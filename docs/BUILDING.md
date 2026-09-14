@@ -26,6 +26,7 @@ Harbour rule. Host Qt is 5.15 while the device has Qt 5.6: the static QML tests 
 | `build` | CMake, `-Wall -Wextra -Wpedantic -Werror` | warnings |
 | `test` | ctest, one process per test, serial, no retries | any failure |
 | `coverage` | gcovr over `src/` (excluding `main.cpp`) | line coverage < 80% |
+| `sonar-selftest` | `ci/sonar-report-selftest.sh` against a stub server | the Sonar report script losing a field |
 | `tidy` | clang-tidy, `.clang-tidy` | any finding |
 
 Missing tools are SKIP locally and failures in CI (`PACKAGING_LINT_STRICT=1`).
@@ -45,7 +46,32 @@ Missing tools are SKIP locally and failures in CI (`PACKAGING_LINT_STRICT=1`).
 
 `make coverage` writes `build/coverage/sonar-coverage.xml` (SonarQube generic format),
 `cobertura.xml` and an HTML report. CI uploads the directory as the `coverage` artifact.
-SonarQube Cloud imports the XML; it is a report, not a gate (`make check` decides).
+
+## Static analysis
+
+SonarQube Cloud analyses every pull request from `.github/workflows/sonar.yml`, which is
+deliberately not part of `ci.yml`: Sonar is a **report**, `make check` is the gate, and
+nothing Sonar says changes a build's colour (SCOPE.md §7).
+
+The scanner measures nothing it can be handed instead. `make sonar-reports` runs
+`make coverage` and leaves two files the scan imports, both named in
+`sonar-project.properties`:
+
+| File | Why the scanner does not produce it |
+|---|---|
+| `build/coverage/sonar-coverage.xml` | It only ever imports coverage. Without a report the reading is a confident 0.0%, not "no data". |
+| `build/compile_commands.json` | The C++ analyser needs to know how each file is compiled. CMake already writes the database, so no build wrapper is used. |
+
+Analysis must run from CI, not from SonarCloud's **Automatic Analysis**: that mode has no
+build step, so it can import neither file and reports 0.0% coverage. The two are mutually
+exclusive, and Automatic Analysis has to be off in the SonarCloud project for this
+workflow to be accepted.
+
+The scan uploads a report and exits; the server processes it afterwards. `ci/sonar-report.sh`
+then asks the server for the quality gate, the measures and the open issues and prints them
+into the job log and the step summary, so the result is readable without opening the
+dashboard. It is `continue-on-error`: a Sonar outage costs a warning, not a build.
+`ci/sonar-report-selftest.sh` runs it against a stub server and is part of `make lint`.
 
 ## Device RPM
 

@@ -12,7 +12,8 @@ CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
 TS_FILES := translations/harbour-tuuli.ts translations/harbour-tuuli-fi.ts
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
-        harbour-check harbour-selftest lint check translations clean
+        harbour-check harbour-selftest sonar-selftest sonar-reports lint check \
+        translations clean
 
 all: build
 
@@ -58,7 +59,21 @@ harbour-check:
 harbour-selftest:
 	ci/harbour-check-selftest.sh
 
-lint: fmt qml-lint packaging-lint harbour-check harbour-selftest
+sonar-selftest:
+	ci/sonar-report-selftest.sh
+
+# What SonarQube Cloud imports rather than measures: the coverage report and the
+# compilation database its C++ analyser reads. sonar-project.properties names both
+# under build/, so a different BUILD needs that file changed with it. Not part of
+# `check`: Sonar is a report, and this only gathers what the scan uploads.
+sonar-reports: coverage
+	@test -f $(BUILD)/compile_commands.json || { \
+		echo "sonar-reports: no $(BUILD)/compile_commands.json" >&2; exit 1; }
+	@test "$(BUILD)" = build || \
+		echo "sonar-reports: BUILD is $(BUILD); sonar-project.properties names build/" >&2
+	@echo "sonar-reports: $(BUILD)/coverage/sonar-coverage.xml and $(BUILD)/compile_commands.json"
+
+lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
 
 check: lint build test coverage tidy
 	@echo "check: all gates green"

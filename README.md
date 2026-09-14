@@ -13,9 +13,10 @@ Scope and rules: [SCOPE.md](SCOPE.md). Everything else: [docs/](docs/).
 
 ## Check
 
-    make check         # exactly what CI runs, from a clean checkout, offline
-    make fmt-apply     # clang-format in place
-    make translations  # refresh translations/*.ts after changing strings
+    make check          # exactly what CI runs, from a clean checkout, offline
+    make fmt-apply      # clang-format in place
+    make translations   # refresh translations/*.ts after changing strings
+    make sonar-reports  # coverage and compile database for SonarQube Cloud
 
 ## Package
 
