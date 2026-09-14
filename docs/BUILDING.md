@@ -60,6 +60,7 @@ The scanner measures nothing it can be handed instead. `make sonar-reports` runs
 | File | Why the scanner does not produce it |
 |---|---|
 | `build/coverage/sonar-coverage.xml` | It only ever imports coverage. Without a report the reading is a confident 0.0%, not "no data". |
+| | The report carries branch data, and SonarQube's coverage figure blends lines with conditions. `make coverage` drops the branches the compiler generates for C++ exceptions, which no test can take: left in, they were 632 of 1732 and put the imported figure 20 points below the line coverage beside it. |
 | `build/compile_commands.json` | The C++ analyser needs to know how each file is compiled. CMake already writes the database, so no build wrapper is used. |
 
 Analysis must run from CI, not from SonarCloud's **Automatic Analysis**: that mode has no

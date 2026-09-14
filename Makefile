@@ -29,10 +29,17 @@ build: configure
 test: build
 	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 120
 
+# --exclude-throw-branches and --exclude-unreachable-branches drop the edges the
+# compiler generates for C++ exceptions -- an allocation that could throw, an
+# implicit destructor unwinding -- which no test can take and which gcov counts
+# anyway. They were 632 of 1732 "branches" here, dragging branch coverage to 58%
+# and, through the blended line+condition figure SonarQube reads, the imported
+# coverage with it. Line coverage, which $(COVERAGE_MIN) gates, is unaffected.
 coverage: test
 	mkdir -p $(BUILD)/coverage
 	gcovr --root . --object-directory $(BUILD) \
 	      --filter 'src/' --exclude 'src/main\.cpp' \
+	      --exclude-throw-branches --exclude-unreachable-branches \
 	      --print-summary --fail-under-line $(COVERAGE_MIN) \
 	      --sonarqube $(BUILD)/coverage/sonar-coverage.xml \
 	      --xml $(BUILD)/coverage/cobertura.xml \
