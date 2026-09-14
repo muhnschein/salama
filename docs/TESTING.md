@@ -12,7 +12,8 @@ workaround; a failure blocks the tag.
 - [ ] Launches under Sailjail; first run shows the home page in one tab.
 - [ ] Tapping the address turns it into a field in place; typing a host opens it over https, typing words searches with the selected engine.
 - [ ] Back, reload and stop act on the current page; progress shows while loading.
-- [ ] Dragging the navigation bar upwards opens the tab grid; tapping a button on the bar does not.
+- [ ] Dragging the navigation bar upwards opens the tab grid, from anywhere along the bar including over the icons; tapping instead does not.
+- [ ] Menu > Tabs opens the same grid without the gesture.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
 - [ ] Grid header names the active tab and counts the rest; its pulley returns to that tab.

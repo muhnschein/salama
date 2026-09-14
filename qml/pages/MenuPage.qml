@@ -102,6 +102,20 @@ Page {
                 text: qsTr("Browse")
             }
 
+            // The tab grid is opened by dragging the navigation bar upwards. This is
+            // the way there that does not need the gesture -- on a device where the
+            // drag is awkward, or a hand that is already in the menu.
+            ListItem {
+                objectName: "tabsItem"
+                onClicked: pageStack.replace(Qt.resolvedUrl("TabsPage.qml"))
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Tabs")
+                }
+            }
+
             ListItem {
                 objectName: "bookmarksItem"
                 onClicked: pageStack.replace(Qt.resolvedUrl("BookmarksPage.qml"))

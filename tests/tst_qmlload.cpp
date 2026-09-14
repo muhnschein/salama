@@ -59,6 +59,7 @@ private:
     static void click(QObject *object);
     static void enterKey(QObject *field);
     void typeAddress(const QString &text);
+    void tapBar(const QString &region);
     void pullUpToTabs();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
@@ -196,18 +197,21 @@ void tst_qmlload::enterKey(QObject *field)
     QMetaObject::invokeMethod(attached, "clicked");
 }
 
-// The address is a label until tapped; editing happens in place. MouseArea::clicked
-// carries a mouse event, so the tap is raised from QML rather than through
-// invokeMethod, which cannot supply one.
+// The address is a label until tapped; editing happens in place. The bar's gesture
+// handler owns every press, so a tap is raised the way that handler raises it.
 void tst_qmlload::typeAddress(const QString &text)
 {
-    QObject *tapArea = find(QStringLiteral("addressTapArea"));
-    QVERIFY(tapArea->property("enabled").toBool());
-    evaluate(tapArea, QStringLiteral("clicked(null)"));
+    tapBar(QStringLiteral("address"));
     QObject *field = find(QStringLiteral("addressField"));
     QVERIFY(field->property("visible").toBool());
     field->setProperty("text", text);
     enterKey(field);
+}
+
+// A tap on the bar, through the one handler that receives them.
+void tst_qmlload::tapBar(const QString &region)
+{
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("activate('%1')").arg(region));
 }
 
 // Dragging the navigation bar upwards is what opens the tab grid. The drag itself
@@ -226,7 +230,7 @@ void tst_qmlload::popPage() const
 
 QObject *tst_qmlload::openMenuItem(const QString &itemName)
 {
-    click(find(QStringLiteral("menuButton")));
+    tapBar(QStringLiteral("menu"));
     QObject *item = find(itemName);
     if (item == nullptr) {
         return nullptr;
@@ -282,15 +286,29 @@ void tst_qmlload::navigationBarDrivesWebView()
 {
     QObject *webView = currentWebView();
     QObject *bar = find(QStringLiteral("navigationBar"));
-    QObject *back = find(QStringLiteral("backButton"));
-    QObject *reload = find(QStringLiteral("reloadButton"));
 
-    QVERIFY(!back->property("enabled").toBool());
+    // Every control on the bar is reached by the region a press lands in. The
+    // boundaries are asserted against the items themselves, because a region that
+    // no press can land in is exactly how the first gesture handler failed.
+    const qreal barWidth = bar->property("width").toReal();
+    QVERIFY(barWidth > 0);
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("back"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width / 2)")).toString(),
+             QStringLiteral("address"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
+             QStringLiteral("menu"));
+    QObject *reloadIcon = find(QStringLiteral("reloadButton"));
+    const qreal reloadX = reloadIcon->property("x").toReal();
+    QVERIFY(reloadX > 0);
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(%1)").arg(reloadX + 1)).toString(),
+             QStringLiteral("reload"));
+
+    // Back is ignored until there is somewhere to go back to.
+    tapBar(QStringLiteral("back"));
+    QVERIFY(webView->property("calls").toStringList().isEmpty());
     webView->setProperty("canGoBack", true);
-    QVERIFY(back->property("enabled").toBool());
-
-    click(back);
-    click(reload);
+    tapBar(QStringLiteral("back"));
+    tapBar(QStringLiteral("reload"));
     QCOMPARE(webView->property("calls").toStringList(),
              QStringList({QStringLiteral("goBack"), QStringLiteral("reload")}));
 
@@ -299,12 +317,20 @@ void tst_qmlload::navigationBarDrivesWebView()
     webView->setProperty("loading", true);
     webView->setProperty("loadProgress", 50);
     QVERIFY(progress->property("visible").toBool());
-    click(reload);
+    // The same region stops a load that is running.
+    tapBar(QStringLiteral("reload"));
     QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
 
     // A short drag is not a gesture; a long one is.
     QVERIFY(!evaluate(bar, QStringLiteral("isPullUp(200, 199)")).toBool());
     QVERIFY(evaluate(bar, QStringLiteral("isPullUp(200, 0)")).toBool());
+
+    // The handler must cover the bar: the first one sat behind the controls, which
+    // tile it, so no press ever reached it and the gesture could not be made.
+    QObject *gesture = find(QStringLiteral("navigationBarGesture"));
+    QVERIFY(gesture->property("enabled").toBool());
+    QCOMPARE(gesture->property("width").toReal(), barWidth);
+    QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
 
     pullUpToTabs();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("tabsPage"));
@@ -413,7 +439,7 @@ void tst_qmlload::tabsPage()
     QVERIFY(m_core->tabs()->activeIsPrivate());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QVERIFY(currentWebView()->property("privateMode").toBool());
-    evaluate(find(QStringLiteral("addressTapArea")), QStringLiteral("clicked(null)"));
+    tapBar(QStringLiteral("address"));
     QCOMPARE(find(QStringLiteral("addressField"))->property("label").toString(),
              QStringLiteral("Private tab"));
 
@@ -469,20 +495,20 @@ void tst_qmlload::menuPage()
     QCOMPARE(m_core->tabs()->count(), 3);
     QVERIFY(m_core->tabs()->activeIsPrivate());
 
-    click(find(QStringLiteral("menuButton")));
+    tapBar(QStringLiteral("menu"));
     auto *bookmarkLabel = find(QStringLiteral("bookmarkItem"))->findChild<QObject *>();
     QCOMPARE(bookmarkLabel->property("text").toString(), QStringLiteral("Bookmark this page"));
     click(find(QStringLiteral("bookmarkItem")));
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QVERIFY(m_core->bookmarks()->activeUrlBookmarked());
 
-    click(find(QStringLiteral("menuButton")));
+    tapBar(QStringLiteral("menu"));
     bookmarkLabel = find(QStringLiteral("bookmarkItem"))->findChild<QObject *>();
     QCOMPARE(bookmarkLabel->property("text").toString(), QStringLiteral("Remove bookmark"));
     click(find(QStringLiteral("bookmarkItem")));
     QCOMPARE(m_core->bookmarks()->count(), 0);
 
-    click(find(QStringLiteral("menuButton")));
+    tapBar(QStringLiteral("menu"));
     QObject *share = find(QStringLiteral("shareAction"));
     click(find(QStringLiteral("shareItem")));
     QCOMPARE(share->property("triggerCount").toInt(), 1);

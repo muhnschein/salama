@@ -148,6 +148,10 @@
         <source>Settings</source>
         <translation>Asetukset</translation>
     </message>
+    <message>
+        <source>Tabs</source>
+        <translation>Välilehdet</translation>
+    </message>
 </context>
 <context>
     <name>NavigationBar</name>
