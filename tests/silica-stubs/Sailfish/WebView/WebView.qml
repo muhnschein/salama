@@ -25,6 +25,10 @@ Item {
     property string lastScript
     property string scriptResult: ""
     property bool scriptFails: false
+    property string lastGrabPath: ""
+    property int grabCount: 0
+    property bool grabFails: false
+    property bool grabSaveFails: false
 
     signal linkClicked(string url)
     signal viewInitialized()
@@ -54,6 +58,22 @@ Item {
     function load(target, fromExternal) {
         record("load")
         url = target
+    }
+
+    // Stands in for QQuickItem::grabToImage, which needs a rendering scene graph the
+    // offscreen test platform does not provide. Calls back synchronously.
+    function grabToImage(callback, targetSize) {
+        grabCount += 1
+        if (grabFails) {
+            return false
+        }
+        callback({
+                     "saveToFile": function (path) {
+                         webView.lastGrabPath = path
+                         return !webView.grabSaveFails
+                     }
+                 })
+        return true
     }
 
     function runJavaScript(script, callback, errorCallback) {

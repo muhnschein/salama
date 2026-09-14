@@ -4,14 +4,21 @@
 
 #include "TabPersistence.h"
 
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QUrl>
+#include <QtDebug>
 #include <algorithm>
+#include <utility>
 
 namespace Tuuli {
 
-TabModel::TabModel(TabPersistence *persistence, QObject *parent)
+TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObject *parent)
     : QAbstractListModel(parent)
     , m_persistence(persistence)
+    , m_thumbnailDirectory(std::move(thumbnailDirectory))
 {
     load();
 }
@@ -25,6 +32,13 @@ void TabModel::load()
     for (const Tab &tab : m_tabs) {
         m_nextTabId = std::max(m_nextTabId, tab.id + 1);
     }
+    // A preview whose file went away shows as nothing rather than as a broken image.
+    for (Tab &tab : m_tabs) {
+        if (!tab.thumbnail.isEmpty() && !QFile::exists(tab.thumbnail)) {
+            tab.thumbnail.clear();
+        }
+    }
+
     if (m_tabs.isEmpty()) {
         return;
     }
@@ -55,6 +69,8 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
         return tab.title;
     case FaviconRole:
         return tab.favicon;
+    case ThumbnailRole:
+        return tab.thumbnail;
     case PrivateRole:
         return tab.isPrivate;
     case ActiveRole:
@@ -71,6 +87,7 @@ QHash<int, QByteArray> TabModel::roleNames() const
         {UrlRole, QByteArrayLiteral("url")},
         {TitleRole, QByteArrayLiteral("title")},
         {FaviconRole, QByteArrayLiteral("favicon")},
+        {ThumbnailRole, QByteArrayLiteral("thumbnail")},
         {PrivateRole, QByteArrayLiteral("privateTab")},
         {ActiveRole, QByteArrayLiteral("activeTab")},
     };
@@ -181,6 +198,7 @@ void TabModel::closeTab(int index)
     }
     const Tab closing = m_tabs.at(index);
     const bool closingActive = closing.id == m_activeTabId;
+    discardThumbnail(closing.thumbnail);
 
     beginRemoveRows(QModelIndex(), index, index);
     m_tabs.removeAt(index);
@@ -221,6 +239,9 @@ void TabModel::closeAllTabs()
         return;
     }
     const QList<Tab> closed = m_tabs;
+    for (const Tab &tab : closed) {
+        discardThumbnail(tab.thumbnail);
+    }
     beginRemoveRows(QModelIndex(), 0, m_tabs.count() - 1);
     m_tabs.clear();
     endRemoveRows();
@@ -309,6 +330,52 @@ void TabModel::updateFavicon(int tabId, const QString &favicon)
     if (!tab.isPrivate) {
         emit faviconUpdated(tab.url, favicon);
     }
+}
+
+QString TabModel::thumbnailPath(int tabId)
+{
+    const int index = indexOf(tabId);
+    if (m_thumbnailDirectory.isEmpty() || index < 0 || m_tabs.at(index).isPrivate) {
+        return {};
+    }
+    QDir dir(m_thumbnailDirectory);
+    if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
+        qWarning() << "TabModel: cannot create preview directory" << m_thumbnailDirectory;
+        return {};
+    }
+    // Unique per capture: a counter alongside the clock, so two grabs within the same
+    // millisecond still differ.
+    return dir.absoluteFilePath(QStringLiteral("tab-%1-%2-%3.png")
+                                    .arg(tabId)
+                                    .arg(QDateTime::currentMSecsSinceEpoch())
+                                    .arg(++m_thumbnailCounter));
+}
+
+void TabModel::updateThumbnail(int tabId, const QString &path)
+{
+    const int index = indexOf(tabId);
+    if (index < 0 || m_tabs.at(index).isPrivate || m_tabs.at(index).thumbnail == path) {
+        return;
+    }
+    Tab &tab = m_tabs[index];
+    discardThumbnail(tab.thumbnail);
+    tab.thumbnail = path;
+    notifyRow(index, ThumbnailRole);
+    persist(tab);
+}
+
+void TabModel::discardThumbnail(const QString &path) const
+{
+    // Only ever removes what this model handed out, so a stray value in the database
+    // cannot turn into a delete somewhere else.
+    if (path.isEmpty() || m_thumbnailDirectory.isEmpty()) {
+        return;
+    }
+    if (QFileInfo(path).absolutePath() != QDir(m_thumbnailDirectory).absolutePath()) {
+        qWarning() << "TabModel: refusing to remove a preview outside" << m_thumbnailDirectory;
+        return;
+    }
+    QFile::remove(path);
 }
 
 void TabModel::setActiveTab(int tabId)

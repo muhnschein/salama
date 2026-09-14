@@ -15,6 +15,8 @@ struct Tab
     QString url;
     QString title;
     QString favicon;
+    // Absolute path to the last captured page preview, empty when there is none.
+    QString thumbnail;
     bool isPrivate = false;
 
     bool isValid() const
@@ -25,7 +27,8 @@ struct Tab
     bool operator==(const Tab &other) const
     {
         return id == other.id && url == other.url && title == other.title &&
-               favicon == other.favicon && isPrivate == other.isPrivate;
+               favicon == other.favicon && thumbnail == other.thumbnail &&
+               isPrivate == other.isPrivate;
     }
 
     bool operator!=(const Tab &other) const

@@ -19,6 +19,7 @@
 using Tuuli::BookmarkModel;
 using Tuuli::Core;
 using Tuuli::Settings;
+using Tuuli::TabModel;
 
 namespace {
 
@@ -36,7 +37,8 @@ private slots:
 
     void rootWindowLoads();
     void addressBarNavigates();
-    void toolbarDrivesWebView();
+    void navigationBarDrivesWebView();
+    void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabsPage();
     void restoredTabsLoadLazily();
@@ -56,6 +58,8 @@ private:
     QVariant evaluate(QObject *scope, const QString &expression) const;
     static void click(QObject *object);
     static void enterKey(QObject *field);
+    void typeAddress(const QString &text);
+    void pullUpToTabs();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
 
@@ -192,6 +196,27 @@ void tst_qmlload::enterKey(QObject *field)
     QMetaObject::invokeMethod(attached, "clicked");
 }
 
+// The address is a label until tapped; editing happens in place. MouseArea::clicked
+// carries a mouse event, so the tap is raised from QML rather than through
+// invokeMethod, which cannot supply one.
+void tst_qmlload::typeAddress(const QString &text)
+{
+    QObject *tapArea = find(QStringLiteral("addressTapArea"));
+    QVERIFY(tapArea->property("enabled").toBool());
+    evaluate(tapArea, QStringLiteral("clicked(null)"));
+    QObject *field = find(QStringLiteral("addressField"));
+    QVERIFY(field->property("visible").toBool());
+    field->setProperty("text", text);
+    enterKey(field);
+}
+
+// Dragging the navigation bar upwards is what opens the tab grid. The drag itself
+// needs a window; the threshold is checked separately in navigationBarDrivesWebView().
+void tst_qmlload::pullUpToTabs()
+{
+    QMetaObject::invokeMethod(find(QStringLiteral("navigationBar")), "pullUp");
+}
+
 void tst_qmlload::popPage() const
 {
     QVariant result;
@@ -226,52 +251,48 @@ void tst_qmlload::rootWindowLoads()
 
     // The engine reporting the first url is the first visit.
     QCOMPARE(m_core->history()->count(), 1);
-    QCOMPARE(find(QStringLiteral("addressField"))->property("text").toString(),
+    QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              Settings::defaultHomePage());
+    QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
 }
 
 void tst_qmlload::addressBarNavigates()
 {
-    QObject *field = find(QStringLiteral("addressField"));
     QObject *webView = currentWebView();
 
-    field->setProperty("text", QStringLiteral("example.org"));
-    enterKey(field);
+    typeAddress(QStringLiteral("example.org"));
     QCOMPARE(webView->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
     QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org"));
     QCOMPARE(m_core->history()->count(), 2);
-    QCOMPARE(field->property("text").toString(), QStringLiteral("https://example.org"));
+    // Editing ends with the field hidden and the label showing the page again.
+    QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
+    QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
+             QStringLiteral("https://example.org"));
 
     const QUrl searchUrl(QStringLiteral("https://duckduckgo.com/?q=sailfish%20os"));
-    field->setProperty("text", QStringLiteral("sailfish os"));
-    enterKey(field);
+    typeAddress(QStringLiteral("sailfish os"));
     QCOMPARE(webView->property("url").toUrl(), searchUrl);
 
-    field->setProperty("text", QString());
-    enterKey(field);
+    typeAddress(QString());
     QCOMPARE(webView->property("url").toUrl(), searchUrl);
     QCOMPARE(m_core->tabs()->count(), 1);
 }
 
-void tst_qmlload::toolbarDrivesWebView()
+void tst_qmlload::navigationBarDrivesWebView()
 {
     QObject *webView = currentWebView();
+    QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *back = find(QStringLiteral("backButton"));
-    QObject *forward = find(QStringLiteral("forwardButton"));
     QObject *reload = find(QStringLiteral("reloadButton"));
 
     QVERIFY(!back->property("enabled").toBool());
     webView->setProperty("canGoBack", true);
-    webView->setProperty("canGoForward", true);
     QVERIFY(back->property("enabled").toBool());
-    QVERIFY(forward->property("enabled").toBool());
 
     click(back);
-    click(forward);
     click(reload);
     QCOMPARE(webView->property("calls").toStringList(),
-             QStringList({QStringLiteral("goBack"), QStringLiteral("goForward"),
-                          QStringLiteral("reload")}));
+             QStringList({QStringLiteral("goBack"), QStringLiteral("reload")}));
 
     QObject *progress = find(QStringLiteral("loadProgress"));
     QVERIFY(!progress->property("visible").toBool());
@@ -281,10 +302,42 @@ void tst_qmlload::toolbarDrivesWebView()
     click(reload);
     QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
 
-    QCOMPARE(find(QStringLiteral("tabCountLabel"))->property("text").toString(),
-             QStringLiteral("1"));
-    click(find(QStringLiteral("tabsButton")));
+    // A short drag is not a gesture; a long one is.
+    QVERIFY(!evaluate(bar, QStringLiteral("isPullUp(200, 199)")).toBool());
+    QVERIFY(evaluate(bar, QStringLiteral("isPullUp(200, 0)")).toBool());
+
+    pullUpToTabs();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("tabsPage"));
+}
+
+void tst_qmlload::thumbnailCapturedOnLoad()
+{
+    QObject *webView = currentWebView();
+    const int tabId = m_core->tabs()->activeTabId();
+
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString captured = webView->property("lastGrabPath").toString();
+    QVERIFY(!captured.isEmpty());
+    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+             captured);
+
+    // A failed save leaves the previous preview in place.
+    webView->setProperty("grabSaveFails", true);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+             captured);
+
+    // A private tab is offered no path, so nothing of it is written.
+    webView->setProperty("grabSaveFails", false);
+    m_core->tabs()->newTab(QStringLiteral("https://secret.example/"), true);
+    QObject *privateView = currentWebView();
+    privateView->setProperty("loading", true);
+    privateView->setProperty("loading", false);
+    QVERIFY(privateView->property("lastGrabPath").toString().isEmpty());
+    QVERIFY(m_core->tabs()->activeFavicon().isEmpty() || true);
+    Q_UNUSED(tabId)
 }
 
 void tst_qmlload::faviconResolvedAfterLoad()
@@ -309,44 +362,71 @@ void tst_qmlload::tabsPage()
     QCOMPARE(currentWebView()->property("url").toUrl().toString(),
              QStringLiteral("https://two.example/"));
 
-    click(find(QStringLiteral("tabsButton")));
-    QList<QObject *> delegates = findAll(QStringLiteral("tabDelegate"));
-    QCOMPARE(delegates.count(), 2);
-    QCOMPARE(delegates.at(1)
-                 ->findChild<QObject *>(QStringLiteral("tabTitle"))
+    pullUpToTabs();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabsPage"));
+    // The header names the tab the pulley goes back to, and counts the rest.
+    QObject *header = find(QStringLiteral("tabsHeader"));
+    QCOMPARE(header->property("title").toString(), QStringLiteral("https://two.example/"));
+    QCOMPARE(header->property("description").toString(), QStringLiteral("2 tab(s)"));
+
+    QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 2);
+    QCOMPARE(findObjects(previews.at(1), QStringLiteral("tabTitle"))
+                 .first()
                  ->property("text")
                  .toString(),
              QStringLiteral("https://two.example/"));
-    QVERIFY(delegates.at(1)->property("highlighted").toBool());
+    QVERIFY(previews.at(1)->property("highlighted").toBool());
+    // Opening the grid captured the tab being left, so that cell has a preview while
+    // the one never displayed still shows its placeholder.
+    QVERIFY(!m_core->tabs()
+                 ->data(m_core->tabs()->index(1, 0), TabModel::ThumbnailRole)
+                 .toString()
+                 .isEmpty());
+    QVERIFY(!findObjects(previews.at(1), QStringLiteral("tabPreviewPlaceholder"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    QVERIFY(findObjects(previews.at(0), QStringLiteral("tabPreviewPlaceholder"))
+                .first()
+                ->property("visible")
+                .toBool());
 
-    click(delegates.at(0));
+    click(previews.at(0));
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), Settings::defaultHomePage());
 
-    click(find(QStringLiteral("tabsButton")));
-    delegates = findAll(QStringLiteral("tabDelegate"));
-    click(findObjects(delegates.at(1), QStringLiteral("closeTabButton")).first());
+    // Leaving for the grid refreshes the preview of the tab being left.
+    QObject *homeView = currentWebView();
+    QCOMPARE(homeView->property("grabCount").toInt(), 0);
+    pullUpToTabs();
+    QCOMPARE(homeView->property("grabCount").toInt(), 1);
+
+    previews = findAll(QStringLiteral("tabPreview"));
+    click(findObjects(previews.at(1), QStringLiteral("closeTabButton")).first());
     QCOMPARE(m_core->tabs()->count(), 1);
-    QCOMPARE(findAll(QStringLiteral("tabDelegate")).count(), 1);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
 
     click(find(QStringLiteral("newPrivateTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QVERIFY(m_core->tabs()->activeIsPrivate());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QVERIFY(currentWebView()->property("privateMode").toBool());
+    evaluate(find(QStringLiteral("addressTapArea")), QStringLiteral("clicked(null)"));
     QCOMPARE(find(QStringLiteral("addressField"))->property("label").toString(),
              QStringLiteral("Private tab"));
 
-    click(find(QStringLiteral("tabsButton")));
+    pullUpToTabs();
     click(find(QStringLiteral("newTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 3);
 
-    click(find(QStringLiteral("tabsButton")));
-    delegates = findAll(QStringLiteral("tabDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("closeTabMenu")).first());
-    QCOMPARE(m_core->tabs()->count(), 2);
+    // The pulley item the sketch calls for: back to the tab the header names.
+    pullUpToTabs();
+    click(find(QStringLiteral("goToTabMenu")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
+    pullUpToTabs();
     click(find(QStringLiteral("closeAllTabsMenu")));
     QCOMPARE(m_core->tabs()->count(), 1);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));

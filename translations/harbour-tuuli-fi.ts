@@ -2,17 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fi">
 <context>
-    <name>AddressBar</name>
-    <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
-    </message>
-    <message>
-        <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
-    </message>
-</context>
-<context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -161,6 +150,17 @@
     </message>
 </context>
 <context>
+    <name>NavigationBar</name>
+    <message>
+        <source>Search or enter address</source>
+        <translation>Hae tai kirjoita osoite</translation>
+    </message>
+    <message>
+        <source>Private tab</source>
+        <translation>Yksityinen välilehti</translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -220,22 +220,18 @@
     </message>
 </context>
 <context>
-    <name>TabDelegate</name>
-    <message>
-        <source>Close</source>
-        <translation>Sulje</translation>
-    </message>
+    <name>TabPreview</name>
     <message>
         <source>Private tab</source>
         <translation>Yksityinen välilehti</translation>
     </message>
+    <message>
+        <source>No preview</source>
+        <translation>Ei esikatselua</translation>
+    </message>
 </context>
 <context>
     <name>TabsPage</name>
-    <message>
-        <source>Tabs</source>
-        <translation>Välilehdet</translation>
-    </message>
     <message>
         <source>Close all tabs</source>
         <translation>Sulje kaikki välilehdet</translation>
@@ -259,6 +255,17 @@
     <message>
         <source>Pull down to open one</source>
         <translation>Vedä alas avataksesi välilehden</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Go to tab</source>
+        <translation>Siirry välilehteen</translation>
     </message>
 </context>
 </TS>

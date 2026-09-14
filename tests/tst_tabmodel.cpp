@@ -4,6 +4,9 @@
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
 
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -27,7 +30,24 @@ private slots:
     void titleAndFavicon();
     void privateTabsStayQuiet();
     void persistenceRoundTrip();
+    void thumbnailsAreCapturedPerTab();
+    void thumbnailsFollowTabLifetime();
+    void thumbnailsAreOptional();
 };
+
+namespace {
+
+bool writeFile(const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        return false;
+    }
+    file.write("png");
+    return true;
+}
+
+} // namespace
 
 namespace {
 
@@ -331,6 +351,117 @@ void tst_tabmodel::persistenceRoundTrip()
         TabModel model(&persistence);
         QCOMPARE(model.activeTabIndex(), 0);
     }
+}
+
+void tst_tabmodel::thumbnailsAreCapturedPerTab()
+{
+    QTemporaryDir dir;
+    TabModel model(nullptr, dir.path() + QStringLiteral("/previews"));
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    const int secret = model.newTab(QStringLiteral("https://secret.example/"), true);
+    QSignalSpy rowSpy(&model, &TabModel::dataChanged);
+
+    // Private tabs and unknown tabs are never given a file to write.
+    QVERIFY(model.thumbnailPath(secret).isEmpty());
+    QVERIFY(model.thumbnailPath(4242).isEmpty());
+
+    const QString first = model.thumbnailPath(a);
+    QVERIFY(!first.isEmpty());
+    QCOMPARE(QFileInfo(first).absolutePath(),
+             QDir(dir.path() + QStringLiteral("/previews")).absolutePath());
+    // Each capture gets its own name, so a new image is never hidden behind a cached one.
+    QVERIFY(model.thumbnailPath(a) != first);
+
+    QVERIFY(writeFile(first));
+    model.updateThumbnail(a, first);
+    QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(), first);
+    QCOMPARE(rowSpy.count(), 1);
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::ThumbnailRole});
+    QCOMPARE(model.roleNames().value(TabModel::ThumbnailRole), QByteArrayLiteral("thumbnail"));
+
+    // Replacing a preview removes the file it replaces.
+    const QString second = model.thumbnailPath(a);
+    QVERIFY(writeFile(second));
+    model.updateThumbnail(a, second);
+    QVERIFY(!QFile::exists(first));
+    QVERIFY(QFile::exists(second));
+
+    model.updateThumbnail(a, second);
+    QCOMPARE(rowSpy.count(), 2);
+
+    // A private tab keeps no preview even when one is offered.
+    model.updateThumbnail(secret, second);
+    QVERIFY(role(model, 1, TabModel::ThumbnailRole).toString().isEmpty());
+    QVERIFY(QFile::exists(second));
+
+    // Nothing outside the preview directory is ever removed.
+    const QString outside = dir.path() + QStringLiteral("/keep.png");
+    QVERIFY(writeFile(outside));
+    model.updateThumbnail(a, outside);
+    model.updateThumbnail(a, model.thumbnailPath(a));
+    QVERIFY(QFile::exists(outside));
+}
+
+void tst_tabmodel::thumbnailsFollowTabLifetime()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    const QString previews = dir.path() + QStringLiteral("/previews");
+    QString kept;
+    int keptId = 0;
+    {
+        TabModel model(&persistence, previews);
+        const int a = model.newTab(QStringLiteral("https://a.example/"));
+        const int b = model.newTab(QStringLiteral("https://b.example/"));
+        const QString shotA = model.thumbnailPath(a);
+        const QString shotB = model.thumbnailPath(b);
+        QVERIFY(writeFile(shotA));
+        QVERIFY(writeFile(shotB));
+        model.updateThumbnail(a, shotA);
+        model.updateThumbnail(b, shotB);
+
+        // Closing a tab takes its preview with it.
+        model.closeTab(model.indexOf(a));
+        QVERIFY(!QFile::exists(shotA));
+        QVERIFY(QFile::exists(shotB));
+        kept = shotB;
+        keptId = b;
+    }
+    {
+        // Previews survive a restart.
+        TabModel model(&persistence, previews);
+        QCOMPARE(model.count(), 1);
+        QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(), kept);
+
+        model.closeAllTabs();
+        QVERIFY(!QFile::exists(kept));
+    }
+    {
+        // A path whose file has gone reads as no preview rather than a broken one.
+        TabModel model(&persistence, previews);
+        const int c = model.newTab(QStringLiteral("https://c.example/"));
+        const QString shot = model.thumbnailPath(c);
+        QVERIFY(writeFile(shot));
+        model.updateThumbnail(c, shot);
+        QVERIFY(QFile::remove(shot));
+        Q_UNUSED(keptId)
+    }
+    TabModel model(&persistence, previews);
+    QCOMPARE(model.count(), 1);
+    QVERIFY(role(model, 0, TabModel::ThumbnailRole).toString().isEmpty());
+}
+
+void tst_tabmodel::thumbnailsAreOptional()
+{
+    // No directory means no previews, which is how the unit tests above run.
+    TabModel model(nullptr);
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    QVERIFY(model.thumbnailPath(a).isEmpty());
+    model.updateThumbnail(a, QStringLiteral("/tmp/nowhere.png"));
+    QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(),
+             QStringLiteral("/tmp/nowhere.png"));
+    model.closeAllTabs();
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

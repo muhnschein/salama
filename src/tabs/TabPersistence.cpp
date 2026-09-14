@@ -35,8 +35,8 @@ QList<Tab> TabPersistence::loadTabs() const
 {
     QList<Tab> tabs;
     QSqlQuery query(m_storage.database());
-    query.prepare(
-        QStringLiteral("SELECT tab_id, url, title, favicon FROM tab ORDER BY position ASC"));
+    query.prepare(QStringLiteral("SELECT tab_id, url, title, favicon, thumbnail FROM tab "
+                                 "ORDER BY position ASC"));
     if (!run(query)) {
         return tabs;
     }
@@ -46,6 +46,7 @@ QList<Tab> TabPersistence::loadTabs() const
         tab.url = query.value(1).toString();
         tab.title = query.value(2).toString();
         tab.favicon = query.value(3).toString();
+        tab.thumbnail = query.value(4).toString();
         tabs.append(tab);
     }
     return tabs;
@@ -68,13 +69,15 @@ void TabPersistence::insertTab(const Tab &tab)
         return;
     }
     QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("INSERT INTO tab (tab_id, position, url, title, favicon) "
-                                 "VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM tab), "
-                                 "?, ?, ?)"));
+    query.prepare(
+        QStringLiteral("INSERT INTO tab (tab_id, position, url, title, favicon, thumbnail) "
+                       "VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM tab), "
+                       "?, ?, ?, ?)"));
     query.addBindValue(tab.id);
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
     query.addBindValue(Storage::text(tab.favicon));
+    query.addBindValue(Storage::text(tab.thumbnail));
     run(query);
 }
 
@@ -84,11 +87,12 @@ void TabPersistence::updateTab(const Tab &tab)
         return;
     }
     QSqlQuery query(m_storage.database());
-    query.prepare(
-        QStringLiteral("UPDATE tab SET url = ?, title = ?, favicon = ? WHERE tab_id = ?"));
+    query.prepare(QStringLiteral(
+        "UPDATE tab SET url = ?, title = ?, favicon = ?, thumbnail = ? WHERE tab_id = ?"));
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
     query.addBindValue(Storage::text(tab.favicon));
+    query.addBindValue(Storage::text(tab.thumbnail));
     query.addBindValue(tab.id);
     run(query);
 }

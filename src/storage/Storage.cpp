@@ -25,7 +25,8 @@ const QStringList &schemaStatements()
                        "position INTEGER NOT NULL, "
                        "url TEXT NOT NULL, "
                        "title TEXT NOT NULL DEFAULT '', "
-                       "favicon TEXT NOT NULL DEFAULT '')"),
+                       "favicon TEXT NOT NULL DEFAULT '', "
+                       "thumbnail TEXT NOT NULL DEFAULT '')"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS browser_history ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                        "url TEXT NOT NULL UNIQUE, "
@@ -112,6 +113,11 @@ QString Storage::defaultDataDirectory()
     return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 }
 
+QString Storage::defaultCacheDirectory()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+}
+
 QString Storage::defaultConfigFilePath()
 {
     // Sandboxed apps must not use the default QSettings path; this is the layout
@@ -123,6 +129,20 @@ QString Storage::defaultConfigFilePath()
 QVariant Storage::text(const QString &value)
 {
     return value.isNull() ? QVariant(QStringLiteral("")) : QVariant(value);
+}
+
+bool Storage::hasColumn(const QString &table, const QString &column) const
+{
+    QSqlQuery query(database());
+    if (!query.exec(QStringLiteral("PRAGMA table_info(%1)").arg(table))) {
+        return false;
+    }
+    while (query.next()) {
+        if (query.value(1).toString() == column) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Storage::applySchema() const
@@ -143,6 +163,19 @@ bool Storage::applySchema() const
     for (const QString &statement : schemaStatements()) {
         QSqlQuery query(db);
         if (!query.exec(statement)) {
+            qWarning() << "Storage:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+
+    // Schema 1 predates tab previews. CREATE TABLE IF NOT EXISTS above leaves an
+    // existing table alone, so the column is added here; asking the table rather than
+    // the version number makes this correct whichever way the database was created.
+    if (!hasColumn(QStringLiteral("tab"), QStringLiteral("thumbnail"))) {
+        QSqlQuery query(db);
+        if (!query.exec(
+                QStringLiteral("ALTER TABLE tab ADD COLUMN thumbnail TEXT NOT NULL DEFAULT ''"))) {
             qWarning() << "Storage:" << query.lastError().text();
             db.rollback();
             return false;

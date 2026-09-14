@@ -14,7 +14,7 @@ namespace Tuuli {
 class Storage
 {
 public:
-    static const int SchemaVersion = 1;
+    static const int SchemaVersion = 2;
 
     explicit Storage(const QString &dataDirectory);
     ~Storage();
@@ -30,12 +30,15 @@ public:
     // Sailjail grants write access only below these locations; see docs/HARBOUR.md.
     static QString defaultDataDirectory();
     static QString defaultConfigFilePath();
+    // Tab previews live here: losing them costs a placeholder, not data.
+    static QString defaultCacheDirectory();
 
     // Bind value for a TEXT NOT NULL column: a null QString would bind SQL NULL.
     static QVariant text(const QString &value);
 
 private:
     bool applySchema() const;
+    bool hasColumn(const QString &table, const QString &column) const;
 
     QString m_connectionName;
     QString m_databasePath;

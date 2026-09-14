@@ -3,8 +3,8 @@
 //
 // Modelled on sailfish-browser apps/history/declarativetabmodel.{h,cpp}
 // (Copyright (c) 2013 Jolla Ltd., (c) 2021 Open Mobile Platform LLC, MPL-2.0).
-// Differences: no web container coupling, no thumbnails, private tabs are a per-tab
-// flag, and the model reports navigations through signals instead of writing history.
+// Differences: no web container coupling, private tabs are a per-tab flag, and the
+// model reports navigations through signals instead of writing history.
 #pragma once
 
 #include "Tab.h"
@@ -35,12 +35,15 @@ public:
         UrlRole,
         TitleRole,
         FaviconRole,
+        ThumbnailRole,
         PrivateRole,
         ActiveRole
     };
 
-    // A null persistence keeps the model in memory only (used by tests).
-    explicit TabModel(TabPersistence *persistence, QObject *parent = nullptr);
+    // A null persistence keeps the model in memory only (used by tests). An empty
+    // thumbnail directory turns page previews off.
+    explicit TabModel(TabPersistence *persistence, QString thumbnailDirectory = QString(),
+                      QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -69,6 +72,14 @@ public:
     Q_INVOKABLE void updateTitle(int tabId, const QString &title);
     Q_INVOKABLE void updateFavicon(int tabId, const QString &favicon);
 
+    // Where the view should write this tab's next page preview. Each call returns a
+    // fresh name so the grabbed image is never hidden behind a cached one, and the
+    // previous file is removed once the new path is handed back through
+    // updateThumbnail(). Empty for a private tab, whose preview is never written to
+    // disk, and when previews are off.
+    Q_INVOKABLE QString thumbnailPath(int tabId);
+    Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
+
     static bool isExternalUrl(const QString &url);
 
 signals:
@@ -87,12 +98,15 @@ private:
     void setActiveTab(int tabId);
     void notifyRow(int index, Role role);
     void persist(const Tab &tab);
+    void discardThumbnail(const QString &path) const;
 
     TabPersistence *m_persistence;
+    QString m_thumbnailDirectory;
     QList<Tab> m_tabs;
     QList<int> m_awaitingFirstUrl;
     int m_activeTabId = 0;
     int m_nextTabId = 1;
+    int m_thumbnailCounter = 0;
 };
 
 } // namespace Tuuli

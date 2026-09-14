@@ -10,12 +10,16 @@ workaround; a failure blocks the tag.
 ## Checklist
 
 - [ ] Launches under Sailjail; first run shows the home page in one tab.
-- [ ] Address bar: typing a host opens it over https; typing words searches with the selected engine.
-- [ ] Back, forward, reload and stop act on the current page; progress shows while loading.
+- [ ] Tapping the address turns it into a field in place; typing a host opens it over https, typing words searches with the selected engine.
+- [ ] Back, reload and stop act on the current page; progress shows while loading.
+- [ ] Dragging the navigation bar upwards opens the tab grid; tapping a button on the bar does not.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
-- [ ] Tabs page lists open tabs with title and address; tapping switches, the close button closes.
-- [ ] New private tab shows "Private tab" in the address bar; its pages do not appear in History.
-- [ ] Kill the app (swipe close), relaunch: same tabs, same active tab, private tabs gone.
+- [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
+- [ ] Grid header names the active tab and counts the rest; its pulley returns to that tab.
+- [ ] A tab never displayed this session shows a placeholder, and fills in once visited.
+- [ ] New private tab shows "Private tab" when the address is tapped; its pages do not appear in History, and its grid cell never shows a preview.
+- [ ] Kill the app (swipe close), relaunch: same tabs, same active tab, private tabs gone, previews still there.
+- [ ] `ls ~/.cache/io.github.muhnschein/tuuli` holds one PNG per previewed tab and none after closing them.
 - [ ] History lists visited pages newest first; search filters; remove and clear work.
 - [ ] Bookmark the page from the menu; it appears in Bookmarks; edit and remove work.
 - [ ] Share sends the address to another app.

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 tuuli contributors
 #include "storage/Storage.h"
 
+#include <QDir>
 #include <QSqlQuery>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -18,6 +19,7 @@ private slots:
     void reopenKeepsData();
     void refusesUnusableDirectory();
     void refusesNewerSchema();
+    void migratesSchemaOne();
     void defaultPaths();
 };
 
@@ -96,10 +98,50 @@ void tst_storage::refusesNewerSchema()
     QVERIFY(!storage.isOpen());
 }
 
+void tst_storage::migratesSchemaOne()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.sqlite"));
+    {
+        // A schema 1 database: the tab table has no thumbnail column.
+        QSqlDatabase db =
+            QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("legacy"));
+        db.setDatabaseName(path);
+        QVERIFY(db.open());
+        QSqlQuery query(db);
+        QVERIFY(query.exec(QStringLiteral("CREATE TABLE tab (tab_id INTEGER PRIMARY KEY, "
+                                          "position INTEGER NOT NULL, url TEXT NOT NULL, "
+                                          "title TEXT NOT NULL DEFAULT '', "
+                                          "favicon TEXT NOT NULL DEFAULT '')")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO tab (tab_id, position, url, title) "
+                                          "VALUES (1, 1, 'https://a.example/', 'A')")));
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = 1")));
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("legacy"));
+
+    Storage storage(dir.path());
+    QVERIFY(storage.isOpen());
+    QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
+
+    QSqlQuery query(storage.database());
+    QVERIFY(query.exec(QStringLiteral("SELECT tab_id, title, thumbnail FROM tab")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+    QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
+    QVERIFY(query.value(2).toString().isEmpty());
+
+    // Reopening an already migrated database changes nothing.
+    Storage again(dir.path());
+    QVERIFY(again.isOpen());
+    QCOMPARE(again.userVersion(), Storage::SchemaVersion);
+}
+
 void tst_storage::defaultPaths()
 {
     QVERIFY(!Storage::defaultDataDirectory().isEmpty());
     QVERIFY(Storage::defaultConfigFilePath().endsWith(QStringLiteral(".conf")));
+    QVERIFY(!Storage::defaultCacheDirectory().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_storage)

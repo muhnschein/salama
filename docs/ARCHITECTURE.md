@@ -27,7 +27,9 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 ## Data flow
 
 1. The engine reports `url`, `title` and load state on a `WebView`.
-2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`.
+2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`, and on
+   load completion grabs a page preview into the path `TabModel.thumbnailPath()` hands
+   out, reporting it back through `updateThumbnail()`.
 3. `TabModel` updates its row, persists non-private tabs, and emits `visited`,
    `titleUpdated`, `faviconUpdated` for non-private tabs only.
 4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
@@ -38,7 +40,13 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 Views: one `WebView` per tab that has been shown this session, created lazily by a
 `Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing
 until activated. Favicons come from a page script with `/favicon.ico` as fallback
-(`DECISIONS/0005-favicons.md`).
+(`DECISIONS/0005-favicons.md`). Tab previews are scene-graph grabs written to the cache
+directory (`DECISIONS/0008-tab-previews.md`); a tab that has not been displayed this
+session has none, and shows a placeholder in the grid.
+
+The browsing page carries the address: a label until tapped, a field in place after.
+The navigation bar along the bottom is also the gesture surface that opens the tab
+grid, and the grid's pulley leads back (`DECISIONS/0009-navigation-bar-gesture.md`).
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
@@ -47,12 +55,15 @@ anything else becomes a search with the selected engine.
 ## Storage
 
 Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<app>`),
-file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Nothing else is
-written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently 1);
-a newer database than the build refuses to open rather than corrupt.
+file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Tab previews are
+PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
+is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
+2); a newer database than the build refuses to open rather than corrupt. Migration asks
+the table for its columns rather than trusting the version number, so a database from
+either schema converges on the same shape.
 
 ```
-tab              tab_id PK, position, url, title, favicon
+tab              tab_id PK, position, url, title, favicon, thumbnail
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 setting          name PK, value          -- activeTabId

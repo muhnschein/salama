@@ -2,17 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en">
 <context>
-    <name>AddressBar</name>
-    <message>
-        <source>Private tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search or enter address</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -161,6 +150,17 @@
     </message>
 </context>
 <context>
+    <name>NavigationBar</name>
+    <message>
+        <source>Search or enter address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -220,22 +220,18 @@
     </message>
 </context>
 <context>
-    <name>TabDelegate</name>
+    <name>TabPreview</name>
     <message>
-        <source>Close</source>
+        <source>Private tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Private tab</source>
+        <source>No preview</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TabsPage</name>
-    <message>
-        <source>Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Close all tabs</source>
         <translation type="unfinished"></translation>
@@ -258,6 +254,17 @@
     </message>
     <message>
         <source>Pull down to open one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Go to tab</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

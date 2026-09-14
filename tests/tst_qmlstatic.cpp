@@ -125,7 +125,7 @@ void tst_qmlstatic::delegateRolesExist()
     const QHash<QString, QSet<QString>> expected{
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
         {QStringLiteral("pages/TabsPage.qml"), roleSet(tabs)},
-        {QStringLiteral("components/TabDelegate.qml"), roleSet(tabs)},
+        {QStringLiteral("components/TabPreview.qml"), roleSet(tabs)},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},

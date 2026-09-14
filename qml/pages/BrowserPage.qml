@@ -40,6 +40,14 @@ WebViewPage {
         }
     }
 
+    // Refresh the grid's picture of this tab before leaving for it.
+    function showTabs() {
+        if (currentView) {
+            currentView.captureThumbnail()
+        }
+        pageStack.push(Qt.resolvedUrl("TabsPage.qml"))
+    }
+
     Component.onCompleted: {
         ensureTab()
         updateCurrentView()
@@ -51,28 +59,12 @@ WebViewPage {
         onCountChanged: browserPage.ensureTab()
     }
 
-    AddressBar {
-        id: addressBar
-
-        objectName: "addressBar"
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-        }
-        url: TabModel.activeUrl
-        privateTab: TabModel.activeIsPrivate
-        loading: currentView ? currentView.loading : false
-        loadProgress: currentView ? currentView.loadProgress : 0
-        onAccepted: browserPage.openUrl(Settings.urlForInput(text))
-    }
-
     Item {
         id: viewArea
 
         anchors {
-            top: addressBar.bottom
-            bottom: toolbar.top
+            top: parent.top
+            bottom: navigationBar.top
             left: parent.left
             right: parent.right
         }
@@ -134,35 +126,54 @@ WebViewPage {
                 })
             }
 
+            // The model hands out a fresh file name per capture and removes the one it
+            // replaces; a private tab is given none, so nothing of it reaches the disk.
+            function captureThumbnail() {
+                if (!isCurrent) {
+                    return
+                }
+                var path = TabModel.thumbnailPath(tabId)
+                if (path.length === 0) {
+                    return
+                }
+                grabToImage(function (result) {
+                    if (result.saveToFile(path)) {
+                        TabModel.updateThumbnail(tabId, path)
+                    }
+                })
+            }
+
             onUrlChanged: TabModel.updateUrl(tabId, url)
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 if (!loading) {
                     fetchFavicon()
+                    captureThumbnail()
                 }
             }
             Component.onCompleted: url = initialUrl
         }
     }
 
-    Toolbar {
-        id: toolbar
+    NavigationBar {
+        id: navigationBar
 
-        objectName: "toolbar"
+        objectName: "navigationBar"
         anchors {
             bottom: parent.bottom
             left: parent.left
             right: parent.right
         }
+        url: TabModel.activeUrl
+        privateTab: TabModel.activeIsPrivate
         canGoBack: currentView ? currentView.canGoBack : false
-        canGoForward: currentView ? currentView.canGoForward : false
         loading: currentView ? currentView.loading : false
-        tabCount: TabModel.count
+        loadProgress: currentView ? currentView.loadProgress : 0
+        onAccepted: browserPage.openUrl(Settings.urlForInput(text))
         onBack: currentView.goBack()
-        onForward: currentView.goForward()
         onReload: currentView.reload()
         onStop: currentView.stop()
-        onShowTabs: pageStack.push(Qt.resolvedUrl("TabsPage.qml"))
         onShowMenu: pageStack.push(Qt.resolvedUrl("MenuPage.qml"))
+        onPullUp: browserPage.showTabs()
     }
 }

@@ -8,7 +8,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     : QObject(parent)
     , m_storage(dataDirectory)
     , m_tabPersistence(m_storage)
-    , m_tabs(&m_tabPersistence)
+    , m_tabs(&m_tabPersistence, Storage::defaultCacheDirectory())
     , m_history(m_storage)
     , m_bookmarks(m_storage)
     , m_settings(configFilePath)

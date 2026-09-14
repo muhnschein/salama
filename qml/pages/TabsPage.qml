@@ -11,14 +11,20 @@ Page {
     objectName: "tabsPage"
     allowedOrientations: Orientation.Portrait
 
-    SilicaListView {
-        id: tabList
+    SilicaGridView {
+        id: tabGrid
 
-        objectName: "tabList"
+        objectName: "tabGrid"
         anchors.fill: parent
         model: TabModel
+        cellWidth: width / 2
+        cellHeight: cellWidth + Theme.itemSizeSmall
+
+        // The header names the tab the pulley returns to, as the sketch has it.
         header: PageHeader {
-            title: qsTr("Tabs")
+            objectName: "tabsHeader"
+            title: TabModel.activeTitle.length > 0 ? TabModel.activeTitle : TabModel.activeUrl
+            description: qsTr("%n tab(s)", "", TabModel.count)
         }
 
         PullDownMenu {
@@ -46,9 +52,15 @@ Page {
                     pageStack.pop()
                 }
             }
+            MenuItem {
+                objectName: "goToTabMenu"
+                text: qsTr("Go to tab")
+                enabled: TabModel.count > 0
+                onClicked: pageStack.pop()
+            }
         }
 
-        delegate: TabDelegate {
+        delegate: TabPreview {
             onClicked: {
                 TabModel.activateTab(index)
                 pageStack.pop()
