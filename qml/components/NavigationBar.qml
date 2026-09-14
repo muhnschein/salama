@@ -2,7 +2,7 @@
 // Copyright (c) 2026 tuuli contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
-// the menu. Dragging it upwards opens the tab grid.
+// the menu. Dragging it upwards pulls the tab grid up from underneath the page.
 //
 // One MouseArea covers the whole bar and owns every press, and the icons are just
 // icons. A drag has to be recognised from the press that starts it, and the controls
@@ -10,6 +10,11 @@
 // lets presses through to them cannot see the movement afterwards. So the press is
 // taken here, the region under it decides what a tap means, and the same region
 // drives the pressed highlight.
+//
+// The drag is reported as a distance, not as a finished gesture: the page follows the
+// finger while it moves and decides when it lifts. A handler that only speaks at its
+// threshold shows nothing while the finger is down, and on device that is
+// indistinguishable from the system's own bottom-edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -29,9 +34,16 @@ Item {
     signal reload()
     signal stop()
     signal showMenu()
-    signal pullUp()
+    // Upward drag, in pixels from where the finger went down. Negative means it has
+    // come back below its own starting point.
+    signal dragStarted()
+    signal dragMoved(real distance)
+    signal dragFinished(real distance)
 
-    height: Theme.itemSizeMedium
+    // The bar is the whole touch target for the drag, and it sits in the strip the
+    // system watches for its own edge swipe. Every bit of height here is height the
+    // gesture can start in without lipstick taking it first.
+    height: Theme.itemSizeLarge
 
     function beginEditing() {
         urlField.text = navigationBar.url
@@ -50,13 +62,6 @@ Item {
         if (text.length > 0) {
             navigationBar.accepted(text)
         }
-    }
-
-    // True when an upward drag is long enough to count as opening the tab grid.
-    // A named function rather than a condition inside the handler so the threshold
-    // is reachable from the load tests, which have no window to send presses to.
-    function isPullUp(startY, currentY) {
-        return startY - currentY > Theme.itemSizeSmall
     }
 
     // Which control a press at this x belongs to. Named regions rather than hit
@@ -91,6 +96,14 @@ Item {
         } else if (region === "address") {
             navigationBar.beginEditing()
         }
+    }
+
+    // The page runs the full height of the window and this bar lies over its foot,
+    // so the last line of a page is dimmed rather than cut off.
+    Rectangle {
+        objectName: "navigationBarBackground"
+        anchors.fill: parent
+        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
     }
 
     Icon {
@@ -197,7 +210,8 @@ Item {
         id: gestureArea
 
         property real pressedY: 0
-        property bool dragged: false
+        property real distance: 0
+        property bool dragging: false
         property string pressedRegion: ""
 
         objectName: "navigationBarGesture"
@@ -206,23 +220,40 @@ Item {
 
         onPressed: {
             pressedY = mouse.y
-            dragged = false
+            distance = 0
+            dragging = false
             pressedRegion = navigationBar.regionAt(mouse.x)
         }
         onPositionChanged: {
-            if (!dragged && navigationBar.isPullUp(pressedY, mouse.y)) {
-                dragged = true
+            distance = pressedY - mouse.y
+            // Theme.startDragDistance is the movement Silica treats as a drag rather
+            // than a shaky tap; past it the press belongs to the page, not a control.
+            if (!dragging && distance > Theme.startDragDistance) {
+                dragging = true
                 pressedRegion = ""
-                navigationBar.pullUp()
+                navigationBar.dragStarted()
+            }
+            if (dragging) {
+                navigationBar.dragMoved(distance)
             }
         }
-        onReleased: pressedRegion = ""
+        onReleased: {
+            if (dragging) {
+                navigationBar.dragFinished(distance)
+            }
+            pressedRegion = ""
+        }
+        // The grab can be taken away mid-drag -- by the system's edge gesture, most
+        // of all. Finish at zero so the page springs back rather than hanging.
         onCanceled: {
-            dragged = false
+            if (dragging) {
+                navigationBar.dragFinished(0)
+            }
+            dragging = false
             pressedRegion = ""
         }
         onClicked: {
-            if (!dragged) {
+            if (!dragging) {
                 navigationBar.activate(navigationBar.regionAt(mouse.x))
             }
         }

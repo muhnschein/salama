@@ -45,8 +45,11 @@ directory (`DECISIONS/0008-tab-previews.md`); a tab that has not been displayed 
 session has none, and shows a placeholder in the grid.
 
 The browsing page carries the address: a label until tapped, a field in place after.
-The navigation bar along the bottom is also the gesture surface that opens the tab
-grid, and the grid's pulley leads back (`DECISIONS/0009-navigation-bar-gesture.md`).
+The navigation bar along the bottom is also the surface the tab grid is dragged from:
+the page and the grid are one deck two screens tall, the grid below the page, and the
+grid's own overscroll drops the page back onto it. Nothing is pushed onto the page
+stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
+`DECISIONS/0010-tab-grid-deck.md`).
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),

@@ -8,6 +8,10 @@ import harbour.tuuli 1.0
 Page {
     id: menuPage
 
+    // The page this menu was opened from, so the tab grid can be reached through it:
+    // the grid is part of that page now, not a page of its own.
+    property Item browserPage
+
     objectName: "menuPage"
     allowedOrientations: Orientation.Portrait
 
@@ -107,7 +111,12 @@ Page {
             // drag is awkward, or a hand that is already in the menu.
             ListItem {
                 objectName: "tabsItem"
-                onClicked: pageStack.replace(Qt.resolvedUrl("TabsPage.qml"))
+                onClicked: {
+                    pageStack.pop()
+                    if (menuPage.browserPage) {
+                        menuPage.browserPage.showTabs()
+                    }
+                }
 
                 Label {
                     x: Theme.horizontalPageMargin

@@ -7,7 +7,7 @@ Versions follow semantic versioning.
 
 ### Added
 - Multi-tab browsing with a grid of page previews; tabs, the active tab and the previews survive restarts.
-- Dragging the navigation bar upwards opens the tab grid; the grid's pulley returns to the tab it names, and the menu reaches the grid without the gesture.
+- Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top puts the page back; tapping a preview does the same. The menu reaches the grid without the gesture.
 - Address shown in the navigation bar, tapped to edit in place, opening addresses or searching with a configurable engine.
 - Back, reload, stop and share.
 - History with search, and bookmarks with edit and remove.

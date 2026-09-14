@@ -85,16 +85,16 @@ expect error requires "Requires of a bare shared library"
 fresh; sed -i 's/^Summary:.*/&\nBuildArch:  noarch/' "$SPEC"
 expect error arch "noarch with a binary"
 
-fresh; add_import "$TREE/qml/pages/TabsPage.qml" "import QtQuick.Controls 1.0"
+fresh; add_import "$TREE/qml/components/TabsView.qml" "import QtQuick.Controls 1.0"
 expect error qml-import "disallowed QML import"
 
-fresh; add_import "$TREE/qml/pages/TabsPage.qml" 'import "\/usr\/share\/other"'
+fresh; add_import "$TREE/qml/components/TabsView.qml" 'import "\/usr\/share\/other"'
 expect error qml-import "absolute path QML import"
 
-fresh; add_import "$TREE/qml/pages/TabsPage.qml" 'import "..\/..\/src"'
+fresh; add_import "$TREE/qml/components/TabsView.qml" 'import "..\/..\/src"'
 expect error qml-import "QML import outside the application directory"
 
-fresh; add_import "$TREE/qml/pages/TabsPage.qml" "import org.nemomobile.notifications 1.0"
+fresh; add_import "$TREE/qml/components/TabsView.qml" "import org.nemomobile.notifications 1.0"
 expect warning qml-import "deprecated QML import"
 
 fresh; sed -i 's/^Icon=.*/Icon=other/' "$DESKTOP"

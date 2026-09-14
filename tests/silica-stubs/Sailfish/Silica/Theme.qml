@@ -25,7 +25,13 @@ QtObject {
     readonly property color highlightColor: "#aaccff"
     readonly property color secondaryHighlightColor: "#b0aaccff"
     readonly property color highlightBackgroundColor: "#aaccff"
+    readonly property color highlightDimmerColor: "#22447f"
     readonly property real highlightBackgroundOpacity: 0.3
+    readonly property real opacityFaint: 0.2
+    readonly property real opacityLow: 0.4
+    readonly property real opacityHigh: 0.6
+    readonly property real opacityOverlay: 0.8
+    readonly property real startDragDistance: 20
 
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)

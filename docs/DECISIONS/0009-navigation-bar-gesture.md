@@ -14,10 +14,12 @@ Silica's `PushUpMenu` attaches to a `Flickable`, and the `WebView` is a `QuickMo
 that scrolls itself, so a stock pulley cannot be used on the browsing page. The bar
 handles the drag itself, and **one `MouseArea` covering the whole bar owns every press**:
 the icons are icons, the region under the press decides what a tap means, and the same
-region drives the pressed highlight. The threshold lives in `isPullUp()` and the regions
-in `regionAt()`, so both can be checked from the load tests, which have no window to send
-real presses to. The tab grid is an ordinary `SilicaGridView` and uses a real
-`PullDownMenu`, whose last item returns to the tab its header names.
+region drives the pressed highlight. The regions live in `regionAt()`, so they can be
+checked from the load tests, which have no window to send real presses to.
+
+The bar reports the drag as a **distance**, not as a finished gesture: `dragStarted`,
+`dragMoved(distance)`, `dragFinished(distance)`. What that distance moves, and the
+threshold that commits it, belong to the page (`0010-tab-grid-deck.md`).
 
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload
@@ -28,7 +30,13 @@ the tap dispatched by region, is the arrangement that can do both.
 
 ## Consequences
 The gesture starts on the bar, not on the page, which keeps it clear of the engine's own
-scrolling. Press feedback is drawn from `pressedRegion` rather than by the controls
+scrolling. That also puts it in the strip along the bottom of the screen that the system
+watches for its own edge swipe, and on the first device build most upward drags opened
+the app grid instead. The bar is `Theme.itemSizeLarge` tall for that reason: every bit
+of height is height the drag can start in above what lipstick takes first. It is also
+translucent and lies over the page rather than above it, so the height costs the page
+nothing. A drag that lipstick takes mid-gesture arrives here as `onCanceled`, which
+finishes at zero so the page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
 themselves, because they no longer receive the press. While the address is being edited
 the handler stands down, so the field keeps its own taps for the caret, and the bar
 cannot be dragged until editing ends.

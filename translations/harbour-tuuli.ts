@@ -235,31 +235,7 @@
     </message>
 </context>
 <context>
-    <name>TabsPage</name>
-    <message>
-        <source>Close all tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Closing all tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New private tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No open tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pull down to open one</source>
-        <translation type="unfinished"></translation>
-    </message>
+    <name>TabsView</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
@@ -268,7 +244,11 @@
         </translation>
     </message>
     <message>
-        <source>Go to tab</source>
+        <source>No open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open one with the button in the header</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

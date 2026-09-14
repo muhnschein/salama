@@ -235,31 +235,7 @@
     </message>
 </context>
 <context>
-    <name>TabsPage</name>
-    <message>
-        <source>Close all tabs</source>
-        <translation>Sulje kaikki välilehdet</translation>
-    </message>
-    <message>
-        <source>Closing all tabs</source>
-        <translation>Suljetaan kaikki välilehdet</translation>
-    </message>
-    <message>
-        <source>New private tab</source>
-        <translation>Uusi yksityinen välilehti</translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation>Uusi välilehti</translation>
-    </message>
-    <message>
-        <source>No open tabs</source>
-        <translation>Ei avoimia välilehtiä</translation>
-    </message>
-    <message>
-        <source>Pull down to open one</source>
-        <translation>Vedä alas avataksesi välilehden</translation>
-    </message>
+    <name>TabsView</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
@@ -268,8 +244,12 @@
         </translation>
     </message>
     <message>
-        <source>Go to tab</source>
-        <translation>Siirry välilehteen</translation>
+        <source>No open tabs</source>
+        <translation>Ei avoimia välilehtiä</translation>
+    </message>
+    <message>
+        <source>Open one with the button in the header</source>
+        <translation>Avaa välilehti otsikon painikkeella</translation>
     </message>
 </context>
 </TS>

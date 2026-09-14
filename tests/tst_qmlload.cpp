@@ -40,7 +40,7 @@ private slots:
     void navigationBarDrivesWebView();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
-    void tabsPage();
+    void tabGrid();
     void restoredTabsLoadLazily();
     void menuPage();
     void historyPage();
@@ -61,6 +61,7 @@ private:
     void typeAddress(const QString &text);
     void tapBar(const QString &region);
     void pullUpToTabs();
+    void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
 
@@ -214,11 +215,28 @@ void tst_qmlload::tapBar(const QString &region)
     evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("activate('%1')").arg(region));
 }
 
-// Dragging the navigation bar upwards is what opens the tab grid. The drag itself
-// needs a window; the threshold is checked separately in navigationBarDrivesWebView().
+// Dragging the navigation bar upwards is what opens the tab grid, and dragging the
+// grid past its own top is what closes it again. The drags themselves need a window;
+// what the bar and the grid report while one is under way is a distance, and these
+// raise the distances of a gesture that goes all the way.
 void tst_qmlload::pullUpToTabs()
 {
-    QMetaObject::invokeMethod(find(QStringLiteral("navigationBar")), "pullUp");
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    const qreal distance =
+        find(QStringLiteral("browserPage"))->property("pullThreshold").toReal() + 1;
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    evaluate(bar, QStringLiteral("dragMoved(%1)").arg(distance));
+    evaluate(bar, QStringLiteral("dragFinished(%1)").arg(distance));
+}
+
+void tst_qmlload::pullDownToBrowser()
+{
+    QObject *grid = find(QStringLiteral("tabsView"));
+    const qreal distance =
+        find(QStringLiteral("browserPage"))->property("pullThreshold").toReal() + 1;
+    evaluate(grid, QStringLiteral("pullStarted()"));
+    evaluate(grid, QStringLiteral("pulled(%1)").arg(distance));
+    evaluate(grid, QStringLiteral("pullFinished(%1)").arg(distance));
 }
 
 void tst_qmlload::popPage() const
@@ -321,9 +339,18 @@ void tst_qmlload::navigationBarDrivesWebView()
     tapBar(QStringLiteral("reload"));
     QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
 
-    // A short drag is not a gesture; a long one is.
-    QVERIFY(!evaluate(bar, QStringLiteral("isPullUp(200, 199)")).toBool());
-    QVERIFY(evaluate(bar, QStringLiteral("isPullUp(200, 0)")).toBool());
+    // The bar reports how far it has been dragged and the page decides. The deck
+    // follows the finger while it moves, and a drag that stops short springs back:
+    // a gesture that shows nothing until it fires cannot be told apart, on device,
+    // from the system's own edge swipe having taken the touch.
+    QObject *page = find(QStringLiteral("browserPage"));
+    const qreal threshold = page->property("pullThreshold").toReal();
+    QVERIFY(threshold > 0);
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    evaluate(bar, QStringLiteral("dragMoved(%1)").arg(threshold / 2));
+    QCOMPARE(page->property("tabsOffset").toReal(), threshold / 2);
+    evaluate(bar, QStringLiteral("dragFinished(%1)").arg(threshold / 2));
+    QVERIFY(!page->property("tabsOpen").toBool());
 
     // The handler must cover the bar: the first one sat behind the controls, which
     // tile it, so no press ever reached it and the gesture could not be made.
@@ -333,7 +360,10 @@ void tst_qmlload::navigationBarDrivesWebView()
     QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
 
     pullUpToTabs();
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabsPage"));
+    QVERIFY(page->property("tabsOpen").toBool());
+    // The grid is not a page: nothing was pushed, and there is nothing to come back
+    // from. It is the same page, further down.
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 }
 
 void tst_qmlload::thumbnailCapturedOnLoad()
@@ -381,16 +411,21 @@ void tst_qmlload::faviconResolvedAfterLoad()
     QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://duckduckgo.com/favicon.ico"));
 }
 
-void tst_qmlload::tabsPage()
+void tst_qmlload::tabGrid()
 {
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
     QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
     QCOMPARE(currentWebView()->property("url").toUrl().toString(),
              QStringLiteral("https://two.example/"));
 
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *grid = find(QStringLiteral("tabsView"));
+    QVERIFY(!grid->property("visible").toBool());
+
     pullUpToTabs();
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabsPage"));
-    // The header names the tab the pulley goes back to, and counts the rest.
+    QVERIFY(page->property("tabsOpen").toBool());
+    QVERIFY(grid->property("visible").toBool());
+    // The header names the tab the page comes back to, and counts the rest.
     QObject *header = find(QStringLiteral("tabsHeader"));
     QCOMPARE(header->property("title").toString(), QStringLiteral("https://two.example/"));
     QCOMPARE(header->property("description").toString(), QStringLiteral("2 tab(s)"));
@@ -418,9 +453,10 @@ void tst_qmlload::tabsPage()
                 ->property("visible")
                 .toBool());
 
+    // Tapping a preview is one way back, and it brings its tab with it.
     click(previews.at(0));
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(!page->property("tabsOpen").toBool());
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), Settings::defaultHomePage());
 
     // Leaving for the grid refreshes the preview of the tab being left.
@@ -434,29 +470,46 @@ void tst_qmlload::tabsPage()
     QCOMPARE(m_core->tabs()->count(), 1);
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
 
-    click(find(QStringLiteral("newPrivateTabMenu")));
+    // The other way back: dragging the grid down past its own top.
+    QVERIFY(page->property("tabsOpen").toBool());
+    pullDownToBrowser();
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // Half a pull moves the deck half way and settles back on the grid, the same way
+    // half a drag on the bar settles back on the page.
+    pullUpToTabs();
+    const qreal threshold = page->property("pullThreshold").toReal();
+    evaluate(grid, QStringLiteral("pullStarted()"));
+    evaluate(grid, QStringLiteral("pulled(%1)").arg(threshold / 2));
+    QCOMPARE(page->property("tabsOffset").toReal(),
+             page->property("height").toReal() - threshold / 2);
+    evaluate(grid, QStringLiteral("pullFinished(%1)").arg(threshold / 2));
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // That pull is the view's own overscroll: dragged past its top it reports the
+    // distance and moves up by the same amount, which cancels the shift the flickable
+    // would draw and leaves its content under the finger.
+    QObject *view = find(QStringLiteral("tabGrid"));
+    const qreal originY = view->property("originY").toReal();
+    view->setProperty("contentY", originY - threshold);
+    QCOMPARE(view->property("overscroll").toReal(), threshold);
+    QCOMPARE(view->property("y").toReal(), -threshold);
+    view->setProperty("contentY", originY);
+    QCOMPARE(view->property("overscroll").toReal(), qreal(0));
+    QCOMPARE(view->property("y").toReal(), qreal(0));
+
+    // The one control the grid carries of its own opens a tab and hands the page back.
+    click(find(QStringLiteral("newTabButton")));
     QCOMPARE(m_core->tabs()->count(), 2);
-    QVERIFY(m_core->tabs()->activeIsPrivate());
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QCOMPARE(m_core->tabs()->activeUrl(), Settings::defaultHomePage());
+
+    // A private tab says so in the bar as soon as it is the current one.
+    m_core->tabs()->newTab(QStringLiteral("https://secret.example/"), true);
     QVERIFY(currentWebView()->property("privateMode").toBool());
     tapBar(QStringLiteral("address"));
     QCOMPARE(find(QStringLiteral("addressField"))->property("label").toString(),
              QStringLiteral("Private tab"));
-
-    pullUpToTabs();
-    click(find(QStringLiteral("newTabMenu")));
-    QCOMPARE(m_core->tabs()->count(), 3);
-
-    // The pulley item the sketch calls for: back to the tab the header names.
-    pullUpToTabs();
-    click(find(QStringLiteral("goToTabMenu")));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
-
-    pullUpToTabs();
-    click(find(QStringLiteral("closeAllTabsMenu")));
-    QCOMPARE(m_core->tabs()->count(), 1);
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
-    QCOMPARE(m_core->tabs()->activeUrl(), Settings::defaultHomePage());
 }
 
 void tst_qmlload::restoredTabsLoadLazily()
@@ -527,6 +580,12 @@ void tst_qmlload::menuPage()
              QStringLiteral("settingsPage"));
     popPage();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+
+    // Tabs is the way into the grid for a hand that is already in the menu, or a
+    // device where the drag is awkward. It comes back to this page and opens the
+    // grid on it rather than pushing a page of its own.
+    QCOMPARE(openMenuItem(QStringLiteral("tabsItem"))->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
 }
 
 void tst_qmlload::historyPage()

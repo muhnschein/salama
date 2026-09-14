@@ -12,11 +12,14 @@ workaround; a failure blocks the tag.
 - [ ] Launches under Sailjail; first run shows the home page in one tab.
 - [ ] Tapping the address turns it into a field in place; typing a host opens it over https, typing words searches with the selected engine.
 - [ ] Back, reload and stop act on the current page; progress shows while loading.
-- [ ] Dragging the navigation bar upwards opens the tab grid, from anywhere along the bar including over the icons; tapping instead does not.
+- [ ] Dragging the navigation bar upwards pulls the tab grid up from under the page, from anywhere along the bar including over the icons; tapping instead does not.
+- [ ] The grid follows the finger while it moves, and a drag that stops short of the threshold springs back. The movement is vertical, never sideways.
+- [ ] Dragging the grid downwards past its top brings the page back the same way; a short pull springs back to the grid.
 - [ ] Menu > Tabs opens the same grid without the gesture.
+- [ ] The bar is translucent and the page runs underneath it.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
-- [ ] Grid header names the active tab and counts the rest; its pulley returns to that tab.
+- [ ] Grid header names the active tab and counts the rest; the button in its corner opens a new tab and returns to it.
 - [ ] A tab never displayed this session shows a placeholder, and fills in once visited.
 - [ ] New private tab shows "Private tab" when the address is tapped; its pages do not appear in History, and its grid cell never shows a preview.
 - [ ] Kill the app (swipe close), relaunch: same tabs, same active tab, private tabs gone, previews still there.
