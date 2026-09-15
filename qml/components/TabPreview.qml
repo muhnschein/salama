@@ -72,7 +72,9 @@ BackgroundItem {
                 var acrossY = mouse.y - grabY
                 // Sideways, because the grid itself only flicks up and down: a drag
                 // across the cell is the one movement nothing else is waiting for.
-                if (Math.abs(acrossX) > Theme.startDragDistance
+                // Half the usual drag distance, because nothing else is waiting for
+                // it: the cell comes up almost as soon as the finger moves across.
+                if (Math.abs(acrossX) > Theme.startDragDistance / 2
                         && Math.abs(acrossX) > Math.abs(acrossY)) {
                     preview.held = true
                     preview.carried = true

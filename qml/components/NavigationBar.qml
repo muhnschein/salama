@@ -87,7 +87,7 @@ Item {
     // undefined, and then the item's own centre is the best that can be done.
     function textCentringOffset(field) {
         var offset = field.textVerticalCenterOffset
-        return offset === undefined ? 0 : -offset
+        return offset === undefined ? 0 : offset
     }
 
     function submit() {
@@ -287,25 +287,49 @@ Item {
     // Every press on the bar, so a drag is seen from the start. It stays live while
     // the address is being edited -- the field is drawn above it and takes its own
     // presses, and everything else on the bar goes on working.
+    //
+    // The handler reaches above the bar as well. The drag that opens the grid has to
+    // start somewhere the system's own bottom-edge swipe has not already taken, and
+    // the bar alone lies in that strip; the reach gives a thumb somewhere higher to
+    // start from. A tap up there does nothing -- the page does not get it either,
+    // which is the price of the reach and the reason it is only a strip.
     MouseArea {
         id: gestureArea
 
+        // Where the press went down, in the window's own coordinates. Not the bar's:
+        // the bar rides on the deck, so while the deck follows the finger the bar
+        // moves under it, and a distance measured against the bar would shrink as the
+        // deck rose, drop the deck back, grow again -- which on device was the whole
+        // screen jumping up and down for as long as the finger was held.
         property real pressedY: 0
         property real distance: 0
         property bool dragging: false
+        property bool pressedOnBar: false
         property string pressedRegion: ""
+        readonly property real reach: Theme.itemSizeExtraSmall
 
         objectName: "navigationBarGesture"
-        anchors.fill: parent
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+            topMargin: -reach
+            bottom: parent.bottom
+        }
+
+        function sceneY(y) {
+            return gestureArea.mapToItem(null, 0, y).y
+        }
 
         onPressed: {
-            pressedY = mouse.y
+            pressedY = sceneY(mouse.y)
             distance = 0
             dragging = false
-            pressedRegion = navigationBar.regionAt(mouse.x)
+            pressedOnBar = mouse.y >= reach
+            pressedRegion = pressedOnBar ? navigationBar.regionAt(mouse.x) : ""
         }
         onPositionChanged: {
-            distance = pressedY - mouse.y
+            distance = pressedY - sceneY(mouse.y)
             // Theme.startDragDistance is the movement Silica treats as a drag rather
             // than a shaky tap; past it the press belongs to the page, not a control.
             if (!dragging && distance > Theme.startDragDistance) {
@@ -333,19 +357,21 @@ Item {
             pressedRegion = ""
         }
         onClicked: {
-            if (!dragging) {
+            if (!dragging && pressedOnBar) {
                 navigationBar.activate(navigationBar.regionAt(mouse.x))
             }
         }
     }
 
-    // The bar is a pulley now, so it says so.
+    // The bar is a pulley, so it says so -- along its top edge rather than its bottom.
+    // The bottom edge is where the system watches for its own swipe, and an indicator
+    // there invites a thumb to start the drag in exactly the wrong place.
     PullIndicator {
         objectName: "barPullIndicator"
         anchors {
             horizontalCenter: parent.horizontalCenter
-            bottom: parent.bottom
-            bottomMargin: Theme.paddingSmall
+            top: parent.top
+            topMargin: Theme.paddingSmall
         }
     }
 

@@ -10,6 +10,8 @@ workaround; a failure blocks the tag.
 ## Checklist
 
 - [ ] Launches under Sailjail; first run shows the home page in one tab.
+- [ ] Page text is the size a phone browser lays it out at, not desktop-small.
+- [ ] Opening and closing the keyboard does not stretch the page; the bar comes up with the keyboard.
 - [ ] The bar shows the host only -- "bellard.org", not "https://www.bellard.org/" -- with the port kept when there is one.
 - [ ] Tapping the address turns it into a field in place showing the whole url again, with its text on the same line the host was on; typing a host opens it over https, typing words searches with the selected engine.
 - [ ] With the field up: tapping the page, or dismissing the keyboard, puts the bar back to the host. Back, reload and menu still work, and the bar can still be dragged, while the field is up.
@@ -25,7 +27,9 @@ workaround; a failure blocks the tag.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
 - [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.
-- [ ] Both pulley indicators are visible: along the bottom of the navigation bar and along the top of the tab grid.
+- [ ] Both pulley indicators are visible: along the top of the navigation bar and along the top of the tab grid.
+- [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.
+- [ ] The tab grid has no header; a row along its foot carries one button, drawn over the cells, and the last row of cells can be scrolled clear of it.
 - [ ] Grid header names the active tab and counts the rest; the button in its corner opens a new tab and returns to it.
 - [ ] A tab never displayed this session shows a placeholder, and fills in once visited.
 - [ ] New private tab shows "Private tab" when the address is tapped; its pages do not appear in History, and its grid cell never shows a preview.

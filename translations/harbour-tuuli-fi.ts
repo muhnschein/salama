@@ -236,20 +236,13 @@
 </context>
 <context>
     <name>TabsView</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
-        </translation>
-    </message>
     <message>
         <source>No open tabs</source>
         <translation>Ei avoimia välilehtiä</translation>
     </message>
     <message>
-        <source>Open one with the button in the header</source>
-        <translation>Avaa välilehti otsikon painikkeella</translation>
+        <source>Open one with the button below</source>
+        <translation>Avaa välilehti alla olevalla painikkeella</translation>
     </message>
 </context>
 </TS>

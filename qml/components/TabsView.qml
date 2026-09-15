@@ -61,38 +61,11 @@ Item {
         }
         onDragEnded: tabsView.pullFinished(pullDistance)
 
-        // The header names the tab the page returns to, counts the rest, and carries
-        // the one control the grid needs of its own.
-        header: PageHeader {
-            objectName: "tabsHeader"
-            title: TabModel.activeTitle.length > 0 ? TabModel.activeTitle : TabModel.activeUrl
-            description: qsTr("%n tab(s)", "", TabModel.count)
-
-            IconButton {
-                objectName: "newTabButton"
-                anchors {
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                    verticalCenter: parent.verticalCenter
-                }
-                width: Theme.iconSizeMedium
-                height: width
-                icon.source: "image://theme/icon-m-add"
-                onClicked: {
-                    TabModel.newTab(Settings.homePage)
-                    tabsView.tabActivated()
-                }
-            }
-        }
-
-        // Cells that make way for a carried one glide; the carried one itself is
-        // already under the finger and must not be animated away from it.
-        displaced: Transition {
-            NumberAnimation {
-                properties: "x,y"
-                duration: 200
-                easing.type: Easing.OutQuad
-            }
+        // Room at the foot for the row below, which is drawn over the cells rather
+        // than scrolling among them.
+        footer: Item {
+            width: tabGrid.width
+            height: newTabRow.height
         }
 
         delegate: TabPreview {
@@ -107,10 +80,37 @@ Item {
         ViewPlaceholder {
             enabled: TabModel.count === 0
             text: qsTr("No open tabs")
-            hintText: qsTr("Open one with the button in the header")
+            hintText: qsTr("Open one with the button below")
         }
 
         VerticalScrollDecorator {}
+    }
+
+    // The one control the grid carries of its own, over the cells rather than among
+    // them: a row along the foot of the view, in the same glass as the navigation bar.
+    Rectangle {
+        id: newTabRow
+
+        objectName: "newTabRow"
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: Theme.itemSizeLarge
+        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+
+        IconButton {
+            objectName: "newTabButton"
+            anchors.centerIn: parent
+            width: Theme.iconSizeMedium
+            height: width
+            icon.source: "image://theme/icon-m-add"
+            onClicked: {
+                TabModel.newTab(Settings.homePage)
+                tabsView.tabActivated()
+            }
+        }
     }
 
     // The top edge is a pulley: dragged down it hands the page back.

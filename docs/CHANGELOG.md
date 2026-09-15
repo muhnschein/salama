@@ -10,6 +10,7 @@ Versions follow semantic versioning.
 - Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top puts the page back; tapping a preview does the same. The menu reaches the grid without the gesture.
 - Address shown in the navigation bar as the host alone, tapped to edit the whole url in place, opening addresses or searching with a configurable engine.
 - A red warning on the address when the engine reports a broken TLS connection, and a navigation bar that gets out of the way when a page is scrolled down.
+- Pages laid out at a phone-sized zoom rather than the engine's smaller default.
 - Tabs can be carried to another place in the grid; the order is kept across restarts.
 - Back, reload, stop and share.
 - History with search, and bookmarks with edit and remove.

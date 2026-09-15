@@ -12,6 +12,7 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
+import Sailfish.WebEngine 1.0
 import harbour.tuuli 1.0
 import "../components"
 
@@ -27,7 +28,20 @@ WebViewPage {
     property bool tabsOpen: false
     property bool dragging: false
     property real dragOffset: 0
-    property real tabsOffset: dragging ? dragOffset : (tabsOpen ? height : 0)
+    property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
+
+    // The tallest this page has been. Silica shrinks a page while the keyboard is up,
+    // and resizing the engine's view in the middle of that animation is what left the
+    // content stretched until the animation finished. The deck keeps the full height
+    // and lets the keyboard cover it; only the bar follows the page down, so the field
+    // it carries stays above the keyboard.
+    property real fullHeight: 0
+
+    onHeightChanged: {
+        if (height > fullHeight) {
+            fullHeight = height
+        }
+    }
 
     // What the engine is told to keep clear at the foot of the viewport, and what the
     // bar is drawn over. The page can then be scrolled until its own last line sits
@@ -125,7 +139,7 @@ WebViewPage {
     }
 
     function dragTo(offset) {
-        dragOffset = Math.max(0, Math.min(height, offset))
+        dragOffset = Math.max(0, Math.min(fullHeight, offset))
     }
 
     // A gesture that has ended: the deck goes all the way, one way or the other.
@@ -141,7 +155,25 @@ WebViewPage {
         settle(true)
     }
 
+    // How large the engine lays a page out. The platform starts it at
+    // 1.5 * Theme.pixelRatio, which is about 410 css pixels across a 1080 wide screen;
+    // 1.75 gives 360 -- the width a phone layout is usually written for -- and larger
+    // text with it. Rounded to a half the way the platform rounds its own.
+    //
+    // Two functions rather than one expression: the engine's own value can then be
+    // read back, and the load tests can compare the two. An expression evaluated
+    // against this page from outside cannot see the Sailfish.WebEngine import, because
+    // the context it is given is the one the page was created in, not the page's own.
+    function pageZoom() {
+        return Math.round(Theme.pixelRatio * 1.75 / 0.5) * 0.5
+    }
+
+    function engineZoom() {
+        return WebEngineSettings.pixelRatio
+    }
+
     Component.onCompleted: {
+        WebEngineSettings.pixelRatio = pageZoom()
         ensureTab()
         updateCurrentView()
     }
@@ -156,14 +188,14 @@ WebViewPage {
         id: deck
 
         width: parent.width
-        height: parent.height * 2
+        height: browserPage.fullHeight * 2
         y: -browserPage.tabsOffset
 
         Item {
             id: browserLayer
 
             width: parent.width
-            height: browserPage.height
+            height: browserPage.fullHeight
 
             // The engine gets the whole page; the bar lies over its foot.
             Item {
@@ -211,7 +243,10 @@ WebViewPage {
 
                 objectName: "navigationBar"
                 width: parent.width
-                y: browserLayer.height - (browserPage.barShown ? height : 0)
+                // The page's own height, not the layer's: Silica shrinks the page for
+                // the keyboard, and the bar has to come up with it or the field it
+                // carries would be typed at from behind the keyboard.
+                y: browserPage.height - (browserPage.barShown ? height : 0)
 
                 Behavior on y {
                     NumberAnimation {
@@ -248,8 +283,8 @@ WebViewPage {
             id: tabsView
 
             width: parent.width
-            height: browserPage.height
-            y: browserPage.height
+            height: browserPage.fullHeight
+            y: browserPage.fullHeight
             // Nothing to draw while the page covers it, and the engine has the screen
             // to itself again for as long as that lasts.
             visible: browserPage.tabsOffset > 0

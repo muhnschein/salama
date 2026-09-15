@@ -33,6 +33,8 @@ QtObject {
     readonly property real opacityHigh: 0.6
     readonly property real opacityOverlay: 0.8
     readonly property real startDragDistance: 20
+    readonly property real itemSizeExtraSmall: 60
+    readonly property real pixelRatio: 2.0
 
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)

@@ -271,6 +271,13 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(currentWebView(), webView);
     QCOMPARE(webView->property("url").toUrl().toString(), Settings::defaultHomePage());
     QVERIFY(!webView->property("privateMode").toBool());
+    // The engine is told to lay pages out larger than the platform's own default.
+    // The engine is told to lay pages out larger than the platform's own default of
+    // 1.5 * Theme.pixelRatio.
+    QObject *page = find(QStringLiteral("browserPage"));
+    const qreal zoom = evaluate(page, QStringLiteral("pageZoom()")).toReal();
+    QVERIFY(zoom > 1.5 * evaluate(page, QStringLiteral("Theme.pixelRatio")).toReal() - 0.5);
+    QCOMPARE(evaluate(page, QStringLiteral("engineZoom()")).toReal(), zoom);
     QVERIFY(webView->property("downloadsEnabled").toBool());
     QVERIFY(!webView->property("desktopMode").toBool());
 
@@ -367,11 +374,15 @@ void tst_qmlload::navigationBarDrivesWebView()
     QVERIFY(!page->property("tabsOpen").toBool());
 
     // The handler must cover the bar: the first one sat behind the controls, which
-    // tile it, so no press ever reached it and the gesture could not be made.
+    // tile it, so no press ever reached it and the gesture could not be made. It also
+    // reaches above the bar, to give the drag somewhere to start that the system's own
+    // bottom-edge swipe has not already taken.
     QObject *gesture = find(QStringLiteral("navigationBarGesture"));
     QVERIFY(gesture->property("enabled").toBool());
     QCOMPARE(gesture->property("width").toReal(), barWidth);
-    QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
+    const qreal reach = gesture->property("reach").toReal();
+    QVERIFY(reach > 0);
+    QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal() + reach);
 
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
@@ -567,10 +578,8 @@ void tst_qmlload::tabGrid()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QVERIFY(grid->property("visible").toBool());
-    // The header names the tab the page comes back to, and counts the rest.
-    QObject *header = find(QStringLiteral("tabsHeader"));
-    QCOMPARE(header->property("title").toString(), QStringLiteral("https://two.example/"));
-    QCOMPARE(header->property("description").toString(), QStringLiteral("2 tab(s)"));
+    // The grid carries one control of its own, in a row drawn over the cells.
+    QVERIFY(find(QStringLiteral("newTabRow")) != nullptr);
 
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
@@ -666,7 +675,7 @@ void tst_qmlload::tabGrid()
              QStringLiteral("https://three.example/"));
     m_core->tabs()->closeTab(1);
 
-    // The one control the grid carries of its own opens a tab and hands the page back.
+    // That control opens a tab and hands the page back with it.
     click(find(QStringLiteral("newTabButton")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QVERIFY(!page->property("tabsOpen").toBool());

@@ -49,7 +49,10 @@ drag, because the grid only ever flicks up and down: across the cell is the one 
 nothing else is waiting for, and it needs no press-and-hold to disambiguate. Once a cell
 is held the delegate sets `preventStealing`, so the grid cannot take the drag back, and
 what moves is the cell's *contents*, not the cell: the view owns where cells are, and
-after `TabModel.moveTab()` the cell underneath has already moved to meet them. Only the
+after `TabModel.moveTab()` the cell underneath has already moved to meet them. Half of
+`Theme.startDragDistance` is enough to pick a cell up, rather than the whole of it: nothing
+else is waiting for that movement, so the cell can come up as soon as the finger goes
+sideways. Only the
 displaced cells are animated; the carried one is under a finger and must not be animated
 away from it.
 
@@ -57,6 +60,12 @@ A cell that has been carried must not also *open* when the finger lifts. `MouseA
 raises `released` before `clicked`, so the flag the release resets cannot be the one the
 click reads: `held` ends the carry, and a second flag, `carried`, lives from the moment
 the cell is picked up until the next press and is what `releaseTap()` asks.
+
+The grid carries no header. The tab it would name is the one the page comes back to, and
+the count is the cells themselves; both were in the way of the previews. The one control
+it keeps — new tab — is a row along the **foot** of the view, drawn over the cells in the
+same glass as the navigation bar rather than scrolling among them, with a footer item of
+the same height so the last row can still be scrolled clear of it.
 
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two

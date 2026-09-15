@@ -236,19 +236,12 @@
 </context>
 <context>
     <name>TabsView</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
-        </translation>
-    </message>
     <message>
         <source>No open tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open one with the button in the header</source>
+        <source>Open one with the button below</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

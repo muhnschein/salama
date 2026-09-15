@@ -21,6 +21,19 @@ The bar reports the drag as a **distance**, not as a finished gesture: `dragStar
 `dragMoved(distance)`, `dragFinished(distance)`. What that distance moves, and the
 threshold that commits it, belong to the page (`0010-tab-grid-deck.md`).
 
+That distance is measured in the **window's** coordinates, through `mapToItem(null, …)`,
+and not in the bar's own. The bar rides on the deck: while the deck follows the finger the
+bar moves up under it, so a distance measured against the bar shrinks as the deck rises,
+which drops the deck back, which grows the distance again. On device that was the whole
+screen jumping up and down for as long as the finger was held.
+
+The handler also **reaches above the bar** by `Theme.itemSizeExtraSmall`. The drag has to
+start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
+lies in that strip. A tap in the reach does nothing — the page does not get it either,
+which is the price of the reach and the reason it is only a strip. The pulley indicator
+sits along the bar's **top** edge for the same reason: an indicator at the bottom invites a
+thumb to start the drag in exactly the place lipstick is watching.
+
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload
 and the menu tile the bar edge to edge, so no press ever reached the handler. Letting
