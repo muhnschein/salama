@@ -11,9 +11,11 @@ workaround; a failure blocks the tag.
 
 - [ ] Launches under Sailjail; first run shows the home page in one tab.
 - [ ] The bar shows the host only -- "bellard.org", not "https://www.bellard.org/" -- with the port kept when there is one.
-- [ ] Tapping the address turns it into a field in place showing the whole url again; typing a host opens it over https, typing words searches with the selected engine.
-- [ ] A site with a bad certificate draws a red open padlock left of the host; a plain http site draws none; neither shows while the address is being edited.
-- [ ] A page whose own footer sits at the very bottom can be scrolled until that footer clears the navigation bar, and the bar is still translucent over the page.
+- [ ] Tapping the address turns it into a field in place showing the whole url again, with its text on the same line the host was on; typing a host opens it over https, typing words searches with the selected engine.
+- [ ] With the field up: tapping the page, or dismissing the keyboard, puts the bar back to the host. Back, reload and menu still work, and the bar can still be dragged, while the field is up.
+- [ ] A site with a bad certificate (expired.badssl.com) draws a red warning glyph left of the host; a plain http site draws none; neither shows while the address is being edited.
+- [ ] Scrolling a page down takes the navigation bar off the bottom, so a button at the very foot of a page can be reached; scrolling back up brings the bar in again, and loading a new page brings it in too.
+- [ ] The address and the warning beside it sit centred in the bar; no port number is shown.
 - [ ] Back, reload and stop act on the current page; progress shows while loading.
 - [ ] Dragging the navigation bar upwards pulls the tab grid up from under the page, from anywhere along the bar including over the icons; tapping instead does not.
 - [ ] The grid follows the finger while it moves, and a drag that stops short of the threshold springs back. The movement is vertical, never sideways.
@@ -22,7 +24,7 @@ workaround; a failure blocks the tag.
 - [ ] The bar is translucent and the page runs underneath it.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
-- [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded.
+- [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.
 - [ ] Both pulley indicators are visible: along the bottom of the navigation bar and along the top of the tab grid.
 - [ ] Grid header names the active tab and counts the rest; the button in its corner opens a new tab and returns to it.
 - [ ] A tab never displayed this session shows a placeholder, and fills in once visited.
@@ -34,7 +36,7 @@ workaround; a failure blocks the tag.
 - [ ] Share sends the address to another app.
 - [ ] Download a file: the transfer UI appears and the file lands in Downloads.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
-- [ ] Settings: the engines are Qwant, Ecosia, Startpage and Wikipedia, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
+- [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.
 - [ ] Cover shows the current tab's title and favicon; cover action opens a new tab.
 - [ ] Rotate the phone: layout stays portrait (landscape is Phase 2).

@@ -53,6 +53,11 @@ after `TabModel.moveTab()` the cell underneath has already moved to meet them. O
 displaced cells are animated; the carried one is under a finger and must not be animated
 away from it.
 
+A cell that has been carried must not also *open* when the finger lifts. `MouseArea`
+raises `released` before `clicked`, so the flag the release resets cannot be the one the
+click reads: `held` ends the carry, and a second flag, `carried`, lives from the moment
+the cell is picked up until the next press and is what `releaseTap()` asks.
+
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is

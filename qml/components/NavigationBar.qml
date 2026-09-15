@@ -57,7 +57,37 @@ Item {
     }
 
     function endEditing() {
+        if (!editing) {
+            return
+        }
         editing = false
+        urlField.focus = false
+    }
+
+    // The field losing focus, and the keyboard going away, both end editing: tapping
+    // the page while the field is up used to leave the bar in edit mode with nothing
+    // to type into. Named functions rather than logic inside the handlers, so both can
+    // be exercised from the load tests, which have no window to take focus in and no
+    // input panel to close.
+    function focusChanged(hasFocus) {
+        if (!hasFocus) {
+            endEditing()
+        }
+    }
+
+    function keyboardVisibilityChanged(keyboardVisible) {
+        if (!keyboardVisible) {
+            endEditing()
+        }
+    }
+
+    // Silica lays a field out with room for its label above the text and its underline
+    // below it, so centring the item leaves the text itself off centre. The field
+    // publishes the offset for exactly this; an engine whose field has none gives
+    // undefined, and then the item's own centre is the best that can be done.
+    function textCentringOffset(field) {
+        var offset = field.textVerticalCenterOffset
+        return offset === undefined ? 0 : -offset
     }
 
     function submit() {
@@ -98,7 +128,9 @@ Item {
                 navigationBar.reload()
             }
         } else if (region === "address") {
-            navigationBar.beginEditing()
+            if (!navigationBar.editing) {
+                navigationBar.beginEditing()
+            }
         }
     }
 
@@ -168,67 +200,59 @@ Item {
             top: parent.top
             bottom: parent.bottom
         }
+        // Above the gesture handler, so that the field keeps its own presses for the
+        // caret while the rest of the bar stays live -- the controls still work and the
+        // bar can still be dragged while an address is being typed. The label and the
+        // warning accept no presses of their own and fall through to the handler.
+        z: 1
 
-        // An open padlock in the error colour, drawn rather than themed: there is no
-        // icon in the platform set for "this lock is open and that is wrong", and a
-        // warning that quietly fails to load would be worse than none. Hidden while
-        // the address is being edited, where the whole url says more than an icon.
-        Canvas {
-            id: securityIcon
+        Row {
+            id: addressRow
 
-            objectName: "securityWarning"
             anchors {
-                left: parent.left
+                horizontalCenter: parent.horizontalCenter
                 verticalCenter: parent.verticalCenter
             }
-            width: Theme.iconSizeSmall
-            height: width
-            visible: navigationBar.tlsBroken && !navigationBar.editing
-            onVisibleChanged: requestPaint()
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.clearRect(0, 0, width, height)
-                ctx.strokeStyle = Theme.errorColor
-                ctx.fillStyle = Theme.errorColor
-                ctx.lineWidth = width / 9
-                ctx.lineCap = "round"
-                var bodyTop = height * 0.48
-                ctx.beginPath()
-                ctx.rect(width * 0.15, bodyTop, width * 0.62, height * 0.40)
-                ctx.fill()
-                // The shackle: hinged on the body's right shoulder, swung up and over,
-                // its left leg ending in the air instead of back in the body.
-                ctx.beginPath()
-                ctx.arc(width * 0.66, height * 0.34, width * 0.22, Math.PI, 0, false)
-                ctx.stroke()
-                ctx.beginPath()
-                ctx.moveTo(width * 0.88, height * 0.34)
-                ctx.lineTo(width * 0.88, bodyTop)
-                ctx.stroke()
-            }
-        }
-
-        Label {
-            objectName: "addressLabel"
-            anchors {
-                left: parent.left
-                leftMargin: securityIcon.visible ? securityIcon.width + Theme.paddingSmall : 0
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-            }
+            // While editing, the field below says everything this row would.
             visible: !navigationBar.editing
-            // The host, not the whole url (Settings.displayAddress). Tapping brings
-            // the field up with every character of it back.
-            text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
-                                               : qsTr("Search or enter address")
-            truncationMode: TruncationMode.Fade
-            color: {
-                if (gestureArea.pressedRegion === "address") {
-                    return Theme.highlightColor
-                }
-                return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
+            spacing: Theme.paddingSmall
+
+            // The platform's own warning glyph in the error colour. There is no open
+            // padlock in the icon set, and sailfish-browser draws this same icon for
+            // this same state (apps/browser/qml/pages/components/ToolBar.qml).
+            Icon {
+                id: securityIcon
+
+                objectName: "securityWarning"
+                anchors.verticalCenter: parent.verticalCenter
+                width: Theme.iconSizeSmall
+                height: width
+                visible: navigationBar.tlsBroken
+                source: "image://theme/icon-s-filled-warning"
+                color: Theme.errorColor
             }
-            font.pixelSize: Theme.fontSizeSmall
+
+            Label {
+                objectName: "addressLabel"
+                anchors.verticalCenter: parent.verticalCenter
+                // Wide enough for the text and no wider, so the row centres on what is
+                // actually drawn; never wider than the space between the controls.
+                width: Math.min(implicitWidth, addressArea.width
+                                - (securityIcon.visible ? securityIcon.width + addressRow.spacing
+                                                        : 0))
+                // The host, not the whole url (Settings.displayAddress). Tapping brings
+                // the field up with every character of it back.
+                text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
+                                                   : qsTr("Search or enter address")
+                truncationMode: TruncationMode.Fade
+                color: {
+                    if (gestureArea.pressedRegion === "address") {
+                        return Theme.highlightColor
+                    }
+                    return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
+                }
+                font.pixelSize: Theme.fontSizeSmall
+            }
         }
 
         TextField {
@@ -239,6 +263,7 @@ Item {
                 left: parent.left
                 right: parent.right
                 verticalCenter: parent.verticalCenter
+                verticalCenterOffset: navigationBar.textCentringOffset(urlField)
             }
             visible: navigationBar.editing
             label: navigationBar.privateTab ? qsTr("Private tab") : ""
@@ -247,11 +272,21 @@ Item {
             EnterKey.enabled: text.length > 0
             EnterKey.iconSource: "image://theme/icon-m-enter-accept"
             EnterKey.onClicked: navigationBar.submit()
+            onActiveFocusChanged: navigationBar.focusChanged(activeFocus)
         }
     }
 
-    // Every press on the bar, so a drag is seen from the start. Stands down while
-    // the address is being edited: the field needs its own taps for the caret.
+    // The input panel closing is the other end of editing: the field can keep focus
+    // after the keyboard is dismissed, and the bar would sit in edit mode with no
+    // keyboard to type on.
+    Connections {
+        target: Qt.inputMethod
+        onVisibleChanged: navigationBar.keyboardVisibilityChanged(Qt.inputMethod.visible)
+    }
+
+    // Every press on the bar, so a drag is seen from the start. It stays live while
+    // the address is being edited -- the field is drawn above it and takes its own
+    // presses, and everything else on the bar goes on working.
     MouseArea {
         id: gestureArea
 
@@ -262,7 +297,6 @@ Item {
 
         objectName: "navigationBarGesture"
         anchors.fill: parent
-        enabled: !navigationBar.editing
 
         onPressed: {
             pressedY = mouse.y
@@ -313,7 +347,6 @@ Item {
             bottom: parent.bottom
             bottomMargin: Theme.paddingSmall
         }
-        visible: !navigationBar.editing
     }
 
     Rectangle {

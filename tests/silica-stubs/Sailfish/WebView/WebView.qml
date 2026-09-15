@@ -21,9 +21,15 @@ Item {
     property var popupProvider
     // RawWebView: what the engine keeps clear at the foot of the viewport.
     property real footerMargin: 0
+    // QuickMozView's chrome gesture: the engine drops chrome while a page is scrolled
+    // down and asks for it back on the way up.
+    property bool chrome: true
+    property bool chromeGestureEnabled: true
+    property real chromeGestureThreshold: 0
     // QuickMozView's QMozSecurity. Assign null to stand in for an engine build that
     // has none.
     property QtObject security: QtObject {
+        property bool validState: true
         property bool allGood: true
     }
 

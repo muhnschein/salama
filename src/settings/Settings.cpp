@@ -28,7 +28,6 @@ const QVector<SearchEngine> &searchEngines()
         {"qwant", "Qwant", "https://www.qwant.com/?q=%1"},
         {"ecosia", "Ecosia", "https://www.ecosia.org/search?q=%1"},
         {"startpage", "Startpage", "https://www.startpage.com/do/search?q=%1"},
-        {"wikipedia", "Wikipedia", "https://en.wikipedia.org/w/index.php?search=%1"},
     };
     return engines;
 }
@@ -163,8 +162,9 @@ QString Settings::searchUrl(const QString &query) const
 // The host is taken as the engine reports it rather than reduced to a registrable
 // domain: "docs.example.com" and "example.com" are different sites, and deciding
 // where the site ends needs the public suffix list, which is not worth carrying and
-// would be wrong the day it goes stale. A port is kept because a port is a different
-// server. Anything without a host -- about:, data:, file: -- is shown as it is.
+// would be wrong the day it goes stale. The port is left off entirely: 80 and 443 say
+// nothing, and the rest are noise in a bar this narrow. Anything without a host --
+// about:, data:, file: -- is shown as it is.
 QString Settings::displayAddress(const QString &url)
 {
     const QUrl parsed(url, QUrl::TolerantMode);
@@ -174,9 +174,6 @@ QString Settings::displayAddress(const QString &url)
     }
     if (host.startsWith(QLatin1String("www."))) {
         host = host.mid(4);
-    }
-    if (parsed.port() > 0) {
-        return host + QLatin1Char(':') + QString::number(parsed.port());
     }
     return host;
 }

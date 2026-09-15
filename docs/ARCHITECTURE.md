@@ -53,8 +53,9 @@ stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
 
 The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped, and
 draws a red open padlock when the engine reports a broken TLS connection for an https page
-(`DECISIONS/0011-address-and-security.md`). The engine is told the bar's height through
-`footerMargin`, so a page can be scrolled clear of it.
+(`DECISIONS/0011-address-and-security.md`). The bar follows the engine's own chrome gesture off the
+bottom of the page while a page is scrolled down, so the foot of a page can be reached
+under it.
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),

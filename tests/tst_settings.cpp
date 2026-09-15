@@ -38,7 +38,8 @@ void tst_settings::defaults()
     QVERIFY(!settings.searchEngineKeys().contains(QStringLiteral("google")));
     QVERIFY(!settings.searchEngineKeys().contains(QStringLiteral("bing")));
     QVERIFY(!settings.searchEngineKeys().contains(QStringLiteral("duckduckgo")));
-    QVERIFY(settings.searchEngineKeys().contains(QStringLiteral("wikipedia")));
+    QVERIFY(!settings.searchEngineKeys().contains(QStringLiteral("wikipedia")));
+    QVERIFY(settings.searchEngineKeys().contains(QStringLiteral("startpage")));
 }
 
 void tst_settings::persistsValues()
@@ -58,12 +59,12 @@ void tst_settings::persistsValues()
         settings.setDesktopMode(true);
         settings.setDesktopMode(true);
         QCOMPARE(desktopSpy.count(), 1);
-        settings.setSearchEngine(QStringLiteral("wikipedia"));
+        settings.setSearchEngine(QStringLiteral("startpage"));
     }
     Settings reloaded(path);
     QCOMPARE(reloaded.homePage(), QStringLiteral("https://sailfishos.org/"));
     QVERIFY(reloaded.desktopMode());
-    QCOMPARE(reloaded.searchEngine(), QStringLiteral("wikipedia"));
+    QCOMPARE(reloaded.searchEngine(), QStringLiteral("startpage"));
 
     reloaded.setHomePage(QStringLiteral("   "));
     QCOMPARE(reloaded.homePage(), Settings::defaultHomePage());
@@ -158,8 +159,11 @@ void tst_settings::displayAddress_data()
     QTest::newRow("wwwsomething") << QStringLiteral("https://wwwhat.example/")
                                   << QStringLiteral("wwwhat.example");
     QTest::newRow("http") << QStringLiteral("http://example.org/") << QStringLiteral("example.org");
+    // The port is left off: 80 and 443 say nothing, and the rest are noise here.
     QTest::newRow("port") << QStringLiteral("http://localhost:8080/app")
-                          << QStringLiteral("localhost:8080");
+                          << QStringLiteral("localhost");
+    QTest::newRow("default port") << QStringLiteral("https://example.org:443/")
+                                  << QStringLiteral("example.org");
     QTest::newRow("ipv4") << QStringLiteral("http://192.168.1.1/admin")
                           << QStringLiteral("192.168.1.1");
     // Nothing to shorten: shown as it is rather than emptied.

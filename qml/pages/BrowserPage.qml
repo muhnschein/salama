@@ -35,15 +35,31 @@ WebViewPage {
     // still behind it.
     readonly property real barHeight: navigationBar.height
 
-    // Gecko's own verdict on the connection, if this engine build hands one out.
-    // Only for https: a page served over http is not broken TLS, it is no TLS, and a
-    // warning on every plain page is a warning nobody reads.
+    // Gecko's own verdict on the connection, if this engine build hands one out:
+    // validState says it has one for this page, allGood weighs certificate, protocol
+    // and mixed content together. sailfish-browser reads the same two.
+    //
+    // Only for https on top of that: a page served over http is not broken TLS, it is
+    // no TLS, and a warning on every plain page is a warning nobody reads.
     readonly property bool tlsBroken: {
         if (!currentView || TabModel.activeUrl.indexOf("https://") !== 0) {
             return false
         }
         var security = currentView.security
-        return !!security && !security.allGood
+        return !!security && !!security.validState && !security.allGood
+    }
+
+    // The bar is drawn over the page, so the engine's own chrome gesture decides when
+    // it is in the way: scrolling down a page takes it off the bottom, scrolling back
+    // up brings it in. That, rather than a margin, is how the foot of a page is
+    // reached -- RawWebView::setFooterMargin only reaches the engine while the virtual
+    // keyboard is up, so on its own it does nothing here.
+    readonly property bool barShown: {
+        if (!currentView || navigationBar.editing || dragging) {
+            return true
+        }
+        // undefined on an engine with no chrome gesture: then the bar simply stays.
+        return currentView.chrome !== false
     }
 
     // How far the deck must be dragged for the gesture to commit when the finger
@@ -194,11 +210,16 @@ WebViewPage {
                 id: navigationBar
 
                 objectName: "navigationBar"
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    right: parent.right
+                width: parent.width
+                y: browserLayer.height - (browserPage.barShown ? height : 0)
+
+                Behavior on y {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutQuad
+                    }
                 }
+
                 url: TabModel.activeUrl
                 privateTab: TabModel.activeIsPrivate
                 canGoBack: browserPage.currentView ? browserPage.currentView.canGoBack : false
@@ -253,12 +274,23 @@ WebViewPage {
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
-            // Through Binding rather than as a property of its own: footerMargin
-            // belongs to Sailfish.WebView's RawWebView, and an engine build without it
-            // should cost a warning in the log, not a page that fails to load.
+            // Through Binding rather than as properties of their own: these belong to
+            // the engine's view, and a build without one should cost a warning in the
+            // log, not a page that fails to load.
+            //
+            // footerMargin is what the engine keeps clear at the foot of the viewport
+            // while the virtual keyboard is up. The threshold is how far a page must be
+            // scrolled before the engine decides the chrome is or is not wanted; its
+            // default is zero, which toggles on the first pixel of every drag.
             Binding {
                 target: webView
                 property: "footerMargin"
+                value: browserPage.barHeight
+            }
+
+            Binding {
+                target: webView
+                property: "chromeGestureThreshold"
                 value: browserPage.barHeight
             }
 
@@ -294,7 +326,11 @@ WebViewPage {
             onUrlChanged: TabModel.updateUrl(tabId, url)
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
-                if (!loading) {
+                if (loading) {
+                    // A new page starts at the top, and so does the bar: without this
+                    // it would stay hidden from whatever was scrolled before it.
+                    chrome = true
+                } else {
                     fetchFavicon()
                     captureThumbnail()
                 }

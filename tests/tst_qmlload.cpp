@@ -39,6 +39,8 @@ private slots:
     void addressBarNavigates();
     void navigationBarDrivesWebView();
     void addressShowsHostAndSecurity();
+    void barGetsOutOfTheWay();
+    void editingEndsWithTheKeyboard();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabGrid();
@@ -402,6 +404,13 @@ void tst_qmlload::addressShowsHostAndSecurity()
     evaluate(bar, QStringLiteral("endEditing()"));
     QVERIFY(warning->property("visible").toBool());
 
+    // No verdict for this page -- the engine has not judged it -- says nothing either,
+    // which is the same pair sailfish-browser reads.
+    security->setProperty("validState", false);
+    QVERIFY(!bar->property("tlsBroken").toBool());
+    security->setProperty("validState", true);
+    QVERIFY(bar->property("tlsBroken").toBool());
+
     // An engine build that hands out no security object at all says nothing.
     webView->setProperty("security", QVariant::fromValue<QObject *>(nullptr));
     QVERIFY(!bar->property("tlsBroken").toBool());
@@ -415,6 +424,84 @@ void tst_qmlload::addressShowsHostAndSecurity()
              QStringLiteral("plain.example"));
     QVERIFY(!bar->property("tlsBroken").toBool());
     QVERIFY(!warning->property("visible").toBool());
+}
+
+// The bar lies over the page, so the engine's own chrome gesture takes it off the
+// bottom while a page is scrolled down and brings it back on the way up. Without it
+// the foot of a page stays under the bar: RawWebView::setFooterMargin only reaches
+// the engine while the virtual keyboard is up.
+void tst_qmlload::barGetsOutOfTheWay()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *webView = currentWebView();
+    const qreal barHeight = bar->property("height").toReal();
+    const qreal layerHeight = page->property("height").toReal();
+    QVERIFY(barHeight > 0);
+
+    // The engine is told how far a page must be scrolled before it decides: its own
+    // default is zero, which drops the chrome on the first pixel of every drag.
+    QCOMPARE(webView->property("chromeGestureThreshold").toReal(), barHeight);
+    QVERIFY(webView->property("chromeGestureEnabled").toBool());
+
+    QVERIFY(page->property("barShown").toBool());
+    QCOMPARE(bar->property("y").toReal(), layerHeight - barHeight);
+
+    webView->setProperty("chrome", false);
+    QVERIFY(!page->property("barShown").toBool());
+
+    // Editing keeps it: the field is on it. So does a drag, which is a finger on it.
+    tapBar(QStringLiteral("address"));
+    QVERIFY(page->property("barShown").toBool());
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(!page->property("barShown").toBool());
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    QVERIFY(page->property("barShown").toBool());
+    evaluate(bar, QStringLiteral("dragFinished(0)"));
+    QVERIFY(!page->property("barShown").toBool());
+
+    // A new page starts at the top, and the bar comes back with it.
+    webView->setProperty("loading", true);
+    QVERIFY(webView->property("chrome").toBool());
+    QVERIFY(page->property("barShown").toBool());
+    webView->setProperty("loading", false);
+}
+
+// Tapping the page while the field is up, or dismissing the keyboard, ends editing.
+// Leaving it up stranded the bar in edit mode with nothing to type on, and with the
+// controls behind a field that no longer had the keyboard.
+void tst_qmlload::editingEndsWithTheKeyboard()
+{
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *field = find(QStringLiteral("addressField"));
+
+    tapBar(QStringLiteral("address"));
+    QVERIFY(bar->property("editing").toBool());
+    evaluate(bar, QStringLiteral("focusChanged(false)"));
+    QVERIFY(!bar->property("editing").toBool());
+    QVERIFY(!field->property("visible").toBool());
+
+    tapBar(QStringLiteral("address"));
+    QVERIFY(bar->property("editing").toBool());
+    evaluate(bar, QStringLiteral("keyboardVisibilityChanged(false)"));
+    QVERIFY(!bar->property("editing").toBool());
+
+    // The keyboard opening is not the end of anything.
+    tapBar(QStringLiteral("address"));
+    evaluate(bar, QStringLiteral("keyboardVisibilityChanged(true)"));
+    QVERIFY(bar->property("editing").toBool());
+
+    // The bar stays live while a field is up: the controls answer and it can still be
+    // dragged. The address region is the one that does not, because the field has it.
+    QObject *webView = currentWebView();
+    webView->setProperty("canGoBack", true);
+    tapBar(QStringLiteral("back"));
+    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("goBack"));
+    QVERIFY(find(QStringLiteral("navigationBarGesture"))->property("enabled").toBool());
+    QVERIFY(bar->property("editing").toBool());
+
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(!bar->property("editing").toBool());
 }
 
 void tst_qmlload::thumbnailCapturedOnLoad()
@@ -564,6 +651,13 @@ void tst_qmlload::tabGrid()
     QCOMPARE(m_core->tabs()->activeTabIndex(), 1);
     previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
+    // A cell that has been carried must not also open on release: releasing one used
+    // to drop the grid and jump to that tab.
+    previews.at(1)->setProperty("carried", true);
+    evaluate(previews.at(1), QStringLiteral("releaseTap()"));
+    QVERIFY(find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
+    previews.at(1)->setProperty("carried", false);
+
     evaluate(previews.at(1), QStringLiteral("moveRequested(1, 0)"));
     QCOMPARE(m_core->tabs()->activeTabId(), carriedId);
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);

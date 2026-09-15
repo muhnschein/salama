@@ -21,8 +21,11 @@ BackgroundItem {
     // The cell has been carried over another one and the two should trade places.
     signal moveRequested(int from, int to)
 
-    // True while this cell is being carried rather than merely pressed.
+    // True while this cell is being carried rather than merely pressed, and true from
+    // the moment it is picked up until the next press. MouseArea raises released
+    // before clicked, so the first cannot be what clears the second.
     property bool held: false
+    property bool carried: false
     readonly property Item grid: GridView.view
 
     objectName: "tabPreview"
@@ -31,6 +34,15 @@ BackgroundItem {
     highlighted: dragArea.pressed || model.activeTab
     // A carried cell passes over its neighbours, not under them.
     z: held ? 1 : 0
+
+    // A cell that has been carried must not also open on release. MouseArea raises
+    // released before clicked, so held is already false by then and cannot be the
+    // guard; carried lives until the next press.
+    function releaseTap() {
+        if (!carried) {
+            tapped()
+        }
+    }
 
     function drop() {
         held = false
@@ -52,6 +64,7 @@ BackgroundItem {
         onPressed: {
             grabX = mouse.x
             grabY = mouse.y
+            preview.carried = false
         }
         onPositionChanged: {
             if (!preview.held) {
@@ -62,6 +75,7 @@ BackgroundItem {
                 if (Math.abs(acrossX) > Theme.startDragDistance
                         && Math.abs(acrossX) > Math.abs(acrossY)) {
                     preview.held = true
+                    preview.carried = true
                 }
             }
             if (preview.held) {
@@ -77,11 +91,7 @@ BackgroundItem {
         }
         onReleased: preview.drop()
         onCanceled: preview.drop()
-        onClicked: {
-            if (!preview.held) {
-                preview.tapped()
-            }
-        }
+        onClicked: preview.releaseTap()
     }
 
     Item {
