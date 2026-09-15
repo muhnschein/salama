@@ -31,6 +31,9 @@ void tst_settings::defaults()
     QCOMPARE(settings.searchEngine(), Settings::defaultSearchEngine());
     QCOMPARE(settings.searchEngineIndex(), 0);
     QVERIFY(!settings.desktopMode());
+    // On unless it is turned off: a camera cutout over the first line of a page is
+    // not a design decision (docs/DECISIONS/0013-screen-cutout.md).
+    QVERIFY(settings.cutoutGuard());
     QCOMPARE(settings.searchEngineNames().count(), settings.searchEngineKeys().count());
     QCOMPARE(settings.searchEngineNames().first(), QStringLiteral("Qwant"));
     QVERIFY(settings.searchEngineNames().contains(QStringLiteral("Ecosia")));
@@ -50,6 +53,7 @@ void tst_settings::persistsValues()
         Settings settings(path);
         QSignalSpy homeSpy(&settings, &Settings::homePageChanged);
         QSignalSpy desktopSpy(&settings, &Settings::desktopModeChanged);
+        QSignalSpy cutoutSpy(&settings, &Settings::cutoutGuardChanged);
 
         settings.setHomePage(QStringLiteral("  https://sailfishos.org/  "));
         settings.setHomePage(QStringLiteral("https://sailfishos.org/"));
@@ -59,11 +63,16 @@ void tst_settings::persistsValues()
         settings.setDesktopMode(true);
         settings.setDesktopMode(true);
         QCOMPARE(desktopSpy.count(), 1);
+
+        settings.setCutoutGuard(false);
+        settings.setCutoutGuard(false);
+        QCOMPARE(cutoutSpy.count(), 1);
         settings.setSearchEngine(QStringLiteral("startpage"));
     }
     Settings reloaded(path);
     QCOMPARE(reloaded.homePage(), QStringLiteral("https://sailfishos.org/"));
     QVERIFY(reloaded.desktopMode());
+    QVERIFY(!reloaded.cutoutGuard());
     QCOMPARE(reloaded.searchEngine(), QStringLiteral("startpage"));
 
     reloaded.setHomePage(QStringLiteral("   "));

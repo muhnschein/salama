@@ -33,9 +33,8 @@ Item {
     property bool tlsBroken: false
     // The address turns into a field in place while it is being edited.
     property bool editing: false
-    // Slimmed down to the handle and the host, with the controls off it: what the bar
-    // does instead of leaving when a page is scrolled
-    // (docs/DECISIONS/0009-navigation-bar-gesture.md).
+    // Slimmed down to the handle and the host, with the controls faded off it: what the
+    // bar does instead of leaving when a page is scrolled (docs/DECISIONS/0009).
     property bool compact: false
 
     signal accepted(string text)
@@ -66,10 +65,25 @@ Item {
     readonly property real fieldRight: menuIcon.x - Theme.paddingMedium
 
     // The bar is the whole touch target for the drag, and it sits in the strip the
-    // system watches for its own edge swipe. Every bit of height here is height the
-    // gesture can start in without lipstick taking it first -- which is why the slim
-    // state gives up a quarter of it and not more.
-    height: compact ? Theme.itemSizeSmall : Theme.itemSizeLarge
+    // system watches for its own edge swipe: every bit of height here is height the
+    // gesture can start in, which is why the slim state gives up only a quarter.
+    readonly property real slimHeight: Theme.itemSizeSmall
+    // 0 while slim and 1 while whole. Everything that differs between the two states
+    // is drawn from this, so the height animation below carries all of it and nothing
+    // needs an animation of its own.
+    readonly property real expansion: (height - slimHeight) / (Theme.itemSizeLarge - slimHeight)
+    readonly property bool resizing: heightSlide.running
+
+    height: compact ? slimHeight : Theme.itemSizeLarge
+
+    Behavior on height {
+        NumberAnimation {
+            id: heightSlide
+
+            duration: 200
+            easing.type: Easing.InOutQuad
+        }
+    }
 
     function beginEditing() {
         urlField.text = navigationBar.url
@@ -185,9 +199,10 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        visible: !navigationBar.editing && !navigationBar.compact
+        // Faded with the bar, and dimmed on top of that when there is nowhere to go.
+        opacity: navigationBar.expansion * (navigationBar.canGoBack ? 1.0 : Theme.opacityLow)
+        visible: !navigationBar.editing && navigationBar.expansion > 0
         source: "image://theme/icon-m-back"
-        opacity: navigationBar.canGoBack ? 1.0 : Theme.opacityLow
         highlighted: gestureArea.pressedRegion === "back"
     }
 
@@ -202,7 +217,8 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        visible: !navigationBar.compact
+        opacity: navigationBar.expansion
+        visible: opacity > 0
         source: "image://theme/icon-m-menu"
         highlighted: gestureArea.pressedRegion === "menu"
     }
@@ -218,7 +234,8 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        visible: !navigationBar.editing && !navigationBar.compact
+        opacity: navigationBar.expansion
+        visible: !navigationBar.editing && opacity > 0
         source: navigationBar.loading ? "image://theme/icon-m-clear"
                                       : "image://theme/icon-m-refresh"
         highlighted: gestureArea.pressedRegion === "reload"
@@ -241,7 +258,8 @@ Item {
         privateTab: navigationBar.privateTab
         pressed: gestureArea.pressedRegion === "address"
         maximumWidth: navigationBar.centredWidth
-        fontSize: navigationBar.compact ? Theme.fontSizeSmall : Theme.fontSizeMedium
+        fontSize: Theme.fontSizeSmall
+                  + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion
     }
 
     TextField {
@@ -271,8 +289,8 @@ Item {
     }
 
     // Silica insets the text inside a field by a page margin at each end, which is a
-    // page's margin, not a bar's. Through Binding rather than as properties: a Silica
-    // without them should cost a line in the log rather than a bar that fails to load.
+    // page's margin, not a bar's. Through Binding: a Silica without them should cost a
+    // line in the log rather than a bar that fails to load.
     Binding {
         target: urlField
         property: "textLeftMargin"

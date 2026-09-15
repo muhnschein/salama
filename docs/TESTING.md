@@ -25,7 +25,8 @@ workaround; a failure blocks the tag.
 - [ ] Dragging the grid downwards past its top brings the page back the same way; a short pull springs back to the grid.
 - [ ] Menu > Tabs opens the same grid without the gesture.
 - [ ] The bar is opaque and the page ends above it: scroll to the foot of a long page -- a site footer, a cookie banner -- and every control there can be tapped without the bar in the way, in both of the bar's heights.
-- [ ] Scrolling down a page slims the bar to the handle and the host alone, at a smaller size; scrolling back up brings its controls back. Tapping the address, and loading a new page, both bring the whole bar back. The page does not jump or reflow as the bar changes height.
+- [ ] Scrolling down a page slims the bar to the handle and the host alone, at a smaller size; scrolling back up brings its controls back. The change is one smooth movement -- the bar's height, the controls fading, the host's size -- not a jump. Tapping the address, and loading a new page, both bring the whole bar back. The page does not reflow as the bar changes height.
+- [ ] Settings > Avoid the screen cutout is on by default: no page content sits under the camera cutout, and the strip beside it is drawn in the page's own colour where a page has one. Turning it off gives that strip back to the page and puts the grid's head row under the cutout.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes. Each preview and the highlight round the active one have rounded corners, and the picture is rounded with them rather than square inside them. Nothing square is drawn behind the active cell or a pressed one.
 - [ ] A preview shows the top of what was last on screen for that tab, not the middle of the page.

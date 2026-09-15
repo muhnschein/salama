@@ -25,11 +25,10 @@ Item {
     // A tab was chosen; the page is wanted back regardless of any drag.
     signal tabActivated()
 
-    // What the display's own cutout takes at the top of the screen. Silica's own
-    // PullDownMenu adds exactly this to its top margin in portrait; read through a
-    // guard, because a Screen without a cutout to report would leave every length
-    // below it undefined.
-    readonly property real cutoutHeight: Screen.topCutout ? Screen.topCutout.height : 0
+    // What the display's cutout takes at the top of the screen, as the page works it
+    // out and the settings allow. Silica's own PullDownMenu adds the same to its top
+    // margin in portrait (docs/DECISIONS/0013-screen-cutout.md).
+    property real cutoutHeight: 0
 
     objectName: "tabsView"
 

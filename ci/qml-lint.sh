@@ -6,7 +6,7 @@
 #  * Theme values, never pixel counts
 #  * Qt 5.6 only: import versions, no ES6/ES2015+, no Qt 5.7+ QML syntax
 #  * every user-visible string translatable
-#  * no file over 400 lines; no TODO/FIXME without an issue number
+#  * no file over 400 lines without a decision record; no TODO/FIXME without an issue
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -108,10 +108,20 @@ while read -r hit; do
     fail untranslated "${hit%%:*}" "user-visible string is not translatable: ${hit#*:}"
 done < <(grep -nE "^\s*$TEXT_PROPS\s*:\s*\"[^\"]+\"\s*$" "${FILES[@]}" | sed "s|^$ROOT/||")
 
-# 7. File size
+# 7. File size. SCOPE.md §7 is "no file over 400 lines without an ADR", so a decision
+# record can waive one by name -- a line reading "qml-size-waiver: <path>" -- and the
+# record is where the reason has to be written down. The ceiling is a reason, not a
+# blank cheque: nothing passes 600 lines, waived or not.
 for file in "${FILES[@]}"; do
     lines=$(wc -l <"$file")
-    [[ $lines -le 400 ]] || fail file-size "$(rel "$file")" "$lines lines; files over 400 lines need an ADR (docs/DECISIONS)"
+    file_rel=$(rel "$file")
+    limit=400
+    if grep -rqs -- "qml-size-waiver: $file_rel\$" "$ROOT/docs/DECISIONS"; then
+        limit=600
+        [[ $lines -le 400 ]] || echo "INFO  [file-size] [$file_rel] $lines lines; waived by a decision record"
+    fi
+    [[ $lines -le $limit ]] || fail file-size "$file_rel" \
+        "$lines lines; over $limit -- SCOPE.md §7 (a decision record waives 400, nothing waives 600)"
 done
 
 # 8. TODO without an issue number, across shipped sources and tests

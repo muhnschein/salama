@@ -480,35 +480,45 @@ void tst_qmlload::barDoesNotCoverThePage()
     QObject *webView = currentWebView();
     const qreal fullBar = bar->property("height").toReal();
     const qreal pageHeight = page->property("height").toReal();
+    const qreal inset = page->property("cutoutInset").toReal();
     QVERIFY(fullBar > 0);
+    QVERIFY(inset > 0);
 
-    // The engine's view stops where the bar starts, so the foot of a page is above
-    // the bar rather than behind it. The bar used to lie over the page and take
-    // itself off the screen on the engine's chrome gesture; on device the last rows
-    // of a page were still out of reach often enough to be a defect.
+    // The engine's view sits between the cutout and the bar, so neither the first
+    // line of a page nor its last is behind anything. The bar used to lie over the
+    // page and take itself off the screen on the engine's chrome gesture; on device
+    // the last rows of a page were still out of reach often enough to be a defect.
     QObject *viewArea = find(QStringLiteral("viewArea"));
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar);
+    QCOMPARE(viewArea->property("y").toReal(), inset);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(find(QStringLiteral("cutoutBand"))->property("height").toReal(), inset);
     QCOMPARE(bar->property("y").toReal(), pageHeight - fullBar);
     QVERIFY(webView->property("chromeGestureEnabled").toBool());
     // The threshold is a constant, not the bar's own height: the bar changes height
     // in answer to the gesture, and a threshold that moved with it would chase it.
     QCOMPARE(webView->property("chromeGestureThreshold").toReal(),
              evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    // With the view already clear of the cutout, a page has nothing left to avoid.
+    QCOMPARE(webView->property("safeAreaTop").toReal(), qreal(0));
 
-    // That gesture now slims the bar rather than removing it, and the view grows into
-    // what the bar gives up -- so the page still ends above it.
+    // That gesture now slims the bar rather than removing it. The bar animates
+    // between its two heights, so what is asserted is where it settles -- and the
+    // view is sized for the slimmer height from the first frame, so that it is
+    // resized once rather than on every frame of the animation.
+    const qreal slimBar = bar->property("slimHeight").toReal();
+    QVERIFY(slimBar < fullBar);
+    QVERIFY(slimBar > fullBar * 0.6);
     webView->setProperty("chrome", false);
     QVERIFY(page->property("barCompact").toBool());
     QVERIFY(bar->property("compact").toBool());
-    const qreal slimBar = bar->property("height").toReal();
-    QVERIFY(slimBar < fullBar);
-    QVERIFY(slimBar > fullBar * 0.6);
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
+    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
     QCOMPARE(bar->property("y").toReal(), pageHeight - slimBar);
 
-    // Nothing is on the slim bar but the address, drawn smaller, and every press on
-    // it belongs to the address.
+    // Nothing is left on the slim bar but the address, drawn smaller, and every
+    // press on it belongs to the address.
+    QCOMPARE(bar->property("expansion").toReal(), qreal(0));
     QVERIFY(!find(QStringLiteral("menuButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("reloadButton"))->property("visible").toBool());
@@ -526,7 +536,10 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(webView->property("chrome").toBool());
     QVERIFY(!bar->property("compact").toBool());
     webView->setProperty("loading", false);
+    QTRY_COMPARE(bar->property("height").toReal(), fullBar);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
     QVERIFY(addressLabel->property("font").value<QFont>().pixelSize() > slimSize);
+    QVERIFY(find(QStringLiteral("menuButton"))->property("visible").toBool());
 
     // The handle is drawn on the line between the bar and the page, which is where
     // the finger aims, and it lights up while a drag is under way.
@@ -976,6 +989,16 @@ void tst_qmlload::settingsPage()
     find(QStringLiteral("desktopModeSwitch"))->setProperty("checked", true);
     QVERIFY(m_core->settings()->desktopMode());
     QVERIFY(currentWebView()->property("desktopMode").toBool());
+
+    // The cutout guard is on until it is turned off here, and the page answers.
+    QObject *cutoutSwitch = find(QStringLiteral("cutoutGuardSwitch"));
+    QVERIFY(cutoutSwitch->property("checked").toBool());
+    cutoutSwitch->setProperty("checked", false);
+    QVERIFY(!m_core->settings()->cutoutGuard());
+    QCOMPARE(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal(), qreal(0));
+    QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), qreal(0));
+    cutoutSwitch->setProperty("checked", true);
+    QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 
     click(find(QStringLiteral("clearHistoryButton")));
     QCOMPARE(m_core->history()->count(), 0);

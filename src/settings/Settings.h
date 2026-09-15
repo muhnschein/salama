@@ -21,6 +21,7 @@ class Settings : public QObject
                    searchEngineChanged)
     Q_PROPERTY(QStringList searchEngineNames READ searchEngineNames CONSTANT)
     Q_PROPERTY(bool desktopMode READ desktopMode WRITE setDesktopMode NOTIFY desktopModeChanged)
+    Q_PROPERTY(bool cutoutGuard READ cutoutGuard WRITE setCutoutGuard NOTIFY cutoutGuardChanged)
 
 public:
     explicit Settings(const QString &filePath, QObject *parent = nullptr);
@@ -38,6 +39,11 @@ public:
     bool desktopMode() const;
     void setDesktopMode(bool desktopMode);
 
+    // Whether this application keeps out of the display's own cutout. On by default:
+    // a camera notch over the first line of a page is not a design decision.
+    bool cutoutGuard() const;
+    void setCutoutGuard(bool cutoutGuard);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
@@ -51,6 +57,7 @@ signals:
     void homePageChanged();
     void searchEngineChanged();
     void desktopModeChanged();
+    void cutoutGuardChanged();
 
 private:
     QSettings m_settings;

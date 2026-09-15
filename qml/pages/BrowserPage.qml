@@ -43,8 +43,22 @@ WebViewPage {
 
     // The bar's height, which is height the engine's view does not get: the page ends
     // where the bar begins rather than running on behind it, in either of the two
-    // heights the bar has.
+    // heights the bar has. While the bar is between them the view is sized for the
+    // slimmer one: a view resized on every frame of that animation is a page relaid
+    // out on every frame, which is what stretched pages under the keyboard. One
+    // resize, and the bar covers the difference while it moves.
     readonly property real barHeight: navigationBar.height
+    readonly property real viewHeight: fullHeight - (navigationBar.resizing
+                                                     ? navigationBar.slimHeight : barHeight)
+
+    // What the display's own cutout takes at the top of the screen, and how much of
+    // it this application keeps out of. Silica reports the cutout's whole rectangle,
+    // and it is read as y plus height because a cutout need not start at the very top
+    // -- sailfish-browser reads the same pair (docs/DECISIONS/0013-screen-cutout.md).
+    readonly property real cutoutHeight: Screen.topCutout
+                                         ? Math.max(0, Screen.topCutout.y + Screen.topCutout.height)
+                                         : 0
+    readonly property real cutoutInset: Settings.cutoutGuard ? cutoutHeight : 0
 
     // Scrolling down slims the bar to the handle and the host; scrolling back up puts
     // its controls back. The engine's own chrome gesture is the signal -- the same one
@@ -203,10 +217,20 @@ WebViewPage {
             width: parent.width
             height: browserPage.fullHeight
 
-            // The engine gets the page down to the bar and no further. Letting it
-            // run on behind a bar that scrolled away was the other answer, and on
-            // device the foot of a page was still out of reach often enough to be a
-            // defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
+            // The strip the cutout sits in, in the page's own theme colour when the
+            // engine reports one. sailfish-browser paints the same strip the same way.
+            Rectangle {
+                objectName: "cutoutBand"
+                width: parent.width
+                height: browserPage.cutoutInset
+                color: browserPage.currentView && browserPage.currentView.hasThemeColor === true
+                       ? browserPage.currentView.themeColor : Theme.highlightDimmerColor
+            }
+
+            // The engine gets the page between the cutout and the bar, and no
+            // further. Letting it run on behind a bar that scrolled away was the
+            // other answer, and on device the foot of a page was still out of reach
+            // often enough to be a defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
             Item {
                 id: viewArea
 
@@ -214,9 +238,9 @@ WebViewPage {
                 anchors {
                     left: parent.left
                     right: parent.right
-                    top: parent.top
                 }
-                height: browserPage.fullHeight - browserPage.barHeight
+                y: browserPage.cutoutInset
+                height: browserPage.viewHeight - browserPage.cutoutInset
 
                 // One WebView per tab shown this session; restored tabs stay unloaded
                 // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md).
@@ -291,6 +315,7 @@ WebViewPage {
             width: parent.width
             height: browserPage.fullHeight
             y: browserPage.fullHeight
+            cutoutHeight: browserPage.cutoutInset
             // Nothing to draw while the page covers it: the engine has the screen.
             visible: browserPage.tabsOffset > 0
             onPullStarted: browserPage.beginDrag()
@@ -333,6 +358,17 @@ WebViewPage {
                 target: webView
                 property: "chromeGestureThreshold"
                 value: Theme.itemSizeLarge
+            }
+
+            // The platform's WebView hands the engine a safe area for the cutout, so
+            // that a page written for one can lay itself out around it. With the view
+            // already below the cutout there is nothing left for a page to avoid, and
+            // a page that did would be avoiding it twice.
+            Binding {
+                target: webView
+                property: "safeAreaTop"
+                value: 0
+                when: browserPage.cutoutInset > 0
             }
 
             function fetchFavicon() {

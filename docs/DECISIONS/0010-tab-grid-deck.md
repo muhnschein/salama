@@ -116,6 +116,23 @@ a decoration: it sits inside the reach the gesture handler already covers, and i
 responds. This is not what Silica does; it is what this application needs, and the previous
 two attempts to guess at a platform idiom for it were both wrong.
 
+### The size of the browsing page
+`qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is
+waived here rather than split:
+
+qml-size-waiver: qml/pages/BrowserPage.qml
+
+The rule's other half is one responsibility per file, and the usual answer to a long file
+— take a responsibility out of it — is not available to this one. SCOPE.md §5 puts the
+`Sailfish.WebView` import in the browsing page **and nowhere else**, so that a release
+without the engine package breaks browsing rather than the application; the page is a
+`WebViewPage`, and the per-tab `WebView` component with its favicon, thumbnail and engine
+bindings is another eighty lines that cannot move out of it. What could be taken out has
+been: the bar, the address, the grid, the cell, the handle are all components of their
+own. What is left is the engine, the deck it sits in, and the state the two share, which
+is one subject. The lint's ceiling of 600 lines still applies, and if this page reaches
+it the split to make is the deck's state and gestures, not the engine.
+
 ## Consequences
 The grid is instantiated with the page rather than on demand, so the delegates exist
 before they are first shown; it is `visible` only while the deck is raised, so the

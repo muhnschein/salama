@@ -26,6 +26,15 @@ Item {
     property bool chrome: true
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
+    // What the platform's own WebView hands the engine for the display's cutout, so
+    // that a page written for one can lay itself out around it.
+    property real safeAreaTop: 90
+    property real safeAreaRight: 0
+    property real safeAreaBottom: 0
+    property real safeAreaLeft: 0
+    // The page's own theme colour, when it declares one.
+    property bool hasThemeColor: false
+    property color themeColor: "black"
     // QuickMozView's QMozSecurity. Assign null to stand in for an engine build that
     // has none.
     property QtObject security: QtObject {

@@ -66,6 +66,14 @@ Page {
                 onCheckedChanged: Settings.desktopMode = checked
             }
 
+            TextSwitch {
+                objectName: "cutoutGuardSwitch"
+                text: qsTr("Avoid the screen cutout")
+                description: qsTr("Keep pages and the tab grid out from under the camera cutout")
+                checked: Settings.cutoutGuard
+                onCheckedChanged: Settings.cutoutGuard = checked
+            }
+
             SectionHeader {
                 text: qsTr("Clear data")
             }

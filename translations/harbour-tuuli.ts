@@ -229,6 +229,14 @@
         <source>Closing all tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Avoid the screen cutout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep pages and the tab grid out from under the camera cutout</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TabPreview</name>

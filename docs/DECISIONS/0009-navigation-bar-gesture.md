@@ -68,13 +68,19 @@ whole again. `chromeGestureThreshold` is bound to a constant rather than to the 
 height, because the bar answers that gesture by changing height and a threshold that moved
 with it would be chasing itself.
 
-`barHeight` is read by `viewArea`, so the engine's view grows into what the bar gives up
-and shrinks when it comes back. That is a viewport resize on every change of scroll
-direction, which is the mechanism that deformed pages while the keyboard was animating —
-the difference is that this one is a single step, not a step per frame, so it is one
-reflow and the threshold keeps it from flapping. Editing forces the whole bar back, since
-the field needs the room, and so does a page starting to load, since a new page starts at
-the top.
+The change of state is **one animation**, 200 ms on the bar's own `height`. Everything
+that differs between the two states is drawn from `expansion`, which is 0 at the slim
+height and 1 at the whole one: the three controls fade with it, and the host's size is
+interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it. Nothing else
+animates, because nothing else has to.
+
+`viewArea` is sized from the bar, so the engine's view grows into what the bar gives up —
+but sized for the **slim** height for as long as the bar is between the two (`resizing`).
+A view resized on every frame of that animation is a page relaid out on every frame, which
+is the mechanism that deformed pages while the keyboard was animating; sized for the
+slimmer height throughout, the view is resized once per change of direction and the bar
+covers the difference while it moves. Editing forces the whole bar back, since the field
+needs the room, and so does a page starting to load, since a new page starts at the top.
 
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload

@@ -108,6 +108,19 @@ Item {
         width: parent.width
         height: parent.height
 
+        // What marks the active cell, and the one under a finger: the wash Silica's
+        // BackgroundItem would have drawn across the cell, in the shape this cell
+        // actually has. The thin border below says the same thing quietly; on device
+        // it turned out to say nothing at all on its own.
+        Rectangle {
+            objectName: "tabPreviewHighlight"
+            anchors.fill: parent
+            anchors.margins: Theme.paddingSmall
+            radius: Theme.paddingMedium
+            color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+            visible: preview.highlighted
+        }
+
         Rectangle {
             id: shot
 

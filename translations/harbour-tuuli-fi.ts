@@ -229,6 +229,14 @@
         <source>Closing all tabs</source>
         <translation>Suljetaan kaikki välilehdet</translation>
     </message>
+    <message>
+        <source>Avoid the screen cutout</source>
+        <translation>Vältä näytön lovea</translation>
+    </message>
+    <message>
+        <source>Keep pages and the tab grid out from under the camera cutout</source>
+        <translation>Pidä sivut ja välilehdet poissa kameraloven alta</translation>
+    </message>
 </context>
 <context>
     <name>TabPreview</name>

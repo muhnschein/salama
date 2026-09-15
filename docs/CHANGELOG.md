@@ -16,6 +16,6 @@ Versions follow semantic versioning.
 - History with search, and bookmarks with edit and remove.
 - Private tabs that leave no history and keep no cookies.
 - Downloads through the platform transfer UI.
-- Settings: home page, search engine (Qwant, Ecosia, Startpage), desktop site mode, clearing history, cookies and cache.
+- Settings: home page, search engine (Qwant, Ecosia, Startpage), desktop site mode, keeping clear of the display's camera cutout (on by default), clearing history, cookies and cache.
 - Cover showing the current tab's title and icon, with a new-tab action.
 - Finnish translation.

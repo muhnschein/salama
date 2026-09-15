@@ -14,6 +14,7 @@ namespace {
 const char *const HomePageKey = "homePage";
 const char *const SearchEngineKey = "searchEngine";
 const char *const DesktopModeKey = "desktopMode";
+const char *const CutoutGuardKey = "cutoutGuard";
 
 struct SearchEngine
 {
@@ -146,6 +147,20 @@ void Settings::setDesktopMode(bool desktopMode)
     }
     m_settings.setValue(QLatin1String(DesktopModeKey), desktopMode);
     emit desktopModeChanged();
+}
+
+bool Settings::cutoutGuard() const
+{
+    return m_settings.value(QLatin1String(CutoutGuardKey), true).toBool();
+}
+
+void Settings::setCutoutGuard(bool cutoutGuard)
+{
+    if (cutoutGuard == this->cutoutGuard()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(CutoutGuardKey), cutoutGuard);
+    emit cutoutGuardChanged();
 }
 
 QString Settings::searchUrl(const QString &query) const
