@@ -12,6 +12,10 @@ Text {
     // Silica's TextBase publishes where its text sits relative to the item's own
     // centre, so a field can be lined up with a label beside it.
     property real textVerticalCenterOffset: 0
+    // Silica insets the text inside a field by Theme.horizontalPageMargin at each
+    // end; the stub's Theme has that at 24.
+    property real textLeftMargin: 24
+    property real textRightMargin: 24
 
     function selectAll() {
         selectAllCount += 1

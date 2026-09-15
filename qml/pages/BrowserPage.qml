@@ -7,8 +7,8 @@
 // The page is the top half of a deck two screens tall: browsing above, the tab grid
 // below. Dragging the navigation bar upwards raises the deck and brings the grid up
 // from under the page; dragging the grid past its top lowers it again. Nothing is
-// pushed onto the page stack for it, so there is no sideways transition and no second
-// page to come back from.
+// pushed onto the page stack, so there is no sideways transition, and nothing to come
+// back from.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
@@ -22,19 +22,23 @@ WebViewPage {
     // The WebView of the active tab, or null while it is being created.
     property Item currentView: null
 
-    // Where the deck is headed, where a finger is holding it, and where it is drawn.
-    // tabsOpen is the settled answer and changes the moment a gesture commits;
-    // tabsOffset is the picture, and takes the spring below to get there.
+    // Where the deck is headed and where a finger is holding it: tabsOpen is the
+    // settled answer and changes the moment a gesture commits, tabsOffset is the
+    // picture and takes the spring below to get there.
     property bool tabsOpen: false
     property bool dragging: false
     property real dragOffset: 0
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
 
+    // What the pulley hint is borrowing, and where the deck is drawn: apart from
+    // tabsOffset, whose spring would otherwise chase the hint's own animation.
+    property real hintOffset: 0
+    property bool hinted: false
+    readonly property real deckOffset: tabsOffset + hintOffset
+
     // The tallest this page has been. Silica shrinks a page while the keyboard is up,
-    // and resizing the engine's view in the middle of that animation is what left the
-    // content stretched until the animation finished. The deck keeps the full height
-    // and lets the keyboard cover it; only the bar follows the page down, so the field
-    // it carries stays above the keyboard.
+    // and resizing the engine's view mid-animation left the content stretched until it
+    // finished; the deck keeps its height and lets the keyboard cover it instead.
     property real fullHeight: 0
 
     onHeightChanged: {
@@ -44,17 +48,12 @@ WebViewPage {
     }
 
     // What the engine is told to keep clear at the foot of the viewport, and what the
-    // bar is drawn over. The page can then be scrolled until its own last line sits
-    // above the bar instead of under it, while the bar stays translucent over what is
-    // still behind it.
+    // bar is drawn over: a page can be scrolled until its last line clears the bar.
     readonly property real barHeight: navigationBar.height
 
     // Gecko's own verdict on the connection, if this engine build hands one out:
     // validState says it has one for this page, allGood weighs certificate, protocol
-    // and mixed content together. sailfish-browser reads the same two.
-    //
-    // Only for https on top of that: a page served over http is not broken TLS, it is
-    // no TLS, and a warning on every plain page is a warning nobody reads.
+    // and mixed content. sailfish-browser reads the same two, and only for https.
     readonly property bool tlsBroken: {
         if (!currentView || TabModel.activeUrl.indexOf("https://") !== 0) {
             return false
@@ -64,10 +63,8 @@ WebViewPage {
     }
 
     // The bar is drawn over the page, so the engine's own chrome gesture decides when
-    // it is in the way: scrolling down a page takes it off the bottom, scrolling back
-    // up brings it in. That, rather than a margin, is how the foot of a page is
-    // reached -- RawWebView::setFooterMargin only reaches the engine while the virtual
-    // keyboard is up, so on its own it does nothing here.
+    // it is in the way: scrolling down takes it off the bottom, scrolling up brings it
+    // back. setFooterMargin reaches the engine only while the keyboard is up.
     readonly property bool barShown: {
         if (!currentView || navigationBar.editing || dragging) {
             return true
@@ -76,18 +73,16 @@ WebViewPage {
         return currentView.chrome !== false
     }
 
-    // How far the deck must be dragged for the gesture to commit when the finger
-    // lifts. Short, because the deck follows the finger: by then the movement has
-    // already shown what letting go will do.
+    // How far the deck must be dragged for the gesture to commit when the finger lifts.
+    // Short, because the movement has already shown what letting go will do.
     readonly property real pullThreshold: Theme.itemSizeLarge
 
     objectName: "browserPage"
     allowedOrientations: Orientation.Portrait
 
-    // Enabled and disabled from the functions below rather than by a binding: the
-    // drag ends by changing what tabsOffset is bound to, and two bindings on the same
-    // property are not ordered against each other -- the spring has to be back on
-    // before the target moves, not in the same breath.
+    // Enabled and disabled from the functions below rather than by a binding: the drag
+    // ends by changing what tabsOffset is bound to, and two bindings on one property
+    // are not ordered against each other -- the spring has to be on before it moves.
     Behavior on tabsOffset {
         id: deckSpring
 
@@ -121,8 +116,7 @@ WebViewPage {
         }
     }
 
-    // What the menu asks of the current page: the bar carries the address and the
-    // menu, and nothing else (docs/DECISIONS/0009-navigation-bar-gesture.md).
+    // What the bar asks of the current page.
     readonly property bool canGoBack: currentView ? currentView.canGoBack === true : false
     readonly property bool loading: currentView ? currentView.loading === true : false
 
@@ -150,12 +144,13 @@ WebViewPage {
         }
     }
 
-    // A finger takes the deck off whatever the spring was doing with it: a disabled
-    // Behavior does not stop an animation already under way, and one still running
-    // would go on writing its own idea of the offset over the finger's.
+    // A finger takes the deck off whatever the spring or the hint was doing with it:
+    // a disabled Behavior does not stop an animation that is already under way.
     function beginDrag() {
         deckSpring.enabled = false
         deckSlide.stop()
+        pulleyHint.stop()
+        hintOffset = 0
         dragOffset = tabsOffset
         dragging = true
     }
@@ -177,21 +172,33 @@ WebViewPage {
         settle(true)
     }
 
-    // How large the engine lays a page out. The platform starts it at
-    // 1.5 * Theme.pixelRatio, which is about 410 css pixels across a 1080 wide screen;
-    // 1.75 gives 360 -- the width a phone layout is usually written for -- and larger
-    // text with it. Rounded to a half the way the platform rounds its own.
-    //
-    // Two functions rather than one expression: the engine's own value can then be
-    // read back, and the load tests can compare the two. An expression evaluated
-    // against this page from outside cannot see the Sailfish.WebEngine import, because
-    // the context it is given is the one the page was created in, not the page's own.
+    // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
+    // pixels across a 1080 wide screen -- the width a phone layout is written for --
+    // where the platform's own 1.5 gives 410. Two functions so the load tests can
+    // compare them: an expression evaluated from outside has no WebEngine import.
     function pageZoom() {
         return Math.round(Theme.pixelRatio * 1.75 / 0.5) * 0.5
     }
 
     function engineZoom() {
         return WebEngineSettings.pixelRatio
+    }
+
+    // Once, when the page is first shown: the grid peeks up from under it and falls
+    // back again, which is the whole of what Silica says about a pulley.
+    PulleyHint {
+        id: pulleyHint
+
+        objectName: "pulleyHint"
+        item: browserPage
+        offsetProperty: "hintOffset"
+    }
+
+    onStatusChanged: {
+        if (status === PageStatus.Active && !hinted) {
+            hinted = true
+            pulleyHint.start()
+        }
     }
 
     Component.onCompleted: {
@@ -211,7 +218,7 @@ WebViewPage {
 
         width: parent.width
         height: browserPage.fullHeight * 2
-        y: -browserPage.tabsOffset
+        y: -browserPage.deckOffset
 
         Item {
             id: browserLayer
@@ -225,9 +232,8 @@ WebViewPage {
 
                 anchors.fill: parent
 
-                // One WebView per tab that has been shown this session. Restored tabs
-                // stay unloaded until first activated
-                // (docs/DECISIONS/0003-one-webview-per-tab.md).
+                // One WebView per tab shown this session; restored tabs stay unloaded
+                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md).
                 Repeater {
                     id: webViews
 
@@ -266,8 +272,7 @@ WebViewPage {
                 objectName: "navigationBar"
                 width: parent.width
                 // The page's own height, not the layer's: Silica shrinks the page for
-                // the keyboard, and the bar has to come up with it or the field it
-                // carries would be typed at from behind the keyboard.
+                // the keyboard, and the field the bar carries has to come up with it.
                 y: browserPage.height - (browserPage.barShown ? height : 0)
 
                 Behavior on y {
@@ -282,12 +287,15 @@ WebViewPage {
                 loading: browserPage.loading
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
                 tlsBroken: browserPage.tlsBroken
+                canGoBack: browserPage.canGoBack
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
+                onBack: browserPage.goBack()
+                onReloadOrStop: browserPage.reloadOrStop()
                 onShowMenu: pageStack.push(Qt.resolvedUrl("MenuPage.qml"), {
                                                "browserPage": browserPage
                                            })
-                // The grid is about to be uncovered, so the picture of the tab being
-                // left is taken before the first pixel of it shows.
+                // The grid is about to show, so the picture of the tab being left is
+                // taken before the first pixel of it does.
                 onDragStarted: {
                     browserPage.captureCurrent()
                     browserPage.beginDrag()
@@ -303,9 +311,8 @@ WebViewPage {
             width: parent.width
             height: browserPage.fullHeight
             y: browserPage.fullHeight
-            // Nothing to draw while the page covers it, and the engine has the screen
-            // to itself again for as long as that lasts.
-            visible: browserPage.tabsOffset > 0
+            // Nothing to draw while the page covers it: the engine has the screen.
+            visible: browserPage.deckOffset > 0
             onPullStarted: browserPage.beginDrag()
             onPulled: browserPage.dragTo(browserPage.height - distance)
             onPullFinished: browserPage.settle(distance <= browserPage.pullThreshold)
@@ -329,12 +336,10 @@ WebViewPage {
 
             // Through Binding rather than as properties of their own: these belong to
             // the engine's view, and a build without one should cost a warning in the
-            // log, not a page that fails to load.
-            //
-            // footerMargin is what the engine keeps clear at the foot of the viewport
-            // while the virtual keyboard is up. The threshold is how far a page must be
-            // scrolled before the engine decides the chrome is or is not wanted; its
-            // default is zero, which toggles on the first pixel of every drag.
+            // log, not a page that fails to load. footerMargin is what the engine keeps
+            // clear at the foot of the viewport while the keyboard is up; the threshold
+            // is how far a page must scroll before the engine decides about the chrome,
+            // and its default of zero toggles on every drag.
             Binding {
                 target: webView
                 property: "footerMargin"
@@ -357,7 +362,7 @@ WebViewPage {
             }
 
             // The model hands out a fresh file name per capture and removes the one it
-            // replaces; a private tab is given none, so nothing of it reaches the disk.
+            // replaces; a private tab is given none, so none of it reaches the disk.
             function captureThumbnail() {
                 if (!isCurrent) {
                     return
@@ -368,7 +373,7 @@ WebViewPage {
                 }
                 // Half size in each direction: the grab is a read back from the GPU
                 // and a PNG encode, both on the way into a gesture, and the grid never
-                // draws the picture wider than half the screen anyway.
+                // draws it wider than half the screen anyway.
                 grabToImage(function (result) {
                     if (result.saveToFile(path)) {
                         TabModel.updateThumbnail(tabId, path)
@@ -380,8 +385,8 @@ WebViewPage {
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 if (loading) {
-                    // A new page starts at the top, and so does the bar: without this
-                    // it would stay hidden from whatever was scrolled before it.
+                    // A new page starts at the top, and so does the bar: it would
+                    // otherwise stay hidden from whatever was scrolled before it.
                     chrome = true
                 } else {
                     fetchFavicon()

@@ -25,6 +25,12 @@ Item {
     // A tab was chosen; the page is wanted back regardless of any drag.
     signal tabActivated()
 
+    // What the display's own cutout takes at the top of the screen. Silica's own
+    // PullDownMenu adds exactly this to its top margin in portrait; read through a
+    // guard, because a Screen without a cutout to report would leave every length
+    // below it undefined.
+    readonly property real cutoutHeight: Screen.topCutout ? Screen.topCutout.height : 0
+
     objectName: "tabsView"
 
     SilicaGridView {
@@ -104,12 +110,18 @@ Item {
             right: parent.right
             top: parent.top
         }
-        height: Theme.itemSizeLarge
+        // The cutout on top of the row's own height, and the text below the cutout
+        // rather than centred through it: the row starts at the top of the screen,
+        // and the notch was taking a bite out of what it says.
+        height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
         Label {
             objectName: "tabCountLabel"
-            anchors.centerIn: parent
+            anchors {
+                centerIn: parent
+                verticalCenterOffset: tabsView.cutoutHeight / 2
+            }
             text: qsTr("%n tab(s)", "", TabModel.count)
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.highlightColor
@@ -140,16 +152,6 @@ Item {
                 TabModel.newTab(Settings.homePage)
                 tabsView.tabActivated()
             }
-        }
-    }
-
-    // The top edge is a pulley: dragged down it hands the page back.
-    PullIndicator {
-        objectName: "gridPullIndicator"
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: parent.top
-            topMargin: Theme.paddingSmall
         }
     }
 }

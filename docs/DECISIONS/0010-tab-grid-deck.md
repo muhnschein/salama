@@ -68,7 +68,11 @@ the view's header and footer so that no cell is stranded under either:
 * along the **head**, what the grid holds — "*n* tabs". It replaced a page header that
   named the active tab, which said what the page behind the grid already says. Its real
   work is the row of cells below it: without it the first row, and the close button in its
-  corner, sat under the device's own screen cutout.
+  corner, sat under the device's own screen cutout. The row is `Screen.topCutout.height`
+  taller than it looks and puts its own text below that height, which is what Silica's
+  `PullDownMenu` does with its top margin; the property is read through a guard, so a
+  `Screen` that does not report a cutout gives a row of the ordinary height rather than
+  one that is undefined pixels tall.
 * along the **foot**, the one control the grid offers: new tab.
 
 A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
@@ -82,6 +86,23 @@ inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
 the pull and the tap, "New tab" is the button in the grid's header, "New private tab" is
 in the menu, and "Close all tabs" is in Settings next to the other clearing actions.
+
+### The hint
+Nothing is drawn to say that the bar is a pulley, because **Silica draws nothing**. The
+indicator this project shipped for two builds was a guess, and both times it was told it
+was not idiomatic. Jolla's own source settles it: `PullDownMenu` keeps a `menuIndicator`
+property "for API compatibility" whose only effect is to log that it is no longer
+supported, and the hint the platform gives instead is a movement —
+`PulleyAnimationHint` peeks the menu open by `Theme.itemSizeExtraSmall` over 400 ms
+(`OutCubic`) and lets it fall back over another 400 ms (`InOutCubic`).
+
+`components/PulleyHint.qml` is that movement, and the browsing page runs it once, when it
+is first shown: the grid peeks up from under the page and drops back. It borrows a
+**second** offset, `hintOffset`, which is added to `tabsOffset` where the deck is drawn
+rather than being `tabsOffset` itself: that property carries the spring, and a spring
+chasing an animation is two animations on one value. `beginDrag()` stops the hint and
+zeroes what it borrowed, so a finger arriving mid-hint takes the deck rather than fighting
+it for the deck.
 
 ## Consequences
 The grid is instantiated with the page rather than on demand, so the delegates exist

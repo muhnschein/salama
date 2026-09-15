@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 tuuli contributors
 //
-// The bar along the bottom of the browsing page: the address, and the menu. Dragging
-// it upwards pulls the tab grid up from underneath the page.
+// The bar along the bottom of the browsing page: back, the address, reload/stop and
+// the menu. Dragging it upwards pulls the tab grid up from underneath the page.
 //
-// Back and reload are not here. The address is what a browser's bar is for, and the
-// width those two took was width the address did not have; they live in the menu now
+// While the address is being edited the bar belongs to the field: back and reload are
+// not drawn and the field takes their room, from the edge of the screen to the menu
 // (docs/DECISIONS/0009-navigation-bar-gesture.md).
 //
-// One MouseArea covers the whole bar and owns every press, and the menu is just an
-// icon. A drag has to be recognised from the press that starts it, and a handler
+// One MouseArea covers the whole bar and owns every press, and the icons are just
+// icons. A drag has to be recognised from the press that starts it, and a handler
 // behind the controls is never reached -- while one that lets presses through to them
 // cannot see the movement afterwards. So the press is taken here, the region under it
 // decides what a tap means, and the same region drives the pressed highlight.
@@ -29,6 +29,7 @@ Item {
     property bool privateTab: false
     property bool loading: false
     property int loadProgress: 0
+    property bool canGoBack: false
     // The page came over TLS and the engine is not satisfied with it: a bad
     // certificate, a broken chain, mixed content.
     property bool tlsBroken: false
@@ -36,6 +37,8 @@ Item {
     property bool editing: false
 
     signal accepted(string text)
+    signal back()
+    signal reloadOrStop()
     signal showMenu()
     // Upward drag, in pixels from where the finger went down. Negative means it has
     // come back below its own starting point.
@@ -43,13 +46,19 @@ Item {
     signal dragMoved(real distance)
     signal dragFinished(real distance)
 
-    // Where the address may be drawn: from the page margin to the menu icon.
-    readonly property real addressLeft: Theme.horizontalPageMargin
-    readonly property real addressRight: menuIcon.x - Theme.paddingLarge
+    // Where the address may be drawn: between the two controls that flank it.
+    readonly property real addressLeft: backIcon.x + backIcon.width + Theme.paddingMedium
+    readonly property real addressRight: reloadIcon.x - Theme.paddingMedium
     // The widest the address can be while staying centred on the screen rather than
-    // in the space left over beside the menu.
+    // in the space left over between the controls.
     readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
                                                       addressRight - width / 2)
+
+    // Where the field is drawn instead: everything the menu does not take. Back and
+    // reload are gone while it is up, so their room is the field's, and the margin
+    // left is the smallest one that still keeps text off the edge of the screen.
+    readonly property real fieldLeft: Theme.paddingMedium
+    readonly property real fieldRight: menuIcon.x - Theme.paddingMedium
 
     // The bar is the whole touch target for the drag, and it sits in the strip the
     // system watches for its own edge swipe. Every bit of height here is height the
@@ -73,9 +82,8 @@ Item {
 
     // The field losing focus, and the keyboard going away, both end editing: tapping
     // the page while the field is up used to leave the bar in edit mode with nothing
-    // to type into. Named functions rather than logic inside the handlers, so both can
-    // be exercised from the load tests, which have no window to take focus in and no
-    // input panel to close.
+    // to type into. Named functions rather than logic in the handlers, so both can be
+    // exercised from the load tests, which have neither focus nor an input panel.
     function focusChanged(hasFocus) {
         if (!hasFocus) {
             endEditing()
@@ -89,9 +97,8 @@ Item {
     }
 
     // Silica lays a field out with room for its label above the text and its underline
-    // below it, so centring the item leaves the text itself off centre. The field
-    // publishes the offset for exactly this; an engine whose field has none gives
-    // undefined, and then the item's own centre is the best that can be done.
+    // below it, so centring the item leaves the text off centre. The field publishes
+    // the offset for exactly this, and undefined when it has none.
     function textCentringOffset(field) {
         var offset = field.textVerticalCenterOffset
         return offset === undefined ? 0 : offset
@@ -106,11 +113,21 @@ Item {
     }
 
     // Which control a press at this x belongs to. Named regions rather than hit
-    // testing: the gesture handler sits on top of everything, so childAt() would
-    // only ever return the handler itself.
+    // testing: the gesture handler sits on top of everything, so childAt() would only
+    // ever return the handler itself. The regions tile the bar, so every press
+    // belongs to something and each target is larger than the icon drawn in it.
     function regionAt(x) {
         if (x >= menuIcon.x) {
             return "menu"
+        }
+        // While the field is up, the room those two had is the field's.
+        if (!navigationBar.editing) {
+            if (x < navigationBar.addressLeft) {
+                return "back"
+            }
+            if (x >= navigationBar.addressRight) {
+                return "reload"
+            }
         }
         return "address"
     }
@@ -118,6 +135,12 @@ Item {
     function activate(region) {
         if (region === "menu") {
             navigationBar.showMenu()
+        } else if (region === "back") {
+            if (navigationBar.canGoBack) {
+                navigationBar.back()
+            }
+        } else if (region === "reload") {
+            navigationBar.reloadOrStop()
         } else if (region === "address") {
             if (!navigationBar.editing) {
                 navigationBar.beginEditing()
@@ -131,6 +154,23 @@ Item {
         objectName: "navigationBarBackground"
         anchors.fill: parent
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+    }
+
+    Icon {
+        id: backIcon
+
+        objectName: "backButton"
+        anchors {
+            left: parent.left
+            leftMargin: Theme.horizontalPageMargin
+            verticalCenter: parent.verticalCenter
+        }
+        width: Theme.iconSizeMedium
+        height: width
+        visible: !navigationBar.editing
+        source: "image://theme/icon-m-back"
+        opacity: navigationBar.canGoBack ? 1.0 : Theme.opacityLow
+        highlighted: gestureArea.pressedRegion === "back"
     }
 
     Icon {
@@ -148,8 +188,26 @@ Item {
         highlighted: gestureArea.pressedRegion === "menu"
     }
 
-    // Centred on the screen rather than in the space beside the menu: the address is
-    // the bar's subject, and a subject that sits off to one side reads as a label.
+    Icon {
+        id: reloadIcon
+
+        objectName: "reloadButton"
+        anchors {
+            right: menuIcon.left
+            rightMargin: Theme.paddingLarge
+            verticalCenter: parent.verticalCenter
+        }
+        width: Theme.iconSizeMedium
+        height: width
+        visible: !navigationBar.editing
+        source: navigationBar.loading ? "image://theme/icon-m-clear"
+                                      : "image://theme/icon-m-refresh"
+        highlighted: gestureArea.pressedRegion === "reload"
+    }
+
+    // Centred on the screen rather than in the space between the controls: the
+    // address is the bar's subject, and a subject that sits off to one side reads as
+    // a label.
     Row {
         id: addressRow
 
@@ -183,7 +241,7 @@ Item {
             objectName: "addressLabel"
             anchors.verticalCenter: parent.verticalCenter
             // Wide enough for the text and no wider, so the row centres on what is
-            // actually drawn, and never so wide that a centred row reaches the menu.
+            // actually drawn, and never so wide that a centred row reaches a control.
             width: Math.min(implicitWidth, navigationBar.centredWidth
                             - (securityIcon.visible ? securityIcon.width + addressRow.spacing
                                                     : 0))
@@ -206,10 +264,8 @@ Item {
         id: urlField
 
         objectName: "addressField"
-        // The whole width the bar can spare, which is all of it but the menu: a field
-        // is for typing into, and the bar has no other use for the room.
-        x: navigationBar.addressLeft
-        width: navigationBar.addressRight - navigationBar.addressLeft
+        x: navigationBar.fieldLeft
+        width: navigationBar.fieldRight - navigationBar.fieldLeft
         anchors {
             verticalCenter: parent.verticalCenter
             verticalCenterOffset: navigationBar.textCentringOffset(urlField)
@@ -230,6 +286,22 @@ Item {
         onActiveFocusChanged: navigationBar.focusChanged(activeFocus)
     }
 
+    // Silica insets the text inside a field by a page margin at each end, which is a
+    // page's margin, not a bar's. Through Binding rather than as properties: a Silica
+    // without them should cost a line in the log rather than a bar that fails to
+    // load, and assigning to a property that is not there is an error.
+    Binding {
+        target: urlField
+        property: "textLeftMargin"
+        value: Theme.paddingMedium
+    }
+
+    Binding {
+        target: urlField
+        property: "textRightMargin"
+        value: Theme.paddingMedium
+    }
+
     // The input panel closing is the other end of editing: the field can keep focus
     // after the keyboard is dismissed, and the bar would sit in edit mode with no
     // keyboard to type on.
@@ -242,19 +314,16 @@ Item {
     // the address is being edited -- the field is drawn above it and takes its own
     // presses, and everything else on the bar goes on working.
     //
-    // The handler reaches above the bar as well. The drag that opens the grid has to
+    // The handler reaches above the bar as well: the drag that opens the grid has to
     // start somewhere the system's own bottom-edge swipe has not already taken, and
-    // the bar alone lies in that strip; the reach gives a thumb somewhere higher to
-    // start from. A tap up there does nothing -- the page does not get it either,
-    // which is the price of the reach and the reason it is only a strip.
+    // the bar alone lies in that strip. A tap up there does nothing -- the page does
+    // not get it either, which is the price of the reach and why it is only a strip.
     MouseArea {
         id: gestureArea
 
         // Where the press went down, in the window's own coordinates. Not the bar's:
-        // the bar rides on the deck, so while the deck follows the finger the bar
-        // moves under it, and a distance measured against the bar would shrink as the
-        // deck rose, drop the deck back, grow again -- which on device was the whole
-        // screen jumping up and down for as long as the finger was held.
+        // the bar rides on the deck, so a distance measured against it would shrink as
+        // the deck rose and grow again -- on device, the screen jumping up and down.
         property real pressedY: 0
         property real distance: 0
         property bool dragging: false
@@ -314,18 +383,6 @@ Item {
             if (!dragging && pressedOnBar) {
                 navigationBar.activate(navigationBar.regionAt(mouse.x))
             }
-        }
-    }
-
-    // The bar is a pulley, so it says so -- along its top edge rather than its bottom.
-    // The bottom edge is where the system watches for its own swipe, and an indicator
-    // there invites a thumb to start the drag in exactly the wrong place.
-    PullIndicator {
-        objectName: "barPullIndicator"
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: parent.top
-            topMargin: Theme.paddingSmall
         }
     }
 

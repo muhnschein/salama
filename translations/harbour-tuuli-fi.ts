@@ -152,18 +152,6 @@
         <source>Tabs</source>
         <translation>Välilehdet</translation>
     </message>
-    <message>
-        <source>Back</source>
-        <translation>Takaisin</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation>Pysäytä</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation>Lataa uudelleen</translation>
-    </message>
 </context>
 <context>
     <name>NavigationBar</name>

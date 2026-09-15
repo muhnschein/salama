@@ -152,18 +152,6 @@
         <source>Tabs</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>NavigationBar</name>

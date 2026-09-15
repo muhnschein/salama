@@ -6,22 +6,27 @@ drops the forward button, and reaches the tab grid by dragging that bar upwards 
 than by tapping a button.
 
 ## Decision
-`components/NavigationBar.qml` holds **the address and the menu**, and nothing else. The
+`components/NavigationBar.qml` holds **back, the address, reload/stop and the menu**. The
 address is a `Label` until tapped and a `TextField` in the same place after, so editing
 needs no second screen. Forward navigation is dropped from the bar; the gesture replaces
 the tabs button.
 
-Back and reload were on it too, and are not any more: the width of two icons is width the
-address did not have, and on a phone the address is what the bar is for. They are
-`backItem` and `reloadItem` in the menu, acting on the page through `BrowserPage.goBack()`
-and `BrowserPage.reloadOrStop()`. The cost is honest and worth naming: back is two taps
-now. It is the price of a field that uses the bar, and if it turns out to be the wrong
-trade the smaller one is to bring back only back and leave reload in the menu.
+Back and reload were moved into the menu for one build, on the grounds that the width of
+two icons was width the address did not have. On device that was the wrong trade — back
+is the control a browser uses most, and two taps for it is two taps — so they are on the
+bar again and gone from the menu. What the address gets instead is the bar **while it is
+being edited**: back and reload are not drawn then, the field spans from the edge of the
+screen to the menu, and the text inside it is inset by `Theme.paddingMedium` rather than
+by Silica's own default of a page margin at each end. A field is worth every pixel of the
+bar, but only while there is something to type into it.
 
-The address is centred on the **screen**, not in the room left beside the menu icon:
+Those two insets are set through `Binding` rather than as properties, for the same reason
+the engine's are below: assigning to a property a Silica build has not got is a load
+error, binding to one is a line in the log.
+
+The address is centred on the **screen**, not in the room left between the controls:
 `centredWidth` is twice the smaller of the two gaps either side of the centre, so a
-centred row can never reach the menu. The field spans the whole of that room, at the size
-the host is drawn at, so the text does not jump when a label becomes a field.
+centred row can never reach one of them.
 
 Silica's `PushUpMenu` attaches to a `Flickable`, and the `WebView` is a `QuickMozView`
 that scrolls itself, so a stock pulley cannot be used on the browsing page. The bar
@@ -44,9 +49,9 @@ The handler also **reaches above the bar**, by three quarters of
 `Theme.itemSizeExtraSmall`. The drag has to
 start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
 lies in that strip. A tap in the reach does nothing — the page does not get it either,
-which is the price of the reach and the reason it is only a strip. The pulley indicator
-sits along the bar's **top** edge for the same reason: an indicator at the bottom invites a
-thumb to start the drag in exactly the place lipstick is watching.
+which is the price of the reach and the reason it is only a strip. What says the bar can
+be dragged at all is a movement rather than a drawn indicator
+(`0010-tab-grid-deck.md`).
 
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload
@@ -75,10 +80,9 @@ height, since the engine's own default is zero -- which drops the chrome on the 
 pixel of every drag.
 
 Both are set through `Binding` rather than as properties of their own, because an engine
-build without one should cost a warning in the log, not a page that fails to load. The bar
-also carries a pulley indicator along its bottom edge: it behaves like a pulley, so it
-says so. A drag that lipstick takes mid-gesture arrives here as `onCanceled`, which
-finishes at zero so the page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
+build without one should cost a warning in the log, not a page that fails to load. A drag
+that lipstick takes mid-gesture arrives here as `onCanceled`, which finishes at zero so
+the page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
 themselves, because they no longer receive the press. While the address is being edited
 the handler stands down, so the field keeps its own taps for the caret, and the bar
 cannot be dragged until editing ends.

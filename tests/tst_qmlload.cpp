@@ -39,6 +39,7 @@ private slots:
     void addressBarNavigates();
     void navigationBarDrivesWebView();
     void addressShowsHostAndSecurity();
+    void pulleyHintPeeksTheGrid();
     void barGetsOutOfTheWay();
     void editingEndsWithTheKeyboard();
     void thumbnailCapturedOnLoad();
@@ -65,6 +66,7 @@ private:
     void tapBar(const QString &region);
     void pullUpToTabs();
     void pullDownToBrowser();
+    void stopPulleyHint();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
 
@@ -79,6 +81,7 @@ void tst_qmlload::init()
     m_dir.reset(new QTemporaryDir);
     m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/tuuli.conf")));
     QVERIFY(loadWindow());
+    stopPulleyHint();
 }
 
 void tst_qmlload::cleanup()
@@ -242,6 +245,16 @@ void tst_qmlload::pullDownToBrowser()
     evaluate(grid, QStringLiteral("pullFinished(%1)").arg(distance));
 }
 
+// Showing the page hints at its pulley by peeking the grid up and letting it fall
+// back, which leaves the deck moving. Every test but the hint's own wants it still.
+void tst_qmlload::stopPulleyHint()
+{
+    QObject *hint = find(QStringLiteral("pulleyHint"));
+    QVERIFY(hint != nullptr);
+    QMetaObject::invokeMethod(hint, "stop");
+    find(QStringLiteral("browserPage"))->setProperty("hintOffset", 0.0);
+}
+
 void tst_qmlload::popPage() const
 {
     QVariant result;
@@ -326,28 +339,36 @@ void tst_qmlload::navigationBarDrivesWebView()
     QObject *webView = currentWebView();
     QObject *bar = find(QStringLiteral("navigationBar"));
 
-    // The bar carries the address and the menu, and nothing else: back and reload
-    // took width the address did not have, and are in the menu now. Each is reached
-    // by the region a press lands in, and the boundary is asserted against the icon
-    // itself, because a region no press can land in is exactly how the first gesture
-    // handler failed.
+    // Every control on the bar is reached by the region a press lands in, and the
+    // regions tile it: each boundary is asserted against the item itself, because a
+    // region no press can land in is exactly how the first gesture handler failed.
     const qreal barWidth = bar->property("width").toReal();
     QVERIFY(barWidth > 0);
-    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("address"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("back"));
     QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width / 2)")).toString(),
              QStringLiteral("address"));
     QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
              QStringLiteral("menu"));
-    QVERIFY(find(QStringLiteral("backButton")) == nullptr);
-    QVERIFY(find(QStringLiteral("reloadButton")) == nullptr);
+    const qreal reloadX = find(QStringLiteral("reloadButton"))->property("x").toReal();
+    QVERIFY(reloadX > 0);
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(%1)").arg(reloadX + 1)).toString(),
+             QStringLiteral("reload"));
 
-    // The address is centred on the screen rather than in the room left beside the
-    // menu, and it never reaches the menu.
+    // Back is ignored until there is somewhere to go back to.
+    tapBar(QStringLiteral("back"));
+    QVERIFY(webView->property("calls").toStringList().isEmpty());
+    webView->setProperty("canGoBack", true);
+    tapBar(QStringLiteral("back"));
+    tapBar(QStringLiteral("reload"));
+    QCOMPARE(webView->property("calls").toStringList(),
+             QStringList({QStringLiteral("goBack"), QStringLiteral("reload")}));
+
+    // The address is centred on the screen rather than in the room left between the
+    // controls, and it never reaches either of them.
     QObject *addressLabel = find(QStringLiteral("addressLabel"));
     const qreal centred = bar->property("centredWidth").toReal();
     QVERIFY(centred > 0);
-    QVERIFY(centred <=
-            barWidth - 2 * (barWidth - find(QStringLiteral("menuButton"))->property("x").toReal()));
+    QVERIFY(centred <= barWidth - 2 * (barWidth - reloadX));
     QVERIFY(addressLabel->property("width").toReal() <= centred);
 
     QObject *progress = find(QStringLiteral("loadProgress"));
@@ -355,7 +376,34 @@ void tst_qmlload::navigationBarDrivesWebView()
     webView->setProperty("loading", true);
     webView->setProperty("loadProgress", 50);
     QVERIFY(progress->property("visible").toBool());
+    // The same region stops a load that is running.
+    tapBar(QStringLiteral("reload"));
+    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
     webView->setProperty("loading", false);
+
+    // While the address is being edited the bar belongs to the field: back and
+    // reload are not drawn, the room they had is the field's, and the text inside it
+    // is inset by a padding rather than by a page margin. The field was half the bar
+    // wide with a page margin at each end of it, twice over.
+    QObject *field = find(QStringLiteral("addressField"));
+    const qreal pageMargin = evaluate(bar, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const qreal menuX = find(QStringLiteral("menuButton"))->property("x").toReal();
+    tapBar(QStringLiteral("address"));
+    QVERIFY(field->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("reloadButton"))->property("visible").toBool());
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("address"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(%1)").arg(reloadX + 1)).toString(),
+             QStringLiteral("address"));
+    const qreal fieldLeft = field->property("x").toReal();
+    const qreal fieldRight = fieldLeft + field->property("width").toReal();
+    QVERIFY(fieldLeft < pageMargin);
+    QVERIFY(fieldRight <= menuX);
+    QVERIFY(menuX - fieldRight < pageMargin);
+    QVERIFY(field->property("textLeftMargin").toReal() < pageMargin);
+    QVERIFY(field->property("textRightMargin").toReal() < pageMargin);
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(find(QStringLiteral("backButton"))->property("visible").toBool());
 
     // The bar reports how far it has been dragged and the page decides. The deck
     // follows the finger while it moves, and a drag that stops short springs back:
@@ -397,7 +445,6 @@ void tst_qmlload::addressShowsHostAndSecurity()
     QObject *webView = currentWebView();
     QVERIFY(!warning->property("visible").toBool());
     QVERIFY(!bar->property("tlsBroken").toBool());
-    QVERIFY(find(QStringLiteral("barPullIndicator"))->property("visible").toBool());
 
     auto *security = webView->property("security").value<QObject *>();
     QVERIFY(security != nullptr);
@@ -438,6 +485,41 @@ void tst_qmlload::addressShowsHostAndSecurity()
 // bottom while a page is scrolled down and brings it back on the way up. Without it
 // the foot of a page stays under the bar: RawWebView::setFooterMargin only reaches
 // the engine while the virtual keyboard is up.
+// What tells a first-time reader the bar is a pulley. Silica draws no indicator for
+// one: PullDownMenu.menuIndicator is kept for compatibility and logs that it is no
+// longer supported, and the hint the platform does give is a movement --
+// PulleyAnimationHint peeks the menu open and lets it fall back.
+void tst_qmlload::pulleyHintPeeksTheGrid()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *grid = find(QStringLiteral("tabsView"));
+    QObject *hint = find(QStringLiteral("pulleyHint"));
+    QVERIFY(hint != nullptr);
+    // It ran once, when the page was first shown. (init() then stopped it.)
+    QVERIFY(page->property("hinted").toBool());
+    const qreal distance = hint->property("distance").toReal();
+    QVERIFY(distance > 0);
+    QVERIFY(!grid->property("visible").toBool());
+
+    // The grid shows behind the page by that much, without the deck settling on it:
+    // the hint borrows the offset rather than moving the one the spring drives.
+    page->setProperty("hintOffset", distance);
+    QCOMPARE(page->property("deckOffset").toReal(), distance);
+    QCOMPARE(page->property("tabsOffset").toReal(), qreal(0));
+    QVERIFY(grid->property("visible").toBool());
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // A finger on the bar takes the deck off the hint rather than fighting it for it.
+    QMetaObject::invokeMethod(hint, "start");
+    QVERIFY(hint->property("running").toBool());
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    QVERIFY(!hint->property("running").toBool());
+    QCOMPARE(page->property("hintOffset").toReal(), qreal(0));
+    evaluate(bar, QStringLiteral("dragFinished(0)"));
+    QVERIFY(!page->property("tabsOpen").toBool());
+}
+
 void tst_qmlload::barGetsOutOfTheWay()
 {
     QObject *page = find(QStringLiteral("browserPage"));
@@ -581,6 +663,18 @@ void tst_qmlload::tabGrid()
     QCOMPARE(find(QStringLiteral("tabCountLabel"))->property("text").toString(),
              QStringLiteral("2 tab(s)"));
 
+    // Both what the head row says and the first row of cells clear the display's own
+    // cutout: the count sat under the notch, and so did the close button in the
+    // corner of the first cell.
+    const qreal cutout = grid->property("cutoutHeight").toReal();
+    QVERIFY(cutout > 0);
+    QObject *countRow = find(QStringLiteral("tabCountRow"));
+    QVERIFY(countRow->property("height").toReal() > cutout);
+    QVERIFY(find(QStringLiteral("tabCountLabel"))->property("y").toReal() >= cutout);
+    auto *headerItem = find(QStringLiteral("tabGrid"))->property("headerItem").value<QObject *>();
+    QVERIFY(headerItem != nullptr);
+    QCOMPARE(headerItem->property("height").toReal(), countRow->property("height").toReal());
+
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
     QCOMPARE(findObjects(previews.at(1), QStringLiteral("tabTitle"))
@@ -654,7 +748,6 @@ void tst_qmlload::tabGrid()
     // delegates on a move would reload the page behind the preview.
     m_core->tabs()->newTab(QStringLiteral("https://three.example/"));
     pullUpToTabs();
-    QVERIFY(find(QStringLiteral("gridPullIndicator")) != nullptr);
     QObject *carried = currentWebView();
     const int carriedId = m_core->tabs()->activeTabId();
     QCOMPARE(m_core->tabs()->activeTabIndex(), 1);
@@ -758,22 +851,11 @@ void tst_qmlload::menuPage()
     popPage();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
-    // Back and reload are in the menu now, and act on the page behind it.
-    QObject *webView = currentWebView();
-    QObject *backItem = openMenuItem(QStringLiteral("backItem"));
-    Q_UNUSED(backItem)
-    QVERIFY(webView->property("calls").toStringList().isEmpty());
+    // Back and reload are on the bar, one tap away, and not in the menu as well.
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(find(QStringLiteral("backItem")) == nullptr);
+    QVERIFY(find(QStringLiteral("reloadItem")) == nullptr);
     popPage();
-    webView->setProperty("canGoBack", true);
-    openMenuItem(QStringLiteral("backItem"));
-    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("goBack"));
-
-    openMenuItem(QStringLiteral("reloadItem"));
-    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("reload"));
-    webView->setProperty("loading", true);
-    openMenuItem(QStringLiteral("reloadItem"));
-    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
-    webView->setProperty("loading", false);
 
     // Tabs is the way into the grid for a hand that is already in the menu, or a
     // device where the drag is awkward. It comes back to this page and opens the
