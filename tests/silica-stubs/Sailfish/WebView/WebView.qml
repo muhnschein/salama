@@ -45,6 +45,9 @@ Item {
     // Test hooks
     property var calls: []
     property string lastScript
+    // Every script run since the view was made: a page is asked more than one thing
+    // when it finishes loading, and only the last of them would be seen otherwise.
+    property var scripts: []
     property string scriptResult: ""
     property bool scriptFails: false
     property string lastGrabPath: ""
@@ -102,6 +105,9 @@ Item {
 
     function runJavaScript(script, callback, errorCallback) {
         lastScript = script
+        var list = scripts
+        list.push(script)
+        scripts = list
         if (scriptFails) {
             if (errorCallback) {
                 errorCallback("stub failure")

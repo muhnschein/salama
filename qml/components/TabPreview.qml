@@ -114,8 +114,12 @@ Item {
         // it turned out to say nothing at all on its own.
         Rectangle {
             objectName: "tabPreviewHighlight"
-            anchors.fill: parent
-            anchors.margins: Theme.paddingSmall
+            anchors {
+                fill: parent
+                margins: Theme.paddingSmall
+                // Further down than the rest: the title sat close to the edge of it.
+                bottomMargin: Theme.paddingSmall / 2
+            }
             radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
             visible: preview.highlighted

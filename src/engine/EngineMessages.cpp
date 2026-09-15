@@ -2,6 +2,8 @@
 // Copyright (c) 2026 tuuli contributors
 #include "EngineMessages.h"
 
+#include <QColor>
+#include <QRegularExpression>
 #include <QUrl>
 
 namespace Tuuli {
@@ -41,6 +43,49 @@ QString EngineMessages::faviconScript() const
                           " var link = document.querySelector('link[rel~=\"icon\"]');"
                           " return link && link.href ? String(link.href) : '';"
                           " })()");
+}
+
+QString EngineMessages::themeColorScript() const
+{
+    return QStringLiteral("(function () {"
+                          " var meta = document.querySelector('meta[name=\"theme-color\"]');"
+                          " return meta && meta.content ? String(meta.content) : '';"
+                          " })()");
+}
+
+QString EngineMessages::themeColor(const QString &value)
+{
+    const QString text = value.trimmed();
+    if (text.isEmpty()) {
+        return {};
+    }
+
+    QColor color;
+    if (text.startsWith(QLatin1String("rgb"), Qt::CaseInsensitive)) {
+        // rgb(r, g, b) and rgba(r, g, b, a), in either the comma-separated form or the
+        // space-separated one. The channels are the first three numbers in it; what
+        // follows is alpha, which is dropped anyway.
+        const QRegularExpression number(QStringLiteral("\\d+"));
+        QRegularExpressionMatchIterator matches = number.globalMatch(text);
+        QList<int> channels;
+        while (matches.hasNext() && channels.count() < 3) {
+            channels.append(qBound(0, matches.next().captured().toInt(), 255));
+        }
+        if (channels.count() == 3) {
+            color = QColor(channels.at(0), channels.at(1), channels.at(2));
+        }
+    } else if (text.startsWith(QLatin1Char('#')) && text.length() == 9) {
+        // #rrggbbaa is CSS; QColor would read the same string as #aarrggbb.
+        color = QColor(text.left(7));
+    } else if (QColor::isValidColor(text)) {
+        color = QColor(text);
+    }
+
+    if (!color.isValid()) {
+        return {};
+    }
+    color.setAlpha(255);
+    return color.name();
 }
 
 QString EngineMessages::defaultFavicon(const QString &pageUrl) const

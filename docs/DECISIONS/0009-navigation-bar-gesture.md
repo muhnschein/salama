@@ -70,9 +70,15 @@ with it would be chasing itself.
 
 The change of state is **one animation**, 200 ms on the bar's own `height`. Everything
 that differs between the two states is drawn from `expansion`, which is 0 at the slim
-height and 1 at the whole one: the three controls fade with it, and the host's size is
-interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it. Nothing else
-animates, because nothing else has to.
+height and 1 at the whole one: the three controls fade with it, the host's size is
+interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it, and the bar's
+own background fades out with it, so that what is left at the slim end is the handle and
+the host, floating. Nothing else animates, because nothing else has to.
+
+The page still ends above the bar in both states, so what shows through the slim bar is
+the application's own background rather than the page: the alternative — letting the page
+run on behind a bar that is transparent anyway — puts the foot of a page back under
+something that eats its presses, which is the defect this arrangement exists to end.
 
 `viewArea` is sized from the bar, so the engine's view grows into what the bar gives up —
 but sized for the **slim** height for as long as the bar is between the two (`resizing`).

@@ -16,6 +16,8 @@ private slots:
     void defaultFavicon();
     void resolveFavicon_data();
     void resolveFavicon();
+    void themeColor_data();
+    void themeColor();
 };
 
 void tst_enginemessages::constants()
@@ -26,6 +28,41 @@ void tst_enginemessages::constants()
     QCOMPARE(messages.cachePayload(), QStringLiteral("cache"));
     QVERIFY(messages.faviconScript().contains(QStringLiteral("icon")));
     QVERIFY(messages.faviconScript().startsWith(QStringLiteral("(function")));
+    QVERIFY(messages.themeColorScript().contains(QStringLiteral("theme-color")));
+    QVERIFY(messages.themeColorScript().startsWith(QStringLiteral("(function")));
+}
+
+// What a page's theme-color says, read into something Qt can draw with. CSS writes
+// colours in forms QColor does not, and a page can write anything at all.
+void tst_enginemessages::themeColor_data()
+{
+    QTest::addColumn<QString>("value");
+    QTest::addColumn<QString>("expected");
+    const QString blue = QStringLiteral("#123456");
+    QTest::newRow("hex") << blue << blue;
+    QTest::newRow("padded") << QStringLiteral("  #123456  ") << blue;
+    QTest::newRow("short hex") << QStringLiteral("#abc") << QStringLiteral("#aabbcc");
+    // CSS puts alpha last in an eight-digit hex; QColor reads the same string with
+    // alpha first, so #123456ff would come out as #3456ff without this.
+    QTest::newRow("hex with alpha") << QStringLiteral("#123456ff") << blue;
+    QTest::newRow("named") << QStringLiteral("darkslateblue") << QStringLiteral("#483d8b");
+    QTest::newRow("rgb") << QStringLiteral("rgb(18, 52, 86)") << blue;
+    QTest::newRow("rgb spaces") << QStringLiteral("rgb(18 52 86)") << blue;
+    // Alpha is dropped rather than honoured: a band that showed what is behind it
+    // would not be the page's colour any more.
+    QTest::newRow("rgba") << QStringLiteral("rgba(18, 52, 86, 0.5)") << blue;
+    QTest::newRow("rgb clamped") << QStringLiteral("rgb(300, 52, 86)") << QStringLiteral("#ff3456");
+    QTest::newRow("empty") << QString() << QString();
+    QTest::newRow("nonsense") << QStringLiteral("very blue") << QString();
+    QTest::newRow("script leftovers") << QStringLiteral("undefined") << QString();
+    QTest::newRow("rgb too few") << QStringLiteral("rgb(18, 52)") << QString();
+}
+
+void tst_enginemessages::themeColor()
+{
+    QFETCH(QString, value);
+    QFETCH(QString, expected);
+    QCOMPARE(EngineMessages::themeColor(value), expected);
 }
 
 void tst_enginemessages::defaultFavicon_data()

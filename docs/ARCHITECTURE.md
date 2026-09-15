@@ -40,7 +40,9 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 Views: one `WebView` per tab that has been shown this session, created lazily by a
 `Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing
 until activated. Favicons come from a page script with `/favicon.ico` as fallback
-(`DECISIONS/0005-favicons.md`). Tab previews are scene-graph grabs written to the cache
+(`DECISIONS/0005-favicons.md`), and a page's `theme-color` from another one
+(`DECISIONS/0013-screen-cutout.md`); both are asked of the page because the `WebView`
+Harbour allows carries neither. Tab previews are scene-graph grabs written to the cache
 directory (`DECISIONS/0008-tab-previews.md`); a tab that has not been displayed this
 session has none, and shows a placeholder in the grid.
 

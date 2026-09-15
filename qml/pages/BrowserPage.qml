@@ -217,14 +217,17 @@ WebViewPage {
             width: parent.width
             height: browserPage.fullHeight
 
-            // The strip the cutout sits in, in the page's own theme colour when the
-            // engine reports one. sailfish-browser paints the same strip the same way.
+            // The strip the cutout sits in, in the page's own theme colour when it
+            // declares one. sailfish-browser paints the same strip the same way, from
+            // a property its own web page item carries; this one asks the page
+            // (docs/DECISIONS/0013-screen-cutout.md).
             Rectangle {
                 objectName: "cutoutBand"
                 width: parent.width
                 height: browserPage.cutoutInset
-                color: browserPage.currentView && browserPage.currentView.hasThemeColor === true
-                       ? browserPage.currentView.themeColor : Theme.highlightDimmerColor
+                color: browserPage.currentView
+                       && browserPage.currentView.pageThemeColor.length > 0
+                       ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
             }
 
             // The engine gets the page between the cutout and the bar, and no
@@ -371,6 +374,19 @@ WebViewPage {
                 when: browserPage.cutoutInset > 0
             }
 
+            // What the page asks the browser to dress itself in, or nothing. Read
+            // from the page because the engine keeps it to itself; the C++ side is
+            // what decides whether the answer is a colour at all.
+            property string pageThemeColor: ""
+
+            function fetchThemeColor() {
+                runJavaScript(EngineMessages.themeColorScript, function (value) {
+                    webView.pageThemeColor = EngineMessages.themeColor(value)
+                }, function () {
+                    webView.pageThemeColor = ""
+                })
+            }
+
             function fetchFavicon() {
                 var pageUrl = url
                 runJavaScript(EngineMessages.faviconScript, function (href) {
@@ -405,10 +421,13 @@ WebViewPage {
             onLoadingChanged: {
                 if (loading) {
                     // A new page starts at the top, and the bar starts whole: it would
-                    // otherwise stay slim from whatever was scrolled before it.
+                    // otherwise stay slim from whatever was scrolled before it. The
+                    // colour goes with the page that declared it.
                     chrome = true
+                    pageThemeColor = ""
                 } else {
                     fetchFavicon()
+                    fetchThemeColor()
                     captureThumbnail()
                 }
             }

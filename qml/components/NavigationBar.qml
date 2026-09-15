@@ -169,13 +169,13 @@ Item {
         }
     }
 
-    // Opaque, and the page ends above it rather than running underneath: a
-    // translucent bar looks better than it works, and the last rows of a page kept
-    // being unreachable behind it (docs/DECISIONS/0009-navigation-bar-gesture.md).
+    // Opaque while the bar is whole and gone by the time it is slim, where what is
+    // left is the handle and the host, floating. The page ends above the bar in either
+    // state rather than running underneath (docs/DECISIONS/0009).
     Rectangle {
         objectName: "navigationBarBackground"
         anchors.fill: parent
-        color: Theme.highlightDimmerColor
+        color: Theme.rgba(Theme.highlightDimmerColor, navigationBar.expansion)
     }
 
     // Where the drag starts, drawn: on the line between the bar and the page, which

@@ -6,6 +6,7 @@
 #include "Core.h"
 #include "QmlTypes.h"
 
+#include <QColor>
 #include <QFont>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -517,8 +518,11 @@ void tst_qmlload::barDoesNotCoverThePage()
     QCOMPARE(bar->property("y").toReal(), pageHeight - slimBar);
 
     // Nothing is left on the slim bar but the address, drawn smaller, and every
-    // press on it belongs to the address.
+    // press on it belongs to the address. Its background has gone with the rest: what
+    // is left of the bar is the handle and the host, floating.
     QCOMPARE(bar->property("expansion").toReal(), qreal(0));
+    QObject *background = find(QStringLiteral("navigationBarBackground"));
+    QCOMPARE(background->property("color").value<QColor>().alpha(), 0);
     QVERIFY(!find(QStringLiteral("menuButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("reloadButton"))->property("visible").toBool());
@@ -539,6 +543,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QTRY_COMPARE(bar->property("height").toReal(), fullBar);
     QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
     QVERIFY(addressLabel->property("font").value<QFont>().pixelSize() > slimSize);
+    QCOMPARE(background->property("color").value<QColor>().alpha(), 255);
     QVERIFY(find(QStringLiteral("menuButton"))->property("visible").toBool());
 
     // The handle is drawn on the line between the bar and the page, which is where
@@ -628,13 +633,30 @@ void tst_qmlload::faviconResolvedAfterLoad()
     webView->setProperty("scriptResult", QStringLiteral("/icon.png"));
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    QCOMPARE(webView->property("lastScript").toString(), m_core->engineMessages()->faviconScript());
+    QVERIFY(webView->property("scripts").toStringList().contains(
+        m_core->engineMessages()->faviconScript()));
     QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://www.qwant.com/icon.png"));
+
+    // The page is asked for its theme colour in the same breath, and the strip beside
+    // the cutout is painted with what it says. The engine keeps that colour to itself,
+    // so there is nothing to read it from but the page.
+    webView->setProperty("scriptResult", QStringLiteral("#123456"));
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QVERIFY(webView->property("scripts").toStringList().contains(
+        m_core->engineMessages()->themeColorScript()));
+    QCOMPARE(webView->property("pageThemeColor").toString(), QStringLiteral("#123456"));
+    QCOMPARE(find(QStringLiteral("cutoutBand"))->property("color").value<QColor>(),
+             QColor(QStringLiteral("#123456")));
 
     webView->setProperty("scriptFails", true);
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
     QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://www.qwant.com/favicon.ico"));
+    // A page that says nothing leaves the strip in the application's own colour.
+    QVERIFY(webView->property("pageThemeColor").toString().isEmpty());
+    QVERIFY(find(QStringLiteral("cutoutBand"))->property("color").value<QColor>() !=
+            QColor(QStringLiteral("#123456")));
 }
 
 void tst_qmlload::tabGrid()

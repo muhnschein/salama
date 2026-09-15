@@ -19,7 +19,7 @@ cutout to report gives zero rather than an undefined length.
 While the guard is on:
 
 * the engine's view starts below the cutout, and the strip it leaves is painted in the
-  page's own theme colour when the engine reports one, as sailfish-browser paints it;
+  page's own **theme colour** when it declares one, as sailfish-browser paints it;
 * the tab grid's head row is that much taller and puts "*n* tabs" below the cutout, which
   is also what keeps the first row of cells and their close buttons clear of it;
 * `safeAreaTop` on the view is bound to **0**. The platform's `Sailfish.WebView` hands the
@@ -29,6 +29,17 @@ While the guard is on:
 
 Turning it off gives the cutout's height back to the page and puts the grid's head row
 where it was.
+
+That colour is asked of the page, with `runJavaScript` and the same shape of script the
+favicon uses (`0005-favicons.md`). sailfish-browser reads it as a property instead — but
+from its own `DeclarativeWebPage`, which Gecko sends a message carrying `viewportFit`,
+`safeAreaInsetUsage` and `themeColor` together (`apps/qtmozembed/declarativewebpage.cpp`);
+none of that reaches the `WebView` Harbour allows. `EngineMessages::themeColor()` decides
+whether the answer is a colour at all: CSS writes colours in forms `QColor` does not read
+— `rgb()`, and the eight-digit hex whose *last* pair is alpha where Qt's is its first —
+and a page can put anything in that attribute. Alpha is dropped, as upstream drops it: a
+translucent band would show what is behind it, which is the one thing a band painted in
+the page's colour must not do.
 
 ## Consequences
 This is a coarser instrument than the platform browser's. sailfish-browser reads a policy

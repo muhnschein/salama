@@ -21,7 +21,9 @@ add_library(tuuli-core STATIC
     tabs/TabPersistence.h
 )
 target_include_directories(tuuli-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(tuuli-core PUBLIC Qt5::Core Qt5::Qml Qt5::Sql)
+# Gui, for QColor: a page's theme-color is a CSS colour, and reading one is what
+# QColor is for (src/engine/EngineMessages.cpp).
+target_link_libraries(tuuli-core PUBLIC Qt5::Core Qt5::Gui Qt5::Qml Qt5::Sql)
 target_compile_definitions(tuuli-core PUBLIC
     QT_NO_CAST_FROM_ASCII
     QT_NO_CAST_TO_ASCII
