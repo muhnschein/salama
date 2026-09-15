@@ -39,18 +39,14 @@ QString EngineMessages::cachePayload() const
 
 QString EngineMessages::faviconScript() const
 {
-    return QStringLiteral("(function () {"
-                          " var link = document.querySelector('link[rel~=\"icon\"]');"
-                          " return link && link.href ? String(link.href) : '';"
-                          " })()");
+    return QStringLiteral(" var link = document.querySelector('link[rel~=\"icon\"]');"
+                          " return link && link.href ? String(link.href) : '';");
 }
 
 QString EngineMessages::themeColorScript() const
 {
-    return QStringLiteral("(function () {"
-                          " var meta = document.querySelector('meta[name=\"theme-color\"]');"
-                          " return meta && meta.content ? String(meta.content) : '';"
-                          " })()");
+    return QStringLiteral(" var meta = document.querySelector('meta[name=\"theme-color\"]');"
+                          " return meta && meta.content ? String(meta.content) : '';");
 }
 
 QString EngineMessages::themeColor(const QString &value)

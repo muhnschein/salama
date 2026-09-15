@@ -26,9 +26,14 @@ public:
     QString cookiesAndSiteDataPayload() const;
     QString cachePayload() const;
 
-    // Script for WebView.runJavaScript(); evaluates to the page's <link rel=icon> href
-    // or an empty string. The WebView exposes no favicon property (qtmozembed
+    // Script for WebView.runJavaScript(); answers the page's <link rel=icon> href or
+    // an empty string. The WebView exposes no favicon property (qtmozembed
     // qmozview_defined_wrapper.h), so the page is asked directly.
+    //
+    // Every script here is the **body of a function**, and has to return: the engine
+    // builds one from it and calls it -- `new content.Function(script)` in
+    // embedlite-components jsscripts/embedhelper.js -- so a script that merely
+    // evaluates to something hands the callback undefined.
     QString faviconScript() const;
 
     // Absolute icon URL for a page: the script result resolved against the page, or
@@ -36,8 +41,8 @@ public:
     Q_INVOKABLE QString resolveFavicon(const QString &pageUrl, const QString &href) const;
     Q_INVOKABLE QString defaultFavicon(const QString &pageUrl) const;
 
-    // Script for WebView.runJavaScript(); evaluates to the page's theme-color, the
-    // colour a page asks the browser to dress itself in, or an empty string. Asked of
+    // Script for WebView.runJavaScript(); answers the page's theme-color, the colour
+    // a page asks the browser to dress itself in, or an empty string. Asked of
     // the page for the same reason the favicon is: sailfish-browser has the colour as
     // a property, but on its own DeclarativeWebPage, fed by a Gecko-side message that
     // the WebView Harbour allows does not carry

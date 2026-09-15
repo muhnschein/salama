@@ -31,7 +31,7 @@ Turning it off gives the cutout's height back to the page and puts the grid's he
 where it was.
 
 That colour is asked of the page, with `runJavaScript` and the same shape of script the
-favicon uses (`0005-favicons.md`). sailfish-browser reads it as a property instead — but
+favicon uses — a function body that returns, for the reason `0005-favicons.md` gives. sailfish-browser reads it as a property instead — but
 from its own `DeclarativeWebPage`, which Gecko sends a message carrying `viewportFit`,
 `safeAreaInsetUsage` and `themeColor` together (`apps/qtmozembed/declarativewebpage.cpp`);
 none of that reaches the `WebView` Harbour allows. `EngineMessages::themeColor()` decides

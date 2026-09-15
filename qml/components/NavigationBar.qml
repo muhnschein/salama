@@ -8,14 +8,12 @@
 // not drawn and the field takes their room, from the edge of the screen to the menu
 // (docs/DECISIONS/0009-navigation-bar-gesture.md).
 //
-// One MouseArea covers the whole bar and owns every press, and the icons are just
-// icons: a handler behind the controls is never reached, while one that lets presses
-// through to them cannot see the movement afterwards. So the press is taken here and
-// the region under it decides what a tap means and what is drawn pressed.
-//
-// The drag is reported as a distance, not as a finished gesture: the page follows the
-// finger while it moves and decides when it lifts. A gesture that shows nothing until
-// its threshold is, on device, the system's own edge swipe having taken the touch.
+// One MouseArea owns every press and the icons are just icons: a handler behind the
+// controls is never reached, while one that lets presses through cannot see the
+// movement afterwards. So the press is taken here and the region under it decides what
+// a tap means. The drag is reported as a distance rather than as a finished gesture,
+// because a gesture that shows nothing until its threshold is, on device,
+// indistinguishable from the system's own edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.tuuli 1.0
@@ -311,13 +309,10 @@ Item {
         onVisibleChanged: navigationBar.keyboardVisibilityChanged(Qt.inputMethod.visible)
     }
 
-    // Every press on the bar, so a drag is seen from the start. It stays live while
-    // the address is being edited -- the field is drawn above it and takes its own
-    // presses, and the rest of the bar goes on working.
-    //
-    // The handler reaches above the bar as well: the drag that opens the grid has to
-    // start somewhere the system's own bottom-edge swipe has not already taken. A tap
-    // up there does nothing, which is the price of the reach and why it is a strip.
+    // Every press on the bar, so a drag is seen from the start. It stays live while the
+    // address is being edited: the field is drawn above it and takes its own presses.
+    // It reaches above the bar as well, because the drag that opens the grid has to
+    // start where the system's own bottom-edge swipe has not.
     MouseArea {
         id: gestureArea
 
@@ -330,6 +325,10 @@ Item {
         property bool pressedOnBar: false
         property string pressedRegion: ""
         readonly property real reach: Theme.itemSizeExtraSmall * 0.75
+        // Slim, the page runs behind the bar: the handler keeps the strip its handle
+        // is in, and a press below that belongs to the page.
+        readonly property real strip: navigationBar.compact ? Theme.itemSizeExtraSmall
+                                                            : navigationBar.height
 
         objectName: "navigationBarGesture"
         anchors {
@@ -337,8 +336,8 @@ Item {
             right: parent.right
             top: parent.top
             topMargin: -reach
-            bottom: parent.bottom
         }
+        height: strip + reach
 
         function sceneY(y) {
             return gestureArea.mapToItem(null, 0, y).y

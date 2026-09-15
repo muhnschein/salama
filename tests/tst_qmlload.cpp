@@ -513,9 +513,18 @@ void tst_qmlload::barDoesNotCoverThePage()
     webView->setProperty("chrome", false);
     QVERIFY(page->property("barCompact").toBool());
     QVERIFY(bar->property("compact").toBool());
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
     QTRY_COMPARE(bar->property("height").toReal(), slimBar);
     QCOMPARE(bar->property("y").toReal(), pageHeight - slimBar);
+    // The page runs behind the slim bar, which is transparent by then and keeps only
+    // the strip its handle is in: what is below that strip belongs to the page, so
+    // nothing of it ends up both visible and deaf.
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - inset);
+    QObject *slimGesture = find(QStringLiteral("navigationBarGesture"));
+    const qreal strip = slimGesture->property("strip").toReal();
+    QVERIFY(strip > 0);
+    QVERIFY(strip < slimBar);
+    QCOMPARE(slimGesture->property("height").toReal(),
+             strip + slimGesture->property("reach").toReal());
 
     // Nothing is left on the slim bar but the address, drawn smaller, and every
     // press on it belongs to the address. Its background has gone with the rest: what

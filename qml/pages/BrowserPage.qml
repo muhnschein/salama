@@ -43,13 +43,16 @@ WebViewPage {
 
     // The bar's height, which is height the engine's view does not get: the page ends
     // where the bar begins rather than running on behind it, in either of the two
-    // heights the bar has. While the bar is between them the view is sized for the
-    // slimmer one: a view resized on every frame of that animation is a page relaid
-    // out on every frame, which is what stretched pages under the keyboard. One
+    // heights the bar has. While the bar is between them the view is sized as it will
+    // be at the slim end: a view resized on every frame of that animation is a page
+    // relaid out on every frame, which is what stretched pages under the keyboard. One
     // resize, and the bar covers the difference while it moves.
     readonly property real barHeight: navigationBar.height
-    readonly property real viewHeight: fullHeight - (navigationBar.resizing
-                                                     ? navigationBar.slimHeight : barHeight)
+    // Nothing at all while the bar is slim: what is left of it then is transparent,
+    // and the page is what should be behind it. The bar keeps the strip its handle is
+    // in and gives the rest of its presses to the page.
+    readonly property real viewHeight: fullHeight - (navigationBar.compact
+                                                     || navigationBar.resizing ? 0 : barHeight)
 
     // What the display's own cutout takes at the top of the screen, and how much of
     // it this application keeps out of. Silica reports the cutout's whole rectangle,

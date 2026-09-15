@@ -26,10 +26,16 @@ void tst_enginemessages::constants()
     QCOMPARE(messages.clearPrivateDataTopic(), QStringLiteral("clear-private-data"));
     QCOMPARE(messages.cookiesAndSiteDataPayload(), QStringLiteral("cookies-and-site-data"));
     QCOMPARE(messages.cachePayload(), QStringLiteral("cache"));
+    // The engine builds a function from the script and calls it -- embedhelper.js
+    // does `new content.Function(script)` -- so a script is a function body and has
+    // to return. One that only evaluates to something hands the callback undefined,
+    // which is what the favicon script did: every page fell back to /favicon.ico.
     QVERIFY(messages.faviconScript().contains(QStringLiteral("icon")));
-    QVERIFY(messages.faviconScript().startsWith(QStringLiteral("(function")));
+    QVERIFY(messages.faviconScript().contains(QStringLiteral("return ")));
+    QVERIFY(!messages.faviconScript().contains(QStringLiteral("function")));
     QVERIFY(messages.themeColorScript().contains(QStringLiteral("theme-color")));
-    QVERIFY(messages.themeColorScript().startsWith(QStringLiteral("(function")));
+    QVERIFY(messages.themeColorScript().contains(QStringLiteral("return ")));
+    QVERIFY(!messages.themeColorScript().contains(QStringLiteral("function")));
 }
 
 // What a page's theme-color says, read into something Qt can draw with. CSS writes
