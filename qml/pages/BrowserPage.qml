@@ -30,12 +30,6 @@ WebViewPage {
     property real dragOffset: 0
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
 
-    // What the pulley hint is borrowing, and where the deck is drawn: apart from
-    // tabsOffset, whose spring would otherwise chase the hint's own animation.
-    property real hintOffset: 0
-    property bool hinted: false
-    readonly property real deckOffset: tabsOffset + hintOffset
-
     // The tallest this page has been. Silica shrinks a page while the keyboard is up,
     // and resizing the engine's view mid-animation left the content stretched until it
     // finished; the deck keeps its height and lets the keyboard cover it instead.
@@ -47,8 +41,8 @@ WebViewPage {
         }
     }
 
-    // What the engine is told to keep clear at the foot of the viewport, and what the
-    // bar is drawn over: a page can be scrolled until its last line clears the bar.
+    // The bar's height, which is height the engine's view does not get: the page ends
+    // where the bar begins rather than running on behind it.
     readonly property real barHeight: navigationBar.height
 
     // Gecko's own verdict on the connection, if this engine build hands one out:
@@ -60,17 +54,6 @@ WebViewPage {
         }
         var security = currentView.security
         return !!security && !!security.validState && !security.allGood
-    }
-
-    // The bar is drawn over the page, so the engine's own chrome gesture decides when
-    // it is in the way: scrolling down takes it off the bottom, scrolling up brings it
-    // back. setFooterMargin reaches the engine only while the keyboard is up.
-    readonly property bool barShown: {
-        if (!currentView || navigationBar.editing || dragging) {
-            return true
-        }
-        // undefined on an engine with no chrome gesture: then the bar simply stays.
-        return currentView.chrome !== false
     }
 
     // How far the deck must be dragged for the gesture to commit when the finger lifts.
@@ -144,13 +127,11 @@ WebViewPage {
         }
     }
 
-    // A finger takes the deck off whatever the spring or the hint was doing with it:
-    // a disabled Behavior does not stop an animation that is already under way.
+    // A finger takes the deck off whatever the spring was doing with it: a disabled
+    // Behavior does not stop an animation that is already under way.
     function beginDrag() {
         deckSpring.enabled = false
         deckSlide.stop()
-        pulleyHint.stop()
-        hintOffset = 0
         dragOffset = tabsOffset
         dragging = true
     }
@@ -184,23 +165,6 @@ WebViewPage {
         return WebEngineSettings.pixelRatio
     }
 
-    // Once, when the page is first shown: the grid peeks up from under it and falls
-    // back again, which is the whole of what Silica says about a pulley.
-    PulleyHint {
-        id: pulleyHint
-
-        objectName: "pulleyHint"
-        item: browserPage
-        offsetProperty: "hintOffset"
-    }
-
-    onStatusChanged: {
-        if (status === PageStatus.Active && !hinted) {
-            hinted = true
-            pulleyHint.start()
-        }
-    }
-
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
         ensureTab()
@@ -218,7 +182,7 @@ WebViewPage {
 
         width: parent.width
         height: browserPage.fullHeight * 2
-        y: -browserPage.deckOffset
+        y: -browserPage.tabsOffset
 
         Item {
             id: browserLayer
@@ -226,11 +190,20 @@ WebViewPage {
             width: parent.width
             height: browserPage.fullHeight
 
-            // The engine gets the whole page; the bar lies over its foot.
+            // The engine gets the page down to the bar and no further. Letting it
+            // run on behind a bar that scrolled away was the other answer, and on
+            // device the foot of a page was still out of reach often enough to be a
+            // defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
             Item {
                 id: viewArea
 
-                anchors.fill: parent
+                objectName: "viewArea"
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                }
+                height: browserPage.fullHeight - browserPage.barHeight
 
                 // One WebView per tab shown this session; restored tabs stay unloaded
                 // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md).
@@ -273,14 +246,7 @@ WebViewPage {
                 width: parent.width
                 // The page's own height, not the layer's: Silica shrinks the page for
                 // the keyboard, and the field the bar carries has to come up with it.
-                y: browserPage.height - (browserPage.barShown ? height : 0)
-
-                Behavior on y {
-                    NumberAnimation {
-                        duration: 200
-                        easing.type: Easing.OutQuad
-                    }
-                }
+                y: browserPage.height - height
 
                 url: TabModel.activeUrl
                 privateTab: TabModel.activeIsPrivate
@@ -312,7 +278,7 @@ WebViewPage {
             height: browserPage.fullHeight
             y: browserPage.fullHeight
             // Nothing to draw while the page covers it: the engine has the screen.
-            visible: browserPage.deckOffset > 0
+            visible: browserPage.tabsOffset > 0
             onPullStarted: browserPage.beginDrag()
             onPulled: browserPage.dragTo(browserPage.height - distance)
             onPullFinished: browserPage.settle(distance <= browserPage.pullThreshold)
@@ -334,22 +300,15 @@ WebViewPage {
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
-            // Through Binding rather than as properties of their own: these belong to
-            // the engine's view, and a build without one should cost a warning in the
-            // log, not a page that fails to load. footerMargin is what the engine keeps
-            // clear at the foot of the viewport while the keyboard is up; the threshold
-            // is how far a page must scroll before the engine decides about the chrome,
-            // and its default of zero toggles on every drag.
+            // The engine's own chrome gesture is off: it exists to take a toolbar
+            // that lies over the page out of the way, and this bar does not lie over
+            // it. Through Binding rather than as a property of its own, because it
+            // belongs to the engine's view -- a build without it should cost a warning
+            // in the log, not a page that fails to load.
             Binding {
                 target: webView
-                property: "footerMargin"
-                value: browserPage.barHeight
-            }
-
-            Binding {
-                target: webView
-                property: "chromeGestureThreshold"
-                value: browserPage.barHeight
+                property: "chromeGestureEnabled"
+                value: false
             }
 
             function fetchFavicon() {
@@ -384,11 +343,7 @@ WebViewPage {
             onUrlChanged: TabModel.updateUrl(tabId, url)
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
-                if (loading) {
-                    // A new page starts at the top, and so does the bar: it would
-                    // otherwise stay hidden from whatever was scrolled before it.
-                    chrome = true
-                } else {
+                if (!loading) {
                     fetchFavicon()
                     captureThumbnail()
                 }

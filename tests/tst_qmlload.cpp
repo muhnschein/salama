@@ -6,6 +6,7 @@
 #include "Core.h"
 #include "QmlTypes.h"
 
+#include <QFont>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -39,8 +40,7 @@ private slots:
     void addressBarNavigates();
     void navigationBarDrivesWebView();
     void addressShowsHostAndSecurity();
-    void pulleyHintPeeksTheGrid();
-    void barGetsOutOfTheWay();
+    void barDoesNotCoverThePage();
     void editingEndsWithTheKeyboard();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
@@ -66,7 +66,6 @@ private:
     void tapBar(const QString &region);
     void pullUpToTabs();
     void pullDownToBrowser();
-    void stopPulleyHint();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
 
@@ -81,7 +80,6 @@ void tst_qmlload::init()
     m_dir.reset(new QTemporaryDir);
     m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/tuuli.conf")));
     QVERIFY(loadWindow());
-    stopPulleyHint();
 }
 
 void tst_qmlload::cleanup()
@@ -245,16 +243,6 @@ void tst_qmlload::pullDownToBrowser()
     evaluate(grid, QStringLiteral("pullFinished(%1)").arg(distance));
 }
 
-// Showing the page hints at its pulley by peeking the grid up and letting it fall
-// back, which leaves the deck moving. Every test but the hint's own wants it still.
-void tst_qmlload::stopPulleyHint()
-{
-    QObject *hint = find(QStringLiteral("pulleyHint"));
-    QVERIFY(hint != nullptr);
-    QMetaObject::invokeMethod(hint, "stop");
-    find(QStringLiteral("browserPage"))->setProperty("hintOffset", 0.0);
-}
-
 void tst_qmlload::popPage() const
 {
     QVariant result;
@@ -300,11 +288,6 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("qwant.com"));
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
-
-    // The engine is told to keep the bar's height clear at the foot of the viewport,
-    // so a page can be scrolled until its own last line clears the bar.
-    QCOMPARE(webView->property("footerMargin").toReal(),
-             find(QStringLiteral("navigationBar"))->property("height").toReal());
 }
 
 void tst_qmlload::addressBarNavigates()
@@ -402,6 +385,11 @@ void tst_qmlload::navigationBarDrivesWebView()
     QVERIFY(menuX - fieldRight < pageMargin);
     QVERIFY(field->property("textLeftMargin").toReal() < pageMargin);
     QVERIFY(field->property("textRightMargin").toReal() < pageMargin);
+    // The field is drawn at the size the host is, and both are larger than the small
+    // text Silica puts in a label.
+    const int hostSize = addressLabel->property("font").value<QFont>().pixelSize();
+    QCOMPARE(field->property("font").value<QFont>().pixelSize(), hostSize);
+    QVERIFY(hostSize > evaluate(bar, QStringLiteral("Theme.fontSizeSmall")).toInt());
     evaluate(bar, QStringLiteral("endEditing()"));
     QVERIFY(find(QStringLiteral("backButton"))->property("visible").toBool());
 
@@ -485,81 +473,41 @@ void tst_qmlload::addressShowsHostAndSecurity()
 // bottom while a page is scrolled down and brings it back on the way up. Without it
 // the foot of a page stays under the bar: RawWebView::setFooterMargin only reaches
 // the engine while the virtual keyboard is up.
-// What tells a first-time reader the bar is a pulley. Silica draws no indicator for
-// one: PullDownMenu.menuIndicator is kept for compatibility and logs that it is no
-// longer supported, and the hint the platform does give is a movement --
-// PulleyAnimationHint peeks the menu open and lets it fall back.
-void tst_qmlload::pulleyHintPeeksTheGrid()
-{
-    QObject *page = find(QStringLiteral("browserPage"));
-    QObject *grid = find(QStringLiteral("tabsView"));
-    QObject *hint = find(QStringLiteral("pulleyHint"));
-    QVERIFY(hint != nullptr);
-    // It ran once, when the page was first shown. (init() then stopped it.)
-    QVERIFY(page->property("hinted").toBool());
-    const qreal distance = hint->property("distance").toReal();
-    QVERIFY(distance > 0);
-    QVERIFY(!grid->property("visible").toBool());
-
-    // The grid shows behind the page by that much, without the deck settling on it:
-    // the hint borrows the offset rather than moving the one the spring drives.
-    page->setProperty("hintOffset", distance);
-    QCOMPARE(page->property("deckOffset").toReal(), distance);
-    QCOMPARE(page->property("tabsOffset").toReal(), qreal(0));
-    QVERIFY(grid->property("visible").toBool());
-    QVERIFY(!page->property("tabsOpen").toBool());
-
-    // A finger on the bar takes the deck off the hint rather than fighting it for it.
-    QMetaObject::invokeMethod(hint, "start");
-    QVERIFY(hint->property("running").toBool());
-    QObject *bar = find(QStringLiteral("navigationBar"));
-    evaluate(bar, QStringLiteral("dragStarted()"));
-    QVERIFY(!hint->property("running").toBool());
-    QCOMPARE(page->property("hintOffset").toReal(), qreal(0));
-    evaluate(bar, QStringLiteral("dragFinished(0)"));
-    QVERIFY(!page->property("tabsOpen").toBool());
-}
-
-void tst_qmlload::barGetsOutOfTheWay()
+void tst_qmlload::barDoesNotCoverThePage()
 {
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *webView = currentWebView();
     const qreal barHeight = bar->property("height").toReal();
-    const qreal layerHeight = page->property("height").toReal();
+    const qreal pageHeight = page->property("height").toReal();
     QVERIFY(barHeight > 0);
 
-    // The engine is told how far a page must be scrolled before it decides: its own
-    // default is zero, which drops the chrome on the first pixel of every drag.
-    QCOMPARE(webView->property("chromeGestureThreshold").toReal(), barHeight);
-    QVERIFY(webView->property("chromeGestureEnabled").toBool());
+    // The engine's view stops where the bar starts, so the foot of a page is above
+    // the bar rather than behind it. The bar used to lie over the page and scroll
+    // itself away on the engine's chrome gesture; on device the last rows of a page
+    // were still out of reach often enough to be a defect, so the gesture is off.
+    QObject *viewArea = find(QStringLiteral("viewArea"));
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - barHeight);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - barHeight);
+    QCOMPARE(bar->property("y").toReal(), pageHeight - barHeight);
+    QVERIFY(!webView->property("chromeGestureEnabled").toBool());
 
-    QVERIFY(page->property("barShown").toBool());
-    QCOMPARE(bar->property("y").toReal(), layerHeight - barHeight);
-
+    // Nothing the engine reports moves the bar any more.
     webView->setProperty("chrome", false);
-    QVERIFY(!page->property("barShown").toBool());
+    QCOMPARE(bar->property("y").toReal(), pageHeight - barHeight);
 
-    // Editing keeps it: the field is on it. So does a drag, which is a finger on it.
-    tapBar(QStringLiteral("address"));
-    QVERIFY(page->property("barShown").toBool());
-    evaluate(bar, QStringLiteral("endEditing()"));
-    QVERIFY(!page->property("barShown").toBool());
-    evaluate(bar, QStringLiteral("dragStarted()"));
-    QVERIFY(page->property("barShown").toBool());
-    evaluate(bar, QStringLiteral("dragFinished(0)"));
-    QVERIFY(!page->property("barShown").toBool());
-
-    // A new page starts at the top, and the bar comes back with it.
-    webView->setProperty("loading", true);
-    QVERIFY(webView->property("chrome").toBool());
-    QVERIFY(page->property("barShown").toBool());
-    webView->setProperty("loading", false);
+    // Where the drag starts is drawn, and lights up while a finger is on it.
+    QObject *handle = find(QStringLiteral("barDragHandle"));
+    QVERIFY(handle != nullptr);
+    QVERIFY(handle->property("width").toReal() > 0);
+    QVERIFY(!handle->property("active").toBool());
+    QObject *gesture = find(QStringLiteral("navigationBarGesture"));
+    gesture->setProperty("dragging", true);
+    QVERIFY(handle->property("active").toBool());
+    gesture->setProperty("dragging", false);
+    QVERIFY(!handle->property("active").toBool());
 }
 
-// Tapping the page while the field is up, or dismissing the keyboard, ends editing.
-// Leaving it up stranded the bar in edit mode with nothing to type on, and with the
-// controls behind a field that no longer had the keyboard.
 void tst_qmlload::editingEndsWithTheKeyboard()
 {
     QObject *bar = find(QStringLiteral("navigationBar"));
@@ -671,12 +619,25 @@ void tst_qmlload::tabGrid()
     QObject *countRow = find(QStringLiteral("tabCountRow"));
     QVERIFY(countRow->property("height").toReal() > cutout);
     QVERIFY(find(QStringLiteral("tabCountLabel"))->property("y").toReal() >= cutout);
+    QObject *gridHandle = find(QStringLiteral("gridDragHandle"));
+    QVERIFY(gridHandle != nullptr);
+    QVERIFY(gridHandle->property("y").toReal() >= cutout);
     auto *headerItem = find(QStringLiteral("tabGrid"))->property("headerItem").value<QObject *>();
     QVERIFY(headerItem != nullptr);
     QCOMPARE(headerItem->property("height").toReal(), countRow->property("height").toReal());
 
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
+
+    // The preview box is rounded, and so is the highlight drawn round the active
+    // one. Clipping is rectangular whatever the shape of the item doing it, so the
+    // picture is cut to the same corners by a mask.
+    QObject *shot = findObjects(previews.at(1), QStringLiteral("tabPreviewShot")).first();
+    QVERIFY(shot->property("radius").toReal() > 0);
+    auto *shotLayer = shot->property("layer").value<QObject *>();
+    QVERIFY(shotLayer != nullptr);
+    QVERIFY(shotLayer->property("enabled").toBool());
+
     QCOMPARE(findObjects(previews.at(1), QStringLiteral("tabTitle"))
                  .first()
                  ->property("text")

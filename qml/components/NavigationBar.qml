@@ -9,15 +9,13 @@
 // (docs/DECISIONS/0009-navigation-bar-gesture.md).
 //
 // One MouseArea covers the whole bar and owns every press, and the icons are just
-// icons. A drag has to be recognised from the press that starts it, and a handler
-// behind the controls is never reached -- while one that lets presses through to them
-// cannot see the movement afterwards. So the press is taken here, the region under it
-// decides what a tap means, and the same region drives the pressed highlight.
+// icons: a handler behind the controls is never reached, while one that lets presses
+// through to them cannot see the movement afterwards. So the press is taken here and
+// the region under it decides what a tap means and what is drawn pressed.
 //
 // The drag is reported as a distance, not as a finished gesture: the page follows the
-// finger while it moves and decides when it lifts. A handler that only speaks at its
-// threshold shows nothing while the finger is down, and on device that is
-// indistinguishable from the system's own bottom-edge swipe having taken the touch.
+// finger while it moves and decides when it lifts. A gesture that shows nothing until
+// its threshold is, on device, the system's own edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.tuuli 1.0
@@ -81,9 +79,8 @@ Item {
     }
 
     // The field losing focus, and the keyboard going away, both end editing: tapping
-    // the page while the field is up used to leave the bar in edit mode with nothing
-    // to type into. Named functions rather than logic in the handlers, so both can be
-    // exercised from the load tests, which have neither focus nor an input panel.
+    // the page while the field was up used to leave the bar in edit mode with nothing
+    // to type into. Named functions, so the load tests can exercise both.
     function focusChanged(hasFocus) {
         if (!hasFocus) {
             endEditing()
@@ -96,9 +93,8 @@ Item {
         }
     }
 
-    // Silica lays a field out with room for its label above the text and its underline
-    // below it, so centring the item leaves the text off centre. The field publishes
-    // the offset for exactly this, and undefined when it has none.
+    // Silica lays a field out with room for its label and underline, so centring the
+    // item leaves the text off centre; the field publishes the offset for this.
     function textCentringOffset(field) {
         var offset = field.textVerticalCenterOffset
         return offset === undefined ? 0 : offset
@@ -113,9 +109,8 @@ Item {
     }
 
     // Which control a press at this x belongs to. Named regions rather than hit
-    // testing: the gesture handler sits on top of everything, so childAt() would only
-    // ever return the handler itself. The regions tile the bar, so every press
-    // belongs to something and each target is larger than the icon drawn in it.
+    // testing: the handler sits on top of everything, so childAt() would only ever
+    // return the handler. They tile the bar, so each target is larger than its icon.
     function regionAt(x) {
         if (x >= menuIcon.x) {
             return "menu"
@@ -148,12 +143,22 @@ Item {
         }
     }
 
-    // The page runs the full height of the window and this bar lies over its foot,
-    // so the last line of a page is dimmed rather than cut off.
+    // Opaque, and the page ends above it rather than running underneath: a
+    // translucent bar looks better than it works, and the last rows of a page kept
+    // being unreachable behind it (docs/DECISIONS/0009-navigation-bar-gesture.md).
     Rectangle {
         objectName: "navigationBarBackground"
         anchors.fill: parent
-        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+        color: Theme.highlightDimmerColor
+    }
+
+    // Where the drag starts, drawn. The handler below reaches above the bar, so the
+    // handle sits at its top edge, in the reach.
+    DragHandle {
+        objectName: "barDragHandle"
+        x: (navigationBar.width - width) / 2
+        y: Theme.paddingSmall
+        active: gestureArea.pressed || gestureArea.dragging
     }
 
     Icon {
@@ -205,9 +210,8 @@ Item {
         highlighted: gestureArea.pressedRegion === "reload"
     }
 
-    // Centred on the screen rather than in the space between the controls: the
-    // address is the bar's subject, and a subject that sits off to one side reads as
-    // a label.
+    // Centred on the screen rather than in the space between the controls: an address
+    // that sits off to one side reads as a label rather than as the bar's subject.
     Row {
         id: addressRow
 
@@ -218,13 +222,11 @@ Item {
         // While editing, the field below says everything this row would.
         visible: !navigationBar.editing
         spacing: Theme.paddingSmall
-        // Above the gesture handler for the same reason the field is: nothing here
-        // accepts a press, so every press falls through to it anyway.
+        // Above the gesture handler: nothing here accepts a press in any case.
         z: 1
 
-        // The platform's own warning glyph in the error colour. There is no open
-        // padlock in the icon set, and sailfish-browser draws this same icon for
-        // this same state (apps/browser/qml/pages/components/ToolBar.qml).
+        // The platform's own warning glyph in the error colour: there is no open
+        // padlock in the icon set, and sailfish-browser draws this one for this state.
         Icon {
             id: securityIcon
 
@@ -256,7 +258,7 @@ Item {
                 }
                 return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
             }
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSizeMedium
         }
     }
 
@@ -278,7 +280,7 @@ Item {
         placeholderText: qsTr("Search or enter address")
         // The same size the host is drawn at, so the text does not jump when the
         // label becomes a field.
-        font.pixelSize: Theme.fontSizeSmall
+        font.pixelSize: Theme.fontSizeMedium
         inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhUrlCharactersOnly
         EnterKey.enabled: text.length > 0
         EnterKey.iconSource: "image://theme/icon-m-enter-accept"
@@ -288,8 +290,7 @@ Item {
 
     // Silica insets the text inside a field by a page margin at each end, which is a
     // page's margin, not a bar's. Through Binding rather than as properties: a Silica
-    // without them should cost a line in the log rather than a bar that fails to
-    // load, and assigning to a property that is not there is an error.
+    // without them should cost a line in the log rather than a bar that fails to load.
     Binding {
         target: urlField
         property: "textLeftMargin"
@@ -312,18 +313,17 @@ Item {
 
     // Every press on the bar, so a drag is seen from the start. It stays live while
     // the address is being edited -- the field is drawn above it and takes its own
-    // presses, and everything else on the bar goes on working.
+    // presses, and the rest of the bar goes on working.
     //
     // The handler reaches above the bar as well: the drag that opens the grid has to
-    // start somewhere the system's own bottom-edge swipe has not already taken, and
-    // the bar alone lies in that strip. A tap up there does nothing -- the page does
-    // not get it either, which is the price of the reach and why it is only a strip.
+    // start somewhere the system's own bottom-edge swipe has not already taken. A tap
+    // up there does nothing, which is the price of the reach and why it is a strip.
     MouseArea {
         id: gestureArea
 
-        // Where the press went down, in the window's own coordinates. Not the bar's:
-        // the bar rides on the deck, so a distance measured against it would shrink as
-        // the deck rose and grow again -- on device, the screen jumping up and down.
+        // Where the press went down, in the window's own coordinates: the bar rides on
+        // the deck, so a distance measured against it shrank as the deck rose and grew
+        // again, which on device was the screen jumping up and down under the finger.
         property real pressedY: 0
         property real distance: 0
         property bool dragging: false

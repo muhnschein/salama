@@ -24,13 +24,13 @@ workaround; a failure blocks the tag.
 - [ ] The grid follows the finger while it moves, and a drag that stops short of the threshold springs back. The movement is vertical, never sideways.
 - [ ] Dragging the grid downwards past its top brings the page back the same way; a short pull springs back to the grid.
 - [ ] Menu > Tabs opens the same grid without the gesture.
-- [ ] The bar is translucent and the page runs underneath it.
+- [ ] The bar is opaque and the page ends above it: scroll to the foot of a long page -- a site footer, a cookie banner -- and every control there can be tapped without the bar in the way. The bar does not move when a page is scrolled.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
-- [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
+- [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes. Each preview and the highlight round the active one have rounded corners, and the picture is rounded with them rather than square inside them.
 - [ ] A preview shows the top of what was last on screen for that tab, not the middle of the page.
 - [ ] The grid's head says how many tabs there are, and both that text and the first row of cells -- with its close buttons -- are clear of the screen cutout.
 - [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.
-- [ ] On the first launch of the app the grid peeks up from under the page once and falls back. Grabbing the bar while it moves takes the deck over without a jump.
+- [ ] A handle is drawn along the top of the navigation bar and along the top of the grid's head row; the bar's lights up while a drag is under way.
 - [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.
 - [ ] The grid's two rows are drawn over the cells rather than among them: the head says how many tabs, the foot carries the one button, and the first and last rows of cells can be scrolled clear of both.
 - [ ] The button in the foot row opens a new tab and returns to it.

@@ -81,28 +81,35 @@ screen — tall — and the cell is not; cropping to fill centres it, so every p
 the middle of a page whatever the reader had been looking at. Anchored at the top, what
 shows is the top of what was last on the screen.
 
+The box it sits in has rounded corners, and so does the picture: `clip` is rectangular
+whatever the shape of the item doing the clipping, so the corners are cut by an
+`OpacityMask` from `QtGraphicalEffects` — which is on Harbour's import allow-list, and is
+how sailfish-browser rounds its own tab previews
+(`apps/browser/qml/pages/components/TabItem.qml`). The mask costs one framebuffer per
+visible cell, which is the price of the shape; the radius is `Theme.paddingMedium`, the
+same number upstream writes as `12 * Theme.pixelRatio`.
+
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
 the pull and the tap, "New tab" is the button in the grid's header, "New private tab" is
 in the menu, and "Close all tabs" is in Settings next to the other clearing actions.
 
-### The hint
-Nothing is drawn to say that the bar is a pulley, because **Silica draws nothing**. The
-indicator this project shipped for two builds was a guess, and both times it was told it
-was not idiomatic. Jolla's own source settles it: `PullDownMenu` keeps a `menuIndicator`
-property "for API compatibility" whose only effect is to log that it is no longer
-supported, and the hint the platform gives instead is a movement —
-`PulleyAnimationHint` peeks the menu open by `Theme.itemSizeExtraSmall` over 400 ms
-(`OutCubic`) and lets it fall back over another 400 ms (`InOutCubic`).
+### What says an edge can be dragged
+**Silica draws nothing for this.** Jolla's own source settles that much: `PullDownMenu`
+keeps a `menuIndicator` property "for API compatibility" whose only effect is to log that
+it is no longer supported, and what the platform offers instead is `PulleyAnimationHint`
+— a movement, peeking the menu open by `Theme.itemSizeExtraSmall` over 400 ms and letting
+it fall back over another 400 ms.
 
-`components/PulleyHint.qml` is that movement, and the browsing page runs it once, when it
-is first shown: the grid peeks up from under the page and drops back. It borrows a
-**second** offset, `hintOffset`, which is added to `tabsOffset` where the deck is drawn
-rather than being `tabsOffset` itself: that property carries the spring, and a spring
-chasing an animation is two animations on one value. `beginDrag()` stops the hint and
-zeroes what it borrowed, so a finger arriving mid-hint takes the deck rather than fighting
-it for the deck.
+That movement was built and shipped, and on device it was not wanted: a hint that plays
+once, before the hand is anywhere near the screen, is a hint nobody is looking at. So
+`components/DragHandle.qml` is drawn instead — a short rounded bar along the navigation
+bar's top edge and along the top of the grid's head row — and it is deliberately more than
+a decoration: it sits inside the reach the gesture handler already covers, and it lights up
+(`active`) while that gesture has the finger, so the thing you aim at is the thing that
+responds. This is not what Silica does; it is what this application needs, and the previous
+two attempts to guess at a platform idiom for it were both wrong.
 
 ## Consequences
 The grid is instantiated with the page rather than on demand, so the delegates exist

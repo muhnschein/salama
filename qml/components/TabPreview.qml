@@ -9,6 +9,7 @@
 // and the close button do not fight over it: the button is drawn above the handler
 // and keeps its own taps, everything else falls through to it.
 import QtQuick 2.6
+import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
 
 BackgroundItem {
@@ -105,6 +106,7 @@ BackgroundItem {
         Rectangle {
             id: shot
 
+            objectName: "tabPreviewShot"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -113,9 +115,24 @@ BackgroundItem {
             }
             height: parent.height - caption.height - Theme.paddingMedium * 3
             clip: true
+            radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
             border.width: preview.highlighted ? Theme.paddingSmall / 2 : 0
             border.color: Theme.highlightColor
+
+            // Rounded at the corners, picture and all. Clipping is rectangular
+            // whatever the shape of the item doing it, so the corners are cut by a
+            // mask instead; sailfish-browser rounds its own tab previews the same way
+            // (apps/browser/qml/pages/components/TabItem.qml).
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: Rectangle {
+                    width: shot.width
+                    height: shot.height
+                    radius: shot.radius
+                    visible: false
+                }
+            }
 
             // As wide as the cell and anchored to its top, at the picture's own
             // aspect: what shows is then the top of what was last on the screen.

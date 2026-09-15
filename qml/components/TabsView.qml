@@ -116,6 +116,14 @@ Item {
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
+        // The grid's own edge is a pulley too: dragged down it hands the page back.
+        DragHandle {
+            objectName: "gridDragHandle"
+            x: (parent.width - width) / 2
+            y: tabsView.cutoutHeight + Theme.paddingSmall
+            active: tabGrid.dragging
+        }
+
         Label {
             objectName: "tabCountLabel"
             anchors {

@@ -50,8 +50,18 @@ The handler also **reaches above the bar**, by three quarters of
 start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
 lies in that strip. A tap in the reach does nothing — the page does not get it either,
 which is the price of the reach and the reason it is only a strip. What says the bar can
-be dragged at all is a movement rather than a drawn indicator
+be dragged is drawn along its top edge, inside that reach: `components/DragHandle.qml`
 (`0010-tab-grid-deck.md`).
+
+The bar is **opaque**, and the engine's view ends where the bar begins: `viewArea` is
+`fullHeight - barHeight` tall. Both of those replace the arrangement below, which was a
+translucent bar lying over the page that took itself off the screen on the engine's own
+chrome gesture. That was prettier and it did mostly work, but "mostly" is the problem: on
+device the last rows of a page — a footer, a cookie banner's buttons — kept being
+unreachable, and a control you can reach four times out of five is a defect. A bar that
+never covers anything cannot hide anything. The cost is real estate: the bar no longer
+gets out of the way when a page is scrolled, and `chromeGestureEnabled` is bound to false
+because the gesture exists to move a toolbar that lies over the page.
 
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload
@@ -79,10 +89,12 @@ because that case is real, but it was not the answer. The threshold is set to th
 height, since the engine's own default is zero -- which drops the chrome on the first
 pixel of every drag.
 
-Both are set through `Binding` rather than as properties of their own, because an engine
-build without one should cost a warning in the log, not a page that fails to load. A drag
-that lipstick takes mid-gesture arrives here as `onCanceled`, which finishes at zero so
-the page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
+That binding is set through `Binding` rather than as a property of its own, because an
+engine build without it should cost a warning in the log, not a page that fails to load.
+`footerMargin` is not bound at all any more: it reaches the engine only while the virtual
+keyboard is up, which is why it could never have been the answer here. A drag that
+lipstick takes mid-gesture arrives here as `onCanceled`, which finishes at zero so the
+page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
 themselves, because they no longer receive the press. While the address is being edited
 the handler stands down, so the field keeps its own taps for the caret, and the bar
 cannot be dragged until editing ends.

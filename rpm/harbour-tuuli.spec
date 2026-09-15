@@ -30,6 +30,8 @@ Requires:   sailfish-components-webview-qt5 >= 1.7.0
 Requires:   sailfish-components-webview-qt5-popups >= 1.7.0
 Requires:   sailfish-components-webview-qt5-pickers >= 1.7.0
 Requires:   qt5-plugin-imageformat-ico
+# QtGraphicalEffects, for the rounded corners on the tab previews.
+Requires:   qt5-qtgraphicaleffects
 
 %description
 Web browser for Sailfish OS with a Silica interface over the platform web engine.
