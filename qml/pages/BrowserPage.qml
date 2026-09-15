@@ -42,8 +42,21 @@ WebViewPage {
     }
 
     // The bar's height, which is height the engine's view does not get: the page ends
-    // where the bar begins rather than running on behind it.
+    // where the bar begins rather than running on behind it, in either of the two
+    // heights the bar has.
     readonly property real barHeight: navigationBar.height
+
+    // Scrolling down slims the bar to the handle and the host; scrolling back up puts
+    // its controls back. The engine's own chrome gesture is the signal -- the same one
+    // that used to take the whole bar off the screen -- and the view is resized with
+    // the bar, so the foot of a page clears it either way.
+    readonly property bool barCompact: {
+        if (!currentView || navigationBar.editing || dragging) {
+            return false
+        }
+        // undefined on an engine with no chrome gesture: then the bar stays as it is.
+        return currentView.chrome === false
+    }
 
     // Gecko's own verdict on the connection, if this engine build hands one out:
     // validState says it has one for this page, allGood weighs certificate, protocol
@@ -253,6 +266,7 @@ WebViewPage {
                 loading: browserPage.loading
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
                 tlsBroken: browserPage.tlsBroken
+                compact: browserPage.barCompact
                 canGoBack: browserPage.canGoBack
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
@@ -300,15 +314,25 @@ WebViewPage {
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
-            // The engine's own chrome gesture is off: it exists to take a toolbar
-            // that lies over the page out of the way, and this bar does not lie over
-            // it. Through Binding rather than as a property of its own, because it
-            // belongs to the engine's view -- a build without it should cost a warning
-            // in the log, not a page that fails to load.
+            // The engine's chrome gesture is what tells the bar which way a page is
+            // being scrolled. The threshold is how far it must be scrolled before the
+            // engine decides; its default is zero, which flips on the first pixel of
+            // every drag. It is a constant rather than the bar's own height, which
+            // changes when the bar answers it.
+            //
+            // Through Binding rather than as properties of their own, because they
+            // belong to the engine's view -- a build without them should cost a
+            // warning in the log, not a page that fails to load.
             Binding {
                 target: webView
                 property: "chromeGestureEnabled"
-                value: false
+                value: true
+            }
+
+            Binding {
+                target: webView
+                property: "chromeGestureThreshold"
+                value: Theme.itemSizeLarge
             }
 
             function fetchFavicon() {
@@ -343,7 +367,11 @@ WebViewPage {
             onUrlChanged: TabModel.updateUrl(tabId, url)
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
-                if (!loading) {
+                if (loading) {
+                    // A new page starts at the top, and the bar starts whole: it would
+                    // otherwise stay slim from whatever was scrolled before it.
+                    chrome = true
+                } else {
                     fetchFavicon()
                     captureThumbnail()
                 }

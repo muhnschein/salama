@@ -81,7 +81,12 @@ screen — tall — and the cell is not; cropping to fill centres it, so every p
 the middle of a page whatever the reader had been looking at. Anchored at the top, what
 shows is the top of what was last on the screen.
 
-The box it sits in has rounded corners, and so does the picture: `clip` is rectangular
+The cell is a plain `Item`, not a Silica `BackgroundItem`. That one draws both its press
+feedback and its highlight as a square wash across the whole cell, which is the one shape
+this cell has stopped having; what marks the active tab and the pressed one is the border
+of its own rounded box.
+
+The box has rounded corners, and so does the picture: `clip` is rectangular
 whatever the shape of the item doing the clipping, so the corners are cut by an
 `OpacityMask` from `QtGraphicalEffects` — which is on Harbour's import allow-list, and is
 how sailfish-browser rounds its own tab previews

@@ -54,14 +54,27 @@ be dragged is drawn along its top edge, inside that reach: `components/DragHandl
 (`0010-tab-grid-deck.md`).
 
 The bar is **opaque**, and the engine's view ends where the bar begins: `viewArea` is
-`fullHeight - barHeight` tall. Both of those replace the arrangement below, which was a
-translucent bar lying over the page that took itself off the screen on the engine's own
-chrome gesture. That was prettier and it did mostly work, but "mostly" is the problem: on
-device the last rows of a page — a footer, a cookie banner's buttons — kept being
-unreachable, and a control you can reach four times out of five is a defect. A bar that
-never covers anything cannot hide anything. The cost is real estate: the bar no longer
-gets out of the way when a page is scrolled, and `chromeGestureEnabled` is bound to false
-because the gesture exists to move a toolbar that lies over the page.
+`fullHeight - barHeight` tall. Both of those replace a translucent bar that lay over the
+page and took itself off the screen on the engine's own chrome gesture. That was prettier
+and it did mostly work, but "mostly" is the problem: on device the last rows of a page — a
+footer, a cookie banner's buttons — kept being unreachable, and a control you can reach
+four times out of five is a defect. A bar that never covers anything cannot hide anything.
+
+What the bar does with that gesture instead is **shrink**. Scrolled down, it drops to
+`Theme.itemSizeSmall` — a quarter less than `Theme.itemSizeLarge` — takes back, reload and
+the menu off itself, and draws the host at `Theme.fontSizeSmall`: the handle and the
+address, which is what a bar is for while a page is being read. Scrolled back up, it is
+whole again. `chromeGestureThreshold` is bound to a constant rather than to the bar's own
+height, because the bar answers that gesture by changing height and a threshold that moved
+with it would be chasing itself.
+
+`barHeight` is read by `viewArea`, so the engine's view grows into what the bar gives up
+and shrinks when it comes back. That is a viewport resize on every change of scroll
+direction, which is the mechanism that deformed pages while the keyboard was animating —
+the difference is that this one is a single step, not a step per frame, so it is one
+reflow and the threshold keeps it from flapping. Editing forces the whole bar back, since
+the field needs the room, and so does a page starting to load, since a new page starts at
+the top.
 
 The first attempt put that `MouseArea` *behind* the controls, so presses on a button
 would reach the button. On device no drag was possible at all: back, the address, reload

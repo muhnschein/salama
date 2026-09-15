@@ -24,9 +24,10 @@ workaround; a failure blocks the tag.
 - [ ] The grid follows the finger while it moves, and a drag that stops short of the threshold springs back. The movement is vertical, never sideways.
 - [ ] Dragging the grid downwards past its top brings the page back the same way; a short pull springs back to the grid.
 - [ ] Menu > Tabs opens the same grid without the gesture.
-- [ ] The bar is opaque and the page ends above it: scroll to the foot of a long page -- a site footer, a cookie banner -- and every control there can be tapped without the bar in the way. The bar does not move when a page is scrolled.
+- [ ] The bar is opaque and the page ends above it: scroll to the foot of a long page -- a site footer, a cookie banner -- and every control there can be tapped without the bar in the way, in both of the bar's heights.
+- [ ] Scrolling down a page slims the bar to the handle and the host alone, at a smaller size; scrolling back up brings its controls back. Tapping the address, and loading a new page, both bring the whole bar back. The page does not jump or reflow as the bar changes height.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
-- [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes. Each preview and the highlight round the active one have rounded corners, and the picture is rounded with them rather than square inside them.
+- [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes. Each preview and the highlight round the active one have rounded corners, and the picture is rounded with them rather than square inside them. Nothing square is drawn behind the active cell or a pressed one.
 - [ ] A preview shows the top of what was last on screen for that tab, not the middle of the page.
 - [ ] The grid's head says how many tabs there are, and both that text and the first row of cells -- with its close buttons -- are clear of the screen cutout.
 - [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.

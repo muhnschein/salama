@@ -33,6 +33,10 @@ Item {
     property bool tlsBroken: false
     // The address turns into a field in place while it is being edited.
     property bool editing: false
+    // Slimmed down to the handle and the host, with the controls off it: what the bar
+    // does instead of leaving when a page is scrolled
+    // (docs/DECISIONS/0009-navigation-bar-gesture.md).
+    property bool compact: false
 
     signal accepted(string text)
     signal back()
@@ -44,9 +48,12 @@ Item {
     signal dragMoved(real distance)
     signal dragFinished(real distance)
 
-    // Where the address may be drawn: between the two controls that flank it.
-    readonly property real addressLeft: backIcon.x + backIcon.width + Theme.paddingMedium
-    readonly property real addressRight: reloadIcon.x - Theme.paddingMedium
+    // Where the address may be drawn: between the two controls that flank it, or the
+    // whole bar but its margins when there are no controls on it.
+    readonly property real addressLeft: compact ? Theme.horizontalPageMargin
+                                                : backIcon.x + backIcon.width + Theme.paddingMedium
+    readonly property real addressRight: compact ? width - Theme.horizontalPageMargin
+                                                 : reloadIcon.x - Theme.paddingMedium
     // The widest the address can be while staying centred on the screen rather than
     // in the space left over between the controls.
     readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
@@ -60,8 +67,9 @@ Item {
 
     // The bar is the whole touch target for the drag, and it sits in the strip the
     // system watches for its own edge swipe. Every bit of height here is height the
-    // gesture can start in without lipstick taking it first.
-    height: Theme.itemSizeLarge
+    // gesture can start in without lipstick taking it first -- which is why the slim
+    // state gives up a quarter of it and not more.
+    height: compact ? Theme.itemSizeSmall : Theme.itemSizeLarge
 
     function beginEditing() {
         urlField.text = navigationBar.url
@@ -112,6 +120,10 @@ Item {
     // testing: the handler sits on top of everything, so childAt() would only ever
     // return the handler. They tile the bar, so each target is larger than its icon.
     function regionAt(x) {
+        // Nothing is on the slim bar but the address.
+        if (navigationBar.compact) {
+            return "address"
+        }
         if (x >= menuIcon.x) {
             return "menu"
         }
@@ -152,12 +164,13 @@ Item {
         color: Theme.highlightDimmerColor
     }
 
-    // Where the drag starts, drawn. The handler below reaches above the bar, so the
-    // handle sits at its top edge, in the reach.
+    // Where the drag starts, drawn: on the line between the bar and the page, which
+    // is where the finger is aiming, and inside the reach the handler covers above
+    // the bar.
     DragHandle {
         objectName: "barDragHandle"
         x: (navigationBar.width - width) / 2
-        y: Theme.paddingSmall
+        y: -height / 2
         active: gestureArea.pressed || gestureArea.dragging
     }
 
@@ -172,7 +185,7 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        visible: !navigationBar.editing
+        visible: !navigationBar.editing && !navigationBar.compact
         source: "image://theme/icon-m-back"
         opacity: navigationBar.canGoBack ? 1.0 : Theme.opacityLow
         highlighted: gestureArea.pressedRegion === "back"
@@ -189,6 +202,7 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
+        visible: !navigationBar.compact
         source: "image://theme/icon-m-menu"
         highlighted: gestureArea.pressedRegion === "menu"
     }
@@ -204,7 +218,7 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        visible: !navigationBar.editing
+        visible: !navigationBar.editing && !navigationBar.compact
         source: navigationBar.loading ? "image://theme/icon-m-clear"
                                       : "image://theme/icon-m-refresh"
         highlighted: gestureArea.pressedRegion === "reload"
@@ -212,54 +226,22 @@ Item {
 
     // Centred on the screen rather than in the space between the controls: an address
     // that sits off to one side reads as a label rather than as the bar's subject.
-    Row {
-        id: addressRow
-
+    AddressLabel {
+        objectName: "addressRow"
         anchors {
             horizontalCenter: parent.horizontalCenter
             verticalCenter: parent.verticalCenter
         }
         // While editing, the field below says everything this row would.
         visible: !navigationBar.editing
-        spacing: Theme.paddingSmall
         // Above the gesture handler: nothing here accepts a press in any case.
         z: 1
-
-        // The platform's own warning glyph in the error colour: there is no open
-        // padlock in the icon set, and sailfish-browser draws this one for this state.
-        Icon {
-            id: securityIcon
-
-            objectName: "securityWarning"
-            anchors.verticalCenter: parent.verticalCenter
-            width: Theme.iconSizeSmall
-            height: width
-            visible: navigationBar.tlsBroken
-            source: "image://theme/icon-s-filled-warning"
-            color: Theme.errorColor
-        }
-
-        Label {
-            objectName: "addressLabel"
-            anchors.verticalCenter: parent.verticalCenter
-            // Wide enough for the text and no wider, so the row centres on what is
-            // actually drawn, and never so wide that a centred row reaches a control.
-            width: Math.min(implicitWidth, navigationBar.centredWidth
-                            - (securityIcon.visible ? securityIcon.width + addressRow.spacing
-                                                    : 0))
-            // The host, not the whole url (Settings.displayAddress). Tapping brings
-            // the field up with every character of it back.
-            text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
-                                               : qsTr("Search or enter address")
-            truncationMode: TruncationMode.Fade
-            color: {
-                if (gestureArea.pressedRegion === "address") {
-                    return Theme.highlightColor
-                }
-                return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
-            }
-            font.pixelSize: Theme.fontSizeMedium
-        }
+        url: navigationBar.url
+        tlsBroken: navigationBar.tlsBroken
+        privateTab: navigationBar.privateTab
+        pressed: gestureArea.pressedRegion === "address"
+        maximumWidth: navigationBar.centredWidth
+        fontSize: navigationBar.compact ? Theme.fontSizeSmall : Theme.fontSizeMedium
     }
 
     TextField {

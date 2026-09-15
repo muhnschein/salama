@@ -8,15 +8,19 @@
 // contents owns the press, the way the navigation bar's does, so the tap, the carry
 // and the close button do not fight over it: the button is drawn above the handler
 // and keeps its own taps, everything else falls through to it.
+//
+// It is a plain Item rather than a Silica BackgroundItem. That one draws its press
+// and its highlight as a square wash across the whole cell, and this cell has rounded
+// corners; what marks it is its own box (docs/DECISIONS/0010-tab-grid-deck.md).
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
 
-BackgroundItem {
+Item {
     id: preview
 
-    // Its own tap signal rather than BackgroundItem's clicked: that one comes from
-    // MouseArea and carries a mouse event, which this handler has not got to give it.
+    // Its own tap signal: a Silica clicked() comes from MouseArea and carries a mouse
+    // event, which this handler has not got to give it.
     signal tapped()
     signal closeRequested()
     // The cell has been carried over another one and the two should trade places.
@@ -27,12 +31,13 @@ BackgroundItem {
     // before clicked, so the first cannot be what clears the second.
     property bool held: false
     property bool carried: false
+    // Drawn on the rounded box below: this cell is the active tab, or has a finger.
+    readonly property bool highlighted: dragArea.pressed || model.activeTab
     readonly property Item grid: GridView.view
 
     objectName: "tabPreview"
     width: GridView.view.cellWidth
     height: GridView.view.cellHeight
-    highlighted: dragArea.pressed || model.activeTab
     // A carried cell passes over its neighbours, not under them.
     z: held ? 1 : 0
 

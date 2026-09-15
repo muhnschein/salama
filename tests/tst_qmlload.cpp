@@ -478,28 +478,62 @@ void tst_qmlload::barDoesNotCoverThePage()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *webView = currentWebView();
-    const qreal barHeight = bar->property("height").toReal();
+    const qreal fullBar = bar->property("height").toReal();
     const qreal pageHeight = page->property("height").toReal();
-    QVERIFY(barHeight > 0);
+    QVERIFY(fullBar > 0);
 
     // The engine's view stops where the bar starts, so the foot of a page is above
-    // the bar rather than behind it. The bar used to lie over the page and scroll
-    // itself away on the engine's chrome gesture; on device the last rows of a page
-    // were still out of reach often enough to be a defect, so the gesture is off.
+    // the bar rather than behind it. The bar used to lie over the page and take
+    // itself off the screen on the engine's chrome gesture; on device the last rows
+    // of a page were still out of reach often enough to be a defect.
     QObject *viewArea = find(QStringLiteral("viewArea"));
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - barHeight);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - barHeight);
-    QCOMPARE(bar->property("y").toReal(), pageHeight - barHeight);
-    QVERIFY(!webView->property("chromeGestureEnabled").toBool());
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar);
+    QCOMPARE(bar->property("y").toReal(), pageHeight - fullBar);
+    QVERIFY(webView->property("chromeGestureEnabled").toBool());
+    // The threshold is a constant, not the bar's own height: the bar changes height
+    // in answer to the gesture, and a threshold that moved with it would chase it.
+    QCOMPARE(webView->property("chromeGestureThreshold").toReal(),
+             evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
 
-    // Nothing the engine reports moves the bar any more.
+    // That gesture now slims the bar rather than removing it, and the view grows into
+    // what the bar gives up -- so the page still ends above it.
     webView->setProperty("chrome", false);
-    QCOMPARE(bar->property("y").toReal(), pageHeight - barHeight);
+    QVERIFY(page->property("barCompact").toBool());
+    QVERIFY(bar->property("compact").toBool());
+    const qreal slimBar = bar->property("height").toReal();
+    QVERIFY(slimBar < fullBar);
+    QVERIFY(slimBar > fullBar * 0.6);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar);
+    QCOMPARE(bar->property("y").toReal(), pageHeight - slimBar);
 
-    // Where the drag starts is drawn, and lights up while a finger is on it.
+    // Nothing is on the slim bar but the address, drawn smaller, and every press on
+    // it belongs to the address.
+    QVERIFY(!find(QStringLiteral("menuButton"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("reloadButton"))->property("visible").toBool());
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
+             QStringLiteral("address"));
+    QObject *addressLabel = find(QStringLiteral("addressLabel"));
+    const int slimSize = addressLabel->property("font").value<QFont>().pixelSize();
+
+    // Editing brings the whole bar back, and so does a new page.
+    tapBar(QStringLiteral("address"));
+    QVERIFY(!bar->property("compact").toBool());
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(bar->property("compact").toBool());
+    webView->setProperty("loading", true);
+    QVERIFY(webView->property("chrome").toBool());
+    QVERIFY(!bar->property("compact").toBool());
+    webView->setProperty("loading", false);
+    QVERIFY(addressLabel->property("font").value<QFont>().pixelSize() > slimSize);
+
+    // The handle is drawn on the line between the bar and the page, which is where
+    // the finger aims, and it lights up while a drag is under way.
     QObject *handle = find(QStringLiteral("barDragHandle"));
     QVERIFY(handle != nullptr);
     QVERIFY(handle->property("width").toReal() > 0);
+    QVERIFY(handle->property("y").toReal() < 0);
     QVERIFY(!handle->property("active").toBool());
     QObject *gesture = find(QStringLiteral("navigationBarGesture"));
     gesture->setProperty("dragging", true);
@@ -634,6 +668,11 @@ void tst_qmlload::tabGrid()
     // picture is cut to the same corners by a mask.
     QObject *shot = findObjects(previews.at(1), QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
+    // The active cell is marked on that same box -- a Silica BackgroundItem would
+    // have drawn a square wash across the whole cell instead.
+    auto *border = shot->property("border").value<QObject *>();
+    QVERIFY(border != nullptr);
+    QVERIFY(border->property("width").toReal() > 0);
     auto *shotLayer = shot->property("layer").value<QObject *>();
     QVERIFY(shotLayer != nullptr);
     QVERIFY(shotLayer->property("enabled").toBool());
