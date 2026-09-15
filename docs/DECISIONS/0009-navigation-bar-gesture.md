@@ -35,7 +35,14 @@ watches for its own edge swipe, and on the first device build most upward drags 
 the app grid instead. The bar is `Theme.itemSizeLarge` tall for that reason: every bit
 of height is height the drag can start in above what lipstick takes first. It is also
 translucent and lies over the page rather than above it, so the height costs the page
-nothing. A drag that lipstick takes mid-gesture arrives here as `onCanceled`, which
+nothing. Lying over the page would hide its last rows -- a button in a page footer would
+be unreachable -- so the engine is told about the bar: `RawWebView.footerMargin` is bound
+to the bar's height, and Gecko keeps that much of the viewport clear at the bottom. The
+page can then be scrolled until its own last line sits above the bar, and what is behind
+the glass is the page's own content rather than a hole. It is set through `Binding` rather
+than as a property of its own, because an engine build without `footerMargin` should cost
+a warning in the log, not a page that fails to load. The bar also carries a pulley
+indicator along its bottom edge: it behaves like a pulley, so it says so. A drag that lipstick takes mid-gesture arrives here as `onCanceled`, which
 finishes at zero so the page springs back instead of hanging. Press feedback is drawn from `pressedRegion` rather than by the controls
 themselves, because they no longer receive the press. While the address is being edited
 the handler stands down, so the field keeps its own taps for the caret, and the bar

@@ -97,6 +97,23 @@ void TabPersistence::updateTab(const Tab &tab)
     run(query);
 }
 
+void TabPersistence::saveOrder(const QList<Tab> &tabs)
+{
+    // Numbered from 1 so that insertTab's MAX(position) + 1 still lands last.
+    int position = 0;
+    for (const Tab &tab : tabs) {
+        if (tab.isPrivate || !tab.isValid()) {
+            continue;
+        }
+        ++position;
+        QSqlQuery query(m_storage.database());
+        query.prepare(QStringLiteral("UPDATE tab SET position = ? WHERE tab_id = ?"));
+        query.addBindValue(position);
+        query.addBindValue(tab.id);
+        run(query);
+    }
+}
+
 void TabPersistence::removeTab(int tabId)
 {
     QSqlQuery query(m_storage.database());

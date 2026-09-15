@@ -25,9 +25,8 @@ struct SearchEngine
 const QVector<SearchEngine> &searchEngines()
 {
     static const QVector<SearchEngine> engines{
-        {"duckduckgo", "DuckDuckGo", "https://duckduckgo.com/?q=%1"},
-        {"google", "Google", "https://www.google.com/search?q=%1"},
-        {"bing", "Bing", "https://www.bing.com/search?q=%1"},
+        {"qwant", "Qwant", "https://www.qwant.com/?q=%1"},
+        {"ecosia", "Ecosia", "https://www.ecosia.org/search?q=%1"},
         {"startpage", "Startpage", "https://www.startpage.com/do/search?q=%1"},
         {"wikipedia", "Wikipedia", "https://en.wikipedia.org/w/index.php?search=%1"},
     };
@@ -67,7 +66,7 @@ Settings::Settings(const QString &filePath, QObject *parent)
 
 QString Settings::defaultHomePage()
 {
-    return QStringLiteral("https://duckduckgo.com/");
+    return QStringLiteral("https://www.qwant.com/");
 }
 
 QString Settings::defaultSearchEngine()
@@ -154,6 +153,32 @@ QString Settings::searchUrl(const QString &query) const
 {
     const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
     return QString::fromLatin1(searchEngines().at(searchEngineIndex()).urlTemplate).arg(encoded);
+}
+
+// What the bar shows when the address is not being edited: the host, without the
+// scheme, without "www." and without the path -- the part that says whose page this
+// is. The field shows the whole url again the moment it is tapped, so nothing is
+// hidden from the person who asks for it.
+//
+// The host is taken as the engine reports it rather than reduced to a registrable
+// domain: "docs.example.com" and "example.com" are different sites, and deciding
+// where the site ends needs the public suffix list, which is not worth carrying and
+// would be wrong the day it goes stale. A port is kept because a port is a different
+// server. Anything without a host -- about:, data:, file: -- is shown as it is.
+QString Settings::displayAddress(const QString &url)
+{
+    const QUrl parsed(url, QUrl::TolerantMode);
+    QString host = parsed.host();
+    if (host.isEmpty()) {
+        return url;
+    }
+    if (host.startsWith(QLatin1String("www."))) {
+        host = host.mid(4);
+    }
+    if (parsed.port() > 0) {
+        return host + QLatin1Char(':') + QString::number(parsed.port());
+    }
+    return host;
 }
 
 QString Settings::urlForInput(const QString &input) const

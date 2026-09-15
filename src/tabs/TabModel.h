@@ -63,6 +63,8 @@ public:
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
     Q_INVOKABLE void closeTab(int index);
+    // Reorder, from the grid. The active tab stays active wherever it lands.
+    Q_INVOKABLE void moveTab(int from, int to);
     Q_INVOKABLE void closeActiveTab();
     Q_INVOKABLE void closeAllTabs();
     Q_INVOKABLE int indexOf(int tabId) const;

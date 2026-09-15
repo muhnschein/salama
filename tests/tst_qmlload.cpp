@@ -38,6 +38,7 @@ private slots:
     void rootWindowLoads();
     void addressBarNavigates();
     void navigationBarDrivesWebView();
+    void addressShowsHostAndSecurity();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabGrid();
@@ -273,9 +274,15 @@ void tst_qmlload::rootWindowLoads()
 
     // The engine reporting the first url is the first visit.
     QCOMPARE(m_core->history()->count(), 1);
+    // The bar carries the host, not the whole url.
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
-             Settings::defaultHomePage());
+             QStringLiteral("qwant.com"));
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
+
+    // The engine is told to keep the bar's height clear at the foot of the viewport,
+    // so a page can be scrolled until its own last line clears the bar.
+    QCOMPARE(webView->property("footerMargin").toReal(),
+             find(QStringLiteral("navigationBar"))->property("height").toReal());
 }
 
 void tst_qmlload::addressBarNavigates()
@@ -289,9 +296,14 @@ void tst_qmlload::addressBarNavigates()
     // Editing ends with the field hidden and the label showing the page again.
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
+             QStringLiteral("example.org"));
+    // Editing gets every character of it back.
+    tapBar(QStringLiteral("address"));
+    QCOMPARE(find(QStringLiteral("addressField"))->property("text").toString(),
              QStringLiteral("https://example.org"));
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
 
-    const QUrl searchUrl(QStringLiteral("https://duckduckgo.com/?q=sailfish%20os"));
+    const QUrl searchUrl(QStringLiteral("https://www.qwant.com/?q=sailfish%20os"));
     typeAddress(QStringLiteral("sailfish os"));
     QCOMPARE(webView->property("url").toUrl(), searchUrl);
 
@@ -366,6 +378,45 @@ void tst_qmlload::navigationBarDrivesWebView()
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 }
 
+// The address is shown short, and a connection the engine is unhappy with is drawn
+// on it. The warning is only for pages that claimed to be secure in the first place.
+void tst_qmlload::addressShowsHostAndSecurity()
+{
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *warning = find(QStringLiteral("securityWarning"));
+    QObject *webView = currentWebView();
+    QVERIFY(!warning->property("visible").toBool());
+    QVERIFY(!bar->property("tlsBroken").toBool());
+    QVERIFY(find(QStringLiteral("barPullIndicator"))->property("visible").toBool());
+
+    auto *security = webView->property("security").value<QObject *>();
+    QVERIFY(security != nullptr);
+    security->setProperty("allGood", false);
+    QVERIFY(bar->property("tlsBroken").toBool());
+    QVERIFY(warning->property("visible").toBool());
+
+    // Not while the address is being edited: the field then shows the whole url,
+    // which says more than any icon can.
+    tapBar(QStringLiteral("address"));
+    QVERIFY(!warning->property("visible").toBool());
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(warning->property("visible").toBool());
+
+    // An engine build that hands out no security object at all says nothing.
+    webView->setProperty("security", QVariant::fromValue<QObject *>(nullptr));
+    QVERIFY(!bar->property("tlsBroken").toBool());
+
+    // A page served over plain http is not broken TLS, it is no TLS.
+    m_core->tabs()->newTab(QStringLiteral("http://plain.example/"));
+    QObject *plainView = currentWebView();
+    QVERIFY(plainView != webView);
+    plainView->property("security").value<QObject *>()->setProperty("allGood", false);
+    QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
+             QStringLiteral("plain.example"));
+    QVERIFY(!bar->property("tlsBroken").toBool());
+    QVERIFY(!warning->property("visible").toBool());
+}
+
 void tst_qmlload::thumbnailCapturedOnLoad()
 {
     QObject *webView = currentWebView();
@@ -375,6 +426,10 @@ void tst_qmlload::thumbnailCapturedOnLoad()
     webView->setProperty("loading", false);
     const QString captured = webView->property("lastGrabPath").toString();
     QVERIFY(!captured.isEmpty());
+    // Grabbed at half size: the read back and the encode land in the middle of a
+    // gesture, and the grid never draws the picture wider than half the screen.
+    QCOMPARE(webView->property("lastGrabSize").toSize().width(),
+             int(webView->property("width").toReal() / 2));
     QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
              captured);
 
@@ -403,12 +458,12 @@ void tst_qmlload::faviconResolvedAfterLoad()
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
     QCOMPARE(webView->property("lastScript").toString(), m_core->engineMessages()->faviconScript());
-    QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://duckduckgo.com/icon.png"));
+    QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://www.qwant.com/icon.png"));
 
     webView->setProperty("scriptFails", true);
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://duckduckgo.com/favicon.ico"));
+    QCOMPARE(m_core->tabs()->activeFavicon(), QStringLiteral("https://www.qwant.com/favicon.ico"));
 }
 
 void tst_qmlload::tabGrid()
@@ -454,7 +509,7 @@ void tst_qmlload::tabGrid()
                 .toBool());
 
     // Tapping a preview is one way back, and it brings its tab with it.
-    click(previews.at(0));
+    QMetaObject::invokeMethod(previews.at(0), "tapped");
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
     QVERIFY(!page->property("tabsOpen").toBool());
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), Settings::defaultHomePage());
@@ -497,6 +552,25 @@ void tst_qmlload::tabGrid()
     view->setProperty("contentY", originY);
     QCOMPARE(view->property("overscroll").toReal(), qreal(0));
     QCOMPARE(view->property("y").toReal(), qreal(0));
+
+    // A cell carried across the grid reorders the tabs. The view of the tab that
+    // moved is carried with it rather than built again: a Repeater that recreated its
+    // delegates on a move would reload the page behind the preview.
+    m_core->tabs()->newTab(QStringLiteral("https://three.example/"));
+    pullUpToTabs();
+    QVERIFY(find(QStringLiteral("gridPullIndicator")) != nullptr);
+    QObject *carried = currentWebView();
+    const int carriedId = m_core->tabs()->activeTabId();
+    QCOMPARE(m_core->tabs()->activeTabIndex(), 1);
+    previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 2);
+    evaluate(previews.at(1), QStringLiteral("moveRequested(1, 0)"));
+    QCOMPARE(m_core->tabs()->activeTabId(), carriedId);
+    QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
+    QCOMPARE(currentWebView(), carried);
+    QCOMPARE(currentWebView()->property("url").toUrl().toString(),
+             QStringLiteral("https://three.example/"));
+    m_core->tabs()->closeTab(1);
 
     // The one control the grid carries of its own opens a tab and hands the page back.
     click(find(QStringLiteral("newTabButton")));

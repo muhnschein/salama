@@ -24,6 +24,7 @@ private slots:
     void newTabAppendsAndActivates();
     void newTabRejectsExternalUrls();
     void activation();
+    void moveTabReorders();
     void closeTabActivatesPrevious();
     void closeAllTabs();
     void urlUpdatesAndVisits();
@@ -152,6 +153,58 @@ void tst_tabmodel::activation()
     QCOMPARE(model.activeTabIndex(), 1);
     QCOMPARE(model.indexOf(a), 0);
     QCOMPARE(model.indexOf(1234), -1);
+}
+
+void tst_tabmodel::moveTabReorders()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    TabModel model(&persistence);
+    const int first = model.newTab(QStringLiteral("https://a.example/"));
+    const int second = model.newTab(QStringLiteral("https://b.example/"));
+    const int third = model.newTab(QStringLiteral("https://c.example/"));
+    model.activateTabById(first);
+
+    QSignalSpy movedSpy(&model, &TabModel::rowsMoved);
+    QSignalSpy activeSpy(&model, &TabModel::activeTabChanged);
+
+    // Carried to the end: the rest close up behind it.
+    model.moveTab(0, 2);
+    QCOMPARE(movedSpy.count(), 1);
+    QCOMPARE(role(model, 0, TabModel::TabIdRole).toInt(), second);
+    QCOMPARE(role(model, 1, TabModel::TabIdRole).toInt(), third);
+    QCOMPARE(role(model, 2, TabModel::TabIdRole).toInt(), first);
+    // The tab that moved is the same tab, and still the active one.
+    QCOMPARE(model.activeTabId(), first);
+    QCOMPARE(model.activeTabIndex(), 2);
+    QCOMPARE(activeSpy.count(), 1);
+    QVERIFY(role(model, 2, TabModel::ActiveRole).toBool());
+
+    // And back towards the front.
+    model.moveTab(2, 1);
+    QCOMPARE(role(model, 1, TabModel::TabIdRole).toInt(), first);
+    QCOMPARE(model.activeTabIndex(), 1);
+
+    // Nothing to do, nothing reported.
+    movedSpy.clear();
+    model.moveTab(1, 1);
+    model.moveTab(-1, 0);
+    model.moveTab(0, 3);
+    model.moveTab(3, 0);
+    QCOMPARE(movedSpy.count(), 0);
+    QCOMPARE(model.count(), 3);
+
+    // The order is the one a restart reads back.
+    const QList<Tuuli::Tab> stored = persistence.loadTabs();
+    QCOMPARE(stored.count(), 3);
+    QCOMPARE(stored.at(0).id, second);
+    QCOMPARE(stored.at(1).id, first);
+    QCOMPARE(stored.at(2).id, third);
+
+    // A tab opened afterwards still lands last.
+    const int fourth = model.newTab(QStringLiteral("https://d.example/"));
+    QCOMPARE(persistence.loadTabs().at(3).id, fourth);
 }
 
 void tst_tabmodel::closeTabActivatesPrevious()

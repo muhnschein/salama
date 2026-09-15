@@ -19,6 +19,13 @@ Item {
     property bool domContentLoaded: false
     property string httpUserAgent
     property var popupProvider
+    // RawWebView: what the engine keeps clear at the foot of the viewport.
+    property real footerMargin: 0
+    // QuickMozView's QMozSecurity. Assign null to stand in for an engine build that
+    // has none.
+    property QtObject security: QtObject {
+        property bool allGood: true
+    }
 
     // Test hooks
     property var calls: []
@@ -26,6 +33,7 @@ Item {
     property string scriptResult: ""
     property bool scriptFails: false
     property string lastGrabPath: ""
+    property var lastGrabSize
     property int grabCount: 0
     property bool grabFails: false
     property bool grabSaveFails: false
@@ -64,6 +72,7 @@ Item {
     // offscreen test platform does not provide. Calls back synchronously.
     function grabToImage(callback, targetSize) {
         grabCount += 1
+        lastGrabSize = targetSize
         if (grabFails) {
             return false
         }

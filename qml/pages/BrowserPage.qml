@@ -29,6 +29,23 @@ WebViewPage {
     property real dragOffset: 0
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? height : 0)
 
+    // What the engine is told to keep clear at the foot of the viewport, and what the
+    // bar is drawn over. The page can then be scrolled until its own last line sits
+    // above the bar instead of under it, while the bar stays translucent over what is
+    // still behind it.
+    readonly property real barHeight: navigationBar.height
+
+    // Gecko's own verdict on the connection, if this engine build hands one out.
+    // Only for https: a page served over http is not broken TLS, it is no TLS, and a
+    // warning on every plain page is a warning nobody reads.
+    readonly property bool tlsBroken: {
+        if (!currentView || TabModel.activeUrl.indexOf("https://") !== 0) {
+            return false
+        }
+        var security = currentView.security
+        return !!security && !security.allGood
+    }
+
     // How far the deck must be dragged for the gesture to commit when the finger
     // lifts. Short, because the deck follows the finger: by then the movement has
     // already shown what letting go will do.
@@ -187,6 +204,7 @@ WebViewPage {
                 canGoBack: browserPage.currentView ? browserPage.currentView.canGoBack : false
                 loading: browserPage.currentView ? browserPage.currentView.loading : false
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
+                tlsBroken: browserPage.tlsBroken
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.currentView.goBack()
                 onReload: browserPage.currentView.reload()
@@ -235,6 +253,15 @@ WebViewPage {
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
+            // Through Binding rather than as a property of its own: footerMargin
+            // belongs to Sailfish.WebView's RawWebView, and an engine build without it
+            // should cost a warning in the log, not a page that fails to load.
+            Binding {
+                target: webView
+                property: "footerMargin"
+                value: browserPage.barHeight
+            }
+
             function fetchFavicon() {
                 var pageUrl = url
                 runJavaScript(EngineMessages.faviconScript, function (href) {
@@ -254,11 +281,14 @@ WebViewPage {
                 if (path.length === 0) {
                     return
                 }
+                // Half size in each direction: the grab is a read back from the GPU
+                // and a PNG encode, both on the way into a gesture, and the grid never
+                // draws the picture wider than half the screen anyway.
                 grabToImage(function (result) {
                     if (result.saveToFile(path)) {
                         TabModel.updateThumbnail(tabId, path)
                     }
-                })
+                }, Qt.size(width / 2, height / 2))
             }
 
             onUrlChanged: TabModel.updateUrl(tabId, url)

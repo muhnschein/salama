@@ -85,12 +85,23 @@ Item {
             }
         }
 
+        // Cells that make way for a carried one glide; the carried one itself is
+        // already under the finger and must not be animated away from it.
+        displaced: Transition {
+            NumberAnimation {
+                properties: "x,y"
+                duration: 200
+                easing.type: Easing.OutQuad
+            }
+        }
+
         delegate: TabPreview {
-            onClicked: {
+            onTapped: {
                 TabModel.activateTab(index)
                 tabsView.tabActivated()
             }
             onCloseRequested: TabModel.closeTab(index)
+            onMoveRequested: TabModel.moveTab(from, to)
         }
 
         ViewPlaceholder {
@@ -100,5 +111,15 @@ Item {
         }
 
         VerticalScrollDecorator {}
+    }
+
+    // The top edge is a pulley: dragged down it hands the page back.
+    PullIndicator {
+        objectName: "gridPullIndicator"
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            top: parent.top
+            topMargin: Theme.paddingSmall
+        }
     }
 }

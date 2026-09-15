@@ -51,6 +51,11 @@ grid's own overscroll drops the page back onto it. Nothing is pushed onto the pa
 stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
 `DECISIONS/0010-tab-grid-deck.md`).
 
+The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped, and
+draws a red open padlock when the engine reports a broken TLS connection for an https page
+(`DECISIONS/0011-address-and-security.md`). The engine is told the bar's height through
+`footerMargin`, so a page can be scrolled clear of it.
+
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
 anything else becomes a search with the selected engine.

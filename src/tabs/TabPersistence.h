@@ -28,6 +28,8 @@ public:
     void insertTab(const Tab &tab);
     void updateTab(const Tab &tab);
     void removeTab(int tabId);
+    // Rewrites position from the order of the list; private tabs have no row to write.
+    void saveOrder(const QList<Tab> &tabs);
     void removeAllTabs();
     void setActiveTabId(int tabId);
 

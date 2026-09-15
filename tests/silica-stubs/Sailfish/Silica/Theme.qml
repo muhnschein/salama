@@ -24,6 +24,7 @@ QtObject {
     readonly property color secondaryColor: "#b0ffffff"
     readonly property color highlightColor: "#aaccff"
     readonly property color secondaryHighlightColor: "#b0aaccff"
+    readonly property color errorColor: "#ff4d4d"
     readonly property color highlightBackgroundColor: "#aaccff"
     readonly property color highlightDimmerColor: "#22447f"
     readonly property real highlightBackgroundOpacity: 0.3

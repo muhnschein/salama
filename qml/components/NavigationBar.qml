@@ -17,6 +17,7 @@
 // indistinguishable from the system's own bottom-edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import harbour.tuuli 1.0
 
 Item {
     id: navigationBar
@@ -26,6 +27,9 @@ Item {
     property bool loading: false
     property int loadProgress: 0
     property bool canGoBack: false
+    // The page came over TLS and the engine is not satisfied with it: a bad
+    // certificate, a broken chain, mixed content. Drawn as a red, open padlock.
+    property bool tlsBroken: false
     // The address turns into a field in place while it is being edited.
     property bool editing: false
 
@@ -165,15 +169,57 @@ Item {
             bottom: parent.bottom
         }
 
+        // An open padlock in the error colour, drawn rather than themed: there is no
+        // icon in the platform set for "this lock is open and that is wrong", and a
+        // warning that quietly fails to load would be worse than none. Hidden while
+        // the address is being edited, where the whole url says more than an icon.
+        Canvas {
+            id: securityIcon
+
+            objectName: "securityWarning"
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+            width: Theme.iconSizeSmall
+            height: width
+            visible: navigationBar.tlsBroken && !navigationBar.editing
+            onVisibleChanged: requestPaint()
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                ctx.strokeStyle = Theme.errorColor
+                ctx.fillStyle = Theme.errorColor
+                ctx.lineWidth = width / 9
+                ctx.lineCap = "round"
+                var bodyTop = height * 0.48
+                ctx.beginPath()
+                ctx.rect(width * 0.15, bodyTop, width * 0.62, height * 0.40)
+                ctx.fill()
+                // The shackle: hinged on the body's right shoulder, swung up and over,
+                // its left leg ending in the air instead of back in the body.
+                ctx.beginPath()
+                ctx.arc(width * 0.66, height * 0.34, width * 0.22, Math.PI, 0, false)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.moveTo(width * 0.88, height * 0.34)
+                ctx.lineTo(width * 0.88, bodyTop)
+                ctx.stroke()
+            }
+        }
+
         Label {
             objectName: "addressLabel"
             anchors {
                 left: parent.left
+                leftMargin: securityIcon.visible ? securityIcon.width + Theme.paddingSmall : 0
                 right: parent.right
                 verticalCenter: parent.verticalCenter
             }
             visible: !navigationBar.editing
-            text: navigationBar.url.length > 0 ? navigationBar.url
+            // The host, not the whole url (Settings.displayAddress). Tapping brings
+            // the field up with every character of it back.
+            text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
                                                : qsTr("Search or enter address")
             truncationMode: TruncationMode.Fade
             color: {
@@ -257,6 +303,17 @@ Item {
                 navigationBar.activate(navigationBar.regionAt(mouse.x))
             }
         }
+    }
+
+    // The bar is a pulley now, so it says so.
+    PullIndicator {
+        objectName: "barPullIndicator"
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: parent.bottom
+            bottomMargin: Theme.paddingSmall
+        }
+        visible: !navigationBar.editing
     }
 
     Rectangle {

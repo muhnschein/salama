@@ -16,6 +16,7 @@ class tst_tabpersistence : public QObject
 
 private slots:
     void roundTrip();
+    void saveOrderRenumbers();
     void ignoresPrivateAndInvalidTabs();
     void activeTabId();
     void removeAll();
@@ -63,6 +64,33 @@ void tst_tabpersistence::roundTrip()
     tabs = persistence.loadTabs();
     QCOMPARE(tabs.count(), 1);
     QCOMPARE(tabs.first().id, 3);
+}
+
+void tst_tabpersistence::saveOrderRenumbers()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    persistence.insertTab(makeTab(1, QStringLiteral("https://a.example/")));
+    persistence.insertTab(makeTab(2, QStringLiteral("https://b.example/")));
+    persistence.insertTab(makeTab(3, QStringLiteral("https://c.example/")));
+
+    QList<Tab> tabs = persistence.loadTabs();
+    tabs.move(0, 2);
+    // A private tab in the middle of the list has no row of its own and must not
+    // consume a position or upset the ones around it.
+    tabs.insert(1, makeTab(9, QStringLiteral("https://secret.example/"), true));
+    persistence.saveOrder(tabs);
+
+    const QList<Tab> reloaded = persistence.loadTabs();
+    QCOMPARE(reloaded.count(), 3);
+    QCOMPARE(reloaded.at(0).id, 2);
+    QCOMPARE(reloaded.at(1).id, 3);
+    QCOMPARE(reloaded.at(2).id, 1);
+
+    // Positions were renumbered from 1, so a new tab still lands after all of them.
+    persistence.insertTab(makeTab(4, QStringLiteral("https://d.example/")));
+    QCOMPARE(persistence.loadTabs().at(3).id, 4);
 }
 
 void tst_tabpersistence::ignoresPrivateAndInvalidTabs()

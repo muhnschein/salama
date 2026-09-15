@@ -44,6 +44,15 @@ would go missing.
 
 Tapping a preview does the same thing as the pull, with the tab it names.
 
+A cell can also be **carried** to another place in the grid. The gesture is a sideways
+drag, because the grid only ever flicks up and down: across the cell is the one movement
+nothing else is waiting for, and it needs no press-and-hold to disambiguate. Once a cell
+is held the delegate sets `preventStealing`, so the grid cannot take the drag back, and
+what moves is the cell's *contents*, not the cell: the view owns where cells are, and
+after `TabModel.moveTab()` the cell underneath has already moved to meet them. Only the
+displaced cells are animated; the carried one is under a finger and must not be animated
+away from it.
+
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
@@ -56,6 +65,14 @@ before they are first shown; it is `visible` only while the deck is raised, so t
 engine has the screen to itself the rest of the time. The previews are captured when a
 drag starts, which is before the first pixel of the grid can be seen — and a drag that
 springs back has captured one for nothing, which costs a grab and a file.
+
+That grab lands at the worst moment for it: a read back from the GPU and a PNG encode,
+on the first frame of a gesture. On device the transition was visibly rough for it, so
+the grab is taken at half the screen's width and height. The grid never draws a preview
+wider than half the screen, so nothing is lost, and there is a quarter as much to read
+back and encode. If it is still rough, the next thing to try is capturing after the deck
+has settled rather than before it moves — at the cost of a preview that is one gesture
+out of date while the grid comes up.
 
 The deck's two layers sit outside the window when the deck is at either end, and the
 window is what clips them; nothing is set to `clip`, which the engine's own composited

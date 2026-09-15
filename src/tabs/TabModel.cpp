@@ -191,6 +191,28 @@ bool TabModel::activateTabById(int tabId)
     return true;
 }
 
+void TabModel::moveTab(int from, int to)
+{
+    const int last = m_tabs.count() - 1;
+    if (from == to || from < 0 || from > last || to < 0 || to > last) {
+        return;
+    }
+    // beginMoveRows wants the row the block lands *before*, which is one past the
+    // destination when moving down the list.
+    const int destination = to > from ? to + 1 : to;
+    if (!beginMoveRows(QModelIndex(), from, from, QModelIndex(), destination)) {
+        return;
+    }
+    m_tabs.move(from, to);
+    endMoveRows();
+
+    if (m_persistence != nullptr) {
+        m_persistence->saveOrder(m_tabs);
+    }
+    // activeTabIndex is a position, and positions have just changed.
+    emit activeTabChanged();
+}
+
 void TabModel::closeTab(int index)
 {
     if (index < 0 || index >= m_tabs.count()) {

@@ -41,6 +41,8 @@ public:
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
+    // The other direction: the url as the bar shows it while it is not being edited.
+    Q_INVOKABLE static QString displayAddress(const QString &url);
 
     static QString defaultHomePage();
     static QString defaultSearchEngine();
