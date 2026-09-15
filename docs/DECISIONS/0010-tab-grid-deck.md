@@ -61,11 +61,21 @@ raises `released` before `clicked`, so the flag the release resets cannot be the
 click reads: `held` ends the carry, and a second flag, `carried`, lives from the moment
 the cell is picked up until the next press and is what `releaseTap()` asks.
 
-The grid carries no header. The tab it would name is the one the page comes back to, and
-the count is the cells themselves; both were in the way of the previews. The one control
-it keeps — new tab — is a row along the **foot** of the view, drawn over the cells in the
-same glass as the navigation bar rather than scrolling among them, with a footer item of
-the same height so the last row can still be scrolled clear of it.
+The grid carries two rows of its own, both drawn over the cells in the same glass as the
+navigation bar rather than scrolling among them, each with a spacer of the same height in
+the view's header and footer so that no cell is stranded under either:
+
+* along the **head**, what the grid holds — "*n* tabs". It replaced a page header that
+  named the active tab, which said what the page behind the grid already says. Its real
+  work is the row of cells below it: without it the first row, and the close button in its
+  corner, sat under the device's own screen cutout.
+* along the **foot**, the one control the grid offers: new tab.
+
+A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
+picture's own aspect ratio, rather than with `PreserveAspectCrop`. The picture is of a
+screen — tall — and the cell is not; cropping to fill centres it, so every preview showed
+the middle of a page whatever the reader had been looking at. Anchored at the top, what
+shows is the top of what was last on the screen.
 
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two

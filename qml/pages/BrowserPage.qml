@@ -121,6 +121,28 @@ WebViewPage {
         }
     }
 
+    // What the menu asks of the current page: the bar carries the address and the
+    // menu, and nothing else (docs/DECISIONS/0009-navigation-bar-gesture.md).
+    readonly property bool canGoBack: currentView ? currentView.canGoBack === true : false
+    readonly property bool loading: currentView ? currentView.loading === true : false
+
+    function goBack() {
+        if (canGoBack) {
+            currentView.goBack()
+        }
+    }
+
+    function reloadOrStop() {
+        if (!currentView) {
+            return
+        }
+        if (currentView.loading) {
+            currentView.stop()
+        } else {
+            currentView.reload()
+        }
+    }
+
     // Refresh the grid's picture of this tab before it can be seen.
     function captureCurrent() {
         if (currentView) {
@@ -257,14 +279,10 @@ WebViewPage {
 
                 url: TabModel.activeUrl
                 privateTab: TabModel.activeIsPrivate
-                canGoBack: browserPage.currentView ? browserPage.currentView.canGoBack : false
-                loading: browserPage.currentView ? browserPage.currentView.loading : false
+                loading: browserPage.loading
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
                 tlsBroken: browserPage.tlsBroken
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
-                onBack: browserPage.currentView.goBack()
-                onReload: browserPage.currentView.reload()
-                onStop: browserPage.currentView.stop()
                 onShowMenu: pageStack.push(Qt.resolvedUrl("MenuPage.qml"), {
                                                "browserPage": browserPage
                                            })

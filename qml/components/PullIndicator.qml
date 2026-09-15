@@ -13,7 +13,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Rectangle {
-    width: Theme.itemSizeSmall
+    width: Theme.itemSizeMedium
     height: Theme.paddingSmall / 2
     radius: height / 2
     color: Theme.highlightColor

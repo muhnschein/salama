@@ -18,7 +18,8 @@ workaround; a failure blocks the tag.
 - [ ] A site with a bad certificate (expired.badssl.com) draws a red warning glyph left of the host; a plain http site draws none; neither shows while the address is being edited.
 - [ ] Scrolling a page down takes the navigation bar off the bottom, so a button at the very foot of a page can be reached; scrolling back up brings the bar in again, and loading a new page brings it in too.
 - [ ] The address and the warning beside it sit centred in the bar; no port number is shown.
-- [ ] Back, reload and stop act on the current page; progress shows while loading.
+- [ ] Menu > Back and Menu > Reload act on the current page; Reload reads "Stop" while a page is loading; progress shows on the bar while loading.
+- [ ] The bar carries the address and the menu only, and the address is centred on the screen.
 - [ ] Dragging the navigation bar upwards pulls the tab grid up from under the page, from anywhere along the bar including over the icons; tapping instead does not.
 - [ ] The grid follows the finger while it moves, and a drag that stops short of the threshold springs back. The movement is vertical, never sideways.
 - [ ] Dragging the grid downwards past its top brings the page back the same way; a short pull springs back to the grid.
@@ -26,6 +27,8 @@ workaround; a failure blocks the tag.
 - [ ] The bar is translucent and the page runs underneath it.
 - [ ] A link with `target=_blank` and an in-page navigation both stay in the tab.
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes.
+- [ ] A preview shows the top of what was last on screen for that tab, not the middle of the page.
+- [ ] The grid's head says how many tabs there are, and the first row of cells -- with its close buttons -- is clear of the screen cutout.
 - [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.
 - [ ] Both pulley indicators are visible: along the top of the navigation bar and along the top of the tab grid.
 - [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.

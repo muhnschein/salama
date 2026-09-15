@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 tuuli contributors
 //
-// The bar along the bottom of the browsing page: back, the address, reload/stop and
-// the menu. Dragging it upwards pulls the tab grid up from underneath the page.
+// The bar along the bottom of the browsing page: the address, and the menu. Dragging
+// it upwards pulls the tab grid up from underneath the page.
 //
-// One MouseArea covers the whole bar and owns every press, and the icons are just
-// icons. A drag has to be recognised from the press that starts it, and the controls
-// tile the bar edge to edge: a handler behind them is never reached, and one that
-// lets presses through to them cannot see the movement afterwards. So the press is
-// taken here, the region under it decides what a tap means, and the same region
-// drives the pressed highlight.
+// Back and reload are not here. The address is what a browser's bar is for, and the
+// width those two took was width the address did not have; they live in the menu now
+// (docs/DECISIONS/0009-navigation-bar-gesture.md).
+//
+// One MouseArea covers the whole bar and owns every press, and the menu is just an
+// icon. A drag has to be recognised from the press that starts it, and a handler
+// behind the controls is never reached -- while one that lets presses through to them
+// cannot see the movement afterwards. So the press is taken here, the region under it
+// decides what a tap means, and the same region drives the pressed highlight.
 //
 // The drag is reported as a distance, not as a finished gesture: the page follows the
 // finger while it moves and decides when it lifts. A handler that only speaks at its
@@ -26,23 +29,27 @@ Item {
     property bool privateTab: false
     property bool loading: false
     property int loadProgress: 0
-    property bool canGoBack: false
     // The page came over TLS and the engine is not satisfied with it: a bad
-    // certificate, a broken chain, mixed content. Drawn as a red, open padlock.
+    // certificate, a broken chain, mixed content.
     property bool tlsBroken: false
     // The address turns into a field in place while it is being edited.
     property bool editing: false
 
     signal accepted(string text)
-    signal back()
-    signal reload()
-    signal stop()
     signal showMenu()
     // Upward drag, in pixels from where the finger went down. Negative means it has
     // come back below its own starting point.
     signal dragStarted()
     signal dragMoved(real distance)
     signal dragFinished(real distance)
+
+    // Where the address may be drawn: from the page margin to the menu icon.
+    readonly property real addressLeft: Theme.horizontalPageMargin
+    readonly property real addressRight: menuIcon.x - Theme.paddingLarge
+    // The widest the address can be while staying centred on the screen rather than
+    // in the space left over beside the menu.
+    readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
+                                                      addressRight - width / 2)
 
     // The bar is the whole touch target for the drag, and it sits in the strip the
     // system watches for its own edge swipe. Every bit of height here is height the
@@ -102,31 +109,15 @@ Item {
     // testing: the gesture handler sits on top of everything, so childAt() would
     // only ever return the handler itself.
     function regionAt(x) {
-        if (x < addressArea.x) {
-            return "back"
-        }
         if (x >= menuIcon.x) {
             return "menu"
-        }
-        if (x >= reloadIcon.x) {
-            return "reload"
         }
         return "address"
     }
 
     function activate(region) {
-        if (region === "back") {
-            if (navigationBar.canGoBack) {
-                navigationBar.back()
-            }
-        } else if (region === "menu") {
+        if (region === "menu") {
             navigationBar.showMenu()
-        } else if (region === "reload") {
-            if (navigationBar.loading) {
-                navigationBar.stop()
-            } else {
-                navigationBar.reload()
-            }
         } else if (region === "address") {
             if (!navigationBar.editing) {
                 navigationBar.beginEditing()
@@ -140,22 +131,6 @@ Item {
         objectName: "navigationBarBackground"
         anchors.fill: parent
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
-    }
-
-    Icon {
-        id: backIcon
-
-        objectName: "backButton"
-        anchors {
-            left: parent.left
-            leftMargin: Theme.horizontalPageMargin
-            verticalCenter: parent.verticalCenter
-        }
-        width: Theme.iconSizeMedium
-        height: width
-        source: "image://theme/icon-m-back"
-        opacity: navigationBar.canGoBack ? 1.0 : Theme.highlightBackgroundOpacity
-        highlighted: gestureArea.pressedRegion === "back"
     }
 
     Icon {
@@ -173,107 +148,86 @@ Item {
         highlighted: gestureArea.pressedRegion === "menu"
     }
 
-    Icon {
-        id: reloadIcon
+    // Centred on the screen rather than in the space beside the menu: the address is
+    // the bar's subject, and a subject that sits off to one side reads as a label.
+    Row {
+        id: addressRow
 
-        objectName: "reloadButton"
         anchors {
-            right: menuIcon.left
-            rightMargin: Theme.paddingLarge
+            horizontalCenter: parent.horizontalCenter
             verticalCenter: parent.verticalCenter
         }
-        width: Theme.iconSizeMedium
-        height: width
-        source: navigationBar.loading ? "image://theme/icon-m-clear"
-                                      : "image://theme/icon-m-refresh"
-        highlighted: gestureArea.pressedRegion === "reload"
-    }
-
-    Item {
-        id: addressArea
-
-        anchors {
-            left: backIcon.right
-            leftMargin: Theme.paddingLarge
-            right: reloadIcon.left
-            rightMargin: Theme.paddingLarge
-            top: parent.top
-            bottom: parent.bottom
-        }
-        // Above the gesture handler, so that the field keeps its own presses for the
-        // caret while the rest of the bar stays live -- the controls still work and the
-        // bar can still be dragged while an address is being typed. The label and the
-        // warning accept no presses of their own and fall through to the handler.
+        // While editing, the field below says everything this row would.
+        visible: !navigationBar.editing
+        spacing: Theme.paddingSmall
+        // Above the gesture handler for the same reason the field is: nothing here
+        // accepts a press, so every press falls through to it anyway.
         z: 1
 
-        Row {
-            id: addressRow
+        // The platform's own warning glyph in the error colour. There is no open
+        // padlock in the icon set, and sailfish-browser draws this same icon for
+        // this same state (apps/browser/qml/pages/components/ToolBar.qml).
+        Icon {
+            id: securityIcon
 
-            anchors {
-                horizontalCenter: parent.horizontalCenter
-                verticalCenter: parent.verticalCenter
-            }
-            // While editing, the field below says everything this row would.
-            visible: !navigationBar.editing
-            spacing: Theme.paddingSmall
+            objectName: "securityWarning"
+            anchors.verticalCenter: parent.verticalCenter
+            width: Theme.iconSizeSmall
+            height: width
+            visible: navigationBar.tlsBroken
+            source: "image://theme/icon-s-filled-warning"
+            color: Theme.errorColor
+        }
 
-            // The platform's own warning glyph in the error colour. There is no open
-            // padlock in the icon set, and sailfish-browser draws this same icon for
-            // this same state (apps/browser/qml/pages/components/ToolBar.qml).
-            Icon {
-                id: securityIcon
-
-                objectName: "securityWarning"
-                anchors.verticalCenter: parent.verticalCenter
-                width: Theme.iconSizeSmall
-                height: width
-                visible: navigationBar.tlsBroken
-                source: "image://theme/icon-s-filled-warning"
-                color: Theme.errorColor
-            }
-
-            Label {
-                objectName: "addressLabel"
-                anchors.verticalCenter: parent.verticalCenter
-                // Wide enough for the text and no wider, so the row centres on what is
-                // actually drawn; never wider than the space between the controls.
-                width: Math.min(implicitWidth, addressArea.width
-                                - (securityIcon.visible ? securityIcon.width + addressRow.spacing
-                                                        : 0))
-                // The host, not the whole url (Settings.displayAddress). Tapping brings
-                // the field up with every character of it back.
-                text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
-                                                   : qsTr("Search or enter address")
-                truncationMode: TruncationMode.Fade
-                color: {
-                    if (gestureArea.pressedRegion === "address") {
-                        return Theme.highlightColor
-                    }
-                    return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
+        Label {
+            objectName: "addressLabel"
+            anchors.verticalCenter: parent.verticalCenter
+            // Wide enough for the text and no wider, so the row centres on what is
+            // actually drawn, and never so wide that a centred row reaches the menu.
+            width: Math.min(implicitWidth, navigationBar.centredWidth
+                            - (securityIcon.visible ? securityIcon.width + addressRow.spacing
+                                                    : 0))
+            // The host, not the whole url (Settings.displayAddress). Tapping brings
+            // the field up with every character of it back.
+            text: navigationBar.url.length > 0 ? Settings.displayAddress(navigationBar.url)
+                                               : qsTr("Search or enter address")
+            truncationMode: TruncationMode.Fade
+            color: {
+                if (gestureArea.pressedRegion === "address") {
+                    return Theme.highlightColor
                 }
-                font.pixelSize: Theme.fontSizeSmall
+                return navigationBar.privateTab ? Theme.highlightColor : Theme.primaryColor
             }
+            font.pixelSize: Theme.fontSizeSmall
         }
+    }
 
-        TextField {
-            id: urlField
+    TextField {
+        id: urlField
 
-            objectName: "addressField"
-            anchors {
-                left: parent.left
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-                verticalCenterOffset: navigationBar.textCentringOffset(urlField)
-            }
-            visible: navigationBar.editing
-            label: navigationBar.privateTab ? qsTr("Private tab") : ""
-            placeholderText: qsTr("Search or enter address")
-            inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhUrlCharactersOnly
-            EnterKey.enabled: text.length > 0
-            EnterKey.iconSource: "image://theme/icon-m-enter-accept"
-            EnterKey.onClicked: navigationBar.submit()
-            onActiveFocusChanged: navigationBar.focusChanged(activeFocus)
+        objectName: "addressField"
+        // The whole width the bar can spare, which is all of it but the menu: a field
+        // is for typing into, and the bar has no other use for the room.
+        x: navigationBar.addressLeft
+        width: navigationBar.addressRight - navigationBar.addressLeft
+        anchors {
+            verticalCenter: parent.verticalCenter
+            verticalCenterOffset: navigationBar.textCentringOffset(urlField)
         }
+        // Above the gesture handler: while the address is being edited the field needs
+        // its own presses for the caret, and the rest of the bar stays live.
+        z: 1
+        visible: navigationBar.editing
+        label: navigationBar.privateTab ? qsTr("Private tab") : ""
+        placeholderText: qsTr("Search or enter address")
+        // The same size the host is drawn at, so the text does not jump when the
+        // label becomes a field.
+        font.pixelSize: Theme.fontSizeSmall
+        inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhUrlCharactersOnly
+        EnterKey.enabled: text.length > 0
+        EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+        EnterKey.onClicked: navigationBar.submit()
+        onActiveFocusChanged: navigationBar.focusChanged(activeFocus)
     }
 
     // The input panel closing is the other end of editing: the field can keep focus
@@ -306,7 +260,7 @@ Item {
         property bool dragging: false
         property bool pressedOnBar: false
         property string pressedRegion: ""
-        readonly property real reach: Theme.itemSizeExtraSmall
+        readonly property real reach: Theme.itemSizeExtraSmall * 0.75
 
         objectName: "navigationBarGesture"
         anchors {

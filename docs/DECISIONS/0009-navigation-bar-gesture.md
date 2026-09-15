@@ -6,9 +6,22 @@ drops the forward button, and reaches the tab grid by dragging that bar upwards 
 than by tapping a button.
 
 ## Decision
-`components/NavigationBar.qml` holds all four controls. The address is a `Label` until
-tapped and a `TextField` in the same place after, so editing needs no second screen.
-Forward navigation is dropped from the bar; the gesture replaces the tabs button.
+`components/NavigationBar.qml` holds **the address and the menu**, and nothing else. The
+address is a `Label` until tapped and a `TextField` in the same place after, so editing
+needs no second screen. Forward navigation is dropped from the bar; the gesture replaces
+the tabs button.
+
+Back and reload were on it too, and are not any more: the width of two icons is width the
+address did not have, and on a phone the address is what the bar is for. They are
+`backItem` and `reloadItem` in the menu, acting on the page through `BrowserPage.goBack()`
+and `BrowserPage.reloadOrStop()`. The cost is honest and worth naming: back is two taps
+now. It is the price of a field that uses the bar, and if it turns out to be the wrong
+trade the smaller one is to bring back only back and leave reload in the menu.
+
+The address is centred on the **screen**, not in the room left beside the menu icon:
+`centredWidth` is twice the smaller of the two gaps either side of the centre, so a
+centred row can never reach the menu. The field spans the whole of that room, at the size
+the host is drawn at, so the text does not jump when a label becomes a field.
 
 Silica's `PushUpMenu` attaches to a `Flickable`, and the `WebView` is a `QuickMozView`
 that scrolls itself, so a stock pulley cannot be used on the browsing page. The bar
@@ -27,7 +40,8 @@ bar moves up under it, so a distance measured against the bar shrinks as the dec
 which drops the deck back, which grows the distance again. On device that was the whole
 screen jumping up and down for as long as the finger was held.
 
-The handler also **reaches above the bar** by `Theme.itemSizeExtraSmall`. The drag has to
+The handler also **reaches above the bar**, by three quarters of
+`Theme.itemSizeExtraSmall`. The drag has to
 start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
 lies in that strip. A tap in the reach does nothing — the page does not get it either,
 which is the price of the reach and the reason it is only a strip. The pulley indicator

@@ -152,6 +152,18 @@
         <source>Tabs</source>
         <translation>Välilehdet</translation>
     </message>
+    <message>
+        <source>Back</source>
+        <translation>Takaisin</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Pysäytä</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation>Lataa uudelleen</translation>
+    </message>
 </context>
 <context>
     <name>NavigationBar</name>
@@ -243,6 +255,13 @@
     <message>
         <source>Open one with the button below</source>
         <translation>Avaa välilehti alla olevalla painikkeella</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
     </message>
 </context>
 </TS>

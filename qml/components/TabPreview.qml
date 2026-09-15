@@ -112,15 +112,27 @@ BackgroundItem {
                 margins: Theme.paddingMedium
             }
             height: parent.height - caption.height - Theme.paddingMedium * 3
+            clip: true
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
             border.width: preview.highlighted ? Theme.paddingSmall / 2 : 0
             border.color: Theme.highlightColor
 
+            // As wide as the cell and anchored to its top, at the picture's own
+            // aspect: what shows is then the top of what was last on the screen.
+            // PreserveAspectCrop centres instead, and a screen-shaped picture in a
+            // cell-shaped box centres on the middle of the page -- which is neither
+            // where the reader was at the top of a page nor where they were at its
+            // foot.
             Image {
                 objectName: "tabPreviewImage"
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-                clip: true
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                }
+                height: sourceSize.width > 0 ? width * sourceSize.height / sourceSize.width
+                                             : parent.height
+                fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
                 visible: status === Image.Ready

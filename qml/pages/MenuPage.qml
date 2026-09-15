@@ -41,6 +41,38 @@ Page {
                 description: TabModel.activeUrl
             }
 
+            // Back and reload live here now: the bar gave their width to the address
+            // (docs/DECISIONS/0009-navigation-bar-gesture.md).
+            ListItem {
+                objectName: "backItem"
+                enabled: menuPage.browserPage ? menuPage.browserPage.canGoBack : false
+                onClicked: {
+                    pageStack.pop()
+                    menuPage.browserPage.goBack()
+                }
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Back")
+                }
+            }
+
+            ListItem {
+                objectName: "reloadItem"
+                onClicked: {
+                    pageStack.pop()
+                    menuPage.browserPage.reloadOrStop()
+                }
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: menuPage.browserPage && menuPage.browserPage.loading ? qsTr("Stop")
+                                                                              : qsTr("Reload")
+                }
+            }
+
             ListItem {
                 objectName: "newTabItem"
                 onClicked: {

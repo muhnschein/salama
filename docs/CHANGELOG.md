@@ -12,7 +12,7 @@ Versions follow semantic versioning.
 - A red warning on the address when the engine reports a broken TLS connection, and a navigation bar that gets out of the way when a page is scrolled down.
 - Pages laid out at a phone-sized zoom rather than the engine's smaller default.
 - Tabs can be carried to another place in the grid; the order is kept across restarts.
-- Back, reload, stop and share.
+- Back, reload and stop in the menu, and share.
 - History with search, and bookmarks with edit and remove.
 - Private tabs that leave no history and keep no cookies.
 - Downloads through the platform transfer UI.

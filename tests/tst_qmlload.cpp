@@ -326,39 +326,36 @@ void tst_qmlload::navigationBarDrivesWebView()
     QObject *webView = currentWebView();
     QObject *bar = find(QStringLiteral("navigationBar"));
 
-    // Every control on the bar is reached by the region a press lands in. The
-    // boundaries are asserted against the items themselves, because a region that
-    // no press can land in is exactly how the first gesture handler failed.
+    // The bar carries the address and the menu, and nothing else: back and reload
+    // took width the address did not have, and are in the menu now. Each is reached
+    // by the region a press lands in, and the boundary is asserted against the icon
+    // itself, because a region no press can land in is exactly how the first gesture
+    // handler failed.
     const qreal barWidth = bar->property("width").toReal();
     QVERIFY(barWidth > 0);
-    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("back"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("address"));
     QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width / 2)")).toString(),
              QStringLiteral("address"));
     QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
              QStringLiteral("menu"));
-    QObject *reloadIcon = find(QStringLiteral("reloadButton"));
-    const qreal reloadX = reloadIcon->property("x").toReal();
-    QVERIFY(reloadX > 0);
-    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(%1)").arg(reloadX + 1)).toString(),
-             QStringLiteral("reload"));
+    QVERIFY(find(QStringLiteral("backButton")) == nullptr);
+    QVERIFY(find(QStringLiteral("reloadButton")) == nullptr);
 
-    // Back is ignored until there is somewhere to go back to.
-    tapBar(QStringLiteral("back"));
-    QVERIFY(webView->property("calls").toStringList().isEmpty());
-    webView->setProperty("canGoBack", true);
-    tapBar(QStringLiteral("back"));
-    tapBar(QStringLiteral("reload"));
-    QCOMPARE(webView->property("calls").toStringList(),
-             QStringList({QStringLiteral("goBack"), QStringLiteral("reload")}));
+    // The address is centred on the screen rather than in the room left beside the
+    // menu, and it never reaches the menu.
+    QObject *addressLabel = find(QStringLiteral("addressLabel"));
+    const qreal centred = bar->property("centredWidth").toReal();
+    QVERIFY(centred > 0);
+    QVERIFY(centred <=
+            barWidth - 2 * (barWidth - find(QStringLiteral("menuButton"))->property("x").toReal()));
+    QVERIFY(addressLabel->property("width").toReal() <= centred);
 
     QObject *progress = find(QStringLiteral("loadProgress"));
     QVERIFY(!progress->property("visible").toBool());
     webView->setProperty("loading", true);
     webView->setProperty("loadProgress", 50);
     QVERIFY(progress->property("visible").toBool());
-    // The same region stops a load that is running.
-    tapBar(QStringLiteral("reload"));
-    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
+    webView->setProperty("loading", false);
 
     // The bar reports how far it has been dragged and the page decides. The deck
     // follows the finger while it moves, and a drag that stops short springs back:
@@ -502,13 +499,12 @@ void tst_qmlload::editingEndsWithTheKeyboard()
     evaluate(bar, QStringLiteral("keyboardVisibilityChanged(true)"));
     QVERIFY(bar->property("editing").toBool());
 
-    // The bar stays live while a field is up: the controls answer and it can still be
+    // The bar stays live while a field is up: the menu answers and it can still be
     // dragged. The address region is the one that does not, because the field has it.
-    QObject *webView = currentWebView();
-    webView->setProperty("canGoBack", true);
-    tapBar(QStringLiteral("back"));
-    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("goBack"));
     QVERIFY(find(QStringLiteral("navigationBarGesture"))->property("enabled").toBool());
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("menuPage"));
+    popPage();
     QVERIFY(bar->property("editing").toBool());
 
     evaluate(bar, QStringLiteral("endEditing()"));
@@ -578,8 +574,12 @@ void tst_qmlload::tabGrid()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QVERIFY(grid->property("visible").toBool());
-    // The grid carries one control of its own, in a row drawn over the cells.
+    // The grid carries two rows of its own, drawn over the cells: what it holds, and
+    // the one control it offers. The first is also what keeps the top row of cells
+    // clear of the screen's own cutout.
     QVERIFY(find(QStringLiteral("newTabRow")) != nullptr);
+    QCOMPARE(find(QStringLiteral("tabCountLabel"))->property("text").toString(),
+             QStringLiteral("2 tab(s)"));
 
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
@@ -757,6 +757,23 @@ void tst_qmlload::menuPage()
              QStringLiteral("settingsPage"));
     popPage();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+
+    // Back and reload are in the menu now, and act on the page behind it.
+    QObject *webView = currentWebView();
+    QObject *backItem = openMenuItem(QStringLiteral("backItem"));
+    Q_UNUSED(backItem)
+    QVERIFY(webView->property("calls").toStringList().isEmpty());
+    popPage();
+    webView->setProperty("canGoBack", true);
+    openMenuItem(QStringLiteral("backItem"));
+    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("goBack"));
+
+    openMenuItem(QStringLiteral("reloadItem"));
+    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("reload"));
+    webView->setProperty("loading", true);
+    openMenuItem(QStringLiteral("reloadItem"));
+    QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
+    webView->setProperty("loading", false);
 
     // Tabs is the way into the grid for a hand that is already in the menu, or a
     // device where the drag is awkward. It comes back to this page and opens the

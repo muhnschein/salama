@@ -61,8 +61,15 @@ Item {
         }
         onDragEnded: tabsView.pullFinished(pullDistance)
 
-        // Room at the foot for the row below, which is drawn over the cells rather
-        // than scrolling among them.
+        // Room at the head and the foot for the two rows below, which are drawn over
+        // the cells rather than scrolling among them. The head also keeps the first
+        // row of cells -- and the close button in its corner -- out from under the
+        // device's own cutout.
+        header: Item {
+            width: tabGrid.width
+            height: countRow.height
+        }
+
         footer: Item {
             width: tabGrid.width
             height: newTabRow.height
@@ -84,6 +91,29 @@ Item {
         }
 
         VerticalScrollDecorator {}
+    }
+
+    // What the grid says about itself, over the cells rather than among them. It is
+    // also what keeps the top row clear of the screen's cutout.
+    Rectangle {
+        id: countRow
+
+        objectName: "tabCountRow"
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+        }
+        height: Theme.itemSizeLarge
+        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+
+        Label {
+            objectName: "tabCountLabel"
+            anchors.centerIn: parent
+            text: qsTr("%n tab(s)", "", TabModel.count)
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
+        }
     }
 
     // The one control the grid carries of its own, over the cells rather than among
