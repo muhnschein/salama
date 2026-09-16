@@ -1,0 +1,92 @@
+# harbour-tuuli developer entry points.
+#
+# `make check` runs exactly what CI runs: from a clean checkout, without a phone,
+# an SDK, or network access. Every target below is also usable on its own.
+
+BUILD ?= build
+JOBS ?= $(shell nproc 2>/dev/null || echo 2)
+CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DTUULI_COVERAGE=ON
+COVERAGE_MIN ?= 80
+
+CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
+TS_FILES := translations/harbour-tuuli.ts translations/harbour-tuuli-fi.ts
+
+.PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
+        harbour-check harbour-selftest sonar-selftest sonar-reports lint check \
+        translations clean
+
+all: build
+
+configure: $(BUILD)/CMakeCache.txt
+
+$(BUILD)/CMakeCache.txt: CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt translations/CMakeLists.txt
+	cmake -S . -B $(BUILD) $(CMAKE_FLAGS)
+
+build: configure
+	cmake --build $(BUILD) -j $(JOBS)
+
+# Tests run one per process, serially, with no retries (a second-attempt pass is a defect).
+test: build
+	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 120
+
+# --exclude-throw-branches and --exclude-unreachable-branches drop the edges the
+# compiler generates for C++ exceptions -- an allocation that could throw, an
+# implicit destructor unwinding -- which no test can take and which gcov counts
+# anyway. They were 632 of 1732 "branches" here, dragging branch coverage to 58%
+# and, through the blended line+condition figure SonarQube reads, the imported
+# coverage with it. Line coverage, which $(COVERAGE_MIN) gates, is unaffected.
+coverage: test
+	mkdir -p $(BUILD)/coverage
+	gcovr --root . --object-directory $(BUILD) \
+	      --filter 'src/' --exclude 'src/main\.cpp' \
+	      --exclude-throw-branches --exclude-unreachable-branches \
+	      --print-summary --fail-under-line $(COVERAGE_MIN) \
+	      --sonarqube $(BUILD)/coverage/sonar-coverage.xml \
+	      --xml $(BUILD)/coverage/cobertura.xml \
+	      --html-details $(BUILD)/coverage/index.html
+
+fmt:
+	clang-format --dry-run --Werror $(CXX_SOURCES)
+
+fmt-apply:
+	clang-format -i $(CXX_SOURCES)
+
+tidy: configure
+	ci/clang-tidy.sh $(BUILD)
+
+qml-lint:
+	ci/qml-lint.sh
+
+packaging-lint:
+	ci/packaging-lint.sh
+
+harbour-check:
+	ci/harbour-check.sh
+
+harbour-selftest:
+	ci/harbour-check-selftest.sh
+
+sonar-selftest:
+	ci/sonar-report-selftest.sh
+
+# What SonarQube Cloud imports rather than measures: the coverage report and the
+# compilation database its C++ analyser reads. sonar-project.properties names both
+# under build/, so a different BUILD needs that file changed with it. Not part of
+# `check`: Sonar is a report, and this only gathers what the scan uploads.
+sonar-reports: coverage
+	@test -f $(BUILD)/compile_commands.json || { \
+		echo "sonar-reports: no $(BUILD)/compile_commands.json" >&2; exit 1; }
+	@test "$(BUILD)" = build || \
+		echo "sonar-reports: BUILD is $(BUILD); sonar-project.properties names build/" >&2
+	@echo "sonar-reports: $(BUILD)/coverage/sonar-coverage.xml and $(BUILD)/compile_commands.json"
+
+lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
+
+check: lint build test coverage tidy
+	@echo "check: all gates green"
+
+translations:
+	lupdate -no-obsolete -locations none qml src -ts $(TS_FILES)
+
+clean:
+	rm -rf $(BUILD)

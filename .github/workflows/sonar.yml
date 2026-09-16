@@ -1,0 +1,86 @@
+# SonarQube Cloud analysis.
+#
+# Kept out of ci.yml on purpose. ci.yml is the GATE: it installs the toolchain and
+# calls `make check`, and SCOPE.md §7's rule is that a contributor's green `make
+# check` is a green CI. This workflow is a REPORT: it cannot fail a change on its
+# own findings, and the quality gate it publishes is advice, not intake. Folding it
+# into the gate would quietly make a hosted service part of the rule that says a
+# laptop is enough.
+#
+# What Sonar imports -- coverage and the compilation database its C++ analyser
+# reads -- comes from `make sonar-reports`, so what runs here runs at home too. See
+# sonar-project.properties for why the scanner does not produce them itself.
+name: sonar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+# Nothing here writes. SonarQube Cloud decorates pull requests through its own
+# GitHub App, not through this token.
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonar:
+    name: SonarQube Cloud
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # A pull request from a fork gets no secrets, so SONAR_TOKEN would be empty and
+    # the scan would fail on every such PR with an authentication error that looks
+    # like a broken setup. Skip it instead; the analysis of the merge lands when the
+    # branch reaches main.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Sonar reads git blame to decide what counts as new code. A shallow clone
+          # leaves every line looking as though it landed in this commit.
+          fetch-depth: 0
+
+      # The same set ci.yml installs: `make sonar-reports` runs the whole suite to
+      # produce coverage, and the QML load tests drive a real QtQuick engine.
+      - name: Install toolchain
+        run: |
+          ci/apt-install.sh \
+            cmake g++ make clang-format clang-tidy \
+            qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev qtdeclarative5-dev-tools \
+            qttools5-dev-tools libqt5sql5-sqlite \
+            qml-module-qtquick2 qml-module-qtqml qml-module-qtquick-window2 qml-module-qttest \
+            gcovr shellcheck desktop-file-utils rpm file
+
+      - name: make sonar-reports
+        run: make sonar-reports
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # SONAR_HOST_URL is not set: unset means SonarQube Cloud, and a self-hosted
+        # Server is what needs it.
+
+      # The scan uploads a report and exits. The server processes it afterwards, so
+      # without this the run finishes knowing nothing about its own result -- the
+      # gate, the ratings and the issue list stay on a dashboard, which neither the
+      # job log, nor a reviewer, nor anything whose network policy stops at
+      # sonarcloud.io can reach.
+      #
+      # continue-on-error, and never `sonar.qualitygate.wait`: this reports and does
+      # not gate. A Sonar outage costs a warning here, not a build.
+      - name: What SonarQube made of it
+        if: always()
+        continue-on-error: true
+        env:
+          # Only used if the project is private; the endpoints are readable without
+          # it on a public one. See the script.
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ci/sonar-report.sh
