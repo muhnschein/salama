@@ -67,12 +67,9 @@
 </context>
 <context>
     <name>CoverPage</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
-        </translation>
+    <message>
+        <source>Tabs</source>
+        <translation>Välilehdet</translation>
     </message>
 </context>
 <context>

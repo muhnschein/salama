@@ -1053,19 +1053,27 @@ void tst_qmlload::cover()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    auto *title = coverItem->findChild<QObject *>(QStringLiteral("coverTitle"));
-    QCOMPARE(title->property("text").toString(), Settings::defaultHomePage());
-    m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(), QStringLiteral("Home"));
-    QCOMPARE(title->property("text").toString(), QStringLiteral("Home"));
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"))
-                ->property("text")
-                .toString()
-                .startsWith(QStringLiteral("1")));
+    QCOMPARE(
+        coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
+        QStringLiteral("Tuuli"));
+    QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Tabs"));
+
+    // The number is what the cover is for, and the field under it holds one cell
+    // per tab -- no cell stands in for a tab that is not there, and none is left
+    // out for a tab that has no picture yet.
+    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
+    QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
 
     QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("newTabCoverAction")),
                               "triggered");
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
+    QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 2);
 }
 
 QTEST_MAIN(tst_qmlload)

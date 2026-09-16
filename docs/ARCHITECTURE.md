@@ -34,8 +34,10 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
    `titleUpdated`, `faviconUpdated` for non-private tabs only.
 4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
    therefore never reach history or disk; the engine's `privateMode` keeps cookies out.
-5. `TabModel.activeTabDataChanged` feeds the address bar, the cover and
-   `BookmarkModel.activeUrl`.
+5. `TabModel.activeTabDataChanged` feeds the address bar and
+   `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
+   how many tabs are open over a monochrome field of their previews, and names no page
+   (`DECISIONS/0014-cover-is-the-tab-count.md`).
 
 Views: one `WebView` per tab that has been shown this session, created lazily by a
 `Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing

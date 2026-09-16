@@ -126,6 +126,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabsView.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabPreview.qml"), roleSet(tabs)},
+        {QStringLiteral("components/CoverTabField.qml"), roleSet(tabs)},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},

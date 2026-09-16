@@ -67,12 +67,9 @@
 </context>
 <context>
     <name>CoverPage</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
-        </translation>
+    <message>
+        <source>Tabs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

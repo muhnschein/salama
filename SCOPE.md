@@ -68,7 +68,7 @@ Reuse policy:
 - Downloads via platform transfer UI
 - Private tabs (no history or cookie persistence)
 - Settings: home page, search engine, clear data, mobile/desktop UA
-- Cover: current tab title and favicon
+- Cover: the tab count over a field of page previews
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2
