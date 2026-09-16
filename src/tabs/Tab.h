@@ -17,6 +17,11 @@ struct Tab
     QString favicon;
     // Absolute path to the last captured page preview, empty when there is none.
     QString thumbnail;
+    // When this tab was last the active one, on the model's own activation clock: a
+    // counter, not a time, because all the order needs is which came after which. Zero
+    // for a tab that has not been in front since the database was written. The cover
+    // reads it (docs/DECISIONS/0014-cover-is-the-tab-count.md).
+    qint64 lastActive = 0;
     bool isPrivate = false;
 
     bool isValid() const
@@ -28,7 +33,7 @@ struct Tab
     {
         return id == other.id && url == other.url && title == other.title &&
                favicon == other.favicon && thumbnail == other.thumbnail &&
-               isPrivate == other.isPrivate;
+               lastActive == other.lastActive && isPrivate == other.isPrivate;
     }
 
     bool operator!=(const Tab &other) const

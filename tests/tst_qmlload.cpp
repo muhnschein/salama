@@ -52,6 +52,8 @@ private slots:
     void bookmarksPage();
     void settingsPage();
     void cover();
+    void coverFieldFollowsTheFront();
+    void thumbnailCapturedOnLeavingTheApp();
 
 private:
     bool loadWindow();
@@ -1068,12 +1070,72 @@ void tst_qmlload::cover()
     QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
 
-    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("newTabCoverAction")),
+    // The action is a search: a new tab, the window raised, and the address field up
+    // with the whole url selected so the first key typed replaces it.
+    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")),
                               "triggered");
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
     QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 2);
+}
+
+void tst_qmlload::coverFieldFollowsTheFront()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://second.example/"));
+
+    // A picture for each, so the order the cover draws them in can be read off the
+    // cells' own sources.
+    QObject *webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString secondShot = webView->property("lastGrabPath").toString();
+    QVERIFY(!secondShot.isEmpty());
+    tabs->activateTabById(first);
+    webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString firstShot = webView->property("lastGrabPath").toString();
+    QVERIFY(!firstShot.isEmpty());
+    QVERIFY(firstShot != secondShot);
+
+    // The tab in front leads the field, whatever the grid's own order is.
+    QList<QObject *> cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
+    QCOMPARE(cells.count(), 2);
+    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), firstShot);
+
+    tabs->activateTabById(second);
+    cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
+    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), secondShot);
+}
+
+void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
+{
+    QObject *webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString onLoad = webView->property("lastGrabPath").toString();
+    QVERIFY(!onLoad.isEmpty());
+
+    // Nothing is taken while the application is still the one on screen.
+    QObject *page = find(QStringLiteral("browserPage"));
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationActive));
+    QCOMPARE(webView->property("lastGrabPath").toString(), onLoad);
+
+    // Leaving it is the cover's last chance at a current picture of this tab.
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    const QString onLeaving = webView->property("lastGrabPath").toString();
+    QVERIFY(!onLeaving.isEmpty());
+    QVERIFY(onLeaving != onLoad);
+    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+             onLeaving);
 }
 
 QTEST_MAIN(tst_qmlload)

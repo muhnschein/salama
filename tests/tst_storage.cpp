@@ -103,7 +103,8 @@ void tst_storage::migratesSchemaOne()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.sqlite"));
     {
-        // A schema 1 database: the tab table has no thumbnail column.
+        // A schema 1 database: the tab table has neither the thumbnail column schema 2
+        // added nor the last_active one schema 3 did.
         QSqlDatabase db =
             QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("legacy"));
         db.setDatabaseName(path);
@@ -125,11 +126,13 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
 
     QSqlQuery query(storage.database());
-    QVERIFY(query.exec(QStringLiteral("SELECT tab_id, title, thumbnail FROM tab")));
+    QVERIFY(query.exec(QStringLiteral("SELECT tab_id, title, thumbnail, last_active FROM tab")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 1);
     QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
     QVERIFY(query.value(2).toString().isEmpty());
+    // Never in front as far as the database knows; the model stamps the restored tab.
+    QCOMPARE(query.value(3).toLongLong(), 0LL);
 
     // Reopening an already migrated database changes nothing.
     Storage again(dir.path());

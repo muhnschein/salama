@@ -48,6 +48,9 @@ workaround; a failure blocks the tag.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.
-- [ ] Cover shows "Tuuli", "Tabs" and the tab count, over a grey field of the open tabs' previews that fades in below the heading. The field fills the cover at one tab, at two, at four and at a dozen (six cells at most), and the count and the field follow opening and closing tabs. Cover action opens a new tab.
+- [ ] Cover shows "Tuuli", "Tabs" and the tab count, over a grey field of the open tabs' previews that fades in below the heading. The field fills the cover at one tab, at two, at four and at a dozen (six cells at most), and the count and the field follow opening and closing tabs.
+- [ ] The field is ordered by what was read last: switch tabs, minimise, and the tab just left leads it. The order survives a restart.
+- [ ] Scroll a page well down, minimise: the cover shows it scrolled, not as it was loaded. Same after stepping through a site that navigates without loading.
+- [ ] Cover action is a search icon: it opens a new tab with the address field up, the url selected and the keyboard shown, from the browsing page and from Settings alike.
 - [ ] Rotate the phone: layout stays portrait (landscape is Phase 2).
 - [ ] `journalctl -f` shows no QML warnings from `harbour-tuuli` during the above.

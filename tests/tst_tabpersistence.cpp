@@ -30,6 +30,7 @@ Tab makeTab(int id, const QString &url, bool isPrivate = false)
     tab.id = id;
     tab.url = url;
     tab.title = QStringLiteral("Title %1").arg(id);
+    tab.lastActive = id;
     tab.isPrivate = isPrivate;
     return tab;
 }
@@ -51,10 +52,13 @@ void tst_tabpersistence::roundTrip()
     QCOMPARE(tabs.at(0).id, 7);
     QCOMPARE(tabs.at(1).id, 3);
     QCOMPARE(tabs.at(1).title, QStringLiteral("Title 3"));
+    // The cover's order is written with the rest of the tab, not derived on load.
+    QCOMPARE(tabs.at(0).lastActive, 7LL);
 
     Tab updated = tabs.at(0);
     updated.url = QStringLiteral("https://a.example/page");
     updated.favicon = QStringLiteral("https://a.example/favicon.ico");
+    updated.lastActive = 99;
     persistence.updateTab(updated);
     tabs = persistence.loadTabs();
     QCOMPARE(tabs.at(0), updated);

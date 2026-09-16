@@ -157,6 +157,27 @@ WebViewPage {
         }
     }
 
+    // The cover is made of these pictures, so the last thing this page does on the way
+    // out is take one. Until now a preview was only as fresh as the last load or the
+    // last time the grid was opened, which left the cover showing a page as it was
+    // before it was read: scrolled somewhere else, or a step further into a site that
+    // navigates without loading. A named function rather than the handler's body, so
+    // the load tests can leave the application without a window manager to do it.
+    function applicationStateChanged(state) {
+        if (state !== Qt.ApplicationActive) {
+            captureCurrent()
+        }
+    }
+
+    // What the cover's search action ends at: a new tab, with the address field up and
+    // the whole url selected, so the first key typed replaces it.
+    function newTabForAddress() {
+        captureCurrent()
+        settle(false)
+        TabModel.newTab(Settings.homePage)
+        navigationBar.beginEditing()
+    }
+
     // A finger takes the deck off whatever the spring was doing with it: a disabled
     // Behavior does not stop an animation that is already under way.
     function beginDrag() {
@@ -193,6 +214,11 @@ WebViewPage {
 
     function engineZoom() {
         return WebEngineSettings.pixelRatio
+    }
+
+    Connections {
+        target: Qt.application
+        onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
     }
 
     Component.onCompleted: {

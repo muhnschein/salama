@@ -32,11 +32,27 @@ The cover says **how many tabs are open**, and shows them.
 - The field is **monochrome** — one `Desaturate` pass over the whole of it — and
   drawn at `Theme.opacityLow`. At full strength the desaturated pages read as a
   second screen inside the cover and take the eye off the number.
+- The field is ordered **most recently in front first**, not by the grid's order. A
+  cover is glanced at just after the app was put away, and what the glance should land
+  on is where the reader has just been. `TabModel` stamps the tab in front with a
+  counter — `Tab::lastActive`, `last_active` in the database from schema 3 — and
+  `recentThumbnails` sorts a copy of the list by it, so neither the grid's order nor
+  what is persisted is disturbed. The sort is stable, so tabs never yet in front keep
+  the grid's order among themselves. On load the restored tab is stamped, which also
+  gives a database written before schema 3 its first stamp.
 - The grid is **shaped to the count**, not fixed: at most two across and three down,
   one column while there are two tabs or fewer, and the last row widened to take
   what its missing neighbours would have had. A fixed cell size cannot fill a cover
   at every count — one tab left a stamp in the corner of an empty cover and two left
   a row with a hole under it — and a field that only sometimes fills is not texture.
+
+The one cover action is a **search**: `icon-cover-search`, opening a new tab with the
+address field up and the whole url selected, so the first key typed replaces it. That is
+what a browser is picked up for, and the cover is the one place where the choice of a
+single action has to be right. It goes through `requestNewTab()` on the root window
+rather than acting on `TabModel` itself: the address field belongs to the browsing page,
+which a cover has no way to reach, and whatever page is on top — the menu, Settings — is
+popped first, or the new tab would arrive under a page that cannot type into it.
 
 The app's name is held in a `brandName` property rather than written into the label:
 a name is not a word to be translated, and `ci/qml-lint.sh` treats every bare string
@@ -53,6 +69,12 @@ what says how many there actually are. The cells' pictures are drawn at whatever
 scale their cell is, so a widened last row shows its page larger than the row above
 it. That is a picture of a browser, not a table of pages, and the difference does not
 read as an error at cover size.
+
+The previews the field draws are as fresh as the cover needs them because `BrowserPage`
+now also captures as the application leaves the screen (0008). Before that a preview was
+only as new as the last load or the last visit to the grid, so a page that had been
+scrolled, or stepped through without loading, was shown on the cover as it had been
+before it was read.
 
 Grey, not the site's colours, and no highlight on the active cell: a cover belongs
 to the phone's ambience rather than to the pages inside the app, and a dozen

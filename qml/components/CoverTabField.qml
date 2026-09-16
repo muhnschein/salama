@@ -23,9 +23,10 @@ import Sailfish.Silica 1.0
 Item {
     id: field
 
-    /// The tab model to draw. Every row is one cell, in the model's own order --
-    /// the order the tab grid puts them in -- and the cells past the foot of the
-    /// cover are clipped away rather than laid out somewhere else.
+    /// The previews to draw: one path per open tab, most recently in front first,
+    /// and an empty string for a tab that has no picture. TabModel.recentThumbnails
+    /// is what the cover hands over; the order is the whole point, so the field
+    /// does not sort and does not know what a tab is.
     property alias model: cells.model
 
     /// How long the previews take to arrive, measured down from the top of the
@@ -136,7 +137,7 @@ Item {
                                                      : parent.height
                         fillMode: Image.PreserveAspectFit
                         asynchronous: true
-                        source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
+                        source: modelData.length > 0 ? "file://" + modelData : ""
                         visible: status === Image.Ready
                     }
                 }

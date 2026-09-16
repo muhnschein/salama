@@ -43,7 +43,9 @@ CoverBackground {
         // a second screen inside the cover and pulls the eye off the number.
         opacity: Theme.opacityLow
         fadeHeight: cover.height * 0.14
-        model: TabModel
+        // Most recently in front first, so what a glance lands on is where the reader
+        // has just been rather than whichever tab is oldest.
+        model: TabModel.recentThumbnails
     }
 
     // The name and what the number counts, top left; the number top right, always
@@ -106,14 +108,14 @@ CoverBackground {
         color: Theme.primaryColor
     }
 
+    // One action, and it is the one a browser is opened for: a new tab with the
+    // address field already up and the keyboard with it. The window does the work --
+    // the field belongs to the browsing page, which is not in a cover's scope.
     CoverActionList {
         CoverAction {
-            objectName: "newTabCoverAction"
-            iconSource: "image://theme/icon-cover-new"
-            onTriggered: {
-                TabModel.newTab(Settings.homePage)
-                window.activate()
-            }
+            objectName: "searchCoverAction"
+            iconSource: "image://theme/icon-cover-search"
+            onTriggered: window.requestNewTab()
         }
     }
 }
