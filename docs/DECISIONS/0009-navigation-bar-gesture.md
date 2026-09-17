@@ -72,10 +72,17 @@ The change of state is **one animation**, 200 ms on the bar's own `height`. Ever
 that differs between the two states is drawn from `expansion`, which is 0 at the slim
 height and 1 at the whole one: the three controls fade with it, the host's size is
 interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it, and the bar's
-own background fades out with it, so that what is left at the slim end is the handle and
-the host, floating. Nothing else animates, because nothing else has to.
+own background fades with it, so that what is left at the slim end is the handle and the
+host over the page. Nothing else animates, because nothing else has to.
 
-The page **runs behind the slim bar**, which is what makes that transparency worth
+The slim background is a **wash, not nothing**. The first slim bar was fully
+transparent, and on device the host was unreadable over a light page: white text on
+white. It now fades to `Theme.opacityLow` of the dimmer colour rather than to zero,
+which is the least that keeps the host legible and still lets the page be seen through
+it. The choice is a taste, and a reader who
+finds it too much or too little changes one number.
+
+The page **runs behind the slim bar**, which is what makes that translucency worth
 anything: with the view still ending above it, what showed through was the application's
 own background, and a dark strip where a dark bar had been is no change at all. What does
 not come back with it is the defect: while the bar is slim the gesture handler keeps only

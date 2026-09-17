@@ -834,6 +834,170 @@ void tst_qmlload::tabGrid()
              QStringLiteral("Private tab"));
 }
 
+void tst_qmlload::tabGroups()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->groups().first().id;
+    const int first = tabs->activeTabId();
+    QObject *page = find(QStringLiteral("browserPage"));
+    pullUpToTabs();
+
+    // The strip holds the current group in the middle; its list and the model agree.
+    QObject *groupList = find(QStringLiteral("tabGroupList"));
+    QVERIFY(groupList != nullptr);
+    QCOMPARE(groupList->property("count").toInt(), 1);
+    QCOMPARE(groupList->property("currentIndex").toInt(), 0);
+
+    // The edit corner leads to the list of groups, where a new one is made; it is the
+    // current group from then on, and the grid under the page shows it empty.
+    click(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    QCOMPARE(findAll(QStringLiteral("tabGroupDelegate")).count(), 1);
+    click(find(QStringLiteral("newGroupMenu")));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("tabGroupDialog"));
+    QCOMPARE(dialog->property("groupId").toInt(), 0);
+    find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Work"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    QCOMPARE(tabs->groups().count(), 2);
+    const int work = tabs->groups().at(1).id;
+    QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Work"));
+    QCOMPARE(tabs->currentGroupId(), work);
+    QList<QObject *> delegates = findAll(QStringLiteral("tabGroupDelegate"));
+    QCOMPARE(delegates.count(), 2);
+    QCOMPARE(findObjects(delegates.at(0), QStringLiteral("tabGroupName"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("1 tab(s)"));
+    QCOMPARE(findObjects(delegates.at(1), QStringLiteral("tabGroupName"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Work"));
+
+    // Tapping a group there makes it current and returns to the grid, still open.
+    click(delegates.at(1));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 0);
+    QCOMPARE(groupList->property("count").toInt(), 2);
+    QCOMPARE(groupList->property("currentIndex").toInt(), 1);
+    QCOMPARE(tabs->activeTabId(), first);
+
+    // A new tab opens in the current group.
+    click(find(QStringLiteral("newTabButton")));
+    const int second = tabs->activeTabId();
+    QVERIFY(second != first);
+    QCOMPARE(tabs->tabCountInGroup(work), 1);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    pullUpToTabs();
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
+
+    // Flicking the strip is a change of current index on its list: the group under
+    // the middle becomes current, and its last tab comes to the front.
+    groupList->setProperty("currentIndex", 0);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), first);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
+
+    // The search corner lists every tab, group by group, and a tap brings one to the
+    // front and puts the grid away.
+    tabs->updateTitle(second, QStringLiteral("Office mail"));
+    click(find(QStringLiteral("searchTabsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabSearchPage"));
+    QList<QObject *> results = findAll(QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 2);
+    QObject *heading = findObjects(results.at(1), QStringLiteral("tabSearchGroupHeader")).first();
+    QVERIFY(heading->property("visible").toBool());
+    QCOMPARE(heading->property("text").toString(), QStringLiteral("Work"));
+    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabSearchGroupHeader"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("1 tab(s)"));
+    find(QStringLiteral("tabSearchField"))->setProperty("text", QStringLiteral("office"));
+    QCOMPARE(m_core->tabSearch()->searchTerm(), QStringLiteral("office"));
+    results = findAll(QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
+    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabSearchTitle"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Office mail"));
+    click(findObjects(results.at(0), QStringLiteral("tabSearchItem")).first());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QCOMPARE(groupList->property("currentIndex").toInt(), 1);
+    // The term does not outlive the page.
+    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
+
+    // The menu moves the tab in front to another group, through the same list.
+    QObject *groupsPage = openMenuItem(QStringLiteral("moveToGroupItem"));
+    QCOMPARE(groupsPage->objectName(), QStringLiteral("tabGroupsPage"));
+    QCOMPARE(groupsPage->property("moveTabId").toInt(), second);
+    click(findAll(QStringLiteral("tabGroupDelegate")).at(0));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(tabs->tabCountInGroup(home), 2);
+    QCOMPARE(tabs->tabCountInGroup(work), 0);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    // The view behind the moved tab is the one it had.
+    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
+
+    // Or into a new group made for it.
+    openMenuItem(QStringLiteral("moveToGroupItem"));
+    click(find(QStringLiteral("newGroupMenu")));
+    dialog = currentPage();
+    QCOMPARE(dialog->property("moveTabId").toInt(), second);
+    find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Mail"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    popPage();
+    QCOMPARE(tabs->groups().count(), 3);
+    QCOMPARE(tabs->currentGroupId(), tabs->groups().at(2).id);
+    QCOMPARE(tabs->tabCountInGroup(tabs->groups().at(2).id), 1);
+    QCOMPARE(tabs->tabCountInGroup(home), 1);
+
+    // Rename and delete are in the group's own menu; the last group has no delete.
+    pullUpToTabs();
+    click(find(QStringLiteral("editGroupsButton")));
+    delegates = findAll(QStringLiteral("tabGroupDelegate"));
+    QCOMPARE(delegates.count(), 3);
+    click(findObjects(delegates.at(1), QStringLiteral("renameGroupMenu")).first());
+    dialog = currentPage();
+    QCOMPARE(dialog->property("groupId").toInt(), work);
+    QCOMPARE(dialog->property("name").toString(), QStringLiteral("Work"));
+    find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Play"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Play"));
+
+    delegates = findAll(QStringLiteral("tabGroupDelegate"));
+    QObject *deleteMenu = findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first();
+    QVERIFY(deleteMenu->property("enabled").toBool());
+    click(deleteMenu);
+    QCOMPARE(delegates.at(2)->property("remorseCount").toInt(), 1);
+    QCOMPARE(tabs->groups().count(), 2);
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->activeTabId(), first);
+    click(findObjects(findAll(QStringLiteral("tabGroupDelegate")).at(1),
+                      QStringLiteral("deleteGroupMenu"))
+              .first());
+    QCOMPARE(tabs->groups().count(), 1);
+    QVERIFY(!findObjects(findAll(QStringLiteral("tabGroupDelegate")).at(0),
+                         QStringLiteral("deleteGroupMenu"))
+                 .first()
+                 ->property("enabled")
+                 .toBool());
+    QCOMPARE(groupList->property("currentIndex").toInt(), 0);
+}
+
 void tst_qmlload::restoredTabsLoadLazily()
 {
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));

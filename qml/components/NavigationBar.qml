@@ -167,13 +167,13 @@ Item {
         }
     }
 
-    // Opaque while the bar is whole and gone by the time it is slim, where what is
-    // left is the handle and the host, floating. The page ends above the bar in either
-    // state rather than running underneath (docs/DECISIONS/0009).
+    // Opaque while the bar is whole, a wash of Theme.opacityLow by the time it is slim:
+    // transparent, the host was unreadable over a light page (docs/DECISIONS/0009).
     Rectangle {
         objectName: "navigationBarBackground"
         anchors.fill: parent
-        color: Theme.rgba(Theme.highlightDimmerColor, navigationBar.expansion)
+        color: Theme.rgba(Theme.highlightDimmerColor,
+                          Theme.opacityLow + (1 - Theme.opacityLow) * navigationBar.expansion)
     }
 
     // Where the drag starts, drawn: on the line between the bar and the page, which
