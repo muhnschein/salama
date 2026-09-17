@@ -67,12 +67,9 @@
 </context>
 <context>
     <name>CoverPage</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
-        </translation>
+    <message>
+        <source>Tabs</source>
+        <translation>Välilehdet</translation>
     </message>
 </context>
 <context>
@@ -236,6 +233,26 @@
     <message>
         <source>Keep pages and the tab grid out from under the camera cutout</source>
         <translation>Pidä sivut ja välilehdet poissa kameraloven alta</translation>
+    </message>
+    <message>
+        <source>Cover</source>
+        <translation>Kansi</translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation>Näyttää</translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation>Vain kuvakkeen</translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
+    </message>
+    <message>
+        <source>The tab count and every tab</source>
+        <translation>Välilehtien määrän ja kaikki välilehdet</translation>
     </message>
 </context>
 <context>

@@ -2,6 +2,8 @@
 // Copyright (c) 2026 tuuli contributors
 #include "settings/Settings.h"
 
+#include <QDir>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -21,6 +23,7 @@ private slots:
     void urlForInput();
     void displayAddress_data();
     void displayAddress();
+    void coverStyle();
 };
 
 void tst_settings::defaults()
@@ -97,6 +100,50 @@ void tst_settings::searchEngineSelection()
     QCOMPARE(settings.searchEngineIndex(), 2);
     settings.setSearchEngine(QStringLiteral("startpage"));
     QCOMPARE(spy.count(), 1);
+}
+
+void tst_settings::coverStyle()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::coverStyleChanged);
+
+    // Every tab by default: the cover a reader who has not been to Settings gets.
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverEveryTab));
+
+    settings.setCoverStyle(Settings::CoverIconOnly);
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverIconOnly));
+    QCOMPARE(spy.count(), 1);
+
+    // Setting what is already set says nothing.
+    settings.setCoverStyle(Settings::CoverIconOnly);
+    QCOMPARE(spy.count(), 1);
+
+    // A value from outside the range is refused rather than stored: this comes from a
+    // file a user can edit.
+    settings.setCoverStyle(7);
+    settings.setCoverStyle(-1);
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverIconOnly));
+    QCOMPARE(spy.count(), 1);
+
+    settings.setCoverStyle(Settings::CoverLatestTab);
+    QCOMPARE(spy.count(), 2);
+    {
+        Settings again(path);
+        QCOMPARE(again.coverStyle(), int(Settings::CoverLatestTab));
+    }
+
+    // One written by hand, out of range: read back as the default, not as a cover that
+    // draws nothing.
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("coverStyle"), 42);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.coverStyle(), int(Settings::CoverEveryTab));
+    }
 }
 
 void tst_settings::searchUrl()

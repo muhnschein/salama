@@ -35,6 +35,9 @@ if(TUULI_BUILD_TESTS)
 endif()
 
 install(DIRECTORY qml DESTINATION share/${PROJECT_NAME})
+# Pictures the QML draws but which are not QML: ci/harbour-check.sh holds qml/ to QML
+# files alone, and the cover's own icon has to be a file an Image can resolve.
+install(DIRECTORY art DESTINATION share/${PROJECT_NAME})
 install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications)
 foreach(size 86x86 108x108 128x128 172x172)
     install(FILES icons/${size}/${PROJECT_NAME}.png DESTINATION share/icons/hicolor/${size}/apps)

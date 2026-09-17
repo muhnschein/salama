@@ -67,12 +67,9 @@
 </context>
 <context>
     <name>CoverPage</name>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
-        </translation>
+    <message>
+        <source>Tabs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -235,6 +232,26 @@
     </message>
     <message>
         <source>Keep pages and the tab grid out from under the camera cutout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cover</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and every tab</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

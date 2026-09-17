@@ -34,6 +34,8 @@ private slots:
     void thumbnailsAreCapturedPerTab();
     void thumbnailsFollowTabLifetime();
     void thumbnailsAreOptional();
+    void recentThumbnailsFollowTheFront();
+    void recentOrderSurvivesARestart();
 };
 
 namespace {
@@ -349,6 +351,80 @@ void tst_tabmodel::privateTabsStayQuiet()
     QCOMPARE(faviconSpy.count(), 0);
     QCOMPARE(model.activeUrl(), QStringLiteral("https://secret.example/more"));
     QCOMPARE(model.activeTitle(), QStringLiteral("Secret"));
+}
+
+void tst_tabmodel::recentThumbnailsFollowTheFront()
+{
+    QTemporaryDir dir;
+    TabModel model(nullptr, dir.path());
+    const int first = model.newTab(QStringLiteral("https://first.example/"));
+    const int second = model.newTab(QStringLiteral("https://second.example/"));
+    const int third = model.newTab(QStringLiteral("https://third.example/"));
+    QSignalSpy recent(&model, &TabModel::recentTabsChanged);
+
+    // One entry per tab, whether or not it has a picture, so the list is never shorter
+    // than the number the cover prints above it.
+    QCOMPARE(model.recentThumbnails().count(), 3);
+    for (const QString &thumbnail : model.recentThumbnails()) {
+        QVERIFY(thumbnail.isEmpty());
+    }
+
+    const QString firstShot = model.thumbnailPath(first);
+    QVERIFY(writeFile(firstShot));
+    model.updateThumbnail(first, firstShot);
+    const QString thirdShot = model.thumbnailPath(third);
+    QVERIFY(writeFile(thirdShot));
+    model.updateThumbnail(third, thirdShot);
+    QVERIFY(recent.count() > 0);
+
+    // The third tab is the one in front: newTab activates what it opens.
+    QCOMPARE(model.recentThumbnails().first(), thirdShot);
+
+    recent.clear();
+    model.activateTabById(first);
+    QVERIFY(recent.count() > 0);
+    QCOMPARE(model.recentThumbnails().first(), firstShot);
+
+    // Nothing the grid does reorders the cover: a carried cell changes positions, not
+    // which tab was last read.
+    model.moveTab(0, 2);
+    QCOMPARE(model.recentThumbnails().first(), firstShot);
+
+    // The tab that has never been in front keeps the grid's order rather than an
+    // arbitrary one: second was opened before third and comes after it here only
+    // because third was activated later.
+    model.activateTabById(second);
+    QCOMPARE(model.recentThumbnails().at(1), firstShot);
+    QCOMPARE(model.recentThumbnails().at(2), thirdShot);
+
+    model.closeTab(model.indexOf(first));
+    QCOMPARE(model.recentThumbnails().count(), 2);
+    QVERIFY(!model.recentThumbnails().contains(firstShot));
+}
+
+void tst_tabmodel::recentOrderSurvivesARestart()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    QTemporaryDir shots;
+    QString wanted;
+    {
+        TabModel model(&persistence, shots.path());
+        model.newTab(QStringLiteral("https://first.example/"));
+        const int second = model.newTab(QStringLiteral("https://second.example/"));
+        model.newTab(QStringLiteral("https://third.example/"));
+        wanted = model.thumbnailPath(second);
+        QVERIFY(writeFile(wanted));
+        model.updateThumbnail(second, wanted);
+        model.activateTabById(second);
+    }
+    {
+        TabModel model(&persistence, shots.path());
+        QCOMPARE(model.recentThumbnails().count(), 3);
+        // The restored tab is in front, and was also the last one read.
+        QCOMPARE(model.recentThumbnails().first(), wanted);
+    }
 }
 
 void tst_tabmodel::persistenceRoundTrip()

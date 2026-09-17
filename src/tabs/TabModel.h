@@ -12,6 +12,7 @@
 #include <QAbstractListModel>
 #include <QList>
 #include <QString>
+#include <QStringList>
 
 namespace Tuuli {
 
@@ -27,6 +28,10 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(QString activeUrl READ activeUrl NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeFavicon READ activeFavicon NOTIFY activeTabDataChanged)
+    // The open tabs' previews, most recently in front first. What the cover draws its
+    // field from (docs/DECISIONS/0014-cover-is-the-tab-count.md); a tab with no picture
+    // is an empty string rather than a gap, so the list is always as long as count.
+    Q_PROPERTY(QStringList recentThumbnails READ recentThumbnails NOTIFY recentTabsChanged)
 
 public:
     enum Role
@@ -56,6 +61,7 @@ public:
     QString activeUrl() const;
     QString activeTitle() const;
     QString activeFavicon() const;
+    QStringList recentThumbnails() const;
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
@@ -87,6 +93,9 @@ public:
 signals:
     void countChanged();
     void activeTabChanged();
+    // The cover's list has changed: a tab opened or closed, one came to the front, or
+    // a preview was captured.
+    void recentTabsChanged();
     void activeTabDataChanged();
     void tabAdded(int tabId);
     void tabClosed(int tabId);
@@ -98,6 +107,8 @@ signals:
 private:
     void load();
     void setActiveTab(int tabId);
+    // Marks the tab in front as the most recent one, and tells the cover.
+    void stampActive();
     void notifyRow(int index, Role role);
     void persist(const Tab &tab);
     void discardThumbnail(const QString &path) const;
@@ -108,6 +119,9 @@ private:
     QList<int> m_awaitingFirstUrl;
     int m_activeTabId = 0;
     int m_nextTabId = 1;
+    // Counts activations rather than milliseconds: the order is all anyone reads, and a
+    // counter cannot be turned around by a clock that steps backwards.
+    qint64 m_activationClock = 0;
     int m_thumbnailCounter = 0;
 };
 

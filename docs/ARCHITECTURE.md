@@ -19,7 +19,7 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 - `TabModel` + `TabPersistence` — open tabs, the active tab, private flag.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
-- `Settings` — home page, search engine, desktop mode, address-bar heuristics.
+- `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the only place engine-specific strings live.
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.tuuli 1.0`.
@@ -27,15 +27,19 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 ## Data flow
 
 1. The engine reports `url`, `title` and load state on a `WebView`.
-2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`, and on
-   load completion grabs a page preview into the path `TabModel.thumbnailPath()` hands
-   out, reporting it back through `updateThumbnail()`.
+2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`, and
+   grabs a page preview into the path `TabModel.thumbnailPath()` hands out — on load
+   completion, when the grid opens, and as the application leaves the screen — reporting
+   it back through `updateThumbnail()`.
 3. `TabModel` updates its row, persists non-private tabs, and emits `visited`,
    `titleUpdated`, `faviconUpdated` for non-private tabs only.
 4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
    therefore never reach history or disk; the engine's `privateMode` keeps cookies out.
-5. `TabModel.activeTabDataChanged` feeds the address bar, the cover and
-   `BookmarkModel.activeUrl`.
+5. `TabModel.activeTabDataChanged` feeds the address bar and
+   `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
+   how many tabs are open over a monochrome field of their previews, most recently in
+   front first (`TabModel.recentThumbnails`, ordered by each tab's `last_active` stamp),
+   and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`).
 
 Views: one `WebView` per tab that has been shown this session, created lazily by a
 `Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing
@@ -74,7 +78,7 @@ the table for its columns rather than trusting the version number, so a database
 either schema converges on the same shape.
 
 ```
-tab              tab_id PK, position, url, title, favicon, thumbnail
+tab              tab_id PK, position, url, title, favicon, thumbnail, last_active
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 setting          name PK, value          -- activeTabId

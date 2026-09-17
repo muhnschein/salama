@@ -52,6 +52,9 @@ private slots:
     void bookmarksPage();
     void settingsPage();
     void cover();
+    void coverFieldFollowsTheFront();
+    void coverStyleIsConfigurable();
+    void thumbnailCapturedOnLeavingTheApp();
 
 private:
     bool loadWindow();
@@ -1031,6 +1034,17 @@ void tst_qmlload::settingsPage()
     cutoutSwitch->setProperty("checked", true);
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 
+    // The cover's style is the one choice here that another page has to answer.
+    QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
+    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
+    coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
+    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
+                 ->property("visible")
+                 .toBool());
+    coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
+
     click(find(QStringLiteral("clearHistoryButton")));
     QCOMPARE(m_core->history()->count(), 0);
 
@@ -1053,19 +1067,129 @@ void tst_qmlload::cover()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    auto *title = coverItem->findChild<QObject *>(QStringLiteral("coverTitle"));
-    QCOMPARE(title->property("text").toString(), Settings::defaultHomePage());
-    m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(), QStringLiteral("Home"));
-    QCOMPARE(title->property("text").toString(), QStringLiteral("Home"));
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"))
-                ->property("text")
-                .toString()
-                .startsWith(QStringLiteral("1")));
+    QCOMPARE(
+        coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
+        QStringLiteral("Tuuli"));
+    QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Tabs"));
 
-    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("newTabCoverAction")),
+    // The number is what the cover is for, and the field under it holds one cell
+    // per tab -- no cell stands in for a tab that is not there, and none is left
+    // out for a tab that has no picture yet.
+    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
+    QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
+
+    // The action is a search: a new tab, the window raised, and the address field up
+    // with the whole url selected so the first key typed replaces it.
+    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")),
                               "triggered");
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 2);
+}
+
+void tst_qmlload::coverFieldFollowsTheFront()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://second.example/"));
+
+    // A picture for each, so the order the cover draws them in can be read off the
+    // cells' own sources.
+    QObject *webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString secondShot = webView->property("lastGrabPath").toString();
+    QVERIFY(!secondShot.isEmpty());
+    tabs->activateTabById(first);
+    webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString firstShot = webView->property("lastGrabPath").toString();
+    QVERIFY(!firstShot.isEmpty());
+    QVERIFY(firstShot != secondShot);
+
+    // The tab in front leads the field, whatever the grid's own order is.
+    QList<QObject *> cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
+    QCOMPARE(cells.count(), 2);
+    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), firstShot);
+
+    tabs->activateTabById(second);
+    cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
+    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), secondShot);
+}
+
+void tst_qmlload::coverStyleIsConfigurable()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    m_core->tabs()->newTab(QStringLiteral("https://second.example/"));
+    m_core->tabs()->newTab(QStringLiteral("https://third.example/"));
+
+    auto *heading = coverItem->findChild<QObject *>(QStringLiteral("coverHeading"));
+    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
+    auto *field = coverItem->findChild<QObject *>(QStringLiteral("coverTabField"));
+    auto *icon = coverItem->findChild<QObject *>(QStringLiteral("coverIcon"));
+
+    // Every tab, which is what a reader who has not been to Settings gets.
+    QVERIFY(heading->property("visible").toBool());
+    QVERIFY(count->property("visible").toBool());
+    QVERIFY(field->property("visible").toBool());
+    QVERIFY(!icon->property("visible").toBool());
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
+
+    // The middle one: the heading stays, and the field is cut to the tab last read --
+    // one cell, which the grid draws across the whole of the room it has.
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    QVERIFY(heading->property("visible").toBool());
+    QVERIFY(count->property("visible").toBool());
+    QVERIFY(field->property("visible").toBool());
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
+
+    // The icon alone: no heading, no number, no pictures. The action stays whatever
+    // the style is -- it is what the cover is there to offer.
+    m_core->settings()->setCoverStyle(Settings::CoverIconOnly);
+    QVERIFY(!heading->property("visible").toBool());
+    QVERIFY(!count->property("visible").toBool());
+    QVERIFY(!field->property("visible").toBool());
+    QVERIFY(icon->property("visible").toBool());
+    QVERIFY(icon->property("source").toUrl().toString().endsWith(
+        QStringLiteral("art/harbour-tuuli.png")));
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")) != nullptr);
+
+    m_core->settings()->setCoverStyle(Settings::CoverEveryTab);
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
+}
+
+void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
+{
+    QObject *webView = currentWebView();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    const QString onLoad = webView->property("lastGrabPath").toString();
+    QVERIFY(!onLoad.isEmpty());
+
+    // Nothing is taken while the application is still the one on screen.
+    QObject *page = find(QStringLiteral("browserPage"));
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationActive));
+    QCOMPARE(webView->property("lastGrabPath").toString(), onLoad);
+
+    // Leaving it is the cover's last chance at a current picture of this tab.
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    const QString onLeaving = webView->property("lastGrabPath").toString();
+    QVERIFY(!onLeaving.isEmpty());
+    QVERIFY(onLeaving != onLoad);
+    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+             onLeaving);
 }
 
 QTEST_MAIN(tst_qmlload)

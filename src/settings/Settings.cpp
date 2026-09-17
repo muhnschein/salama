@@ -15,6 +15,7 @@ const char *const HomePageKey = "homePage";
 const char *const SearchEngineKey = "searchEngine";
 const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
+const char *const CoverStyleKey = "coverStyle";
 
 struct SearchEngine
 {
@@ -161,6 +162,24 @@ void Settings::setCutoutGuard(bool cutoutGuard)
     }
     m_settings.setValue(QLatin1String(CutoutGuardKey), cutoutGuard);
     emit cutoutGuardChanged();
+}
+
+int Settings::coverStyle() const
+{
+    const int stored = m_settings.value(QLatin1String(CoverStyleKey), CoverEveryTab).toInt();
+    if (stored < CoverIconOnly || stored > CoverEveryTab) {
+        return CoverEveryTab;
+    }
+    return stored;
+}
+
+void Settings::setCoverStyle(int style)
+{
+    if (style < CoverIconOnly || style > CoverEveryTab || style == coverStyle()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(CoverStyleKey), style);
+    emit coverStyleChanged();
 }
 
 QString Settings::searchUrl(const QString &query) const

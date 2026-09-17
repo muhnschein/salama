@@ -39,11 +39,31 @@ void TabModel::load()
         }
     }
 
+    for (const Tab &tab : m_tabs) {
+        m_activationClock = std::max(m_activationClock, tab.lastActive);
+    }
+
     if (m_tabs.isEmpty()) {
         return;
     }
     const int storedActive = m_persistence->loadActiveTabId();
     m_activeTabId = indexOf(storedActive) >= 0 ? storedActive : m_tabs.first().id;
+    // The restored tab is in front from here, whatever the database said about which
+    // was in front last. A database written before schema 3 has no stamps at all, and
+    // this is what gives the first one out.
+    stampActive();
+}
+
+void TabModel::stampActive()
+{
+    const int index = indexOf(m_activeTabId);
+    if (index < 0) {
+        return;
+    }
+    Tab &tab = m_tabs[index];
+    tab.lastActive = ++m_activationClock;
+    persist(tab);
+    emit recentTabsChanged();
 }
 
 int TabModel::rowCount(const QModelIndex &parent) const
@@ -132,6 +152,29 @@ QString TabModel::activeFavicon() const
     return index >= 0 ? m_tabs.at(index).favicon : QString();
 }
 
+QStringList TabModel::recentThumbnails() const
+{
+    // Ordered on a copy of the ids: the model's own order is what the grid shows and
+    // what is persisted, and the cover must not disturb either. std::stable_sort so
+    // that tabs never yet in front -- restored ones, before they are opened -- keep the
+    // order the grid puts them in rather than an arbitrary one.
+    QList<const Tab *> ordered;
+    ordered.reserve(m_tabs.count());
+    for (const Tab &tab : m_tabs) {
+        ordered.append(&tab);
+    }
+    std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
+        return one->lastActive > other->lastActive;
+    });
+
+    QStringList thumbnails;
+    thumbnails.reserve(ordered.count());
+    for (const Tab *tab : ordered) {
+        thumbnails.append(tab->thumbnail);
+    }
+    return thumbnails;
+}
+
 const QList<Tab> &TabModel::tabs() const
 {
     return m_tabs;
@@ -167,6 +210,7 @@ int TabModel::newTab(const QString &url, bool isPrivate)
     }
 
     emit countChanged();
+    emit recentTabsChanged();
     emit tabAdded(tab.id);
     setActiveTab(tab.id);
     return tab.id;
@@ -248,6 +292,7 @@ void TabModel::closeTab(int index)
     // Last: listeners may open a replacement tab from here, which re-enters this model.
     emit tabClosed(closing.id);
     emit countChanged();
+    emit recentTabsChanged();
 }
 
 void TabModel::closeActiveTab()
@@ -281,6 +326,7 @@ void TabModel::closeAllTabs()
         emit tabClosed(tab.id);
     }
     emit countChanged();
+    emit recentTabsChanged();
 }
 
 int TabModel::indexOf(int tabId) const
@@ -384,6 +430,7 @@ void TabModel::updateThumbnail(int tabId, const QString &path)
     tab.thumbnail = path;
     notifyRow(index, ThumbnailRole);
     persist(tab);
+    emit recentTabsChanged();
 }
 
 void TabModel::discardThumbnail(const QString &path) const
@@ -417,6 +464,7 @@ void TabModel::setActiveTab(int tabId)
     if (m_persistence != nullptr) {
         m_persistence->setActiveTabId(tabId);
     }
+    stampActive();
     emit activeTabChanged();
     emit activeTabDataChanged();
 }

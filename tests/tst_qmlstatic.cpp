@@ -8,6 +8,7 @@
 #include "Core.h"
 
 #include <QDirIterator>
+#include <QMetaEnum>
 #include <QMetaMethod>
 #include <QMetaProperty>
 #include <QRegularExpression>
@@ -54,6 +55,16 @@ QSet<QString> metaMembers(const QMetaObject *meta)
     }
     for (int i = 0; i < meta->methodCount(); ++i) {
         members.insert(QString::fromLatin1(meta->method(i).name()));
+    }
+    // Enumerators too: QML reads `Settings.CoverIconOnly` off the singleton the same
+    // way it reads a property, and a checker that knew only properties and methods
+    // called every one of them a typo.
+    for (int i = 0; i < meta->enumeratorCount(); ++i) {
+        const QMetaEnum metaEnum = meta->enumerator(i);
+        members.insert(QString::fromLatin1(metaEnum.name()));
+        for (int key = 0; key < metaEnum.keyCount(); ++key) {
+            members.insert(QString::fromLatin1(metaEnum.key(key)));
+        }
     }
     return members;
 }
@@ -126,6 +137,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabsView.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabPreview.qml"), roleSet(tabs)},
+        {QStringLiteral("components/CoverTabField.qml"), roleSet(tabs)},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},

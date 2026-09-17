@@ -4,6 +4,7 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QPair>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStandardPaths>
@@ -26,7 +27,8 @@ const QStringList &schemaStatements()
                        "url TEXT NOT NULL, "
                        "title TEXT NOT NULL DEFAULT '', "
                        "favicon TEXT NOT NULL DEFAULT '', "
-                       "thumbnail TEXT NOT NULL DEFAULT '')"),
+                       "thumbnail TEXT NOT NULL DEFAULT '', "
+                       "last_active INTEGER NOT NULL DEFAULT 0)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS browser_history ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                        "url TEXT NOT NULL UNIQUE, "
@@ -169,13 +171,21 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews. CREATE TABLE IF NOT EXISTS above leaves an
-    // existing table alone, so the column is added here; asking the table rather than
-    // the version number makes this correct whichever way the database was created.
-    if (!hasColumn(QStringLiteral("tab"), QStringLiteral("thumbnail"))) {
+    // Schema 1 predates tab previews and schema 2 the cover's order of tabs. CREATE
+    // TABLE IF NOT EXISTS above leaves an existing table alone, so the columns are
+    // added here; asking the table rather than the version number makes this correct
+    // whichever way the database was created.
+    const QList<QPair<QString, QString>> tabColumns{
+        {QStringLiteral("thumbnail"), QStringLiteral("TEXT NOT NULL DEFAULT ''")},
+        {QStringLiteral("last_active"), QStringLiteral("INTEGER NOT NULL DEFAULT 0")},
+    };
+    for (const QPair<QString, QString> &column : tabColumns) {
+        if (hasColumn(QStringLiteral("tab"), column.first)) {
+            continue;
+        }
         QSqlQuery query(db);
-        if (!query.exec(
-                QStringLiteral("ALTER TABLE tab ADD COLUMN thumbnail TEXT NOT NULL DEFAULT ''"))) {
+        if (!query.exec(QStringLiteral("ALTER TABLE tab ADD COLUMN %1 %2")
+                            .arg(column.first, column.second))) {
             qWarning() << "Storage:" << query.lastError().text();
             db.rollback();
             return false;
