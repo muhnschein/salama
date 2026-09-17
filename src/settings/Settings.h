@@ -27,6 +27,12 @@ class Settings : public QObject
 public:
     // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
     // The values are stored, so their numbers are part of the file format.
+    //
+    // Unscoped on purpose, and not the oversight SonarQube reads it as (cpp:S3642):
+    // the cover reaches these as `Settings.CoverIconOnly`, and QML could not do that
+    // with a scoped enum until Qt 5.8. This application is built against 5.6 (SCOPE.md
+    // §4), so `enum class` here would compile on the host and leave the cover blank on
+    // the phone. TabModel::Role is unscoped for the same reason.
     enum CoverStyle
     {
         CoverIconOnly = 0,
