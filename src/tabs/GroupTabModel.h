@@ -38,7 +38,7 @@ public:
     void reset(const QList<int> &tabIds);
     void append(int tabId);
     void remove(int tabId);
-    void moveRow(int from, int to);
+    void moveTabRow(int from, int to);
     void changed(int tabId, int role);
 
 signals:

@@ -328,7 +328,7 @@ void TabModel::moveTab(int from, int to)
     // The grid's order is this order with the other groups' tabs left out, so a tab
     // of the current group lands in the grid where the tabs before it put it.
     if (groupRow >= 0) {
-        m_groupTabs->moveRow(groupRow, groupRowFor(to));
+        m_groupTabs->moveTabRow(groupRow, groupRowFor(to));
     }
 
     if (m_persistence != nullptr) {

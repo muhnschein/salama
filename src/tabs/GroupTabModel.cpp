@@ -55,7 +55,7 @@ void GroupTabModel::moveTab(int from, int to)
     if (from == to || from < 0 || from > last || to < 0 || to > last) {
         return;
     }
-    // The tab model moves the row and reports the move back here through moveRow():
+    // The tab model moves the row and reports the move back here through moveTabRow():
     // one place decides the order, and the grid's picture of it follows.
     m_tabs->moveTab(m_tabs->indexOf(m_tabIds.at(from)), m_tabs->indexOf(m_tabIds.at(to)));
 }
@@ -89,7 +89,7 @@ void GroupTabModel::remove(int tabId)
     emit countChanged();
 }
 
-void GroupTabModel::moveRow(int from, int to)
+void GroupTabModel::moveTabRow(int from, int to)
 {
     const int last = m_tabIds.count() - 1;
     if (from == to || from < 0 || from > last || to < 0 || to > last) {
