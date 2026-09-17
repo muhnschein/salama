@@ -9,10 +9,12 @@ search across all of them. That is the shape asked for here, and the one a reade
 that browser already knows.
 
 ## Decision
-Every tab is in exactly one **group**; there is always at least one, and the last
-cannot be deleted. A group has a name, which may be empty: an unnamed group is shown as
-what it holds — "3 tabs" — the way Safari shows the tabs outside every group, and it is
-what a database from before this record turns into (every tab in group 1, unnamed).
+Every tab is in exactly one **group**. There is always a **default group**, the first
+ordinary one, which can be neither renamed nor deleted, so the strip always reads
+"*n* tabs" somewhere and the grid always has somewhere to be. A group has a name, which
+may be empty: an unnamed group is shown as what it holds — "3 tabs" — the way Safari
+shows the tabs outside every group, and it is what a database from before this record
+turns into (every tab in group 1, unnamed).
 
 The **tab model stays one list of every tab**, whatever its group. The browsing page
 keeps one `WebView` per row of it (0003), so a tab changing group must not be a row
@@ -58,10 +60,12 @@ in the left corner pushes `pages/TabGroupsPage.qml`; the search button in the ri
 corner pushes `pages/TabSearchPage.qml`. Both are pages over the grid, which stays open
 under them.
 
-`TabGroupsPage` is a list with a pull-down to make a group (`TabGroupDialog`, a name),
-a tap to make one current, and rename and delete in each row's menu. Given a tab
-(`moveTabId`) it is a picker instead: the tap moves the tab into that group, and the
-pull-down makes a new group with the tab in it. The menu's "Move tab to group" opens it
+`TabGroupsPage` is a list with a tap to make a group current, rename and delete in each
+row's menu, and under the last row a row shaped like a group's with a plus where its name
+would start, which makes a group (`TabGroupDialog`, a name) — under the list rather than
+in a pulley, the way postivene offers another profile, because that is where a reader who
+has just read the list is looking. Given a tab (`moveTabId`) it is a picker instead: the
+tap moves the tab into that group, and the plus row makes a new group with the tab in it. The menu's "Move tab to group" opens it
 that way for the tab in front — the one way a tab changes group, beside the grid it
 leaves rather than on a cell that already carries a tap, a carry and a close button.
 
@@ -72,6 +76,13 @@ the new together, both drawn from the same tabs in the same order — and never 
 a reset rebuilt the list under the reader's finger on every keystroke, and on device
 that threw the page about as the first results came in. When the tabs or the groups
 change the list is built again, since the order it is walked in is no longer shared.
+That was not the whole of it: the page still jumped at the first pause in typing. The
+search field was the list's header, and a header lives inside the view's flickable,
+whose content moves as the list narrows — and Silica takes the keyboard away when the
+content under it moves. The field is now **anchored above the list**, outside it, and
+the term reaches the model from a **250 ms timer** restarted on each keystroke, so a
+burst of typing asks once; both are what postivene's chat search does, for the same
+reasons.
 The group heading is a role on the first row of each group rather than a section of
 the list, so two unnamed groups holding the same number of tabs stay two headings. A
 tap calls `BrowserPage.showTab(id)`: the tab to the front, the deck settled on the page.
@@ -87,8 +98,9 @@ that fails half way.
 is unchanged. The grid's delegates address tabs by id (`activateTabById`,
 `closeTabById`) rather than by row, because the grid's rows are no longer the model's.
 
-There is no way to reorder groups yet. The private group is 0017. Two unnamed groups
-are told apart in the strip only by their counts.
+There is no way to reorder groups yet: the private group is first (0017), the default
+group after it, and a new group goes last. Two unnamed groups are told apart in the strip
+only by their counts.
 
 `components/TabsView.qml` keeps its size by handing the strip its own file. The load
 tests drive the strip through `select(index)`, which is what a tap calls, and the pages

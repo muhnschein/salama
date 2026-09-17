@@ -14,19 +14,21 @@ ListItem {
 
     objectName: "tabGroupDelegate"
     contentHeight: Theme.itemSizeMedium
+    // The private group and the default one are what they are: neither renamed nor
+    // removed.
+    readonly property bool fixed: model.privateGroup || model.defaultGroup
+
     menu: ContextMenu {
-        // The private group is what it is: neither renamed nor removed.
         MenuItem {
             objectName: "renameGroupMenu"
             text: qsTr("Rename")
-            enabled: !model.privateGroup
+            enabled: !delegate.fixed
             onClicked: delegate.renameRequested()
         }
         MenuItem {
             objectName: "deleteGroupMenu"
             text: qsTr("Delete")
-            // The last ordinary group has nowhere to send the grid.
-            enabled: !model.privateGroup && TabGroups.count > 2
+            enabled: !delegate.fixed
             onClicked: delegate.remorseAction(qsTr("Deleting tab group"), function () {
                 TabGroups.removeGroup(model.groupId)
             })

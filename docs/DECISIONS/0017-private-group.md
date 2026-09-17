@@ -5,15 +5,16 @@ Private tabs were a flag on a tab: the engine kept their cookies apart, the mode
 them out of history and wrote no preview, and they were never written to the
 database, so a restart lost them. With tab groups (0015) the question was where a
 private tab lives, and the research that followed proposed what Safari does: a private
-group, last in the strip, that every private tab belongs to. The person testing the
+group, at one end of the strip, that every private tab belongs to. The person testing the
 build asked for one thing more — that private tabs survive a restart like the others.
 
 ## Decision
-There is always exactly **one private group** (`TabGroup::isPrivate`). It is last in
-the strip and stays last: a new group is inserted before it and the persisted order is
-renumbered. It is named "Private" wherever groups are named, cannot be renamed or
-deleted, and the last *ordinary* group cannot be deleted either, so the grid always has
-somewhere to be.
+There is always exactly **one private group** (`TabGroup::isPrivate`). It is first in
+the strip and stays first, to the left of the default group, where the person testing
+asked for it; a new group goes last, and the order is sorted on load so that a database
+from the build that kept it last comes up right. It is named "Private" wherever groups
+are named and cannot be renamed or deleted; nor can the default group after it (0015),
+so the grid always has somewhere to be.
 
 A tab is private because of the group it is in, and only then. `newTab(url, true)` —
 the menu's "New private tab" — opens the tab in the private group and makes that group

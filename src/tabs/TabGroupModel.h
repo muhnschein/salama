@@ -24,7 +24,9 @@ public:
         NameRole,
         TabCountRole,
         CurrentRole,
-        PrivateRole
+        PrivateRole,
+        // The group every ordinary tab starts in, which is neither renamed nor removed.
+        DefaultRole
     };
 
     explicit TabGroupModel(TabModel *tabs);

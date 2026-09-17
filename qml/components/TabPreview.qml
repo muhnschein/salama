@@ -6,7 +6,7 @@
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held still
-// for two seconds picks the cell up to be carried to another place in the grid. A
+// for a second and a half picks the cell up to be carried to another place in the grid. A
 // drag to the left slides the cell out and closes the tab when it has gone far
 // enough; released short of that it slides back. The button is drawn above the
 // handler and keeps its own taps (docs/DECISIONS/0010-tab-grid-deck.md).
@@ -36,7 +36,7 @@ Item {
     // True while the cell is being slid out to the left.
     property bool swiping: false
     // How long a finger holds still before the cell comes up.
-    readonly property int holdInterval: 2000
+    readonly property int holdInterval: 1500
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
     // Drawn on the rounded box below: this cell is the active tab, or has a finger.
@@ -262,29 +262,60 @@ Item {
                 color: Theme.secondaryColor
             }
 
-            // A disc under the close button: the glyph alone was lost on most pages.
-            Rectangle {
-                objectName: "closeTabDisc"
-                anchors.centerIn: closeButton
-                width: Theme.iconSizeMedium
-                height: width
-                radius: width / 2
-                color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
-            }
-
-            IconButton {
+            // The close button: a disc of the highlight colour, all but opaque, with
+            // a cross cut through it. Drawn here rather than the theme's icon-m-clear:
+            // that icon carries a disc of its own at its own transparency, so the
+            // glyph alone was lost on most pages and a disc behind it was a disc
+            // inside a disc.
+            Item {
                 id: closeButton
+
+                // Its own tap signal, as the cell has: the handler's carries a mouse
+                // event, which a test cannot give it.
+                signal clicked()
 
                 objectName: "closeTabButton"
                 anchors {
                     right: parent.right
                     top: parent.top
-                    margins: Theme.paddingSmall
                 }
-                width: Theme.iconSizeMedium
+                // The touch target is the whole corner; the mark is what shows.
+                width: Theme.iconSizeMedium + Theme.paddingSmall
                 height: width
-                icon.source: "image://theme/icon-m-clear"
                 onClicked: preview.closeRequested()
+
+                MouseArea {
+                    id: closeTap
+
+                    anchors.fill: parent
+                    onClicked: closeButton.clicked()
+                }
+
+                Rectangle {
+                    id: closeMark
+
+                    objectName: "closeTabMark"
+                    anchors.centerIn: parent
+                    width: Theme.iconSizeSmall + Theme.paddingMedium
+                    height: width
+                    radius: width / 2
+                    color: closeTap.pressed ? Theme.highlightColor
+                                            : Theme.highlightBackgroundColor
+                    opacity: 0.9
+
+                    Repeater {
+                        model: 2
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: closeMark.width / 2
+                            height: Theme.paddingSmall / 2
+                            radius: height / 2
+                            rotation: index === 0 ? 45 : -45
+                            color: Theme.primaryColor
+                        }
+                    }
+                }
             }
         }
 

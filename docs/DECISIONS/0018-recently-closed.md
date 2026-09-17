@@ -10,7 +10,7 @@ desktop browser has: a list of what was closed lately, to open again.
 as the address, title and favicon it had, in a `closed_tab` table (schema 5) so that
 the list survives a restart. `TabModel` records every tab it closes, one at a time or
 all at once, except private ones (0017). `reopen(row)` opens the tab again in the
-current group — the first ordinary group when the private one is current — gives it
+current group — the default group when the private one is current — gives it
 back its title and icon so the grid's cell can say them before the page has loaded,
 and takes it off the list.
 

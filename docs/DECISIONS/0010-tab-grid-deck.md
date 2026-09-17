@@ -46,7 +46,7 @@ Tapping a preview does the same thing as the pull, with the tab it names.
 
 A cell can also be **carried** to another place in the grid, and **slid away** to close
 its tab. The two share the sideways movement, so a hold tells them apart: a finger held
-still for **two full seconds** picks the cell up (a timer the delegate owns, since
+still for **a second and a half** picks the cell up (a timer the delegate owns, since
 `MouseArea.pressAndHoldInterval` came with Qt 5.9), and the cell comes up a little so the
 hand knows it has it; a finger that moves sideways before then is sliding the cell, to
 the left only, because the grid has nothing to the right. Slid past a third of its width
@@ -118,11 +118,19 @@ it fall back over another 400 ms.
 That movement was built and shipped, and on device it was not wanted: a hint that plays
 once, before the hand is anywhere near the screen, is a hint nobody is looking at. So
 `components/DragHandle.qml` is drawn instead — a short rounded bar along the navigation
-bar's top edge and along the top of the grid's head row — and it is deliberately more than
-a decoration: it sits inside the reach the gesture handler already covers, and it lights up
-(`active`) while that gesture has the finger, so the thing you aim at is the thing that
-responds. This is not what Silica does; it is what this application needs, and the previous
-two attempts to guess at a platform idiom for it were both wrong.
+bar's top edge — and it is deliberately more than a decoration: it sits inside the reach
+the gesture handler already covers, and it lights up (`active`) while that gesture has the
+finger, so the thing you aim at is the thing that responds. This is not what Silica does;
+it is what this application needs, and the previous two attempts to guess at a platform
+idiom for it were both wrong. The grid's top edge had the same handle for a while, and on
+device it read as a second handle to find; it now has a **line in the highlight colour
+across the very top of the screen**, as thick as the handle, which is how Silica's own
+pulley menu says it is there.
+
+The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
+colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc
+of its own at its own transparency, baked into the icon, so the glyph alone was lost on
+most pages and a disc drawn behind it was a disc inside a disc.
 
 ### The size of the browsing page
 `qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is

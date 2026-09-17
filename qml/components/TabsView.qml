@@ -119,11 +119,18 @@ Item {
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
         // The grid's own edge is a pulley too: dragged down it hands the page back.
-        DragHandle {
-            objectName: "gridDragHandle"
-            x: (parent.width - width) / 2
-            y: tabsView.cutoutHeight + Theme.paddingSmall
-            active: tabGrid.dragging
+        // Said the way Silica says a pulley menu is there -- a line in the highlight
+        // colour across the whole edge -- rather than with the bar's handle, which on
+        // device read as a second handle to find.
+        Rectangle {
+            objectName: "gridPullIndicator"
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+            height: Theme.paddingSmall
+            color: Theme.highlightColor
         }
 
         TabGroupStrip {

@@ -108,19 +108,22 @@ public:
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
 
-    // Tab groups. There is always one ordinary group and one private group, last in
-    // the list; the private one and the last ordinary one cannot be removed.
+    // Tab groups. There is always one private group, first in the list, and one
+    // default group right after it; neither can be renamed or removed.
     const QList<TabGroup> &groups() const;
     int groupIndexOf(int groupId) const;
     int privateGroupId() const;
+    int defaultGroupId() const;
     int tabCountInGroup(int groupId) const;
     int currentGroupId() const;
     int currentGroupIndex() const;
     void setCurrentGroupId(int groupId);
-    // Returns the new group's id. The new group becomes the current one.
+    // Returns the new group's id. The new group goes last and becomes the current one.
     int addGroup(const QString &name);
+    // Refused for the private group and the default one.
     void renameGroup(int groupId, const QString &name);
-    // Closes the group's tabs and removes it. Refused for the last group.
+    // Closes the group's tabs and removes it. Refused for the private group and the
+    // default one.
     bool removeGroup(int groupId);
     // Puts a tab in another group. Its row in this model does not move, so the view
     // behind it stays; its place in the group is after the tabs already there. A tab
@@ -172,6 +175,8 @@ private:
     void applyCurrentGroup(int groupId);
     // The tab to bring to the front when the active one goes: the nearest in its own
     // group, then the most recent anywhere.
+    // The private group and the default one: neither renamed nor removed.
+    bool isFixedGroup(int groupId) const;
     int successorOf(int index) const;
     int mostRecentTabId(int groupId) const;
     int groupRowFor(int index) const;

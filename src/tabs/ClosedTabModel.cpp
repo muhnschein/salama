@@ -122,10 +122,10 @@ void ClosedTabModel::reopen(int row)
     // Last: opening the tab re-enters the tab model, and the grid's cell wants the
     // title and the icon before the page has loaded to say them itself. It was an
     // ordinary tab, so it comes back as one: in the current group, unless that is
-    // the private group, and then in the first ordinary one.
+    // the private group, and then in the default one.
     const int groupIndex = m_tabs->currentGroupIndex();
     if (groupIndex >= 0 && m_tabs->groups().at(groupIndex).isPrivate) {
-        m_tabs->setCurrentGroupId(m_tabs->groups().first().id);
+        m_tabs->setCurrentGroupId(m_tabs->defaultGroupId());
     }
     const int tabId = m_tabs->newTab(closed.url);
     if (tabId > 0) {

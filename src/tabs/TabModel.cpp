@@ -65,7 +65,7 @@ void TabModel::load()
 }
 
 // Every tab is in a group that exists, there is an ordinary group and a private one,
-// the private one is last, and the current group is among them. A group a stored tab
+// the private one is first, and the current group is among them. A group a stored tab
 // names but no row describes is created unnamed rather than the tab moved: that is
 // what a database from before schema 4 looks like, where every tab says group 1 and
 // no group table says anything. A tab's own flag decides which kind of group it may
@@ -99,7 +99,7 @@ void TabModel::ensureGroups()
         m_currentGroupId = m_tabs.at(activeIndex).groupId;
     }
     if (groupIndexOf(m_currentGroupId) < 0) {
-        m_currentGroupId = m_groups.first().id;
+        m_currentGroupId = defaultGroupId();
     }
     QList<int> ids;
     for (const Tab &tab : m_tabs) {
@@ -110,8 +110,9 @@ void TabModel::ensureGroups()
     m_groupTabs->reset(ids);
 }
 
-// An ordinary group and a private one exist, and the private one is last, whatever
-// order the rows came in.
+// An ordinary group and a private one exist, and the private one is first, whatever
+// order the rows came in -- a database from before the private group moved to the
+// front has it last.
 void TabModel::ensureGroupKinds()
 {
     bool ordinary = false;
@@ -123,7 +124,7 @@ void TabModel::ensureGroupKinds()
     if (!ordinary) {
         TabGroup group;
         group.id = m_nextGroupId++;
-        m_groups.prepend(group);
+        m_groups.append(group);
         if (m_persistence != nullptr) {
             m_persistence->insertGroup(group);
         }
@@ -132,14 +133,14 @@ void TabModel::ensureGroupKinds()
         TabGroup group;
         group.id = m_nextGroupId++;
         group.isPrivate = true;
-        m_groups.append(group);
+        m_groups.prepend(group);
         if (m_persistence != nullptr) {
             m_persistence->insertGroup(group);
         }
     }
     std::stable_sort(m_groups.begin(), m_groups.end(),
                      [](const TabGroup &one, const TabGroup &other) {
-                         return !one.isPrivate && other.isPrivate;
+                         return one.isPrivate && !other.isPrivate;
                      });
 }
 
@@ -149,7 +150,7 @@ void TabModel::fileTabsByKind()
     for (Tab &tab : m_tabs) {
         const int groupIndex = groupIndexOf(tab.groupId);
         if (groupIndex < 0 || m_groups.at(groupIndex).isPrivate != tab.isPrivate) {
-            tab.groupId = tab.isPrivate ? privateGroupId() : m_groups.first().id;
+            tab.groupId = tab.isPrivate ? privateGroupId() : defaultGroupId();
             persist(tab);
         }
     }
@@ -673,6 +674,21 @@ int TabModel::privateGroupId() const
     return 0;
 }
 
+int TabModel::defaultGroupId() const
+{
+    for (const TabGroup &group : m_groups) {
+        if (!group.isPrivate) {
+            return group.id;
+        }
+    }
+    return 0;
+}
+
+bool TabModel::isFixedGroup(int groupId) const
+{
+    return groupId == privateGroupId() || groupId == defaultGroupId();
+}
+
 int TabModel::currentGroupId() const
 {
     return m_currentGroupId;
@@ -722,14 +738,14 @@ int TabModel::addGroup(const QString &name)
     TabGroup group;
     group.id = m_nextGroupId++;
     group.name = name.trimmed();
-    // Before the private group, which stays last.
-    const int row = groupIndexOf(privateGroupId());
-    m_groups.insert(row, group);
+    // Last: the private group and the default one keep the front of the strip.
+    const int row = m_groups.count();
+    m_groups.append(group);
     m_groupModel->inserted(row);
     if (m_persistence != nullptr) {
         m_persistence->insertGroup(group);
         // Positions are given out in insertion order; renumbered so a restart keeps
-        // the private group last.
+        // the order the strip shows.
         m_persistence->saveGroupOrder(m_groups);
     }
     emit groupsChanged();
@@ -740,7 +756,7 @@ int TabModel::addGroup(const QString &name)
 void TabModel::renameGroup(int groupId, const QString &name)
 {
     const int index = groupIndexOf(groupId);
-    if (index < 0 || m_groups.at(index).isPrivate || m_groups.at(index).name == name.trimmed()) {
+    if (index < 0 || isFixedGroup(groupId) || m_groups.at(index).name == name.trimmed()) {
         return;
     }
     m_groups[index].name = name.trimmed();
@@ -754,21 +770,14 @@ void TabModel::renameGroup(int groupId, const QString &name)
 bool TabModel::removeGroup(int groupId)
 {
     const int index = groupIndexOf(groupId);
-    if (index < 0 || m_groups.at(index).isPrivate) {
+    if (index < 0 || isFixedGroup(groupId)) {
         return false;
     }
-    int ordinary = 0;
-    for (const TabGroup &group : m_groups) {
-        ordinary += group.isPrivate ? 0 : 1;
-    }
-    if (ordinary < 2) {
-        return false;
-    }
-    // Current moves to a neighbour first: closing the group's tabs can close the
-    // active one, and whoever answers that by opening a replacement must not open it
-    // in the group that is going.
+    // Current moves to the group before it first, which is never the private one:
+    // closing the group's tabs can close the active one, and whoever answers that by
+    // opening a replacement must not open it in the group that is going.
     if (groupId == m_currentGroupId) {
-        setCurrentGroupId(m_groups.at(index > 0 ? index - 1 : 1).id);
+        setCurrentGroupId(m_groups.at(index - 1).id);
     }
     for (int i = m_tabs.count() - 1; i >= 0; --i) {
         if (m_tabs.at(i).groupId == groupId) {
