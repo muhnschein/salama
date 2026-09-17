@@ -57,7 +57,11 @@ it that is right for everyone:
   across the whole of the room below. The field shapes itself to what it is given
   (below), so this is the same component handed a list of one.
 - `CoverEveryTab` — the heading, the number and the field. The default: what a reader
-  who never opens Settings gets, and the reading this record argues for.
+  who never opens Settings gets, and the reading this record argues for. Settings
+  calls it "the tab count and the most recent tabs", because that is what the field
+  shows: six cells at most, most recently read first, and the number above them is
+  what says how many there are. "Every tab", which it said first, promised more than
+  the field draws past the sixth.
 
 The stored values are 0, 1 and 2 and are therefore part of the config file's format. A
 value outside that range reads back as the default rather than as a cover that draws

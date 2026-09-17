@@ -97,9 +97,12 @@ Page {
                         text: qsTr("The tab count and the last tab")
                     }
 
+                    // "Most recent" rather than "every": the field draws six cells at
+                    // most, most recently read first, and the number above it is what
+                    // says how many there are (docs/DECISIONS/0014-cover-is-the-tab-count.md).
                     MenuItem {
                         objectName: "coverEveryTabItem"
-                        text: qsTr("The tab count and every tab")
+                        text: qsTr("The tab count and the most recent tabs")
                     }
                 }
                 onCurrentIndexChanged: Settings.coverStyle = currentIndex
