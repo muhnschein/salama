@@ -67,8 +67,8 @@ Reuse policy:
 - History and bookmarks (SQLite) with management UI
 - Downloads via platform transfer UI
 - Private tabs (no history or cookie persistence)
-- Settings: home page, search engine, clear data, mobile/desktop UA
-- Cover: the tab count over a field of page previews
+- Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows
+- Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2

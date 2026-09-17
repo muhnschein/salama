@@ -22,8 +22,19 @@ class Settings : public QObject
     Q_PROPERTY(QStringList searchEngineNames READ searchEngineNames CONSTANT)
     Q_PROPERTY(bool desktopMode READ desktopMode WRITE setDesktopMode NOTIFY desktopModeChanged)
     Q_PROPERTY(bool cutoutGuard READ cutoutGuard WRITE setCutoutGuard NOTIFY cutoutGuardChanged)
+    Q_PROPERTY(int coverStyle READ coverStyle WRITE setCoverStyle NOTIFY coverStyleChanged)
 
 public:
+    // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
+    // The values are stored, so their numbers are part of the file format.
+    enum CoverStyle
+    {
+        CoverIconOnly = 0,
+        CoverLatestTab = 1,
+        CoverEveryTab = 2
+    };
+    Q_ENUM(CoverStyle)
+
     explicit Settings(const QString &filePath, QObject *parent = nullptr);
 
     QString homePage() const;
@@ -44,6 +55,11 @@ public:
     bool cutoutGuard() const;
     void setCutoutGuard(bool cutoutGuard);
 
+    // Out-of-range values read back as the default rather than as a cover that draws
+    // nothing: this comes from a file a user can edit.
+    int coverStyle() const;
+    void setCoverStyle(int style);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
@@ -58,6 +74,7 @@ signals:
     void searchEngineChanged();
     void desktopModeChanged();
     void cutoutGuardChanged();
+    void coverStyleChanged();
 
 private:
     QSettings m_settings;

@@ -234,6 +234,26 @@
         <source>Keep pages and the tab grid out from under the camera cutout</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Cover</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and every tab</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TabPreview</name>

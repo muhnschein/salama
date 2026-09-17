@@ -19,7 +19,7 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 - `TabModel` + `TabPersistence` — open tabs, the active tab, private flag.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
-- `Settings` — home page, search engine, desktop mode, address-bar heuristics.
+- `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the only place engine-specific strings live.
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.tuuli 1.0`.

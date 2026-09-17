@@ -46,6 +46,23 @@ The cover says **how many tabs are open**, and shows them.
   at every count — one tab left a stamp in the corner of an empty cover and two left
   a row with a hole under it — and a field that only sometimes fills is not texture.
 
+How much of this a cover shows is **`Settings.coverStyle`**, a choice of three, because
+a cover is the one surface where taste is the whole argument and there is no reading of
+it that is right for everyone:
+
+- `CoverIconOnly` — the app's icon, semi-transparent and centred, and the action. For a
+  reader who wants the switcher to stay a row of apps rather than a row of screens, and
+  for whom a tab count is not news.
+- `CoverLatestTab` — the heading and the number, over the one tab last read, drawn
+  across the whole of the room below. The field shapes itself to what it is given
+  (below), so this is the same component handed a list of one.
+- `CoverEveryTab` — the heading, the number and the field. The default: what a reader
+  who never opens Settings gets, and the reading this record argues for.
+
+The stored values are 0, 1 and 2 and are therefore part of the config file's format. A
+value outside that range reads back as the default rather than as a cover that draws
+nothing: the file is one a user can edit.
+
 The one cover action is a **search**: `icon-cover-search`, opening a new tab with the
 address field up and the whole url selected, so the first key typed replaces it. That is
 what a browser is picked up for, and the cover is the one place where the choice of a
@@ -80,6 +97,14 @@ Grey, not the site's colours, and no highlight on the active cell: a cover belon
 to the phone's ambience rather than to the pages inside the app, and a dozen
 screenshots each in its own colours is noise at cover size. Which tab is in front is
 not something the cover has room to say.
+
+The icon the first style draws is `art/harbour-tuuli.png`, rendered from
+`icons/harbour-tuuli.svg` by `icons/render.sh` and committed with the launcher icons.
+It sits beside `qml/` rather than inside it — `ci/harbour-check.sh` holds that directory
+to QML files alone, and that rule is worth more than the convenience of one shorter path
+— and `CMakeLists.txt` installs `art/` next to `qml/` so the relative URL resolves the
+same way in the source tree and on the device. It is a PNG rather than the SVG because
+the SVG image format plugin is not something a Harbour application may count on.
 
 `tests/silica-stubs/QtGraphicalEffects/` gains `Desaturate` and `LinearGradient`
 beside `OpacityMask`, on the terms already written there: the module is not installed

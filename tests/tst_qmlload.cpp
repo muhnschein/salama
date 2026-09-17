@@ -53,6 +53,7 @@ private slots:
     void settingsPage();
     void cover();
     void coverFieldFollowsTheFront();
+    void coverStyleIsConfigurable();
     void thumbnailCapturedOnLeavingTheApp();
 
 private:
@@ -1033,6 +1034,17 @@ void tst_qmlload::settingsPage()
     cutoutSwitch->setProperty("checked", true);
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 
+    // The cover's style is the one choice here that another page has to answer.
+    QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
+    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
+    coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
+    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
+                 ->property("visible")
+                 .toBool());
+    coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
+
     click(find(QStringLiteral("clearHistoryButton")));
     QCOMPARE(m_core->history()->count(), 0);
 
@@ -1112,6 +1124,48 @@ void tst_qmlload::coverFieldFollowsTheFront()
     tabs->activateTabById(second);
     cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
     QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), secondShot);
+}
+
+void tst_qmlload::coverStyleIsConfigurable()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    m_core->tabs()->newTab(QStringLiteral("https://second.example/"));
+    m_core->tabs()->newTab(QStringLiteral("https://third.example/"));
+
+    auto *heading = coverItem->findChild<QObject *>(QStringLiteral("coverHeading"));
+    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
+    auto *field = coverItem->findChild<QObject *>(QStringLiteral("coverTabField"));
+    auto *icon = coverItem->findChild<QObject *>(QStringLiteral("coverIcon"));
+
+    // Every tab, which is what a reader who has not been to Settings gets.
+    QVERIFY(heading->property("visible").toBool());
+    QVERIFY(count->property("visible").toBool());
+    QVERIFY(field->property("visible").toBool());
+    QVERIFY(!icon->property("visible").toBool());
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
+
+    // The middle one: the heading stays, and the field is cut to the tab last read --
+    // one cell, which the grid draws across the whole of the room it has.
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    QVERIFY(heading->property("visible").toBool());
+    QVERIFY(count->property("visible").toBool());
+    QVERIFY(field->property("visible").toBool());
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
+
+    // The icon alone: no heading, no number, no pictures. The action stays whatever
+    // the style is -- it is what the cover is there to offer.
+    m_core->settings()->setCoverStyle(Settings::CoverIconOnly);
+    QVERIFY(!heading->property("visible").toBool());
+    QVERIFY(!count->property("visible").toBool());
+    QVERIFY(!field->property("visible").toBool());
+    QVERIFY(icon->property("visible").toBool());
+    QVERIFY(icon->property("source").toUrl().toString().endsWith(
+        QStringLiteral("art/harbour-tuuli.png")));
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")) != nullptr);
+
+    m_core->settings()->setCoverStyle(Settings::CoverEveryTab);
+    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
 }
 
 void tst_qmlload::thumbnailCapturedOnLeavingTheApp()

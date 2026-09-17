@@ -234,6 +234,26 @@
         <source>Keep pages and the tab grid out from under the camera cutout</source>
         <translation>Pidä sivut ja välilehdet poissa kameraloven alta</translation>
     </message>
+    <message>
+        <source>Cover</source>
+        <translation>Kansi</translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation>Näyttää</translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation>Vain kuvakkeen</translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
+    </message>
+    <message>
+        <source>The tab count and every tab</source>
+        <translation>Välilehtien määrän ja kaikki välilehdet</translation>
+    </message>
 </context>
 <context>
     <name>TabPreview</name>

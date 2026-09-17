@@ -27,10 +27,30 @@ CoverBackground {
     /// string that is not.
     readonly property string brandName: "Tuuli"
 
+    /// What the cover is set to show (Settings.coverStyle): its own icon and nothing
+    /// else, the heading over the one tab last read, or the heading over all of them.
+    /// Everything below turns on these two.
+    readonly property bool showsHeading: Settings.coverStyle !== Settings.CoverIconOnly
+    readonly property bool showsEveryTab: Settings.coverStyle === Settings.CoverEveryTab
+
     objectName: "coverPage"
 
     // Under the words, and declared first so that it is: the field is the ground
     // the heading and the number are read against.
+    // The icon-only cover: the app's own mark, quietly, and the one action. No count
+    // and no pictures -- for a reader who wants the switcher to stay a row of apps
+    // rather than a row of screens, and for whom a tab count is not news.
+    Image {
+        objectName: "coverIcon"
+        anchors.centerIn: parent
+        width: Math.round(cover.width * 0.45)
+        height: width
+        visible: !cover.showsHeading
+        opacity: Theme.opacityHigh
+        smooth: true
+        source: Qt.resolvedUrl("../../art/harbour-tuuli.png")
+    }
+
     CoverTabField {
         anchors {
             top: heading.bottom
@@ -41,11 +61,15 @@ CoverBackground {
         }
         // Texture, not a picture to be looked into. Grey at full strength reads as
         // a second screen inside the cover and pulls the eye off the number.
+        visible: cover.showsHeading
         opacity: Theme.opacityLow
         fadeHeight: cover.height * 0.14
         // Most recently in front first, so what a glance lands on is where the reader
-        // has just been rather than whichever tab is oldest.
-        model: TabModel.recentThumbnails
+        // has just been rather than whichever tab is oldest. Cut to one for the middle
+        // style, where the field becomes a single full-bleed picture of the tab just
+        // left -- the grid shapes itself to what it is given.
+        model: cover.showsEveryTab ? TabModel.recentThumbnails
+                                   : TabModel.recentThumbnails.slice(0, 1)
     }
 
     // The name and what the number counts, top left; the number top right, always
@@ -54,6 +78,7 @@ CoverBackground {
         id: heading
 
         objectName: "coverHeading"
+        visible: cover.showsHeading
         anchors {
             top: parent.top
             left: parent.left
@@ -90,6 +115,7 @@ CoverBackground {
         id: tabCount
 
         objectName: "coverTabCount"
+        visible: cover.showsHeading
         anchors {
             top: parent.top
             right: parent.right

@@ -75,6 +75,37 @@ Page {
             }
 
             SectionHeader {
+                text: qsTr("Cover")
+            }
+
+            // The order is how much the cover says, least first, and the index is the
+            // stored value -- Settings.CoverIconOnly, CoverLatestTab, CoverEveryTab.
+            // A combo rather than three switches: these are one choice, not three.
+            ComboBox {
+                objectName: "coverStyleCombo"
+                width: parent.width
+                label: qsTr("Shows")
+                currentIndex: Settings.coverStyle
+                menu: ContextMenu {
+                    MenuItem {
+                        objectName: "coverIconOnlyItem"
+                        text: qsTr("The icon alone")
+                    }
+
+                    MenuItem {
+                        objectName: "coverLatestTabItem"
+                        text: qsTr("The tab count and the last tab")
+                    }
+
+                    MenuItem {
+                        objectName: "coverEveryTabItem"
+                        text: qsTr("The tab count and every tab")
+                    }
+                }
+                onCurrentIndexChanged: Settings.coverStyle = currentIndex
+            }
+
+            SectionHeader {
                 text: qsTr("Clear data")
             }
 
