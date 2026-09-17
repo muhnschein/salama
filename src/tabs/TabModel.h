@@ -160,7 +160,11 @@ signals:
 private:
     void load();
     void ensureGroups();
-    // Recomputes which tabs keep their views and tells the rows that changed.
+    void ensureGroupKinds();
+    void fileTabsByKind();
+    // Which tabs keep their views, and the same recomputed with the rows that changed
+    // told; the constructor takes the set alone, there being no rows to tell yet.
+    QSet<int> liveSet() const;
     void refreshLive();
     void setActiveTab(int tabId);
     // The tab and the group, each without following the other.

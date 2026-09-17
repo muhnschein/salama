@@ -28,7 +28,7 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
 {
     load();
     ensureGroups();
-    refreshLive();
+    m_liveIds = liveSet();
 }
 
 void TabModel::load()
@@ -90,6 +90,30 @@ void TabModel::ensureGroups()
             }
         }
     }
+    ensureGroupKinds();
+    fileTabsByKind();
+
+    // The active tab's group first, then what was stored, then the first there is.
+    const int activeIndex = indexOf(m_activeTabId);
+    if (activeIndex >= 0) {
+        m_currentGroupId = m_tabs.at(activeIndex).groupId;
+    }
+    if (groupIndexOf(m_currentGroupId) < 0) {
+        m_currentGroupId = m_groups.first().id;
+    }
+    QList<int> ids;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == m_currentGroupId) {
+            ids.append(tab.id);
+        }
+    }
+    m_groupTabs->reset(ids);
+}
+
+// An ordinary group and a private one exist, and the private one is last, whatever
+// order the rows came in.
+void TabModel::ensureGroupKinds()
+{
     bool ordinary = false;
     bool privateGroup = false;
     for (const TabGroup &group : m_groups) {
@@ -113,11 +137,15 @@ void TabModel::ensureGroups()
             m_persistence->insertGroup(group);
         }
     }
-    // Private last, whatever order the rows came in.
     std::stable_sort(m_groups.begin(), m_groups.end(),
                      [](const TabGroup &one, const TabGroup &other) {
                          return !one.isPrivate && other.isPrivate;
                      });
+}
+
+// A private tab is in the private group and an ordinary tab in an ordinary one.
+void TabModel::fileTabsByKind()
+{
     for (Tab &tab : m_tabs) {
         const int groupIndex = groupIndexOf(tab.groupId);
         if (groupIndex < 0 || m_groups.at(groupIndex).isPrivate != tab.isPrivate) {
@@ -125,22 +153,6 @@ void TabModel::ensureGroups()
             persist(tab);
         }
     }
-
-    // The active tab's group first, then what was stored, then the first there is.
-    const int activeIndex = indexOf(m_activeTabId);
-    if (activeIndex >= 0) {
-        m_currentGroupId = m_tabs.at(activeIndex).groupId;
-    }
-    if (groupIndexOf(m_currentGroupId) < 0) {
-        m_currentGroupId = m_groups.first().id;
-    }
-    QList<int> ids;
-    for (const Tab &tab : m_tabs) {
-        if (tab.groupId == m_currentGroupId) {
-            ids.append(tab.id);
-        }
-    }
-    m_groupTabs->reset(ids);
 }
 
 void TabModel::stampActive()
@@ -826,7 +838,7 @@ void TabModel::setLiveTabLimit(int limit)
 // rest are unloaded by the view and reloaded when they come to the front again, the
 // way Jolla's browser keeps five (docs/DECISIONS/0016-five-live-pages.md). Ordered
 // as the cover orders them, by the activation stamp, stable over the list.
-void TabModel::refreshLive()
+QSet<int> TabModel::liveSet() const
 {
     QList<const Tab *> ordered;
     ordered.reserve(m_tabs.count());
@@ -842,6 +854,12 @@ void TabModel::refreshLive()
             live.insert(ordered.at(i)->id);
         }
     }
+    return live;
+}
+
+void TabModel::refreshLive()
+{
+    const QSet<int> live = liveSet();
     if (live == m_liveIds) {
         return;
     }
