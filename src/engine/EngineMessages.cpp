@@ -32,6 +32,16 @@ QString EngineMessages::cookiesAndSiteDataPayload() const
     return QStringLiteral("cookies-and-site-data");
 }
 
+QString EngineMessages::memoryPressureTopic() const
+{
+    return QStringLiteral("memory-pressure");
+}
+
+QString EngineMessages::heapMinimizePayload() const
+{
+    return QStringLiteral("heap-minimize");
+}
+
 QString EngineMessages::cachePayload() const
 {
     return QStringLiteral("cache");

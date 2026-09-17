@@ -154,6 +154,7 @@ Item {
         height: Theme.itemSizeLarge
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
+        // Held rather than tapped, the button brings up what was closed lately.
         IconButton {
             objectName: "newTabButton"
             anchors.centerIn: parent
@@ -164,6 +165,15 @@ Item {
                 TabModel.newTab(Settings.homePage)
                 tabsView.tabActivated()
             }
+            onPressAndHold: closedPanel.show()
         }
+    }
+
+    RecentlyClosedPanel {
+        id: closedPanel
+
+        width: parent.width
+        height: Math.round(parent.height * 0.6)
+        onTabReopened: tabsView.tabActivated()
     }
 }

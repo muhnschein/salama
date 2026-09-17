@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QString>
 #include <QStringList>
+#include <QVariantList>
 
 namespace Tuuli {
 
@@ -23,6 +24,13 @@ class Settings : public QObject
     Q_PROPERTY(bool desktopMode READ desktopMode WRITE setDesktopMode NOTIFY desktopModeChanged)
     Q_PROPERTY(bool cutoutGuard READ cutoutGuard WRITE setCutoutGuard NOTIFY cutoutGuardChanged)
     Q_PROPERTY(int coverStyle READ coverStyle WRITE setCoverStyle NOTIFY coverStyleChanged)
+    // How many tabs keep their page loaded; 0 for all of them
+    // (docs/DECISIONS/0016-five-live-pages.md). The index is over liveTabLimitChoices,
+    // for a combo box.
+    Q_PROPERTY(int liveTabLimit READ liveTabLimit NOTIFY liveTabLimitChanged)
+    Q_PROPERTY(int liveTabLimitIndex READ liveTabLimitIndex WRITE setLiveTabLimitIndex NOTIFY
+                   liveTabLimitChanged)
+    Q_PROPERTY(QVariantList liveTabLimitChoices READ liveTabLimitChoices CONSTANT)
 
 public:
     // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
@@ -66,6 +74,12 @@ public:
     int coverStyle() const;
     void setCoverStyle(int style);
 
+    int liveTabLimit() const;
+    int liveTabLimitIndex() const;
+    void setLiveTabLimitIndex(int index);
+    QVariantList liveTabLimitChoices() const;
+    static int defaultLiveTabLimit();
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
@@ -81,6 +95,7 @@ signals:
     void desktopModeChanged();
     void cutoutGuardChanged();
     void coverStyleChanged();
+    void liveTabLimitChanged();
 
 private:
     QSettings m_settings;

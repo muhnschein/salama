@@ -14,6 +14,8 @@ add_library(tuuli-core STATIC
     settings/Settings.h
     storage/Storage.cpp
     storage/Storage.h
+    tabs/ClosedTabModel.cpp
+    tabs/ClosedTabModel.h
     tabs/GroupTabModel.cpp
     tabs/GroupTabModel.h
     tabs/Tab.h

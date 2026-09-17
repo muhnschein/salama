@@ -71,25 +71,17 @@ with it would be chasing itself.
 The change of state is **one animation**, 200 ms on the bar's own `height`. Everything
 that differs between the two states is drawn from `expansion`, which is 0 at the slim
 height and 1 at the whole one: the three controls fade with it, the host's size is
-interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it, and the bar's
-own background fades with it, so that what is left at the slim end is the handle and the
-host over the page. Nothing else animates, because nothing else has to.
+interpolated between `Theme.fontSizeSmall` and `Theme.fontSizeMedium` by it. Nothing
+else animates, because nothing else has to.
 
-The slim background is a **wash, not nothing**. The first slim bar was fully
-transparent, and on device the host was unreadable over a light page: white text on
-white. It now fades to `Theme.opacityLow` of the dimmer colour rather than to zero,
-which is the least that keeps the host legible and still lets the page be seen through
-it. The choice is a taste, and a reader who
-finds it too much or too little changes one number.
-
-The page **runs behind the slim bar**, which is what makes that translucency worth
-anything: with the view still ending above it, what showed through was the application's
-own background, and a dark strip where a dark bar had been is no change at all. What does
-not come back with it is the defect: while the bar is slim the gesture handler keeps only
-the strip its handle is in (`Theme.itemSizeExtraSmall`) and every press below that reaches
-the page. The bar covers the foot of a page only where it is drawing something — a
-handle — rather than across its whole width, which is what made the old translucent bar a
-defect rather than a decoration.
+The slim bar is **opaque**, as the whole one is. It was fully transparent first, with
+the page running on behind it, and on device the host was unreadable over a light page:
+white text on white. A wash of `Theme.opacityLow` was tried next and was still not
+enough to read by. So the bar keeps its colour at either height, and the page **ends
+above the slim bar** as it ends above the whole one: nothing is hidden under it, and
+the whole of it takes presses, since nothing under it is the page's to take. What the
+slim bar gives the page is the quarter of its height it gives up, which is what the
+gesture was for.
 
 `viewArea` is sized from the bar, so the engine's view grows into what the bar gives up —
 but sized for the **slim** height for as long as the bar is between the two (`resizing`).

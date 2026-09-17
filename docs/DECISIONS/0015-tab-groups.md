@@ -1,4 +1,4 @@
-# 0015 — Tab groups: one grid per group, a strip to flick between them
+# 0015 — Tab groups: one grid per group, a strip to move between them
 
 ## Context
 The grid showed every open tab in one field, and past a dozen or so it stopped being a
@@ -43,14 +43,20 @@ closes its tabs, moving the current group to a neighbour first, so that whoever 
 "no tabs left" by opening one does not open it in the group that is going.
 
 The **strip** (`components/TabGroupStrip.qml`) replaced the "*n* tabs" label in the
-grid's head row: a horizontal `ListView` over `TabGroups`, `SnapOneItem` with
-`StrictlyEnforceRange` so the current group sits in the middle with half a neighbour to
-either side, each item half the list's width. Its `currentIndex` and the model's current
-group each drive the other; the list's index is set from a `Connections` rather than
-bound, because the view writes to it too and a binding would not survive that. The edit
-button in the left corner pushes `pages/TabGroupsPage.qml`; the search button in the
-right corner pushes `pages/TabSearchPage.qml`. Both are pages over the grid, which
-stays open under them.
+grid's head row. It is Silica's own `TabBar` geometry rebuilt from public API, the way
+vuo rebuilds it: a `Flickable` over a `Row` of buttons, each its name's width plus
+`Theme.paddingLarge` either side, the current name in the highlight colour with a
+`Theme._lineWidth` underline exactly as wide as the name, the first and last button
+taking the slack so a row that fits is centred, and the current button kept in the
+middle when it does not. `TabBar` itself lives in `Sailfish.Silica.private` and works
+only inside a `TabView`, neither of which a Harbour application may have. A tap chooses
+a group. The first strip was a snapping `ListView` with each item half the width, whose
+flick chose the group; it was too sparse to read as a row of names, and the view's own
+writes to `currentIndex` during layout chose groups nobody had asked for. Small type,
+because the strip sits over the grid rather than at the head of a page. The edit button
+in the left corner pushes `pages/TabGroupsPage.qml`; the search button in the right
+corner pushes `pages/TabSearchPage.qml`. Both are pages over the grid, which stays open
+under them.
 
 `TabGroupsPage` is a list with a pull-down to make a group (`TabGroupDialog`, a name),
 a tap to make one current, and rename and delete in each row's menu. Given a tab
@@ -59,12 +65,16 @@ pull-down makes a new group with the tab in it. The menu's "Move tab to group" o
 that way for the tab in front — the one way a tab changes group, beside the grid it
 leaves rather than on a cell that already carries a tap, a carry and a close button.
 
-`TabSearchModel` (`TabSearch`) rebuilds its rows on every change to the tabs or the
-groups: title or address containing the term, case-insensitively, group by group in the
-strip's order. The group heading is a role on the first row of each group rather than a
-section of the list, so two unnamed groups holding the same number of tabs stay two
-headings. A tap calls `BrowserPage.showTab(id)`: the tab to the front, the deck settled
-on the page.
+`TabSearchModel` (`TabSearch`) lists the tabs whose title or address contains the term,
+case-insensitively, group by group in the strip's order. When the **term** changes the
+rows are refined one at a time — kept, removed or inserted, walking the old rows and
+the new together, both drawn from the same tabs in the same order — and never reset:
+a reset rebuilt the list under the reader's finger on every keystroke, and on device
+that threw the page about as the first results came in. When the tabs or the groups
+change the list is built again, since the order it is walked in is no longer shared.
+The group heading is a role on the first row of each group rather than a section of
+the list, so two unnamed groups holding the same number of tabs stay two headings. A
+tap calls `BrowserPage.showTab(id)`: the tab to the front, the deck settled on the page.
 
 Storage is schema 4: `tab.group_id`, a `tab_group` table, and `currentGroupId` beside
 `activeTabId` in `setting`. `TabModel` repairs what it loads — a tab naming a group no
@@ -77,10 +87,9 @@ that fails half way.
 is unchanged. The grid's delegates address tabs by id (`activateTabById`,
 `closeTabById`) rather than by row, because the grid's rows are no longer the model's.
 
-There is no way to reorder groups yet, and no private group; the second is the subject
-of the research that followed this record. Two unnamed groups are told apart in the
-strip only by their counts.
+There is no way to reorder groups yet. The private group is 0017. Two unnamed groups
+are told apart in the strip only by their counts.
 
 `components/TabsView.qml` keeps its size by handing the strip its own file. The load
-tests drive the strip through its list's `currentIndex`, which is what a flick changes,
-and the pages through their `objectName`s as the other pages are driven.
+tests drive the strip through `select(index)`, which is what a tap calls, and the pages
+through their `objectName`s as the other pages are driven.

@@ -20,6 +20,7 @@ public:
         qmlRegisterUncreatableType<Orientation>(uri, 1, 0, "Orientation", reason);
         qmlRegisterUncreatableType<PageStatus>(uri, 1, 0, "PageStatus", reason);
         qmlRegisterUncreatableType<TruncationMode>(uri, 1, 0, "TruncationMode", reason);
+        qmlRegisterUncreatableType<Dock>(uri, 1, 0, "Dock", reason);
     }
 };
 

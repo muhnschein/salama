@@ -6,6 +6,7 @@
 //  * Every `model.<role>` a delegate binds exists on that delegate's model.
 //  * Every `<Singleton>.<member>` reference resolves to a property, method or signal.
 #include "Core.h"
+#include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
 #include "tabs/TabGroupModel.h"
 
@@ -18,6 +19,7 @@
 #include <QtTest>
 
 using Tuuli::BookmarkModel;
+using Tuuli::ClosedTabModel;
 using Tuuli::EngineMessages;
 using Tuuli::GroupTabModel;
 using Tuuli::HistoryModel;
@@ -150,6 +152,8 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("pages/TabGroupsPage.qml"), roleSet(*tabs.groupModel())},
         {QStringLiteral("components/TabSearchDelegate.qml"), roleSet(search)},
         {QStringLiteral("pages/TabSearchPage.qml"), roleSet(search)},
+        {QStringLiteral("components/ClosedTabDelegate.qml"), roleSet(*tabs.closedTabs())},
+        {QStringLiteral("components/RecentlyClosedPanel.qml"), roleSet(*tabs.closedTabs())},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},
@@ -181,6 +185,7 @@ void tst_qmlstatic::singletonMembersExist()
     const QHash<QString, QSet<QString>> members{
         {QStringLiteral("TabModel"), metaMembers(&TabModel::staticMetaObject)},
         {QStringLiteral("GroupTabs"), metaMembers(&GroupTabModel::staticMetaObject)},
+        {QStringLiteral("ClosedTabs"), metaMembers(&ClosedTabModel::staticMetaObject)},
         {QStringLiteral("TabGroups"), metaMembers(&TabGroupModel::staticMetaObject)},
         {QStringLiteral("TabSearch"), metaMembers(&TabSearchModel::staticMetaObject)},
         {QStringLiteral("HistoryModel"), metaMembers(&HistoryModel::staticMetaObject)},
@@ -189,8 +194,8 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
     };
     const QRegularExpression reference(
-        QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|HistoryModel|BookmarkModel|"
-                       "Settings|EngineMessages)\\.([A-Za-z_][A-Za-z0-9_]*)"));
+        QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
+                       "BookmarkModel|Settings|EngineMessages)\\.([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;
     for (const QString &file : qmlFiles()) {

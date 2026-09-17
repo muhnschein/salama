@@ -2,6 +2,7 @@
 // Copyright (c) 2026 tuuli contributors
 #include "TabModel.h"
 
+#include "ClosedTabModel.h"
 #include "GroupTabModel.h"
 #include "TabGroupModel.h"
 #include "TabPersistence.h"
@@ -23,9 +24,11 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     , m_thumbnailDirectory(std::move(thumbnailDirectory))
     , m_groupTabs(new GroupTabModel(this))
     , m_groupModel(new TabGroupModel(this))
+    , m_closedTabs(new ClosedTabModel(this, persistence))
 {
     load();
     ensureGroups();
+    refreshLive();
 }
 
 void TabModel::load()
@@ -61,10 +64,13 @@ void TabModel::load()
     stampActive();
 }
 
-// Every tab is in a group that exists, there is at least one group, and the current
-// one is among them. A group a stored tab names but no row describes is created
-// unnamed rather than the tab moved: that is what a database from before schema 4
-// looks like, where every tab says group 1 and no group table says anything.
+// Every tab is in a group that exists, there is an ordinary group and a private one,
+// the private one is last, and the current group is among them. A group a stored tab
+// names but no row describes is created unnamed rather than the tab moved: that is
+// what a database from before schema 4 looks like, where every tab says group 1 and
+// no group table says anything. A tab's own flag decides which kind of group it may
+// be in; a private tab in an ordinary group -- there were none before schema 5, but
+// the file is one a user can edit -- moves to the private one.
 void TabModel::ensureGroups()
 {
     for (const TabGroup &group : m_groups) {
@@ -74,7 +80,7 @@ void TabModel::ensureGroups()
         if (tab.groupId <= 0) {
             tab.groupId = 1;
         }
-        if (groupIndexOf(tab.groupId) < 0) {
+        if (!tab.isPrivate && groupIndexOf(tab.groupId) < 0) {
             TabGroup group;
             group.id = tab.groupId;
             m_groups.append(group);
@@ -84,12 +90,39 @@ void TabModel::ensureGroups()
             }
         }
     }
-    if (m_groups.isEmpty()) {
+    bool ordinary = false;
+    bool privateGroup = false;
+    for (const TabGroup &group : m_groups) {
+        ordinary = ordinary || !group.isPrivate;
+        privateGroup = privateGroup || group.isPrivate;
+    }
+    if (!ordinary) {
         TabGroup group;
         group.id = m_nextGroupId++;
+        m_groups.prepend(group);
+        if (m_persistence != nullptr) {
+            m_persistence->insertGroup(group);
+        }
+    }
+    if (!privateGroup) {
+        TabGroup group;
+        group.id = m_nextGroupId++;
+        group.isPrivate = true;
         m_groups.append(group);
         if (m_persistence != nullptr) {
             m_persistence->insertGroup(group);
+        }
+    }
+    // Private last, whatever order the rows came in.
+    std::stable_sort(m_groups.begin(), m_groups.end(),
+                     [](const TabGroup &one, const TabGroup &other) {
+                         return !one.isPrivate && other.isPrivate;
+                     });
+    for (Tab &tab : m_tabs) {
+        const int groupIndex = groupIndexOf(tab.groupId);
+        if (groupIndex < 0 || m_groups.at(groupIndex).isPrivate != tab.isPrivate) {
+            tab.groupId = tab.isPrivate ? privateGroupId() : m_groups.first().id;
+            persist(tab);
         }
     }
 
@@ -153,6 +186,8 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
         return tab.id == m_activeTabId;
     case GroupRole:
         return tab.groupId;
+    case LiveRole:
+        return m_liveIds.contains(tab.id);
     default:
         return {};
     }
@@ -169,6 +204,7 @@ QHash<int, QByteArray> TabModel::roleNames() const
         {PrivateRole, QByteArrayLiteral("privateTab")},
         {ActiveRole, QByteArrayLiteral("activeTab")},
         {GroupRole, QByteArrayLiteral("groupId")},
+        {LiveRole, QByteArrayLiteral("liveTab")},
     };
 }
 
@@ -256,15 +292,19 @@ int TabModel::newTab(const QString &url, bool isPrivate)
     Tab tab;
     tab.id = m_nextTabId++;
     tab.url = url;
-    tab.isPrivate = isPrivate;
-    tab.groupId = m_currentGroupId;
+    // Asked for private, or opened while the private group is current: either way
+    // the tab is private and lives there.
+    tab.groupId = isPrivate ? privateGroupId() : m_currentGroupId;
+    tab.isPrivate = m_groups.at(groupIndexOf(tab.groupId)).isPrivate;
 
     const int index = m_tabs.count();
     beginInsertRows(QModelIndex(), index, index);
     m_tabs.append(tab);
     endInsertRows();
     m_awaitingFirstUrl.append(tab.id);
-    m_groupTabs->append(tab.id);
+    if (tab.groupId == m_currentGroupId) {
+        m_groupTabs->append(tab.id);
+    }
     m_groupModel->changed(groupIndexOf(tab.groupId), TabGroupModel::TabCountRole);
 
     if (m_persistence != nullptr) {
@@ -412,6 +452,9 @@ void TabModel::closeTab(int index)
             setActiveTab(successor);
         }
     }
+    // A tab gone may leave room for another to keep its page.
+    refreshLive();
+    m_closedTabs->record(closing);
 
     // Last: listeners may open a replacement tab from here, which re-enters this model.
     emit tabClosed(closing.id);
@@ -443,8 +486,12 @@ void TabModel::closeAllTabs()
     endRemoveRows();
     m_awaitingFirstUrl.clear();
     m_activeTabId = 0;
+    m_liveIds.clear();
     m_groupTabs->reset(QList<int>());
     m_groupModel->changedAll(TabGroupModel::TabCountRole);
+    for (const Tab &tab : closed) {
+        m_closedTabs->record(tab);
+    }
 
     if (m_persistence != nullptr) {
         m_persistence->removeAllTabs();
@@ -604,6 +651,16 @@ int TabModel::tabCountInGroup(int groupId) const
     return count;
 }
 
+int TabModel::privateGroupId() const
+{
+    for (const TabGroup &group : m_groups) {
+        if (group.isPrivate) {
+            return group.id;
+        }
+    }
+    return 0;
+}
+
 int TabModel::currentGroupId() const
 {
     return m_currentGroupId;
@@ -653,10 +710,15 @@ int TabModel::addGroup(const QString &name)
     TabGroup group;
     group.id = m_nextGroupId++;
     group.name = name.trimmed();
-    m_groups.append(group);
-    m_groupModel->inserted(m_groups.count() - 1);
+    // Before the private group, which stays last.
+    const int row = groupIndexOf(privateGroupId());
+    m_groups.insert(row, group);
+    m_groupModel->inserted(row);
     if (m_persistence != nullptr) {
         m_persistence->insertGroup(group);
+        // Positions are given out in insertion order; renumbered so a restart keeps
+        // the private group last.
+        m_persistence->saveGroupOrder(m_groups);
     }
     emit groupsChanged();
     setCurrentGroupId(group.id);
@@ -666,7 +728,7 @@ int TabModel::addGroup(const QString &name)
 void TabModel::renameGroup(int groupId, const QString &name)
 {
     const int index = groupIndexOf(groupId);
-    if (index < 0 || m_groups.at(index).name == name.trimmed()) {
+    if (index < 0 || m_groups.at(index).isPrivate || m_groups.at(index).name == name.trimmed()) {
         return;
     }
     m_groups[index].name = name.trimmed();
@@ -680,7 +742,14 @@ void TabModel::renameGroup(int groupId, const QString &name)
 bool TabModel::removeGroup(int groupId)
 {
     const int index = groupIndexOf(groupId);
-    if (index < 0 || m_groups.count() < 2) {
+    if (index < 0 || m_groups.at(index).isPrivate) {
+        return false;
+    }
+    int ordinary = 0;
+    for (const TabGroup &group : m_groups) {
+        ordinary += group.isPrivate ? 0 : 1;
+    }
+    if (ordinary < 2) {
         return false;
     }
     // Current moves to a neighbour first: closing the group's tabs can close the
@@ -715,6 +784,9 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
     if (tab.groupId == groupId) {
         return true;
     }
+    if (m_groups.at(groupIndexOf(groupId)).isPrivate != tab.isPrivate) {
+        return false;
+    }
     const int oldGroup = tab.groupId;
     tab.groupId = groupId;
     notifyRow(index, GroupRole);
@@ -735,9 +807,62 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
     return true;
 }
 
+int TabModel::liveTabLimit() const
+{
+    return m_liveLimit;
+}
+
+void TabModel::setLiveTabLimit(int limit)
+{
+    const int bounded = std::max(0, limit);
+    if (bounded == m_liveLimit) {
+        return;
+    }
+    m_liveLimit = bounded;
+    refreshLive();
+}
+
+// The tab in front and the ones read most recently before it keep their pages; the
+// rest are unloaded by the view and reloaded when they come to the front again, the
+// way Jolla's browser keeps five (docs/DECISIONS/0016-five-live-pages.md). Ordered
+// as the cover orders them, by the activation stamp, stable over the list.
+void TabModel::refreshLive()
+{
+    QList<const Tab *> ordered;
+    ordered.reserve(m_tabs.count());
+    for (const Tab &tab : m_tabs) {
+        ordered.append(&tab);
+    }
+    std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
+        return one->lastActive > other->lastActive;
+    });
+    QSet<int> live;
+    for (int i = 0; i < ordered.count(); ++i) {
+        if (m_liveLimit == 0 || i < m_liveLimit || ordered.at(i)->id == m_activeTabId) {
+            live.insert(ordered.at(i)->id);
+        }
+    }
+    if (live == m_liveIds) {
+        return;
+    }
+    const QSet<int> before = m_liveIds;
+    m_liveIds = live;
+    for (int i = 0; i < m_tabs.count(); ++i) {
+        const int id = m_tabs.at(i).id;
+        if (before.contains(id) != live.contains(id)) {
+            notifyRow(i, LiveRole);
+        }
+    }
+}
+
 GroupTabModel *TabModel::groupTabs() const
 {
     return m_groupTabs;
+}
+
+ClosedTabModel *TabModel::closedTabs() const
+{
+    return m_closedTabs;
 }
 
 TabGroupModel *TabModel::groupModel() const
@@ -775,6 +900,7 @@ void TabModel::applyActiveTab(int tabId)
         m_persistence->setActiveTabId(tabId);
     }
     stampActive();
+    refreshLive();
     emit activeTabChanged();
     emit activeTabDataChanged();
 }

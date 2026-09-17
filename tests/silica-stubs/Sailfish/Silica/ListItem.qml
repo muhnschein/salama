@@ -5,6 +5,10 @@ Item {
     id: listItem
 
     property real contentHeight: 0
+
+    // Silica's ListItem is as tall as its content, and a list lays its rows out by
+    // that: what the load tests sort rows by.
+    implicitHeight: contentHeight
     property Item menu
     property bool down: false
     property bool highlighted: down

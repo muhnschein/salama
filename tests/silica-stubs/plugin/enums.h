@@ -41,6 +41,21 @@ public:
     Q_ENUM(Value)
 };
 
+class Dock : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Value
+    {
+        Top = 1,
+        Bottom = 2,
+        Left = 4,
+        Right = 8
+    };
+    Q_ENUM(Value)
+};
+
 class TruncationMode : public QObject
 {
     Q_OBJECT

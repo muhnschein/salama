@@ -15,16 +15,18 @@ ListItem {
     objectName: "tabGroupDelegate"
     contentHeight: Theme.itemSizeMedium
     menu: ContextMenu {
+        // The private group is what it is: neither renamed nor removed.
         MenuItem {
             objectName: "renameGroupMenu"
             text: qsTr("Rename")
+            enabled: !model.privateGroup
             onClicked: delegate.renameRequested()
         }
         MenuItem {
             objectName: "deleteGroupMenu"
             text: qsTr("Delete")
-            // There is always one group: the last one has nowhere to send the grid.
-            enabled: TabGroups.count > 1
+            // The last ordinary group has nowhere to send the grid.
+            enabled: !model.privateGroup && TabGroups.count > 2
             onClicked: delegate.remorseAction(qsTr("Deleting tab group"), function () {
                 TabGroups.removeGroup(model.groupId)
             })
@@ -42,7 +44,9 @@ ListItem {
         Label {
             objectName: "tabGroupName"
             width: parent.width
-            text: model.name.length > 0 ? model.name : qsTr("%n tab(s)", "", model.tabCount)
+            text: model.privateGroup ? qsTr("Private")
+                                     : model.name.length > 0 ? model.name
+                                                             : qsTr("%n tab(s)", "", model.tabCount)
             truncationMode: TruncationMode.Fade
             color: delegate.highlighted || model.currentGroup ? Theme.highlightColor
                                                               : Theme.primaryColor
@@ -53,7 +57,7 @@ ListItem {
             width: parent.width
             text: qsTr("%n tab(s)", "", model.tabCount)
             // The name already says this for an unnamed group.
-            visible: model.name.length > 0
+            visible: model.name.length > 0 || model.privateGroup
             font.pixelSize: Theme.fontSizeExtraSmall
             color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
         }

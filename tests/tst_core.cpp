@@ -8,6 +8,7 @@
 using Tuuli::BookmarkModel;
 using Tuuli::Core;
 using Tuuli::HistoryModel;
+using Tuuli::Settings;
 
 class tst_core : public QObject
 {
@@ -85,6 +86,11 @@ void tst_core::restoresState()
     QCOMPARE(core.tabs()->count(), 1);
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
     QVERIFY(core.settings()->desktopMode());
+    // The tab model takes its live-page limit from Settings, and follows it.
+    QCOMPARE(core.tabs()->liveTabLimit(), Settings::defaultLiveTabLimit());
+    core.settings()->setLiveTabLimitIndex(0);
+    QCOMPARE(core.tabs()->liveTabLimit(), core.settings()->liveTabLimit());
+    QCOMPARE(core.tabs()->liveTabLimit(), 3);
 }
 
 QTEST_GUILESS_MAIN(tst_core)

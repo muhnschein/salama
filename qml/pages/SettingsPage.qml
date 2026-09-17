@@ -74,6 +74,26 @@ Page {
                 onCheckedChanged: Settings.cutoutGuard = checked
             }
 
+            // The choices are Settings.liveTabLimitChoices, 0 standing for all of them.
+            // Five is the default, and what the platform browser keeps.
+            ComboBox {
+                objectName: "liveTabLimitCombo"
+                width: parent.width
+                label: qsTr("Pages kept loaded")
+                description: qsTr("Tabs beyond this many reload their page when opened again")
+                currentIndex: Settings.liveTabLimitIndex
+                menu: ContextMenu {
+                    Repeater {
+                        model: Settings.liveTabLimitChoices
+
+                        MenuItem {
+                            text: modelData > 0 ? modelData : qsTr("All")
+                        }
+                    }
+                }
+                onCurrentIndexChanged: Settings.liveTabLimitIndex = currentIndex
+            }
+
             SectionHeader {
                 text: qsTr("Cover")
             }

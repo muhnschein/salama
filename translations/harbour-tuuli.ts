@@ -173,6 +173,17 @@
     </message>
 </context>
 <context>
+    <name>RecentlyClosedPanel</name>
+    <message>
+        <source>Recently closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing closed recently</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -258,6 +269,18 @@
         <source>The tab count and the most recent tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Pages kept loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tabs beyond this many reload their page when opened again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>
@@ -279,6 +302,10 @@
             <numerusform>%n tab</numerusform>
             <numerusform>%n tabs</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>Private</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -308,6 +335,10 @@
             <numerusform>%n tab</numerusform>
             <numerusform>%n tabs</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>Private</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -347,6 +378,10 @@
     </message>
     <message>
         <source>Private tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -36,6 +36,8 @@ QVariant TabGroupModel::data(const QModelIndex &index, int role) const
         return m_tabs->tabCountInGroup(group.id);
     case CurrentRole:
         return group.id == m_tabs->currentGroupId();
+    case PrivateRole:
+        return group.isPrivate;
     default:
         return {};
     }
@@ -48,6 +50,7 @@ QHash<int, QByteArray> TabGroupModel::roleNames() const
         {NameRole, QByteArrayLiteral("name")},
         {TabCountRole, QByteArrayLiteral("tabCount")},
         {CurrentRole, QByteArrayLiteral("currentGroup")},
+        {PrivateRole, QByteArrayLiteral("privateGroup")},
     };
 }
 
@@ -92,7 +95,7 @@ bool TabGroupModel::moveTab(int tabId, int groupId)
 
 void TabGroupModel::inserted(int row)
 {
-    // The tab model has already appended the group; this only tells the views.
+    // The tab model has already put the group in its list; this only tells the views.
     beginInsertRows(QModelIndex(), row, row);
     endInsertRows();
     emit countChanged();

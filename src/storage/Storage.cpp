@@ -29,11 +29,19 @@ const QStringList &schemaStatements()
                        "favicon TEXT NOT NULL DEFAULT '', "
                        "thumbnail TEXT NOT NULL DEFAULT '', "
                        "last_active INTEGER NOT NULL DEFAULT 0, "
-                       "group_id INTEGER NOT NULL DEFAULT 1)"),
+                       "group_id INTEGER NOT NULL DEFAULT 1, "
+                       "private INTEGER NOT NULL DEFAULT 0)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS tab_group ("
                        "group_id INTEGER PRIMARY KEY, "
                        "name TEXT NOT NULL DEFAULT '', "
-                       "position INTEGER NOT NULL)"),
+                       "position INTEGER NOT NULL, "
+                       "private INTEGER NOT NULL DEFAULT 0)"),
+        QStringLiteral("CREATE TABLE IF NOT EXISTS closed_tab ("
+                       "id INTEGER PRIMARY KEY, "
+                       "url TEXT NOT NULL, "
+                       "title TEXT NOT NULL DEFAULT '', "
+                       "favicon TEXT NOT NULL DEFAULT '', "
+                       "closed INTEGER NOT NULL)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS browser_history ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                        "url TEXT NOT NULL UNIQUE, "
@@ -176,24 +184,33 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews, schema 2 the cover's order of tabs and schema 3
-    // tab groups. CREATE TABLE IF NOT EXISTS above leaves an existing table alone, so
-    // the columns are added here; asking the table rather than the version number
-    // makes this correct whichever way the database was created. Every tab from
-    // before schema 4 lands in group 1, which TabModel creates when no group row
-    // claims the id.
-    const QList<QPair<QString, QString>> tabColumns{
-        {QStringLiteral("thumbnail"), QStringLiteral("TEXT NOT NULL DEFAULT ''")},
-        {QStringLiteral("last_active"), QStringLiteral("INTEGER NOT NULL DEFAULT 0")},
-        {QStringLiteral("group_id"), QStringLiteral("INTEGER NOT NULL DEFAULT 1")},
+    // Schema 1 predates tab previews, schema 2 the cover's order of tabs, schema 3
+    // tab groups and schema 4 the private group. CREATE TABLE IF NOT EXISTS above
+    // leaves an existing table alone, so the columns are added here; asking the table
+    // rather than the version number makes this correct whichever way the database
+    // was created. Every tab from before schema 4 lands in group 1, which TabModel
+    // creates when no group row claims the id.
+    struct Column
+    {
+        const char *table;
+        const char *name;
+        const char *definition;
     };
-    for (const QPair<QString, QString> &column : tabColumns) {
-        if (hasColumn(QStringLiteral("tab"), column.first)) {
+    const QList<Column> columns{
+        {"tab", "thumbnail", "TEXT NOT NULL DEFAULT ''"},
+        {"tab", "last_active", "INTEGER NOT NULL DEFAULT 0"},
+        {"tab", "group_id", "INTEGER NOT NULL DEFAULT 1"},
+        {"tab", "private", "INTEGER NOT NULL DEFAULT 0"},
+        {"tab_group", "private", "INTEGER NOT NULL DEFAULT 0"},
+    };
+    for (const Column &column : columns) {
+        if (hasColumn(QLatin1String(column.table), QLatin1String(column.name))) {
             continue;
         }
         QSqlQuery query(db);
-        if (!query.exec(QStringLiteral("ALTER TABLE tab ADD COLUMN %1 %2")
-                            .arg(column.first, column.second))) {
+        if (!query.exec(QStringLiteral("ALTER TABLE %1 ADD COLUMN %2 %3")
+                            .arg(QLatin1String(column.table), QLatin1String(column.name),
+                                 QLatin1String(column.definition)))) {
             qWarning() << "Storage:" << query.lastError().text();
             db.rollback();
             return false;

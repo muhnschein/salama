@@ -31,6 +31,7 @@ public:
         GroupIdRole,
         GroupNameRole,
         GroupTabCountRole,
+        GroupPrivateRole,
         // True on the first row of each group, where the page draws the group's heading.
         GroupStartRole
     };
@@ -57,7 +58,10 @@ private:
         bool groupStart;
     };
 
+    QList<Row> rowsForTerm() const;
     void rebuild();
+    // The term changed: rows come and go one at a time, the list is not reset.
+    void refine();
     bool matches(int tabIndex) const;
 
     TabModel *m_tabs;

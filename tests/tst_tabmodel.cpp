@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 tuuli contributors
 #include "storage/Storage.h"
+#include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
 #include "tabs/TabGroupModel.h"
 #include "tabs/TabModel.h"
@@ -14,9 +15,11 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+using Tuuli::ClosedTabModel;
 using Tuuli::GroupTabModel;
 using Tuuli::Storage;
 using Tuuli::Tab;
+using Tuuli::TabGroup;
 using Tuuli::TabGroupModel;
 using Tuuli::TabModel;
 using Tuuli::TabPersistence;
@@ -51,6 +54,10 @@ private slots:
     void movingATabToAnotherGroup();
     void groupsSurviveARestart();
     void searchSpansTheGroups();
+    void searchRefinesWithoutResetting();
+    void privateGroupIsLastAndKept();
+    void closedTabsCanBeReopened();
+    void livePagesAreCapped();
 };
 
 namespace {
@@ -467,6 +474,9 @@ void tst_tabmodel::persistenceRoundTrip()
         TabModel model(&persistence);
         publicId = model.newTab(QStringLiteral("https://public.example/"));
         model.newTab(QStringLiteral("https://secret.example/"), true);
+        // Back to the ordinary group first: a tab opened while the private group is
+        // current would be private too.
+        model.activateTabById(publicId);
         otherId = model.newTab(QStringLiteral("https://other.example/"));
         model.updateTitle(publicId, QStringLiteral("Public"));
         model.updateFavicon(publicId, QStringLiteral("https://public.example/favicon.ico"));
@@ -474,14 +484,17 @@ void tst_tabmodel::persistenceRoundTrip()
         model.activateTabById(publicId);
     }
     {
+        // The private tab comes back too, private, in the private group.
         TabModel model(&persistence);
-        QCOMPARE(model.count(), 2);
+        QCOMPARE(model.count(), 3);
         QCOMPARE(model.activeTabId(), publicId);
         QCOMPARE(model.activeTitle(), QStringLiteral("Public"));
         QCOMPARE(model.activeFavicon(), QStringLiteral("https://public.example/favicon.ico"));
-        QCOMPARE(role(model, 1, TabModel::UrlRole).toString(),
+        QCOMPARE(role(model, 2, TabModel::UrlRole).toString(),
                  QStringLiteral("https://other.example/moved"));
-        QVERIFY(!role(model, 1, TabModel::PrivateRole).toBool());
+        QVERIFY(!role(model, 2, TabModel::PrivateRole).toBool());
+        QVERIFY(role(model, 1, TabModel::PrivateRole).toBool());
+        QCOMPARE(role(model, 1, TabModel::GroupRole).toInt(), model.privateGroupId());
 
         // Restored tabs are not "visited" again when the engine reports their url.
         QSignalSpy visitedSpy(&model, &TabModel::visited);
@@ -624,26 +637,35 @@ void tst_tabmodel::thumbnailsAreOptional()
 
 void tst_tabmodel::thereIsAlwaysAGroup()
 {
+    // An ordinary group and the private one, in that order.
     TabModel model(nullptr);
-    QCOMPARE(model.groups().count(), 1);
+    QCOMPARE(model.groups().count(), 2);
     const int groupId = model.groups().first().id;
     QVERIFY(groupId > 0);
+    QVERIFY(!model.groups().first().isPrivate);
+    QVERIFY(model.groups().last().isPrivate);
+    QCOMPARE(model.privateGroupId(), model.groups().last().id);
     QCOMPARE(model.currentGroupId(), groupId);
     QCOMPARE(model.currentGroupIndex(), 0);
-    QCOMPARE(model.groupModel()->count(), 1);
+    QCOMPARE(model.groupModel()->count(), 2);
     QCOMPARE(model.groupModel()->rowCount(model.groupModel()->index(0, 0)), 0);
     QCOMPARE(model.groupModel()->groupIdAt(0), groupId);
-    QCOMPARE(model.groupModel()->groupIdAt(1), 0);
+    QCOMPARE(model.groupModel()->groupIdAt(2), 0);
     QVERIFY(role(*model.groupModel(), 0, TabGroupModel::NameRole).toString().isEmpty());
     QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 0);
     QVERIFY(role(*model.groupModel(), 0, TabGroupModel::CurrentRole).toBool());
-    QVERIFY(!role(*model.groupModel(), 1, TabGroupModel::CurrentRole).isValid());
+    QVERIFY(!role(*model.groupModel(), 0, TabGroupModel::PrivateRole).toBool());
+    QVERIFY(role(*model.groupModel(), 1, TabGroupModel::PrivateRole).toBool());
+    QVERIFY(!role(*model.groupModel(), 1, TabGroupModel::CurrentRole).toBool());
+    QVERIFY(!role(*model.groupModel(), 2, TabGroupModel::CurrentRole).isValid());
     QCOMPARE(model.groupModel()->roleNames().value(TabGroupModel::TabCountRole),
              QByteArrayLiteral("tabCount"));
     QCOMPARE(model.roleNames().value(TabModel::GroupRole), QByteArrayLiteral("groupId"));
 
-    // The last group cannot go, and nothing else names a group that is not there.
+    // Neither the last ordinary group nor the private one can go, and nothing else
+    // names a group that is not there.
     QVERIFY(!model.removeGroup(groupId));
+    QVERIFY(!model.removeGroup(model.privateGroupId()));
     QVERIFY(!model.removeGroup(4242));
     model.setCurrentGroupId(4242);
     QCOMPARE(model.currentGroupId(), groupId);
@@ -651,6 +673,8 @@ void tst_tabmodel::thereIsAlwaysAGroup()
     QCOMPARE(model.currentGroupId(), groupId);
     QVERIFY(!model.moveTabToGroup(1, groupId));
     model.renameGroup(4242, QStringLiteral("Nowhere"));
+    model.renameGroup(model.privateGroupId(), QStringLiteral("Not private"));
+    QVERIFY(model.groups().last().name.isEmpty());
 
     // A new tab lands in the group there is, and the grid's model shows it.
     const int a = model.newTab(QStringLiteral("https://a.example/"));
@@ -682,9 +706,11 @@ void tst_tabmodel::groupsHoldTheirOwnTabs()
     // page keeps the tab it had: an empty group has nothing to bring to the front.
     const int work = model.addGroup(QStringLiteral("  Work "));
     QVERIFY(work > home);
-    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groups().count(), 3);
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(model.currentGroupIndex(), 1);
+    // Before the private group, which stays last.
+    QVERIFY(model.groups().last().isPrivate);
     QCOMPARE(groupSpy.count(), 1);
     QCOMPARE(groupsSpy.count(), 1);
     QCOMPARE(insertSpy.count(), 1);
@@ -803,7 +829,7 @@ void tst_tabmodel::closingStaysInTheGroup()
     model.closeTabById(a3);
     QCOMPARE(model.activeTabId(), b1);
     QCOMPARE(model.currentGroupId(), work);
-    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groups().count(), 3);
     QCOMPARE(model.tabCountInGroup(home), 0);
 
     // An empty group can be looked at, and a tab opened there.
@@ -823,7 +849,7 @@ void tst_tabmodel::closingStaysInTheGroup()
 
     // Closing every tab empties every group and keeps them all.
     model.closeAllTabs();
-    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groups().count(), 3);
     QCOMPARE(model.groupTabs()->count(), 0);
     QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::TabCountRole).toInt(), 0);
 }
@@ -845,7 +871,7 @@ void tst_tabmodel::removingAGroupClosesItsTabs()
     model.activateTabById(b2);
     QCOMPARE(model.currentGroupId(), work);
     QVERIFY(model.removeGroup(work));
-    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groups().count(), 3);
     QCOMPARE(model.groupIndexOf(work), -1);
     QCOMPARE(closedSpy.count(), 2);
     QCOMPARE(removedSpy.count(), 1);
@@ -858,10 +884,11 @@ void tst_tabmodel::removingAGroupClosesItsTabs()
 
     // Removing the first group while it is current moves to the one after it.
     QVERIFY(model.removeGroup(home));
-    QCOMPARE(model.groups().count(), 1);
+    QCOMPARE(model.groups().count(), 2);
     QCOMPARE(model.currentGroupId(), play);
     QCOMPARE(model.activeTabId(), c1);
     QCOMPARE(model.count(), 1);
+    // The last ordinary group stays, with the private one behind it.
     QVERIFY(!model.removeGroup(play));
 }
 
@@ -927,10 +954,13 @@ void tst_tabmodel::groupsSurviveARestart()
     }
     {
         TabModel model(&persistence);
-        QCOMPARE(model.groups().count(), 2);
+        QCOMPARE(model.groups().count(), 3);
         QCOMPARE(model.groups().at(0).id, home);
         QCOMPARE(model.groups().at(1).name, QStringLiteral("Office"));
-        QCOMPARE(model.count(), 2);
+        QVERIFY(model.groups().at(2).isPrivate);
+        // The private tab came back with the rest.
+        QCOMPARE(model.count(), 3);
+        QCOMPARE(model.tabCountInGroup(model.privateGroupId()), 1);
         QCOMPARE(model.activeTabId(), b1);
         QCOMPARE(model.currentGroupId(), work);
         QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{b1});
@@ -938,12 +968,15 @@ void tst_tabmodel::groupsSurviveARestart()
         const int play = model.addGroup(QStringLiteral("Play"));
         QVERIFY(play > work);
         QVERIFY(model.removeGroup(work));
-        QCOMPARE(model.activeTabId(), a1);
+        // The tab most recently in front was the private one, so it comes forward.
+        QVERIFY(model.activeIsPrivate());
+        QCOMPARE(model.currentGroupId(), model.privateGroupId());
+        model.activateTabById(a1);
         QVERIFY(model.removeGroup(play));
     }
     {
         TabModel model(&persistence);
-        QCOMPARE(model.groups().count(), 1);
+        QCOMPARE(model.groups().count(), 2);
         QCOMPARE(model.currentGroupId(), home);
         QCOMPARE(model.activeTabId(), a1);
         QVERIFY(model.addGroup(QStringLiteral("Again")) > home);
@@ -959,9 +992,13 @@ void tst_tabmodel::groupsSurviveARestart()
         persistence.setCurrentGroupId(4242);
         persistence.setActiveTabId(77);
         TabModel model(&persistence);
-        QCOMPARE(model.groups().count(), 3);
-        QCOMPARE(model.groups().last().id, 40);
-        QVERIFY(model.groups().last().name.isEmpty());
+        QCOMPARE(model.groups().count(), 4);
+        // Made for the stray, and put before the private group all the same.
+        const TabGroup strayGroup = model.groups().at(2);
+        QCOMPARE(strayGroup.id, 40);
+        QVERIFY(strayGroup.name.isEmpty());
+        QVERIFY(!strayGroup.isPrivate);
+        QVERIFY(model.groups().last().isPrivate);
         QCOMPARE(model.currentGroupId(), 40);
         QVERIFY(model.addGroup(QString()) > 40);
     }
@@ -986,23 +1023,26 @@ void tst_tabmodel::searchSpansTheGroups()
     const int a2 = model.newTab(QStringLiteral("https://weather.example/"), true);
     model.updateTitle(a2, QStringLiteral("Weather news"));
 
-    // With nothing typed, every tab, group by group and each group's first marked.
+    // With nothing typed, every tab, group by group and each group's first marked;
+    // the private tab under the private group, last.
     QCOMPARE(search.count(), 3);
     QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a1);
-    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
-    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), b1);
+    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), b1);
+    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), a2);
     QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
-    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(role(search, 1, TabSearchModel::GroupStartRole).toBool());
     QVERIFY(role(search, 2, TabSearchModel::GroupStartRole).toBool());
-    QVERIFY(role(search, 1, TabSearchModel::PrivateRole).toBool());
-    QCOMPARE(role(search, 2, TabSearchModel::GroupIdRole).toInt(), work);
-    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Work"));
+    QVERIFY(role(search, 2, TabSearchModel::PrivateRole).toBool());
+    QVERIFY(role(search, 2, TabSearchModel::GroupPrivateRole).toBool());
+    QVERIFY(!role(search, 1, TabSearchModel::GroupPrivateRole).toBool());
+    QCOMPARE(role(search, 1, TabSearchModel::GroupIdRole).toInt(), work);
+    QCOMPARE(role(search, 1, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Work"));
     QVERIFY(role(search, 0, TabSearchModel::GroupNameRole).toString().isEmpty());
-    QCOMPARE(role(search, 0, TabSearchModel::GroupTabCountRole).toInt(), 2);
-    QCOMPARE(role(search, 2, TabSearchModel::UrlRole).toString(),
+    QCOMPARE(role(search, 0, TabSearchModel::GroupTabCountRole).toInt(), 1);
+    QCOMPARE(role(search, 1, TabSearchModel::UrlRole).toString(),
              QStringLiteral("https://mail.example/"));
-    QCOMPARE(role(search, 2, TabSearchModel::TitleRole).toString(), QStringLiteral("Inbox"));
-    QVERIFY(role(search, 2, TabSearchModel::FaviconRole).toString().isEmpty());
+    QCOMPARE(role(search, 1, TabSearchModel::TitleRole).toString(), QStringLiteral("Inbox"));
+    QVERIFY(role(search, 1, TabSearchModel::FaviconRole).toString().isEmpty());
     QVERIFY(!role(search, 3, TabSearchModel::TabIdRole).isValid());
     QCOMPARE(search.roleNames().value(TabSearchModel::GroupStartRole),
              QByteArrayLiteral("groupStart"));
@@ -1013,6 +1053,7 @@ void tst_tabmodel::searchSpansTheGroups()
     QCOMPARE(termSpy.count(), 1);
     QCOMPARE(search.count(), 2);
     QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
+    QVERIFY(role(search, 1, TabSearchModel::GroupStartRole).toBool());
     search.setSearchTerm(QStringLiteral("NEWS"));
     QCOMPARE(termSpy.count(), 1);
     search.setSearchTerm(QStringLiteral("mail.ex"));
@@ -1026,12 +1067,268 @@ void tst_tabmodel::searchSpansTheGroups()
     search.setSearchTerm(QString());
     QCOMPARE(search.count(), 3);
     model.renameGroup(work, QStringLiteral("Office"));
-    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Office"));
+    QCOMPARE(role(search, 1, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Office"));
     model.closeTabById(b1);
     QCOMPARE(search.count(), 2);
     model.updateTitle(a1, QStringLiteral("Evening news"));
     QCOMPARE(role(search, 0, TabSearchModel::TitleRole).toString(), QStringLiteral("Evening news"));
     QVERIFY(countSpy.count() >= 3);
+}
+
+void tst_tabmodel::searchRefinesWithoutResetting()
+{
+    TabModel model(nullptr);
+    TabSearchModel search(&model);
+    const int a = model.newTab(QStringLiteral("https://apple.example/"));
+    const int b = model.newTab(QStringLiteral("https://banana.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    const int c = model.newTab(QStringLiteral("https://apricot.example/"));
+    const int d = model.newTab(QStringLiteral("https://cherry.example/"));
+    Q_UNUSED(work)
+    QCOMPARE(search.count(), 4);
+    QSignalSpy resetSpy(&search, &TabSearchModel::modelReset);
+    QSignalSpy removeSpy(&search, &TabSearchModel::rowsRemoved);
+    QSignalSpy insertSpy(&search, &TabSearchModel::rowsInserted);
+    QSignalSpy changeSpy(&search, &TabSearchModel::dataChanged);
+
+    // Typing takes rows out one at a time; the list is never reset around a
+    // keystroke, so the page under the keyboard keeps its place and its focus.
+    search.setSearchTerm(QStringLiteral("ap"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(removeSpy.count(), 2);
+    QCOMPARE(insertSpy.count(), 0);
+    QCOMPARE(search.count(), 2);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a);
+    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), c);
+    QVERIFY(role(search, 1, TabSearchModel::GroupStartRole).toBool());
+
+    // Narrowing further removes the last row of a group, and the next group's first
+    // row keeps its heading.
+    search.setSearchTerm(QStringLiteral("apr"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(removeSpy.count(), 3);
+    QCOMPARE(search.count(), 1);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), c);
+    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+
+    // Widening puts rows back where they belong -- "a" is in every address -- and a
+    // row that stops being the first of its group is told so.
+    search.setSearchTerm(QStringLiteral("a"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(insertSpy.count(), 3);
+    QCOMPARE(search.count(), 4);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a);
+    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), b);
+    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), c);
+    QCOMPARE(role(search, 3, TabSearchModel::TabIdRole).toInt(), d);
+    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(!role(search, 3, TabSearchModel::GroupStartRole).toBool());
+    search.setSearchTerm(QStringLiteral("banana"));
+    QCOMPARE(search.count(), 1);
+    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(changeSpy.count() >= 1);
+    search.setSearchTerm(QString());
+    QCOMPARE(search.count(), 4);
+    QCOMPARE(role(search, 3, TabSearchModel::TabIdRole).toInt(), d);
+    QCOMPARE(resetSpy.count(), 0);
+
+    // The tabs changing is another matter: then the list is built again.
+    model.closeTabById(d);
+    QVERIFY(resetSpy.count() >= 1);
+    QCOMPARE(search.count(), 3);
+}
+
+void tst_tabmodel::privateGroupIsLastAndKept()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    int home = 0;
+    int secret = 0;
+    {
+        TabModel model(&persistence);
+        home = model.groups().first().id;
+        const int a = model.newTab(QStringLiteral("https://a.example/"));
+        QSignalSpy groupSpy(&model, &TabModel::currentGroupChanged);
+
+        // Asked for private, the tab lands in the private group and takes the
+        // current group there; opened while that group is current, so does the next.
+        secret = model.newTab(QStringLiteral("https://secret.example/"), true);
+        QCOMPARE(model.currentGroupId(), model.privateGroupId());
+        QCOMPARE(groupSpy.count(), 1);
+        QVERIFY(model.activeIsPrivate());
+        QCOMPARE(role(model, 1, TabModel::GroupRole).toInt(), model.privateGroupId());
+        const int more = model.newTab(QStringLiteral("https://more.example/"));
+        QVERIFY(role(model, model.indexOf(more), TabModel::PrivateRole).toBool());
+        QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{secret, more}));
+        QVERIFY(model.thumbnailPath(more).isEmpty());
+
+        // Neither way across the line: private is a property of the view, not of
+        // the group a tab is filed under.
+        QVERIFY(!model.moveTabToGroup(more, home));
+        QVERIFY(!model.moveTabToGroup(a, model.privateGroupId()));
+        QCOMPARE(role(model, model.indexOf(a), TabModel::GroupRole).toInt(), home);
+
+        // A new group goes before the private one.
+        const int work = model.addGroup(QStringLiteral("Work"));
+        QCOMPARE(model.groups().at(1).id, work);
+        QVERIFY(model.groups().last().isPrivate);
+        QCOMPARE(model.groupModel()->groupIdAt(2), model.privateGroupId());
+        model.closeTabById(more);
+        model.activateTabById(a);
+    }
+    {
+        // Private tabs, and the private group's place, survive a restart.
+        TabModel model(&persistence);
+        QCOMPARE(model.groups().count(), 3);
+        QVERIFY(model.groups().last().isPrivate);
+        QCOMPARE(model.count(), 2);
+        QCOMPARE(model.indexOf(secret), 1);
+        QVERIFY(role(model, 1, TabModel::PrivateRole).toBool());
+        QCOMPARE(model.currentGroupId(), home);
+        model.setCurrentGroupId(model.privateGroupId());
+        QCOMPARE(model.activeTabId(), secret);
+        QVERIFY(model.activeIsPrivate());
+        QVERIFY(!model.removeGroup(model.privateGroupId()));
+    }
+    {
+        // A private tab filed under an ordinary group -- a hand-edited database -- is
+        // moved to the private group on load rather than shown among ordinary tabs.
+        Tab stray;
+        stray.id = 77;
+        stray.url = QStringLiteral("https://stray.example/");
+        stray.groupId = home;
+        stray.isPrivate = true;
+        persistence.insertTab(stray);
+        TabModel model(&persistence);
+        QCOMPARE(role(model, model.indexOf(77), TabModel::GroupRole).toInt(),
+                 model.privateGroupId());
+        QCOMPARE(model.tabCountInGroup(home), 1);
+    }
+}
+
+void tst_tabmodel::closedTabsCanBeReopened()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    {
+        TabModel model(&persistence);
+        ClosedTabModel *closed = model.closedTabs();
+        QVERIFY(closed != nullptr);
+        QCOMPARE(closed->count(), 0);
+        QCOMPARE(closed->rowCount(closed->index(0, 0)), 0);
+        QSignalSpy countSpy(closed, &ClosedTabModel::countChanged);
+
+        const int a = model.newTab(QStringLiteral("https://a.example/"));
+        model.updateTitle(a, QStringLiteral("Alpha"));
+        model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));
+        const int b = model.newTab(QStringLiteral("https://b.example/"));
+        const int secret = model.newTab(QStringLiteral("https://secret.example/"), true);
+        model.newTab(QStringLiteral("https://c.example/"));
+
+        // Closed tabs are listed newest first; a private one leaves nothing behind.
+        model.closeTabById(a);
+        model.closeTabById(secret);
+        model.closeTabById(b);
+        QCOMPARE(closed->count(), 2);
+        QCOMPARE(countSpy.count(), 2);
+        QCOMPARE(role(*closed, 0, ClosedTabModel::UrlRole).toString(),
+                 QStringLiteral("https://b.example/"));
+        QCOMPARE(role(*closed, 1, ClosedTabModel::UrlRole).toString(),
+                 QStringLiteral("https://a.example/"));
+        QCOMPARE(role(*closed, 1, ClosedTabModel::TitleRole).toString(), QStringLiteral("Alpha"));
+        QCOMPARE(role(*closed, 1, ClosedTabModel::FaviconRole).toString(),
+                 QStringLiteral("https://a.example/favicon.ico"));
+        QVERIFY(role(*closed, 1, ClosedTabModel::ClosedIdRole).toInt() > 0);
+        QVERIFY(!role(*closed, 2, ClosedTabModel::UrlRole).isValid());
+        QCOMPARE(closed->roleNames().value(ClosedTabModel::ClosedIdRole),
+                 QByteArrayLiteral("closedId"));
+
+        // Opening one again brings it back with what it was and takes it off the
+        // list -- as an ordinary tab, so not into the private group that is current.
+        QVERIFY(model.activeIsPrivate());
+        closed->reopen(1);
+        QCOMPARE(closed->count(), 1);
+        QCOMPARE(model.activeUrl(), QStringLiteral("https://a.example/"));
+        QCOMPARE(model.activeTitle(), QStringLiteral("Alpha"));
+        QCOMPARE(model.activeFavicon(), QStringLiteral("https://a.example/favicon.ico"));
+        QVERIFY(!model.activeIsPrivate());
+        QCOMPARE(model.currentGroupId(), model.groups().first().id);
+        closed->reopen(5);
+        QCOMPARE(closed->count(), 1);
+
+        // Closing every tab records every ordinary one, and not the private one.
+        model.closeAllTabs();
+        QCOMPARE(closed->count(), 2);
+        QCOMPARE(role(*closed, 0, ClosedTabModel::UrlRole).toString(),
+                 QStringLiteral("https://a.example/"));
+    }
+    {
+        // The list survives a restart, and clears on request.
+        TabModel model(&persistence);
+        ClosedTabModel *closed = model.closedTabs();
+        QCOMPARE(closed->count(), 2);
+        QCOMPARE(role(*closed, 1, ClosedTabModel::UrlRole).toString(),
+                 QStringLiteral("https://b.example/"));
+        closed->clear();
+        closed->clear();
+        QCOMPARE(closed->count(), 0);
+    }
+    {
+        TabModel model(&persistence);
+        QCOMPARE(model.closedTabs()->count(), 0);
+        // Never more than the limit; the oldest go.
+        for (int i = 0; i < ClosedTabModel::Limit + 5; ++i) {
+            model.closeTabById(model.newTab(QStringLiteral("https://n%1.example/").arg(i)));
+        }
+        QCOMPARE(model.closedTabs()->count(), ClosedTabModel::Limit);
+        QCOMPARE(role(*model.closedTabs(), 0, ClosedTabModel::UrlRole).toString(),
+                 QStringLiteral("https://n%1.example/").arg(ClosedTabModel::Limit + 4));
+        TabModel again(&persistence);
+        QCOMPARE(again.closedTabs()->count(), ClosedTabModel::Limit);
+    }
+}
+
+void tst_tabmodel::livePagesAreCapped()
+{
+    TabModel model(nullptr);
+    QCOMPARE(model.liveTabLimit(), 0);
+    QCOMPARE(model.roleNames().value(TabModel::LiveRole), QByteArrayLiteral("liveTab"));
+    QList<int> ids;
+    for (int i = 0; i < 6; ++i) {
+        ids.append(model.newTab(QStringLiteral("https://t%1.example/").arg(i)));
+    }
+    // No limit: every page keeps its view.
+    for (int i = 0; i < 6; ++i) {
+        QVERIFY(role(model, i, TabModel::LiveRole).toBool());
+    }
+
+    // With a limit, the tab in front and the ones read most recently before it.
+    QSignalSpy rowSpy(&model, &TabModel::dataChanged);
+    model.setLiveTabLimit(3);
+    QCOMPARE(model.liveTabLimit(), 3);
+    QCOMPARE(rowSpy.count(), 3);
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::LiveRole});
+    for (int i = 0; i < 6; ++i) {
+        QCOMPARE(role(model, i, TabModel::LiveRole).toBool(), i >= 3);
+    }
+    model.setLiveTabLimit(3);
+    model.setLiveTabLimit(-1);
+    QCOMPARE(model.liveTabLimit(), 0);
+    model.setLiveTabLimit(3);
+
+    // Bringing an old tab to the front keeps it, and lets the least recent go.
+    model.activateTabById(ids.at(0));
+    QVERIFY(role(model, 0, TabModel::LiveRole).toBool());
+    QVERIFY(!role(model, 3, TabModel::LiveRole).toBool());
+    QVERIFY(role(model, 4, TabModel::LiveRole).toBool());
+    QVERIFY(role(model, 5, TabModel::LiveRole).toBool());
+
+    // A tab closed makes room for the next most recent.
+    model.closeTabById(ids.at(5));
+    QVERIFY(role(model, model.indexOf(ids.at(3)), TabModel::LiveRole).toBool());
+    model.closeAllTabs();
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

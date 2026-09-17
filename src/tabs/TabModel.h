@@ -11,11 +11,13 @@
 
 #include <QAbstractListModel>
 #include <QList>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 
 namespace Tuuli {
 
+class ClosedTabModel;
 class GroupTabModel;
 class TabGroupModel;
 class TabPersistence;
@@ -54,7 +56,10 @@ public:
         ThumbnailRole,
         PrivateRole,
         ActiveRole,
-        GroupRole
+        GroupRole,
+        // Whether the page keeps its view: the tab in front and the ones read most
+        // recently, up to the limit (docs/DECISIONS/0016-five-live-pages.md).
+        LiveRole
     };
 
     // A null persistence keeps the model in memory only (used by tests). An empty
@@ -77,7 +82,8 @@ public:
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
-    // The tab opens in the current group.
+    // The tab opens in the current group; a private one in the private group, which
+    // becomes current with it.
     Q_INVOKABLE int newTab(const QString &url, bool isPrivate = false);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
@@ -102,9 +108,11 @@ public:
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
 
-    // Tab groups. There is always at least one; the last cannot be removed.
+    // Tab groups. There is always one ordinary group and one private group, last in
+    // the list; the private one and the last ordinary one cannot be removed.
     const QList<TabGroup> &groups() const;
     int groupIndexOf(int groupId) const;
+    int privateGroupId() const;
     int tabCountInGroup(int groupId) const;
     int currentGroupId() const;
     int currentGroupIndex() const;
@@ -115,12 +123,20 @@ public:
     // Closes the group's tabs and removes it. Refused for the last group.
     bool removeGroup(int groupId);
     // Puts a tab in another group. Its row in this model does not move, so the view
-    // behind it stays; its place in the group is after the tabs already there.
+    // behind it stays; its place in the group is after the tabs already there. A tab
+    // never crosses into or out of the private group: private is a property of its
+    // view, not something a view can be given later.
     bool moveTabToGroup(int tabId, int groupId);
 
-    // The two views of this model the grid and the strip are built on.
+    // How many tabs keep their page loaded, 0 for all of them.
+    int liveTabLimit() const;
+    void setLiveTabLimit(int limit);
+
+    // The views of this model the grid, the strip and the closed-tabs panel are
+    // built on.
     GroupTabModel *groupTabs() const;
     TabGroupModel *groupModel() const;
+    ClosedTabModel *closedTabs() const;
 
     static bool isExternalUrl(const QString &url);
 
@@ -144,6 +160,8 @@ signals:
 private:
     void load();
     void ensureGroups();
+    // Recomputes which tabs keep their views and tells the rows that changed.
+    void refreshLive();
     void setActiveTab(int tabId);
     // The tab and the group, each without following the other.
     void applyActiveTab(int tabId);
@@ -166,6 +184,9 @@ private:
     QList<int> m_awaitingFirstUrl;
     GroupTabModel *m_groupTabs;
     TabGroupModel *m_groupModel;
+    ClosedTabModel *m_closedTabs;
+    QSet<int> m_liveIds;
+    int m_liveLimit = 0;
     int m_activeTabId = 0;
     int m_currentGroupId = 0;
     int m_nextTabId = 1;

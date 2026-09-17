@@ -6,6 +6,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+using Tuuli::ClosedTab;
 using Tuuli::Storage;
 using Tuuli::Tab;
 using Tuuli::TabGroup;
@@ -18,10 +19,11 @@ class tst_tabpersistence : public QObject
 private slots:
     void roundTrip();
     void saveOrderRenumbers();
-    void ignoresPrivateAndInvalidTabs();
+    void keepsPrivateTabsAndIgnoresInvalidOnes();
     void activeTabId();
     void removeAll();
     void groupsRoundTrip();
+    void closedTabsRoundTrip();
 };
 
 namespace {
@@ -86,9 +88,9 @@ void tst_tabpersistence::saveOrderRenumbers()
 
     QList<Tab> tabs = persistence.loadTabs();
     tabs.move(0, 2);
-    // A private tab in the middle of the list has no row of its own and must not
+    // An invalid tab in the middle of the list has no row of its own and must not
     // consume a position or upset the ones around it.
-    tabs.insert(1, makeTab(9, QStringLiteral("https://secret.example/"), true));
+    tabs.insert(1, makeTab(0, QStringLiteral("https://nowhere.example/")));
     persistence.saveOrder(tabs);
 
     const QList<Tab> reloaded = persistence.loadTabs();
@@ -102,20 +104,28 @@ void tst_tabpersistence::saveOrderRenumbers()
     QCOMPARE(persistence.loadTabs().at(3).id, 4);
 }
 
-void tst_tabpersistence::ignoresPrivateAndInvalidTabs()
+void tst_tabpersistence::keepsPrivateTabsAndIgnoresInvalidOnes()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
     TabPersistence persistence(storage);
 
+    // A private tab is written with its flag: the private group keeps its tabs.
     persistence.insertTab(makeTab(1, QStringLiteral("https://secret.example/"), true));
     persistence.insertTab(makeTab(0, QStringLiteral("https://invalid.example/")));
-    QVERIFY(persistence.loadTabs().isEmpty());
+    QList<Tab> tabs = persistence.loadTabs();
+    QCOMPARE(tabs.count(), 1);
+    QVERIFY(tabs.first().isPrivate);
+    QCOMPARE(tabs.first().url, QStringLiteral("https://secret.example/"));
 
     persistence.insertTab(makeTab(2, QStringLiteral("https://public.example/")));
-    Tab privateUpdate = makeTab(2, QStringLiteral("https://changed.example/"), true);
-    persistence.updateTab(privateUpdate);
-    QCOMPARE(persistence.loadTabs().first().url, QStringLiteral("https://public.example/"));
+    Tab update = makeTab(2, QStringLiteral("https://changed.example/"), true);
+    persistence.updateTab(update);
+    tabs = persistence.loadTabs();
+    QCOMPARE(tabs.at(1).url, QStringLiteral("https://changed.example/"));
+    QVERIFY(tabs.at(1).isPrivate);
+    persistence.updateTab(makeTab(0, QStringLiteral("https://invalid.example/")));
+    QCOMPARE(persistence.loadTabs().count(), 2);
 }
 
 void tst_tabpersistence::activeTabId()
@@ -157,6 +167,7 @@ void tst_tabpersistence::groupsRoundTrip()
     TabGroup second;
     second.id = 2;
     second.name = QStringLiteral("Work");
+    second.isPrivate = true;
     TabGroup invalid;
     persistence.insertGroup(first);
     persistence.insertGroup(second);
@@ -170,6 +181,14 @@ void tst_tabpersistence::groupsRoundTrip()
     QCOMPARE(groups.at(1), second);
     QVERIFY(groups.at(0) != groups.at(1));
     QVERIFY(groups.at(0).name.isEmpty());
+    QVERIFY(groups.at(1).isPrivate);
+
+    // The order can be written back from a list.
+    persistence.saveGroupOrder(QList<TabGroup>{second, invalid, first});
+    groups = persistence.loadGroups();
+    QCOMPARE(groups.at(0).id, 2);
+    QCOMPARE(groups.at(1).id, 5);
+    persistence.saveGroupOrder(QList<TabGroup>{first, second});
 
     second.name = QStringLiteral("Office");
     persistence.updateGroup(second);
@@ -182,6 +201,43 @@ void tst_tabpersistence::groupsRoundTrip()
     groups = persistence.loadGroups();
     QCOMPARE(groups.count(), 1);
     QCOMPARE(groups.first().id, 2);
+}
+
+void tst_tabpersistence::closedTabsRoundTrip()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    QVERIFY(persistence.loadClosedTabs().isEmpty());
+
+    ClosedTab older;
+    older.id = 1;
+    older.url = QStringLiteral("https://old.example/");
+    older.title = QStringLiteral("Old");
+    older.closedAt = 100;
+    ClosedTab newer;
+    newer.id = 2;
+    newer.url = QStringLiteral("https://new.example/");
+    newer.favicon = QStringLiteral("https://new.example/favicon.ico");
+    newer.closedAt = 200;
+    ClosedTab invalid;
+    persistence.insertClosedTab(older);
+    persistence.insertClosedTab(newer);
+    persistence.insertClosedTab(invalid);
+
+    // Newest first.
+    QList<ClosedTab> closed = persistence.loadClosedTabs();
+    QCOMPARE(closed.count(), 2);
+    QCOMPARE(closed.at(0), newer);
+    QCOMPARE(closed.at(1), older);
+    QVERIFY(closed.at(0) != closed.at(1));
+
+    persistence.removeClosedTab(2);
+    closed = persistence.loadClosedTabs();
+    QCOMPARE(closed.count(), 1);
+    QCOMPARE(closed.first().id, 1);
+    persistence.removeAllClosedTabs();
+    QVERIFY(persistence.loadClosedTabs().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_tabpersistence)

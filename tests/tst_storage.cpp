@@ -104,7 +104,8 @@ void tst_storage::migratesSchemaOne()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.sqlite"));
     {
         // A schema 1 database: the tab table has none of the columns later schemas
-        // added -- thumbnail (2), last_active (3), group_id (4) -- and no group table.
+        // added -- thumbnail (2), last_active (3), group_id (4), private (5) -- and
+        // neither the group table nor the closed-tab table.
         QSqlDatabase db =
             QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("legacy"));
         db.setDatabaseName(path);
@@ -126,8 +127,8 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
 
     QSqlQuery query(storage.database());
-    QVERIFY(query.exec(
-        QStringLiteral("SELECT tab_id, title, thumbnail, last_active, group_id FROM tab")));
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT tab_id, title, thumbnail, last_active, group_id, private FROM tab")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 1);
     QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
@@ -136,7 +137,12 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(query.value(3).toLongLong(), 0LL);
     // In group 1, which the model creates when it finds no row for it.
     QCOMPARE(query.value(4).toInt(), 1);
+    QVERIFY(!query.value(5).toBool());
     QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM tab_group")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+    QVERIFY(query.exec(QStringLiteral("SELECT private FROM tab_group")));
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM closed_tab")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
 

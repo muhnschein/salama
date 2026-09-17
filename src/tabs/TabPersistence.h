@@ -24,11 +24,12 @@ public:
     QList<Tab> loadTabs() const;
     int loadActiveTabId() const;
 
-    // Private tabs are never written; every call below ignores them.
+    // Private tabs are written like the rest, with their flag: the private group keeps
+    // its tabs across a restart (docs/DECISIONS/0017-private-group.md).
     void insertTab(const Tab &tab);
     void updateTab(const Tab &tab);
     void removeTab(int tabId);
-    // Rewrites position from the order of the list; private tabs have no row to write.
+    // Rewrites position from the order of the list.
     void saveOrder(const QList<Tab> &tabs);
     void removeAllTabs();
     void setActiveTabId(int tabId);
@@ -39,7 +40,15 @@ public:
     void insertGroup(const TabGroup &group);
     void updateGroup(const TabGroup &group);
     void removeGroup(int groupId);
+    // Rewrites position from the order of the list.
+    void saveGroupOrder(const QList<TabGroup> &groups);
     void setCurrentGroupId(int groupId);
+
+    // Recently closed tabs, newest first.
+    QList<ClosedTab> loadClosedTabs() const;
+    void insertClosedTab(const ClosedTab &closed);
+    void removeClosedTab(int closedId);
+    void removeAllClosedTabs();
 
 private:
     Storage &m_storage;

@@ -130,7 +130,7 @@ Page {
             // tap, a carry and a close button on it.
             ListItem {
                 objectName: "moveToGroupItem"
-                enabled: TabModel.activeTabId > 0
+                enabled: TabModel.activeTabId > 0 && !TabModel.activeIsPrivate
                 onClicked: pageStack.replace(Qt.resolvedUrl("TabGroupsPage.qml"), {
                                                  "moveTabId": TabModel.activeTabId
                                              })

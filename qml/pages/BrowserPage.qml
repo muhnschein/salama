@@ -48,11 +48,9 @@ WebViewPage {
     // relaid out on every frame, which is what stretched pages under the keyboard. One
     // resize, and the bar covers the difference while it moves.
     readonly property real barHeight: navigationBar.height
-    // Nothing at all while the bar is slim: what is left of it then is transparent,
-    // and the page is what should be behind it. The bar keeps the strip its handle is
-    // in and gives the rest of its presses to the page.
     readonly property real viewHeight: fullHeight - (navigationBar.compact
-                                                     || navigationBar.resizing ? 0 : barHeight)
+                                                     || navigationBar.resizing
+                                                     ? navigationBar.slimHeight : barHeight)
 
     // What the display's own cutout takes at the top of the screen, and how much of
     // it this application keeps out of. Silica reports the cutout's whole rectangle,
@@ -169,6 +167,15 @@ WebViewPage {
         }
     }
 
+    // Ten minutes in the background, and the engine is asked to give back what it
+    // can -- the words sailfish-browser uses after the same wait
+    // (docs/DECISIONS/0016-five-live-pages.md). A named function, so the load tests
+    // can ask without waiting ten minutes.
+    function trimMemory() {
+        WebEngine.notifyObservers(EngineMessages.memoryPressureTopic,
+                                  EngineMessages.heapMinimizePayload)
+    }
+
     // What the cover's search action ends at: a new tab, with the address field up and
     // the whole url selected, so the first key typed replaces it.
     function newTabForAddress() {
@@ -228,6 +235,15 @@ WebViewPage {
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
     }
 
+    Timer {
+        id: trimTimer
+
+        objectName: "trimTimer"
+        interval: 600000
+        running: Qt.application.state !== Qt.ApplicationActive
+        onTriggered: browserPage.trimMemory()
+    }
+
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
         ensureTab()
@@ -282,7 +298,10 @@ WebViewPage {
                 height: browserPage.viewHeight - browserPage.cutoutInset
 
                 // One WebView per tab shown this session; restored tabs stay unloaded
-                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md).
+                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
+                // and a tab not among the most recently read gives its view up until
+                // it is next in front, when it is loaded again from the page it was
+                // on (docs/DECISIONS/0016-five-live-pages.md).
                 Repeater {
                     id: webViews
 
@@ -292,12 +311,13 @@ WebViewPage {
                         readonly property int tabId: model.tabId
                         readonly property bool isCurrent: model.activeTab
                         readonly property bool privateTab: model.privateTab
+                        readonly property bool liveTab: model.liveTab
                         readonly property string initialUrl: model.url
                         property bool shown: false
 
                         objectName: "webViewLoader"
                         anchors.fill: parent
-                        active: shown
+                        active: shown && liveTab
                         visible: isCurrent
                         sourceComponent: webViewComponent
                         onIsCurrentChanged: {

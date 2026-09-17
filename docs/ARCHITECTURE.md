@@ -16,11 +16,13 @@ enforces both.
 The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 
 - `Storage` — the single SQLite file and its schema.
-- `TabModel` + `TabPersistence` — open tabs, the active tab, private flag, tab groups
-  and the current group. `TabModel` owns two views of itself for QML: `GroupTabModel`
-  (`GroupTabs`), the current group's tabs, which the grid shows; and `TabGroupModel`
-  (`TabGroups`), the groups, which the strip above the grid shows and the group actions
-  are reached through (`DECISIONS/0015-tab-groups.md`).
+- `TabModel` + `TabPersistence` — open tabs, the active tab, tab groups including the
+  private one, the current group, and which tabs keep their page loaded. `TabModel` owns
+  three views of itself for QML: `GroupTabModel` (`GroupTabs`), the current group's
+  tabs, which the grid shows; `TabGroupModel` (`TabGroups`), the groups, which the strip
+  above the grid shows and the group actions are reached through
+  (`DECISIONS/0015-tab-groups.md`, `0017-private-group.md`); and `ClosedTabModel`
+  (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
 - `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
@@ -39,17 +41,20 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 3. `TabModel` updates its row, persists non-private tabs, and emits `visited`,
    `titleUpdated`, `faviconUpdated` for non-private tabs only.
 4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
-   therefore never reach history or disk; the engine's `privateMode` keeps cookies out.
+   therefore never reach history, and no preview of them is written; the engine's
+   `privateMode` keeps cookies out. The tabs themselves are stored, so the private group
+   survives a restart (`DECISIONS/0017-private-group.md`).
 5. `TabModel.activeTabDataChanged` feeds the address bar and
    `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
    how many tabs are open over a monochrome field of their previews, most recently in
    front first (`TabModel.recentThumbnails`, ordered by each tab's `last_active` stamp),
    and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`).
 
-Views: one `WebView` per tab that has been shown this session, created lazily by a
-`Loader` over `TabModel` -- every group's tabs, so a tab changing group keeps its view
-(see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing until
-activated. Favicons come from a page script with `/favicon.ico` as fallback
+Views: one `WebView` per tab that has been shown this session and is among the
+`Settings.liveTabLimit` most recently in front, created lazily by a `Loader` over
+`TabModel` -- every group's tabs, so a tab changing group keeps its view (see
+`DECISIONS/0003-one-webview-per-tab.md`, `0016-five-live-pages.md`). Restored tabs
+cost nothing until activated; a tab beyond the limit reloads when it is next in front. Favicons come from a page script with `/favicon.ico` as fallback
 (`DECISIONS/0005-favicons.md`), and a page's `theme-color` from another one
 (`DECISIONS/0013-screen-cutout.md`); both are asked of the page because the `WebView`
 Harbour allows carries neither. Tab previews are scene-graph grabs written to the cache
@@ -79,13 +84,14 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-4); a newer database than the build refuses to open rather than corrupt. Migration asks
+5); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 either schema converges on the same shape.
 
 ```
-tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
-tab_group        group_id PK, name, position
+tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id, private
+tab_group        group_id PK, name, position, private
+closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 setting          name PK, value          -- activeTabId, currentGroupId

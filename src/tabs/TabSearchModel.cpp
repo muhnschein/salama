@@ -57,6 +57,10 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
     }
     case GroupTabCountRole:
         return m_tabs->tabCountInGroup(row.groupId);
+    case GroupPrivateRole: {
+        const int groupIndex = m_tabs->groupIndexOf(row.groupId);
+        return groupIndex >= 0 && m_tabs->groups().at(groupIndex).isPrivate;
+    }
     case GroupStartRole:
         return row.groupStart;
     default:
@@ -75,6 +79,7 @@ QHash<int, QByteArray> TabSearchModel::roleNames() const
         {GroupIdRole, QByteArrayLiteral("groupId")},
         {GroupNameRole, QByteArrayLiteral("groupName")},
         {GroupTabCountRole, QByteArrayLiteral("groupTabCount")},
+        {GroupPrivateRole, QByteArrayLiteral("groupPrivate")},
         {GroupStartRole, QByteArrayLiteral("groupStart")},
     };
 }
@@ -92,7 +97,7 @@ void TabSearchModel::setSearchTerm(const QString &term)
     }
     m_searchTerm = trimmed;
     emit searchTermChanged();
-    rebuild();
+    refine();
 }
 
 int TabSearchModel::count() const
@@ -110,11 +115,9 @@ bool TabSearchModel::matches(int tabIndex) const
            tab.url.contains(m_searchTerm, Qt::CaseInsensitive);
 }
 
-void TabSearchModel::rebuild()
+QList<TabSearchModel::Row> TabSearchModel::rowsForTerm() const
 {
-    const int before = m_rows.count();
-    beginResetModel();
-    m_rows.clear();
+    QList<Row> rows;
     const QList<Tab> &tabs = m_tabs->tabs();
     for (const TabGroup &group : m_tabs->groups()) {
         bool first = true;
@@ -122,11 +125,71 @@ void TabSearchModel::rebuild()
             if (tabs.at(i).groupId != group.id || !matches(i)) {
                 continue;
             }
-            m_rows.append(Row{tabs.at(i).id, group.id, first});
+            rows.append(Row{tabs.at(i).id, group.id, first});
             first = false;
         }
     }
+    return rows;
+}
+
+// The tabs or the groups changed: whatever the list was, it is built again.
+void TabSearchModel::rebuild()
+{
+    const int before = m_rows.count();
+    beginResetModel();
+    m_rows = rowsForTerm();
     endResetModel();
+    if (m_rows.count() != before) {
+        emit countChanged();
+    }
+}
+
+// Only the term changed, so the old rows and the new are both drawn from the same
+// tabs in the same order: walking the two together, a row is kept, removed or
+// inserted, and the list under the reader's finger is never rebuilt around a
+// keystroke. The headings move with the rows: the first row of a group is told when
+// it stops or starts being one.
+void TabSearchModel::refine()
+{
+    const int before = m_rows.count();
+    const QList<Row> wanted = rowsForTerm();
+    auto wantedFrom = [&wanted](int from, int tabId) {
+        for (int k = from; k < wanted.count(); ++k) {
+            if (wanted.at(k).tabId == tabId) {
+                return true;
+            }
+        }
+        return false;
+    };
+    int have = 0;
+    for (int want = 0; want < wanted.count(); ++want) {
+        // Rows the new list no longer has come out first, in order.
+        while (have < m_rows.count() && !wantedFrom(want, m_rows.at(have).tabId)) {
+            beginRemoveRows(QModelIndex(), have, have);
+            m_rows.removeAt(have);
+            endRemoveRows();
+        }
+        if (have < m_rows.count() && m_rows.at(have).tabId == wanted.at(want).tabId) {
+            if (m_rows.at(have).groupStart != wanted.at(want).groupStart) {
+                m_rows[have].groupStart = wanted.at(want).groupStart;
+                const QModelIndex changed = index(have, 0);
+                emit dataChanged(changed, changed, QVector<int>{GroupStartRole});
+            }
+            ++have;
+            continue;
+        }
+        beginInsertRows(QModelIndex(), have, have);
+        m_rows.insert(have, wanted.at(want));
+        endInsertRows();
+        ++have;
+    }
+    if (have < m_rows.count()) {
+        beginRemoveRows(QModelIndex(), have, m_rows.count() - 1);
+        while (m_rows.count() > have) {
+            m_rows.removeLast();
+        }
+        endRemoveRows();
+    }
     if (m_rows.count() != before) {
         emit countChanged();
     }

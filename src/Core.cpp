@@ -22,6 +22,11 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
+
+    // How many pages stay loaded is a setting; the tab model applies it.
+    connect(&m_settings, &Settings::liveTabLimitChanged, &m_tabs,
+            [this]() { m_tabs.setLiveTabLimit(m_settings.liveTabLimit()); });
+    m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
 }
 
 Storage &Core::storage()

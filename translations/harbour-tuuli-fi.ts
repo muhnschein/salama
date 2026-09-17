@@ -173,6 +173,17 @@
     </message>
 </context>
 <context>
+    <name>RecentlyClosedPanel</name>
+    <message>
+        <source>Recently closed</source>
+        <translation>Äskettäin suljetut</translation>
+    </message>
+    <message>
+        <source>Nothing closed recently</source>
+        <translation>Ei äskettäin suljettuja välilehtiä</translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -258,6 +269,18 @@
         <source>The tab count and the most recent tabs</source>
         <translation>Välilehtien määrän ja viimeisimmät välilehdet</translation>
     </message>
+    <message>
+        <source>Pages kept loaded</source>
+        <translation>Ladattuina pidettävät sivut</translation>
+    </message>
+    <message>
+        <source>Tabs beyond this many reload their page when opened again</source>
+        <translation>Tätä useammat välilehdet lataavat sivunsa uudelleen, kun ne avataan</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Kaikki</translation>
+    </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>
@@ -279,6 +302,10 @@
             <numerusform>%n välilehti</numerusform>
             <numerusform>%n välilehteä</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>Private</source>
+        <translation>Yksityinen</translation>
     </message>
 </context>
 <context>
@@ -308,6 +335,10 @@
             <numerusform>%n välilehti</numerusform>
             <numerusform>%n välilehteä</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>Private</source>
+        <translation>Yksityinen</translation>
     </message>
 </context>
 <context>
@@ -348,6 +379,10 @@
     <message>
         <source>Private tab</source>
         <translation>Yksityinen välilehti</translation>
+    </message>
+    <message>
+        <source>Private</source>
+        <translation>Yksityinen</translation>
     </message>
 </context>
 <context>

@@ -66,7 +66,7 @@ Reuse policy:
 - Back, forward, reload, stop, share (`Sailfish.Share`)
 - History and bookmarks (SQLite) with management UI
 - Downloads via platform transfer UI
-- Private tabs (no history or cookie persistence)
+- Private tabs in a private group (no history, cookies or previews; the tabs themselves persist)
 - Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows
 - Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM

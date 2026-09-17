@@ -14,7 +14,7 @@ namespace Tuuli {
 class Storage
 {
 public:
-    static const int SchemaVersion = 4;
+    static const int SchemaVersion = 5;
 
     explicit Storage(const QString &dataDirectory);
     ~Storage();

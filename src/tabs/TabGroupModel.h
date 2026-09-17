@@ -23,7 +23,8 @@ public:
         GroupIdRole = Qt::UserRole + 1,
         NameRole,
         TabCountRole,
-        CurrentRole
+        CurrentRole,
+        PrivateRole
     };
 
     explicit TabGroupModel(TabModel *tabs);

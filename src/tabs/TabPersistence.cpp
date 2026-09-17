@@ -57,7 +57,7 @@ QList<Tab> TabPersistence::loadTabs() const
     QList<Tab> tabs;
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("SELECT tab_id, url, title, favicon, thumbnail, last_active, "
-                                 "group_id FROM tab ORDER BY position ASC"));
+                                 "group_id, private FROM tab ORDER BY position ASC"));
     if (!run(query)) {
         return tabs;
     }
@@ -70,6 +70,7 @@ QList<Tab> TabPersistence::loadTabs() const
         tab.thumbnail = query.value(4).toString();
         tab.lastActive = query.value(5).toLongLong();
         tab.groupId = query.value(6).toInt();
+        tab.isPrivate = query.value(7).toBool();
         tabs.append(tab);
     }
     return tabs;
@@ -82,15 +83,15 @@ int TabPersistence::loadActiveTabId() const
 
 void TabPersistence::insertTab(const Tab &tab)
 {
-    if (tab.isPrivate || !tab.isValid()) {
+    if (!tab.isValid()) {
         return;
     }
     QSqlQuery query(m_storage.database());
     query.prepare(
         QStringLiteral("INSERT INTO tab (tab_id, position, url, title, favicon, thumbnail, "
-                       "last_active, group_id) "
+                       "last_active, group_id, private) "
                        "VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM tab), "
-                       "?, ?, ?, ?, ?, ?)"));
+                       "?, ?, ?, ?, ?, ?, ?)"));
     query.addBindValue(tab.id);
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
@@ -98,23 +99,26 @@ void TabPersistence::insertTab(const Tab &tab)
     query.addBindValue(Storage::text(tab.thumbnail));
     query.addBindValue(tab.lastActive);
     query.addBindValue(tab.groupId);
+    query.addBindValue(tab.isPrivate ? 1 : 0);
     run(query);
 }
 
 void TabPersistence::updateTab(const Tab &tab)
 {
-    if (tab.isPrivate || !tab.isValid()) {
+    if (!tab.isValid()) {
         return;
     }
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("UPDATE tab SET url = ?, title = ?, favicon = ?, "
-                                 "thumbnail = ?, last_active = ?, group_id = ? WHERE tab_id = ?"));
+                                 "thumbnail = ?, last_active = ?, group_id = ?, private = ? "
+                                 "WHERE tab_id = ?"));
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
     query.addBindValue(Storage::text(tab.favicon));
     query.addBindValue(Storage::text(tab.thumbnail));
     query.addBindValue(tab.lastActive);
     query.addBindValue(tab.groupId);
+    query.addBindValue(tab.isPrivate ? 1 : 0);
     query.addBindValue(tab.id);
     run(query);
 }
@@ -124,7 +128,7 @@ void TabPersistence::saveOrder(const QList<Tab> &tabs)
     // Numbered from 1 so that insertTab's MAX(position) + 1 still lands last.
     int position = 0;
     for (const Tab &tab : tabs) {
-        if (tab.isPrivate || !tab.isValid()) {
+        if (!tab.isValid()) {
             continue;
         }
         ++position;
@@ -160,7 +164,8 @@ QList<TabGroup> TabPersistence::loadGroups() const
 {
     QList<TabGroup> groups;
     QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("SELECT group_id, name FROM tab_group ORDER BY position ASC"));
+    query.prepare(
+        QStringLiteral("SELECT group_id, name, private FROM tab_group ORDER BY position ASC"));
     if (!run(query)) {
         return groups;
     }
@@ -168,6 +173,7 @@ QList<TabGroup> TabPersistence::loadGroups() const
         TabGroup group;
         group.id = query.value(0).toInt();
         group.name = query.value(1).toString();
+        group.isPrivate = query.value(2).toBool();
         groups.append(group);
     }
     return groups;
@@ -184,11 +190,12 @@ void TabPersistence::insertGroup(const TabGroup &group)
         return;
     }
     QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("INSERT INTO tab_group (group_id, name, position) "
+    query.prepare(QStringLiteral("INSERT INTO tab_group (group_id, name, position, private) "
                                  "VALUES (?, ?, (SELECT COALESCE(MAX(position), 0) + 1 "
-                                 "FROM tab_group))"));
+                                 "FROM tab_group), ?)"));
     query.addBindValue(group.id);
     query.addBindValue(Storage::text(group.name));
+    query.addBindValue(group.isPrivate ? 1 : 0);
     run(query);
 }
 
@@ -212,9 +219,77 @@ void TabPersistence::removeGroup(int groupId)
     run(query);
 }
 
+void TabPersistence::saveGroupOrder(const QList<TabGroup> &groups)
+{
+    int position = 0;
+    for (const TabGroup &group : groups) {
+        if (!group.isValid()) {
+            continue;
+        }
+        ++position;
+        QSqlQuery query(m_storage.database());
+        query.prepare(QStringLiteral("UPDATE tab_group SET position = ? WHERE group_id = ?"));
+        query.addBindValue(position);
+        query.addBindValue(group.id);
+        run(query);
+    }
+}
+
 void TabPersistence::setCurrentGroupId(int groupId)
 {
     writeSetting(m_storage.database(), CurrentGroupSetting, groupId);
+}
+
+QList<ClosedTab> TabPersistence::loadClosedTabs() const
+{
+    QList<ClosedTab> closedTabs;
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("SELECT id, url, title, favicon, closed FROM closed_tab "
+                                 "ORDER BY closed DESC, id DESC"));
+    if (!run(query)) {
+        return closedTabs;
+    }
+    while (query.next()) {
+        ClosedTab closed;
+        closed.id = query.value(0).toInt();
+        closed.url = query.value(1).toString();
+        closed.title = query.value(2).toString();
+        closed.favicon = query.value(3).toString();
+        closed.closedAt = query.value(4).toLongLong();
+        closedTabs.append(closed);
+    }
+    return closedTabs;
+}
+
+void TabPersistence::insertClosedTab(const ClosedTab &closed)
+{
+    if (closed.id <= 0) {
+        return;
+    }
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("INSERT INTO closed_tab (id, url, title, favicon, closed) "
+                                 "VALUES (?, ?, ?, ?, ?)"));
+    query.addBindValue(closed.id);
+    query.addBindValue(Storage::text(closed.url));
+    query.addBindValue(Storage::text(closed.title));
+    query.addBindValue(Storage::text(closed.favicon));
+    query.addBindValue(closed.closedAt);
+    run(query);
+}
+
+void TabPersistence::removeClosedTab(int closedId)
+{
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("DELETE FROM closed_tab WHERE id = ?"));
+    query.addBindValue(closedId);
+    run(query);
+}
+
+void TabPersistence::removeAllClosedTabs()
+{
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("DELETE FROM closed_tab"));
+    run(query);
 }
 
 } // namespace Tuuli
