@@ -16,7 +16,12 @@ enforces both.
 The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 
 - `Storage` — the single SQLite file and its schema.
-- `TabModel` + `TabPersistence` — open tabs, the active tab, private flag.
+- `TabModel` + `TabPersistence` — open tabs, the active tab, private flag, tab groups
+  and the current group. `TabModel` owns two views of itself for QML: `GroupTabModel`
+  (`GroupTabs`), the current group's tabs, which the grid shows; and `TabGroupModel`
+  (`TabGroups`), the groups, which the strip above the grid shows and the group actions
+  are reached through (`DECISIONS/0015-tab-groups.md`).
+- `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
@@ -42,8 +47,9 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
    and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`).
 
 Views: one `WebView` per tab that has been shown this session, created lazily by a
-`Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing
-until activated. Favicons come from a page script with `/favicon.ico` as fallback
+`Loader` over `TabModel` -- every group's tabs, so a tab changing group keeps its view
+(see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing until
+activated. Favicons come from a page script with `/favicon.ico` as fallback
 (`DECISIONS/0005-favicons.md`), and a page's `theme-color` from another one
 (`DECISIONS/0013-screen-cutout.md`); both are asked of the page because the `WebView`
 Harbour allows carries neither. Tab previews are scene-graph grabs written to the cache
@@ -73,15 +79,16 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-2); a newer database than the build refuses to open rather than corrupt. Migration asks
+4); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 either schema converges on the same shape.
 
 ```
-tab              tab_id PK, position, url, title, favicon, thumbnail, last_active
+tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
+tab_group        group_id PK, name, position
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
-setting          name PK, value          -- activeTabId
+setting          name PK, value          -- activeTabId, currentGroupId
 ```
 
 History is capped at 2000 rows (pruned on open) and the model shows the newest 500.

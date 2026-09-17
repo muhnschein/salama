@@ -12,6 +12,7 @@ Versions follow semantic versioning.
 - A red warning on the address when the engine reports a broken TLS connection, and a navigation bar the page ends above rather than running behind, so the foot of a page is always reachable. Scrolling down slims the bar to the address alone and scrolling up brings its controls back.
 - Pages laid out at a phone-sized zoom rather than the engine's smaller default.
 - Tabs can be carried to another place in the grid; the order is kept across restarts.
+- Tab groups, as Safari has them: the grid shows one group at a time, and a strip along its head flicks between them with the current group in the middle. An edit button in the strip's corner lists the groups to make, rename and delete them; a search button in the other corner finds a tab by title or address across every group. The menu moves the tab in front to another group, or to a new one. Groups survive a restart.
 - Back, reload and stop on the navigation bar, which the address field takes over while it is being edited. Share in the menu.
 - History with search, and bookmarks with edit and remove.
 - Private tabs that leave no history and keep no cookies.

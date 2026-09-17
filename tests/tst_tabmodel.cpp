@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 tuuli contributors
 #include "storage/Storage.h"
+#include "tabs/GroupTabModel.h"
+#include "tabs/TabGroupModel.h"
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
+#include "tabs/TabSearchModel.h"
 
 #include <QDir>
 #include <QFile>
@@ -11,9 +14,13 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+using Tuuli::GroupTabModel;
 using Tuuli::Storage;
+using Tuuli::Tab;
+using Tuuli::TabGroupModel;
 using Tuuli::TabModel;
 using Tuuli::TabPersistence;
+using Tuuli::TabSearchModel;
 
 class tst_tabmodel : public QObject
 {
@@ -36,6 +43,14 @@ private slots:
     void thumbnailsAreOptional();
     void recentThumbnailsFollowTheFront();
     void recentOrderSurvivesARestart();
+    void thereIsAlwaysAGroup();
+    void groupsHoldTheirOwnTabs();
+    void movingTabsInsideAGroup();
+    void closingStaysInTheGroup();
+    void removingAGroupClosesItsTabs();
+    void movingATabToAnotherGroup();
+    void groupsSurviveARestart();
+    void searchSpansTheGroups();
 };
 
 namespace {
@@ -57,6 +72,20 @@ namespace {
 QVariant role(const TabModel &model, int row, int role)
 {
     return model.data(model.index(row, 0), role);
+}
+
+QVariant role(const QAbstractListModel &model, int row, int role)
+{
+    return model.data(model.index(row, 0), role);
+}
+
+QList<int> groupTabIds(const GroupTabModel &model)
+{
+    QList<int> ids;
+    for (int row = 0; row < model.count(); ++row) {
+        ids.append(model.tabIdAt(row));
+    }
+    return ids;
 }
 
 } // namespace
@@ -591,6 +620,418 @@ void tst_tabmodel::thumbnailsAreOptional()
     QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(),
              QStringLiteral("/tmp/nowhere.png"));
     model.closeAllTabs();
+}
+
+void tst_tabmodel::thereIsAlwaysAGroup()
+{
+    TabModel model(nullptr);
+    QCOMPARE(model.groups().count(), 1);
+    const int groupId = model.groups().first().id;
+    QVERIFY(groupId > 0);
+    QCOMPARE(model.currentGroupId(), groupId);
+    QCOMPARE(model.currentGroupIndex(), 0);
+    QCOMPARE(model.groupModel()->count(), 1);
+    QCOMPARE(model.groupModel()->rowCount(model.groupModel()->index(0, 0)), 0);
+    QCOMPARE(model.groupModel()->groupIdAt(0), groupId);
+    QCOMPARE(model.groupModel()->groupIdAt(1), 0);
+    QVERIFY(role(*model.groupModel(), 0, TabGroupModel::NameRole).toString().isEmpty());
+    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 0);
+    QVERIFY(role(*model.groupModel(), 0, TabGroupModel::CurrentRole).toBool());
+    QVERIFY(!role(*model.groupModel(), 1, TabGroupModel::CurrentRole).isValid());
+    QCOMPARE(model.groupModel()->roleNames().value(TabGroupModel::TabCountRole),
+             QByteArrayLiteral("tabCount"));
+    QCOMPARE(model.roleNames().value(TabModel::GroupRole), QByteArrayLiteral("groupId"));
+
+    // The last group cannot go, and nothing else names a group that is not there.
+    QVERIFY(!model.removeGroup(groupId));
+    QVERIFY(!model.removeGroup(4242));
+    model.setCurrentGroupId(4242);
+    QCOMPARE(model.currentGroupId(), groupId);
+    model.groupModel()->activate(7);
+    QCOMPARE(model.currentGroupId(), groupId);
+    QVERIFY(!model.moveTabToGroup(1, groupId));
+    model.renameGroup(4242, QStringLiteral("Nowhere"));
+
+    // A new tab lands in the group there is, and the grid's model shows it.
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    QCOMPARE(role(model, 0, TabModel::GroupRole).toInt(), groupId);
+    QCOMPARE(model.groupTabs()->count(), 1);
+    QCOMPARE(model.groupTabs()->rowCount(model.groupTabs()->index(0, 0)), 0);
+    QCOMPARE(model.groupTabs()->tabIdAt(0), a);
+    QCOMPARE(model.groupTabs()->rowOf(a), 0);
+    QCOMPARE(model.groupTabs()->rowOf(4242), -1);
+    QCOMPARE(role(*model.groupTabs(), 0, TabModel::UrlRole).toString(),
+             QStringLiteral("https://a.example/"));
+    QVERIFY(!role(*model.groupTabs(), 1, TabModel::UrlRole).isValid());
+    QCOMPARE(model.groupTabs()->roleNames(), model.roleNames());
+    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 1);
+}
+
+void tst_tabmodel::groupsHoldTheirOwnTabs()
+{
+    TabModel model(nullptr);
+    const int home = model.groups().first().id;
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    const int b = model.newTab(QStringLiteral("https://b.example/"));
+    QSignalSpy groupSpy(&model, &TabModel::currentGroupChanged);
+    QSignalSpy groupsSpy(&model, &TabModel::groupsChanged);
+    QSignalSpy insertSpy(model.groupModel(), &TabGroupModel::rowsInserted);
+    QSignalSpy resetSpy(model.groupTabs(), &GroupTabModel::modelReset);
+
+    // A new group is empty, and it is where the grid now looks and new tabs go. The
+    // page keeps the tab it had: an empty group has nothing to bring to the front.
+    const int work = model.addGroup(QStringLiteral("  Work "));
+    QVERIFY(work > home);
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.currentGroupId(), work);
+    QCOMPARE(model.currentGroupIndex(), 1);
+    QCOMPARE(groupSpy.count(), 1);
+    QCOMPARE(groupsSpy.count(), 1);
+    QCOMPARE(insertSpy.count(), 1);
+    QCOMPARE(resetSpy.count(), 1);
+    QCOMPARE(model.groupTabs()->count(), 0);
+    QCOMPARE(model.activeTabId(), b);
+    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::NameRole).toString(),
+             QStringLiteral("Work"));
+    QVERIFY(role(*model.groupModel(), 1, TabGroupModel::CurrentRole).toBool());
+    QVERIFY(!role(*model.groupModel(), 0, TabGroupModel::CurrentRole).toBool());
+
+    const int c = model.newTab(QStringLiteral("https://c.example/"));
+    QCOMPARE(role(model, 2, TabModel::GroupRole).toInt(), work);
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c});
+    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::TabCountRole).toInt(), 1);
+    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 2);
+    QCOMPARE(model.count(), 3);
+
+    // Going back to the first group brings back the tab that was in front there.
+    model.activateTabById(a);
+    model.activateTabById(c);
+    model.groupModel()->activate(0);
+    QCOMPARE(model.currentGroupId(), home);
+    QCOMPARE(model.activeTabId(), a);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a, b}));
+    QCOMPARE(groupSpy.count(), 4);
+
+    // Activating a tab in another group takes the current group there.
+    model.activateTabById(c);
+    QCOMPARE(model.currentGroupId(), work);
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c});
+    // Choosing the current group again changes nothing.
+    model.setCurrentGroupId(work);
+    QCOMPARE(groupSpy.count(), 5);
+
+    model.renameGroup(work, QStringLiteral("Play"));
+    QCOMPARE(model.groups().at(1).name, QStringLiteral("Play"));
+    model.renameGroup(work, QStringLiteral("Play"));
+    QCOMPARE(groupsSpy.count(), 2);
+}
+
+void tst_tabmodel::movingTabsInsideAGroup()
+{
+    TabModel model(nullptr);
+    const int a1 = model.newTab(QStringLiteral("https://a1.example/"));
+    const int other = model.addGroup(QStringLiteral("Other"));
+    const int b1 = model.newTab(QStringLiteral("https://b1.example/"));
+    model.activateTabById(a1);
+    const int a2 = model.newTab(QStringLiteral("https://a2.example/"));
+    model.activateTabById(b1);
+    const int b2 = model.newTab(QStringLiteral("https://b2.example/"));
+    model.activateTabById(a2);
+    const int a3 = model.newTab(QStringLiteral("https://a3.example/"));
+    // The groups are interleaved in the model, and the grid sees only its own.
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
+    QSignalSpy moveSpy(model.groupTabs(), &GroupTabModel::rowsMoved);
+
+    // A move in the grid is a move in the model, and the other group's tabs stay
+    // where they were.
+    model.groupTabs()->moveTab(2, 0);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a3, a1, a2}));
+    QCOMPARE(moveSpy.count(), 1);
+    QCOMPARE(model.indexOf(a3), 0);
+    QCOMPARE(model.indexOf(b1), 2);
+    QCOMPARE(model.indexOf(b2), 4);
+    QCOMPARE(model.activeTabId(), a3);
+
+    // Back to the end of the group, which is right after a2 in the model: the other
+    // group's tabs are not part of the order and a2 is where the finger let go.
+    model.groupTabs()->moveTab(0, 2);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
+    QCOMPARE(moveSpy.count(), 2);
+    QCOMPARE(model.indexOf(a3), 3);
+    QCOMPARE(model.indexOf(b2), 4);
+
+    // Out of range or in place: nothing happens.
+    model.groupTabs()->moveTab(1, 1);
+    model.groupTabs()->moveTab(-1, 1);
+    model.groupTabs()->moveTab(1, 3);
+    QCOMPARE(moveSpy.count(), 2);
+
+    // A move in the model of a tab from the other group leaves the grid alone.
+    model.moveTab(model.indexOf(b2), model.indexOf(b1));
+    QCOMPARE(moveSpy.count(), 2);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
+    model.groupModel()->activate(model.groupIndexOf(other));
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{b2, b1}));
+}
+
+void tst_tabmodel::closingStaysInTheGroup()
+{
+    TabModel model(nullptr);
+    const int home = model.groups().first().id;
+    const int a1 = model.newTab(QStringLiteral("https://a1.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    const int b1 = model.newTab(QStringLiteral("https://b1.example/"));
+    model.activateTabById(a1);
+    const int a2 = model.newTab(QStringLiteral("https://a2.example/"));
+    const int a3 = model.newTab(QStringLiteral("https://a3.example/"));
+
+    // The tab before the closed one in its own group, not the one before it in the
+    // model -- which here belongs to the other group.
+    model.activateTabById(a2);
+    model.closeTabById(a2);
+    QCOMPARE(model.activeTabId(), a1);
+    QCOMPARE(model.currentGroupId(), home);
+    model.activateTabById(a1);
+    // Nothing before it in the group: the one after.
+    model.closeTab(model.indexOf(a1));
+    QCOMPARE(model.activeTabId(), a3);
+    QCOMPARE(model.currentGroupId(), home);
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a3});
+
+    // The group's last tab: the most recent tab anywhere comes to the front, and the
+    // current group goes with it. The empty group stays.
+    model.closeTabById(a3);
+    QCOMPARE(model.activeTabId(), b1);
+    QCOMPARE(model.currentGroupId(), work);
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.tabCountInGroup(home), 0);
+
+    // An empty group can be looked at, and a tab opened there.
+    model.setCurrentGroupId(home);
+    QCOMPARE(model.activeTabId(), b1);
+    QCOMPARE(model.groupTabs()->count(), 0);
+    const int a4 = model.newTab(QStringLiteral("https://a4.example/"));
+    QCOMPARE(role(model, model.indexOf(a4), TabModel::GroupRole).toInt(), home);
+    QCOMPARE(model.activeTabId(), a4);
+
+    // Closing a tab that is not in front changes neither the front nor the group.
+    model.closeTabById(b1);
+    QCOMPARE(model.activeTabId(), a4);
+    QCOMPARE(model.currentGroupId(), home);
+    model.closeTabById(4242);
+    QCOMPARE(model.count(), 1);
+
+    // Closing every tab empties every group and keeps them all.
+    model.closeAllTabs();
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groupTabs()->count(), 0);
+    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::TabCountRole).toInt(), 0);
+}
+
+void tst_tabmodel::removingAGroupClosesItsTabs()
+{
+    TabModel model(nullptr);
+    const int home = model.groups().first().id;
+    const int a1 = model.newTab(QStringLiteral("https://a1.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    const int b1 = model.newTab(QStringLiteral("https://b1.example/"));
+    const int b2 = model.newTab(QStringLiteral("https://b2.example/"));
+    const int play = model.addGroup(QStringLiteral("Play"));
+    const int c1 = model.newTab(QStringLiteral("https://c1.example/"));
+    QSignalSpy closedSpy(&model, &TabModel::tabClosed);
+    QSignalSpy removedSpy(model.groupModel(), &TabGroupModel::rowsRemoved);
+
+    // Removing the current group closes its tabs and moves to the group before it.
+    model.activateTabById(b2);
+    QCOMPARE(model.currentGroupId(), work);
+    QVERIFY(model.removeGroup(work));
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groupIndexOf(work), -1);
+    QCOMPARE(closedSpy.count(), 2);
+    QCOMPARE(removedSpy.count(), 1);
+    QCOMPARE(model.indexOf(b1), -1);
+    QCOMPARE(model.indexOf(b2), -1);
+    QCOMPARE(model.currentGroupId(), home);
+    QCOMPARE(model.activeTabId(), a1);
+    QCOMPARE(model.currentGroupIndex(), 0);
+    QCOMPARE(model.groupIndexOf(play), 1);
+
+    // Removing the first group while it is current moves to the one after it.
+    QVERIFY(model.removeGroup(home));
+    QCOMPARE(model.groups().count(), 1);
+    QCOMPARE(model.currentGroupId(), play);
+    QCOMPARE(model.activeTabId(), c1);
+    QCOMPARE(model.count(), 1);
+    QVERIFY(!model.removeGroup(play));
+}
+
+void tst_tabmodel::movingATabToAnotherGroup()
+{
+    TabModel model(nullptr);
+    const int home = model.groups().first().id;
+    const int a1 = model.newTab(QStringLiteral("https://a1.example/"));
+    const int a2 = model.newTab(QStringLiteral("https://a2.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    model.setCurrentGroupId(home);
+    QCOMPARE(model.activeTabId(), a2);
+    QSignalSpy rowSpy(&model, &TabModel::dataChanged);
+    QSignalSpy moveSpy(&model, &TabModel::rowsMoved);
+    QSignalSpy removeSpy(&model, &TabModel::rowsRemoved);
+
+    // The tab keeps its row, so the view behind it is kept too; it leaves the grid
+    // of the group it was in, and the front goes with it.
+    QVERIFY(model.moveTabToGroup(a2, work));
+    QCOMPARE(model.indexOf(a2), 1);
+    QCOMPARE(role(model, 1, TabModel::GroupRole).toInt(), work);
+    QCOMPARE(moveSpy.count(), 0);
+    QCOMPARE(removeSpy.count(), 0);
+    QCOMPARE(rowSpy.count(), 1);
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::GroupRole});
+    QCOMPARE(model.currentGroupId(), work);
+    QCOMPARE(model.activeTabId(), a2);
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a2});
+    QCOMPARE(model.tabCountInGroup(home), 1);
+
+    // A tab that is not in front moves without the front moving; into the current
+    // group it joins the grid at the end.
+    QVERIFY(model.moveTabToGroup(a1, work));
+    QCOMPARE(model.currentGroupId(), work);
+    QCOMPARE(model.activeTabId(), a2);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a2, a1}));
+    QVERIFY(model.moveTabToGroup(a1, work));
+    QCOMPARE(model.tabCountInGroup(home), 0);
+    QVERIFY(!model.moveTabToGroup(a1, 4242));
+    QVERIFY(!model.moveTabToGroup(4242, home));
+    QVERIFY(model.groupModel()->moveTab(a1, home));
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a2});
+}
+
+void tst_tabmodel::groupsSurviveARestart()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    int home = 0;
+    int work = 0;
+    int a1 = 0;
+    int b1 = 0;
+    {
+        TabModel model(&persistence);
+        home = model.groups().first().id;
+        a1 = model.newTab(QStringLiteral("https://a1.example/"));
+        work = model.addGroup(QStringLiteral("Work"));
+        b1 = model.newTab(QStringLiteral("https://b1.example/"));
+        model.newTab(QStringLiteral("https://secret.example/"), true);
+        model.renameGroup(work, QStringLiteral("Office"));
+        model.activateTabById(b1);
+    }
+    {
+        TabModel model(&persistence);
+        QCOMPARE(model.groups().count(), 2);
+        QCOMPARE(model.groups().at(0).id, home);
+        QCOMPARE(model.groups().at(1).name, QStringLiteral("Office"));
+        QCOMPARE(model.count(), 2);
+        QCOMPARE(model.activeTabId(), b1);
+        QCOMPARE(model.currentGroupId(), work);
+        QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{b1});
+        QCOMPARE(role(model, 0, TabModel::GroupRole).toInt(), home);
+        const int play = model.addGroup(QStringLiteral("Play"));
+        QVERIFY(play > work);
+        QVERIFY(model.removeGroup(work));
+        QCOMPARE(model.activeTabId(), a1);
+        QVERIFY(model.removeGroup(play));
+    }
+    {
+        TabModel model(&persistence);
+        QCOMPARE(model.groups().count(), 1);
+        QCOMPARE(model.currentGroupId(), home);
+        QCOMPARE(model.activeTabId(), a1);
+        QVERIFY(model.addGroup(QStringLiteral("Again")) > home);
+    }
+    {
+        // A tab naming a group no row describes -- every tab of a database from
+        // before schema 4 -- gets that group created for it, unnamed.
+        Tab stray;
+        stray.id = 77;
+        stray.url = QStringLiteral("https://stray.example/");
+        stray.groupId = 40;
+        persistence.insertTab(stray);
+        persistence.setCurrentGroupId(4242);
+        persistence.setActiveTabId(77);
+        TabModel model(&persistence);
+        QCOMPARE(model.groups().count(), 3);
+        QCOMPARE(model.groups().last().id, 40);
+        QVERIFY(model.groups().last().name.isEmpty());
+        QCOMPARE(model.currentGroupId(), 40);
+        QVERIFY(model.addGroup(QString()) > 40);
+    }
+}
+
+void tst_tabmodel::searchSpansTheGroups()
+{
+    TabModel model(nullptr);
+    TabSearchModel search(&model);
+    QCOMPARE(search.count(), 0);
+    QCOMPARE(search.rowCount(search.index(0, 0)), 0);
+    QVERIFY(search.searchTerm().isEmpty());
+    QSignalSpy countSpy(&search, &TabSearchModel::countChanged);
+    QSignalSpy termSpy(&search, &TabSearchModel::searchTermChanged);
+
+    const int a1 = model.newTab(QStringLiteral("https://news.example/"));
+    model.updateTitle(a1, QStringLiteral("Morning news"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    const int b1 = model.newTab(QStringLiteral("https://mail.example/"));
+    model.updateTitle(b1, QStringLiteral("Inbox"));
+    model.activateTabById(a1);
+    const int a2 = model.newTab(QStringLiteral("https://weather.example/"), true);
+    model.updateTitle(a2, QStringLiteral("Weather news"));
+
+    // With nothing typed, every tab, group by group and each group's first marked.
+    QCOMPARE(search.count(), 3);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a1);
+    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
+    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), b1);
+    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(role(search, 2, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(role(search, 1, TabSearchModel::PrivateRole).toBool());
+    QCOMPARE(role(search, 2, TabSearchModel::GroupIdRole).toInt(), work);
+    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Work"));
+    QVERIFY(role(search, 0, TabSearchModel::GroupNameRole).toString().isEmpty());
+    QCOMPARE(role(search, 0, TabSearchModel::GroupTabCountRole).toInt(), 2);
+    QCOMPARE(role(search, 2, TabSearchModel::UrlRole).toString(),
+             QStringLiteral("https://mail.example/"));
+    QCOMPARE(role(search, 2, TabSearchModel::TitleRole).toString(), QStringLiteral("Inbox"));
+    QVERIFY(role(search, 2, TabSearchModel::FaviconRole).toString().isEmpty());
+    QVERIFY(!role(search, 3, TabSearchModel::TabIdRole).isValid());
+    QCOMPARE(search.roleNames().value(TabSearchModel::GroupStartRole),
+             QByteArrayLiteral("groupStart"));
+
+    // Title or address, whatever the case, and the term is trimmed.
+    search.setSearchTerm(QStringLiteral("  NEWS "));
+    QCOMPARE(search.searchTerm(), QStringLiteral("NEWS"));
+    QCOMPARE(termSpy.count(), 1);
+    QCOMPARE(search.count(), 2);
+    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
+    search.setSearchTerm(QStringLiteral("NEWS"));
+    QCOMPARE(termSpy.count(), 1);
+    search.setSearchTerm(QStringLiteral("mail.ex"));
+    QCOMPARE(search.count(), 1);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), b1);
+    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    search.setSearchTerm(QStringLiteral("nothing"));
+    QCOMPARE(search.count(), 0);
+
+    // The list follows the tabs and the groups without being asked.
+    search.setSearchTerm(QString());
+    QCOMPARE(search.count(), 3);
+    model.renameGroup(work, QStringLiteral("Office"));
+    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Office"));
+    model.closeTabById(b1);
+    QCOMPARE(search.count(), 2);
+    model.updateTitle(a1, QStringLiteral("Evening news"));
+    QCOMPARE(role(search, 0, TabSearchModel::TitleRole).toString(), QStringLiteral("Evening news"));
+    QVERIFY(countSpy.count() >= 3);
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

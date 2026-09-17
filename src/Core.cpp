@@ -9,6 +9,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_storage(dataDirectory)
     , m_tabPersistence(m_storage)
     , m_tabs(&m_tabPersistence, Storage::defaultCacheDirectory())
+    , m_tabSearch(&m_tabs)
     , m_history(m_storage)
     , m_bookmarks(m_storage)
     , m_settings(configFilePath)
@@ -31,6 +32,11 @@ Storage &Core::storage()
 TabModel *Core::tabs()
 {
     return &m_tabs;
+}
+
+TabSearchModel *Core::tabSearch()
+{
+    return &m_tabSearch;
 }
 
 HistoryModel *Core::history()

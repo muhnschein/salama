@@ -14,11 +14,17 @@ add_library(tuuli-core STATIC
     settings/Settings.h
     storage/Storage.cpp
     storage/Storage.h
+    tabs/GroupTabModel.cpp
+    tabs/GroupTabModel.h
     tabs/Tab.h
+    tabs/TabGroupModel.cpp
+    tabs/TabGroupModel.h
     tabs/TabModel.cpp
     tabs/TabModel.h
     tabs/TabPersistence.cpp
     tabs/TabPersistence.h
+    tabs/TabSearchModel.cpp
+    tabs/TabSearchModel.h
 )
 target_include_directories(tuuli-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Gui, for QColor: a page's theme-color is a CSS colour, and reading one is what

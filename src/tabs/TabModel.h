@@ -16,8 +16,14 @@
 
 namespace Tuuli {
 
+class GroupTabModel;
+class TabGroupModel;
 class TabPersistence;
 
+// Every open tab, in one list, whatever group it is in: the browsing page keeps one
+// view per row of this model, so a tab changing group must not be a row removed and
+// inserted. The grid shows one group at a time through groupTabs(), and the strip
+// above it lists the groups through groups() (docs/DECISIONS/0015-tab-groups.md).
 class TabModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -32,6 +38,11 @@ class TabModel : public QAbstractListModel
     // field from (docs/DECISIONS/0014-cover-is-the-tab-count.md); a tab with no picture
     // is an empty string rather than a gap, so the list is always as long as count.
     Q_PROPERTY(QStringList recentThumbnails READ recentThumbnails NOTIFY recentTabsChanged)
+    // The group the grid shows and new tabs open in. It follows the active tab, and
+    // choosing another group brings that group's most recent tab to the front.
+    Q_PROPERTY(
+        int currentGroupId READ currentGroupId WRITE setCurrentGroupId NOTIFY currentGroupChanged)
+    Q_PROPERTY(int currentGroupIndex READ currentGroupIndex NOTIFY currentGroupChanged)
 
 public:
     enum Role
@@ -42,7 +53,8 @@ public:
         FaviconRole,
         ThumbnailRole,
         PrivateRole,
-        ActiveRole
+        ActiveRole,
+        GroupRole
     };
 
     // A null persistence keeps the model in memory only (used by tests). An empty
@@ -65,10 +77,12 @@ public:
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
+    // The tab opens in the current group.
     Q_INVOKABLE int newTab(const QString &url, bool isPrivate = false);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
     Q_INVOKABLE void closeTab(int index);
+    Q_INVOKABLE void closeTabById(int tabId);
     // Reorder, from the grid. The active tab stays active wherever it lands.
     Q_INVOKABLE void moveTab(int from, int to);
     Q_INVOKABLE void closeActiveTab();
@@ -88,6 +102,26 @@ public:
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
 
+    // Tab groups. There is always at least one; the last cannot be removed.
+    const QList<TabGroup> &groups() const;
+    int groupIndexOf(int groupId) const;
+    int tabCountInGroup(int groupId) const;
+    int currentGroupId() const;
+    int currentGroupIndex() const;
+    void setCurrentGroupId(int groupId);
+    // Returns the new group's id. The new group becomes the current one.
+    int addGroup(const QString &name);
+    void renameGroup(int groupId, const QString &name);
+    // Closes the group's tabs and removes it. Refused for the last group.
+    bool removeGroup(int groupId);
+    // Puts a tab in another group. Its row in this model does not move, so the view
+    // behind it stays; its place in the group is after the tabs already there.
+    bool moveTabToGroup(int tabId, int groupId);
+
+    // The two views of this model the grid and the strip are built on.
+    GroupTabModel *groupTabs() const;
+    TabGroupModel *groupModel() const;
+
     static bool isExternalUrl(const QString &url);
 
 signals:
@@ -103,10 +137,22 @@ signals:
     void visited(const QString &url);
     void titleUpdated(const QString &url, const QString &title);
     void faviconUpdated(const QString &url, const QString &favicon);
+    void currentGroupChanged();
+    // A group was added, renamed or removed, or a tab changed group.
+    void groupsChanged();
 
 private:
     void load();
+    void ensureGroups();
     void setActiveTab(int tabId);
+    // The tab and the group, each without following the other.
+    void applyActiveTab(int tabId);
+    void applyCurrentGroup(int groupId);
+    // The tab to bring to the front when the active one goes: the nearest in its own
+    // group, then the most recent anywhere.
+    int successorOf(int index) const;
+    int mostRecentTabId(int groupId) const;
+    int groupRowFor(int index) const;
     // Marks the tab in front as the most recent one, and tells the cover.
     void stampActive();
     void notifyRow(int index, Role role);
@@ -116,9 +162,14 @@ private:
     TabPersistence *m_persistence;
     QString m_thumbnailDirectory;
     QList<Tab> m_tabs;
+    QList<TabGroup> m_groups;
     QList<int> m_awaitingFirstUrl;
+    GroupTabModel *m_groupTabs;
+    TabGroupModel *m_groupModel;
     int m_activeTabId = 0;
+    int m_currentGroupId = 0;
     int m_nextTabId = 1;
+    int m_nextGroupId = 1;
     // Counts activations rather than milliseconds: the order is all anyone reads, and a
     // counter cannot be turned around by a clock that steps backwards.
     qint64 m_activationClock = 0;

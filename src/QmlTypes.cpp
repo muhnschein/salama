@@ -3,6 +3,8 @@
 #include "QmlTypes.h"
 
 #include "Core.h"
+#include "tabs/GroupTabModel.h"
+#include "tabs/TabGroupModel.h"
 
 #include <QQmlEngine>
 #include <qqml.h>
@@ -24,6 +26,21 @@ QObject *keepOwnership(QObject *object)
 QObject *tabModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(coreInstance->tabs());
+}
+
+QObject *groupTabModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->tabs()->groupTabs());
+}
+
+QObject *tabGroupModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->tabs()->groupModel());
+}
+
+QObject *tabSearchModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->tabSearch());
 }
 
 QObject *historyModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
@@ -57,6 +74,9 @@ void registerQmlTypes(Core *core)
     }
     registered = true;
     qmlRegisterSingletonType<TabModel>(ModuleUri, 1, 0, "TabModel", &tabModelProvider);
+    qmlRegisterSingletonType<GroupTabModel>(ModuleUri, 1, 0, "GroupTabs", &groupTabModelProvider);
+    qmlRegisterSingletonType<TabGroupModel>(ModuleUri, 1, 0, "TabGroups", &tabGroupModelProvider);
+    qmlRegisterSingletonType<TabSearchModel>(ModuleUri, 1, 0, "TabSearch", &tabSearchModelProvider);
     qmlRegisterSingletonType<HistoryModel>(ModuleUri, 1, 0, "HistoryModel", &historyModelProvider);
     qmlRegisterSingletonType<BookmarkModel>(ModuleUri, 1, 0, "BookmarkModel",
                                             &bookmarkModelProvider);

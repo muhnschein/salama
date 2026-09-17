@@ -27,11 +27,14 @@ void tst_core::wiresTabsToHistory()
     QVERIFY(core.storage().isOpen());
     QVERIFY(core.engineMessages() != nullptr);
     QVERIFY(core.settings() != nullptr);
+    QVERIFY(core.tabSearch() != nullptr);
+    QCOMPARE(core.tabSearch()->count(), 0);
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 0);
     core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 1);
+    QCOMPARE(core.tabSearch()->count(), 1);
     core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
     QCOMPARE(core.history()->data(core.history()->index(0, 0), HistoryModel::TitleRole).toString(),
              QStringLiteral("Alpha"));

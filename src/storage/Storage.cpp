@@ -28,7 +28,12 @@ const QStringList &schemaStatements()
                        "title TEXT NOT NULL DEFAULT '', "
                        "favicon TEXT NOT NULL DEFAULT '', "
                        "thumbnail TEXT NOT NULL DEFAULT '', "
-                       "last_active INTEGER NOT NULL DEFAULT 0)"),
+                       "last_active INTEGER NOT NULL DEFAULT 0, "
+                       "group_id INTEGER NOT NULL DEFAULT 1)"),
+        QStringLiteral("CREATE TABLE IF NOT EXISTS tab_group ("
+                       "group_id INTEGER PRIMARY KEY, "
+                       "name TEXT NOT NULL DEFAULT '', "
+                       "position INTEGER NOT NULL)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS browser_history ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                        "url TEXT NOT NULL UNIQUE, "
@@ -171,13 +176,16 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews and schema 2 the cover's order of tabs. CREATE
-    // TABLE IF NOT EXISTS above leaves an existing table alone, so the columns are
-    // added here; asking the table rather than the version number makes this correct
-    // whichever way the database was created.
+    // Schema 1 predates tab previews, schema 2 the cover's order of tabs and schema 3
+    // tab groups. CREATE TABLE IF NOT EXISTS above leaves an existing table alone, so
+    // the columns are added here; asking the table rather than the version number
+    // makes this correct whichever way the database was created. Every tab from
+    // before schema 4 lands in group 1, which TabModel creates when no group row
+    // claims the id.
     const QList<QPair<QString, QString>> tabColumns{
         {QStringLiteral("thumbnail"), QStringLiteral("TEXT NOT NULL DEFAULT ''")},
         {QStringLiteral("last_active"), QStringLiteral("INTEGER NOT NULL DEFAULT 0")},
+        {QStringLiteral("group_id"), QStringLiteral("INTEGER NOT NULL DEFAULT 1")},
     };
     for (const QPair<QString, QString> &column : tabColumns) {
         if (hasColumn(QStringLiteral("tab"), column.first)) {

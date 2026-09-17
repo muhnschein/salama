@@ -33,6 +33,14 @@ public:
     void removeAllTabs();
     void setActiveTabId(int tabId);
 
+    // Tab groups, in the order the strip shows them (docs/DECISIONS/0015-tab-groups.md).
+    QList<TabGroup> loadGroups() const;
+    int loadCurrentGroupId() const;
+    void insertGroup(const TabGroup &group);
+    void updateGroup(const TabGroup &group);
+    void removeGroup(int groupId);
+    void setCurrentGroupId(int groupId);
+
 private:
     Storage &m_storage;
 };

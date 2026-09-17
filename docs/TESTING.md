@@ -31,7 +31,12 @@ workaround; a failure blocks the tag.
 - [ ] Favicons: a page that declares one shows it in the tab grid and the cover, not the site's `/favicon.ico` fallback (compare two sites whose declared icon differs from their root one).
 - [ ] Tab grid shows two columns of page previews that look like the pages, with favicon and title under each; tapping switches, the close button in a preview's top-right corner closes. Each preview and the highlight round the active one have rounded corners, and the picture is rounded with them rather than square inside them. Nothing square is drawn behind the active cell or a pressed one.
 - [ ] A preview shows the top of what was last on screen for that tab, not the middle of the page.
-- [ ] The grid's head says how many tabs there are, and both that text and the first row of cells -- with its close buttons -- are clear of the screen cutout.
+- [ ] The grid's head is the strip of tab groups, the current one centred; both the strip and the first row of cells -- with its close buttons -- are clear of the screen cutout.
+- [ ] With one group the strip says "N tabs". The edit button in the strip's left corner opens the list of groups: pull down to make one, tap it to make it current -- the grid shows it empty, and the button in the foot opens a tab in it. Its menu renames and deletes; the last group has no delete.
+- [ ] Flicking the strip moves to the neighbouring group, snapping on a whole item; the grid shows that group's tabs and, pulled down, the page shows the tab last read in that group. The name of the current group is highlighted.
+- [ ] The search button in the strip's right corner lists every open tab under its group's heading; typing filters by title or address; tapping a result brings that tab to the front, puts the grid away and moves the strip to its group.
+- [ ] Menu > Move tab to group moves the tab in front into the group tapped, or into a new one made from the pull-down; the tab keeps its page (no reload) and the strip follows it.
+- [ ] Kill the app, relaunch: the groups, their names and order, each tab's group and the current group are as they were.
 - [ ] Dragging a preview sideways picks it up; carrying it over another cell swaps them, and the order survives a restart. The tab keeps its page -- it is not reloaded. Letting go leaves the grid open; it does not jump to that tab.
 - [ ] A handle is drawn along the top of the navigation bar and along the top of the grid's head row; the bar's lights up while a drag is under way.
 - [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.

@@ -204,6 +204,13 @@ WebViewPage {
         settle(true)
     }
 
+    // A tab chosen off the grid -- from the search page -- comes to the front, and the
+    // page comes back over the grid with it.
+    function showTab(tabId) {
+        TabModel.activateTabById(tabId)
+        settle(false)
+    }
+
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
     // pixels across a 1080 wide screen -- the width a phone layout is written for --
     // where the platform's own 1.5 gives 410. Two functions so the load tests can

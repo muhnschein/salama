@@ -8,6 +8,7 @@
 
 using Tuuli::Storage;
 using Tuuli::Tab;
+using Tuuli::TabGroup;
 using Tuuli::TabPersistence;
 
 class tst_tabpersistence : public QObject
@@ -20,6 +21,7 @@ private slots:
     void ignoresPrivateAndInvalidTabs();
     void activeTabId();
     void removeAll();
+    void groupsRoundTrip();
 };
 
 namespace {
@@ -31,6 +33,7 @@ Tab makeTab(int id, const QString &url, bool isPrivate = false)
     tab.url = url;
     tab.title = QStringLiteral("Title %1").arg(id);
     tab.lastActive = id;
+    tab.groupId = 1;
     tab.isPrivate = isPrivate;
     return tab;
 }
@@ -54,11 +57,13 @@ void tst_tabpersistence::roundTrip()
     QCOMPARE(tabs.at(1).title, QStringLiteral("Title 3"));
     // The cover's order is written with the rest of the tab, not derived on load.
     QCOMPARE(tabs.at(0).lastActive, 7LL);
+    QCOMPARE(tabs.at(0).groupId, 1);
 
     Tab updated = tabs.at(0);
     updated.url = QStringLiteral("https://a.example/page");
     updated.favicon = QStringLiteral("https://a.example/favicon.ico");
     updated.lastActive = 99;
+    updated.groupId = 3;
     persistence.updateTab(updated);
     tabs = persistence.loadTabs();
     QCOMPARE(tabs.at(0), updated);
@@ -136,6 +141,47 @@ void tst_tabpersistence::removeAll()
     persistence.insertTab(makeTab(2, QStringLiteral("https://b.example/")));
     persistence.removeAllTabs();
     QVERIFY(persistence.loadTabs().isEmpty());
+}
+
+void tst_tabpersistence::groupsRoundTrip()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+
+    QVERIFY(persistence.loadGroups().isEmpty());
+    QCOMPARE(persistence.loadCurrentGroupId(), 0);
+
+    TabGroup first;
+    first.id = 5;
+    TabGroup second;
+    second.id = 2;
+    second.name = QStringLiteral("Work");
+    TabGroup invalid;
+    persistence.insertGroup(first);
+    persistence.insertGroup(second);
+    persistence.insertGroup(invalid);
+    persistence.updateGroup(invalid);
+
+    // In the order they were added, not by id.
+    QList<TabGroup> groups = persistence.loadGroups();
+    QCOMPARE(groups.count(), 2);
+    QCOMPARE(groups.at(0), first);
+    QCOMPARE(groups.at(1), second);
+    QVERIFY(groups.at(0) != groups.at(1));
+    QVERIFY(groups.at(0).name.isEmpty());
+
+    second.name = QStringLiteral("Office");
+    persistence.updateGroup(second);
+    QCOMPARE(persistence.loadGroups().at(1).name, QStringLiteral("Office"));
+
+    persistence.setCurrentGroupId(2);
+    QCOMPARE(persistence.loadCurrentGroupId(), 2);
+
+    persistence.removeGroup(5);
+    groups = persistence.loadGroups();
+    QCOMPARE(groups.count(), 1);
+    QCOMPARE(groups.first().id, 2);
 }
 
 QTEST_GUILESS_MAIN(tst_tabpersistence)

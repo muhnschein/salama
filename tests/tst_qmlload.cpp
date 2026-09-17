@@ -46,6 +46,7 @@ private slots:
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabGrid();
+    void tabGroups();
     void restoredTabsLoadLazily();
     void menuPage();
     void historyPage();
@@ -530,11 +531,14 @@ void tst_qmlload::barDoesNotCoverThePage()
              strip + slimGesture->property("reach").toReal());
 
     // Nothing is left on the slim bar but the address, drawn smaller, and every
-    // press on it belongs to the address. Its background has gone with the rest: what
-    // is left of the bar is the handle and the host, floating.
+    // press on it belongs to the address. Its background has faded to a wash: enough
+    // to read the host over a light page, not enough to hide the page.
     QCOMPARE(bar->property("expansion").toReal(), qreal(0));
     QObject *background = find(QStringLiteral("navigationBarBackground"));
-    QCOMPARE(background->property("color").value<QColor>().alpha(), 0);
+    const int slimAlpha = background->property("color").value<QColor>().alpha();
+    QVERIFY(slimAlpha > 0);
+    QVERIFY(slimAlpha < 255);
+    QCOMPARE(slimAlpha, qRound(255 * evaluate(bar, QStringLiteral("Theme.opacityLow")).toReal()));
     QVERIFY(!find(QStringLiteral("menuButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("reloadButton"))->property("visible").toBool());
@@ -685,27 +689,28 @@ void tst_qmlload::tabGrid()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QVERIFY(grid->property("visible").toBool());
-    // The grid carries two rows of its own, drawn over the cells: what it holds, and
-    // the one control it offers. The first is also what keeps the top row of cells
-    // clear of the screen's own cutout.
+    // The grid carries two rows of its own, drawn over the cells: the groups, and the
+    // one control it offers. The first is also what keeps the top row of cells clear
+    // of the screen's own cutout. One group so far, unnamed, so named by its count.
     QVERIFY(find(QStringLiteral("newTabRow")) != nullptr);
-    QCOMPARE(find(QStringLiteral("tabCountLabel"))->property("text").toString(),
-             QStringLiteral("2 tab(s)"));
+    QList<QObject *> groupLabels = findAll(QStringLiteral("tabGroupLabel"));
+    QCOMPARE(groupLabels.count(), 1);
+    QCOMPARE(groupLabels.first()->property("text").toString(), QStringLiteral("2 tab(s)"));
 
-    // Both what the head row says and the first row of cells clear the display's own
-    // cutout: the count sat under the notch, and so did the close button in the
-    // corner of the first cell.
+    // Both the head row's strip and the first row of cells clear the display's own
+    // cutout: the head sat under the notch, and so did the close button in the corner
+    // of the first cell.
     const qreal cutout = grid->property("cutoutHeight").toReal();
     QVERIFY(cutout > 0);
-    QObject *countRow = find(QStringLiteral("tabCountRow"));
-    QVERIFY(countRow->property("height").toReal() > cutout);
-    QVERIFY(find(QStringLiteral("tabCountLabel"))->property("y").toReal() >= cutout);
+    QObject *headRow = find(QStringLiteral("tabGroupRow"));
+    QVERIFY(headRow->property("height").toReal() > cutout);
+    QVERIFY(find(QStringLiteral("tabGroupStrip"))->property("y").toReal() >= cutout);
     QObject *gridHandle = find(QStringLiteral("gridDragHandle"));
     QVERIFY(gridHandle != nullptr);
     QVERIFY(gridHandle->property("y").toReal() >= cutout);
     auto *headerItem = find(QStringLiteral("tabGrid"))->property("headerItem").value<QObject *>();
     QVERIFY(headerItem != nullptr);
-    QCOMPARE(headerItem->property("height").toReal(), countRow->property("height").toReal());
+    QCOMPARE(headerItem->property("height").toReal(), headRow->property("height").toReal());
 
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);

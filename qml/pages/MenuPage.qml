@@ -125,6 +125,23 @@ Page {
                 }
             }
 
+            // The tab in front, into another group: the one way a tab changes group,
+            // here beside the grid it leaves rather than on a cell that already has a
+            // tap, a carry and a close button on it.
+            ListItem {
+                objectName: "moveToGroupItem"
+                enabled: TabModel.activeTabId > 0
+                onClicked: pageStack.replace(Qt.resolvedUrl("TabGroupsPage.qml"), {
+                                                 "moveTabId": TabModel.activeTabId
+                                             })
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Move tab to group")
+                }
+            }
+
             ListItem {
                 objectName: "bookmarksItem"
                 onClicked: pageStack.replace(Qt.resolvedUrl("BookmarksPage.qml"))

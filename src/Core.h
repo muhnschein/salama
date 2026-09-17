@@ -9,6 +9,7 @@
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
+#include "tabs/TabSearchModel.h"
 
 #include <QObject>
 #include <QString>
@@ -26,6 +27,7 @@ public:
 
     Storage &storage();
     TabModel *tabs();
+    TabSearchModel *tabSearch();
     HistoryModel *history();
     BookmarkModel *bookmarks();
     Settings *settings();
@@ -35,6 +37,7 @@ private:
     Storage m_storage;
     TabPersistence m_tabPersistence;
     TabModel m_tabs;
+    TabSearchModel m_tabSearch;
     HistoryModel m_history;
     BookmarkModel m_bookmarks;
     Settings m_settings;

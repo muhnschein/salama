@@ -45,7 +45,7 @@ Item {
         width: parent.width
         height: parent.height
         y: -overscroll
-        model: TabModel
+        model: GroupTabs
         cellWidth: width / 2
         cellHeight: cellWidth + Theme.itemSizeSmall
         // Vertical rather than automatic: with a handful of tabs the content fits the
@@ -72,7 +72,7 @@ Item {
         // device's own cutout.
         header: Item {
             width: tabGrid.width
-            height: countRow.height
+            height: headRow.height
         }
 
         footer: Item {
@@ -80,36 +80,39 @@ Item {
             height: newTabRow.height
         }
 
+        // By id rather than by row: the grid's rows are the current group's, and
+        // the tab model's are every group's.
         delegate: TabPreview {
             onTapped: {
-                TabModel.activateTab(index)
+                TabModel.activateTabById(model.tabId)
                 tabsView.tabActivated()
             }
-            onCloseRequested: TabModel.closeTab(index)
-            onMoveRequested: TabModel.moveTab(from, to)
+            onCloseRequested: TabModel.closeTabById(model.tabId)
+            onMoveRequested: GroupTabs.moveTab(from, to)
         }
 
         ViewPlaceholder {
-            enabled: TabModel.count === 0
-            text: qsTr("No open tabs")
+            enabled: GroupTabs.count === 0
+            text: qsTr("No tabs in this group")
             hintText: qsTr("Open one with the button below")
         }
 
         VerticalScrollDecorator {}
     }
 
-    // What the grid says about itself, over the cells rather than among them. It is
-    // also what keeps the top row clear of the screen's cutout.
+    // The groups, over the cells rather than among them, with the way to edit them in
+    // one corner and the search for a tab in the other. The row is also what keeps
+    // the top row of cells clear of the screen's cutout.
     Rectangle {
-        id: countRow
+        id: headRow
 
-        objectName: "tabCountRow"
+        objectName: "tabGroupRow"
         anchors {
             left: parent.left
             right: parent.right
             top: parent.top
         }
-        // The cutout on top of the row's own height, and the text below the cutout
+        // The cutout on top of the row's own height, and the strip below the cutout
         // rather than centred through it: the row starts at the top of the screen,
         // and the notch was taking a bite out of what it says.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
@@ -123,15 +126,17 @@ Item {
             active: tabGrid.dragging
         }
 
-        Label {
-            objectName: "tabCountLabel"
+        TabGroupStrip {
             anchors {
-                centerIn: parent
-                verticalCenterOffset: tabsView.cutoutHeight / 2
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
             }
-            text: qsTr("%n tab(s)", "", TabModel.count)
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.highlightColor
+            height: Theme.itemSizeLarge
+            // Both are pages of their own over the grid, which stays open under them
+            // for when they are popped.
+            onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))
+            onSearchRequested: pageStack.push(Qt.resolvedUrl("../pages/TabSearchPage.qml"))
         }
     }
 

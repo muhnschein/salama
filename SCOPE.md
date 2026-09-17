@@ -61,7 +61,7 @@ Reuse policy:
 ## 6. Deliverables
 
 ### Phase 1 — Shippable
-- Multi-tab browsing, tab switcher, tab persistence across restarts
+- Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
 - Address bar (URL/search), configurable search engine
 - Back, forward, reload, stop, share (`Sailfish.Share`)
 - History and bookmarks (SQLite) with management UI

@@ -14,6 +14,7 @@ namespace Tuuli {
 namespace {
 
 const char *const ActiveTabSetting = "activeTabId";
+const char *const CurrentGroupSetting = "currentGroupId";
 
 bool run(QSqlQuery &query)
 {
@@ -22,6 +23,26 @@ bool run(QSqlQuery &query)
         return false;
     }
     return true;
+}
+
+int readSetting(const QSqlDatabase &db, const char *name)
+{
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("SELECT value FROM setting WHERE name = ?"));
+    query.addBindValue(QLatin1String(name));
+    if (run(query) && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
+}
+
+void writeSetting(const QSqlDatabase &db, const char *name, int value)
+{
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("INSERT OR REPLACE INTO setting (name, value) VALUES (?, ?)"));
+    query.addBindValue(QLatin1String(name));
+    query.addBindValue(QString::number(value));
+    run(query);
 }
 
 } // namespace
@@ -35,8 +56,8 @@ QList<Tab> TabPersistence::loadTabs() const
 {
     QList<Tab> tabs;
     QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("SELECT tab_id, url, title, favicon, thumbnail, last_active "
-                                 "FROM tab ORDER BY position ASC"));
+    query.prepare(QStringLiteral("SELECT tab_id, url, title, favicon, thumbnail, last_active, "
+                                 "group_id FROM tab ORDER BY position ASC"));
     if (!run(query)) {
         return tabs;
     }
@@ -48,6 +69,7 @@ QList<Tab> TabPersistence::loadTabs() const
         tab.favicon = query.value(3).toString();
         tab.thumbnail = query.value(4).toString();
         tab.lastActive = query.value(5).toLongLong();
+        tab.groupId = query.value(6).toInt();
         tabs.append(tab);
     }
     return tabs;
@@ -55,13 +77,7 @@ QList<Tab> TabPersistence::loadTabs() const
 
 int TabPersistence::loadActiveTabId() const
 {
-    QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("SELECT value FROM setting WHERE name = ?"));
-    query.addBindValue(QLatin1String(ActiveTabSetting));
-    if (run(query) && query.next()) {
-        return query.value(0).toInt();
-    }
-    return 0;
+    return readSetting(m_storage.database(), ActiveTabSetting);
 }
 
 void TabPersistence::insertTab(const Tab &tab)
@@ -72,15 +88,16 @@ void TabPersistence::insertTab(const Tab &tab)
     QSqlQuery query(m_storage.database());
     query.prepare(
         QStringLiteral("INSERT INTO tab (tab_id, position, url, title, favicon, thumbnail, "
-                       "last_active) "
+                       "last_active, group_id) "
                        "VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM tab), "
-                       "?, ?, ?, ?, ?)"));
+                       "?, ?, ?, ?, ?, ?)"));
     query.addBindValue(tab.id);
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
     query.addBindValue(Storage::text(tab.favicon));
     query.addBindValue(Storage::text(tab.thumbnail));
     query.addBindValue(tab.lastActive);
+    query.addBindValue(tab.groupId);
     run(query);
 }
 
@@ -91,12 +108,13 @@ void TabPersistence::updateTab(const Tab &tab)
     }
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("UPDATE tab SET url = ?, title = ?, favicon = ?, "
-                                 "thumbnail = ?, last_active = ? WHERE tab_id = ?"));
+                                 "thumbnail = ?, last_active = ?, group_id = ? WHERE tab_id = ?"));
     query.addBindValue(Storage::text(tab.url));
     query.addBindValue(Storage::text(tab.title));
     query.addBindValue(Storage::text(tab.favicon));
     query.addBindValue(Storage::text(tab.thumbnail));
     query.addBindValue(tab.lastActive);
+    query.addBindValue(tab.groupId);
     query.addBindValue(tab.id);
     run(query);
 }
@@ -135,11 +153,68 @@ void TabPersistence::removeAllTabs()
 
 void TabPersistence::setActiveTabId(int tabId)
 {
+    writeSetting(m_storage.database(), ActiveTabSetting, tabId);
+}
+
+QList<TabGroup> TabPersistence::loadGroups() const
+{
+    QList<TabGroup> groups;
     QSqlQuery query(m_storage.database());
-    query.prepare(QStringLiteral("INSERT OR REPLACE INTO setting (name, value) VALUES (?, ?)"));
-    query.addBindValue(QLatin1String(ActiveTabSetting));
-    query.addBindValue(QString::number(tabId));
+    query.prepare(QStringLiteral("SELECT group_id, name FROM tab_group ORDER BY position ASC"));
+    if (!run(query)) {
+        return groups;
+    }
+    while (query.next()) {
+        TabGroup group;
+        group.id = query.value(0).toInt();
+        group.name = query.value(1).toString();
+        groups.append(group);
+    }
+    return groups;
+}
+
+int TabPersistence::loadCurrentGroupId() const
+{
+    return readSetting(m_storage.database(), CurrentGroupSetting);
+}
+
+void TabPersistence::insertGroup(const TabGroup &group)
+{
+    if (!group.isValid()) {
+        return;
+    }
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("INSERT INTO tab_group (group_id, name, position) "
+                                 "VALUES (?, ?, (SELECT COALESCE(MAX(position), 0) + 1 "
+                                 "FROM tab_group))"));
+    query.addBindValue(group.id);
+    query.addBindValue(Storage::text(group.name));
     run(query);
+}
+
+void TabPersistence::updateGroup(const TabGroup &group)
+{
+    if (!group.isValid()) {
+        return;
+    }
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("UPDATE tab_group SET name = ? WHERE group_id = ?"));
+    query.addBindValue(Storage::text(group.name));
+    query.addBindValue(group.id);
+    run(query);
+}
+
+void TabPersistence::removeGroup(int groupId)
+{
+    QSqlQuery query(m_storage.database());
+    query.prepare(QStringLiteral("DELETE FROM tab_group WHERE group_id = ?"));
+    query.addBindValue(groupId);
+    run(query);
+}
+
+void TabPersistence::setCurrentGroupId(int groupId)
+{
+    writeSetting(m_storage.database(), CurrentGroupSetting, groupId);
 }
 
 } // namespace Tuuli

@@ -2,6 +2,8 @@
 // Copyright (c) 2026 tuuli contributors
 #include "TabModel.h"
 
+#include "GroupTabModel.h"
+#include "TabGroupModel.h"
 #include "TabPersistence.h"
 
 #include <QDateTime>
@@ -19,8 +21,11 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     : QAbstractListModel(parent)
     , m_persistence(persistence)
     , m_thumbnailDirectory(std::move(thumbnailDirectory))
+    , m_groupTabs(new GroupTabModel(this))
+    , m_groupModel(new TabGroupModel(this))
 {
     load();
+    ensureGroups();
 }
 
 void TabModel::load()
@@ -29,6 +34,7 @@ void TabModel::load()
         return;
     }
     m_tabs = m_persistence->loadTabs();
+    m_groups = m_persistence->loadGroups();
     for (const Tab &tab : m_tabs) {
         m_nextTabId = std::max(m_nextTabId, tab.id + 1);
     }
@@ -43,6 +49,7 @@ void TabModel::load()
         m_activationClock = std::max(m_activationClock, tab.lastActive);
     }
 
+    m_currentGroupId = m_persistence->loadCurrentGroupId();
     if (m_tabs.isEmpty()) {
         return;
     }
@@ -52,6 +59,55 @@ void TabModel::load()
     // was in front last. A database written before schema 3 has no stamps at all, and
     // this is what gives the first one out.
     stampActive();
+}
+
+// Every tab is in a group that exists, there is at least one group, and the current
+// one is among them. A group a stored tab names but no row describes is created
+// unnamed rather than the tab moved: that is what a database from before schema 4
+// looks like, where every tab says group 1 and no group table says anything.
+void TabModel::ensureGroups()
+{
+    for (const TabGroup &group : m_groups) {
+        m_nextGroupId = std::max(m_nextGroupId, group.id + 1);
+    }
+    for (Tab &tab : m_tabs) {
+        if (tab.groupId <= 0) {
+            tab.groupId = 1;
+        }
+        if (groupIndexOf(tab.groupId) < 0) {
+            TabGroup group;
+            group.id = tab.groupId;
+            m_groups.append(group);
+            m_nextGroupId = std::max(m_nextGroupId, group.id + 1);
+            if (m_persistence != nullptr) {
+                m_persistence->insertGroup(group);
+            }
+        }
+    }
+    if (m_groups.isEmpty()) {
+        TabGroup group;
+        group.id = m_nextGroupId++;
+        m_groups.append(group);
+        if (m_persistence != nullptr) {
+            m_persistence->insertGroup(group);
+        }
+    }
+
+    // The active tab's group first, then what was stored, then the first there is.
+    const int activeIndex = indexOf(m_activeTabId);
+    if (activeIndex >= 0) {
+        m_currentGroupId = m_tabs.at(activeIndex).groupId;
+    }
+    if (groupIndexOf(m_currentGroupId) < 0) {
+        m_currentGroupId = m_groups.first().id;
+    }
+    QList<int> ids;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == m_currentGroupId) {
+            ids.append(tab.id);
+        }
+    }
+    m_groupTabs->reset(ids);
 }
 
 void TabModel::stampActive()
@@ -95,6 +151,8 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
         return tab.isPrivate;
     case ActiveRole:
         return tab.id == m_activeTabId;
+    case GroupRole:
+        return tab.groupId;
     default:
         return {};
     }
@@ -110,6 +168,7 @@ QHash<int, QByteArray> TabModel::roleNames() const
         {ThumbnailRole, QByteArrayLiteral("thumbnail")},
         {PrivateRole, QByteArrayLiteral("privateTab")},
         {ActiveRole, QByteArrayLiteral("activeTab")},
+        {GroupRole, QByteArrayLiteral("groupId")},
     };
 }
 
@@ -198,12 +257,15 @@ int TabModel::newTab(const QString &url, bool isPrivate)
     tab.id = m_nextTabId++;
     tab.url = url;
     tab.isPrivate = isPrivate;
+    tab.groupId = m_currentGroupId;
 
     const int index = m_tabs.count();
     beginInsertRows(QModelIndex(), index, index);
     m_tabs.append(tab);
     endInsertRows();
     m_awaitingFirstUrl.append(tab.id);
+    m_groupTabs->append(tab.id);
+    m_groupModel->changed(groupIndexOf(tab.groupId), TabGroupModel::TabCountRole);
 
     if (m_persistence != nullptr) {
         m_persistence->insertTab(tab);
@@ -235,12 +297,26 @@ bool TabModel::activateTabById(int tabId)
     return true;
 }
 
+// How many tabs of the current group sit before this row: the row the grid would
+// show the tab at, were it in that group.
+int TabModel::groupRowFor(int index) const
+{
+    int row = 0;
+    for (int i = 0; i < index && i < m_tabs.count(); ++i) {
+        if (m_tabs.at(i).groupId == m_currentGroupId) {
+            ++row;
+        }
+    }
+    return row;
+}
+
 void TabModel::moveTab(int from, int to)
 {
     const int last = m_tabs.count() - 1;
     if (from == to || from < 0 || from > last || to < 0 || to > last) {
         return;
     }
+    const int groupRow = m_groupTabs->rowOf(m_tabs.at(from).id);
     // beginMoveRows wants the row the block lands *before*, which is one past the
     // destination when moving down the list.
     const int destination = to > from ? to + 1 : to;
@@ -249,12 +325,58 @@ void TabModel::moveTab(int from, int to)
     }
     m_tabs.move(from, to);
     endMoveRows();
+    // The grid's order is this order with the other groups' tabs left out, so a tab
+    // of the current group lands in the grid where the tabs before it put it.
+    if (groupRow >= 0) {
+        m_groupTabs->moveRow(groupRow, groupRowFor(to));
+    }
 
     if (m_persistence != nullptr) {
         m_persistence->saveOrder(m_tabs);
     }
     // activeTabIndex is a position, and positions have just changed.
     emit activeTabChanged();
+}
+
+// The tab to bring to the front when the one at this row closes: the one before it in
+// its own group, else the one after, else the most recent tab in any group. Zero when
+// it was the last tab there is.
+int TabModel::successorOf(int index) const
+{
+    const Tab &closing = m_tabs.at(index);
+    for (int i = index - 1; i >= 0; --i) {
+        if (m_tabs.at(i).groupId == closing.groupId) {
+            return m_tabs.at(i).id;
+        }
+    }
+    for (int i = index + 1; i < m_tabs.count(); ++i) {
+        if (m_tabs.at(i).groupId == closing.groupId) {
+            return m_tabs.at(i).id;
+        }
+    }
+    int successor = 0;
+    qint64 latest = -1;
+    for (int i = 0; i < m_tabs.count(); ++i) {
+        if (i != index && m_tabs.at(i).lastActive > latest) {
+            latest = m_tabs.at(i).lastActive;
+            successor = m_tabs.at(i).id;
+        }
+    }
+    return successor;
+}
+
+// The tab of this group that was in front last, or zero for an empty group.
+int TabModel::mostRecentTabId(int groupId) const
+{
+    int recent = 0;
+    qint64 latest = -1;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == groupId && tab.lastActive > latest) {
+            latest = tab.lastActive;
+            recent = tab.id;
+        }
+    }
+    return recent;
 }
 
 void TabModel::closeTab(int index)
@@ -264,12 +386,15 @@ void TabModel::closeTab(int index)
     }
     const Tab closing = m_tabs.at(index);
     const bool closingActive = closing.id == m_activeTabId;
+    const int successor = closingActive ? successorOf(index) : 0;
     discardThumbnail(closing.thumbnail);
 
     beginRemoveRows(QModelIndex(), index, index);
     m_tabs.removeAt(index);
     endRemoveRows();
     m_awaitingFirstUrl.removeAll(closing.id);
+    m_groupTabs->remove(closing.id);
+    m_groupModel->changed(groupIndexOf(closing.groupId), TabGroupModel::TabCountRole);
 
     if (m_persistence != nullptr) {
         m_persistence->removeTab(closing.id);
@@ -277,15 +402,14 @@ void TabModel::closeTab(int index)
 
     if (closingActive) {
         m_activeTabId = 0;
-        if (m_tabs.isEmpty()) {
+        if (successor == 0) {
             if (m_persistence != nullptr) {
                 m_persistence->setActiveTabId(0);
             }
             emit activeTabChanged();
             emit activeTabDataChanged();
         } else {
-            // The tab before the closed one becomes active, or the first if none precedes it.
-            activateTab(index - 1);
+            setActiveTab(successor);
         }
     }
 
@@ -293,6 +417,11 @@ void TabModel::closeTab(int index)
     emit tabClosed(closing.id);
     emit countChanged();
     emit recentTabsChanged();
+}
+
+void TabModel::closeTabById(int tabId)
+{
+    closeTab(indexOf(tabId));
 }
 
 void TabModel::closeActiveTab()
@@ -314,6 +443,8 @@ void TabModel::closeAllTabs()
     endRemoveRows();
     m_awaitingFirstUrl.clear();
     m_activeTabId = 0;
+    m_groupTabs->reset(QList<int>());
+    m_groupModel->changedAll(TabGroupModel::TabCountRole);
 
     if (m_persistence != nullptr) {
         m_persistence->removeAllTabs();
@@ -447,11 +578,190 @@ void TabModel::discardThumbnail(const QString &path) const
     QFile::remove(path);
 }
 
+const QList<TabGroup> &TabModel::groups() const
+{
+    return m_groups;
+}
+
+int TabModel::groupIndexOf(int groupId) const
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups.at(i).id == groupId) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int TabModel::tabCountInGroup(int groupId) const
+{
+    int count = 0;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == groupId) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+int TabModel::currentGroupId() const
+{
+    return m_currentGroupId;
+}
+
+int TabModel::currentGroupIndex() const
+{
+    return groupIndexOf(m_currentGroupId);
+}
+
+void TabModel::setCurrentGroupId(int groupId)
+{
+    if (groupId == m_currentGroupId || groupIndexOf(groupId) < 0) {
+        return;
+    }
+    applyCurrentGroup(groupId);
+    // Each group remembers which of its tabs was in front, the way Safari's do: what
+    // the page shows once the grid is put away is the group that was chosen, not the
+    // one it was opened from. An empty group leaves the page as it is.
+    const int recent = mostRecentTabId(groupId);
+    if (recent != 0 && recent != m_activeTabId) {
+        applyActiveTab(recent);
+    }
+}
+
+void TabModel::applyCurrentGroup(int groupId)
+{
+    const int oldIndex = groupIndexOf(m_currentGroupId);
+    m_currentGroupId = groupId;
+    QList<int> ids;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == groupId) {
+            ids.append(tab.id);
+        }
+    }
+    m_groupTabs->reset(ids);
+    m_groupModel->changed(oldIndex, TabGroupModel::CurrentRole);
+    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::CurrentRole);
+    if (m_persistence != nullptr) {
+        m_persistence->setCurrentGroupId(groupId);
+    }
+    emit currentGroupChanged();
+}
+
+int TabModel::addGroup(const QString &name)
+{
+    TabGroup group;
+    group.id = m_nextGroupId++;
+    group.name = name.trimmed();
+    m_groups.append(group);
+    m_groupModel->inserted(m_groups.count() - 1);
+    if (m_persistence != nullptr) {
+        m_persistence->insertGroup(group);
+    }
+    emit groupsChanged();
+    setCurrentGroupId(group.id);
+    return group.id;
+}
+
+void TabModel::renameGroup(int groupId, const QString &name)
+{
+    const int index = groupIndexOf(groupId);
+    if (index < 0 || m_groups.at(index).name == name.trimmed()) {
+        return;
+    }
+    m_groups[index].name = name.trimmed();
+    m_groupModel->changed(index, TabGroupModel::NameRole);
+    if (m_persistence != nullptr) {
+        m_persistence->updateGroup(m_groups.at(index));
+    }
+    emit groupsChanged();
+}
+
+bool TabModel::removeGroup(int groupId)
+{
+    const int index = groupIndexOf(groupId);
+    if (index < 0 || m_groups.count() < 2) {
+        return false;
+    }
+    // Current moves to a neighbour first: closing the group's tabs can close the
+    // active one, and whoever answers that by opening a replacement must not open it
+    // in the group that is going.
+    if (groupId == m_currentGroupId) {
+        setCurrentGroupId(m_groups.at(index > 0 ? index - 1 : 1).id);
+    }
+    for (int i = m_tabs.count() - 1; i >= 0; --i) {
+        if (m_tabs.at(i).groupId == groupId) {
+            closeTab(i);
+        }
+    }
+    m_groups.removeAt(index);
+    m_groupModel->removed(index);
+    if (m_persistence != nullptr) {
+        m_persistence->removeGroup(groupId);
+    }
+    emit groupsChanged();
+    // The current group's row may have moved up.
+    emit currentGroupChanged();
+    return true;
+}
+
+bool TabModel::moveTabToGroup(int tabId, int groupId)
+{
+    const int index = indexOf(tabId);
+    if (index < 0 || groupIndexOf(groupId) < 0) {
+        return false;
+    }
+    Tab &tab = m_tabs[index];
+    if (tab.groupId == groupId) {
+        return true;
+    }
+    const int oldGroup = tab.groupId;
+    tab.groupId = groupId;
+    notifyRow(index, GroupRole);
+    persist(tab);
+    if (oldGroup == m_currentGroupId) {
+        m_groupTabs->remove(tab.id);
+    } else if (groupId == m_currentGroupId) {
+        m_groupTabs->append(tab.id);
+    }
+    m_groupModel->changed(groupIndexOf(oldGroup), TabGroupModel::TabCountRole);
+    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::TabCountRole);
+    emit groupsChanged();
+    // The active tab is in the current group, always: a tab moved away takes the
+    // current group with it.
+    if (tab.id == m_activeTabId) {
+        setCurrentGroupId(groupId);
+    }
+    return true;
+}
+
+GroupTabModel *TabModel::groupTabs() const
+{
+    return m_groupTabs;
+}
+
+TabGroupModel *TabModel::groupModel() const
+{
+    return m_groupModel;
+}
+
+// The two halves below are kept apart from setCurrentGroupId() and setActiveTab() so
+// that neither calls the other: the group follows the tab and the tab follows the
+// group, and done as one pair of functions that was a cycle.
 void TabModel::setActiveTab(int tabId)
 {
     if (tabId == m_activeTabId) {
         return;
     }
+    applyActiveTab(tabId);
+    const int index = indexOf(tabId);
+    if (index >= 0 && m_tabs.at(index).groupId != m_currentGroupId) {
+        applyCurrentGroup(m_tabs.at(index).groupId);
+    }
+}
+
+void TabModel::applyActiveTab(int tabId)
+{
     const int oldIndex = indexOf(m_activeTabId);
     m_activeTabId = tabId;
     if (oldIndex >= 0) {
@@ -473,6 +783,7 @@ void TabModel::notifyRow(int index, Role role)
 {
     const QModelIndex modelIndex = this->index(index, 0);
     emit dataChanged(modelIndex, modelIndex, QVector<int>{role});
+    m_groupTabs->changed(m_tabs.at(index).id, role);
 }
 
 void TabModel::persist(const Tab &tab)

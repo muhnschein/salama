@@ -156,6 +156,10 @@
         <source>Tabs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Move tab to group</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NavigationBar</name>
@@ -251,7 +255,73 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The tab count and every tab</source>
+        <source>The tab count and the most recent tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupDelegate</name>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting tab group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupDialog</name>
+    <message>
+        <source>Rename tab group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New tab group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupStrip</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupsPage</name>
+    <message>
+        <source>Move to tab group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tab groups</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New tab group</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -267,21 +337,39 @@
     </message>
 </context>
 <context>
-    <name>TabsView</name>
-    <message>
-        <source>No open tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open one with the button below</source>
-        <translation type="unfinished"></translation>
-    </message>
+    <name>TabSearchDelegate</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
             <numerusform>%n tab</numerusform>
             <numerusform>%n tabs</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>Private tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TabSearchPage</name>
+    <message>
+        <source>Search tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No matching tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TabsView</name>
+    <message>
+        <source>Open one with the button below</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No tabs in this group</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
