@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "settings/Settings.h"
 
 #include <QDir>
@@ -8,7 +8,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::Settings;
+using Salama::Settings;
 
 class tst_settings : public QObject
 {
@@ -24,12 +24,13 @@ private slots:
     void displayAddress_data();
     void displayAddress();
     void coverStyle();
+    void liveTabLimit();
 };
 
 void tst_settings::defaults()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.homePage(), Settings::defaultHomePage());
     QCOMPARE(settings.searchEngine(), Settings::defaultSearchEngine());
     QCOMPARE(settings.searchEngineIndex(), 0);
@@ -51,7 +52,7 @@ void tst_settings::defaults()
 void tst_settings::persistsValues()
 {
     QTemporaryDir dir;
-    const QString path = dir.path() + QStringLiteral("/tuuli.conf");
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Settings settings(path);
         QSignalSpy homeSpy(&settings, &Settings::homePageChanged);
@@ -85,7 +86,7 @@ void tst_settings::persistsValues()
 void tst_settings::searchEngineSelection()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QSignalSpy spy(&settings, &Settings::searchEngineChanged);
 
     settings.setSearchEngine(QStringLiteral("nonsense"));
@@ -105,7 +106,7 @@ void tst_settings::searchEngineSelection()
 void tst_settings::coverStyle()
 {
     QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.conf"));
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Settings settings(path);
     QSignalSpy spy(&settings, &Settings::coverStyleChanged);
 
@@ -149,7 +150,7 @@ void tst_settings::coverStyle()
 void tst_settings::searchUrl()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.searchUrl(QStringLiteral("sailfish os")),
              QStringLiteral("https://www.qwant.com/?q=sailfish%20os"));
     settings.setSearchEngine(QStringLiteral("ecosia"));
@@ -196,7 +197,7 @@ void tst_settings::urlForInput()
     QFETCH(QString, input);
     QFETCH(QString, expected);
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.urlForInput(input), expected);
 }
 
@@ -234,6 +235,45 @@ void tst_settings::displayAddress()
     QFETCH(QString, url);
     QFETCH(QString, expected);
     QCOMPARE(Settings::displayAddress(url), expected);
+}
+
+void tst_settings::liveTabLimit()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::liveTabLimitChanged);
+
+    // Five by default, as Jolla's browser keeps; the choices are what the combo
+    // offers, with 0 standing for all of them.
+    QCOMPARE(settings.liveTabLimit(), Settings::defaultLiveTabLimit());
+    QCOMPARE(settings.liveTabLimit(), 5);
+    QCOMPARE(settings.liveTabLimitChoices(), (QVariantList{3, 5, 10, 0}));
+    QCOMPARE(settings.liveTabLimitIndex(), 1);
+
+    settings.setLiveTabLimitIndex(3);
+    QCOMPARE(settings.liveTabLimit(), 0);
+    QCOMPARE(spy.count(), 1);
+    settings.setLiveTabLimitIndex(3);
+    settings.setLiveTabLimitIndex(4);
+    settings.setLiveTabLimitIndex(-1);
+    QCOMPARE(spy.count(), 1);
+    settings.setLiveTabLimitIndex(0);
+    QCOMPARE(settings.liveTabLimit(), 3);
+    {
+        Settings again(path);
+        QCOMPARE(again.liveTabLimit(), 3);
+    }
+
+    // A number written by hand that is not on offer reads back as the default.
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("liveTabLimit"), 7);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.liveTabLimit(), 5);
+    }
 }
 
 QTEST_GUILESS_MAIN(tst_settings)

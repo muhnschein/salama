@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.Share 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Page {
     id: menuPage
@@ -52,20 +52,6 @@ Page {
                     x: Theme.horizontalPageMargin
                     anchors.verticalCenter: parent.verticalCenter
                     text: qsTr("New tab")
-                }
-            }
-
-            ListItem {
-                objectName: "newPrivateTabItem"
-                onClicked: {
-                    TabModel.newTab(Settings.homePage, true)
-                    pageStack.pop()
-                }
-
-                Label {
-                    x: Theme.horizontalPageMargin
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("New private tab")
                 }
             }
 
@@ -122,6 +108,23 @@ Page {
                     x: Theme.horizontalPageMargin
                     anchors.verticalCenter: parent.verticalCenter
                     text: qsTr("Tabs")
+                }
+            }
+
+            // The tab in front, into another group: the one way a tab changes group,
+            // here beside the grid it leaves rather than on a cell that already has a
+            // tap, a carry and a close button on it.
+            ListItem {
+                objectName: "moveToGroupItem"
+                enabled: TabModel.activeTabId > 0
+                onClicked: pageStack.replace(Qt.resolvedUrl("TabGroupsPage.qml"), {
+                                                 "moveTabId": TabModel.activeTabId
+                                             })
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Move tab to group")
                 }
             }
 

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebEngine 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Page {
     id: settingsPage
@@ -74,6 +74,26 @@ Page {
                 onCheckedChanged: Settings.cutoutGuard = checked
             }
 
+            // The choices are Settings.liveTabLimitChoices, 0 standing for all of them.
+            // Five is the default, and what the platform browser keeps.
+            ComboBox {
+                objectName: "liveTabLimitCombo"
+                width: parent.width
+                label: qsTr("Pages kept loaded")
+                description: qsTr("Tabs beyond this many reload their page when opened again")
+                currentIndex: Settings.liveTabLimitIndex
+                menu: ContextMenu {
+                    Repeater {
+                        model: Settings.liveTabLimitChoices
+
+                        MenuItem {
+                            text: modelData > 0 ? modelData : qsTr("All")
+                        }
+                    }
+                }
+                onCurrentIndexChanged: Settings.liveTabLimitIndex = currentIndex
+            }
+
             SectionHeader {
                 text: qsTr("Cover")
             }
@@ -97,9 +117,12 @@ Page {
                         text: qsTr("The tab count and the last tab")
                     }
 
+                    // "Most recent" rather than "every": the field draws six cells at
+                    // most, most recently read first, and the number above it is what
+                    // says how many there are (docs/DECISIONS/0014-cover-is-the-tab-count.md).
                     MenuItem {
                         objectName: "coverEveryTabItem"
-                        text: qsTr("The tab count and every tab")
+                        text: qsTr("The tab count and the most recent tabs")
                     }
                 }
                 onCurrentIndexChanged: Settings.coverStyle = currentIndex

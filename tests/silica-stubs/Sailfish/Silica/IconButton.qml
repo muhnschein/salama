@@ -5,4 +5,5 @@ Item {
     property bool down: false
 
     signal clicked()
+    signal pressAndHold()
 }

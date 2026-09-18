@@ -16,7 +16,7 @@ what the app actually holds.
 ## Decision
 The cover says **how many tabs are open**, and shows them.
 
-- The heading is postivene's exactly: "Tuuli" in the highlight colour at
+- The heading is postivene's exactly: "Salama" in the highlight colour at
   `fontSizeMedium`, `qsTr("Tabs")` under it at `fontSizeExtraSmall` in the secondary
   highlight, the two set `-Theme.paddingSmall` apart so they read as one heading, at
   `Theme.paddingLarge` from the top and left edges.
@@ -57,7 +57,11 @@ it that is right for everyone:
   across the whole of the room below. The field shapes itself to what it is given
   (below), so this is the same component handed a list of one.
 - `CoverEveryTab` — the heading, the number and the field. The default: what a reader
-  who never opens Settings gets, and the reading this record argues for.
+  who never opens Settings gets, and the reading this record argues for. Settings
+  calls it "the tab count and the most recent tabs", because that is what the field
+  shows: six cells at most, most recently read first, and the number above them is
+  what says how many there are. "Every tab", which it said first, promised more than
+  the field draws past the sixth.
 
 The stored values are 0, 1 and 2 and are therefore part of the config file's format. A
 value outside that range reads back as the default rather than as a cover that draws
@@ -78,8 +82,8 @@ in a `text:` binding as a defect, which is a rule worth keeping absolute.
 ## Consequences
 The cover no longer names the page in front, and the device checklist asks for the
 count and the field instead. A tab with no picture yet — one never displayed this
-session, and every private tab, whose pages are never written to disk — keeps its
-cell and shows the ground alone, so the field never contradicts the number above it.
+session — keeps its cell and shows the ground alone, so the field never contradicts
+the number above it.
 Past the sixth tab the field stops adding cells rather than shrinking them: it says
 "a lot of tabs" as well as it is going to at cover size, and the number above it is
 what says how many there actually are. The cells' pictures are drawn at whatever
@@ -98,8 +102,8 @@ to the phone's ambience rather than to the pages inside the app, and a dozen
 screenshots each in its own colours is noise at cover size. Which tab is in front is
 not something the cover has room to say.
 
-The icon the first style draws is `art/harbour-tuuli.png`, rendered from
-`icons/harbour-tuuli.svg` by `icons/render.sh` and committed with the launcher icons.
+The icon the first style draws is `art/harbour-salama.png`, rendered from
+`icons/harbour-salama.svg` by `icons/render.sh` and committed with the launcher icons.
 It sits beside `qml/` rather than inside it — `ci/harbour-check.sh` holds that directory
 to QML files alone, and that rule is worth more than the convenience of one shorter path
 — and `CMakeLists.txt` installs `art/` next to `qml/` so the relative URL resolves the

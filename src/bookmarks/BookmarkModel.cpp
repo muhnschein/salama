@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "BookmarkModel.h"
 
 #include "storage/Storage.h"
@@ -10,7 +10,7 @@
 #include <QVariant>
 #include <QtDebug>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -264,4 +264,4 @@ void BookmarkModel::reload()
     emit activeUrlBookmarkedChanged();
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -36,6 +36,7 @@ QtObject {
     readonly property real startDragDistance: 20
     readonly property real itemSizeExtraSmall: 60
     readonly property real pixelRatio: 2.0
+    readonly property real _lineWidth: 2
 
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)

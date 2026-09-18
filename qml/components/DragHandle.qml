@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The grab handle on an edge that can be dragged: the navigation bar, and the top of
 // the tab grid. Silica draws nothing of its own here -- PullDownMenu keeps a

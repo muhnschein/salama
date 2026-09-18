@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // What the navigation bar shows while the address is not being edited: the host, and
 // a warning beside it when the engine is unhappy with the connection
 // (docs/DECISIONS/0011-address-and-security.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Row {
     id: address
 
     property string url
     property bool tlsBroken: false
-    property bool privateTab: false
     property bool pressed: false
     // The widest this may be drawn. The label takes what the warning leaves of it.
     property real maximumWidth: 0
@@ -47,12 +46,7 @@ Row {
         text: address.url.length > 0 ? Settings.displayAddress(address.url)
                                      : qsTr("Search or enter address")
         truncationMode: TruncationMode.Fade
-        color: {
-            if (address.pressed) {
-                return Theme.highlightColor
-            }
-            return address.privateTab ? Theme.highlightColor : Theme.primaryColor
-        }
+        color: address.pressed ? Theme.highlightColor : Theme.primaryColor
         font.pixelSize: address.fontSize
     }
 }

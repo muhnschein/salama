@@ -1,4 +1,4 @@
-// Stub of Sailfish.WebView's WebView: the properties and slots tuuli uses, recording
+// Stub of Sailfish.WebView's WebView: the properties and slots salama uses, recording
 // calls so tests can assert on them. Property names follow qtmozembed's
 // qmozview_defined_wrapper.h and sailfish-components-webview's WebView.qml.
 import QtQuick 2.6

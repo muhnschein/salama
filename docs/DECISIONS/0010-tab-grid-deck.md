@@ -44,36 +44,44 @@ would go missing.
 
 Tapping a preview does the same thing as the pull, with the tab it names.
 
-A cell can also be **carried** to another place in the grid. The gesture is a sideways
-drag, because the grid only ever flicks up and down: across the cell is the one movement
-nothing else is waiting for, and it needs no press-and-hold to disambiguate. Once a cell
-is held the delegate sets `preventStealing`, so the grid cannot take the drag back, and
-what moves is the cell's *contents*, not the cell: the view owns where cells are, and
-after `TabModel.moveTab()` the cell underneath has already moved to meet them. Half of
-`Theme.startDragDistance` is enough to pick a cell up, rather than the whole of it: nothing
-else is waiting for that movement, so the cell can come up as soon as the finger goes
-sideways. Only the
-displaced cells are animated; the carried one is under a finger and must not be animated
-away from it.
+A cell can also be **carried** to another place in the grid, and **slid away** to close
+its tab. The two share the sideways movement, so a hold tells them apart: a finger held
+for **a second and a half** picks the cell up (a timer the delegate owns, since
+`MouseArea.pressAndHoldInterval` came with Qt 5.9), and the cell comes up a little so the
+hand knows it has it; a finger that moves sideways before then is sliding the cell, to
+the left only, because the grid has nothing to the right. Slid past a third of its width
+and released, the cell closes its tab; released short of that it slides back. It fades as
+it goes, so the finger sees what lifting will do. A first build picked the cell up on
+the sideways movement alone, with no hold, and on device that was too easy to do by
+accident and left no gesture for closing. Once a cell is held or sliding the delegate sets
+`preventStealing`, so the grid cannot take the drag back, and what moves is the cell's
+*contents*, not the cell: the view owns where cells are, and after `GroupTabs.moveTab()`
+the cell underneath has already moved to meet them. Only the displaced cells are animated;
+the carried one is under a finger and must not be animated away from it.
 
-A cell that has been carried must not also *open* when the finger lifts. `MouseArea`
-raises `released` before `clicked`, so the flag the release resets cannot be the one the
-click reads: `held` ends the carry, and a second flag, `carried`, lives from the moment
-the cell is picked up until the next press and is what `releaseTap()` asks.
+A cell that has been carried or slid must not also *open* when the finger lifts.
+`MouseArea` raises `released` before `clicked`, so the flag the release resets cannot be
+the one the click reads: `held` ends the carry, and a second flag, `carried`, lives from
+the moment the cell is picked up or slid until the next press and is what `releaseTap()`
+asks.
+
+The close button in a cell's corner is a **disc with a cross through it**, drawn by the
+cell; the theme icon it replaced is discussed below.
 
 The grid carries two rows of its own, both drawn over the cells in the same glass as the
 navigation bar rather than scrolling among them, each with a spacer of the same height in
 the view's header and footer so that no cell is stranded under either:
 
-* along the **head**, what the grid holds — "*n* tabs". It replaced a page header that
-  named the active tab, which said what the page behind the grid already says. Its real
-  work is the row of cells below it: without it the first row, and the close button in its
-  corner, sat under the device's own screen cutout. The row is `Screen.topCutout.height`
+* along the **head**, the strip of tab groups (0015). It replaced "*n* tabs", which
+  replaced a page header that named the active tab, which said what the page behind the
+  grid already says. The row's other work is the row of cells below it: without it the
+  first row, and the close button in its corner, sat under the device's own screen cutout. The row is `Screen.topCutout.height`
   taller than it looks and puts its own text below that height, which is what Silica's
   `PullDownMenu` does with its top margin; the property is read through a guard, so a
   `Screen` that does not report a cutout gives a row of the ordinary height rather than
   one that is undefined pixels tall.
-* along the **foot**, the one control the grid offers: new tab.
+* along the **foot**, the one control the grid offers: new tab. Held rather than tapped,
+  it brings up the tabs closed lately (0018).
 
 A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
 picture's own aspect ratio, rather than with `PreserveAspectCrop`. The picture is of a
@@ -97,8 +105,8 @@ same number upstream writes as `12 * Theme.pixelRatio`.
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
-the pull and the tap, "New tab" is the button in the grid's header, "New private tab" is
-in the menu, and "Close all tabs" is in Settings next to the other clearing actions.
+the pull and the tap, "New tab" is the button in the grid's header, and "Close all
+tabs" is in Settings next to the other clearing actions.
 
 ### What says an edge can be dragged
 **Silica draws nothing for this.** Jolla's own source settles that much: `PullDownMenu`
@@ -110,11 +118,24 @@ it fall back over another 400 ms.
 That movement was built and shipped, and on device it was not wanted: a hint that plays
 once, before the hand is anywhere near the screen, is a hint nobody is looking at. So
 `components/DragHandle.qml` is drawn instead — a short rounded bar along the navigation
-bar's top edge and along the top of the grid's head row — and it is deliberately more than
-a decoration: it sits inside the reach the gesture handler already covers, and it lights up
-(`active`) while that gesture has the finger, so the thing you aim at is the thing that
-responds. This is not what Silica does; it is what this application needs, and the previous
-two attempts to guess at a platform idiom for it were both wrong.
+bar's top edge — and it is deliberately more than a decoration: it sits inside the reach
+the gesture handler already covers, and it lights up (`active`) while that gesture has the
+finger, so the thing you aim at is the thing that responds. This is not what Silica does;
+it is what this application needs, and the previous two attempts to guess at a platform
+idiom for it were both wrong. The grid's top edge had the same handle for a while, and on
+device it read as a second handle to find; it now has a **line across the very top of the
+screen**, as thick as the handle, which is how Silica's own pulley menu says it is there —
+in the highlight *background* colour, the highlight itself being too loud a line to have
+across the top of every grid. The hold tolerates drift: a thumb held down moves, and the
+first build wanted it perfectly still. Within `Theme.iconSizeSmall` of the press the
+finger is still holding, and while it may yet be a hold the delegate keeps
+`preventStealing` up so the grid does not take the drag first; past the tolerance the
+hold is off and the grid takes the drag from the next move.
+
+The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
+colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc
+of its own at its own transparency, baked into the icon, so the glyph alone was lost on
+most pages and a disc drawn behind it was a disc inside a disc.
 
 ### The size of the browsing page
 `qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is

@@ -1,14 +1,14 @@
 [Desktop Entry]
 Type=Application
-Name=Tuuli
-Name[fi]=Tuuli
+Name=Salama
+Name[fi]=Salama
 Comment=Web browser
 Comment[fi]=Verkkoselain
-Icon=harbour-tuuli
-Exec=harbour-tuuli
+Icon=harbour-salama
+Exec=harbour-salama
 X-Nemo-Application-Type=silica-qt5
 
 [X-Sailjail]
 Permissions=Internet;WebView;Downloads;Pictures;Documents
 OrganizationName=io.github.muhnschein
-ApplicationName=tuuli
+ApplicationName=salama

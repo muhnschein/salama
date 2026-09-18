@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Stand-in for Silica's EnterKey attached property. Attached properties need C++,
 // which is the only reason the stub module carries a plugin.

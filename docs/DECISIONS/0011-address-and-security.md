@@ -50,6 +50,6 @@ the other direction: one turns what a person typed into a url, the other turns a
 what a person reads. Both are pure and both are covered by table-driven tests.
 
 The warning is only as good as the engine's own reporting, and this project cannot test
-that on a host. If `security` never arrives, tuuli shows no warning rather than a false
+that on a host. If `security` never arrives, salama shows no warning rather than a false
 one; that failure is silent, and it is the reason the manual checklist has a line for a
 site with a bad certificate.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
 // the menu. Dragging it upwards pulls the tab grid up from underneath the page.
@@ -16,13 +16,12 @@
 // indistinguishable from the system's own edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Item {
     id: navigationBar
 
     property string url
-    property bool privateTab: false
     property bool loading: false
     property int loadProgress: 0
     property bool canGoBack: false
@@ -64,7 +63,8 @@ Item {
 
     // The bar is the whole touch target for the drag, and it sits in the strip the
     // system watches for its own edge swipe: every bit of height here is height the
-    // gesture can start in, which is why the slim state gives up only a quarter.
+    // gesture can start in, which is why the slim state gives up only a quarter. The
+    // page ends above the bar in either state.
     readonly property real slimHeight: Theme.itemSizeSmall
     // 0 while slim and 1 while whole. Everything that differs between the two states
     // is drawn from this, so the height animation below carries all of it and nothing
@@ -167,13 +167,13 @@ Item {
         }
     }
 
-    // Opaque while the bar is whole and gone by the time it is slim, where what is
-    // left is the handle and the host, floating. The page ends above the bar in either
-    // state rather than running underneath (docs/DECISIONS/0009).
+    // Opaque, whole or slim. It faded away as it slimmed once, and on device the host
+    // was unreadable over a light page; the page ends above the bar instead, so it
+    // hides nothing (docs/DECISIONS/0009).
     Rectangle {
         objectName: "navigationBarBackground"
         anchors.fill: parent
-        color: Theme.rgba(Theme.highlightDimmerColor, navigationBar.expansion)
+        color: Theme.highlightDimmerColor
     }
 
     // Where the drag starts, drawn: on the line between the bar and the page, which
@@ -253,7 +253,6 @@ Item {
         z: 1
         url: navigationBar.url
         tlsBroken: navigationBar.tlsBroken
-        privateTab: navigationBar.privateTab
         pressed: gestureArea.pressedRegion === "address"
         maximumWidth: navigationBar.centredWidth
         fontSize: Theme.fontSizeSmall
@@ -274,7 +273,6 @@ Item {
         // its own presses for the caret, and the rest of the bar stays live.
         z: 1
         visible: navigationBar.editing
-        label: navigationBar.privateTab ? qsTr("Private tab") : ""
         placeholderText: qsTr("Search or enter address")
         // The same size the host is drawn at, so the text does not jump when the
         // label becomes a field.
@@ -325,10 +323,9 @@ Item {
         property bool pressedOnBar: false
         property string pressedRegion: ""
         readonly property real reach: Theme.itemSizeExtraSmall * 0.75
-        // Slim, the page runs behind the bar: the handler keeps the strip its handle
-        // is in, and a press below that belongs to the page.
-        readonly property real strip: navigationBar.compact ? Theme.itemSizeExtraSmall
-                                                            : navigationBar.height
+        // The whole bar, whole or slim: the page ends above it, so nothing under it
+        // is the page's to take.
+        readonly property real strip: navigationBar.height
 
         objectName: "navigationBarGesture"
         anchors {

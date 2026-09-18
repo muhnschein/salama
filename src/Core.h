@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include "bookmarks/BookmarkModel.h"
@@ -9,11 +9,12 @@
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
+#include "tabs/TabSearchModel.h"
 
 #include <QObject>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 // Owns every model and the wiring between them. One per process; tests build one
 // per test case on a temporary directory.
@@ -26,6 +27,7 @@ public:
 
     Storage &storage();
     TabModel *tabs();
+    TabSearchModel *tabSearch();
     HistoryModel *history();
     BookmarkModel *bookmarks();
     Settings *settings();
@@ -35,10 +37,11 @@ private:
     Storage m_storage;
     TabPersistence m_tabPersistence;
     TabModel m_tabs;
+    TabSearchModel m_tabSearch;
     HistoryModel m_history;
     BookmarkModel m_bookmarks;
     Settings m_settings;
     EngineMessages m_engineMessages;
 };
 
-} // namespace Tuuli
+} // namespace Salama

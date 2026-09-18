@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Settings.h"
 
 #include <QHostAddress>
@@ -7,7 +7,7 @@
 #include <QUrl>
 #include <QVector>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -16,6 +16,15 @@ const char *const SearchEngineKey = "searchEngine";
 const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
+const char *const LiveTabLimitKey = "liveTabLimit";
+
+// Jolla's browser keeps five pages live and reloads the rest on return; the same
+// five here, with a way to ask for fewer, more, or all of them.
+const QVector<int> &liveTabLimits()
+{
+    static const QVector<int> limits{3, 5, 10, 0};
+    return limits;
+}
 
 struct SearchEngine
 {
@@ -182,6 +191,41 @@ void Settings::setCoverStyle(int style)
     emit coverStyleChanged();
 }
 
+int Settings::defaultLiveTabLimit()
+{
+    return 5;
+}
+
+int Settings::liveTabLimit() const
+{
+    const int stored =
+        m_settings.value(QLatin1String(LiveTabLimitKey), defaultLiveTabLimit()).toInt();
+    return liveTabLimits().contains(stored) ? stored : defaultLiveTabLimit();
+}
+
+int Settings::liveTabLimitIndex() const
+{
+    return liveTabLimits().indexOf(liveTabLimit());
+}
+
+void Settings::setLiveTabLimitIndex(int index)
+{
+    if (index < 0 || index >= liveTabLimits().count() || index == liveTabLimitIndex()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(LiveTabLimitKey), liveTabLimits().at(index));
+    emit liveTabLimitChanged();
+}
+
+QVariantList Settings::liveTabLimitChoices() const
+{
+    QVariantList choices;
+    for (int limit : liveTabLimits()) {
+        choices.append(limit);
+    }
+    return choices;
+}
+
 QString Settings::searchUrl(const QString &query) const
 {
     const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
@@ -240,4 +284,4 @@ QString Settings::urlForInput(const QString &input) const
     return searchUrl(text);
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include <QObject>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 // Every engine-facing string lives here so QML never carries an engine quirk.
 // Topics are what the platform Gecko embedding (embedlite-components) observes; the
@@ -16,6 +16,8 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString clearPrivateDataTopic READ clearPrivateDataTopic CONSTANT)
     Q_PROPERTY(QString cookiesAndSiteDataPayload READ cookiesAndSiteDataPayload CONSTANT)
     Q_PROPERTY(QString cachePayload READ cachePayload CONSTANT)
+    Q_PROPERTY(QString memoryPressureTopic READ memoryPressureTopic CONSTANT)
+    Q_PROPERTY(QString heapMinimizePayload READ heapMinimizePayload CONSTANT)
     Q_PROPERTY(QString faviconScript READ faviconScript CONSTANT)
     Q_PROPERTY(QString themeColorScript READ themeColorScript CONSTANT)
 
@@ -25,6 +27,13 @@ public:
     QString clearPrivateDataTopic() const;
     QString cookiesAndSiteDataPayload() const;
     QString cachePayload() const;
+
+    // What sailfish-browser tells the engine after ten minutes in the background:
+    // "memory-pressure" with "heap-minimize", on which Gecko frees what it can and
+    // keeps what it must (apps/core/webpages.cpp). The same words from here, so the
+    // engine does for this browser what it does for Jolla's.
+    QString memoryPressureTopic() const;
+    QString heapMinimizePayload() const;
 
     // Script for WebView.runJavaScript(); answers the page's <link rel=icon> href or
     // an empty string. The WebView exposes no favicon property (qtmozembed
@@ -57,4 +66,4 @@ public:
     Q_INVOKABLE static QString themeColor(const QString &value);
 };
 
-} // namespace Tuuli
+} // namespace Salama

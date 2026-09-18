@@ -14,8 +14,8 @@ set -uo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 STRICT=${PACKAGING_LINT_STRICT:-0}
 FAILED=0
-SPEC=$ROOT/rpm/harbour-tuuli.spec
-DESKTOP=$ROOT/harbour-tuuli.desktop
+SPEC=$ROOT/rpm/harbour-salama.spec
+DESKTOP=$ROOT/harbour-salama.desktop
 
 fail() { # check-id location message
     printf 'ERROR [%s] [%s] %s\n' "$1" "$2" "$3"
@@ -36,12 +36,12 @@ have() { # tool
 
 # 1. Spec parses
 if have rpmspec; then
-    rpmspec -P "$SPEC" >/dev/null 2>&1 || fail spec rpm/harbour-tuuli.spec "$(rpmspec -P "$SPEC" 2>&1 | head -1)"
+    rpmspec -P "$SPEC" >/dev/null 2>&1 || fail spec rpm/harbour-salama.spec "$(rpmspec -P "$SPEC" 2>&1 | head -1)"
 fi
 
 # 2. Desktop entry validates
 if have desktop-file-validate; then
-    desktop-file-validate "$DESKTOP" || fail desktop harbour-tuuli.desktop "desktop-file-validate failed"
+    desktop-file-validate "$DESKTOP" || fail desktop harbour-salama.desktop "desktop-file-validate failed"
 fi
 
 # 3. Shell scripts clean
@@ -51,7 +51,7 @@ if have shellcheck; then
 fi
 
 # 4. Translations compile and are current
-TS_SOURCE=$ROOT/translations/harbour-tuuli.ts
+TS_SOURCE=$ROOT/translations/harbour-salama.ts
 sources_of() { grep -o '<source>[^<]*</source>' "$1" | sort -u; }
 if have lrelease; then
     tmp=$(mktemp -d)
@@ -62,13 +62,13 @@ if have lrelease; then
 fi
 for ts in "$ROOT"/translations/*.ts; do
     [[ $ts == "$TS_SOURCE" ]] && continue
-    diff -q <(sources_of "$TS_SOURCE") <(sources_of "$ts") >/dev/null || fail translations "translations/$(basename "$ts")" "source strings differ from harbour-tuuli.ts; run 'make translations'"
+    diff -q <(sources_of "$TS_SOURCE") <(sources_of "$ts") >/dev/null || fail translations "translations/$(basename "$ts")" "source strings differ from harbour-salama.ts; run 'make translations'"
 done
 if have lupdate; then
     tmp=$(mktemp -d)
     cp "$TS_SOURCE" "$tmp/current.ts"
     (cd "$ROOT" && lupdate -silent -no-obsolete -locations none qml src -ts "$tmp/current.ts")
-    diff -q <(sources_of "$TS_SOURCE") <(sources_of "$tmp/current.ts") >/dev/null || fail translations translations/harbour-tuuli.ts "catalog is stale; run 'make translations' and commit"
+    diff -q <(sources_of "$TS_SOURCE") <(sources_of "$tmp/current.ts") >/dev/null || fail translations translations/harbour-salama.ts "catalog is stale; run 'make translations' and commit"
     rm -rf "$tmp"
 fi
 

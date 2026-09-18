@@ -93,13 +93,13 @@ ISSUES = {
         {
             "severity": "MAJOR",
             "rule": "cpp:S1234",
-            "component": "muhnschein_tuuli:src/tabs/TabModel.cpp",
+            "component": "muhnschein_salama:src/tabs/TabModel.cpp",
             "line": 42,
             "message": "Remove this redundant cast.",
         },
         {
             "rule": "shell:S5678",
-            "component": "muhnschein_tuuli:ci/qml-lint.sh",
+            "component": "muhnschein_salama:ci/qml-lint.sh",
             "impacts": [{"severity": "LOW"}],
             "message": "Quote this expansion.",
         },
@@ -182,12 +182,12 @@ write_task() {
     local scope=$1
     local port
     port=$(cat "$work/port")
-    local dash="http://127.0.0.1:$port/dashboard?id=muhnschein_tuuli"
+    local dash="http://127.0.0.1:$port/dashboard?id=muhnschein_salama"
     if [[ -n "$scope" ]]; then
         dash="$dash&$scope"
     fi
     cat >"$work/report-task.txt" <<EOF
-projectKey=muhnschein_tuuli
+projectKey=muhnschein_salama
 serverUrl=http://127.0.0.1:$port
 serverVersion=8.0
 dashboardUrl=$dash
@@ -259,7 +259,7 @@ expect "and one in Cloud's periods shape too" "- new_lines_to_cover: 1" "$work/o
 expect "issues are counted" "### Open issues: 2" "$work/out"
 expect "an issue names its file and line" "src/tabs/TabModel.cpp:42" "$work/out"
 expect "an issue with only impacts still has a severity" "LOW  shell:S5678" "$work/out"
-expect "the dashboard link is printed" "/dashboard?id=muhnschein_tuuli" "$work/out"
+expect "the dashboard link is printed" "/dashboard?id=muhnschein_salama" "$work/out"
 
 # The first real run had 115 issues and the script asked for 100, so the
 # report ended in "15 more not listed". A page is the most the API gives.
@@ -284,10 +284,10 @@ env -u SONAR_TOKEN -u GITHUB_STEP_SUMMARY \
 
 expect "the scope is named in the report" "pullRequest=45" "$work/out"
 expect "the measures query carries the scope" \
-    "/api/measures/component?component=muhnschein_tuuli&pullRequest=45&" \
+    "/api/measures/component?component=muhnschein_salama&pullRequest=45&" \
     "$work/seen"
 expect "the issues query carries the scope" \
-    "/api/issues/search?componentKeys=muhnschein_tuuli&pullRequest=45&" \
+    "/api/issues/search?componentKeys=muhnschein_salama&pullRequest=45&" \
     "$work/seen"
 
 # --------------------------------------------------------- the token first

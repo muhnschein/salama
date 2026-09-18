@@ -8,8 +8,8 @@ CHECK=$ROOT/ci/harbour-check.sh
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 TREE=$WORK/tree
-SPEC=$TREE/rpm/harbour-tuuli.spec
-DESKTOP=$TREE/harbour-tuuli.desktop
+SPEC=$TREE/rpm/harbour-salama.spec
+DESKTOP=$TREE/harbour-salama.desktop
 FAILED=0
 CASES=0
 
@@ -17,7 +17,7 @@ fresh() {
     rm -rf "$TREE"
     mkdir -p "$TREE"
     cp -r "$ROOT/ci" "$ROOT/qml" "$ROOT/rpm" "$ROOT/src" "$ROOT/icons" \
-        "$ROOT/CMakeLists.txt" "$ROOT/harbour-tuuli.desktop" "$TREE/"
+        "$ROOT/CMakeLists.txt" "$ROOT/harbour-salama.desktop" "$TREE/"
 }
 
 run_check() {
@@ -52,7 +52,7 @@ add_import() { # file import-line
 fresh
 expect clean - "pristine tree passes"
 
-fresh; sed -i 's/^Name:.*/Name:       tuuli/' "$SPEC"
+fresh; sed -i 's/^Name:.*/Name:       salama/' "$SPEC"
 expect error package-name "package name without harbour- prefix"
 
 fresh; sed -i 's/^Version:.*/Version:    1.0-beta/' "$SPEC"
@@ -130,13 +130,13 @@ expect error desktop-app-type "application type missing"
 fresh; sed -i '/^\[X-Sailjail\]/,$d' "$DESKTOP"
 expect warning sailjail-section "X-Sailjail section missing"
 
-fresh; rm "$TREE/icons/86x86/harbour-tuuli.png"
+fresh; rm "$TREE/icons/86x86/harbour-salama.png"
 expect warning icon-missing "one icon missing"
 
 fresh; rm -r "$TREE/icons"
 expect error icon "all icons missing"
 
-fresh; cp "$TREE/icons/108x108/harbour-tuuli.png" "$TREE/icons/86x86/harbour-tuuli.png"
+fresh; cp "$TREE/icons/108x108/harbour-salama.png" "$TREE/icons/86x86/harbour-salama.png"
 expect error icon-size "icon of the wrong size"
 
 fresh; printf '%%{_libdir}/libfoo.so\n' >>"$SPEC"
@@ -151,10 +151,10 @@ expect error install-path "CMake install outside the application directories"
 fresh; printf 'notes\n' >"$TREE/qml/notes.txt"
 expect error stray-file "non-QML file in qml/"
 
-fresh; chmod +x "$TREE/qml/harbour-tuuli.qml"
+fresh; chmod +x "$TREE/qml/harbour-salama.qml"
 expect error file-mode "executable QML file"
 
-fresh; printf 'target_link_libraries(harbour-tuuli PRIVATE Qt5::WebEngine)\n' >>"$TREE/src/CMakeLists.txt"
+fresh; printf 'target_link_libraries(harbour-salama PRIVATE Qt5::WebEngine)\n' >>"$TREE/src/CMakeLists.txt"
 expect error library "link against a library outside the allow-list"
 
 fresh; printf 'pkg_check_modules(FOO IMPORTED_TARGET foo)\n' >>"$TREE/src/CMakeLists.txt"
@@ -176,7 +176,7 @@ fresh; printf 'void probe() { QSettings settings; }\n' >>"$TREE/src/Core.cpp"
 expect error path-policy "QSettings without a file path"
 
 fresh; sed -i 's/^Summary:.*/&\nVendor:     someone/' "$SPEC"
-printf 'vendor rpm/harbour-tuuli.spec Vendor must not be set # selftest waiver\n' >>"$TREE/ci/harbour/waivers.conf"
+printf 'vendor rpm/harbour-salama.spec Vendor must not be set # selftest waiver\n' >>"$TREE/ci/harbour/waivers.conf"
 expect waived vendor "waived finding reported as WAIVED"
 
 echo "harbour-check-selftest: $CASES cases, $([[ $FAILED -eq 0 ]] && echo all passed || echo FAILED)"

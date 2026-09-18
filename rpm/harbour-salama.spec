@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
-# Harbour package for tuuli. Every Requires must appear in ci/harbour/allowed_requires.conf
+# Harbour package for salama. Every Requires must appear in ci/harbour/allowed_requires.conf
 # (or be a library from allowed_libraries.conf); see docs/HARBOUR.md. The OS floor
 # (Sailfish OS >= 5.2.0) cannot be expressed as `Requires: sailfish-version` because
 # Harbour rejects that dependency, so it is carried by the SDK target used to build
 # (the __libc_start_main version check) and by the package versions below.
 #
 # Version is stamped from the release tag by CI (docs/RELEASING.md); keep 0.0.0 here.
-Name:       harbour-tuuli
+Name:       harbour-salama
 Summary:    Web browser
 Version:    0.0.0
 Release:    1
 License:    MPL-2.0
-URL:        https://github.com/muhnschein/tuuli
+URL:        https://github.com/muhnschein/salama
 Source0:    %{name}-%{version}.tar.bz2
 
 BuildRequires:  cmake
@@ -45,9 +45,9 @@ cd build
 cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-    -DTUULI_BUILD_TESTS=OFF \
-    -DTUULI_REQUIRE_SAILFISHAPP=ON \
-    -DTUULI_VERSION=%{version} \
+    -DSALAMA_BUILD_TESTS=OFF \
+    -DSALAMA_REQUIRE_SAILFISHAPP=ON \
+    -DSALAMA_VERSION=%{version} \
     ..
 make %{?_smp_mflags}
 

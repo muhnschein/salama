@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Enum holders mirroring Silica's values. QML property names cannot start with an
 // upper-case letter, so `Orientation.Portrait` and friends must come from C++.
@@ -37,6 +37,21 @@ public:
         Activating = 1,
         Active = 2,
         Deactivating = 3
+    };
+    Q_ENUM(Value)
+};
+
+class Dock : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Value
+    {
+        Top = 1,
+        Bottom = 2,
+        Left = 4,
+        Right = 8
     };
     Q_ENUM(Value)
 };

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Core.h"
 
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::BookmarkModel;
-using Tuuli::Core;
-using Tuuli::HistoryModel;
+using Salama::BookmarkModel;
+using Salama::Core;
+using Salama::HistoryModel;
+using Salama::Settings;
 
 class tst_core : public QObject
 {
@@ -15,7 +16,6 @@ class tst_core : public QObject
 
 private slots:
     void wiresTabsToHistory();
-    void privateTabsLeaveNoHistory();
     void wiresFaviconsAndActiveUrlToBookmarks();
     void restoresState();
 };
@@ -23,35 +23,27 @@ private slots:
 void tst_core::wiresTabsToHistory()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
     QVERIFY(core.storage().isOpen());
     QVERIFY(core.engineMessages() != nullptr);
     QVERIFY(core.settings() != nullptr);
+    QVERIFY(core.tabSearch() != nullptr);
+    QCOMPARE(core.tabSearch()->count(), 0);
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 0);
     core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 1);
+    QCOMPARE(core.tabSearch()->count(), 1);
     core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
     QCOMPARE(core.history()->data(core.history()->index(0, 0), HistoryModel::TitleRole).toString(),
              QStringLiteral("Alpha"));
 }
 
-void tst_core::privateTabsLeaveNoHistory()
-{
-    QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
-    const int id = core.tabs()->newTab(QStringLiteral("https://secret.example/"), true);
-    core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/"));
-    core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/page"));
-    core.tabs()->updateTitle(id, QStringLiteral("Secret"));
-    QCOMPARE(core.history()->count(), 0);
-}
-
 void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
     QVERIFY(core.bookmarks()->activeUrl().isEmpty());
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
@@ -72,7 +64,7 @@ void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 void tst_core::restoresState()
 {
     QTemporaryDir dir;
-    const QString config = dir.path() + QStringLiteral("/tuuli.conf");
+    const QString config = dir.path() + QStringLiteral("/salama.conf");
     {
         Core core(dir.path(), config);
         core.tabs()->newTab(QStringLiteral("https://a.example/"));
@@ -82,6 +74,11 @@ void tst_core::restoresState()
     QCOMPARE(core.tabs()->count(), 1);
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
     QVERIFY(core.settings()->desktopMode());
+    // The tab model takes its live-page limit from Settings, and follows it.
+    QCOMPARE(core.tabs()->liveTabLimit(), Settings::defaultLiveTabLimit());
+    core.settings()->setLiveTabLimitIndex(0);
+    QCOMPARE(core.tabs()->liveTabLimit(), core.settings()->liveTabLimit());
+    QCOMPARE(core.tabs()->liveTabLimit(), 3);
 }
 
 QTEST_GUILESS_MAIN(tst_core)

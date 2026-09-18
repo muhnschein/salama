@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The only file that imports Sailfish.WebView (SCOPE.md §5): a missing engine package
 // breaks browsing, not the application.
@@ -13,7 +13,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
 import Sailfish.WebEngine 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 import "../components"
 
 WebViewPage {
@@ -48,11 +48,9 @@ WebViewPage {
     // relaid out on every frame, which is what stretched pages under the keyboard. One
     // resize, and the bar covers the difference while it moves.
     readonly property real barHeight: navigationBar.height
-    // Nothing at all while the bar is slim: what is left of it then is transparent,
-    // and the page is what should be behind it. The bar keeps the strip its handle is
-    // in and gives the rest of its presses to the page.
     readonly property real viewHeight: fullHeight - (navigationBar.compact
-                                                     || navigationBar.resizing ? 0 : barHeight)
+                                                     || navigationBar.resizing
+                                                     ? navigationBar.slimHeight : barHeight)
 
     // What the display's own cutout takes at the top of the screen, and how much of
     // it this application keeps out of. Silica reports the cutout's whole rectangle,
@@ -169,6 +167,15 @@ WebViewPage {
         }
     }
 
+    // Ten minutes in the background, and the engine is asked to give back what it
+    // can -- the words sailfish-browser uses after the same wait
+    // (docs/DECISIONS/0016-five-live-pages.md). A named function, so the load tests
+    // can ask without waiting ten minutes.
+    function trimMemory() {
+        WebEngine.notifyObservers(EngineMessages.memoryPressureTopic,
+                                  EngineMessages.heapMinimizePayload)
+    }
+
     // What the cover's search action ends at: a new tab, with the address field up and
     // the whole url selected, so the first key typed replaces it.
     function newTabForAddress() {
@@ -204,6 +211,13 @@ WebViewPage {
         settle(true)
     }
 
+    // A tab chosen off the grid -- from the search page -- comes to the front, and the
+    // page comes back over the grid with it.
+    function showTab(tabId) {
+        TabModel.activateTabById(tabId)
+        settle(false)
+    }
+
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
     // pixels across a 1080 wide screen -- the width a phone layout is written for --
     // where the platform's own 1.5 gives 410. Two functions so the load tests can
@@ -219,6 +233,15 @@ WebViewPage {
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
+    }
+
+    Timer {
+        id: trimTimer
+
+        objectName: "trimTimer"
+        interval: 600000
+        running: Qt.application.state !== Qt.ApplicationActive
+        onTriggered: browserPage.trimMemory()
     }
 
     Component.onCompleted: {
@@ -275,7 +298,10 @@ WebViewPage {
                 height: browserPage.viewHeight - browserPage.cutoutInset
 
                 // One WebView per tab shown this session; restored tabs stay unloaded
-                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md).
+                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
+                // and a tab not among the most recently read gives its view up until
+                // it is next in front, when it is loaded again from the page it was
+                // on (docs/DECISIONS/0016-five-live-pages.md).
                 Repeater {
                     id: webViews
 
@@ -284,13 +310,13 @@ WebViewPage {
                     delegate: Loader {
                         readonly property int tabId: model.tabId
                         readonly property bool isCurrent: model.activeTab
-                        readonly property bool privateTab: model.privateTab
+                        readonly property bool liveTab: model.liveTab
                         readonly property string initialUrl: model.url
                         property bool shown: false
 
                         objectName: "webViewLoader"
                         anchors.fill: parent
-                        active: shown
+                        active: shown && liveTab
                         visible: isCurrent
                         sourceComponent: webViewComponent
                         onIsCurrentChanged: {
@@ -318,7 +344,6 @@ WebViewPage {
                 y: browserPage.height - height
 
                 url: TabModel.activeUrl
-                privateTab: TabModel.activeIsPrivate
                 loading: browserPage.loading
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
                 tlsBroken: browserPage.tlsBroken
@@ -367,7 +392,6 @@ WebViewPage {
             active: isCurrent && Qt.application.state === Qt.ApplicationActive
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
-            privateMode: privateTab
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
@@ -426,7 +450,7 @@ WebViewPage {
             }
 
             // The model hands out a fresh file name per capture and removes the one it
-            // replaces; a private tab is given none, so none of it reaches the disk.
+            // replaces.
             function captureThumbnail() {
                 if (!isCurrent) {
                     return

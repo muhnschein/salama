@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Static checks over the QML sources that host Qt would accept silently:
 //  * Sailfish.WebView is imported only where SCOPE.md §5 allows.
 //  * Every `model.<role>` a delegate binds exists on that delegate's model.
 //  * Every `<Singleton>.<member>` reference resolves to a property, method or signal.
 #include "Core.h"
+#include "tabs/ClosedTabModel.h"
+#include "tabs/GroupTabModel.h"
+#include "tabs/TabGroupModel.h"
 
 #include <QDirIterator>
 #include <QMetaEnum>
@@ -15,16 +18,20 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::BookmarkModel;
-using Tuuli::EngineMessages;
-using Tuuli::HistoryModel;
-using Tuuli::Settings;
-using Tuuli::Storage;
-using Tuuli::TabModel;
+using Salama::BookmarkModel;
+using Salama::ClosedTabModel;
+using Salama::EngineMessages;
+using Salama::GroupTabModel;
+using Salama::HistoryModel;
+using Salama::Settings;
+using Salama::Storage;
+using Salama::TabGroupModel;
+using Salama::TabModel;
+using Salama::TabSearchModel;
 
 namespace {
 
-const char *const QmlDir = TUULI_SOURCE_DIR "/qml";
+const char *const QmlDir = SALAMA_SOURCE_DIR "/qml";
 
 QStringList qmlFiles()
 {
@@ -94,7 +101,7 @@ private slots:
 void tst_qmlstatic::filesExist()
 {
     const QStringList files = qmlFiles();
-    QVERIFY(files.contains(QStringLiteral("harbour-tuuli.qml")));
+    QVERIFY(files.contains(QStringLiteral("harbour-salama.qml")));
     QVERIFY(files.contains(QStringLiteral("pages/BrowserPage.qml")));
     QVERIFY(files.count() >= 10);
 }
@@ -129,15 +136,24 @@ void tst_qmlstatic::delegateRolesExist()
     QTemporaryDir dir;
     Storage storage(dir.path());
     TabModel tabs(nullptr);
+    TabSearchModel search(&tabs);
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
 
-    // Which model backs the `model.` references in each file.
+    // Which model backs the `model.` references in each file. The grid's rows come
+    // from GroupTabs, whose roles are the tab model's own.
     const QHash<QString, QSet<QString>> expected{
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
-        {QStringLiteral("components/TabsView.qml"), roleSet(tabs)},
-        {QStringLiteral("components/TabPreview.qml"), roleSet(tabs)},
+        {QStringLiteral("components/TabsView.qml"), roleSet(*tabs.groupTabs())},
+        {QStringLiteral("components/TabPreview.qml"), roleSet(*tabs.groupTabs())},
         {QStringLiteral("components/CoverTabField.qml"), roleSet(tabs)},
+        {QStringLiteral("components/TabGroupStrip.qml"), roleSet(*tabs.groupModel())},
+        {QStringLiteral("components/TabGroupDelegate.qml"), roleSet(*tabs.groupModel())},
+        {QStringLiteral("pages/TabGroupsPage.qml"), roleSet(*tabs.groupModel())},
+        {QStringLiteral("components/TabSearchDelegate.qml"), roleSet(search)},
+        {QStringLiteral("pages/TabSearchPage.qml"), roleSet(search)},
+        {QStringLiteral("components/ClosedTabDelegate.qml"), roleSet(*tabs.closedTabs())},
+        {QStringLiteral("components/RecentlyClosedPanel.qml"), roleSet(*tabs.closedTabs())},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},
@@ -168,14 +184,18 @@ void tst_qmlstatic::singletonMembersExist()
 {
     const QHash<QString, QSet<QString>> members{
         {QStringLiteral("TabModel"), metaMembers(&TabModel::staticMetaObject)},
+        {QStringLiteral("GroupTabs"), metaMembers(&GroupTabModel::staticMetaObject)},
+        {QStringLiteral("ClosedTabs"), metaMembers(&ClosedTabModel::staticMetaObject)},
+        {QStringLiteral("TabGroups"), metaMembers(&TabGroupModel::staticMetaObject)},
+        {QStringLiteral("TabSearch"), metaMembers(&TabSearchModel::staticMetaObject)},
         {QStringLiteral("HistoryModel"), metaMembers(&HistoryModel::staticMetaObject)},
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
     };
     const QRegularExpression reference(
-        QStringLiteral("\\b(TabModel|HistoryModel|BookmarkModel|Settings|EngineMessages)\\.([A-Za-"
-                       "z_][A-Za-z0-9_]*)"));
+        QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
+                       "BookmarkModel|Settings|EngineMessages)\\.([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;
     for (const QString &file : qmlFiles()) {

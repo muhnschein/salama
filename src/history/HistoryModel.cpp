@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "HistoryModel.h"
 
 #include "storage/Storage.h"
@@ -10,7 +10,7 @@
 #include <QtDebug>
 #include <algorithm>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -234,4 +234,4 @@ void HistoryModel::reload()
     }
 }
 
-} // namespace Tuuli
+} // namespace Salama

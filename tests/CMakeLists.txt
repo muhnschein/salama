@@ -28,12 +28,12 @@ set_target_properties(silicastubsplugin PROPERTIES
 )
 
 # --- Tests ------------------------------------------------------------------------
-function(tuuli_add_test name)
+function(salama_add_test name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE tuuli-core Qt5::Test Qt5::Gui Qt5::Quick)
+    target_link_libraries(${name} PRIVATE salama-core Qt5::Test Qt5::Gui Qt5::Quick)
     target_compile_definitions(${name} PRIVATE
-        TUULI_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-        TUULI_STUBS_DIR="${STUBS_DIR}"
+        SALAMA_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+        SALAMA_STUBS_DIR="${STUBS_DIR}"
     )
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
@@ -51,6 +51,6 @@ foreach(test
     tst_qmlload
     tst_qmlstatic
 )
-    tuuli_add_test(${test})
+    salama_add_test(${test})
 endforeach()
 add_dependencies(tst_qmlload silicastubsplugin)

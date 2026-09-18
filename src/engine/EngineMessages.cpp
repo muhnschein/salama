@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "EngineMessages.h"
 
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -30,6 +30,16 @@ QString EngineMessages::clearPrivateDataTopic() const
 QString EngineMessages::cookiesAndSiteDataPayload() const
 {
     return QStringLiteral("cookies-and-site-data");
+}
+
+QString EngineMessages::memoryPressureTopic() const
+{
+    return QStringLiteral("memory-pressure");
+}
+
+QString EngineMessages::heapMinimizePayload() const
+{
+    return QStringLiteral("heap-minimize");
 }
 
 QString EngineMessages::cachePayload() const
@@ -109,4 +119,4 @@ QString EngineMessages::resolveFavicon(const QString &pageUrl, const QString &hr
     return defaultFavicon(pageUrl);
 }
 
-} // namespace Tuuli
+} // namespace Salama

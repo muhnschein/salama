@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Storage.h"
 
 #include <QCoreApplication>
@@ -12,23 +12,48 @@
 #include <QUuid>
 #include <QtDebug>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
-const char *const DatabaseFileName = "tuuli.sqlite";
+const char *const DatabaseFileName = "salama.sqlite";
+
+// The tab and group tables by the name to create them under: the schema and the
+// rebuild that drops a column from an older table both need them.
+QString tabTable(const QString &name)
+{
+    return QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
+                          "tab_id INTEGER PRIMARY KEY, "
+                          "position INTEGER NOT NULL, "
+                          "url TEXT NOT NULL, "
+                          "title TEXT NOT NULL DEFAULT '', "
+                          "favicon TEXT NOT NULL DEFAULT '', "
+                          "thumbnail TEXT NOT NULL DEFAULT '', "
+                          "last_active INTEGER NOT NULL DEFAULT 0, "
+                          "group_id INTEGER NOT NULL DEFAULT 1)")
+        .arg(name);
+}
+
+QString groupTable(const QString &name)
+{
+    return QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
+                          "group_id INTEGER PRIMARY KEY, "
+                          "name TEXT NOT NULL DEFAULT '', "
+                          "position INTEGER NOT NULL)")
+        .arg(name);
+}
 
 const QStringList &schemaStatements()
 {
     static const QStringList statements{
-        QStringLiteral("CREATE TABLE IF NOT EXISTS tab ("
-                       "tab_id INTEGER PRIMARY KEY, "
-                       "position INTEGER NOT NULL, "
+        tabTable(QStringLiteral("tab")),
+        groupTable(QStringLiteral("tab_group")),
+        QStringLiteral("CREATE TABLE IF NOT EXISTS closed_tab ("
+                       "id INTEGER PRIMARY KEY, "
                        "url TEXT NOT NULL, "
                        "title TEXT NOT NULL DEFAULT '', "
                        "favicon TEXT NOT NULL DEFAULT '', "
-                       "thumbnail TEXT NOT NULL DEFAULT '', "
-                       "last_active INTEGER NOT NULL DEFAULT 0)"),
+                       "closed INTEGER NOT NULL)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS browser_history ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                        "url TEXT NOT NULL UNIQUE, "
@@ -53,7 +78,7 @@ const QStringList &schemaStatements()
 } // namespace
 
 Storage::Storage(const QString &dataDirectory)
-    : m_connectionName(QStringLiteral("tuuli-") + QUuid::createUuid().toString())
+    : m_connectionName(QStringLiteral("salama-") + QUuid::createUuid().toString())
 {
     QDir dir(dataDirectory);
     if (dataDirectory.isEmpty() || (!dir.exists() && !dir.mkpath(QStringLiteral(".")))) {
@@ -171,24 +196,72 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews and schema 2 the cover's order of tabs. CREATE
-    // TABLE IF NOT EXISTS above leaves an existing table alone, so the columns are
-    // added here; asking the table rather than the version number makes this correct
-    // whichever way the database was created.
-    const QList<QPair<QString, QString>> tabColumns{
-        {QStringLiteral("thumbnail"), QStringLiteral("TEXT NOT NULL DEFAULT ''")},
-        {QStringLiteral("last_active"), QStringLiteral("INTEGER NOT NULL DEFAULT 0")},
+    // Schema 1 predates tab previews, schema 2 the cover's order of tabs and schema 3
+    // tab groups. CREATE TABLE IF NOT EXISTS above leaves an existing table alone, so
+    // the columns are added here; asking the table rather than the version number
+    // makes this correct whichever way the database was created. Every tab from
+    // before schema 4 lands in group 1, which TabModel creates when no group row
+    // claims the id.
+    struct Column
+    {
+        const char *table;
+        const char *name;
+        const char *definition;
     };
-    for (const QPair<QString, QString> &column : tabColumns) {
-        if (hasColumn(QStringLiteral("tab"), column.first)) {
+    const QList<Column> columns{
+        {"tab", "thumbnail", "TEXT NOT NULL DEFAULT ''"},
+        {"tab", "last_active", "INTEGER NOT NULL DEFAULT 0"},
+        {"tab", "group_id", "INTEGER NOT NULL DEFAULT 1"},
+    };
+    for (const Column &column : columns) {
+        if (hasColumn(QLatin1String(column.table), QLatin1String(column.name))) {
             continue;
         }
         QSqlQuery query(db);
-        if (!query.exec(QStringLiteral("ALTER TABLE tab ADD COLUMN %1 %2")
-                            .arg(column.first, column.second))) {
+        if (!query.exec(QStringLiteral("ALTER TABLE %1 ADD COLUMN %2 %3")
+                            .arg(QLatin1String(column.table), QLatin1String(column.name),
+                                 QLatin1String(column.definition)))) {
             qWarning() << "Storage:" << query.lastError().text();
             db.rollback();
             return false;
+        }
+    }
+    // Schema 5 kept private tabs, as a flag on the tab and on the group; schema 6
+    // does not. A table that still carries the column loses its private rows and is
+    // rebuilt without it -- copied, because SQLite before 3.35 cannot drop a column.
+    // The ids are kept, so the tabs still name their groups.
+    struct Rebuild
+    {
+        const char *table;
+        const char *kept;
+        QString (*create)(const QString &);
+    };
+    const QList<Rebuild> rebuilds{
+        {"tab", "tab_id, position, url, title, favicon, thumbnail, last_active, group_id",
+         &tabTable},
+        {"tab_group", "group_id, name, position", &groupTable},
+    };
+    for (const Rebuild &rebuild : rebuilds) {
+        const QString table = QLatin1String(rebuild.table);
+        if (!hasColumn(table, QStringLiteral("private"))) {
+            continue;
+        }
+        const QString fresh = table + QStringLiteral("_rebuilt");
+        const QString kept = QLatin1String(rebuild.kept);
+        const QStringList steps{
+            QStringLiteral("DELETE FROM %1 WHERE private = 1").arg(table),
+            rebuild.create(fresh),
+            QStringLiteral("INSERT INTO %1 (%2) SELECT %2 FROM %3").arg(fresh, kept, table),
+            QStringLiteral("DROP TABLE %1").arg(table),
+            QStringLiteral("ALTER TABLE %1 RENAME TO %2").arg(fresh, table),
+        };
+        for (const QString &step : steps) {
+            QSqlQuery query(db);
+            if (!query.exec(step)) {
+                qWarning() << "Storage:" << query.lastError().text();
+                db.rollback();
+                return false;
+            }
         }
     }
     QSqlQuery pragma(db);
@@ -199,4 +272,4 @@ bool Storage::applySchema() const
     return db.commit();
 }
 
-} // namespace Tuuli
+} // namespace Salama

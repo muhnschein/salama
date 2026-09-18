@@ -5,7 +5,7 @@
 | Layer | Location | Owns | Knows about |
 |---|---|---|---|
 | Engine | platform `Sailfish.WebView` | rendering, navigation history, cookies, dialogs, pickers, downloads | nothing of ours |
-| UI | `qml/` | pages, components, cover | the `harbour.tuuli` singletons |
+| UI | `qml/` | pages, components, cover | the `harbour.salama` singletons |
 | Core | `src/` | tabs, history, bookmarks, settings, engine-facing strings | SQLite, QSettings |
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
@@ -13,16 +13,23 @@ the engine package fails to open that page, not the application. `Sailfish.WebEn
 is imported there and in `SettingsPage.qml` (data clearing). `tests/tst_qmlstatic.cpp`
 enforces both.
 
-The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
+The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
 - `Storage` — the single SQLite file and its schema.
-- `TabModel` + `TabPersistence` — open tabs, the active tab, private flag.
+- `TabModel` + `TabPersistence` — open tabs, the active tab, tab groups, the current
+  group, and which tabs keep their page loaded. `TabModel` owns
+  three views of itself for QML: `GroupTabModel` (`GroupTabs`), the current group's
+  tabs, which the grid shows; `TabGroupModel` (`TabGroups`), the groups, which the strip
+  above the grid shows and the group actions are reached through
+  (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
+  (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
+- `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the only place engine-specific strings live.
 
-`registerQmlTypes()` exposes each as a QML singleton under `harbour.tuuli 1.0`.
+`registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 
 ## Data flow
 
@@ -31,19 +38,21 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
    grabs a page preview into the path `TabModel.thumbnailPath()` hands out — on load
    completion, when the grid opens, and as the application leaves the screen — reporting
    it back through `updateThumbnail()`.
-3. `TabModel` updates its row, persists non-private tabs, and emits `visited`,
-   `titleUpdated`, `faviconUpdated` for non-private tabs only.
-4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
-   therefore never reach history or disk; the engine's `privateMode` keeps cookies out.
+3. `TabModel` updates its row, persists the tab, and emits `visited`, `titleUpdated`,
+   `faviconUpdated`.
+4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. There are no
+   private tabs (`DECISIONS/0019-no-private-tabs.md`).
 5. `TabModel.activeTabDataChanged` feeds the address bar and
    `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
    how many tabs are open over a monochrome field of their previews, most recently in
    front first (`TabModel.recentThumbnails`, ordered by each tab's `last_active` stamp),
    and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`).
 
-Views: one `WebView` per tab that has been shown this session, created lazily by a
-`Loader` (see `DECISIONS/0003-one-webview-per-tab.md`). Restored tabs cost nothing
-until activated. Favicons come from a page script with `/favicon.ico` as fallback
+Views: one `WebView` per tab that has been shown this session and is among the
+`Settings.liveTabLimit` most recently in front, created lazily by a `Loader` over
+`TabModel` -- every group's tabs, so a tab changing group keeps its view (see
+`DECISIONS/0003-one-webview-per-tab.md`, `0016-five-live-pages.md`). Restored tabs
+cost nothing until activated; a tab beyond the limit reloads when it is next in front. Favicons come from a page script with `/favicon.ico` as fallback
 (`DECISIONS/0005-favicons.md`), and a page's `theme-color` from another one
 (`DECISIONS/0013-screen-cutout.md`); both are asked of the page because the `WebView`
 Harbour allows carries neither. Tab previews are scene-graph grabs written to the cache
@@ -70,18 +79,21 @@ anything else becomes a search with the selected engine.
 ## Storage
 
 Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<app>`),
-file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Tab previews are
+file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-2); a newer database than the build refuses to open rather than corrupt. Migration asks
+6); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
-either schema converges on the same shape.
+any earlier schema converges on the same shape; a column that a later schema dropped
+takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
 
 ```
-tab              tab_id PK, position, url, title, favicon, thumbnail, last_active
+tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
+tab_group        group_id PK, name, position
+closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
-setting          name PK, value          -- activeTabId
+setting          name PK, value          -- activeTabId, currentGroupId
 ```
 
 History is capped at 2000 rows (pruned on open) and the model shows the newest 500.

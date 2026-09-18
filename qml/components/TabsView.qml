@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The tab grid. It is not a page: it sits directly below the browsing page, and the
 // two are dragged over each other like a pulley. Pushing it onto the page stack
@@ -12,7 +12,7 @@
 // put it while the deck behind it slides down and brings the page back.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Item {
     id: tabsView
@@ -45,7 +45,7 @@ Item {
         width: parent.width
         height: parent.height
         y: -overscroll
-        model: TabModel
+        model: GroupTabs
         cellWidth: width / 2
         cellHeight: cellWidth + Theme.itemSizeSmall
         // Vertical rather than automatic: with a handful of tabs the content fits the
@@ -72,7 +72,7 @@ Item {
         // device's own cutout.
         header: Item {
             width: tabGrid.width
-            height: countRow.height
+            height: headRow.height
         }
 
         footer: Item {
@@ -80,58 +80,71 @@ Item {
             height: newTabRow.height
         }
 
+        // By id rather than by row: the grid's rows are the current group's, and
+        // the tab model's are every group's.
         delegate: TabPreview {
             onTapped: {
-                TabModel.activateTab(index)
+                TabModel.activateTabById(model.tabId)
                 tabsView.tabActivated()
             }
-            onCloseRequested: TabModel.closeTab(index)
-            onMoveRequested: TabModel.moveTab(from, to)
+            onCloseRequested: TabModel.closeTabById(model.tabId)
+            onMoveRequested: GroupTabs.moveTab(from, to)
         }
 
         ViewPlaceholder {
-            enabled: TabModel.count === 0
-            text: qsTr("No open tabs")
+            enabled: GroupTabs.count === 0
+            text: qsTr("No tabs in this group")
             hintText: qsTr("Open one with the button below")
         }
 
         VerticalScrollDecorator {}
     }
 
-    // What the grid says about itself, over the cells rather than among them. It is
-    // also what keeps the top row clear of the screen's cutout.
+    // The groups, over the cells rather than among them, with the way to edit them in
+    // one corner and the search for a tab in the other. The row is also what keeps
+    // the top row of cells clear of the screen's cutout.
     Rectangle {
-        id: countRow
+        id: headRow
 
-        objectName: "tabCountRow"
+        objectName: "tabGroupRow"
         anchors {
             left: parent.left
             right: parent.right
             top: parent.top
         }
-        // The cutout on top of the row's own height, and the text below the cutout
+        // The cutout on top of the row's own height, and the strip below the cutout
         // rather than centred through it: the row starts at the top of the screen,
         // and the notch was taking a bite out of what it says.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
         // The grid's own edge is a pulley too: dragged down it hands the page back.
-        DragHandle {
-            objectName: "gridDragHandle"
-            x: (parent.width - width) / 2
-            y: tabsView.cutoutHeight + Theme.paddingSmall
-            active: tabGrid.dragging
+        // Said the way Silica says a pulley menu is there -- a line across the whole
+        // edge -- rather than with the bar's handle, which on device read as a second
+        // handle to find. The highlight background colour: the highlight itself was
+        // too loud a line to have across the top of every grid.
+        Rectangle {
+            objectName: "gridPullIndicator"
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: parent.top
+            }
+            height: Theme.paddingSmall
+            color: Theme.highlightBackgroundColor
         }
 
-        Label {
-            objectName: "tabCountLabel"
+        TabGroupStrip {
             anchors {
-                centerIn: parent
-                verticalCenterOffset: tabsView.cutoutHeight / 2
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
             }
-            text: qsTr("%n tab(s)", "", TabModel.count)
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.highlightColor
+            height: Theme.itemSizeLarge
+            // Both are pages of their own over the grid, which stays open under them
+            // for when they are popped.
+            onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))
+            onSearchRequested: pageStack.push(Qt.resolvedUrl("../pages/TabSearchPage.qml"))
         }
     }
 
@@ -149,6 +162,7 @@ Item {
         height: Theme.itemSizeLarge
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
+        // Held rather than tapped, the button brings up what was closed lately.
         IconButton {
             objectName: "newTabButton"
             anchors.centerIn: parent
@@ -159,6 +173,15 @@ Item {
                 TabModel.newTab(Settings.homePage)
                 tabsView.tabActivated()
             }
+            onPressAndHold: closedPanel.show()
         }
+    }
+
+    RecentlyClosedPanel {
+        id: closedPanel
+
+        width: parent.width
+        height: Math.round(parent.height * 0.6)
+        onTabReopened: tabsView.tabActivated()
     }
 }

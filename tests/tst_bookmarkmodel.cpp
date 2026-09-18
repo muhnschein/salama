@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "bookmarks/BookmarkModel.h"
 #include "storage/Storage.h"
 
@@ -7,8 +7,8 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::BookmarkModel;
-using Tuuli::Storage;
+using Salama::BookmarkModel;
+using Salama::Storage;
 
 class tst_bookmarkmodel : public QObject
 {

@@ -121,10 +121,6 @@
         <translation>Uusi välilehti</translation>
     </message>
     <message>
-        <source>New private tab</source>
-        <translation>Uusi yksityinen välilehti</translation>
-    </message>
-    <message>
         <source>Remove bookmark</source>
         <translation>Poista kirjanmerkki</translation>
     </message>
@@ -156,6 +152,10 @@
         <source>Tabs</source>
         <translation>Välilehdet</translation>
     </message>
+    <message>
+        <source>Move tab to group</source>
+        <translation>Siirrä välilehti ryhmään</translation>
+    </message>
 </context>
 <context>
     <name>NavigationBar</name>
@@ -163,9 +163,16 @@
         <source>Search or enter address</source>
         <translation>Hae tai kirjoita osoite</translation>
     </message>
+</context>
+<context>
+    <name>RecentlyClosedPanel</name>
     <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
+        <source>Recently closed</source>
+        <translation>Äskettäin suljetut</translation>
+    </message>
+    <message>
+        <source>Nothing closed recently</source>
+        <translation>Ei äskettäin suljettuja välilehtiä</translation>
     </message>
 </context>
 <context>
@@ -251,30 +258,35 @@
         <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
     </message>
     <message>
-        <source>The tab count and every tab</source>
-        <translation>Välilehtien määrän ja kaikki välilehdet</translation>
+        <source>The tab count and the most recent tabs</source>
+        <translation>Välilehtien määrän ja viimeisimmät välilehdet</translation>
+    </message>
+    <message>
+        <source>Pages kept loaded</source>
+        <translation>Ladattuina pidettävät sivut</translation>
+    </message>
+    <message>
+        <source>Tabs beyond this many reload their page when opened again</source>
+        <translation>Tätä useammat välilehdet lataavat sivunsa uudelleen, kun ne avataan</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Kaikki</translation>
     </message>
 </context>
 <context>
-    <name>TabPreview</name>
+    <name>TabGroupDelegate</name>
     <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
+        <source>Rename</source>
+        <translation>Nimeä uudelleen</translation>
     </message>
     <message>
-        <source>No preview</source>
-        <translation>Ei esikatselua</translation>
-    </message>
-</context>
-<context>
-    <name>TabsView</name>
-    <message>
-        <source>No open tabs</source>
-        <translation>Ei avoimia välilehtiä</translation>
+        <source>Delete</source>
+        <translation>Poista</translation>
     </message>
     <message>
-        <source>Open one with the button below</source>
-        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+        <source>Deleting tab group</source>
+        <translation>Poistetaan välilehtiryhmä</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
@@ -282,6 +294,89 @@
             <numerusform>%n välilehti</numerusform>
             <numerusform>%n välilehteä</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupDialog</name>
+    <message>
+        <source>Rename tab group</source>
+        <translation>Nimeä välilehtiryhmä uudelleen</translation>
+    </message>
+    <message>
+        <source>New tab group</source>
+        <translation>Uusi välilehtiryhmä</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Tallenna</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nimi</translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupStrip</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>TabGroupsPage</name>
+    <message>
+        <source>Move to tab group</source>
+        <translation>Siirrä välilehtiryhmään</translation>
+    </message>
+    <message>
+        <source>Tab groups</source>
+        <translation>Välilehtiryhmät</translation>
+    </message>
+    <message>
+        <source>New tab group</source>
+        <translation>Uusi välilehtiryhmä</translation>
+    </message>
+</context>
+<context>
+    <name>TabPreview</name>
+    <message>
+        <source>No preview</source>
+        <translation>Ei esikatselua</translation>
+    </message>
+</context>
+<context>
+    <name>TabSearchDelegate</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>TabSearchPage</name>
+    <message>
+        <source>Search tabs</source>
+        <translation>Hae välilehdistä</translation>
+    </message>
+    <message>
+        <source>No matching tabs</source>
+        <translation>Ei osuvia välilehtiä</translation>
+    </message>
+</context>
+<context>
+    <name>TabsView</name>
+    <message>
+        <source>Open one with the button below</source>
+        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+    </message>
+    <message>
+        <source>No tabs in this group</source>
+        <translation>Ryhmässä ei ole välilehtiä</translation>
     </message>
 </context>
 </TS>

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/storage/tab.h (Copyright (c) 2013 Jolla Ltd., MPL-2.0),
 // reduced to the fields the platform WebView does not already keep per view.
@@ -7,7 +7,7 @@
 
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 struct Tab
 {
@@ -22,7 +22,10 @@ struct Tab
     // for a tab that has not been in front since the database was written. The cover
     // reads it (docs/DECISIONS/0014-cover-is-the-tab-count.md).
     qint64 lastActive = 0;
-    bool isPrivate = false;
+    // The tab group this tab belongs to (docs/DECISIONS/0015-tab-groups.md). Every tab
+    // is in exactly one; the model gives a tab the group that was current when it was
+    // opened, and repairs a stored id that names no group on load.
+    int groupId = 0;
 
     bool isValid() const
     {
@@ -33,7 +36,7 @@ struct Tab
     {
         return id == other.id && url == other.url && title == other.title &&
                favicon == other.favicon && thumbnail == other.thumbnail &&
-               lastActive == other.lastActive && isPrivate == other.isPrivate;
+               lastActive == other.lastActive && groupId == other.groupId;
     }
 
     bool operator!=(const Tab &other) const
@@ -42,4 +45,52 @@ struct Tab
     }
 };
 
-} // namespace Tuuli
+// A tab group: a name and a place in the order the strip shows them in. The name may
+// be empty, in which case the interface names the group by what it holds -- "3 tabs"
+// -- the way Safari names its ungrouped tabs. The first group is the default one,
+// never removed.
+struct TabGroup
+{
+    int id = 0;
+    QString name;
+
+    bool isValid() const
+    {
+        return id > 0;
+    }
+
+    bool operator==(const TabGroup &other) const
+    {
+        return id == other.id && name == other.name;
+    }
+
+    bool operator!=(const TabGroup &other) const
+    {
+        return !(*this == other);
+    }
+};
+
+// What is kept of a closed tab, so it can be opened again: the page and how it
+// presented itself.
+struct ClosedTab
+{
+    int id = 0;
+    QString url;
+    QString title;
+    QString favicon;
+    // Milliseconds since the epoch, for the order and nothing else.
+    qint64 closedAt = 0;
+
+    bool operator==(const ClosedTab &other) const
+    {
+        return id == other.id && url == other.url && title == other.title &&
+               favicon == other.favicon && closedAt == other.closedAt;
+    }
+
+    bool operator!=(const ClosedTab &other) const
+    {
+        return !(*this == other);
+    }
+};
+
+} // namespace Salama

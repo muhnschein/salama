@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/history/declarativehistorymodel.{h,cpp} and the
 // browser_history handling in apps/storage/dbworker.cpp (Copyright (c) 2013 - 2021
@@ -13,7 +13,7 @@
 #include <QSqlDatabase>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 class Storage;
 
@@ -74,4 +74,4 @@ private:
     qint64 m_lastVisit = 0;
 };
 
-} // namespace Tuuli
+} // namespace Salama
