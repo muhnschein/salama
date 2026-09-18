@@ -3,8 +3,8 @@
 //
 // Modelled on sailfish-browser apps/history/declarativetabmodel.{h,cpp}
 // (Copyright (c) 2013 Jolla Ltd., (c) 2021 Open Mobile Platform LLC, MPL-2.0).
-// Differences: no web container coupling, private tabs are a per-tab flag, and the
-// model reports navigations through signals instead of writing history.
+// Differences: no web container coupling, and the model reports navigations through
+// signals instead of writing history.
 #pragma once
 
 #include "Tab.h"
@@ -32,7 +32,6 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(int activeTabIndex READ activeTabIndex NOTIFY activeTabChanged)
     Q_PROPERTY(int activeTabId READ activeTabId NOTIFY activeTabChanged)
-    Q_PROPERTY(bool activeIsPrivate READ activeIsPrivate NOTIFY activeTabChanged)
     Q_PROPERTY(QString activeUrl READ activeUrl NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeFavicon READ activeFavicon NOTIFY activeTabDataChanged)
@@ -54,7 +53,6 @@ public:
         TitleRole,
         FaviconRole,
         ThumbnailRole,
-        PrivateRole,
         ActiveRole,
         GroupRole,
         // Whether the page keeps its view: the tab in front and the ones read most
@@ -74,7 +72,6 @@ public:
     int count() const;
     int activeTabIndex() const;
     int activeTabId() const;
-    bool activeIsPrivate() const;
     QString activeUrl() const;
     QString activeTitle() const;
     QString activeFavicon() const;
@@ -82,9 +79,8 @@ public:
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
-    // The tab opens in the current group; a private one in the private group, which
-    // becomes current with it.
-    Q_INVOKABLE int newTab(const QString &url, bool isPrivate = false);
+    // The tab opens in the current group.
+    Q_INVOKABLE int newTab(const QString &url);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
     Q_INVOKABLE void closeTab(int index);
@@ -103,16 +99,14 @@ public:
     // Where the view should write this tab's next page preview. Each call returns a
     // fresh name so the grabbed image is never hidden behind a cached one, and the
     // previous file is removed once the new path is handed back through
-    // updateThumbnail(). Empty for a private tab, whose preview is never written to
-    // disk, and when previews are off.
+    // updateThumbnail(). Empty when previews are off.
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
 
-    // Tab groups. There is always one private group, first in the list, and one
-    // default group right after it; neither can be renamed or removed.
+    // Tab groups. There is always one default group, first in the list, which can be
+    // neither renamed nor removed.
     const QList<TabGroup> &groups() const;
     int groupIndexOf(int groupId) const;
-    int privateGroupId() const;
     int defaultGroupId() const;
     int tabCountInGroup(int groupId) const;
     int currentGroupId() const;
@@ -120,15 +114,12 @@ public:
     void setCurrentGroupId(int groupId);
     // Returns the new group's id. The new group goes last and becomes the current one.
     int addGroup(const QString &name);
-    // Refused for the private group and the default one.
+    // Refused for the default group.
     void renameGroup(int groupId, const QString &name);
-    // Closes the group's tabs and removes it. Refused for the private group and the
-    // default one.
+    // Closes the group's tabs and removes it. Refused for the default group.
     bool removeGroup(int groupId);
     // Puts a tab in another group. Its row in this model does not move, so the view
-    // behind it stays; its place in the group is after the tabs already there. A tab
-    // never crosses into or out of the private group: private is a property of its
-    // view, not something a view can be given later.
+    // behind it stays; its place in the group is after the tabs already there.
     bool moveTabToGroup(int tabId, int groupId);
 
     // How many tabs keep their page loaded, 0 for all of them.
@@ -152,7 +143,7 @@ signals:
     void activeTabDataChanged();
     void tabAdded(int tabId);
     void tabClosed(int tabId);
-    // Emitted for non-private tabs only; wired to the history model.
+    // Wired to the history model.
     void visited(const QString &url);
     void titleUpdated(const QString &url, const QString &title);
     void faviconUpdated(const QString &url, const QString &favicon);
@@ -163,8 +154,6 @@ signals:
 private:
     void load();
     void ensureGroups();
-    void ensureGroupKinds();
-    void fileTabsByKind();
     // Which tabs keep their views, and the same recomputed with the rows that changed
     // told; the constructor takes the set alone, there being no rows to tell yet.
     QSet<int> liveSet() const;
@@ -175,8 +164,6 @@ private:
     void applyCurrentGroup(int groupId);
     // The tab to bring to the front when the active one goes: the nearest in its own
     // group, then the most recent anywhere.
-    // The private group and the default one: neither renamed nor removed.
-    bool isFixedGroup(int groupId) const;
     int successorOf(int index) const;
     int mostRecentTabId(int groupId) const;
     int groupRowFor(int index) const;

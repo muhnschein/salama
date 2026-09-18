@@ -20,6 +20,7 @@ private slots:
     void refusesUnusableDirectory();
     void refusesNewerSchema();
     void migratesSchemaOne();
+    void dropsPrivateTabsFromSchemaFive();
     void defaultPaths();
 };
 
@@ -104,8 +105,8 @@ void tst_storage::migratesSchemaOne()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.sqlite"));
     {
         // A schema 1 database: the tab table has none of the columns later schemas
-        // added -- thumbnail (2), last_active (3), group_id (4), private (5) -- and
-        // neither the group table nor the closed-tab table.
+        // added -- thumbnail (2), last_active (3), group_id (4) -- and neither the
+        // group table nor the closed-tab table.
         QSqlDatabase db =
             QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("legacy"));
         db.setDatabaseName(path);
@@ -127,8 +128,8 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
 
     QSqlQuery query(storage.database());
-    QVERIFY(query.exec(QStringLiteral(
-        "SELECT tab_id, title, thumbnail, last_active, group_id, private FROM tab")));
+    QVERIFY(query.exec(
+        QStringLiteral("SELECT tab_id, title, thumbnail, last_active, group_id FROM tab")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 1);
     QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
@@ -137,11 +138,9 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(query.value(3).toLongLong(), 0LL);
     // In group 1, which the model creates when it finds no row for it.
     QCOMPARE(query.value(4).toInt(), 1);
-    QVERIFY(!query.value(5).toBool());
     QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM tab_group")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
-    QVERIFY(query.exec(QStringLiteral("SELECT private FROM tab_group")));
     QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM closed_tab")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
@@ -150,6 +149,86 @@ void tst_storage::migratesSchemaOne()
     Storage again(dir.path());
     QVERIFY(again.isOpen());
     QCOMPARE(again.userVersion(), Storage::SchemaVersion);
+}
+
+// Schema 5 flagged private tabs and a private group. Schema 6 has neither: the
+// flagged rows go, and the tables are rebuilt without the column, ids and the rest
+// of the rows intact.
+void tst_storage::dropsPrivateTabsFromSchemaFive()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.sqlite"));
+    {
+        QSqlDatabase db =
+            QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("five"));
+        db.setDatabaseName(path);
+        QVERIFY(db.open());
+        QSqlQuery query(db);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE tab (tab_id INTEGER PRIMARY KEY, position INTEGER NOT NULL, "
+            "url TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', "
+            "favicon TEXT NOT NULL DEFAULT '', thumbnail TEXT NOT NULL DEFAULT '', "
+            "last_active INTEGER NOT NULL DEFAULT 0, group_id INTEGER NOT NULL DEFAULT 1, "
+            "private INTEGER NOT NULL DEFAULT 0)")));
+        QVERIFY(
+            query.exec(QStringLiteral("CREATE TABLE tab_group (group_id INTEGER PRIMARY KEY, "
+                                      "name TEXT NOT NULL DEFAULT '', position INTEGER NOT NULL, "
+                                      "private INTEGER NOT NULL DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO tab_group VALUES (2, '', 1, 1)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO tab_group VALUES (1, '', 2, 0)")));
+        QVERIFY(query.exec(QStringLiteral("INSERT INTO tab_group VALUES (3, 'Work', 3, 0)")));
+        QVERIFY(query.exec(
+            QStringLiteral("INSERT INTO tab (tab_id, position, url, title, group_id, private) "
+                           "VALUES (1, 1, 'https://a.example/', 'A', 1, 0), "
+                           "(2, 2, 'https://secret.example/', 'S', 2, 1), "
+                           "(3, 3, 'https://w.example/', 'W', 3, 0)")));
+        QVERIFY(query.exec(QStringLiteral("PRAGMA user_version = 5")));
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("five"));
+
+    Storage storage(dir.path());
+    QVERIFY(storage.isOpen());
+    QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
+    QSqlQuery query(storage.database());
+    auto columns = [&query](const QString &table) {
+        QStringList names;
+        if (query.exec(QStringLiteral("PRAGMA table_info(%1)").arg(table))) {
+            while (query.next()) {
+                names.append(query.value(1).toString());
+            }
+        }
+        return names;
+    };
+    QVERIFY(!columns(QStringLiteral("tab")).contains(QStringLiteral("private")));
+    QVERIFY(columns(QStringLiteral("tab")).contains(QStringLiteral("group_id")));
+    QVERIFY(!columns(QStringLiteral("tab_group")).contains(QStringLiteral("private")));
+
+    QVERIFY(
+        query.exec(QStringLiteral("SELECT tab_id, title, group_id FROM tab ORDER BY position")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+    QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
+    QCOMPARE(query.value(2).toInt(), 1);
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 3);
+    QCOMPARE(query.value(2).toInt(), 3);
+    QVERIFY(!query.next());
+    QVERIFY(query.exec(QStringLiteral("SELECT group_id, name FROM tab_group ORDER BY position")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 3);
+    QCOMPARE(query.value(1).toString(), QStringLiteral("Work"));
+    QVERIFY(!query.next());
+
+    // The rebuilt tables are the schema's own: a new row still gets its defaults.
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO tab (tab_id, position, url) VALUES (9, 9, 'https://n.example/')")));
+    QVERIFY(query.exec(QStringLiteral("SELECT group_id, title FROM tab WHERE tab_id = 9")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+    QVERIFY(query.value(1).toString().isEmpty());
 }
 
 void tst_storage::defaultPaths()

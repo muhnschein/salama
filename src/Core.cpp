@@ -14,7 +14,6 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_bookmarks(m_storage)
     , m_settings(configFilePath)
 {
-    // Private tabs never emit these, which is what keeps them out of history.
     connect(&m_tabs, &TabModel::visited, &m_history,
             [this](const QString &url) { m_history.visit(url); });
     connect(&m_tabs, &TabModel::titleUpdated, &m_history, &HistoryModel::updateTitle);

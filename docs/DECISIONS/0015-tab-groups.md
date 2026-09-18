@@ -98,9 +98,9 @@ that fails half way.
 is unchanged. The grid's delegates address tabs by id (`activateTabById`,
 `closeTabById`) rather than by row, because the grid's rows are no longer the model's.
 
-There is no way to reorder groups yet: the private group is first (0017), the default
-group after it, and a new group goes last. Two unnamed groups are told apart in the strip
-only by their counts.
+There is no way to reorder groups yet: the default group is first and a new group
+goes last. Two unnamed groups are told apart in the strip only by their counts. The
+private group that once sat before the default one is gone (0019).
 
 `components/TabsView.qml` keeps its size by handing the strip its own file. The load
 tests drive the strip through `select(index)`, which is what a tap calls, and the pages

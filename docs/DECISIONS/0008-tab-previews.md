@@ -15,8 +15,7 @@ or stepped through without loading, was shown on the cover as it had been before
 read. The model owns the files: a fresh name per capture (so a new image is never
 hidden behind a cached one), the previous file removed when the new path is reported
 back, and every file removed when its tab closes. Files live in `CacheLocation`, and
-`discardThumbnail()` refuses to delete anything outside it. A private tab is given no
-path at all, so none of its pages reach the disk.
+`discardThumbnail()` refuses to delete anything outside it.
 
 ## Consequences
 A grab needs a rendered item, so a tab that has not been displayed this session has no

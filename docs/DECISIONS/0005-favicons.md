@@ -21,5 +21,5 @@ made the theme colour in `0013-screen-cutout.md` never arrive. Both are one form
 the tests assert it.
 
 ## Consequences
-Icons are fetched by Qt, not by the engine, so a second request per page. Private tabs
-never publish their icon. Verified on the device as part of the smoke test.
+Icons are fetched by Qt, not by the engine, so a second request per page. Verified on
+the device as part of the smoke test.

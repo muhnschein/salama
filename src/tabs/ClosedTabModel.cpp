@@ -73,7 +73,7 @@ const QList<ClosedTab> &ClosedTabModel::closedTabs() const
 
 void ClosedTabModel::record(const Tab &tab)
 {
-    if (tab.isPrivate || tab.url.isEmpty()) {
+    if (tab.url.isEmpty()) {
         return;
     }
     ClosedTab closed;
@@ -120,13 +120,8 @@ void ClosedTabModel::reopen(int row)
     emit countChanged();
 
     // Last: opening the tab re-enters the tab model, and the grid's cell wants the
-    // title and the icon before the page has loaded to say them itself. It was an
-    // ordinary tab, so it comes back as one: in the current group, unless that is
-    // the private group, and then in the default one.
-    const int groupIndex = m_tabs->currentGroupIndex();
-    if (groupIndex >= 0 && m_tabs->groups().at(groupIndex).isPrivate) {
-        m_tabs->setCurrentGroupId(m_tabs->defaultGroupId());
-    }
+    // title and the icon before the page has loaded to say them itself. It comes
+    // back in the current group.
     const int tabId = m_tabs->newTab(closed.url);
     if (tabId > 0) {
         m_tabs->updateTitle(tabId, closed.title);

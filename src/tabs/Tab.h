@@ -26,11 +26,6 @@ struct Tab
     // is in exactly one; the model gives a tab the group that was current when it was
     // opened, and repairs a stored id that names no group on load.
     int groupId = 0;
-    // A private tab: the engine keeps its cookies out, the model keeps it out of
-    // history and writes no preview of it. It is the private group's tab, and it is
-    // stored with the rest so the group survives a restart
-    // (docs/DECISIONS/0017-private-group.md).
-    bool isPrivate = false;
 
     bool isValid() const
     {
@@ -41,8 +36,7 @@ struct Tab
     {
         return id == other.id && url == other.url && title == other.title &&
                favicon == other.favicon && thumbnail == other.thumbnail &&
-               lastActive == other.lastActive && groupId == other.groupId &&
-               isPrivate == other.isPrivate;
+               lastActive == other.lastActive && groupId == other.groupId;
     }
 
     bool operator!=(const Tab &other) const
@@ -53,13 +47,12 @@ struct Tab
 
 // A tab group: a name and a place in the order the strip shows them in. The name may
 // be empty, in which case the interface names the group by what it holds -- "3 tabs"
-// -- the way Safari names its ungrouped tabs. One group is the private one: last in
-// the strip, never removed, and every tab in it private.
+// -- the way Safari names its ungrouped tabs. The first group is the default one,
+// never removed.
 struct TabGroup
 {
     int id = 0;
     QString name;
-    bool isPrivate = false;
 
     bool isValid() const
     {
@@ -68,7 +61,7 @@ struct TabGroup
 
     bool operator==(const TabGroup &other) const
     {
-        return id == other.id && name == other.name && isPrivate == other.isPrivate;
+        return id == other.id && name == other.name;
     }
 
     bool operator!=(const TabGroup &other) const
@@ -78,7 +71,7 @@ struct TabGroup
 };
 
 // What is kept of a closed tab, so it can be opened again: the page and how it
-// presented itself. Never a private tab.
+// presented itself.
 struct ClosedTab
 {
     int id = 0;

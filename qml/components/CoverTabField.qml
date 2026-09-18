@@ -111,9 +111,8 @@ Item {
                     }
 
                     // The cell's own ground, which is the whole of it for a tab
-                    // that has no picture: one never displayed this session, and
-                    // every private tab, whose pages are never written to disk.
-                    // The field keeps its shape either way -- a gap where a tab
+                    // that has no picture: one never displayed this session. The
+                    // field keeps its shape either way -- a gap where a tab
                     // is would say there are fewer than the number says.
                     Rectangle {
                         objectName: "coverTabGround"

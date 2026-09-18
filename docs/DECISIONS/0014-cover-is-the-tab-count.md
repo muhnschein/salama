@@ -82,8 +82,8 @@ in a `text:` binding as a defect, which is a rule worth keeping absolute.
 ## Consequences
 The cover no longer names the page in front, and the device checklist asks for the
 count and the field instead. A tab with no picture yet — one never displayed this
-session, and every private tab, whose pages are never written to disk — keeps its
-cell and shows the ground alone, so the field never contradicts the number above it.
+session — keeps its cell and shows the ground alone, so the field never contradicts
+the number above it.
 Past the sixth tab the field stops adding cells rather than shrinking them: it says
 "a lot of tabs" as well as it is going to at cover size, and the number above it is
 what says how many there actually are. The cells' pictures are drawn at whatever

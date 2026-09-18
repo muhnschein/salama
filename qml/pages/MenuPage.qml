@@ -56,20 +56,6 @@ Page {
             }
 
             ListItem {
-                objectName: "newPrivateTabItem"
-                onClicked: {
-                    TabModel.newTab(Settings.homePage, true)
-                    pageStack.pop()
-                }
-
-                Label {
-                    x: Theme.horizontalPageMargin
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("New private tab")
-                }
-            }
-
-            ListItem {
                 objectName: "bookmarkItem"
                 enabled: TabModel.activeUrl.length > 0
                 onClicked: {
@@ -130,7 +116,7 @@ Page {
             // tap, a carry and a close button on it.
             ListItem {
                 objectName: "moveToGroupItem"
-                enabled: TabModel.activeTabId > 0 && !TabModel.activeIsPrivate
+                enabled: TabModel.activeTabId > 0
                 onClicked: pageStack.replace(Qt.resolvedUrl("TabGroupsPage.qml"), {
                                                  "moveTabId": TabModel.activeTabId
                                              })

@@ -18,24 +18,36 @@ namespace {
 
 const char *const DatabaseFileName = "salama.sqlite";
 
+// The tab and group tables by the name to create them under: the schema and the
+// rebuild that drops a column from an older table both need them.
+QString tabTable(const QString &name)
+{
+    return QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
+                          "tab_id INTEGER PRIMARY KEY, "
+                          "position INTEGER NOT NULL, "
+                          "url TEXT NOT NULL, "
+                          "title TEXT NOT NULL DEFAULT '', "
+                          "favicon TEXT NOT NULL DEFAULT '', "
+                          "thumbnail TEXT NOT NULL DEFAULT '', "
+                          "last_active INTEGER NOT NULL DEFAULT 0, "
+                          "group_id INTEGER NOT NULL DEFAULT 1)")
+        .arg(name);
+}
+
+QString groupTable(const QString &name)
+{
+    return QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
+                          "group_id INTEGER PRIMARY KEY, "
+                          "name TEXT NOT NULL DEFAULT '', "
+                          "position INTEGER NOT NULL)")
+        .arg(name);
+}
+
 const QStringList &schemaStatements()
 {
     static const QStringList statements{
-        QStringLiteral("CREATE TABLE IF NOT EXISTS tab ("
-                       "tab_id INTEGER PRIMARY KEY, "
-                       "position INTEGER NOT NULL, "
-                       "url TEXT NOT NULL, "
-                       "title TEXT NOT NULL DEFAULT '', "
-                       "favicon TEXT NOT NULL DEFAULT '', "
-                       "thumbnail TEXT NOT NULL DEFAULT '', "
-                       "last_active INTEGER NOT NULL DEFAULT 0, "
-                       "group_id INTEGER NOT NULL DEFAULT 1, "
-                       "private INTEGER NOT NULL DEFAULT 0)"),
-        QStringLiteral("CREATE TABLE IF NOT EXISTS tab_group ("
-                       "group_id INTEGER PRIMARY KEY, "
-                       "name TEXT NOT NULL DEFAULT '', "
-                       "position INTEGER NOT NULL, "
-                       "private INTEGER NOT NULL DEFAULT 0)"),
+        tabTable(QStringLiteral("tab")),
+        groupTable(QStringLiteral("tab_group")),
         QStringLiteral("CREATE TABLE IF NOT EXISTS closed_tab ("
                        "id INTEGER PRIMARY KEY, "
                        "url TEXT NOT NULL, "
@@ -184,12 +196,12 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews, schema 2 the cover's order of tabs, schema 3
-    // tab groups and schema 4 the private group. CREATE TABLE IF NOT EXISTS above
-    // leaves an existing table alone, so the columns are added here; asking the table
-    // rather than the version number makes this correct whichever way the database
-    // was created. Every tab from before schema 4 lands in group 1, which TabModel
-    // creates when no group row claims the id.
+    // Schema 1 predates tab previews, schema 2 the cover's order of tabs and schema 3
+    // tab groups. CREATE TABLE IF NOT EXISTS above leaves an existing table alone, so
+    // the columns are added here; asking the table rather than the version number
+    // makes this correct whichever way the database was created. Every tab from
+    // before schema 4 lands in group 1, which TabModel creates when no group row
+    // claims the id.
     struct Column
     {
         const char *table;
@@ -200,8 +212,6 @@ bool Storage::applySchema() const
         {"tab", "thumbnail", "TEXT NOT NULL DEFAULT ''"},
         {"tab", "last_active", "INTEGER NOT NULL DEFAULT 0"},
         {"tab", "group_id", "INTEGER NOT NULL DEFAULT 1"},
-        {"tab", "private", "INTEGER NOT NULL DEFAULT 0"},
-        {"tab_group", "private", "INTEGER NOT NULL DEFAULT 0"},
     };
     for (const Column &column : columns) {
         if (hasColumn(QLatin1String(column.table), QLatin1String(column.name))) {
@@ -214,6 +224,44 @@ bool Storage::applySchema() const
             qWarning() << "Storage:" << query.lastError().text();
             db.rollback();
             return false;
+        }
+    }
+    // Schema 5 kept private tabs, as a flag on the tab and on the group; schema 6
+    // does not. A table that still carries the column loses its private rows and is
+    // rebuilt without it -- copied, because SQLite before 3.35 cannot drop a column.
+    // The ids are kept, so the tabs still name their groups.
+    struct Rebuild
+    {
+        const char *table;
+        const char *kept;
+        QString (*create)(const QString &);
+    };
+    const QList<Rebuild> rebuilds{
+        {"tab", "tab_id, position, url, title, favicon, thumbnail, last_active, group_id",
+         &tabTable},
+        {"tab_group", "group_id, name, position", &groupTable},
+    };
+    for (const Rebuild &rebuild : rebuilds) {
+        const QString table = QLatin1String(rebuild.table);
+        if (!hasColumn(table, QStringLiteral("private"))) {
+            continue;
+        }
+        const QString fresh = table + QStringLiteral("_rebuilt");
+        const QString kept = QLatin1String(rebuild.kept);
+        const QStringList steps{
+            QStringLiteral("DELETE FROM %1 WHERE private = 1").arg(table),
+            rebuild.create(fresh),
+            QStringLiteral("INSERT INTO %1 (%2) SELECT %2 FROM %3").arg(fresh, kept, table),
+            QStringLiteral("DROP TABLE %1").arg(table),
+            QStringLiteral("ALTER TABLE %1 RENAME TO %2").arg(fresh, table),
+        };
+        for (const QString &step : steps) {
+            QSqlQuery query(db);
+            if (!query.exec(step)) {
+                qWarning() << "Storage:" << query.lastError().text();
+                db.rollback();
+                return false;
+            }
         }
     }
     QSqlQuery pragma(db);

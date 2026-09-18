@@ -154,10 +154,9 @@ Item {
                         }
                         y: (button.height - height) / 2
                         // An unnamed group is named by what it holds, as Safari names
-                        // the tabs outside every group; the private one by what it is.
-                        text: model.privateGroup ? qsTr("Private")
-                                                 : model.name.length > 0 ? model.name
-                                                                         : qsTr("%n tab(s)", "", model.tabCount)
+                        // the tabs outside every group.
+                        text: model.name.length > 0 ? model.name
+                                                    : qsTr("%n tab(s)", "", model.tabCount)
                         font.pixelSize: Theme.fontSizeSmall
                         color: button.current || tap.pressed ? Theme.highlightColor
                                                              : Theme.primaryColor

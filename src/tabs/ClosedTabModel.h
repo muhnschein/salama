@@ -14,8 +14,7 @@ class TabPersistence;
 
 // The tabs closed most recently, newest first, for opening again from the panel
 // under the grid's foot. Kept to a few dozen and written to the database with the
-// tabs, so what was closed before a restart is still there after it. Private tabs
-// are never recorded: closing one is meant to leave nothing behind.
+// tabs, so what was closed before a restart is still there after it.
 class ClosedTabModel : public QAbstractListModel
 {
     Q_OBJECT

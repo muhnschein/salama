@@ -1,5 +1,9 @@
 # 0017 — One private group, whose tabs are kept
 
+**Superseded by 0019.** There are no private tabs any more; this record is kept for
+the history of the idea and for the shape a lock would take if one ever became
+possible for a Harbour application.
+
 ## Context
 Private tabs were a flag on a tab: the engine kept their cookies apart, the model kept
 them out of history and wrote no preview, and they were never written to the

@@ -16,7 +16,6 @@ class tst_core : public QObject
 
 private slots:
     void wiresTabsToHistory();
-    void privateTabsLeaveNoHistory();
     void wiresFaviconsAndActiveUrlToBookmarks();
     void restoresState();
 };
@@ -39,17 +38,6 @@ void tst_core::wiresTabsToHistory()
     core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
     QCOMPARE(core.history()->data(core.history()->index(0, 0), HistoryModel::TitleRole).toString(),
              QStringLiteral("Alpha"));
-}
-
-void tst_core::privateTabsLeaveNoHistory()
-{
-    QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
-    const int id = core.tabs()->newTab(QStringLiteral("https://secret.example/"), true);
-    core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/"));
-    core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/page"));
-    core.tabs()->updateTitle(id, QStringLiteral("Secret"));
-    QCOMPARE(core.history()->count(), 0);
 }
 
 void tst_core::wiresFaviconsAndActiveUrlToBookmarks()

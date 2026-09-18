@@ -24,7 +24,6 @@ public:
         NameRole,
         TabCountRole,
         CurrentRole,
-        PrivateRole,
         // The group every ordinary tab starts in, which is neither renamed nor removed.
         DefaultRole
     };

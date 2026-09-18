@@ -47,8 +47,6 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
         return tab.title;
     case FaviconRole:
         return tab.favicon;
-    case PrivateRole:
-        return tab.isPrivate;
     case GroupIdRole:
         return row.groupId;
     case GroupNameRole: {
@@ -57,10 +55,6 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
     }
     case GroupTabCountRole:
         return m_tabs->tabCountInGroup(row.groupId);
-    case GroupPrivateRole: {
-        const int groupIndex = m_tabs->groupIndexOf(row.groupId);
-        return groupIndex >= 0 && m_tabs->groups().at(groupIndex).isPrivate;
-    }
     case GroupStartRole:
         return row.groupStart;
     default:
@@ -75,11 +69,9 @@ QHash<int, QByteArray> TabSearchModel::roleNames() const
         {UrlRole, QByteArrayLiteral("url")},
         {TitleRole, QByteArrayLiteral("title")},
         {FaviconRole, QByteArrayLiteral("favicon")},
-        {PrivateRole, QByteArrayLiteral("privateTab")},
         {GroupIdRole, QByteArrayLiteral("groupId")},
         {GroupNameRole, QByteArrayLiteral("groupName")},
         {GroupTabCountRole, QByteArrayLiteral("groupTabCount")},
-        {GroupPrivateRole, QByteArrayLiteral("groupPrivate")},
         {GroupStartRole, QByteArrayLiteral("groupStart")},
     };
 }

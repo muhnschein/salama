@@ -24,8 +24,6 @@ public:
     QList<Tab> loadTabs() const;
     int loadActiveTabId() const;
 
-    // Private tabs are written like the rest, with their flag: the private group keeps
-    // its tabs across a restart (docs/DECISIONS/0017-private-group.md).
     void insertTab(const Tab &tab);
     void updateTab(const Tab &tab);
     void removeTab(int tabId);

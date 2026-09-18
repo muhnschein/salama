@@ -36,8 +36,6 @@ QVariant TabGroupModel::data(const QModelIndex &index, int role) const
         return m_tabs->tabCountInGroup(group.id);
     case CurrentRole:
         return group.id == m_tabs->currentGroupId();
-    case PrivateRole:
-        return group.isPrivate;
     case DefaultRole:
         return group.id == m_tabs->defaultGroupId();
     default:
@@ -52,7 +50,6 @@ QHash<int, QByteArray> TabGroupModel::roleNames() const
         {NameRole, QByteArrayLiteral("name")},
         {TabCountRole, QByteArrayLiteral("tabCount")},
         {CurrentRole, QByteArrayLiteral("currentGroup")},
-        {PrivateRole, QByteArrayLiteral("privateGroup")},
         {DefaultRole, QByteArrayLiteral("defaultGroup")},
     };
 }

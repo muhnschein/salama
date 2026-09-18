@@ -80,10 +80,7 @@ Page {
             }
         }
 
-        // A tab moves between ordinary groups only: the private group is not a place
-        // an ordinary tab can be put, nor one a private tab can leave.
         delegate: TabGroupDelegate {
-            enabled: groupsPage.moveTabId === 0 || !model.privateGroup
             onClicked: groupsPage.choose(index, model.groupId)
             onRenameRequested: pageStack.push(Qt.resolvedUrl("TabGroupDialog.qml"), {
                                                   "groupId": model.groupId,

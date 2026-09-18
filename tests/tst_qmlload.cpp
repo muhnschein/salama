@@ -49,7 +49,6 @@ private slots:
     void faviconResolvedAfterLoad();
     void tabGrid();
     void tabGroups();
-    void privateTabsInTheStrip();
     void previewGestures();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
@@ -292,7 +291,6 @@ void tst_qmlload::rootWindowLoads()
     QVERIFY(webView != nullptr);
     QCOMPARE(currentWebView(), webView);
     QCOMPARE(webView->property("url").toUrl().toString(), Settings::defaultHomePage());
-    QVERIFY(!webView->property("privateMode").toBool());
     // The engine is told to lay pages out larger than the platform's own default.
     // The engine is told to lay pages out larger than the platform's own default of
     // 1.5 * Theme.pixelRatio.
@@ -643,14 +641,6 @@ void tst_qmlload::thumbnailCapturedOnLoad()
     QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
              captured);
 
-    // A private tab is offered no path, so nothing of it is written.
-    webView->setProperty("grabSaveFails", false);
-    m_core->tabs()->newTab(QStringLiteral("https://secret.example/"), true);
-    QObject *privateView = currentWebView();
-    privateView->setProperty("loading", true);
-    privateView->setProperty("loading", false);
-    QVERIFY(privateView->property("lastGrabPath").toString().isEmpty());
-    QVERIFY(m_core->tabs()->activeFavicon().isEmpty() || true);
     Q_UNUSED(tabId)
 }
 
@@ -702,18 +692,15 @@ void tst_qmlload::tabGrid()
     QVERIFY(grid->property("visible").toBool());
     // The grid carries two rows of its own, drawn over the cells: the groups, and the
     // one control it offers. The first is also what keeps the top row of cells clear
-    // of the screen's own cutout. The private group first, then the default one,
-    // unnamed, so named by its count.
+    // of the screen's own cutout. One group so far, unnamed, so named by its count.
     QVERIFY(find(QStringLiteral("newTabRow")) != nullptr);
     QList<QObject *> groupLabels = findAll(QStringLiteral("tabGroupLabel"));
-    QCOMPARE(groupLabels.count(), 2);
-    QCOMPARE(groupLabels.first()->property("text").toString(), QStringLiteral("Private"));
-    QCOMPARE(groupLabels.last()->property("text").toString(), QStringLiteral("2 tab(s)"));
+    QCOMPARE(groupLabels.count(), 1);
+    QCOMPARE(groupLabels.first()->property("text").toString(), QStringLiteral("2 tab(s)"));
     // The current group is the one underlined.
     QList<QObject *> underlines = findAll(QStringLiteral("tabGroupUnderline"));
-    QCOMPARE(underlines.count(), 2);
-    QVERIFY(!underlines.first()->property("visible").toBool());
-    QVERIFY(underlines.last()->property("visible").toBool());
+    QCOMPARE(underlines.count(), 1);
+    QVERIFY(underlines.first()->property("visible").toBool());
 
     // Both the head row's strip and the first row of cells clear the display's own
     // cutout: the head sat under the notch, and so did the close button in the corner
@@ -850,13 +837,6 @@ void tst_qmlload::tabGrid()
     QCOMPARE(m_core->tabs()->count(), 2);
     QVERIFY(!page->property("tabsOpen").toBool());
     QCOMPARE(m_core->tabs()->activeUrl(), Settings::defaultHomePage());
-
-    // A private tab says so in the bar as soon as it is the current one.
-    m_core->tabs()->newTab(QStringLiteral("https://secret.example/"), true);
-    QVERIFY(currentWebView()->property("privateMode").toBool());
-    tapBar(QStringLiteral("address"));
-    QCOMPARE(find(QStringLiteral("addressField"))->property("label").toString(),
-             QStringLiteral("Private tab"));
 }
 
 void tst_qmlload::tabGroups()
@@ -867,18 +847,18 @@ void tst_qmlload::tabGroups()
     QObject *page = find(QStringLiteral("browserPage"));
     pullUpToTabs();
 
-    // The strip holds every group, the private one first and the default one after it.
+    // The strip holds every group: the default one alone so far.
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     QVERIFY(strip != nullptr);
-    QCOMPARE(findAll(QStringLiteral("tabGroupItem")).count(), 2);
-    QCOMPARE(tabs->currentGroupIndex(), 1);
+    QCOMPARE(findAll(QStringLiteral("tabGroupItem")).count(), 1);
+    QCOMPARE(tabs->currentGroupIndex(), 0);
 
     // The edit corner leads to the list of groups, where a new one is made from the
     // row under the last group; it is the current group from then on, and the grid
     // under the page shows it empty.
     click(find(QStringLiteral("editGroupsButton")));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
-    QCOMPARE(findAll(QStringLiteral("tabGroupDelegate")).count(), 2);
+    QCOMPARE(findAll(QStringLiteral("tabGroupDelegate")).count(), 1);
     QVERIFY(find(QStringLiteral("tabGroupDelegate"))->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("newGroupMenu")) == nullptr);
     click(find(QStringLiteral("newGroupButton")));
@@ -888,52 +868,44 @@ void tst_qmlload::tabGroups()
     find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Work"));
     QMetaObject::invokeMethod(dialog, "accept");
     popPage();
-    QCOMPARE(tabs->groups().count(), 3);
-    const int work = tabs->groups().at(2).id;
-    QCOMPARE(tabs->groups().at(2).name, QStringLiteral("Work"));
+    QCOMPARE(tabs->groups().count(), 2);
+    const int work = tabs->groups().at(1).id;
+    QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Work"));
     QCOMPARE(tabs->currentGroupId(), work);
     QList<QObject *> delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QCOMPARE(delegates.count(), 3);
-    // The private group is named for what it is, and offers neither rename nor
-    // delete; nor does the default group, which is named by its count.
+    QCOMPARE(delegates.count(), 2);
+    // The default group is named by its count, and offers neither rename nor delete.
     QCOMPARE(findObjects(delegates.at(0), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
                  .toString(),
-             QStringLiteral("Private"));
+             QStringLiteral("1 tab(s)"));
     QCOMPARE(findObjects(delegates.at(1), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
                  .toString(),
-             QStringLiteral("1 tab(s)"));
-    QCOMPARE(findObjects(delegates.at(2), QStringLiteral("tabGroupName"))
-                 .first()
-                 ->property("text")
-                 .toString(),
              QStringLiteral("Work"));
-    for (int fixed = 0; fixed < 2; ++fixed) {
-        QVERIFY(!findObjects(delegates.at(fixed), QStringLiteral("renameGroupMenu"))
-                     .first()
-                     ->property("enabled")
-                     .toBool());
-        QVERIFY(!findObjects(delegates.at(fixed), QStringLiteral("deleteGroupMenu"))
-                     .first()
-                     ->property("enabled")
-                     .toBool());
-    }
-    QVERIFY(findObjects(delegates.at(2), QStringLiteral("renameGroupMenu"))
+    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("renameGroupMenu"))
+                 .first()
+                 ->property("enabled")
+                 .toBool());
+    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("deleteGroupMenu"))
+                 .first()
+                 ->property("enabled")
+                 .toBool());
+    QVERIFY(findObjects(delegates.at(1), QStringLiteral("renameGroupMenu"))
                 .first()
                 ->property("enabled")
                 .toBool());
 
     // Tapping a group there makes it current and returns to the grid, still open.
-    click(delegates.at(2));
+    click(delegates.at(1));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QVERIFY(page->property("tabsOpen").toBool());
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 0);
-    QCOMPARE(findAll(QStringLiteral("tabGroupItem")).count(), 3);
-    QCOMPARE(tabs->currentGroupIndex(), 2);
-    QVERIFY(findAll(QStringLiteral("tabGroupUnderline")).at(2)->property("visible").toBool());
+    QCOMPARE(findAll(QStringLiteral("tabGroupItem")).count(), 2);
+    QCOMPARE(tabs->currentGroupIndex(), 1);
+    QVERIFY(findAll(QStringLiteral("tabGroupUnderline")).at(1)->property("visible").toBool());
     QCOMPARE(tabs->activeTabId(), first);
 
     // A new tab opens in the current group.
@@ -948,7 +920,7 @@ void tst_qmlload::tabGroups()
 
     // A tap on a group in the strip makes it current, and its last tab comes to the
     // front.
-    evaluate(strip, QStringLiteral("select(1)"));
+    evaluate(strip, QStringLiteral("select(0)"));
     QCOMPARE(tabs->currentGroupId(), home);
     QCOMPARE(tabs->activeTabId(), first);
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
@@ -991,7 +963,7 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->currentGroupId(), work);
     QCOMPARE(evaluate(strip, QStringLiteral("currentButton.current")).toBool(), true);
     QCOMPARE(evaluate(strip, QStringLiteral("currentButton")).value<QObject *>(),
-             findAll(QStringLiteral("tabGroupItem")).at(2));
+             findAll(QStringLiteral("tabGroupItem")).at(1));
     // The term does not outlive the page.
     QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
 
@@ -999,11 +971,9 @@ void tst_qmlload::tabGroups()
     QObject *groupsPage = openMenuItem(QStringLiteral("moveToGroupItem"));
     QCOMPARE(groupsPage->objectName(), QStringLiteral("tabGroupsPage"));
     QCOMPARE(groupsPage->property("moveTabId").toInt(), second);
-    // Not into the private group, though: that row is not on offer.
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QVERIFY(!delegates.first()->property("enabled").toBool());
-    QVERIFY(delegates.at(1)->property("enabled").toBool());
-    click(delegates.at(1));
+    QVERIFY(delegates.first()->property("enabled").toBool());
+    click(delegates.at(0));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QCOMPARE(tabs->tabCountInGroup(home), 2);
     QCOMPARE(tabs->tabCountInGroup(work), 0);
@@ -1021,61 +991,43 @@ void tst_qmlload::tabGroups()
     QMetaObject::invokeMethod(dialog, "accept");
     popPage();
     popPage();
-    QCOMPARE(tabs->groups().count(), 4);
-    QCOMPARE(tabs->currentGroupId(), tabs->groups().at(3).id);
-    QCOMPARE(tabs->tabCountInGroup(tabs->groups().at(3).id), 1);
+    QCOMPARE(tabs->groups().count(), 3);
+    QCOMPARE(tabs->currentGroupId(), tabs->groups().at(2).id);
+    QCOMPARE(tabs->tabCountInGroup(tabs->groups().at(2).id), 1);
     QCOMPARE(tabs->tabCountInGroup(home), 1);
-    QVERIFY(tabs->groups().first().isPrivate);
 
     // Rename and delete are in the group's own menu; the default group has neither.
     pullUpToTabs();
     click(find(QStringLiteral("editGroupsButton")));
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QCOMPARE(delegates.count(), 4);
-    click(findObjects(delegates.at(2), QStringLiteral("renameGroupMenu")).first());
+    QCOMPARE(delegates.count(), 3);
+    click(findObjects(delegates.at(1), QStringLiteral("renameGroupMenu")).first());
     dialog = currentPage();
     QCOMPARE(dialog->property("groupId").toInt(), work);
     QCOMPARE(dialog->property("name").toString(), QStringLiteral("Work"));
     find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Play"));
     QMetaObject::invokeMethod(dialog, "accept");
     popPage();
-    QCOMPARE(tabs->groups().at(2).name, QStringLiteral("Play"));
+    QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Play"));
 
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QObject *deleteMenu = findObjects(delegates.at(3), QStringLiteral("deleteGroupMenu")).first();
+    QObject *deleteMenu = findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first();
     QVERIFY(deleteMenu->property("enabled").toBool());
     click(deleteMenu);
-    QCOMPARE(tabs->groups().count(), 3);
+    QCOMPARE(tabs->groups().count(), 2);
     QCOMPARE(tabs->count(), 1);
     QCOMPARE(tabs->activeTabId(), first);
-    click(findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(2),
+    click(findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1),
                       QStringLiteral("deleteGroupMenu"))
               .first());
-    QCOMPARE(tabs->groups().count(), 2);
-    QVERIFY(!findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1),
+    QCOMPARE(tabs->groups().count(), 1);
+    QVERIFY(!findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(0),
                          QStringLiteral("deleteGroupMenu"))
                  .first()
                  ->property("enabled")
                  .toBool());
-    QCOMPARE(tabs->currentGroupIndex(), 1);
+    QCOMPARE(tabs->currentGroupIndex(), 0);
     popPage();
-}
-
-void tst_qmlload::privateTabsInTheStrip()
-{
-    TabModel *tabs = m_core->tabs();
-    // A private tab from the menu goes to the private group, which the strip then
-    // shows current; the tab in front being private, the menu offers no move.
-    openMenuItem(QStringLiteral("newPrivateTabItem"));
-    QVERIFY(tabs->activeIsPrivate());
-    QCOMPARE(tabs->currentGroupId(), tabs->privateGroupId());
-    QVERIFY(currentWebView()->property("privateMode").toBool());
-    tapBar(QStringLiteral("menu"));
-    QVERIFY(!find(QStringLiteral("moveToGroupItem"))->property("enabled").toBool());
-    popPage();
-    pullUpToTabs();
-    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
-    QVERIFY(findAll(QStringLiteral("tabGroupUnderline")).first()->property("visible").toBool());
 }
 
 void tst_qmlload::previewGestures()
@@ -1267,10 +1219,6 @@ void tst_qmlload::menuPage()
     QObject *page = openMenuItem(QStringLiteral("newTabItem"));
     QCOMPARE(page->objectName(), QStringLiteral("browserPage"));
     QCOMPARE(m_core->tabs()->count(), 2);
-
-    openMenuItem(QStringLiteral("newPrivateTabItem"));
-    QCOMPARE(m_core->tabs()->count(), 3);
-    QVERIFY(m_core->tabs()->activeIsPrivate());
 
     tapBar(QStringLiteral("menu"));
     auto *bookmarkLabel = find(QStringLiteral("bookmarkItem"))->findChild<QObject *>();

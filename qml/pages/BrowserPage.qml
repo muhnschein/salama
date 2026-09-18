@@ -310,7 +310,6 @@ WebViewPage {
                     delegate: Loader {
                         readonly property int tabId: model.tabId
                         readonly property bool isCurrent: model.activeTab
-                        readonly property bool privateTab: model.privateTab
                         readonly property bool liveTab: model.liveTab
                         readonly property string initialUrl: model.url
                         property bool shown: false
@@ -345,7 +344,6 @@ WebViewPage {
                 y: browserPage.height - height
 
                 url: TabModel.activeUrl
-                privateTab: TabModel.activeIsPrivate
                 loading: browserPage.loading
                 loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
                 tlsBroken: browserPage.tlsBroken
@@ -394,7 +392,6 @@ WebViewPage {
             active: isCurrent && Qt.application.state === Qt.ApplicationActive
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
-            privateMode: privateTab
             desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
@@ -453,7 +450,7 @@ WebViewPage {
             }
 
             // The model hands out a fresh file name per capture and removes the one it
-            // replaces; a private tab is given none, so none of it reaches the disk.
+            // replaces.
             function captureThumbnail() {
                 if (!isCurrent) {
                     return

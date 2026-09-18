@@ -121,10 +121,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New private tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Remove bookmark</source>
         <translation type="unfinished"></translation>
     </message>
@@ -165,10 +161,6 @@
     <name>NavigationBar</name>
     <message>
         <source>Search or enter address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Private tab</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -303,10 +295,6 @@
             <numerusform>%n tabs</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Private</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>TabGroupDialog</name>
@@ -336,10 +324,6 @@
             <numerusform>%n tabs</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Private</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>TabGroupsPage</name>
@@ -359,10 +343,6 @@
 <context>
     <name>TabPreview</name>
     <message>
-        <source>Private tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No preview</source>
         <translation type="unfinished"></translation>
     </message>
@@ -375,14 +355,6 @@
             <numerusform>%n tab</numerusform>
             <numerusform>%n tabs</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Private tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Private</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

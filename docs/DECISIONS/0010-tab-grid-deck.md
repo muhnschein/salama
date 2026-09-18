@@ -105,8 +105,8 @@ same number upstream writes as `12 * Theme.pixelRatio`.
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
-the pull and the tap, "New tab" is the button in the grid's header, "New private tab" is
-in the menu, and "Close all tabs" is in Settings next to the other clearing actions.
+the pull and the tap, "New tab" is the button in the grid's header, and "Close all
+tabs" is in Settings next to the other clearing actions.
 
 ### What says an edge can be dragged
 **Silica draws nothing for this.** Jolla's own source settles that much: `PullDownMenu`

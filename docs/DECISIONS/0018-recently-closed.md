@@ -9,10 +9,9 @@ desktop browser has: a list of what was closed lately, to open again.
 `ClosedTabModel` (`ClosedTabs`) keeps the last thirty tabs closed, newest first, each
 as the address, title and favicon it had, in a `closed_tab` table (schema 5) so that
 the list survives a restart. `TabModel` records every tab it closes, one at a time or
-all at once, except private ones (0017). `reopen(row)` opens the tab again in the
-current group — the default group when the private one is current — gives it
-back its title and icon so the grid's cell can say them before the page has loaded,
-and takes it off the list.
+all at once. `reopen(row)` opens the tab again in the current group, gives it back its
+title and icon so the grid's cell can say them before the page has loaded, and takes
+it off the list.
 
 The list is shown by **holding** the new-tab button in the grid's foot row: a tap
 still opens a tab, a hold brings up `components/RecentlyClosedPanel.qml`, a Silica

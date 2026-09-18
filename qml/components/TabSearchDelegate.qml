@@ -18,16 +18,15 @@ Column {
     SectionHeader {
         objectName: "tabSearchGroupHeader"
         visible: model.groupStart
-        text: model.groupPrivate ? qsTr("Private")
-                                 : model.groupName.length > 0 ? model.groupName
-                                                              : qsTr("%n tab(s)", "", model.groupTabCount)
+        text: model.groupName.length > 0 ? model.groupName
+                                         : qsTr("%n tab(s)", "", model.groupTabCount)
     }
 
     TabRow {
         objectName: "tabSearchItem"
         width: parent.width
         title: model.title
-        subtitle: model.privateTab ? qsTr("Private tab") : model.url
+        subtitle: model.url
         icon: model.favicon
         onClicked: delegate.chosen()
     }

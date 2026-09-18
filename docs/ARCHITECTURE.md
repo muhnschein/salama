@@ -16,12 +16,12 @@ enforces both.
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
 - `Storage` — the single SQLite file and its schema.
-- `TabModel` + `TabPersistence` — open tabs, the active tab, tab groups including the
-  private one, the current group, and which tabs keep their page loaded. `TabModel` owns
+- `TabModel` + `TabPersistence` — open tabs, the active tab, tab groups, the current
+  group, and which tabs keep their page loaded. `TabModel` owns
   three views of itself for QML: `GroupTabModel` (`GroupTabs`), the current group's
   tabs, which the grid shows; `TabGroupModel` (`TabGroups`), the groups, which the strip
   above the grid shows and the group actions are reached through
-  (`DECISIONS/0015-tab-groups.md`, `0017-private-group.md`); and `ClosedTabModel`
+  (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
   (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
 - `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
@@ -38,12 +38,10 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
    grabs a page preview into the path `TabModel.thumbnailPath()` hands out — on load
    completion, when the grid opens, and as the application leaves the screen — reporting
    it back through `updateThumbnail()`.
-3. `TabModel` updates its row, persists non-private tabs, and emits `visited`,
-   `titleUpdated`, `faviconUpdated` for non-private tabs only.
-4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. Private tabs
-   therefore never reach history, and no preview of them is written; the engine's
-   `privateMode` keeps cookies out. The tabs themselves are stored, so the private group
-   survives a restart (`DECISIONS/0017-private-group.md`).
+3. `TabModel` updates its row, persists the tab, and emits `visited`, `titleUpdated`,
+   `faviconUpdated`.
+4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. There are no
+   private tabs (`DECISIONS/0019-no-private-tabs.md`).
 5. `TabModel.activeTabDataChanged` feeds the address bar and
    `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
    how many tabs are open over a monochrome field of their previews, most recently in
@@ -84,13 +82,14 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-5); a newer database than the build refuses to open rather than corrupt. Migration asks
+6); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
-either schema converges on the same shape.
+any earlier schema converges on the same shape; a column that a later schema dropped
+takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
 
 ```
-tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id, private
-tab_group        group_id PK, name, position, private
+tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
+tab_group        group_id PK, name, position
 closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)

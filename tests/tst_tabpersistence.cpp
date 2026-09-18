@@ -19,7 +19,7 @@ class tst_tabpersistence : public QObject
 private slots:
     void roundTrip();
     void saveOrderRenumbers();
-    void keepsPrivateTabsAndIgnoresInvalidOnes();
+    void ignoresInvalidTabs();
     void activeTabId();
     void removeAll();
     void groupsRoundTrip();
@@ -28,7 +28,7 @@ private slots:
 
 namespace {
 
-Tab makeTab(int id, const QString &url, bool isPrivate = false)
+Tab makeTab(int id, const QString &url)
 {
     Tab tab;
     tab.id = id;
@@ -36,7 +36,6 @@ Tab makeTab(int id, const QString &url, bool isPrivate = false)
     tab.title = QStringLiteral("Title %1").arg(id);
     tab.lastActive = id;
     tab.groupId = 1;
-    tab.isPrivate = isPrivate;
     return tab;
 }
 
@@ -104,26 +103,22 @@ void tst_tabpersistence::saveOrderRenumbers()
     QCOMPARE(persistence.loadTabs().at(3).id, 4);
 }
 
-void tst_tabpersistence::keepsPrivateTabsAndIgnoresInvalidOnes()
+void tst_tabpersistence::ignoresInvalidTabs()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
     TabPersistence persistence(storage);
 
-    // A private tab is written with its flag: the private group keeps its tabs.
-    persistence.insertTab(makeTab(1, QStringLiteral("https://secret.example/"), true));
+    persistence.insertTab(makeTab(1, QStringLiteral("https://first.example/")));
     persistence.insertTab(makeTab(0, QStringLiteral("https://invalid.example/")));
     QList<Tab> tabs = persistence.loadTabs();
     QCOMPARE(tabs.count(), 1);
-    QVERIFY(tabs.first().isPrivate);
-    QCOMPARE(tabs.first().url, QStringLiteral("https://secret.example/"));
+    QCOMPARE(tabs.first().url, QStringLiteral("https://first.example/"));
 
     persistence.insertTab(makeTab(2, QStringLiteral("https://public.example/")));
-    Tab update = makeTab(2, QStringLiteral("https://changed.example/"), true);
-    persistence.updateTab(update);
+    persistence.updateTab(makeTab(2, QStringLiteral("https://changed.example/")));
     tabs = persistence.loadTabs();
     QCOMPARE(tabs.at(1).url, QStringLiteral("https://changed.example/"));
-    QVERIFY(tabs.at(1).isPrivate);
     persistence.updateTab(makeTab(0, QStringLiteral("https://invalid.example/")));
     QCOMPARE(persistence.loadTabs().count(), 2);
 }
@@ -167,7 +162,6 @@ void tst_tabpersistence::groupsRoundTrip()
     TabGroup second;
     second.id = 2;
     second.name = QStringLiteral("Work");
-    second.isPrivate = true;
     TabGroup invalid;
     persistence.insertGroup(first);
     persistence.insertGroup(second);
@@ -181,7 +175,7 @@ void tst_tabpersistence::groupsRoundTrip()
     QCOMPARE(groups.at(1), second);
     QVERIFY(groups.at(0) != groups.at(1));
     QVERIFY(groups.at(0).name.isEmpty());
-    QVERIFY(groups.at(1).isPrivate);
+    QCOMPARE(groups.at(1).name, QStringLiteral("Work"));
 
     // The order can be written back from a list.
     persistence.saveGroupOrder(QList<TabGroup>{second, invalid, first});

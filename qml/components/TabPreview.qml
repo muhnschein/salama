@@ -269,13 +269,12 @@ Item {
                 visible: status === Image.Ready
             }
 
-            // Shown until the tab has been displayed at least once, and for private
-            // tabs, whose pages are never written to disk.
+            // Shown until the tab has been displayed at least once.
             Label {
                 objectName: "tabPreviewPlaceholder"
                 anchors.centerIn: parent
                 visible: model.thumbnail.length === 0
-                text: model.privateTab ? qsTr("Private tab") : qsTr("No preview")
+                text: qsTr("No preview")
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
             }

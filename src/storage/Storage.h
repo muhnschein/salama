@@ -14,7 +14,7 @@ namespace Salama {
 class Storage
 {
 public:
-    static const int SchemaVersion = 5;
+    static const int SchemaVersion = 6;
 
     explicit Storage(const QString &dataDirectory);
     ~Storage();

@@ -22,7 +22,6 @@ Item {
     id: navigationBar
 
     property string url
-    property bool privateTab: false
     property bool loading: false
     property int loadProgress: 0
     property bool canGoBack: false
@@ -254,7 +253,6 @@ Item {
         z: 1
         url: navigationBar.url
         tlsBroken: navigationBar.tlsBroken
-        privateTab: navigationBar.privateTab
         pressed: gestureArea.pressedRegion === "address"
         maximumWidth: navigationBar.centredWidth
         fontSize: Theme.fontSizeSmall
@@ -275,7 +273,6 @@ Item {
         // its own presses for the caret, and the rest of the bar stays live.
         z: 1
         visible: navigationBar.editing
-        label: navigationBar.privateTab ? qsTr("Private tab") : ""
         placeholderText: qsTr("Search or enter address")
         // The same size the host is drawn at, so the text does not jump when the
         // label becomes a field.

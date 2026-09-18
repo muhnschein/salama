@@ -66,7 +66,6 @@ Reuse policy:
 - Back, forward, reload, stop, share (`Sailfish.Share`)
 - History and bookmarks (SQLite) with management UI
 - Downloads via platform transfer UI
-- Private tabs in a private group (no history, cookies or previews; the tabs themselves persist)
 - Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows
 - Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
@@ -144,7 +143,6 @@ Not maintained: design narratives, roadmaps beyond this file, tutorials, marketi
 1. `sdk-harbour-rpmvalidator` rules on `MimeType=` and `x-scheme-handler` in `.desktop` files.
 2. `WebEngineSettings` support for UA switching and tracking-protection flags on the 5.2 engine.
 3. Download ownership when the app is not the default browser.
-4. Whether WebView supports per-tab private contexts or only a global one.
 5. Which Sailjail permissions the WebView needs for downloads and pickers.
 
 ## 10. Risks

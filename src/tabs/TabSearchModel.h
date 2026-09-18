@@ -27,11 +27,9 @@ public:
         UrlRole,
         TitleRole,
         FaviconRole,
-        PrivateRole,
         GroupIdRole,
         GroupNameRole,
         GroupTabCountRole,
-        GroupPrivateRole,
         // True on the first row of each group, where the page draws the group's heading.
         GroupStartRole
     };

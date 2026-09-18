@@ -121,10 +121,6 @@
         <translation>Uusi välilehti</translation>
     </message>
     <message>
-        <source>New private tab</source>
-        <translation>Uusi yksityinen välilehti</translation>
-    </message>
-    <message>
         <source>Remove bookmark</source>
         <translation>Poista kirjanmerkki</translation>
     </message>
@@ -166,10 +162,6 @@
     <message>
         <source>Search or enter address</source>
         <translation>Hae tai kirjoita osoite</translation>
-    </message>
-    <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
     </message>
 </context>
 <context>
@@ -303,10 +295,6 @@
             <numerusform>%n välilehteä</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Private</source>
-        <translation>Yksityinen</translation>
-    </message>
 </context>
 <context>
     <name>TabGroupDialog</name>
@@ -336,10 +324,6 @@
             <numerusform>%n välilehteä</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Private</source>
-        <translation>Yksityinen</translation>
-    </message>
 </context>
 <context>
     <name>TabGroupsPage</name>
@@ -359,10 +343,6 @@
 <context>
     <name>TabPreview</name>
     <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
-    </message>
-    <message>
         <source>No preview</source>
         <translation>Ei esikatselua</translation>
     </message>
@@ -375,14 +355,6 @@
             <numerusform>%n välilehti</numerusform>
             <numerusform>%n välilehteä</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Private tab</source>
-        <translation>Yksityinen välilehti</translation>
-    </message>
-    <message>
-        <source>Private</source>
-        <translation>Yksityinen</translation>
     </message>
 </context>
 <context>

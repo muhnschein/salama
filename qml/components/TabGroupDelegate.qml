@@ -14,9 +14,8 @@ ListItem {
 
     objectName: "tabGroupDelegate"
     contentHeight: Theme.itemSizeMedium
-    // The private group and the default one are what they are: neither renamed nor
-    // removed.
-    readonly property bool fixed: model.privateGroup || model.defaultGroup
+    // The default group is what it is: neither renamed nor removed.
+    readonly property bool fixed: model.defaultGroup
 
     menu: ContextMenu {
         MenuItem {
@@ -46,9 +45,7 @@ ListItem {
         Label {
             objectName: "tabGroupName"
             width: parent.width
-            text: model.privateGroup ? qsTr("Private")
-                                     : model.name.length > 0 ? model.name
-                                                             : qsTr("%n tab(s)", "", model.tabCount)
+            text: model.name.length > 0 ? model.name : qsTr("%n tab(s)", "", model.tabCount)
             truncationMode: TruncationMode.Fade
             color: delegate.highlighted || model.currentGroup ? Theme.highlightColor
                                                               : Theme.primaryColor
@@ -59,7 +56,7 @@ ListItem {
             width: parent.width
             text: qsTr("%n tab(s)", "", model.tabCount)
             // The name already says this for an unnamed group.
-            visible: model.name.length > 0 || model.privateGroup
+            visible: model.name.length > 0
             font.pixelSize: Theme.fontSizeExtraSmall
             color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
         }

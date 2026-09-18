@@ -6,6 +6,7 @@ Versions follow semantic versioning.
 ## [Unreleased]
 
 ### Changed
+- Private tabs are gone, and the private group with them: the platform offers a Harbour application no way to put a device-lock or fingerprint gate on them, and an unlocked "Private" group would promise what it cannot keep. A database that still has private tabs loses them on first start.
 - The application is now called salama (it was tuuli): package `harbour-salama`, Sailjail application name `salama`. The data directory changes with the name, so tabs, bookmarks, history and settings from a tuuli build do not carry over.
 
 ### Added
@@ -16,13 +17,12 @@ Versions follow semantic versioning.
 - Pages laid out at a phone-sized zoom rather than the engine's smaller default.
 - Tabs can be carried to another place in the grid; the order is kept across restarts.
 - Tab groups, as Safari has them: the grid shows one group at a time, and a strip along its head names them, the current one underlined and kept in the middle. An edit button in the strip's corner lists the groups to rename and delete them, with a row under the last one that makes a new group; a search button in the other corner finds a tab by title or address across every group. The menu moves the tab in front to another group, or to a new one. Groups survive a restart.
-- A private group, first in the strip, that every private tab belongs to; private tabs now survive a restart, still leaving no history and no preview. Neither it nor the default group after it can be renamed or deleted.
+- The default group, first in the strip, can be neither renamed nor deleted.
 - A preview in the grid is picked up to be carried by holding it for a second and a half, and closed by sliding it to the left. The close button in its corner is a near-opaque disc in the highlight colour with a cross through it, so it can be seen over any page.
 - Holding the new-tab button brings up the tabs closed lately, to open again; the list survives a restart.
 - Five pages stay loaded, the ones read most recently; the rest reload when their tab comes back. Settings chooses 3, 5, 10 or all. After ten minutes in the background the engine is asked to trim its memory.
 - Back, reload and stop on the navigation bar, which the address field takes over while it is being edited. Share in the menu.
 - History with search, and bookmarks with edit and remove.
-- Private tabs that leave no history and keep no cookies.
 - Downloads through the platform transfer UI.
 - Settings: home page, search engine (Qwant, Ecosia, Startpage), desktop site mode, keeping clear of the display's camera cutout (on by default), what the cover shows, clearing history, cookies and cache.
 - The slim navigation bar stays opaque while a page is scrolled, so the address stays readable over a light page; the page ends above it as it does above the whole bar.
