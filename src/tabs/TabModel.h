@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/history/declarativetabmodel.{h,cpp}
 // (Copyright (c) 2013 Jolla Ltd., (c) 2021 Open Mobile Platform LLC, MPL-2.0).
@@ -15,7 +15,7 @@
 #include <QString>
 #include <QStringList>
 
-namespace Tuuli {
+namespace Salama {
 
 class ClosedTabModel;
 class GroupTabModel;
@@ -206,4 +206,4 @@ private:
     int m_thumbnailCounter = 0;
 };
 
-} // namespace Tuuli
+} // namespace Salama

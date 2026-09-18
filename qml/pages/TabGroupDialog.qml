@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // A tab group's name: for a new group, or for one being renamed. Given a tab, the new
 // group is made with that tab in it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Dialog {
     id: dialog

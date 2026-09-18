@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Core.h"
 #include "QmlTypes.h"
 
@@ -14,19 +14,19 @@
 Q_DECL_EXPORT int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
-    app->setApplicationVersion(QStringLiteral(TUULI_VERSION));
+    app->setApplicationVersion(QStringLiteral(SALAMA_VERSION));
 
     QTranslator translator;
     const QString translationDir =
         SailfishApp::pathTo(QStringLiteral("translations")).toLocalFile();
-    if (translator.load(QLocale(), QStringLiteral("harbour-tuuli"), QStringLiteral("-"),
+    if (translator.load(QLocale(), QStringLiteral("harbour-salama"), QStringLiteral("-"),
                         translationDir)) {
         QGuiApplication::installTranslator(&translator);
     }
 
-    Tuuli::Core core(Tuuli::Storage::defaultDataDirectory(),
-                     Tuuli::Storage::defaultConfigFilePath());
-    Tuuli::registerQmlTypes(&core);
+    Salama::Core core(Salama::Storage::defaultDataDirectory(),
+                      Salama::Storage::defaultConfigFilePath());
+    Salama::registerQmlTypes(&core);
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->setSource(SailfishApp::pathToMainQml());

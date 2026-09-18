@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "storage/Storage.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
@@ -15,15 +15,15 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::ClosedTabModel;
-using Tuuli::GroupTabModel;
-using Tuuli::Storage;
-using Tuuli::Tab;
-using Tuuli::TabGroup;
-using Tuuli::TabGroupModel;
-using Tuuli::TabModel;
-using Tuuli::TabPersistence;
-using Tuuli::TabSearchModel;
+using Salama::ClosedTabModel;
+using Salama::GroupTabModel;
+using Salama::Storage;
+using Salama::Tab;
+using Salama::TabGroup;
+using Salama::TabGroupModel;
+using Salama::TabModel;
+using Salama::TabPersistence;
+using Salama::TabSearchModel;
 
 class tst_tabmodel : public QObject
 {
@@ -234,7 +234,7 @@ void tst_tabmodel::moveTabReorders()
     QCOMPARE(model.count(), 3);
 
     // The order is the one a restart reads back.
-    const QList<Tuuli::Tab> stored = persistence.loadTabs();
+    const QList<Salama::Tab> stored = persistence.loadTabs();
     QCOMPARE(stored.count(), 3);
     QCOMPARE(stored.at(0).id, second);
     QCOMPARE(stored.at(1).id, first);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "TabPersistence.h"
 
 #include "storage/Storage.h"
@@ -9,7 +9,7 @@
 #include <QVariant>
 #include <QtDebug>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -292,4 +292,4 @@ void TabPersistence::removeAllClosedTabs()
     run(query);
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -1,7 +1,7 @@
 # 0013 — The display's cutout is kept clear, and that can be turned off
 
 ## Context
-Recent Sailfish devices have a camera cutout at the top of the screen. tuuli draws to the
+Recent Sailfish devices have a camera cutout at the top of the screen. salama draws to the
 whole screen, so the cutout sat over whatever was underneath it: on device it took a bite
 out of the tab grid's head row, and it sits over the first line of every page.
 
@@ -47,12 +47,12 @@ from dconf with three values and lets a page under the cutout when it asks for t
 `viewport-fit: cover` *and* actually uses the safe-area insets it is given
 (`_policyAllowsCoverViewportFit`). Both of those facts — the page's `viewportFit` and its
 `safeAreaInsetUsage` — live on the browser's own web page item, not on the `WebView` that
-Harbour allows; tuuli cannot see either, so it cannot tell a page that has thought about
+Harbour allows; salama cannot see either, so it cannot tell a page that has thought about
 the cutout from one that has not. The guard is therefore on or off for every page, and the
 direction it errs in is the safe one: content visible where a page did not ask for
 anything, at the cost of the cutout's height for the pages that did.
 
 The cost is real estate — the cutout's height, on every page, all the time — which is why
-there is a switch. Landscape is not handled at all, because tuuli is portrait-only; the
+there is a switch. Landscape is not handled at all, because salama is portrait-only; the
 day that changes, the rest of upstream's cutout arithmetic (which edge the cutout is on
 for each orientation) is what to port.

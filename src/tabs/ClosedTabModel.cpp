@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "ClosedTabModel.h"
 
 #include "TabModel.h"
@@ -8,7 +8,7 @@
 #include <QDateTime>
 #include <algorithm>
 
-namespace Tuuli {
+namespace Salama {
 
 ClosedTabModel::ClosedTabModel(TabModel *tabs, TabPersistence *persistence)
     : QAbstractListModel(tabs)
@@ -148,4 +148,4 @@ void ClosedTabModel::clear()
     emit countChanged();
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -78,7 +78,7 @@ dashboard. It is `continue-on-error`: a Sonar outage costs a warning, not a buil
 
     sfdk config target=SailfishOS-<release>-aarch64
     sfdk build
-    sfdk check -s harbour RPMS/harbour-tuuli-*.aarch64.rpm
+    sfdk check -s harbour RPMS/harbour-salama-*.aarch64.rpm
 
 `.github/workflows/rpm.yml` does the same unattended, the way postivene's does: a
 `docker run` of `coderus/sailfishos-platform-sdk` pinned by digest (5.2.0.15), the
@@ -93,7 +93,7 @@ Run it from the Actions tab (`sfos_version` is the input), push a `v*` tag for a
 release, or a `build-*` tag to build a branch before the workflow reaches the default
 branch. The spec keeps `Version: 0.0.0` and `Release: 1`; the workflow stamps the
 tag's version and `1.<run number>` so each build installs over the previous one.
-The RPM is uploaded as `harbour-tuuli-aarch64-sfos<release>-<sha>` (30 days), and
+The RPM is uploaded as `harbour-salama-aarch64-sfos<release>-<sha>` (30 days), and
 Jolla's validator then runs on it; a rejection fails the job after the upload.
 
 Without the device SDK the host build links `src/main.cpp` against

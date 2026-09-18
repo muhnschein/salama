@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // One cell of the tab grid: the captured page preview with a close button in its
 // top-right corner, and the favicon and title underneath.

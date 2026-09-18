@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Core.h"
 
-namespace Tuuli {
+namespace Salama {
 
 Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject *parent)
     : QObject(parent)
@@ -64,4 +64,4 @@ EngineMessages *Core::engineMessages()
     return &m_engineMessages;
 }
 
-} // namespace Tuuli
+} // namespace Salama

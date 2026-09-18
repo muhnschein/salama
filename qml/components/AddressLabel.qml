@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // What the navigation bar shows while the address is not being edited: the host, and
 // a warning beside it when the engine is unhappy with the connection
 // (docs/DECISIONS/0011-address-and-security.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Row {
     id: address

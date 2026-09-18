@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "TabModel.h"
 
 #include "ClosedTabModel.h"
@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace Tuuli {
+namespace Salama {
 
 TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObject *parent)
     : QAbstractListModel(parent)
@@ -946,4 +946,4 @@ void TabModel::persist(const Tab &tab)
     }
 }
 
-} // namespace Tuuli
+} // namespace Salama

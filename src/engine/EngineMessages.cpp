@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "EngineMessages.h"
 
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -119,4 +119,4 @@ QString EngineMessages::resolveFavicon(const QString &pageUrl, const QString &hr
     return defaultFavicon(pageUrl);
 }
 
-} // namespace Tuuli
+} // namespace Salama

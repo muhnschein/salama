@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include "Tab.h"
@@ -7,7 +7,7 @@
 #include <QAbstractListModel>
 #include <QList>
 
-namespace Tuuli {
+namespace Salama {
 
 class TabModel;
 class TabPersistence;
@@ -59,4 +59,4 @@ private:
     int m_nextId = 1;
 };
 
-} // namespace Tuuli
+} // namespace Salama

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "QmlTypes.h"
 
 #include "Core.h"
@@ -10,11 +10,11 @@
 #include <QQmlEngine>
 #include <qqml.h>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
-const char *const ModuleUri = "harbour.tuuli";
+const char *const ModuleUri = "harbour.salama";
 
 Core *coreInstance = nullptr;
 
@@ -93,4 +93,4 @@ void registerQmlTypes(Core *core)
                                              &engineMessagesProvider);
 }
 
-} // namespace Tuuli
+} // namespace Salama

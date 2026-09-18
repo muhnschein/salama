@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include <QObject>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 // Every engine-facing string lives here so QML never carries an engine quirk.
 // Topics are what the platform Gecko embedding (embedlite-components) observes; the
@@ -66,4 +66,4 @@ public:
     Q_INVOKABLE static QString themeColor(const QString &value);
 };
 
-} // namespace Tuuli
+} // namespace Salama

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Static checks over the QML sources that host Qt would accept silently:
 //  * Sailfish.WebView is imported only where SCOPE.md §5 allows.
@@ -18,20 +18,20 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::BookmarkModel;
-using Tuuli::ClosedTabModel;
-using Tuuli::EngineMessages;
-using Tuuli::GroupTabModel;
-using Tuuli::HistoryModel;
-using Tuuli::Settings;
-using Tuuli::Storage;
-using Tuuli::TabGroupModel;
-using Tuuli::TabModel;
-using Tuuli::TabSearchModel;
+using Salama::BookmarkModel;
+using Salama::ClosedTabModel;
+using Salama::EngineMessages;
+using Salama::GroupTabModel;
+using Salama::HistoryModel;
+using Salama::Settings;
+using Salama::Storage;
+using Salama::TabGroupModel;
+using Salama::TabModel;
+using Salama::TabSearchModel;
 
 namespace {
 
-const char *const QmlDir = TUULI_SOURCE_DIR "/qml";
+const char *const QmlDir = SALAMA_SOURCE_DIR "/qml";
 
 QStringList qmlFiles()
 {
@@ -101,7 +101,7 @@ private slots:
 void tst_qmlstatic::filesExist()
 {
     const QStringList files = qmlFiles();
-    QVERIFY(files.contains(QStringLiteral("harbour-tuuli.qml")));
+    QVERIFY(files.contains(QStringLiteral("harbour-salama.qml")));
     QVERIFY(files.contains(QStringLiteral("pages/BrowserPage.qml")));
     QVERIFY(files.count() >= 10);
 }

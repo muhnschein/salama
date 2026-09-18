@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "settings/Settings.h"
 
 #include <QDir>
@@ -8,7 +8,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::Settings;
+using Salama::Settings;
 
 class tst_settings : public QObject
 {
@@ -30,7 +30,7 @@ private slots:
 void tst_settings::defaults()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.homePage(), Settings::defaultHomePage());
     QCOMPARE(settings.searchEngine(), Settings::defaultSearchEngine());
     QCOMPARE(settings.searchEngineIndex(), 0);
@@ -52,7 +52,7 @@ void tst_settings::defaults()
 void tst_settings::persistsValues()
 {
     QTemporaryDir dir;
-    const QString path = dir.path() + QStringLiteral("/tuuli.conf");
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Settings settings(path);
         QSignalSpy homeSpy(&settings, &Settings::homePageChanged);
@@ -86,7 +86,7 @@ void tst_settings::persistsValues()
 void tst_settings::searchEngineSelection()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QSignalSpy spy(&settings, &Settings::searchEngineChanged);
 
     settings.setSearchEngine(QStringLiteral("nonsense"));
@@ -106,7 +106,7 @@ void tst_settings::searchEngineSelection()
 void tst_settings::coverStyle()
 {
     QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.conf"));
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Settings settings(path);
     QSignalSpy spy(&settings, &Settings::coverStyleChanged);
 
@@ -150,7 +150,7 @@ void tst_settings::coverStyle()
 void tst_settings::searchUrl()
 {
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.searchUrl(QStringLiteral("sailfish os")),
              QStringLiteral("https://www.qwant.com/?q=sailfish%20os"));
     settings.setSearchEngine(QStringLiteral("ecosia"));
@@ -197,7 +197,7 @@ void tst_settings::urlForInput()
     QFETCH(QString, input);
     QFETCH(QString, expected);
     QTemporaryDir dir;
-    Settings settings(dir.path() + QStringLiteral("/tuuli.conf"));
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.urlForInput(input), expected);
 }
 
@@ -240,7 +240,7 @@ void tst_settings::displayAddress()
 void tst_settings::liveTabLimit()
 {
     QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.conf"));
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Settings settings(path);
     QSignalSpy spy(&settings, &Settings::liveTabLimitChanged);
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // What the cover has to say while the app is minimised: how many tabs are open,
 // and what they are.
@@ -14,7 +14,7 @@
 // The number is the message. The field is what makes it a browser's number.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 import "../components"
 
 CoverBackground {
@@ -25,7 +25,7 @@ CoverBackground {
     /// label so that ci/qml-lint.sh's untranslated-string check stays as strict as
     /// it is -- every bare string in a text: binding is a defect, and this is the one
     /// string that is not.
-    readonly property string brandName: "Tuuli"
+    readonly property string brandName: "Salama"
 
     /// What the cover is set to show (Settings.coverStyle): its own icon and nothing
     /// else, the heading over the one tab last read, or the heading over all of them.
@@ -48,7 +48,7 @@ CoverBackground {
         visible: !cover.showsHeading
         opacity: Theme.opacityHigh
         smooth: true
-        source: Qt.resolvedUrl("../../art/harbour-tuuli.png")
+        source: Qt.resolvedUrl("../../art/harbour-salama.png")
     }
 
     CoverTabField {

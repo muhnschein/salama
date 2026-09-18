@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Storage.h"
 
 #include <QCoreApplication>
@@ -12,11 +12,11 @@
 #include <QUuid>
 #include <QtDebug>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
-const char *const DatabaseFileName = "tuuli.sqlite";
+const char *const DatabaseFileName = "salama.sqlite";
 
 const QStringList &schemaStatements()
 {
@@ -66,7 +66,7 @@ const QStringList &schemaStatements()
 } // namespace
 
 Storage::Storage(const QString &dataDirectory)
-    : m_connectionName(QStringLiteral("tuuli-") + QUuid::createUuid().toString())
+    : m_connectionName(QStringLiteral("salama-") + QUuid::createUuid().toString())
 {
     QDir dir(dataDirectory);
     if (dataDirectory.isEmpty() || (!dir.exists() && !dir.mkpath(QStringLiteral(".")))) {
@@ -224,4 +224,4 @@ bool Storage::applySchema() const
     return db.commit();
 }
 
-} // namespace Tuuli
+} // namespace Salama

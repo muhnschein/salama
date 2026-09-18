@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // One tab in the search results, under a heading naming its group on the first row
 // of each group. The heading is part of the row rather than a section of the list,

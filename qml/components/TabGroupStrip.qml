@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The head of the tab grid: the groups in a row, each the width of its name, the
 // current one underlined and kept in the middle. The two corners hold the way to edit
@@ -14,7 +14,7 @@
 // strip sits over the grid rather than at the head of a page.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Item {
     id: strip

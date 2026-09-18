@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "history/HistoryModel.h"
 #include "storage/Storage.h"
 
@@ -8,8 +8,8 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::HistoryModel;
-using Tuuli::Storage;
+using Salama::HistoryModel;
+using Salama::Storage;
 
 class tst_historymodel : public QObject
 {

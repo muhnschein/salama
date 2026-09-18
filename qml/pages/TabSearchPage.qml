@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Every open tab whose title or address contains what is typed, group by group. A tap
 // brings that tab to the front and puts the grid away (docs/DECISIONS/0015-tab-groups.md).
@@ -12,7 +12,7 @@
 // the finger as the first results came in.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 import "../components"
 
 Page {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The tab groups as a list, for editing them: a tap to make one current, rename and
 // delete in each row's menu, and a row under the last group that makes a new one. The
@@ -7,7 +7,7 @@
 // (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 import "../components"
 
 Page {

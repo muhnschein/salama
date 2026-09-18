@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on the tab handling of sailfish-browser apps/storage/dbworker.cpp and
 // apps/history/persistenttabmodel.cpp (Copyright (c) 2013 - 2021 Jolla Ltd., MPL-2.0).
@@ -12,7 +12,7 @@
 #include <QList>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 class Storage;
 
@@ -54,4 +54,4 @@ private:
     Storage &m_storage;
 };
 
-} // namespace Tuuli
+} // namespace Salama

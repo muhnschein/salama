@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariant>
 
-namespace Tuuli {
+namespace Salama {
 
 // Owns the single SQLite database (tabs, history, bookmarks, settings table) and
 // applies the schema. One Storage per process; models borrow its connection.
@@ -44,4 +44,4 @@ private:
     QString m_databasePath;
 };
 
-} // namespace Tuuli
+} // namespace Salama

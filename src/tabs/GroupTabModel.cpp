@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "GroupTabModel.h"
 
 #include "TabModel.h"
 
-namespace Tuuli {
+namespace Salama {
 
 GroupTabModel::GroupTabModel(TabModel *tabs)
     : QAbstractListModel(tabs)
@@ -115,4 +115,4 @@ void GroupTabModel::changed(int tabId, int role)
     emit dataChanged(modelIndex, modelIndex, QVector<int>{role});
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -16,7 +16,7 @@ what the app actually holds.
 ## Decision
 The cover says **how many tabs are open**, and shows them.
 
-- The heading is postivene's exactly: "Tuuli" in the highlight colour at
+- The heading is postivene's exactly: "Salama" in the highlight colour at
   `fontSizeMedium`, `qsTr("Tabs")` under it at `fontSizeExtraSmall` in the secondary
   highlight, the two set `-Theme.paddingSmall` apart so they read as one heading, at
   `Theme.paddingLarge` from the top and left edges.
@@ -102,8 +102,8 @@ to the phone's ambience rather than to the pages inside the app, and a dozen
 screenshots each in its own colours is noise at cover size. Which tab is in front is
 not something the cover has room to say.
 
-The icon the first style draws is `art/harbour-tuuli.png`, rendered from
-`icons/harbour-tuuli.svg` by `icons/render.sh` and committed with the launcher icons.
+The icon the first style draws is `art/harbour-salama.png`, rendered from
+`icons/harbour-salama.svg` by `icons/render.sh` and committed with the launcher icons.
 It sits beside `qml/` rather than inside it — `ci/harbour-check.sh` holds that directory
 to QML files alone, and that rule is worth more than the convenience of one shorter path
 — and `CMakeLists.txt` installs `art/` next to `qml/` so the relative URL resolves the

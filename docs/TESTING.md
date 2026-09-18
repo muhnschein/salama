@@ -2,7 +2,7 @@
 
 Run before every tag, on the Jolla Phone 2026, from the shell, never from the IDE:
 
-    sailjail /usr/bin/harbour-tuuli
+    sailjail /usr/bin/harbour-salama
 
 Install the RPM that `sfdk check -s harbour` accepted. Each line must pass with no
 workaround; a failure blocks the tag.
@@ -52,7 +52,7 @@ workaround; a failure blocks the tag.
 - [ ] A tab never displayed this session shows a placeholder, and fills in once visited.
 - [ ] New private tab shows "Private tab" when the address is tapped; its pages do not appear in History, and its grid cell never shows a preview.
 - [ ] Kill the app (swipe close), relaunch: same tabs, same active tab, private tabs gone, previews still there.
-- [ ] `ls ~/.cache/io.github.muhnschein/tuuli` holds one PNG per previewed tab and none after closing them.
+- [ ] `ls ~/.cache/io.github.muhnschein/salama` holds one PNG per previewed tab and none after closing them.
 - [ ] History lists visited pages newest first; search filters; remove and clear work.
 - [ ] Bookmark the page from the menu; it appears in Bookmarks; edit and remove work.
 - [ ] Share sends the address to another app.
@@ -60,10 +60,10 @@ workaround; a failure blocks the tag.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.
-- [ ] Cover shows "Tuuli", "Tabs" and the tab count, over a grey field of the open tabs' previews that fades in below the heading. The field fills the cover at one tab, at two, at four and at a dozen (six cells at most), and the count and the field follow opening and closing tabs.
+- [ ] Cover shows "Salama", "Tabs" and the tab count, over a grey field of the open tabs' previews that fades in below the heading. The field fills the cover at one tab, at two, at four and at a dozen (six cells at most), and the count and the field follow opening and closing tabs.
 - [ ] The field is ordered by what was read last: switch tabs, minimise, and the tab just left leads it. The order survives a restart.
 - [ ] Scroll a page well down, minimise: the cover shows it scrolled, not as it was loaded. Same after stepping through a site that navigates without loading.
 - [ ] Cover action is a search icon: it opens a new tab with the address field up, the url selected and the keyboard shown, from the browsing page and from Settings alike.
 - [ ] Settings > Cover > Shows: "The icon alone" leaves the cover the app icon and the action, nothing else; "The tab count and the last tab" keeps the heading and draws one preview across the cover; "The tab count and the most recent tabs" is the field. Each takes effect on the cover without restarting, and the choice survives a restart.
 - [ ] Rotate the phone: layout stays portrait (landscape is Phase 2).
-- [ ] `journalctl -f` shows no QML warnings from `harbour-tuuli` during the above.
+- [ ] `journalctl -f` shows no QML warnings from `harbour-salama` during the above.

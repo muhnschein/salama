@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Core.h"
 
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::BookmarkModel;
-using Tuuli::Core;
-using Tuuli::HistoryModel;
-using Tuuli::Settings;
+using Salama::BookmarkModel;
+using Salama::Core;
+using Salama::HistoryModel;
+using Salama::Settings;
 
 class tst_core : public QObject
 {
@@ -24,7 +24,7 @@ private slots:
 void tst_core::wiresTabsToHistory()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
     QVERIFY(core.storage().isOpen());
     QVERIFY(core.engineMessages() != nullptr);
     QVERIFY(core.settings() != nullptr);
@@ -44,7 +44,7 @@ void tst_core::wiresTabsToHistory()
 void tst_core::privateTabsLeaveNoHistory()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
     const int id = core.tabs()->newTab(QStringLiteral("https://secret.example/"), true);
     core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/"));
     core.tabs()->updateUrl(id, QStringLiteral("https://secret.example/page"));
@@ -55,7 +55,7 @@ void tst_core::privateTabsLeaveNoHistory()
 void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/tuuli.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
     QVERIFY(core.bookmarks()->activeUrl().isEmpty());
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
@@ -76,7 +76,7 @@ void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 void tst_core::restoresState()
 {
     QTemporaryDir dir;
-    const QString config = dir.path() + QStringLiteral("/tuuli.conf");
+    const QString config = dir.path() + QStringLiteral("/salama.conf");
     {
         Core core(dir.path(), config);
         core.tabs()->newTab(QStringLiteral("https://a.example/"));

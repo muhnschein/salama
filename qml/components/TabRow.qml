@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // One tab as a row of a list: its icon, its title and its address. What the search
 // results and the recently closed tabs are both made of.

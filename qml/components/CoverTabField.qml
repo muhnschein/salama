@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The cover's field of page previews: the open tabs, drawn small, grey and half
 // there, arriving from under the heading rather than on a hard line.

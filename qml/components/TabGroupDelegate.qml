@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // One tab group in the list of them: its name -- or, unnamed, what it holds -- and
 // how many tabs it has, with rename and delete in its menu.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 ListItem {
     id: delegate

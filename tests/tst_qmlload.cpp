@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Loads the real QML against tests/silica-stubs and drives it through objectNames.
 // The stubs imitate no layout: these tests prove structure and wiring, not appearance.
@@ -20,14 +20,14 @@
 #include <QtTest>
 #include <algorithm>
 
-using Tuuli::BookmarkModel;
-using Tuuli::Core;
-using Tuuli::Settings;
-using Tuuli::TabModel;
+using Salama::BookmarkModel;
+using Salama::Core;
+using Salama::Settings;
+using Salama::TabModel;
 
 namespace {
 
-const char *const RootQml = TUULI_SOURCE_DIR "/qml/harbour-tuuli.qml";
+const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
 
 } // namespace
 
@@ -89,7 +89,7 @@ private:
 void tst_qmlload::init()
 {
     m_dir.reset(new QTemporaryDir);
-    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/tuuli.conf")));
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf")));
     QVERIFY(loadWindow());
 }
 
@@ -103,9 +103,9 @@ void tst_qmlload::cleanup()
 
 bool tst_qmlload::loadWindow()
 {
-    Tuuli::registerQmlTypes(m_core.data());
+    Salama::registerQmlTypes(m_core.data());
     m_engine.reset(new QQmlEngine);
-    m_engine->addImportPath(QStringLiteral(TUULI_STUBS_DIR));
+    m_engine->addImportPath(QStringLiteral(SALAMA_STUBS_DIR));
     QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QLatin1String(RootQml)));
     if (component.isError()) {
         qWarning() << component.errorString();
@@ -1244,7 +1244,7 @@ void tst_qmlload::restoredTabsLoadLazily()
 
     m_window.reset();
     m_engine.reset();
-    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/tuuli.conf")));
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf")));
     QVERIFY(loadWindow());
 
     QCOMPARE(m_core->tabs()->count(), 3);
@@ -1476,7 +1476,7 @@ void tst_qmlload::cover()
     QVERIFY(coverItem != nullptr);
     QCOMPARE(
         coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
-        QStringLiteral("Tuuli"));
+        QStringLiteral("Salama"));
     QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
                  ->property("text")
                  .toString(),
@@ -1568,7 +1568,7 @@ void tst_qmlload::coverStyleIsConfigurable()
     QVERIFY(!field->property("visible").toBool());
     QVERIFY(icon->property("visible").toBool());
     QVERIFY(icon->property("source").toUrl().toString().endsWith(
-        QStringLiteral("art/harbour-tuuli.png")));
+        QStringLiteral("art/harbour-salama.png")));
     QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")) != nullptr);
 
     m_core->settings()->setCoverStyle(Settings::CoverEveryTab);

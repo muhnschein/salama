@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "storage/Storage.h"
 #include "tabs/TabPersistence.h"
 
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::ClosedTab;
-using Tuuli::Storage;
-using Tuuli::Tab;
-using Tuuli::TabGroup;
-using Tuuli::TabPersistence;
+using Salama::ClosedTab;
+using Salama::Storage;
+using Salama::Tab;
+using Salama::TabGroup;
+using Salama::TabPersistence;
 
 class tst_tabpersistence : public QObject
 {

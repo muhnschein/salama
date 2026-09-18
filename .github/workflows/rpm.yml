@@ -1,4 +1,4 @@
-# Device RPM: cross-compiles harbour-tuuli for aarch64 inside the Sailfish platform
+# Device RPM: cross-compiles harbour-salama for aarch64 inside the Sailfish platform
 # SDK image and runs Jolla's validator on the result. Step for step the same as
 # postivene's rpm.yml, minus its Rust plumbing.
 #
@@ -74,14 +74,14 @@ jobs:
       # periods only, which is all Harbour accepts in either field.
       - name: Stamp version and release
         run: |
-          version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-tuuli.spec)
+          version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-salama.spec)
           case "$GITHUB_REF" in refs/tags/v*) version=${GITHUB_REF#refs/tags/v} ;; esac
           [[ $version =~ ^[0-9.]+$ ]] || {
             echo "::error::version '$version' must be digits and periods"; exit 1; }
           release="1.${GITHUB_RUN_NUMBER}"
           sed -i "s/^Version:.*/Version:    $version/; s/^Release:.*/Release:    $release/" \
-            rpm/harbour-tuuli.spec
-          grep -E '^(Version|Release):' rpm/harbour-tuuli.spec
+            rpm/harbour-salama.spec
+          grep -E '^(Version|Release):' rpm/harbour-salama.spec
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       # sdk-manage refuses to run as root, so the build runs as the image's own user and
@@ -94,7 +94,7 @@ jobs:
           gid=$(docker run --rm "$IMAGE" id -g)
           home=$(docker run --rm "$IMAGE" sh -c 'echo $HOME')
           echo "SDK builds as uid=$uid gid=$gid, HOME=$home"
-          echo "BUILDDIR=$home/harbour-tuuli" >> "$GITHUB_ENV"
+          echo "BUILDDIR=$home/harbour-salama" >> "$GITHUB_ENV"
           sudo chown -R "$uid:$gid" "$PWD"
 
       # `-X`: without it build-init asks `git describe` for a version, finds no tag and
@@ -129,7 +129,7 @@ jobs:
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: harbour-tuuli-${{ env.ARCH }}-sfos${{ env.SFOS }}-${{ env.SHORT_SHA }}
+          name: harbour-salama-${{ env.ARCH }}-sfos${{ env.SFOS }}-${{ env.SHORT_SHA }}
           path: RPMS/**/*.rpm
           if-no-files-found: error
           retention-days: 30
@@ -140,7 +140,7 @@ jobs:
       # upload on purpose: a package Harbour would reject is still worth a phone.
       - name: Validate the RPM against Harbour's rules
         run: |
-          rpm=$(find RPMS -name 'harbour-tuuli-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
+          rpm=$(find RPMS -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
           [ -n "$rpm" ] || { echo "::error::no RPM to validate"; exit 1; }
           echo "Validating $rpm"
           ci/harbour-validate-rpm.sh "$rpm"

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The tab grid. It is not a page: it sits directly below the browsing page, and the
 // two are dragged over each other like a pulley. Pushing it onto the page stack
@@ -12,7 +12,7 @@
 // put it while the deck behind it slides down and brings the page back.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Item {
     id: tabsView

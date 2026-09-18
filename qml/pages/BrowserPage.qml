@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The only file that imports Sailfish.WebView (SCOPE.md §5): a missing engine package
 // breaks browsing, not the application.
@@ -13,7 +13,7 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
 import Sailfish.WebEngine 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 import "../components"
 
 WebViewPage {

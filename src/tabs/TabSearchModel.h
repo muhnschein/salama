@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include <QAbstractListModel>
 #include <QList>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 class TabModel;
 
@@ -69,4 +69,4 @@ private:
     QList<Row> m_rows;
 };
 
-} // namespace Tuuli
+} // namespace Salama

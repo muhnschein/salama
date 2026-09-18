@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "storage/Storage.h"
 
 #include <QDir>
@@ -8,7 +8,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-using Tuuli::Storage;
+using Salama::Storage;
 
 class tst_storage : public QObject
 {
@@ -44,7 +44,7 @@ void tst_storage::createsSchema()
     Storage storage(dir.path() + QStringLiteral("/nested/data"));
     QVERIFY(storage.isOpen());
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
-    QVERIFY(storage.databasePath().endsWith(QStringLiteral("tuuli.sqlite")));
+    QVERIFY(storage.databasePath().endsWith(QStringLiteral("salama.sqlite")));
 
     const QStringList tables = tableNames(storage);
     QVERIFY(tables.contains(QStringLiteral("tab")));
@@ -101,7 +101,7 @@ void tst_storage::refusesNewerSchema()
 void tst_storage::migratesSchemaOne()
 {
     QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("tuuli.sqlite"));
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.sqlite"));
     {
         // A schema 1 database: the tab table has none of the columns later schemas
         // added -- thumbnail (2), last_active (3), group_id (4), private (5) -- and

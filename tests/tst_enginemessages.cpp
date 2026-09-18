@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "engine/EngineMessages.h"
 
 #include <QtTest>
 
-using Tuuli::EngineMessages;
+using Salama::EngineMessages;
 
 class tst_enginemessages : public QObject
 {

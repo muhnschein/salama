@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
 // the menu. Dragging it upwards pulls the tab grid up from underneath the page.
@@ -16,7 +16,7 @@
 // indistinguishable from the system's own edge swipe having taken the touch.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 Item {
     id: navigationBar

@@ -49,7 +49,7 @@ None.
 
 ## Sailjail permissions
 
-`harbour-tuuli.desktop`, `[X-Sailjail]`:
+`harbour-salama.desktop`, `[X-Sailjail]`:
 
 | Permission | Why |
 |---|---|
@@ -59,7 +59,7 @@ None.
 | `Pictures` | uploading a photo through the platform picker in web forms |
 | `Documents` | uploading a document through the platform picker |
 
-`OrganizationName=io.github.muhnschein`, `ApplicationName=tuuli` define the writable
+`OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
 data, cache and config directories; nothing is stored anywhere else. Sharing needs no
 permission (part of the `Base` set). Whether the pickers need more than `Pictures` and
 `Documents` is SCOPE.md §9 item 5 and is verified on the device smoke test.

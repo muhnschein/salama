@@ -8,8 +8,8 @@ if(NOT LRELEASE_EXECUTABLE)
 endif()
 
 set(TS_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-tuuli.ts
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-tuuli-fi.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-fi.ts
 )
 
 set(QM_FILES)

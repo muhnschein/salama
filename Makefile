@@ -1,15 +1,15 @@
-# harbour-tuuli developer entry points.
+# harbour-salama developer entry points.
 #
 # `make check` runs exactly what CI runs: from a clean checkout, without a phone,
 # an SDK, or network access. Every target below is also usable on its own.
 
 BUILD ?= build
 JOBS ?= $(shell nproc 2>/dev/null || echo 2)
-CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DTUULI_COVERAGE=ON
+CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DSALAMA_COVERAGE=ON
 COVERAGE_MIN ?= 80
 
 CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
-TS_FILES := translations/harbour-tuuli.ts translations/harbour-tuuli-fi.ts
+TS_FILES := translations/harbour-salama.ts translations/harbour-salama-fi.ts
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
         harbour-check harbour-selftest sonar-selftest sonar-reports lint check \

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #pragma once
 
 #include <QObject>
@@ -8,7 +8,7 @@
 #include <QStringList>
 #include <QVariantList>
 
-namespace Tuuli {
+namespace Salama {
 
 // User preferences, stored in the Sailjail-approved config location. Also owns the
 // address-bar heuristics because "what does typed text mean" depends on the search engine.
@@ -101,4 +101,4 @@ private:
     QSettings m_settings;
 };
 
-} // namespace Tuuli
+} // namespace Salama

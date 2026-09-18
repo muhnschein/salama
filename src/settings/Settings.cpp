@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "Settings.h"
 
 #include <QHostAddress>
@@ -7,7 +7,7 @@
 #include <QUrl>
 #include <QVector>
 
-namespace Tuuli {
+namespace Salama {
 
 namespace {
 
@@ -284,4 +284,4 @@ QString Settings::urlForInput(const QString &input) const
     return searchUrl(text);
 }
 
-} // namespace Tuuli
+} // namespace Salama

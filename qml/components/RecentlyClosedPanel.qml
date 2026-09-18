@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // The tabs closed most recently, newest first, in a panel that comes up from under
 // the grid's foot when the new-tab button is held. A tap opens the tab again and
@@ -8,7 +8,7 @@
 // the tap outside itself (docs/DECISIONS/0018-recently-closed.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.tuuli 1.0
+import harbour.salama 1.0
 
 DockedPanel {
     id: panel

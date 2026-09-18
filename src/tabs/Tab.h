@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/storage/tab.h (Copyright (c) 2013 Jolla Ltd., MPL-2.0),
 // reduced to the fields the platform WebView does not already keep per view.
@@ -7,7 +7,7 @@
 
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 struct Tab
 {
@@ -100,4 +100,4 @@ struct ClosedTab
     }
 };
 
-} // namespace Tuuli
+} // namespace Salama

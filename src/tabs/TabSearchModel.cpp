@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 #include "TabSearchModel.h"
 
 #include "TabModel.h"
 
-namespace Tuuli {
+namespace Salama {
 
 TabSearchModel::TabSearchModel(TabModel *tabs, QObject *parent)
     : QAbstractListModel(parent)
@@ -195,4 +195,4 @@ void TabSearchModel::refine()
     }
 }
 
-} // namespace Tuuli
+} // namespace Salama

@@ -1,6 +1,6 @@
-# SCOPE.md — tuuli
+# SCOPE.md — salama
 
-Web browser for Sailfish OS. Silica UI over the platform Gecko engine via `Sailfish.WebView`. Package name `harbour-tuuli`. Distributed only through Jolla Harbour.
+Web browser for Sailfish OS. Silica UI over the platform Gecko engine via `Sailfish.WebView`. Package name `harbour-salama`. Distributed only through Jolla Harbour.
 
 ## 1. Goal
 
@@ -17,7 +17,7 @@ No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulato
 ## 3. Non-goals
 
 - Building, patching, or bundling Gecko/xulrunner.
-- Supporting community `-next` engine stacks. If Jolla ships a newer engine, tuuli inherits it.
+- Supporting community `-next` engine stacks. If Jolla ships a newer engine, salama inherits it.
 - Distribution via Chum, OpenRepos, or side-loaded RPMs.
 - WebExtensions.
 - Content blocking beyond what `WebEngineSettings` exposes.
@@ -47,7 +47,7 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
                qml-lint.sh, harbour/ (validator allow-lists, waivers.conf)
-rpm/           harbour-tuuli.spec
+rpm/           harbour-salama.spec
 docs/          See §8
 ```
 
@@ -96,7 +96,7 @@ Adopted from postivene and vuo. The governing rule: **`make check` runs exactly 
 2. **QML load tests** against `tests/silica-stubs/`: the real page files, driven by `objectName`. Stubs imitate no layout; these prove structure, not appearance.
 3. **Static QML tests**: Qt 5.6 rules that host Qt accepts silently; `Sailfish.WebView` imported only where §5 says; every `model.<role>` a delegate binds exists on its model.
 4. **Packaging checks** (`ci/packaging-lint.sh`): spec parses, desktop entry validates, shell scripts clean, translations compile, every `docs/*.md` a comment points at exists. Missing tool is SKIP locally, failure in CI (`PACKAGING_LINT_STRICT=1`).
-5. **Device smoke test** before every tag, run under `sailjail /usr/bin/harbour-tuuli`, never from the IDE. Checklist in `docs/TESTING.md`.
+5. **Device smoke test** before every tag, run under `sailjail /usr/bin/harbour-salama`, never from the IDE. Checklist in `docs/TESTING.md`.
 
 Tests run one per process. No retries: a test that passes on the second attempt is a defect.
 A bug fix includes a regression test or a written justification in the PR.

@@ -5,7 +5,7 @@
 | Layer | Location | Owns | Knows about |
 |---|---|---|---|
 | Engine | platform `Sailfish.WebView` | rendering, navigation history, cookies, dialogs, pickers, downloads | nothing of ours |
-| UI | `qml/` | pages, components, cover | the `harbour.tuuli` singletons |
+| UI | `qml/` | pages, components, cover | the `harbour.salama` singletons |
 | Core | `src/` | tabs, history, bookmarks, settings, engine-facing strings | SQLite, QSettings |
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
@@ -13,7 +13,7 @@ the engine package fails to open that page, not the application. `Sailfish.WebEn
 is imported there and in `SettingsPage.qml` (data clearing). `tests/tst_qmlstatic.cpp`
 enforces both.
 
-The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
+The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
 - `Storage` — the single SQLite file and its schema.
 - `TabModel` + `TabPersistence` — open tabs, the active tab, tab groups including the
@@ -29,7 +29,7 @@ The core is one process-wide `Tuuli::Core` (`src/Core.h`) that owns:
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the only place engine-specific strings live.
 
-`registerQmlTypes()` exposes each as a QML singleton under `harbour.tuuli 1.0`.
+`registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 
 ## Data flow
 
@@ -81,7 +81,7 @@ anything else becomes a search with the selected engine.
 ## Storage
 
 Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<app>`),
-file `tuuli.sqlite`. Settings: `AppConfigLocation/tuuli.conf` (INI). Tab previews are
+file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
 5); a newer database than the build refuses to open rather than corrupt. Migration asks

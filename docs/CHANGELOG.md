@@ -5,6 +5,9 @@ Versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+- The application is now called salama (it was tuuli): package `harbour-salama`, Sailjail application name `salama`. The data directory changes with the name, so tabs, bookmarks, history and settings from a tuuli build do not carry over.
+
 ### Added
 - Multi-tab browsing with a grid of page previews; tabs, the active tab and the previews survive restarts.
 - Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top puts the page back; tapping a preview does the same. A handle on the bar's edge and a line across the top of the grid say where to take hold. The menu reaches the grid without the gesture.

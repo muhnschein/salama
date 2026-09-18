@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 tuuli contributors
+// Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/browser/bookmarks/declarativebookmarkmodel.{h,cpp}
 // (Copyright (c) 2013 - 2021 Jolla Ltd., MPL-2.0), stored in SQLite instead of JSON so
@@ -11,7 +11,7 @@
 #include <QSqlDatabase>
 #include <QString>
 
-namespace Tuuli {
+namespace Salama {
 
 class Storage;
 
@@ -75,4 +75,4 @@ private:
     QString m_activeUrl;
 };
 
-} // namespace Tuuli
+} // namespace Salama

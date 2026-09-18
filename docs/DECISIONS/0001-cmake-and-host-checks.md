@@ -6,7 +6,7 @@ without a phone, SDK or network, with coverage, clang-tidy and `-Werror`.
 
 ## Decision
 CMake for both the device RPM and the host build, fronted by a Makefile. `libsailfishapp`
-is required for the device build (`TUULI_REQUIRE_SAILFISHAPP=ON`) and replaced on the
+is required for the device build (`SALAMA_REQUIRE_SAILFISHAPP=ON`) and replaced on the
 host by `tests/stubs/sailfishapp/`, so `src/main.cpp` compiles under the same flags
 everywhere. The spec calls `cmake` directly instead of `%cmake` because the macro's
 behaviour differs between RPM distributions.
