@@ -728,6 +728,8 @@ void tst_qmlload::tabGrid()
     QObject *indicator = find(QStringLiteral("gridPullIndicator"));
     QVERIFY(indicator != nullptr);
     QCOMPARE(indicator->property("y").toReal(), 0.0);
+    // The highlight background rather than the highlight itself: the stub theme's.
+    QCOMPARE(indicator->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
     QCOMPARE(indicator->property("width").toReal(), headRow->property("width").toReal());
     QVERIFY(indicator->property("height").toReal() > 0);
     QVERIFY(find(QStringLiteral("gridDragHandle")) == nullptr);
@@ -1091,10 +1093,25 @@ void tst_qmlload::previewGestures()
     QObject *timer = findObjects(cell, QStringLiteral("holdTimer")).first();
     QCOMPARE(timer->property("interval").toInt(), 1500);
     QCOMPARE(cell->property("holdInterval").toInt(), 1500);
+    // A thumb drifts while it holds: some movement still counts as holding, and
+    // while it may yet be a hold the grid may not take the drag.
+    QVERIFY(cell->property("holdTolerance").toReal() > 0);
     QVERIFY(!cell->property("held").toBool());
+    cell->setProperty("holding", true);
+    QVERIFY(findObjects(cell, QStringLiteral("tabPreviewGesture"))
+                .first()
+                ->property("preventStealing")
+                .toBool());
+    evaluate(cell, QStringLiteral("letGo()"));
+    QVERIFY(!cell->property("holding").toBool());
+    QVERIFY(!findObjects(cell, QStringLiteral("tabPreviewGesture"))
+                 .first()
+                 ->property("preventStealing")
+                 .toBool());
     evaluate(cell, QStringLiteral("pickUp()"));
     QVERIFY(cell->property("held").toBool());
     QVERIFY(cell->property("carried").toBool());
+    QVERIFY(!cell->property("holding").toBool());
     QVERIFY(!timer->property("running").toBool());
     evaluate(cell, QStringLiteral("releaseTap()"));
     QVERIFY(page->property("tabsOpen").toBool());

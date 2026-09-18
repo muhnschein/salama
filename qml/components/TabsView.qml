@@ -119,9 +119,10 @@ Item {
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
         // The grid's own edge is a pulley too: dragged down it hands the page back.
-        // Said the way Silica says a pulley menu is there -- a line in the highlight
-        // colour across the whole edge -- rather than with the bar's handle, which on
-        // device read as a second handle to find.
+        // Said the way Silica says a pulley menu is there -- a line across the whole
+        // edge -- rather than with the bar's handle, which on device read as a second
+        // handle to find. The highlight background colour: the highlight itself was
+        // too loud a line to have across the top of every grid.
         Rectangle {
             objectName: "gridPullIndicator"
             anchors {
@@ -130,7 +131,7 @@ Item {
                 top: parent.top
             }
             height: Theme.paddingSmall
-            color: Theme.highlightColor
+            color: Theme.highlightBackgroundColor
         }
 
         TabGroupStrip {

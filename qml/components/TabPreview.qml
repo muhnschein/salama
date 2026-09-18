@@ -5,11 +5,12 @@
 // top-right corner, and the favicon and title underneath.
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
-// apart the way the navigation bar's does. A tap opens the tab. A finger held still
-// for a second and a half picks the cell up to be carried to another place in the grid. A
-// drag to the left slides the cell out and closes the tab when it has gone far
-// enough; released short of that it slides back. The button is drawn above the
-// handler and keeps its own taps (docs/DECISIONS/0010-tab-grid-deck.md).
+// apart the way the navigation bar's does. A tap opens the tab. A finger held for a
+// second and a half -- still, or near enough: a thumb held down drifts -- picks the
+// cell up to be carried to another place in the grid. A drag to the left slides the
+// cell out and closes the tab when it has gone far enough; released short of that
+// it slides back. The button is drawn above the handler and keeps its own taps
+// (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
 // and its highlight as a square wash across the whole cell, and this cell has rounded
@@ -35,8 +36,12 @@ Item {
     property bool carried: false
     // True while the cell is being slid out to the left.
     property bool swiping: false
-    // How long a finger holds still before the cell comes up.
+    // How long a finger holds before the cell comes up, and how far it may drift
+    // meanwhile and still count as holding.
     readonly property int holdInterval: 1500
+    readonly property real holdTolerance: Theme.iconSizeSmall
+    // True from the press until the finger has moved too far to be holding.
+    property bool holding: false
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
     // Drawn on the rounded box below: this cell is the active tab, or has a finger.
@@ -59,8 +64,15 @@ Item {
     // The hold has run its course: the cell is the finger's to carry.
     function pickUp() {
         holdTimer.stop()
+        holding = false
         held = true
         carried = true
+    }
+
+    // The finger has moved too far to be holding: the hold is off.
+    function letGo() {
+        holdTimer.stop()
+        holding = false
     }
 
     // The cell slid this far to the left, by a finger or by a test.
@@ -81,7 +93,7 @@ Item {
     }
 
     function drop() {
-        holdTimer.stop()
+        letGo()
         held = false
         content.x = 0
         content.y = 0
@@ -103,30 +115,36 @@ Item {
 
         objectName: "tabPreviewGesture"
         anchors.fill: parent
-        // Once the cell is carried or sliding, the grid may not take the drag back.
-        preventStealing: preview.held || preview.swiping
+        // While a hold may still be one, and once the cell is carried or sliding,
+        // the grid may not take the drag: a thumb that drifts a little while it
+        // holds would otherwise have handed the grid a scroll before the hold ran
+        // out. Past the tolerance the hold is off and the grid takes the drag from
+        // the next move.
+        preventStealing: preview.holding || preview.held || preview.swiping
 
         onPressed: {
             grabX = mouse.x
             grabY = mouse.y
             preview.carried = false
             preview.swiping = false
+            preview.holding = true
             holdTimer.restart()
         }
         onPositionChanged: {
             var acrossX = mouse.x - grabX
             var acrossY = mouse.y - grabY
             if (!preview.held && !preview.swiping) {
-                // A finger that moves is not holding still: the hold is off, and a
-                // sideways move is the start of a slide. Leftwards only -- the grid
-                // has nothing to the right -- while an up-and-down move is the
-                // grid's own scroll, which it takes from here.
-                if (Math.abs(acrossX) > Theme.startDragDistance
-                        && Math.abs(acrossX) > Math.abs(acrossY)) {
-                    holdTimer.stop()
+                // Within the tolerance the finger is still holding. Beyond it the
+                // hold is off, and a sideways move is the start of a slide. Leftwards
+                // only -- the grid has nothing to the right -- while an up-and-down
+                // move is the grid's own scroll, which it takes from here.
+                if (Math.abs(acrossX) <= preview.holdTolerance
+                        && Math.abs(acrossY) <= preview.holdTolerance) {
+                    return
+                }
+                preview.letGo()
+                if (Math.abs(acrossX) > Math.abs(acrossY)) {
                     preview.swipeTo(acrossX)
-                } else if (Math.abs(acrossY) > Theme.startDragDistance) {
-                    holdTimer.stop()
                 }
             } else if (preview.held) {
                 // The contents move, not the cell: the view owns where cells are, and

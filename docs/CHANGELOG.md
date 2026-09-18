@@ -7,7 +7,7 @@ Versions follow semantic versioning.
 
 ### Added
 - Multi-tab browsing with a grid of page previews; tabs, the active tab and the previews survive restarts.
-- Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top puts the page back; tapping a preview does the same. A handle on the bar's edge and a highlight-coloured line across the top of the grid say where to take hold. The menu reaches the grid without the gesture.
+- Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top puts the page back; tapping a preview does the same. A handle on the bar's edge and a line across the top of the grid say where to take hold. The menu reaches the grid without the gesture.
 - Address shown in the navigation bar as the host alone, tapped to edit the whole url in place, opening addresses or searching with a configurable engine. Scrolling down slims the bar to the address alone and lets the page run behind it; scrolling up brings it back whole.
 - A red warning on the address when the engine reports a broken TLS connection, and a navigation bar the page ends above rather than running behind, so the foot of a page is always reachable. Scrolling down slims the bar to the address alone and scrolling up brings its controls back.
 - Pages laid out at a phone-sized zoom rather than the engine's smaller default.

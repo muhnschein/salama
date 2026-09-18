@@ -44,8 +44,8 @@ workaround; a failure blocks the tag.
 - [ ] Sliding a preview to the left fades it as it goes; past a third of its width, letting go closes the tab, short of that it slides back. Sliding to the right does nothing. Sliding up or down scrolls the grid.
 - [ ] The close button in a preview's corner sits on a dark disc and can be seen over a white page.
 - [ ] Holding the button in the foot row brings a panel up from under it listing the tabs closed lately, newest first, with title and address; tapping one opens it again with its title and returns to it, and it leaves the list. Tapping outside the panel puts it away. A closed private tab is not listed. The list survives a restart.
-- [ ] A handle is drawn along the top of the navigation bar and lights up while a drag is under way; a line in the highlight colour runs across the very top of the screen when the grid is up, as thick as the handle.
-- [ ] A cell picked up after a second and a half of holding still; the close mark in its corner is one disc in the highlight colour with a cross through it, readable over a white page.
+- [ ] A handle is drawn along the top of the navigation bar and lights up while a drag is under way; a line in the highlight background colour runs across the very top of the screen when the grid is up, as thick as the handle.
+- [ ] A cell picked up after a second and a half of holding, even when the thumb drifts a little meanwhile; the close mark in its corner is one disc in the highlight colour with a cross through it, readable over a white page.
 - [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.
 - [ ] The grid's two rows are drawn over the cells rather than among them: the head says how many tabs, the foot carries the one button, and the first and last rows of cells can be scrolled clear of both.
 - [ ] The button in the foot row opens a new tab and returns to it.

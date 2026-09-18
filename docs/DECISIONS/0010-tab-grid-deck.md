@@ -46,7 +46,7 @@ Tapping a preview does the same thing as the pull, with the tab it names.
 
 A cell can also be **carried** to another place in the grid, and **slid away** to close
 its tab. The two share the sideways movement, so a hold tells them apart: a finger held
-still for **a second and a half** picks the cell up (a timer the delegate owns, since
+for **a second and a half** picks the cell up (a timer the delegate owns, since
 `MouseArea.pressAndHoldInterval` came with Qt 5.9), and the cell comes up a little so the
 hand knows it has it; a finger that moves sideways before then is sliding the cell, to
 the left only, because the grid has nothing to the right. Slid past a third of its width
@@ -65,8 +65,8 @@ the one the click reads: `held` ends the carry, and a second flag, `carried`, li
 the moment the cell is picked up or slid until the next press and is what `releaseTap()`
 asks.
 
-The close button in a cell's corner sits on a **disc** of the dimmer colour at
-`Theme.opacityOverlay`: the glyph alone was lost on most pages.
+The close button in a cell's corner is a **disc with a cross through it**, drawn by the
+cell; the theme icon it replaced is discussed below.
 
 The grid carries two rows of its own, both drawn over the cells in the same glass as the
 navigation bar rather than scrolling among them, each with a spacer of the same height in
@@ -123,9 +123,14 @@ the gesture handler already covers, and it lights up (`active`) while that gestu
 finger, so the thing you aim at is the thing that responds. This is not what Silica does;
 it is what this application needs, and the previous two attempts to guess at a platform
 idiom for it were both wrong. The grid's top edge had the same handle for a while, and on
-device it read as a second handle to find; it now has a **line in the highlight colour
-across the very top of the screen**, as thick as the handle, which is how Silica's own
-pulley menu says it is there.
+device it read as a second handle to find; it now has a **line across the very top of the
+screen**, as thick as the handle, which is how Silica's own pulley menu says it is there —
+in the highlight *background* colour, the highlight itself being too loud a line to have
+across the top of every grid. The hold tolerates drift: a thumb held down moves, and the
+first build wanted it perfectly still. Within `Theme.iconSizeSmall` of the press the
+finger is still holding, and while it may yet be a hold the delegate keeps
+`preventStealing` up so the grid does not take the drag first; past the tolerance the
+hold is off and the grid takes the drag from the next move.
 
 The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
 colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc
