@@ -98,8 +98,6 @@ WebViewPage {
         id: deckSpring
 
         NumberAnimation {
-            id: deckSlide
-
             duration: 250
             easing.type: Easing.OutQuad
         }
@@ -199,11 +197,13 @@ WebViewPage {
         navigationBar.beginEditing()
     }
 
-    // A finger takes the deck off whatever the spring was doing with it: a disabled
-    // Behavior does not stop an animation that is already under way.
+    // A finger takes the deck off whatever the spring was doing with it. Disabling the
+    // Behavior does not stop an animation already under way, but the next value
+    // written through it does -- the switch to dragOffset below. The animation cannot
+    // be stopped by hand: it belongs to the Behavior, and Qt logs a warning and
+    // ignores the call.
     function beginDrag() {
         deckSpring.enabled = false
-        deckSlide.stop()
         dragOffset = tabsOffset
         dragging = true
     }

@@ -46,8 +46,10 @@ Item {
     property bool holding: false
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
-    // Drawn on the rounded box below: this cell is the active tab, or has a finger.
-    readonly property bool highlighted: dragArea.pressed || model.activeTab
+    // Drawn on the rounded box below: this cell is the active tab, or has a finger. A
+    // cell whose tab has just been closed outlives its row for a moment, and its role
+    // is then undefined, which a bool cannot be.
+    readonly property bool highlighted: dragArea.pressed || model.activeTab === true
     readonly property Item grid: GridView.view
 
     objectName: "tabPreview"
