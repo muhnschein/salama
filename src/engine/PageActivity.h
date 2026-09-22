@@ -80,6 +80,7 @@ signals:
 
 private:
     void observeDecoder(const QVariantMap &info);
+    void forgetIdleDecoders();
     void updateAudible();
     void setAsleep(bool asleep);
     void fallAsleepAfter(int delay);

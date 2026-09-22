@@ -103,13 +103,7 @@ void PageActivity::observeDecoder(const QVariantMap &info)
     }
     if (state == QLatin1String("meta")) {
         if (m_hasSound.size() >= RememberedDecoders) {
-            for (auto it = m_hasSound.begin(); it != m_hasSound.end();) {
-                if (m_playing.contains(it.key())) {
-                    ++it;
-                } else {
-                    it = m_hasSound.erase(it);
-                }
-            }
+            forgetIdleDecoders();
         }
         m_hasSound.insert(owner, info.value(QStringLiteral("a")).toBool());
     } else if (state == QLatin1String("play")) {
@@ -117,6 +111,17 @@ void PageActivity::observeDecoder(const QVariantMap &info)
     } else {
         // "pause" is every state but playing, the decoder's shutdown included.
         m_playing.remove(owner);
+    }
+}
+
+void PageActivity::forgetIdleDecoders()
+{
+    for (auto it = m_hasSound.begin(); it != m_hasSound.end();) {
+        if (m_playing.contains(it.key())) {
+            ++it;
+        } else {
+            it = m_hasSound.erase(it);
+        }
     }
 }
 
