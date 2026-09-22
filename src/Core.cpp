@@ -63,4 +63,9 @@ EngineMessages *Core::engineMessages()
     return &m_engineMessages;
 }
 
+PageActivity *Core::pageActivity()
+{
+    return &m_pageActivity;
+}
+
 } // namespace Salama

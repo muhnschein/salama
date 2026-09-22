@@ -23,6 +23,7 @@ using Salama::ClosedTabModel;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
 using Salama::HistoryModel;
+using Salama::PageActivity;
 using Salama::Settings;
 using Salama::Storage;
 using Salama::TabGroupModel;
@@ -192,10 +193,12 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
+        {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|Settings|EngineMessages)\\.([A-Za-z_][A-Za-z0-9_]*)"));
+                       "BookmarkModel|Settings|EngineMessages|PageActivity)\\."
+                       "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;
     for (const QString &file : qmlFiles()) {

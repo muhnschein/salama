@@ -57,6 +57,8 @@ workaround; a failure blocks the tag.
 - [ ] Share sends the address to another app.
 - [ ] Download a file: the transfer UI appears and the file lands in Downloads.
 - [ ] A video with sound plays aloud, through the speaker and through headphones, and the volume keys change its volume.
+- [ ] Open a busy site (a news front page with video and ads) in two tabs, minimise: within a few seconds `top` shows harbour-salama and its web content process near idle, where before they kept a core busy. Back in the app, the page in front carries on where it was; the other tab does too when brought to the front.
+- [ ] Play music or a video with sound, minimise, lock the phone: it keeps playing, and a playlist moves on to the next track. Pause it from the page before minimising instead: the pages go idle as above.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.

@@ -27,6 +27,7 @@ Versions follow semantic versioning.
 - A preview in the grid is picked up to be carried by holding it for a second, and closed by sliding it to the left. The close button in its corner is a near-opaque disc in the highlight colour with a cross through it, so it can be seen over any page.
 - Holding the new-tab button brings up the tabs closed lately, to open again; the list survives a restart.
 - Five pages stay loaded, the ones read most recently; the rest reload when their tab comes back. Settings chooses 3, 5, 10 or all. After ten minutes in the background the engine is asked to trim its memory.
+- A second after the application is put away, the loaded pages are put to sleep -- their scripts, timers and workers stop -- so a busy site no longer keeps the phone busy out of sight. A page playing something with sound, or in a call, keeps them awake, and they sleep five seconds after it stops. Each page wakes as it is next on the screen.
 - Back, reload and stop on the navigation bar, which the address field takes over while it is being edited. Share in the menu.
 - History with search, and bookmarks with edit and remove.
 - Downloads through the platform transfer UI.

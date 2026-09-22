@@ -8,6 +8,8 @@ add_library(salama-core STATIC
     bookmarks/BookmarkModel.h
     engine/EngineMessages.cpp
     engine/EngineMessages.h
+    engine/PageActivity.cpp
+    engine/PageActivity.h
     history/HistoryModel.cpp
     history/HistoryModel.h
     settings/Settings.cpp

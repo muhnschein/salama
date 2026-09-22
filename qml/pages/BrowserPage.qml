@@ -159,11 +159,25 @@ WebViewPage {
     // out is take one. Until now a preview was only as fresh as the last load or the
     // last time the grid was opened, which left the cover showing a page as it was
     // before it was read: scrolled somewhere else, or a step further into a site that
-    // navigates without loading. A named function rather than the handler's body, so
+    // navigates without loading. Out of sight is also when the pages are put to sleep,
+    // and PageActivity says when. A named function rather than the handler's body, so
     // the load tests can leave the application without a window manager to do it.
     function applicationStateChanged(state) {
         if (state !== Qt.ApplicationActive) {
             captureCurrent()
+        }
+        PageActivity.background = state !== Qt.ApplicationActive
+    }
+
+    // Every page that is loaded, the one in front and the ones behind it, stops its
+    // timers, workers and scripts until its view is next on the screen
+    // (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+    function suspendPages() {
+        for (var i = 0; i < webViews.count; ++i) {
+            var loader = webViews.itemAt(i)
+            if (loader && loader.item) {
+                loader.item.suspend()
+            }
         }
     }
 
@@ -235,6 +249,22 @@ WebViewPage {
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
     }
 
+    Connections {
+        target: PageActivity
+        onAsleepChanged: {
+            if (PageActivity.asleep) {
+                browserPage.suspendPages()
+            }
+        }
+    }
+
+    // What the engine says is playing, for PageActivity to weigh: a page making a
+    // sound is not put to sleep.
+    Connections {
+        target: WebEngine
+        onRecvObserve: PageActivity.observe(message, data)
+    }
+
     Timer {
         id: trimTimer
 
@@ -246,6 +276,9 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        for (var i = 0; i < PageActivity.topics.length; ++i) {
+            WebEngine.addObserver(PageActivity.topics[i])
+        }
         ensureTab()
         updateCurrentView()
     }
@@ -449,6 +482,31 @@ WebViewPage {
                 })
             }
 
+            // Asleep: its timers, workers and scripts stopped by suspendView() until
+            // the view is next active, which is on the screen. Only ever out of sight:
+            // Gecko draws every view into one window, and suspendView() stops that
+            // window drawing -- which a view going active again starts, and nothing
+            // else does (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+            property bool suspended: false
+
+            function suspend() {
+                suspended = true
+                suspendView()
+            }
+
+            function resume() {
+                if (suspended) {
+                    suspended = false
+                    resumeView()
+                }
+            }
+
+            onActiveChanged: {
+                if (active) {
+                    resume()
+                }
+            }
+
             // The model hands out a fresh file name per capture and removes the one it
             // replaces.
             function captureThumbnail() {
@@ -472,6 +530,13 @@ WebViewPage {
             onUrlChanged: TabModel.updateUrl(tabId, url)
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
+                // What sleeps is a document, and one that arrives while its view is
+                // asleep arrives awake -- a load already under way, a redirect, a page
+                // that reloads itself. It is put to sleep with the rest, as
+                // sailfish-browser does with a page that finishes loading unseen.
+                if (suspended) {
+                    suspendView()
+                }
                 if (loading) {
                     // A new page starts at the top, and the bar starts whole: it would
                     // otherwise stay slim from whatever was scrolled before it. The

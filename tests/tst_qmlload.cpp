@@ -65,6 +65,7 @@ private slots:
     void coverFieldFollowsTheFront();
     void coverStyleIsConfigurable();
     void thumbnailCapturedOnLeavingTheApp();
+    void pagesSleepOutOfSight();
 
 private:
     bool loadWindow();
@@ -1665,6 +1666,81 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
     QVERIFY(onLeaving != onLoad);
     QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
              onLeaving);
+}
+
+// Out of sight for a moment, every loaded page is put to sleep -- unless one is making
+// a sound -- and each wakes when its view is next on the screen. When is PageActivity's
+// to say, and tst_pageactivity tests it; this is what the browsing page does about it.
+void tst_qmlload::pagesSleepOutOfSight()
+{
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QList<QObject *> views = findAll(QStringLiteral("webView"));
+    QCOMPARE(views.count(), 2);
+    QObject *front = currentWebView();
+    QObject *behind = views.at(0) == front ? views.at(1) : views.at(0);
+    QObject *page = find(QStringLiteral("browserPage"));
+    // Something of BrowserPage.qml's own, whose scope has the engine: the page item's
+    // is the root file's.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    Salama::PageActivity *activity = m_core->pageActivity();
+    const auto calls = [](QObject *view, const char *name) {
+        return view->property("calls").toStringList().count(QLatin1String(name));
+    };
+    const auto setState = [page](Qt::ApplicationState state) {
+        QMetaObject::invokeMethod(page, "applicationStateChanged", Q_ARG(QVariant, state));
+    };
+
+    // The engine is asked for what says a page is playing.
+    QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.observers")).toStringList(),
+             activity->topics());
+
+    // Not the moment the application is left, but a moment after: every page, the one
+    // behind the one in front as well.
+    setState(Qt::ApplicationInactive);
+    QVERIFY(activity->background());
+    QCOMPARE(calls(front, "suspendView"), 0);
+    QTRY_VERIFY(activity->asleep());
+    QCOMPARE(calls(front, "suspendView"), 1);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    QVERIFY(front->property("suspended").toBool());
+
+    // A document that arrives while its view is asleep is put to sleep with the rest.
+    front->setProperty("loading", true);
+    front->setProperty("loading", false);
+    QCOMPARE(calls(front, "suspendView"), 3);
+
+    // Back, and a view wakes as it goes active on the screen: the one in front now, the
+    // one behind when it next comes to the front. Once each.
+    setState(Qt::ApplicationActive);
+    QVERIFY(!activity->asleep());
+    front->setProperty("active", false);
+    front->setProperty("active", true);
+    front->setProperty("active", false);
+    front->setProperty("active", true);
+    QCOMPARE(calls(front, "resumeView"), 1);
+    QVERIFY(!front->property("suspended").toBool());
+    QCOMPARE(calls(behind, "resumeView"), 0);
+    QVERIFY(behind->property("suspended").toBool());
+    behind->setProperty("active", false);
+    behind->setProperty("active", true);
+    QCOMPARE(calls(behind, "resumeView"), 1);
+    // Awake, a load changes nothing.
+    front->setProperty("loading", true);
+    front->setProperty("loading", false);
+    QCOMPARE(calls(front, "suspendView"), 3);
+
+    // Something with sound playing keeps every page awake out of sight.
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
+                                   " {owner: '0x1', state: 'meta', a: 1, v: 0})"));
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
+                                   " {owner: '0x1', state: 'play'})"));
+    QVERIFY(activity->audible());
+    setState(Qt::ApplicationInactive);
+    QTest::qWait(activity->settleDelay() * 3 / 2);
+    QVERIFY(!activity->asleep());
+    QCOMPARE(calls(front, "suspendView"), 3);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    setState(Qt::ApplicationActive);
 }
 
 QTEST_MAIN(tst_qmlload)

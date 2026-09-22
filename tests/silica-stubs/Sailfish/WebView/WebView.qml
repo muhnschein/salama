@@ -86,6 +86,17 @@ Item {
         url = target
     }
 
+    // QuickMozView: inactive with its timers stopped, and back. Recorded only: the
+    // real ones set `active` from C++, which leaves a QML binding on it in place, and
+    // an assignment here would have removed the page's.
+    function suspendView() {
+        record("suspendView")
+    }
+
+    function resumeView() {
+        record("resumeView")
+    }
+
     // Stands in for QQuickItem::grabToImage, which needs a rendering scene graph the
     // offscreen test platform does not provide. Calls back synchronously.
     function grabToImage(callback, targetSize) {
