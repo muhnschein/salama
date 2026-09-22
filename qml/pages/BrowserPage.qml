@@ -225,6 +225,25 @@ WebViewPage {
         settle(true)
     }
 
+    // A touch the reach above the bar took from the foot of the page and handed back,
+    // given to the engine as the touch it would have had, in the view's coordinates.
+    // The view takes focus the way a real touch gives it, which ends editing the address.
+    function touchPage(position, phase) {
+        if (!currentView) {
+            return
+        }
+        var at = currentView.mapFromItem(null, position.x, position.y)
+        var touches = [Qt.point(at.x, at.y)]
+        if (phase === "start") {
+            currentView.forceActiveFocus()
+            currentView.synthTouchBegin(touches)
+        } else if (phase === "move") {
+            currentView.synthTouchMove(touches)
+        } else {
+            currentView.synthTouchEnd(touches)
+        }
+    }
+
     // A tab chosen off the grid -- from the search page -- comes to the front, and the
     // page comes back over the grid with it.
     function showTab(tabId) {
@@ -396,6 +415,9 @@ WebViewPage {
                 }
                 onDragMoved: browserPage.dragTo(distance)
                 onDragFinished: browserPage.settle(distance > browserPage.pullThreshold)
+                onPageTouchStarted: browserPage.touchPage(position, "start")
+                onPageTouchMoved: browserPage.touchPage(position, "move")
+                onPageTouchEnded: browserPage.touchPage(position, "end")
             }
         }
 

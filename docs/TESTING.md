@@ -47,6 +47,7 @@ workaround; a failure blocks the tag.
 - [ ] A handle is drawn along the top of the navigation bar and lights up while a drag is under way; a line in the highlight background colour runs across the very top of the screen when the grid is up, as thick as the handle.
 - [ ] A cell picked up after a second of holding, even when the thumb drifts a little sideways meanwhile; the close mark in its corner is one disc in the highlight colour with a cross through it, readable over a white page.
 - [ ] The drag that opens the grid can also be started just above the bar, and the screen does not judder while the finger is held.
+- [ ] A video scrolled to the foot of the page, and one played full screen: its play button, seek bar (tapped and dragged along) and full-screen button respond just above the navigation bar, and a drag upwards from the same place still opens the grid.
 - [ ] The grid's two rows are drawn over the cells rather than among them: the head says how many tabs, the foot carries the one button, and the first and last rows of cells can be scrolled clear of both.
 - [ ] The button in the foot row opens a new tab and returns to it.
 - [ ] A tab never displayed this session shows a placeholder, and fills in once visited.

@@ -48,10 +48,32 @@ screen jumping up and down for as long as the finger was held.
 The handler also **reaches above the bar**, by three quarters of
 `Theme.itemSizeExtraSmall`. The drag has to
 start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
-lies in that strip. A tap in the reach does nothing — the page does not get it either,
-which is the price of the reach and the reason it is only a strip. What says the bar can
-be dragged is drawn along its top edge, inside that reach: `components/DragHandle.qml`
-(`0010-tab-grid-deck.md`).
+lies in that strip. What says the bar can be dragged is drawn along its top edge, inside
+that reach: `components/DragHandle.qml` (`0010-tab-grid-deck.md`).
+
+The reach lies over the foot of the page, and at first it kept every press there: a tap
+in it did nothing, and the page did not get it either. On device that was the controls
+of every player whose foot sat at the foot of the screen — a seek bar, play, full
+screen — out of reach, full-screen video worst of all. So the reach **hands the page
+everything that is not the drag**. A press there is undecided until the finger moves or
+lifts: moved upwards past `Theme.startDragDistance` it is the drag, as before; moved
+any other way that far, or lifted without moving that far, it is the page's, and the
+browsing page gives it to the engine as the touch it would have had —
+`synthTouchBegin`, `synthTouchMove`, `synthTouchEnd`, which qtmozembed's view takes in
+its own coordinates, the ones a real touch arrives in — from where it went down. The
+view takes focus as a real touch gives it, which also ends editing the address. A
+press **held** in the reach is not handed on: the handle is in the reach, and a finger
+resting on it before it moves up is the grid's. A long press on a link in that strip is
+the price of that.
+
+Detecting players instead — asking the page where its media sits, and shrinking the
+reach over one — was the other way. It needs a script run on every scroll, and it
+could only ever find the players it knows the shape of; the hand-back covers whatever
+is under the finger. Shrinking the reach alone would have given back only as much of a
+player as it gave up, and the drag would have lost the room.
+
+The handler is `components/BarGesture.qml`, the bar's own file having grown past what
+one responsibility should take.
 
 The bar is **opaque**, and the engine's view ends where the bar begins: `viewArea` is
 `fullHeight - barHeight` tall. Both of those replace a translucent bar that lay over the

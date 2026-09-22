@@ -54,6 +54,7 @@ private slots:
     void tabGroups();
     void previewGestures();
     void gridGesturesUnderAFinger();
+    void barReachUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -1117,6 +1118,35 @@ QPoint centreOf(QObject *object)
     return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint();
 }
 
+// The application in a real window, for as long as this lives: for the gestures whose
+// outcome Qt's own event delivery decides.
+class FingerWindow
+{
+public:
+    explicit FingerWindow(QObject *root)
+        : m_root(qobject_cast<QQuickItem *>(root))
+    {
+        m_window.resize(int(m_root->width()), int(m_root->height()));
+        m_root->setParentItem(m_window.contentItem());
+        m_window.show();
+    }
+    ~FingerWindow()
+    {
+        m_root->setParentItem(nullptr);
+    }
+    FingerWindow(const FingerWindow &) = delete;
+    FingerWindow &operator=(const FingerWindow &) = delete;
+
+    QQuickWindow *window()
+    {
+        return &m_window;
+    }
+
+private:
+    QQuickItem *m_root;
+    QQuickWindow m_window;
+};
+
 // A finger put down at one point, moved to another in even steps and lifted there.
 void drag(QWindow *window, const QPoint &from, const QPoint &to)
 {
@@ -1142,10 +1172,8 @@ void tst_qmlload::gridGesturesUnderAFinger()
     const int second = tabs->newTab(QStringLiteral("https://two.example/"));
     QObject *page = find(QStringLiteral("browserPage"));
     auto *root = qobject_cast<QQuickItem *>(m_window.data());
-    QQuickWindow window;
-    window.resize(int(root->width()), int(root->height()));
-    root->setParentItem(window.contentItem());
-    window.show();
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
     const auto openGrid = [&]() {
@@ -1217,8 +1245,76 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QTRY_VERIFY(!grid->property("moving").toBool());
     QVERIFY(grid->property("contentY").toReal() < scrolled);
     QVERIFY(page->property("tabsOpen").toBool());
+}
 
-    root->setParentItem(nullptr);
+// The reach above the navigation bar lies over the foot of the page, where a player
+// keeps its seek bar and its buttons. It keeps the one thing it is there for -- a drag
+// upwards, which opens the grid -- and hands the page everything else: a tap, a drag
+// sideways or down. A press held there is kept, since the handle sits in the reach.
+void tst_qmlload::barReachUnderAFinger()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *view = qobject_cast<QQuickItem *>(currentWebView());
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int inReach = int(gestureTop.y() + reach / 2);
+    const int onBar = int(gestureTop.y() + reach + gesture->property("strip").toReal() / 2);
+    const auto touches = [view]() { return view->property("touches").toList(); };
+    const auto touch = [&](int i) { return touches().at(i).toMap(); };
+    const int shake = evaluate(page, QStringLiteral("Theme.startDragDistance")).toInt();
+
+    // A tap goes down and up on the page where the finger was, in the view's own
+    // coordinates, and the view has the focus a real touch would have given it.
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(200, inReach));
+    QCOMPARE(touches().count(), 2);
+    QCOMPARE(touch(0).value(QStringLiteral("phase")).toString(), QStringLiteral("begin"));
+    QCOMPARE(touch(1).value(QStringLiteral("phase")).toString(), QStringLiteral("end"));
+    const QPointF local = view->mapFromScene(QPointF(200, inReach));
+    QCOMPARE(touch(0).value(QStringLiteral("x")).toReal(), local.x());
+    QCOMPARE(touch(0).value(QStringLiteral("y")).toReal(), local.y());
+    QVERIFY(local.y() > view->height() - reach && local.y() < view->height());
+    QVERIFY(view->hasActiveFocus());
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // A drag along a seek bar goes to the page from where it started, move by move.
+    drag(&window, QPoint(200, inReach), QPoint(700, inReach));
+    QCOMPARE(touch(2).value(QStringLiteral("phase")).toString(), QStringLiteral("begin"));
+    QCOMPARE(touch(2).value(QStringLiteral("x")).toReal(), local.x());
+    QVERIFY(touches().count() > 5);
+    QCOMPARE(touches().last().toMap().value(QStringLiteral("phase")).toString(),
+             QStringLiteral("end"));
+    QCOMPARE(touches().last().toMap().value(QStringLiteral("x")).toReal(),
+             view->mapFromScene(QPointF(700, inReach)).x());
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // So does one downwards, and a shake smaller than a drag is still a tap.
+    int before = touches().count();
+    drag(&window, QPoint(300, int(gestureTop.y()) + 1), QPoint(300, inReach + shake));
+    QVERIFY(touches().count() > before + 2);
+    before = touches().count();
+    drag(&window, QPoint(300, inReach), QPoint(300 + shake / 2, inReach));
+    QCOMPARE(touches().count(), before + 2);
+
+    // A press held, and a tap on the bar itself, are not the page's.
+    before = touches().count();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(300, inReach));
+    QTRY_VERIFY(gesture->property("heldDown").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(300, inReach));
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(int(gesture->width()) / 2, onBar));
+    QCOMPARE(touches().count(), before);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+
+    // A drag upwards from the reach is still the one that opens the grid.
+    drag(&window, QPoint(540, inReach),
+         QPoint(540, inReach - 3 * page->property("pullThreshold").toInt()));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(touches().count(), before);
 }
 
 void tst_qmlload::recentlyClosedTabs()
