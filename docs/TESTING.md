@@ -56,6 +56,7 @@ workaround; a failure blocks the tag.
 - [ ] Bookmark the page from the menu; it appears in Bookmarks; edit and remove work.
 - [ ] Share sends the address to another app.
 - [ ] Download a file: the transfer UI appears and the file lands in Downloads.
+- [ ] A video with sound plays aloud, through the speaker and through headphones, and the volume keys change its volume.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.

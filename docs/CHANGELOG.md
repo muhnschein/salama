@@ -6,6 +6,7 @@ Versions follow semantic versioning.
 ## [Unreleased]
 
 ### Fixed
+- Pages play sound. The application now holds Sailjail's `Audio` permission, without which the platform keeps it out of the sound system altogether.
 - The grid can be pulled back to the page from anywhere on it again, a preview or the row of groups included, and a grid longer than the screen scrolls from a drag begun on a preview. A preview being held is let go when the finger moves up or down, as a held list item is.
 
 ### Changed
