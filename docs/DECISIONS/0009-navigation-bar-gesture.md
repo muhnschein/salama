@@ -52,10 +52,10 @@ lies in that strip. What says the bar can be dragged is drawn along its top edge
 that reach: `components/DragHandle.qml` (`0010-tab-grid-deck.md`).
 
 The reach lies over the foot of the page, and at first it kept every press there: a tap
-in it did nothing, and the page did not get it either. On device that was the controls
-of every player whose foot sat at the foot of the screen — a seek bar, play, full
-screen — out of reach, full-screen video worst of all. So the reach **hands the page
-everything that is not the drag**. A press there is undecided until the finger moves or
+in it did nothing, and the page did not get it either. On device that left a media
+player's controls out of reach wherever they sat at the foot of the page — a seek bar
+runs along a player's bottom edge, and a full-screen player's bottom edge is the
+page's. So the reach **hands the page everything that is not the drag**. A press there is undecided until the finger moves or
 lifts: moved upwards past `Theme.startDragDistance` it is the drag, as before; moved
 any other way that far, or lifted without moving that far, it is the page's, and the
 browsing page gives it to the engine as the touch it would have had —

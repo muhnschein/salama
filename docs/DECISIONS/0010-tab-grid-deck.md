@@ -48,8 +48,8 @@ A cell can also be **carried** to another place in the grid, and **slid away** t
 its tab. The two share the sideways movement, so a hold tells them apart: a finger held
 for **a second** picks the cell up (a timer the delegate owns, since
 `MouseArea.pressAndHoldInterval` came with Qt 5.9), and the cell comes up a little so the
-hand knows it has it. It was a second and a half, which on device was long enough to
-wonder whether anything was happening; a finger that moves sideways before then is sliding the cell, to
+hand knows it has it. It was a second and a half until the person testing on device
+asked for a second. A finger that moves sideways before then is sliding the cell, to
 the left only, because the grid has nothing to the right. Slid past a third of its width
 and released, the cell closes its tab; released short of that it slides back. It fades as
 it goes, so the finger sees what lifting will do. A first build picked the cell up on
