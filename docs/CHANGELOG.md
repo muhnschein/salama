@@ -6,6 +6,7 @@ Versions follow semantic versioning.
 ## [Unreleased]
 
 ### Changed
+- A new application icon: a lightning bolt on a dark disc in a gold frame.
 - Private tabs are gone, and the private group with them: the platform offers a Harbour application no way to put a device-lock or fingerprint gate on them, and an unlocked "Private" group would promise what it cannot keep. A database that still has private tabs loses them on first start.
 - The application is now called salama (it was tuuli): package `harbour-salama`, Sailjail application name `salama`. The data directory changes with the name, so tabs, bookmarks, history and settings from a tuuli build do not carry over.
 
