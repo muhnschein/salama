@@ -24,7 +24,8 @@ namespace Salama {
 // (apps/shared/ResourceController.qml):
 //
 //  * "media-decoder-info", from Gecko's media decoder as patched for Sailfish OS
-//    (xulrunner-qt5 rpm/0056-Ensure-audio-continues-when-screen-is-locked.patch): a
+//    (sailfishos/gecko-dev,
+//    rpm/0056-Ensure-audio-continues-when-screen-is-locked.-Contri.patch): a
 //    decoder's metadata, `{"owner", "state": "meta", "a", "v"}` -- does the stream
 //    have sound, does it have pictures -- and every change of its play state,
 //    `{"owner", "state": "play" | "pause"}`. The owner is the decoder's address.

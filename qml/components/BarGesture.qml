@@ -73,7 +73,15 @@ MouseArea {
         pressedOnBar = mouse.y >= reach
         pressedRegion = pressedOnBar ? bar.regionAt(mouse.x) : ""
     }
-    onPressAndHold: heldDown = true
+    // Only in the reach. On the bar a slow tap is still a tap: the event is handed
+    // back, and MouseArea then raises clicked on release as though never held.
+    onPressAndHold: {
+        if (pressedOnBar) {
+            mouse.accepted = false
+        } else {
+            heldDown = true
+        }
+    }
     onPositionChanged: {
         lastAt = scenePoint(mouse)
         if (forwarding) {

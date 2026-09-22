@@ -33,7 +33,9 @@ that scrolls itself, so a stock pulley cannot be used on the browsing page. The 
 handles the drag itself, and **one `MouseArea` covering the whole bar owns every press**:
 the icons are icons, the region under the press decides what a tap means, and the same
 region drives the pressed highlight. The regions live in `regionAt()`, so they can be
-checked from the load tests, which have no window to send real presses to.
+checked from the load tests directly; what a real press on the bar and its reach does is
+checked by putting the application in a window and pressing on it
+(`tst_qmlload::barReachUnderAFinger`).
 
 The bar reports the drag as a **distance**, not as a finished gesture: `dragStarted`,
 `dragMoved(distance)`, `dragFinished(distance)`. What that distance moves, and the
@@ -64,7 +66,9 @@ its own coordinates, the ones a real touch arrives in — from where it went dow
 view takes focus as a real touch gives it, which also ends editing the address. A
 press **held** in the reach is not handed on: the handle is in the reach, and a finger
 resting on it before it moves up is the grid's. A long press on a link in that strip is
-the price of that.
+the price of that. On the bar itself a hold changes nothing — a slow tap on back or the
+address is still a tap — so the handler hands the held event back to `MouseArea`, which
+then raises `clicked` as though it had never been held.
 
 Detecting players instead — asking the page where its media sits, and shrinking the
 reach over one — was the other way. It needs a script run on every scroll, and it

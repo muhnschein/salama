@@ -119,8 +119,8 @@ so that a thumb drifting while it held would not hand the grid a scroll before t
 ran out, with the expectation that past the drift tolerance the grid would "take the drag
 from the next move". It never did. A `Flickable` that filters a move while another item
 keeps the grab gives the touch up for good -- it forgets the press (`lastPosTime = -1`,
-`pressed = false` in `QQuickFlickable::sendMouseEvent`, Qt 5.6 and 5.15 alike) and ignores
-every move after it -- and it cannot be handed the touch back. So any drag begun on a
+`pressed = false`, in `QQuickFlickable::sendMouseEvent` on Qt 5.6 and `filterMouseEvent`
+on 5.15) and ignores every move after it -- and it cannot be handed the touch back. So any drag begun on a
 cell went nowhere: the page could only be pulled back from the gaps between cells, and a
 grid longer than the screen could not be scrolled from one. Qt 5.6 also runs every
 ancestor's filter on every event whatever a nearer one decided, so no item placed between
@@ -134,6 +134,14 @@ tolerance vertically was possible only by having the cell keep the touch and dri
 grid's scrolling and pulling itself, by hand, for every drag that starts on a cell: the
 flickable's own physics traded for an imitation, on the gesture the grid is used for
 most. The shorter hold is the other half of the answer; a second is less time to drift.
+
+Sideways is the cell's, and it has to be claimed before the grid can take it. A slide
+slants as a thumb does, and a slide that drifted down by the grid's drag distance before
+it had gone the hold's tolerance across went to the grid, to scroll or to pull. So once
+the finger has moved more across than up or down, by three quarters of that drag
+distance, the cell keeps the touch: from then on it is a hold or a slide and never the
+grid's. The distance is Qt's style hint, `Qt.styleHints.startDragDistance`, since that
+is the one the flickable measures by, rather than Silica's `Theme` value.
 
 The gestures are tested under a real finger (`tst_qmlload::gridGesturesUnderAFinger`):
 the application is put in a window and pressed on, because whether a drag begun on a

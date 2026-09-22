@@ -44,6 +44,10 @@ Item {
     readonly property real holdTolerance: Theme.iconSizeSmall
     // True from the press until the finger has moved too far to be holding.
     property bool holding: false
+    // True once the finger has moved more sideways than up or down, by most of the
+    // distance at which the grid would take it: from then on the touch is the cell's,
+    // a hold or a slide, and never the grid's scroll.
+    property bool sideways: false
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
     // Drawn on the rounded box below: this cell is the active tab, or has a finger. A
@@ -99,6 +103,7 @@ Item {
     function drop() {
         letGo()
         held = false
+        sideways = false
         content.x = 0
         content.y = 0
     }
@@ -119,19 +124,23 @@ Item {
 
         objectName: "tabPreviewGesture"
         anchors.fill: parent
-        // Once the cell is carried or sliding, the grid may not take the drag back.
-        // Not while a hold is still forming: a flickable that is refused a touch once
-        // gives up on it for good, so a cell that kept every press from the start
-        // left the grid nothing to scroll and nothing to pull the page back with, for
-        // any drag begun on a cell. A drag up or down therefore cancels the hold, as
-        // it does on any Silica list.
-        preventStealing: preview.held || preview.swiping
+        // Once the cell is carried or sliding, or the finger has gone sideways, the
+        // grid may not take the drag back. Not before: a flickable that is refused a
+        // touch once gives up on it for good, so a cell that kept every press from the
+        // start left the grid nothing to scroll and nothing to pull the page back with,
+        // for any drag begun on a cell. A drag up or down therefore cancels the hold,
+        // as it does on any Silica list. Sideways is claimed short of the grid's own
+        // drag distance, Qt's rather than Silica's, since that is the one the grid
+        // measures by: a slide that slants would otherwise be the grid's before it
+        // had gone far enough across to be a slide.
+        preventStealing: preview.held || preview.swiping || preview.sideways
 
         onPressed: {
             grabX = mouse.x
             grabY = mouse.y
             preview.carried = false
             preview.swiping = false
+            preview.sideways = false
             preview.holding = true
             holdTimer.restart()
         }
@@ -139,6 +148,10 @@ Item {
             var acrossX = mouse.x - grabX
             var acrossY = mouse.y - grabY
             if (!preview.held && !preview.swiping) {
+                if (Math.abs(acrossX) > Math.abs(acrossY)
+                        && Math.abs(acrossX) > Qt.styleHints.startDragDistance * 0.75) {
+                    preview.sideways = true
+                }
                 // Within the tolerance the finger is still holding. Beyond it the
                 // hold is off, and a sideways move is the start of a slide. Leftwards
                 // only -- the grid has nothing to the right -- while an up-and-down

@@ -9,6 +9,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -18,6 +19,7 @@
 #include <QSGRendererInterface>
 #include <QScopedPointer>
 #include <QSet>
+#include <QStyleHints>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <algorithm>
@@ -1221,9 +1223,18 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QCOMPARE(tabs->data(tabs->index(1, 0), TabModel::TabIdRole).toInt(), firstId);
     QVERIFY(page->property("tabsOpen").toBool());
 
-    // Slid to the left, a cell closes its tab.
+    // Slid to the left, a cell closes its tab -- slanting as a thumb does, too: the
+    // grid would take a slide that drifted down by its drag distance before it had
+    // gone across by the hold's tolerance, and scroll or pull instead.
+    const int across = cells().first()->property("width").toInt() / 2;
+    const QPoint slant = centreOf(cells().first());
+    drag(&window, slant, slant + QPoint(-across, across * 3 / 5));
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    openGrid();
     const QPoint slide = centreOf(cells().first());
-    drag(&window, slide, slide - QPoint(cells().first()->property("width").toInt() / 2, 0));
+    drag(&window, slide, slide - QPoint(across, 0));
     QCOMPARE(tabs->count(), 1);
     QVERIFY(page->property("tabsOpen").toBool());
 
@@ -1309,6 +1320,14 @@ void tst_qmlload::barReachUnderAFinger()
     QCOMPARE(touches().count(), before);
     QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
     evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    // On the bar itself a slow tap is a tap: the hold is the reach's alone.
+    const QPoint address(int(gesture->width()) / 2, onBar);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, address);
+    QTest::qWait(QGuiApplication::styleHints()->mousePressAndHoldInterval() + 200);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, address);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    QCOMPARE(touches().count(), before);
 
     // A drag upwards from the reach is still the one that opens the grid.
     drag(&window, QPoint(540, inReach),
@@ -1769,6 +1788,7 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
 // to say, and tst_pageactivity tests it; this is what the browsing page does about it.
 void tst_qmlload::pagesSleepOutOfSight()
 {
+    const int firstTab = m_core->tabs()->activeTabId();
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
     QList<QObject *> views = findAll(QStringLiteral("webView"));
     QCOMPARE(views.count(), 2);
@@ -1791,11 +1811,16 @@ void tst_qmlload::pagesSleepOutOfSight()
              activity->topics());
 
     // Not the moment the application is left, but a moment after: every page, the one
-    // behind the one in front as well.
+    // behind the one in front as well. Until then the one in front stays active --
+    // an inactive view's document is hidden, and a hidden document's media paused.
+    QVERIFY(front->property("active").toBool());
+    QVERIFY(!behind->property("active").toBool());
     setState(Qt::ApplicationInactive);
     QVERIFY(activity->background());
+    QVERIFY(front->property("active").toBool());
     QCOMPARE(calls(front, "suspendView"), 0);
     QTRY_VERIFY(activity->asleep());
+    QVERIFY(!front->property("active").toBool());
     QCOMPARE(calls(front, "suspendView"), 1);
     QCOMPARE(calls(behind, "suspendView"), 1);
     QVERIFY(front->property("suspended").toBool());
@@ -1809,21 +1834,28 @@ void tst_qmlload::pagesSleepOutOfSight()
     // one behind when it next comes to the front. Once each.
     setState(Qt::ApplicationActive);
     QVERIFY(!activity->asleep());
-    front->setProperty("active", false);
-    front->setProperty("active", true);
-    front->setProperty("active", false);
-    front->setProperty("active", true);
+    QVERIFY(front->property("active").toBool());
     QCOMPARE(calls(front, "resumeView"), 1);
     QVERIFY(!front->property("suspended").toBool());
     QCOMPARE(calls(behind, "resumeView"), 0);
     QVERIFY(behind->property("suspended").toBool());
-    behind->setProperty("active", false);
-    behind->setProperty("active", true);
+    // The one behind still sleeps, but a document arriving in it now is left awake:
+    // suspending a view stops the one window every view draws into, and the page on
+    // the screen with it.
+    behind->setProperty("loading", true);
+    behind->setProperty("loading", false);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    m_core->tabs()->activateTabById(firstTab);
+    QVERIFY(behind->property("active").toBool());
     QCOMPARE(calls(behind, "resumeView"), 1);
+    QVERIFY(!behind->property("suspended").toBool());
     // Awake, a load changes nothing.
     front->setProperty("loading", true);
     front->setProperty("loading", false);
     QCOMPARE(calls(front, "suspendView"), 3);
+    m_core->tabs()->activateTabById(
+        m_core->tabs()->data(m_core->tabs()->index(1, 0), TabModel::TabIdRole).toInt());
+    QCOMPARE(currentWebView(), front);
 
     // Something with sound playing keeps every page awake out of sight.
     evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
@@ -1834,6 +1866,7 @@ void tst_qmlload::pagesSleepOutOfSight()
     setState(Qt::ApplicationInactive);
     QTest::qWait(activity->settleDelay() * 3 / 2);
     QVERIFY(!activity->asleep());
+    QVERIFY(front->property("active").toBool());
     QCOMPARE(calls(front, "suspendView"), 3);
     QCOMPARE(calls(behind, "suspendView"), 1);
     setState(Qt::ApplicationActive);

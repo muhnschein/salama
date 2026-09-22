@@ -444,7 +444,13 @@ WebViewPage {
             id: webView
 
             objectName: "webView"
-            active: isCurrent && Qt.application.state === Qt.ApplicationActive
+            // Active out of sight, too, until the pages are put to sleep: an inactive
+            // view's document is hidden, and Sailfish's Gecko pauses the media of a
+            // hidden document, so music would stop the moment the application was put
+            // away -- and a player's next track could not start in the grace after it.
+            // sailfish-browser keeps its page active the same way
+            // (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+            active: isCurrent && !PageActivity.asleep
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
             desktopMode: Settings.desktopMode
@@ -555,8 +561,11 @@ WebViewPage {
                 // What sleeps is a document, and one that arrives while its view is
                 // asleep arrives awake -- a load already under way, a redirect, a page
                 // that reloads itself. It is put to sleep with the rest, as
-                // sailfish-browser does with a page that finishes loading unseen.
-                if (suspended) {
+                // sailfish-browser does with a page that finishes loading unseen. Only
+                // while the pages sleep, out of sight: a view behind the one in front
+                // stays suspended after the application is back, and suspending it then
+                // would stop the shared window drawing the page on the screen.
+                if (suspended && PageActivity.asleep) {
                     suspendView()
                 }
                 if (loading) {
