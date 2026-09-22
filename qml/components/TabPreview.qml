@@ -6,10 +6,11 @@
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held for a
-// second and a half -- still, or near enough: a thumb held down drifts -- picks the
-// cell up to be carried to another place in the grid. A drag to the left slides the
-// cell out and closes the tab when it has gone far enough; released short of that
-// it slides back. The button is drawn above the handler and keeps its own taps
+// second -- still, or near enough: a thumb held down drifts -- picks the cell up to
+// be carried to another place in the grid. A drag to the left slides the cell out
+// and closes the tab when it has gone far enough; released short of that it slides
+// back. A drag up or down is none of these: it is the grid's, to scroll or to hand
+// the page back. The button is drawn above the handler and keeps its own taps
 // (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
@@ -37,8 +38,9 @@ Item {
     // True while the cell is being slid out to the left.
     property bool swiping: false
     // How long a finger holds before the cell comes up, and how far it may drift
-    // meanwhile and still count as holding.
-    readonly property int holdInterval: 1500
+    // sideways meanwhile and still count as holding. Up and down it may drift as far
+    // as the grid lets a finger move before taking it as a drag.
+    readonly property int holdInterval: 1000
     readonly property real holdTolerance: Theme.iconSizeSmall
     // True from the press until the finger has moved too far to be holding.
     property bool holding: false
@@ -115,12 +117,13 @@ Item {
 
         objectName: "tabPreviewGesture"
         anchors.fill: parent
-        // While a hold may still be one, and once the cell is carried or sliding,
-        // the grid may not take the drag: a thumb that drifts a little while it
-        // holds would otherwise have handed the grid a scroll before the hold ran
-        // out. Past the tolerance the hold is off and the grid takes the drag from
-        // the next move.
-        preventStealing: preview.holding || preview.held || preview.swiping
+        // Once the cell is carried or sliding, the grid may not take the drag back.
+        // Not while a hold is still forming: a flickable that is refused a touch once
+        // gives up on it for good, so a cell that kept every press from the start
+        // left the grid nothing to scroll and nothing to pull the page back with, for
+        // any drag begun on a cell. A drag up or down therefore cancels the hold, as
+        // it does on any Silica list.
+        preventStealing: preview.held || preview.swiping
 
         onPressed: {
             grabX = mouse.x
@@ -137,7 +140,7 @@ Item {
                 // Within the tolerance the finger is still holding. Beyond it the
                 // hold is off, and a sideways move is the start of a slide. Leftwards
                 // only -- the grid has nothing to the right -- while an up-and-down
-                // move is the grid's own scroll, which it takes from here.
+                // move is the grid's own, and it has usually taken it before here.
                 if (Math.abs(acrossX) <= preview.holdTolerance
                         && Math.abs(acrossY) <= preview.holdTolerance) {
                     return

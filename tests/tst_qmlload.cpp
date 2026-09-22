@@ -14,6 +14,8 @@
 #include <QQmlEngine>
 #include <QQmlExpression>
 #include <QQuickItem>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <QScopedPointer>
 #include <QSet>
 #include <QTemporaryDir>
@@ -36,6 +38,7 @@ class tst_qmlload : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void init();
     void cleanup();
 
@@ -50,6 +53,7 @@ private slots:
     void tabGrid();
     void tabGroups();
     void previewGestures();
+    void gridGesturesUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -84,6 +88,13 @@ private:
     QScopedPointer<QQmlEngine> m_engine;
     QScopedPointer<QObject> m_window;
 };
+
+// Software rendering, set before anything loads QtQuick: the offscreen platform has no
+// OpenGL, and gridGesturesUnderAFinger() needs a real window to press on.
+void tst_qmlload::initTestCase()
+{
+    QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Software);
+}
 
 void tst_qmlload::init()
 {
@@ -1040,31 +1051,28 @@ void tst_qmlload::previewGestures()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(0);
 
-    // A second and a half of holding still picks a cell up to be carried; a cell
-    // picked up does not open when the finger lifts.
+    // A second of holding still picks a cell up to be carried; a cell picked up does
+    // not open when the finger lifts.
     QObject *timer = findObjects(cell, QStringLiteral("holdTimer")).first();
-    QCOMPARE(timer->property("interval").toInt(), 1500);
-    QCOMPARE(cell->property("holdInterval").toInt(), 1500);
-    // A thumb drifts while it holds: some movement still counts as holding, and
-    // while it may yet be a hold the grid may not take the drag.
+    QCOMPARE(timer->property("interval").toInt(), 1000);
+    QCOMPARE(cell->property("holdInterval").toInt(), 1000);
+    // A thumb drifts while it holds: some movement still counts as holding. The grid
+    // may still take the drag while a hold is forming -- a flickable refused a touch
+    // once never takes it back, and the grid could then be neither scrolled nor
+    // pulled from a cell -- and may not once the cell is up (gridGesturesUnderAFinger).
+    QObject *gesture = findObjects(cell, QStringLiteral("tabPreviewGesture")).first();
     QVERIFY(cell->property("holdTolerance").toReal() > 0);
     QVERIFY(!cell->property("held").toBool());
     cell->setProperty("holding", true);
-    QVERIFY(findObjects(cell, QStringLiteral("tabPreviewGesture"))
-                .first()
-                ->property("preventStealing")
-                .toBool());
+    QVERIFY(!gesture->property("preventStealing").toBool());
     evaluate(cell, QStringLiteral("letGo()"));
     QVERIFY(!cell->property("holding").toBool());
-    QVERIFY(!findObjects(cell, QStringLiteral("tabPreviewGesture"))
-                 .first()
-                 ->property("preventStealing")
-                 .toBool());
     evaluate(cell, QStringLiteral("pickUp()"));
     QVERIFY(cell->property("held").toBool());
     QVERIFY(cell->property("carried").toBool());
     QVERIFY(!cell->property("holding").toBool());
     QVERIFY(!timer->property("running").toBool());
+    QVERIFY(gesture->property("preventStealing").toBool());
     evaluate(cell, QStringLiteral("releaseTap()"));
     QVERIFY(page->property("tabsOpen").toBool());
     evaluate(cell, QStringLiteral("drop()"));
@@ -1098,6 +1106,118 @@ void tst_qmlload::previewGestures()
     QVERIFY(mark->property("opacity").toReal() >= 0.9);
     QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
+}
+
+namespace {
+
+QPoint centreOf(QObject *object)
+{
+    auto *item = qobject_cast<QQuickItem *>(object);
+    return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint();
+}
+
+// A finger put down at one point, moved to another in even steps and lifted there.
+void drag(QWindow *window, const QPoint &from, const QPoint &to)
+{
+    const int steps = 24;
+    QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, from);
+    for (int step = 1; step <= steps; ++step) {
+        QTest::mouseMove(window, from + (to - from) * step / steps);
+    }
+    QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, to);
+}
+
+} // namespace
+
+// The grid's gestures under a real finger, in a real window. Whether a drag begun on a
+// cell ever reaches the grid is decided inside Qt's own delivery -- a cell that keeps
+// the touch from the moment it is pressed leaves the flickable nothing to take for the
+// rest of it -- so raising the signals the gestures end in, as the rest of this file
+// does, cannot see that go wrong. It went wrong once: the grid could only be pulled
+// back from the gaps between its cells.
+void tst_qmlload::gridGesturesUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    QQuickWindow window;
+    window.resize(int(root->width()), int(root->height()));
+    root->setParentItem(window.contentItem());
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    const auto openGrid = [&]() {
+        pullUpToTabs();
+        QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    };
+    const auto cells = [&]() { return byRow(findAll(QStringLiteral("tabPreview"))); };
+    const QPoint down(0, 3 * page->property("pullThreshold").toInt());
+
+    // Dragged down from a cell, the grid hands the page back, as it does from the gaps
+    // between the cells and from the row of groups over them.
+    openGrid();
+    drag(&window, centreOf(cells().first()), centreOf(cells().first()) + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    openGrid();
+    drag(&window, centreOf(find(QStringLiteral("tabGroupLabel"))),
+         centreOf(find(QStringLiteral("tabGroupLabel"))) + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    openGrid();
+    const QPoint gap(int(root->width()) / 2, int(root->height()) * 3 / 4);
+    drag(&window, gap, gap + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // A tap on a cell opens its tab.
+    openGrid();
+    QCOMPARE(tabs->activeTabId(), second);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(cells().first()));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QVERIFY(tabs->activeTabId() != second);
+
+    // Held still for the hold interval -- or all but still: a thumb drifts, and a
+    // drift short of a drag is still a hold -- a cell comes up and is carried to
+    // another place in the grid, and letting go of it opens nothing.
+    openGrid();
+    QObject *first = cells().first();
+    const QPoint grab = centreOf(first);
+    const int firstId = tabs->data(tabs->index(0, 0), TabModel::TabIdRole).toInt();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    QTest::mouseMove(&window, grab + QPoint(first->property("holdTolerance").toInt() / 2, 2));
+    QTRY_VERIFY(first->property("held").toBool());
+    const QPoint target = centreOf(cells().last());
+    QTest::mouseMove(&window, (grab + target) / 2);
+    QTest::mouseMove(&window, target);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, target);
+    QCOMPARE(tabs->data(tabs->index(1, 0), TabModel::TabIdRole).toInt(), firstId);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Slid to the left, a cell closes its tab.
+    const QPoint slide = centreOf(cells().first());
+    drag(&window, slide, slide - QPoint(cells().first()->property("width").toInt() / 2, 0));
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // With more tabs than the screen holds, a drag begun on a cell scrolls the grid,
+    // and a pull back down on one scrolls it back rather than dropping the grid.
+    for (int i = 0; i < 9; ++i) {
+        tabs->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    openGrid();
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    const qreal top = grid->property("contentY").toReal();
+    const QPoint middle = centreOf(cells().at(4));
+    drag(&window, middle, middle - down);
+    QTRY_VERIFY(!grid->property("moving").toBool());
+    const qreal scrolled = grid->property("contentY").toReal();
+    QVERIFY(scrolled > top);
+    const QPoint lower = centreOf(cells().at(4)) - down / 3;
+    drag(&window, lower, lower + down / 3);
+    QTRY_VERIFY(!grid->property("moving").toBool());
+    QVERIFY(grid->property("contentY").toReal() < scrolled);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    root->setParentItem(nullptr);
 }
 
 void tst_qmlload::recentlyClosedTabs()

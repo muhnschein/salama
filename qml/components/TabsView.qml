@@ -9,7 +9,10 @@
 // The way back is this view's own overscroll. Dragged past its top it reports the
 // distance and moves itself up by the same amount, which cancels the shift the
 // flickable would otherwise draw: the content then stays exactly where the finger
-// put it while the deck behind it slides down and brings the page back.
+// put it while the deck behind it slides down and brings the page back. It is
+// dragged from anywhere on the screen: the cells leave a drag up or down to it, and
+// the two rows drawn over the cells are the flickable's own children, so it sees
+// every press on them too.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -31,6 +34,16 @@ Item {
     property real cutoutHeight: 0
 
     objectName: "tabsView"
+
+    // The rows are declared beside the grid, where the view's own default property
+    // cannot take them into the content it scrolls, and are handed to the grid once
+    // made. A flickable filters the presses of its own children and nothing else's:
+    // beside it, the group strip took every press on the head of the screen, and
+    // the page could not be pulled back from there.
+    Component.onCompleted: {
+        headRow.parent = tabGrid
+        newTabRow.parent = tabGrid
+    }
 
     SilicaGridView {
         id: tabGrid
@@ -102,7 +115,8 @@ Item {
 
     // The groups, over the cells rather than among them, with the way to edit them in
     // one corner and the search for a tab in the other. The row is also what keeps
-    // the top row of cells clear of the screen's cutout.
+    // the top row of cells clear of the screen's cutout. It rides on the grid, which
+    // moves up as it is pulled down; the margin keeps the row where the content is.
     Rectangle {
         id: headRow
 
@@ -111,6 +125,7 @@ Item {
             left: parent.left
             right: parent.right
             top: parent.top
+            topMargin: tabGrid.overscroll
         }
         // The cutout on top of the row's own height, and the strip below the cutout
         // rather than centred through it: the row starts at the top of the screen,
@@ -150,6 +165,7 @@ Item {
 
     // The one control the grid carries of its own, over the cells rather than among
     // them: a row along the foot of the view, in the same glass as the navigation bar.
+    // On the grid as the head row is, and held still against its pull the same way.
     Rectangle {
         id: newTabRow
 
@@ -158,6 +174,7 @@ Item {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
+            bottomMargin: -tabGrid.overscroll
         }
         height: Theme.itemSizeLarge
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
