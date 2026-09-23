@@ -66,10 +66,110 @@
     </message>
 </context>
 <context>
+    <name>BrowserMenu</name>
+    <message>
+        <source>Tabs</source>
+        <translation>Välilehdet</translation>
+    </message>
+    <message>
+        <source>New tab</source>
+        <translation>Uusi välilehti</translation>
+    </message>
+    <message>
+        <source>This page</source>
+        <translation>Tämä sivu</translation>
+    </message>
+    <message>
+        <source>Search on page</source>
+        <translation>Etsi sivulta</translation>
+    </message>
+    <message>
+        <source>Remove bookmark</source>
+        <translation>Poista kirjanmerkki</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation>Jaa</translation>
+    </message>
+    <message>
+        <source>Desktop version</source>
+        <translation>Työpöytäversio</translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation>Selain</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation>Lataukset</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Asetukset</translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation>Kirjanmerkki</translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Tabs</source>
         <translation>Välilehdet</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadDelegate</name>
+    <message>
+        <source>Remove from list</source>
+        <translation>Poista luettelosta</translation>
+    </message>
+    <message>
+        <source>Downloading, %1%</source>
+        <translation>Ladataan, %1 %</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Epäonnistui</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>Peruttu</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadsPage</name>
+    <message>
+        <source>Downloads</source>
+        <translation>Lataukset</translation>
+    </message>
+    <message>
+        <source>Clear list</source>
+        <translation>Tyhjennä luettelo</translation>
+    </message>
+    <message>
+        <source>No downloads</source>
+        <translation>Ei latauksia</translation>
+    </message>
+    <message>
+        <source>Files downloaded from pages are listed here</source>
+        <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
+    </message>
+</context>
+<context>
+    <name>FindBar</name>
+    <message>
+        <source>Search on page</source>
+        <translation>Etsi sivulta</translation>
     </message>
 </context>
 <context>
@@ -108,53 +208,6 @@
     <message>
         <source>No history yet</source>
         <translation>Ei vielä historiaa</translation>
-    </message>
-</context>
-<context>
-    <name>MenuPage</name>
-    <message>
-        <source>Menu</source>
-        <translation>Valikko</translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation>Uusi välilehti</translation>
-    </message>
-    <message>
-        <source>Remove bookmark</source>
-        <translation>Poista kirjanmerkki</translation>
-    </message>
-    <message>
-        <source>Bookmark this page</source>
-        <translation>Lisää kirjanmerkkeihin</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>Jaa</translation>
-    </message>
-    <message>
-        <source>Browse</source>
-        <translation>Selaa</translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
-    </message>
-    <message>
-        <source>History</source>
-        <translation>Historia</translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation>Asetukset</translation>
-    </message>
-    <message>
-        <source>Tabs</source>
-        <translation>Välilehdet</translation>
-    </message>
-    <message>
-        <source>Move tab to group</source>
-        <translation>Siirrä välilehti ryhmään</translation>
     </message>
 </context>
 <context>
@@ -328,10 +381,6 @@
 <context>
     <name>TabGroupsPage</name>
     <message>
-        <source>Move to tab group</source>
-        <translation>Siirrä välilehtiryhmään</translation>
-    </message>
-    <message>
         <source>Tab groups</source>
         <translation>Välilehtiryhmät</translation>
     </message>
@@ -358,7 +407,15 @@
     </message>
 </context>
 <context>
-    <name>TabSearchPage</name>
+    <name>TabsView</name>
+    <message>
+        <source>No tabs in this group</source>
+        <translation>Ryhmässä ei ole välilehtiä</translation>
+    </message>
+    <message>
+        <source>Open one with the button below</source>
+        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+    </message>
     <message>
         <source>Search tabs</source>
         <translation>Hae välilehdistä</translation>
@@ -366,17 +423,6 @@
     <message>
         <source>No matching tabs</source>
         <translation>Ei osuvia välilehtiä</translation>
-    </message>
-</context>
-<context>
-    <name>TabsView</name>
-    <message>
-        <source>Open one with the button below</source>
-        <translation>Avaa välilehti alla olevalla painikkeella</translation>
-    </message>
-    <message>
-        <source>No tabs in this group</source>
-        <translation>Ryhmässä ei ole välilehtiä</translation>
     </message>
 </context>
 </TS>

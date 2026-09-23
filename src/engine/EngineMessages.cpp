@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "EngineMessages.h"
 
+#include "EngineData.h"
+
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
@@ -14,6 +16,10 @@ bool isWebScheme(const QString &scheme)
 {
     return scheme == QLatin1String("http") || scheme == QLatin1String("https");
 }
+
+// nsITypeAheadFind's answers that mean the text is on the page.
+const int FindFound = 0;
+const int FindWrapped = 2;
 
 } // namespace
 
@@ -117,6 +123,35 @@ QString EngineMessages::resolveFavicon(const QString &pageUrl, const QString &hr
         return candidate.toString();
     }
     return defaultFavicon(pageUrl);
+}
+
+QString EngineMessages::findMessage() const
+{
+    return QStringLiteral("embedui:find");
+}
+
+QString EngineMessages::findResultMessage() const
+{
+    return QStringLiteral("embed:find");
+}
+
+QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool backwards) const
+{
+    return {
+        {QStringLiteral("text"), text},
+        {QStringLiteral("again"), again},
+        {QStringLiteral("backwards"), backwards},
+    };
+}
+
+bool EngineMessages::findFound(const QVariant &data)
+{
+    const QVariant result = data.toMap().value(QStringLiteral("r"));
+    if (!EngineData::isNumber(result)) {
+        return false;
+    }
+    const double value = result.toDouble();
+    return value == FindFound || value == FindWrapped;
 }
 
 } // namespace Salama

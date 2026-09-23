@@ -29,6 +29,7 @@ SectionHeader 1.0 SectionHeader.qml
 ViewPlaceholder 1.0 ViewPlaceholder.qml
 VerticalScrollDecorator 1.0 VerticalScrollDecorator.qml
 DockedPanel 1.0 DockedPanel.qml
+OpacityRampEffect 1.0 OpacityRampEffect.qml
 CoverBackground 1.0 CoverBackground.qml
 CoverActionList 1.0 CoverActionList.qml
 CoverAction 1.0 CoverAction.qml

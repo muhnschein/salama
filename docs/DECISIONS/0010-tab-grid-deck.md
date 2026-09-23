@@ -69,26 +69,41 @@ asks.
 The close button in a cell's corner is a **disc with a cross through it**, drawn by the
 cell; the theme icon it replaced is discussed below.
 
-The grid carries two rows of its own, both drawn over the cells in the same glass as the
-navigation bar rather than scrolling among them, each with a spacer of the same height in
-the view's header and footer so that no cell is stranded under either. Both are
-**children of the flickable itself** -- declared beside it and handed to it once made,
-since anything declared inside a view goes into the content it scrolls -- because a
-flickable filters the presses of its own children and nothing else's: beside it, the
-strip of groups took every press along the head of the screen, which is exactly where a
-pull down begins. On the flickable they ride on its `y`, which moves up as the view is
-pulled down, so each carries the overscroll as a margin and stays with the content:
+The grid carries two rows of its own, both drawn over the cells rather than scrolling
+among them, each with a spacer of the same height in the view's header and footer so that
+no cell is stranded under either. Both are **children of the flickable itself** --
+declared beside it and handed to it once made, since anything declared inside a view goes
+into the content it scrolls -- because a flickable filters the presses of its own children
+and nothing else's: beside it, the strip of groups took every press along the head of the
+screen, which is exactly where a pull down begins. On the flickable they ride on its `y`,
+which moves up as the view is pulled down, so each carries the overscroll as a margin and
+stays with the content:
 
-* along the **head**, the strip of tab groups (0015). It replaced "*n* tabs", which
-  replaced a page header that named the active tab, which said what the page behind the
-  grid already says. The row's other work is the row of cells below it: without it the
-  first row, and the close button in its corner, sat under the device's own screen cutout. The row is `Screen.topCutout.height`
-  taller than it looks and puts its own text below that height, which is what Silica's
-  `PullDownMenu` does with its top margin; the property is read through a guard, so a
-  `Screen` that does not report a cutout gives a row of the ordinary height rather than
-  one that is undefined pixels tall.
-* along the **foot**, the one control the grid offers: new tab. Held rather than tapped,
-  it brings up the tabs closed lately (0018).
+* along the **head**, Silica's own `SearchField`, "Search tabs", across the row with its
+  words from the left edge; what it finds is listed over the cells (0015). The head held
+  the way to a new tab and a search button that opened a page of its own, and before
+  that the strip of tab groups (0015) until the strip went to the foot, and before that
+  "*n* tabs", and before that a page header that named the active tab, which said what
+  the page behind the grid already says. The row's other work is the row of cells below
+  it: without it the first row, and the close button in its corner, sat under the
+  device's own screen cutout. The row is `Screen.topCutout.height` taller than it looks
+  and puts its controls below that height, which is what Silica's `PullDownMenu` does
+  with its top margin; the property is read through a guard, so a `Screen` that does not
+  report a cutout gives a row of the ordinary height rather than one that is undefined
+  pixels tall.
+* along the **foot**, new tab in the left corner, the strip of tab groups, and the way to
+  edit them in the right corner. The corners are the same width, so the names are
+  centred on the screen. Held rather than tapped, new tab brings up the tabs closed
+  lately (0018). The strip was in the head until a tab could be carried onto a group to
+  move it there (0015): at the foot it is under the thumb doing the carrying.
+
+Both rows are panes of **Silica's glass**: their tint, `Theme.highlightDimmerColor` at
+`Theme.opacityOverlay`, with the ambience's own pattern, `Theme._patternImage`, tiled over
+it a pixel to a pixel of the screen and drawn at a tenth, as Silica's glass material draws
+its pattern; the keyboard's glass draws this one (`components/GlassTexture.qml`). The tint
+alone was a smooth band where Silica's own panes are textured. The material itself is in
+`Sailfish.Silica.Background`, which is not on Harbour's import allow-list; the pattern is
+the theme's, an underscored `Theme` property as `_lineWidth` is (0015).
 
 A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
 picture's own aspect ratio, rather than with `PreserveAspectCrop`. The picture is of a
@@ -97,9 +112,11 @@ the middle of a page whatever the reader had been looking at. Anchored at the to
 shows is the top of what was last on the screen.
 
 The cell is a plain `Item`, not a Silica `BackgroundItem`. That one draws both its press
-feedback and its highlight as a square wash across the whole cell, which is the one shape
-this cell has stopped having; what marks the active tab and the pressed one is the border
-of its own rounded box.
+feedback and its highlight as a wash across the whole cell, edge to edge. The cell draws
+the same square wash itself, stopped short of its edges round the picture and the title,
+and marks its rounded box with a border as well. The wash was once left out for the border
+alone, which on device said nothing at all; it came back with the box's rounded corners,
+and after another look on device it is square, as Silica's own is.
 
 The box has rounded corners, and so does the picture: `clip` is rectangular
 whatever the shape of the item doing the clipping, so the corners are cut by an
@@ -111,8 +128,10 @@ same number upstream writes as `12 * Theme.pixelRatio`.
 
 ### Every drag up or down is the grid's
 The grid is pulled back, and scrolled, from **anywhere on it**: a cell, the gaps between
-cells, the row of groups, the foot row. The cells do not keep a press for themselves
-while a hold is still forming, and that is a rule of Qt's, not a preference.
+cells, the head row. The foot row hands its presses to the grid as well, but a pull begun
+there has too little screen below it to go past the threshold. The cells do not keep a
+press for themselves while a hold is still forming, and that is a rule of Qt's, not a
+preference.
 
 The build that introduced the hold did keep it: `preventStealing` was up from the press,
 so that a thumb drifting while it held would not hand the grid a scroll before the hold
@@ -151,7 +170,7 @@ signals from a test skips entirely.
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
-the pull and the tap, "New tab" is the button in the grid's header, and "Close all
+the pull and the tap, "New tab" is the button in the grid's foot row, and "Close all
 tabs" is in Settings next to the other clearing actions.
 
 ### What says an edge can be dragged
@@ -177,9 +196,15 @@ first build wanted it perfectly still. How much, and in which direction, is in t
 section above.
 
 The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
-colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc
-of its own at its own transparency, baked into the icon, so the glyph alone was lost on
-most pages and a disc drawn behind it was a disc inside a disc.
+colour with a cross through it. The theme's `icon-m-clear` carries a disc of its own at
+its own transparency, baked into the icon, so the glyph alone was lost on most pages and
+a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,
+and on device it was the first thing seen on every cell; it is drawn at
+`Theme.opacityHigh` now, and opaque only under a finger.
+
+The picture and the title sit `Theme.paddingMedium` and half a `Theme.paddingSmall` in
+from the cell's edges (`inset`), so two cells stand twice that apart. It was a medium
+padding, and on device the pictures stood too close together.
 
 ### The size of the browsing page
 `qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is
@@ -218,5 +243,4 @@ window is what clips them; nothing is set to `clip`, which the engine's own comp
 surface would not have honoured anyway.
 
 While the grid is open the browsing page is still the page on the stack. Anything that
-reads `pageStack.currentPage` sees `browserPage` either way, and the menu's `Tabs` entry
-pops back to it and calls `showTabs()` on it rather than pushing a page of its own.
+reads `pageStack.currentPage` sees `browserPage` either way.

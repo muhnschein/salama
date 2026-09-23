@@ -59,6 +59,11 @@ QObject *bookmarkModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngi
     return keepOwnership(coreInstance->bookmarks());
 }
 
+QObject *downloadModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->downloads());
+}
+
 QObject *settingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(coreInstance->settings());
@@ -93,6 +98,8 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<HistoryModel>(ModuleUri, 1, 0, "HistoryModel", &historyModelProvider);
     qmlRegisterSingletonType<BookmarkModel>(ModuleUri, 1, 0, "BookmarkModel",
                                             &bookmarkModelProvider);
+    qmlRegisterSingletonType<DownloadModel>(ModuleUri, 1, 0, "DownloadModel",
+                                            &downloadModelProvider);
     qmlRegisterSingletonType<Settings>(ModuleUri, 1, 0, "Settings", &settingsProvider);
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);

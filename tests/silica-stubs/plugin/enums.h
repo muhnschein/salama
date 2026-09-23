@@ -56,6 +56,25 @@ public:
     Q_ENUM(Value)
 };
 
+// Which way OpacityRampEffect fades: the first four from opaque to clear, the last two
+// from the middle out to both edges.
+class OpacityRamp : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Value
+    {
+        LeftToRight = 0,
+        RightToLeft = 1,
+        TopToBottom = 2,
+        BottomToTop = 3,
+        BothSides = 4,
+        BothEnds = 5
+    };
+    Q_ENUM(Value)
+};
+
 class TruncationMode : public QObject
 {
     Q_OBJECT

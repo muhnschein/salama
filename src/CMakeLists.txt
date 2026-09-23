@@ -6,6 +6,10 @@ add_library(salama-core STATIC
     QmlTypes.h
     bookmarks/BookmarkModel.cpp
     bookmarks/BookmarkModel.h
+    downloads/DownloadModel.cpp
+    downloads/DownloadModel.h
+    engine/EngineData.cpp
+    engine/EngineData.h
     engine/EngineMessages.cpp
     engine/EngineMessages.h
     engine/PageActivity.cpp

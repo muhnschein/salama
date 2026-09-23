@@ -6,8 +6,10 @@
 #include "Core.h"
 #include "QmlTypes.h"
 #include "tabs/ClosedTabModel.h"
+#include "tabs/TabGroupModel.h"
 
 #include <QColor>
+#include <QDesktopServices>
 #include <QFont>
 #include <QGuiApplication>
 #include <QQmlComponent>
@@ -23,6 +25,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 #include <algorithm>
+#include <utility>
 
 using Salama::BookmarkModel;
 using Salama::Core;
@@ -34,6 +37,37 @@ namespace {
 const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
 
 } // namespace
+
+// Takes the addresses Qt.openUrlExternally is handed for one scheme, in place of the
+// platform, which a test has no business starting.
+class UrlCatcher : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit UrlCatcher(QString scheme)
+        : m_scheme(std::move(scheme))
+    {
+        QDesktopServices::setUrlHandler(m_scheme, this, "open");
+    }
+    ~UrlCatcher() override
+    {
+        QDesktopServices::unsetUrlHandler(m_scheme);
+    }
+    UrlCatcher(const UrlCatcher &) = delete;
+    UrlCatcher &operator=(const UrlCatcher &) = delete;
+
+    QList<QUrl> opened;
+
+public slots:
+    void open(const QUrl &url)
+    {
+        opened.append(url);
+    }
+
+private:
+    QString m_scheme;
+};
 
 class tst_qmlload : public QObject
 {
@@ -54,13 +88,21 @@ private slots:
     void faviconResolvedAfterLoad();
     void tabGrid();
     void tabGroups();
+    void tabSearch();
+    void tabsDropOntoGroups();
     void previewGestures();
     void gridGesturesUnderAFinger();
+    void carryToGroupUnderAFinger();
+    void carryOverTheStripUnderAFinger();
+    void tabGroupStripFades();
     void barReachUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
-    void menuPage();
+    void browserMenu();
+    void menuSheetUnderAFinger();
+    void findInPage();
+    void downloadsPage();
     void historyPage();
     void bookmarksPage();
     void settingsPage();
@@ -285,11 +327,12 @@ void tst_qmlload::popPage() const
                               Q_ARG(QVariant, QVariant()), Q_ARG(QVariant, QVariant()));
 }
 
+// The bar's menu button brings up the sheet of icons; one of them, tapped.
 QObject *tst_qmlload::openMenuItem(const QString &itemName)
 {
     tapBar(QStringLiteral("menu"));
     QObject *item = find(itemName);
-    if (item == nullptr) {
+    if (item == nullptr || !find(QStringLiteral("browserMenu"))->property("open").toBool()) {
         return nullptr;
     }
     click(item);
@@ -571,8 +614,17 @@ void tst_qmlload::barDoesNotCoverThePage()
     QObject *addressLabel = find(QStringLiteral("addressLabel"));
     const int slimSize = addressLabel->property("font").value<QFont>().pixelSize();
 
-    // Editing brings the whole bar back, and so does a new page.
+    // A tap on the slim bar brings the whole bar back rather than the field, the way a
+    // page scrolled back up does; the next tap edits.
     tapBar(QStringLiteral("address"));
+    QVERIFY(webView->property("chrome").toBool());
+    QVERIFY(!bar->property("compact").toBool());
+    QVERIFY(!bar->property("editing").toBool());
+    tapBar(QStringLiteral("address"));
+    QVERIFY(bar->property("editing").toBool());
+    // Editing keeps the bar whole, however the page is scrolled meanwhile, and so does
+    // a new page.
+    webView->setProperty("chrome", false);
     QVERIFY(!bar->property("compact").toBool());
     evaluate(bar, QStringLiteral("endEditing()"));
     QVERIFY(bar->property("compact").toBool());
@@ -623,14 +675,15 @@ void tst_qmlload::editingEndsWithTheKeyboard()
 
     // The bar stays live while a field is up: the menu answers and it can still be
     // dragged. The address region is the one that does not, because the field has it.
+    // The menu is the end of editing too: its sheet comes up from under the bar, where
+    // the keyboard would sit over it.
     QVERIFY(find(QStringLiteral("navigationBarGesture"))->property("enabled").toBool());
     tapBar(QStringLiteral("menu"));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("menuPage"));
-    popPage();
-    QVERIFY(bar->property("editing").toBool());
-
-    evaluate(bar, QStringLiteral("endEditing()"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QVERIFY(menu->property("open").toBool());
     QVERIFY(!bar->property("editing").toBool());
+    QVERIFY(!field->property("visible").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
 }
 
 void tst_qmlload::thumbnailCapturedOnLoad()
@@ -705,26 +758,74 @@ void tst_qmlload::tabGrid()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QVERIFY(grid->property("visible").toBool());
-    // The grid carries two rows of its own, drawn over the cells: the groups, and the
-    // one control it offers. The first is also what keeps the top row of cells clear
-    // of the screen's own cutout. One group so far, unnamed, so named by its count.
-    QVERIFY(find(QStringLiteral("newTabRow")) != nullptr);
+    // The grid carries two rows of its own, drawn over the cells: along the head the
+    // search for a tab, along the foot the way to a new tab, the groups and the way to
+    // edit them. The head is also what keeps the top row of cells clear of the screen's
+    // own cutout. One group so far, unnamed, so named by its count.
+    auto *headRow = qobject_cast<QQuickItem *>(find(QStringLiteral("gridHeadRow")));
+    auto *footRow = qobject_cast<QQuickItem *>(find(QStringLiteral("gridFootRow")));
+    QVERIFY(headRow != nullptr);
+    QVERIFY(footRow != nullptr);
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    QVERIFY(headRow->isAncestorOf(item("tabSearchField")));
+    QVERIFY(footRow->isAncestorOf(item("newTabButton")));
+    QVERIFY(footRow->isAncestorOf(item("tabGroupStrip")));
+    QVERIFY(footRow->isAncestorOf(item("editGroupsButton")));
+    QVERIFY(find(QStringLiteral("searchTabsButton")) == nullptr);
+    // The head along the top of the grid, and the foot along its bottom.
+    auto *gridView = qobject_cast<QQuickItem *>(grid);
+    QCOMPARE(headRow->mapToItem(gridView, QPointF(0, 0)).y(), qreal(0));
+    QCOMPARE(footRow->mapToItem(gridView, QPointF(0, footRow->height())).y(), gridView->height());
+    // The search field across the head from its left edge, where its words start; new
+    // tab in the foot's left corner and edit in its right, and the names between them in
+    // the middle of the screen.
+    const auto sceneX = [](QQuickItem *of, qreal x) { return of->mapToScene(QPointF(x, 0)).x(); };
+    const qreal screenWidth = headRow->width();
+    QCOMPARE(sceneX(item("tabSearchField"), 0), qreal(0));
+    QCOMPARE(item("tabSearchField")->width(), screenWidth);
+    QCOMPARE(item("tabSearchField")->property("placeholderText").toString(),
+             QStringLiteral("Search tabs"));
+    QVERIFY(sceneX(item("newTabButton"), 0) < screenWidth / 2);
+    QVERIFY(sceneX(item("editGroupsButton"), 0) > screenWidth / 2);
+    QQuickItem *names = item("tabGroupList");
+    QCOMPARE(sceneX(names, names->width() / 2), screenWidth / 2);
+    QVERIFY(sceneX(names, 0) >= sceneX(item("newTabButton"), item("newTabButton")->width()));
+    QVERIFY(sceneX(names, names->width()) <= sceneX(item("editGroupsButton"), 0));
     QList<QObject *> groupLabels = findAll(QStringLiteral("tabGroupLabel"));
     QCOMPARE(groupLabels.count(), 1);
     QCOMPARE(groupLabels.first()->property("text").toString(), QStringLiteral("2 tab(s)"));
+    // The row is sized to sit with the search field: the names in medium type, and the
+    // corners' icons a step below Silica's medium size, each at the page margin inside
+    // a button a padding wider either side and the row's height.
+    QCOMPARE(groupLabels.first()->property("font").value<QFont>().pixelSize(),
+             evaluate(grid, QStringLiteral("Theme.fontSizeMedium")).toInt());
+    const qreal smallPlus = evaluate(grid, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QVERIFY(smallPlus < evaluate(grid, QStringLiteral("Theme.iconSizeMedium")).toReal());
+    const qreal margin = evaluate(grid, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    for (QQuickItem *corner : {item("newTabButton"), item("editGroupsButton")}) {
+        auto *icon = corner->property("icon").value<QObject *>();
+        QVERIFY(icon != nullptr);
+        QCOMPARE(icon->property("sourceSize").toSizeF(), QSizeF(smallPlus, smallPlus));
+        QCOMPARE(corner->height(), footRow->height());
+        QVERIFY(corner->width() > smallPlus);
+    }
+    QCOMPARE(sceneX(item("newTabButton"), (item("newTabButton")->width() - smallPlus) / 2), margin);
+    QCOMPARE(sceneX(item("editGroupsButton"), (item("editGroupsButton")->width() + smallPlus) / 2),
+             screenWidth - margin);
     // The current group is the one underlined.
     QList<QObject *> underlines = findAll(QStringLiteral("tabGroupUnderline"));
     QCOMPARE(underlines.count(), 1);
     QVERIFY(underlines.first()->property("visible").toBool());
 
-    // Both the head row's strip and the first row of cells clear the display's own
+    // Both the head row's controls and the first row of cells clear the display's own
     // cutout: the head sat under the notch, and so did the close button in the corner
     // of the first cell.
     const qreal cutout = grid->property("cutoutHeight").toReal();
     QVERIFY(cutout > 0);
-    QObject *headRow = find(QStringLiteral("tabGroupRow"));
-    QVERIFY(headRow->property("height").toReal() > cutout);
-    QVERIFY(find(QStringLiteral("tabGroupStrip"))->property("y").toReal() >= cutout);
+    QVERIFY(headRow->height() > cutout);
+    QVERIFY(item("gridHeadControls")->y() >= cutout);
     // What says the edge is a pulley: a line in the highlight colour across the very
     // top of the screen, cutout or no cutout.
     QObject *indicator = find(QStringLiteral("gridPullIndicator"));
@@ -732,23 +833,54 @@ void tst_qmlload::tabGrid()
     QCOMPARE(indicator->property("y").toReal(), 0.0);
     // The highlight background rather than the highlight itself: the stub theme's.
     QCOMPARE(indicator->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
-    QCOMPARE(indicator->property("width").toReal(), headRow->property("width").toReal());
+    QCOMPARE(indicator->property("width").toReal(), headRow->width());
     QVERIFY(indicator->property("height").toReal() > 0);
     QVERIFY(find(QStringLiteral("gridDragHandle")) == nullptr);
+    // Both rows are panes of Silica's glass: the tint, and over it the ambience's own
+    // pattern, tiled and drawn at the tenth the glass draws it at -- under whatever the
+    // row carries, and loaded, which the stub's theme lets every image be.
+    const QString pattern = evaluate(grid, QStringLiteral("Theme._patternImage")).toString();
+    QVERIFY(!pattern.isEmpty());
+    for (QQuickItem *row : {headRow, footRow}) {
+        QQuickItem *glass = row->childItems().value(0);
+        QVERIFY(glass != nullptr);
+        QVERIFY(glass->objectName().endsWith(QLatin1String("Glass")));
+        QCOMPARE(glass->property("source").toUrl().toString(), pattern);
+        QVERIFY(evaluate(glass, QStringLiteral("fillMode === Image.Tile")).toBool());
+        QCOMPARE(glass->opacity(), 0.1);
+        QCOMPARE(glass->width(), row->width());
+        QCOMPARE(glass->height(), row->height());
+        QTRY_VERIFY(evaluate(glass, QStringLiteral("status === Image.Ready")).toBool());
+    }
+    QCOMPARE(item("gridHeadGlass")->parentItem(), headRow);
+    QCOMPARE(item("gridFootGlass")->parentItem(), footRow);
+    // Room in the scrolled content for each row, so no cell is stranded under one.
     auto *headerItem = find(QStringLiteral("tabGrid"))->property("headerItem").value<QObject *>();
     QVERIFY(headerItem != nullptr);
-    QCOMPARE(headerItem->property("height").toReal(), headRow->property("height").toReal());
+    QCOMPARE(headerItem->property("height").toReal(), headRow->height());
+    auto *footerItem = find(QStringLiteral("tabGrid"))->property("footerItem").value<QObject *>();
+    QVERIFY(footerItem != nullptr);
+    QCOMPARE(footerItem->property("height").toReal(), footRow->height());
 
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
 
-    // The preview box is rounded, and so is the highlight drawn round the active
-    // one. Clipping is rectangular whatever the shape of the item doing it, so the
-    // picture is cut to the same corners by a mask.
+    // The preview box is rounded, and the wash drawn round the active one is square,
+    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
+    // it, so the picture is cut to the box's corners by a mask.
     QObject *shot = findObjects(previews.at(1), QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
-    // The active cell is marked on that same box -- a Silica BackgroundItem would
-    // have drawn a square wash across the whole cell instead.
+    QObject *wash = findObjects(previews.at(1), QStringLiteral("tabPreviewHighlight")).first();
+    QVERIFY(wash->property("visible").toBool());
+    QCOMPARE(wash->property("radius").toReal(), qreal(0));
+    // The picture sits in from the cell's edges by a little more than a medium padding,
+    // and two cells stand twice that apart.
+    const qreal inset = previews.at(1)->property("inset").toReal();
+    QVERIFY(inset > evaluate(grid, QStringLiteral("Theme.paddingMedium")).toReal());
+    QCOMPARE(shot->property("x").toReal(), inset);
+    QCOMPARE(shot->property("width").toReal(),
+             previews.at(1)->property("width").toReal() - 2 * inset);
+    // The active cell's box is marked as well, by its border.
     auto *border = shot->property("border").value<QObject *>();
     QVERIFY(border != nullptr);
     QVERIFY(border->property("width").toReal() > 0);
@@ -941,74 +1073,20 @@ void tst_qmlload::tabGroups()
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
     QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
 
-    // The search corner lists every tab, group by group, and a tap brings one to the
-    // front and puts the grid away.
-    tabs->updateTitle(second, QStringLiteral("Office mail"));
-    click(find(QStringLiteral("searchTabsButton")));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabSearchPage"));
-    QList<QObject *> results = findAll(QStringLiteral("tabSearchDelegate"));
-    QCOMPARE(results.count(), 2);
-    QObject *heading = findObjects(results.at(1), QStringLiteral("tabSearchGroupHeader")).first();
-    QVERIFY(heading->property("visible").toBool());
-    QCOMPARE(heading->property("text").toString(), QStringLiteral("Work"));
-    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabSearchGroupHeader"))
-                 .first()
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("1 tab(s)"));
-    // The term follows the field a beat after typing stops, not on each keystroke.
-    find(QStringLiteral("tabSearchField"))->setProperty("text", QStringLiteral("office"));
-    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
-    QObject *debounce = find(QStringLiteral("searchDebounce"));
-    QVERIFY(debounce->property("running").toBool());
-    QVERIFY(debounce->property("interval").toInt() >= 200);
-    QMetaObject::invokeMethod(debounce, "triggered");
-    QCOMPARE(m_core->tabSearch()->searchTerm(), QStringLiteral("office"));
-    results = findAll(QStringLiteral("tabSearchDelegate"));
-    QCOMPARE(results.count(), 1);
-    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabRowTitle"))
-                 .first()
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("Office mail"));
-    click(findObjects(results.at(0), QStringLiteral("tabSearchItem")).first());
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
-    QVERIFY(!page->property("tabsOpen").toBool());
-    QCOMPARE(tabs->activeTabId(), second);
-    QCOMPARE(tabs->currentGroupId(), work);
-    QCOMPARE(evaluate(strip, QStringLiteral("currentButton.current")).toBool(), true);
-    QCOMPARE(evaluate(strip, QStringLiteral("currentButton")).value<QObject *>(),
-             findAll(QStringLiteral("tabGroupItem")).at(1));
-    // The term does not outlive the page.
-    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
-
-    // The menu moves the tab in front to another group, through the same list.
-    QObject *groupsPage = openMenuItem(QStringLiteral("moveToGroupItem"));
-    QCOMPARE(groupsPage->objectName(), QStringLiteral("tabGroupsPage"));
-    QCOMPARE(groupsPage->property("moveTabId").toInt(), second);
-    delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QVERIFY(delegates.first()->property("enabled").toBool());
-    click(delegates.at(0));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
-    QCOMPARE(tabs->tabCountInGroup(home), 2);
-    QCOMPARE(tabs->tabCountInGroup(work), 0);
-    QCOMPARE(tabs->currentGroupId(), home);
-    QCOMPARE(tabs->activeTabId(), second);
-    // The view behind the moved tab is the one it had.
-    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
-
-    // Or into a new group made for it.
-    openMenuItem(QStringLiteral("moveToGroupItem"));
+    // Into a group made for it: made from the list of groups, which makes it current
+    // and empty. How a tab is carried there from the grid is tabsDropOntoGroups().
+    click(find(QStringLiteral("editGroupsButton")));
     click(find(QStringLiteral("newGroupButton")));
     dialog = currentPage();
-    QCOMPARE(dialog->property("moveTabId").toInt(), second);
+    QCOMPARE(dialog->objectName(), QStringLiteral("tabGroupDialog"));
     find(QStringLiteral("groupNameField"))->setProperty("text", QStringLiteral("Mail"));
     QMetaObject::invokeMethod(dialog, "accept");
     popPage();
     popPage();
     QCOMPARE(tabs->groups().count(), 3);
+    QVERIFY(tabs->moveTabToGroup(second, tabs->groups().at(2).id));
     QCOMPARE(tabs->currentGroupId(), tabs->groups().at(2).id);
-    QCOMPARE(tabs->tabCountInGroup(tabs->groups().at(2).id), 1);
+    QCOMPARE(tabs->tabCountInGroup(work), 0);
     QCOMPARE(tabs->tabCountInGroup(home), 1);
 
     // Rename and delete are in the group's own menu; the default group has neither.
@@ -1043,6 +1121,156 @@ void tst_qmlload::tabGroups()
                  .toBool());
     QCOMPARE(tabs->currentGroupIndex(), 0);
     popPage();
+}
+
+// What is typed in the field along the grid's head lists the tabs that hold it, group by
+// group, in place of the cells; a tap on one brings it to the front and puts the grid
+// away. Nothing is pushed for it.
+void tst_qmlload::tabSearch()
+{
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(1);
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    QCOMPARE(tabs->tabCountInGroup(work), 1);
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->activeTabId(), first);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    pullUpToTabs();
+
+    tabs->updateTitle(first, QStringLiteral("Office hours"));
+    tabs->updateTitle(second, QStringLiteral("Office mail"));
+    QObject *view = find(QStringLiteral("tabsView"));
+    QObject *field = find(QStringLiteral("tabSearchField"));
+    QObject *found = find(QStringLiteral("tabSearchList"));
+    auto *cells = find(QStringLiteral("tabGrid"))->property("contentItem").value<QQuickItem *>();
+    const auto cellsShown = [cells]() { return cells->isVisible(); };
+    QVERIFY(!found->property("visible").toBool());
+    QVERIFY(cellsShown());
+    // The term follows the field a beat after typing stops, not on each keystroke, and
+    // the cells stay until it does.
+    field->setProperty("text", QStringLiteral("office"));
+    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
+    QVERIFY(!found->property("visible").toBool());
+    QObject *debounce = find(QStringLiteral("searchDebounce"));
+    QVERIFY(debounce->property("running").toBool());
+    QVERIFY(debounce->property("interval").toInt() >= 200);
+    QMetaObject::invokeMethod(debounce, "triggered");
+    QCOMPARE(m_core->tabSearch()->searchTerm(), QStringLiteral("office"));
+    QVERIFY(found->property("visible").toBool());
+    QVERIFY(!cellsShown());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QList<QObject *> results = byRow(findAll(QStringLiteral("tabSearchDelegate")));
+    QCOMPARE(results.count(), 2);
+    QObject *heading = findObjects(results.at(1), QStringLiteral("tabSearchGroupHeader")).first();
+    QVERIFY(heading->property("visible").toBool());
+    QCOMPARE(heading->property("text").toString(), QStringLiteral("Work"));
+    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabSearchGroupHeader"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("1 tab(s)"));
+    // Emptied, the field gives the cells back at once.
+    field->setProperty("text", QString());
+    QVERIFY(!found->property("visible").toBool());
+    QVERIFY(cellsShown());
+    field->setProperty("text", QStringLiteral("mail"));
+    QMetaObject::invokeMethod(debounce, "triggered");
+    // Enter puts the keyboard away and leaves what was found.
+    field->setProperty("focus", true);
+    enterKey(field);
+    QVERIFY(!field->property("focus").toBool());
+    QVERIFY(found->property("visible").toBool());
+    results = findAll(QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
+    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabRowTitle"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Office mail"));
+    click(findObjects(results.at(0), QStringLiteral("tabSearchItem")).first());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QCOMPARE(evaluate(strip, QStringLiteral("currentButton.current")).toBool(), true);
+    QCOMPARE(evaluate(strip, QStringLiteral("currentButton")).value<QObject *>(),
+             findAll(QStringLiteral("tabGroupItem")).at(1));
+    // The search does not outlive the grid: the next one starts empty, with the cells.
+    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
+    QVERIFY(field->property("text").toString().isEmpty());
+    QVERIFY(!debounce->property("running").toBool());
+    QVERIFY(cellsShown());
+    // Nor does one left by pulling the page back over the grid.
+    pullUpToTabs();
+    field->setProperty("text", QStringLiteral("office"));
+    QMetaObject::invokeMethod(debounce, "triggered");
+    QVERIFY(found->property("visible").toBool());
+    pullDownToBrowser();
+    QTRY_VERIFY(!view->property("visible").toBool());
+    QVERIFY(field->property("text").toString().isEmpty());
+    QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
+    QVERIFY(!found->property("visible").toBool());
+}
+
+// A tab carried down onto a group in the strip moves into that group, the way a tap
+// on a name chooses it: through the strip's own functions. The finger that carries it
+// is carryToGroupUnderAFinger().
+void tst_qmlload::tabsDropOntoGroups()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->activeTabId(), second);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    pullUpToTabs();
+
+    // The tab in front takes the grid with it: the tab in front is always in the group
+    // the grid shows. The view behind the tab is the one it had.
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    strip->setProperty("dropIndex", 1);
+    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    // A moment later: the carried cell's own release is still running when the finger
+    // lifts, and the move takes the cell out of the grid.
+    QCOMPARE(tabs->tabCountInGroup(home), 2);
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Dropped with nothing lit, nothing moves, then or a moment later.
+    QVERIFY(!evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
+    QCoreApplication::processEvents();
+    QCOMPARE(tabs->tabCountInGroup(work), 1);
+    // A finger nowhere near the strip lights nothing, and the carry is the grid's;
+    // however the carry ends, nothing stays lit.
+    strip->setProperty("dropIndex", 0);
+    QVERIFY(!evaluate(strip, QStringLiteral("carryOver(null, -1, -1)")).toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    strip->setProperty("dropIndex", 0);
+    evaluate(strip, QStringLiteral("endCarry()"));
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+
+    // A tab that is not the one in front leaves the grid where it is, a cell fewer.
+    evaluate(strip, QStringLiteral("select(0)"));
+    QCOMPARE(tabs->activeTabId(), first);
+    const int third = tabs->newTab(QStringLiteral("https://three.example/"));
+    tabs->activateTabById(first);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    strip->setProperty("dropIndex", 1);
+    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(third)).toBool());
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 2);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), first);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
 }
 
 void tst_qmlload::previewGestures()
@@ -1103,11 +1331,13 @@ void tst_qmlload::previewGestures()
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
     QVERIFY(page->property("tabsOpen").toBool());
 
-    // The close button is its own mark, a disc all but opaque, so it can be seen
-    // over any page; there is no second disc under it.
+    // The close button is its own mark, a disc faint enough not to be the first thing
+    // seen on each cell -- it is opaque only under a finger, which
+    // gridGesturesUnderAFinger() puts on it; there is no second disc under it.
     QObject *mark = find(QStringLiteral("closeTabMark"));
     QVERIFY(mark != nullptr);
-    QVERIFY(mark->property("opacity").toReal() >= 0.9);
+    QCOMPARE(mark->property("opacity").toReal(),
+             evaluate(mark, QStringLiteral("Theme.opacityHigh")).toReal());
     QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
 }
@@ -1149,6 +1379,47 @@ private:
     QQuickWindow m_window;
 };
 
+// The script errors QML reports while one of these lives, which a test that drives
+// the QML by hand would otherwise only see scroll past: a handler that throws goes on
+// as if nothing had happened.
+QStringList *scriptErrors = nullptr;
+QtMessageHandler previousHandler = nullptr;
+
+void recordScriptError(QtMsgType type, const QMessageLogContext &context, const QString &message)
+{
+    if (scriptErrors != nullptr && (message.contains(QLatin1String("TypeError")) ||
+                                    message.contains(QLatin1String("ReferenceError")) ||
+                                    message.contains(QLatin1String("invalid context")))) {
+        scriptErrors->append(message);
+    }
+    previousHandler(type, context, message);
+}
+
+class ScriptErrors
+{
+public:
+    ScriptErrors()
+    {
+        scriptErrors = &m_errors;
+        previousHandler = qInstallMessageHandler(recordScriptError);
+    }
+    ~ScriptErrors()
+    {
+        qInstallMessageHandler(previousHandler);
+        scriptErrors = nullptr;
+    }
+    ScriptErrors(const ScriptErrors &) = delete;
+    ScriptErrors &operator=(const ScriptErrors &) = delete;
+
+    QString all() const
+    {
+        return m_errors.join(QLatin1Char('\n'));
+    }
+
+private:
+    QStringList m_errors;
+};
+
 // A finger put down at one point, moved to another in even steps and lifted there.
 void drag(QWindow *window, const QPoint &from, const QPoint &to)
 {
@@ -1186,13 +1457,13 @@ void tst_qmlload::gridGesturesUnderAFinger()
     const QPoint down(0, 3 * page->property("pullThreshold").toInt());
 
     // Dragged down from a cell, the grid hands the page back, as it does from the gaps
-    // between the cells and from the row of groups over them.
+    // between the cells and from the row over them at its head.
     openGrid();
     drag(&window, centreOf(cells().first()), centreOf(cells().first()) + down);
     QVERIFY(!page->property("tabsOpen").toBool());
     openGrid();
-    drag(&window, centreOf(find(QStringLiteral("tabGroupLabel"))),
-         centreOf(find(QStringLiteral("tabGroupLabel"))) + down);
+    drag(&window, centreOf(find(QStringLiteral("gridHeadControls"))),
+         centreOf(find(QStringLiteral("gridHeadControls"))) + down);
     QVERIFY(!page->property("tabsOpen").toBool());
     openGrid();
     const QPoint gap(int(root->width()) / 2, int(root->height()) * 3 / 4);
@@ -1205,6 +1476,21 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(cells().first()));
     QVERIFY(!page->property("tabsOpen").toBool());
     QVERIFY(tabs->activeTabId() != second);
+
+    // The close button's disc is faint until a finger is on it; one taken off it
+    // before it lifts closes nothing.
+    openGrid();
+    QObject *mark = findObjects(cells().first(), QStringLiteral("closeTabMark")).first();
+    QVERIFY(mark->property("opacity").toReal() < 1.0);
+    const QPoint onMark = centreOf(mark);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onMark);
+    QCOMPARE(mark->property("opacity").toReal(), 1.0);
+    const QPoint offMark = onMark - QPoint(3 * mark->property("width").toInt(), 0);
+    QTest::mouseMove(&window, offMark);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, offMark);
+    QVERIFY(mark->property("opacity").toReal() < 1.0);
+    QCOMPARE(tabs->count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
 
     // Held still for the hold interval -- or all but still: a thumb drifts, and a
     // drift short of a drag is still a hold -- a cell comes up and is carried to
@@ -1256,6 +1542,329 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QTRY_VERIFY(!grid->property("moving").toBool());
     QVERIFY(grid->property("contentY").toReal() < scrolled);
     QVERIFY(page->property("tabsOpen").toBool());
+}
+
+// A cell held until it comes up and carried down onto a name in the strip of groups
+// moves its tab into that group, under a real finger: the strip lights the name the
+// finger is over, and while it is over the strip the cells hidden under it are not
+// traded with.
+void tst_qmlload::carryToGroupUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    pullUpToTabs();
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    // A drop that moves the tab at once takes the carried cell out of the grid while
+    // its own release is still being handled, and the rest of that handler throws.
+    const ScriptErrors errors;
+
+    const auto cellOf = [this](int tabId) -> QObject * {
+        for (QObject *cell : findAll(QStringLiteral("tabPreview"))) {
+            if (evaluate(cell, QStringLiteral("model.tabId")).toInt() == tabId) {
+                return cell;
+            }
+        }
+        return nullptr;
+    };
+    const auto labelOf = [this](const QString &name) -> QObject * {
+        for (QObject *label : findAll(QStringLiteral("tabGroupLabel"))) {
+            if (label->property("text").toString() == name) {
+                return label;
+            }
+        }
+        return nullptr;
+    };
+    const auto highlights = [this]() {
+        int lit = 0;
+        for (QObject *highlight : findAll(QStringLiteral("tabGroupDropHighlight"))) {
+            lit += highlight->property("visible").toBool() ? 1 : 0;
+        }
+        return lit;
+    };
+    // Put down on a cell and held there, drifting a little; the caller waits for it
+    // to come up.
+    const auto press = [&window](QObject *cell) {
+        const QPoint grab = centreOf(cell);
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+        QTest::mouseMove(&window, grab + QPoint(2, 2));
+        return grab;
+    };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, from + (to - from) * step / steps);
+        }
+    };
+    const QList<int> order{first, second};
+    const auto tabOrder = [tabs]() {
+        QList<int> ids;
+        for (int row = 0; row < tabs->count(); ++row) {
+            ids.append(tabs->data(tabs->index(row, 0), TabModel::TabIdRole).toInt());
+        }
+        return ids;
+    };
+
+    // Carried over the name of another group, the name is lit; over the strip's own
+    // current group nothing is, and no cell trades places. (Between two names is the
+    // nearer one's: the names' buttons tile the row.)
+    QObject *workLabel = labelOf(QStringLiteral("Work"));
+    QVERIFY(workLabel != nullptr);
+    QObject *cell = cellOf(first);
+    QPoint at = press(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    const QPoint homeName = centreOf(labelOf(QStringLiteral("2 tab(s)")));
+    carry(at, homeName);
+    at = homeName;
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QCOMPARE(highlights(), 0);
+    const QPoint workName = centreOf(workLabel);
+    carry(at, workName);
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    QCOMPARE(highlights(), 1);
+    // The cells' own wash, square as theirs is.
+    QCOMPARE(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("radius").toReal(),
+             qreal(0));
+    QCOMPARE(workLabel->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
+    QCOMPARE(tabOrder(), order);
+
+    // Let go there, and the tab is in that group. It was not the tab in front, so the
+    // grid stays on its own group, one cell the fewer, and the grid stays up.
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, workName);
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
+    QCOMPARE(tabs->tabCountInGroup(home), 1);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+    QCOMPARE(highlights(), 0);
+
+    // Carried onto the strip and back off it, nothing stays lit, and let go among the
+    // cells nothing moves group.
+    cell = cellOf(second);
+    at = press(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    carry(at, centreOf(labelOf(QStringLiteral("Work"))));
+    QCOMPARE(highlights(), 1);
+    carry(centreOf(labelOf(QStringLiteral("Work"))), at);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QCOMPARE(highlights(), 0);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at);
+    QCOMPARE(tabs->tabCountInGroup(home), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // The tab in front carried to another group takes the grid with it: the tab in
+    // front is always in the group the grid shows.
+    cell = cellOf(second);
+    at = press(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    carry(at, centreOf(labelOf(QStringLiteral("Work"))));
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier,
+                        centreOf(labelOf(QStringLiteral("Work"))));
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 2);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QCOMPARE(tabs->activeTabId(), second);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// Over the strip the finger is choosing a group, not a place, and the carried cell
+// trades with none of the cells that lie under the strip; a carry the grid takes away
+// leaves nothing lit; and a name scrolled out of sight is not a place to drop a tab.
+void tst_qmlload::carryOverTheStripUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    for (int i = 0; i < 9; ++i) {
+        tabs->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *strip = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupStrip")));
+    auto *grid = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGrid")));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    pullUpToTabs();
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    const ScriptErrors errors;
+
+    const auto tabOrder = [tabs]() {
+        QList<int> ids;
+        for (int row = 0; row < tabs->count(); ++row) {
+            ids.append(tabs->data(tabs->index(row, 0), TabModel::TabIdRole).toInt());
+        }
+        return ids;
+    };
+    const auto cellAt = [this](int index) -> QObject * {
+        for (QObject *cell : findAll(QStringLiteral("tabPreview"))) {
+            if (evaluate(cell, QStringLiteral("index")).toInt() == index) {
+                return cell;
+            }
+        }
+        return nullptr;
+    };
+    const auto cellUnder = [this, grid](const QPoint &point) {
+        const QPointF inGrid = grid->mapFromScene(QPointF(point));
+        return evaluate(grid, QStringLiteral("indexAt(contentX + %1, contentY + %2)")
+                                  .arg(inGrid.x())
+                                  .arg(inGrid.y()))
+            .toInt();
+    };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, from + (to - from) * step / steps);
+        }
+    };
+    const auto lift = [&window](QObject *cell) {
+        const QPoint grab = centreOf(cell);
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+        QTest::mouseMove(&window, grab + QPoint(2, 2));
+        return grab;
+    };
+    const int stripY = int(strip->mapToScene(QPointF(0, strip->height() / 2)).y());
+    const int width = int(root->width());
+    const QPoint left(width / 4, stripY);
+    const QPoint right(width * 3 / 4, stripY);
+    // With ten tabs, cells lie under both ends of the strip.
+    QVERIFY(cellUnder(left) >= 0);
+    QVERIFY(cellUnder(right) >= 0);
+
+    // Carried straight down its column onto the strip -- trading places with the cells
+    // it crosses on the way, as a carry does -- and then along the strip over the cells
+    // under it, which it does not trade with.
+    QObject *cell = cellAt(0);
+    QPoint at = lift(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    carry(at, QPoint(at.x(), stripY));
+    const QList<int> onTheStrip = tabOrder();
+    carry(QPoint(at.x(), stripY), right);
+    QCOMPARE(tabOrder(), onTheStrip);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    // The corners are the strip's too: over the edit corner -- past the names, over a
+    // cell other than the carried one -- no cell is traded with, and nothing is lit.
+    const QPoint corner = centreOf(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(corner.y(), stripY);
+    QVERIFY(cellUnder(corner) >= 0);
+    QVERIFY(cellUnder(corner) != evaluate(cell, QStringLiteral("index")).toInt());
+    carry(right, corner);
+    QCOMPARE(tabOrder(), onTheStrip);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    // Dropped there, with nothing lit, the tab stays in its group, the corner's button
+    // is not pressed and the grid stays up.
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, corner);
+    QCoreApplication::processEvents();
+    QCOMPARE(tabs->tabCountInGroup(home), 10);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // A carry the grid takes away mid-way leaves nothing lit, and nothing moves.
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QTRY_COMPARE(findAll(QStringLiteral("tabGroupLabel")).count(), 2);
+    QObject *workLabel = findAll(QStringLiteral("tabGroupLabel")).at(1);
+    QTRY_VERIFY(centreOf(workLabel).x() > width / 2);
+    cell = cellAt(0);
+    at = lift(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    carry(at, centreOf(workLabel));
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    window.mouseGrabberItem()->ungrabMouse();
+    QVERIFY(!cell->property("held").toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QVERIFY(!findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("visible").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, centreOf(workLabel));
+    QCoreApplication::processEvents();
+    QCOMPARE(tabs->tabCountInGroup(work), 0);
+
+    // With more names than the strip shows, a point of the strip past the end of the
+    // names -- where the ones scrolled out of sight lie, clipped -- lights nothing.
+    for (int i = 0; i < 8; ++i) {
+        tabs->addGroup(QStringLiteral("Group number %1").arg(i));
+    }
+    tabs->groupModel()->activate(0);
+    auto *names = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupList")));
+    QTRY_VERIFY(names->property("interactive").toBool());
+    QTRY_COMPARE(names->property("contentX").toReal(), qreal(0));
+    const QPointF namesEnd = names->mapToScene(QPointF(names->width(), names->height() / 2));
+    const QPoint pastTheNames(int(namesEnd.x()) + 10, int(namesEnd.y()));
+    QVERIFY(pastTheNames.x() < width);
+    cell = cellAt(0);
+    at = lift(cell);
+    QTRY_VERIFY(cell->property("held").toBool());
+    carry(at, centreOf(workLabel));
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    carry(centreOf(workLabel), pastTheNames);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, pastTheNames);
+    QCoreApplication::processEvents();
+    QCOMPARE(tabs->tabCountInGroup(home), 10);
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// A strip with more names than it shows fades out at an end with names past it, and
+// only there, and not by much; a row of names that fits has no fade at all.
+void tst_qmlload::tabGroupStripFades()
+{
+    TabModel *tabs = m_core->tabs();
+    // In a window: the names are laid out in a row, and a row lays out when drawn.
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    pullUpToTabs();
+    QObject *left = find(QStringLiteral("tabGroupLeftFade"));
+    QObject *right = find(QStringLiteral("tabGroupRightFade"));
+    auto *names = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupList")));
+    QVERIFY(left != nullptr);
+    QVERIFY(right != nullptr);
+    QVERIFY(!left->property("enabled").toBool());
+    QVERIFY(!right->property("enabled").toBool());
+
+    for (int i = 0; i < 8; ++i) {
+        tabs->addGroup(QStringLiteral("Group number %1").arg(i));
+    }
+    // At the first name only the far end fades, drawn from the names themselves: the
+    // ramp that is opaque on the left.
+    tabs->groupModel()->activate(0);
+    QTRY_VERIFY(names->property("interactive").toBool());
+    QTRY_COMPARE(names->property("contentX").toReal(), qreal(0));
+    QVERIFY(!left->property("enabled").toBool());
+    QVERIFY(right->property("enabled").toBool());
+    QCOMPARE(right->property("sourceItem").value<QObject *>(), names);
+    QCOMPARE(right->property("direction").toInt(), 0);
+    // Over a twentieth of the screen at most, fading to nothing at the very edge.
+    const qreal slope = right->property("slope").toReal();
+    const qreal screenWidth = evaluate(names, QStringLiteral("Screen.width")).toReal();
+    QVERIFY(names->width() / slope <= screenWidth / 20);
+    QCOMPARE(right->property("offset").toReal(), 1 - 1 / slope);
+
+    // Among the names, both ends, the second ramp drawn from the first.
+    tabs->groupModel()->activate(4);
+    QTRY_VERIFY(left->property("enabled").toBool());
+    QVERIFY(right->property("enabled").toBool());
+    QCOMPARE(right->property("sourceItem").value<QObject *>(), left);
+    QCOMPARE(left->property("sourceItem").value<QObject *>(), names);
+    QCOMPARE(left->property("direction").toInt(), 1);
+
+    // At the last name, only the near end.
+    tabs->groupModel()->activate(8);
+    QTRY_VERIFY(!right->property("enabled").toBool());
+    QVERIFY(left->property("enabled").toBool());
+    QCOMPARE(names->property("contentX").toReal(),
+             names->property("contentWidth").toReal() - names->width());
 }
 
 // The reach above the navigation bar lies over the foot of the page, where a player
@@ -1345,7 +1954,8 @@ void tst_qmlload::recentlyClosedTabs()
     QCOMPARE(tabs->closedTabs()->count(), 1);
     pullUpToTabs();
 
-    // Holding the new-tab button brings the panel up from the foot of the grid.
+    // Holding the new-tab button, in the corner of the grid's foot, brings the panel up
+    // from under it.
     QObject *panel = find(QStringLiteral("recentlyClosedPanel"));
     QVERIFY(panel != nullptr);
     QVERIFY(!panel->property("open").toBool());
@@ -1382,7 +1992,7 @@ void tst_qmlload::pagesBeyondTheLimitUnload()
     TabModel *tabs = m_core->tabs();
     // Five by default, and Settings offers the choice.
     QCOMPARE(tabs->liveTabLimit(), 5);
-    QObject *settings = openMenuItem(QStringLiteral("settingsItem"));
+    QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *combo = find(QStringLiteral("liveTabLimitCombo"));
     QCOMPARE(combo->property("currentIndex").toInt(), 1);
     combo->setProperty("currentIndex", 0);
@@ -1450,56 +2060,363 @@ void tst_qmlload::restoredTabsLoadLazily()
     QCOMPARE(m_core->history()->count(), 3);
 }
 
-void tst_qmlload::menuPage()
+// The bar's menu button brings up a sheet of icons from under the bar, in three rows:
+// the tabs, the page in front, the browser. Nothing is pushed for it, and each icon
+// puts it away as it does what it says.
+void tst_qmlload::browserMenu()
 {
-    QObject *page = openMenuItem(QStringLiteral("newTabItem"));
-    QCOMPARE(page->objectName(), QStringLiteral("browserPage"));
-    QCOMPARE(m_core->tabs()->count(), 2);
-
+    TabModel *tabs = m_core->tabs();
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QVERIFY(menu != nullptr);
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(menu->property("modal").toBool());
+    QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
     tapBar(QStringLiteral("menu"));
-    auto *bookmarkLabel = find(QStringLiteral("bookmarkItem"))->findChild<QObject *>();
-    QCOMPARE(bookmarkLabel->property("text").toString(), QStringLiteral("Bookmark this page"));
-    click(find(QStringLiteral("bookmarkItem")));
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    const QStringList entries{
+        QStringLiteral("newTabMenuButton"),   QStringLiteral("findMenuButton"),
+        QStringLiteral("bookmarkMenuButton"), QStringLiteral("shareMenuButton"),
+        QStringLiteral("desktopMenuButton"),  QStringLiteral("bookmarksMenuButton"),
+        QStringLiteral("historyMenuButton"),  QStringLiteral("downloadsMenuButton"),
+        QStringLiteral("settingsMenuButton"),
+    };
+    for (const QString &entry : entries) {
+        QObject *button = find(entry);
+        QVERIFY2(button != nullptr, qPrintable(entry));
+        QVERIFY2(button->property("enabled").toBool(), qPrintable(entry));
+        QVERIFY2(!button->property("iconSource").toString().isEmpty(), qPrintable(entry));
+        QVERIFY2(!button->property("text").toString().isEmpty(), qPrintable(entry));
+    }
+    // In the three rows asked for: the tabs, the page in front, the browser.
+    const QHash<QString, QString> rows{
+        {QStringLiteral("newTabMenuButton"), QStringLiteral("menuTabsRow")},
+        {QStringLiteral("findMenuButton"), QStringLiteral("menuPageRow")},
+        {QStringLiteral("bookmarkMenuButton"), QStringLiteral("menuPageRow")},
+        {QStringLiteral("shareMenuButton"), QStringLiteral("menuPageRow")},
+        {QStringLiteral("desktopMenuButton"), QStringLiteral("menuPageRow")},
+        {QStringLiteral("bookmarksMenuButton"), QStringLiteral("menuBrowserRow")},
+        {QStringLiteral("historyMenuButton"), QStringLiteral("menuBrowserRow")},
+        {QStringLiteral("downloadsMenuButton"), QStringLiteral("menuBrowserRow")},
+        {QStringLiteral("settingsMenuButton"), QStringLiteral("menuBrowserRow")},
+    };
+    for (auto it = rows.cbegin(); it != rows.cend(); ++it) {
+        QCOMPARE(qobject_cast<QQuickItem *>(find(it.key()))->parentItem()->objectName(),
+                 it.value());
+    }
+    // Searching the page and its desktop version need the page's view, and wait for it;
+    // bookmarking and sharing need only its address.
+    // Through something of BrowserPage.qml's own, whose scope names the page and the menu.
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    evaluate(pageScope, QStringLiteral("browserMenu.view = null"));
+    QVERIFY(!find(QStringLiteral("findMenuButton"))->property("enabled").toBool());
+    QVERIFY(!find(QStringLiteral("desktopMenuButton"))->property("enabled").toBool());
+    QVERIFY(find(QStringLiteral("bookmarkMenuButton"))->property("enabled").toBool());
+    QVERIFY(find(QStringLiteral("shareMenuButton"))->property("enabled").toBool());
+    evaluate(pageScope, QStringLiteral("browserMenu.view = Qt.binding(function () {"
+                                       " return browserPage.currentView })"));
+    QCOMPARE(menu->property("view").value<QObject *>(), currentWebView());
+    // What the old page of the menu also had is not here: the grid is the bar's drag,
+    // and a tab changes group by being carried onto one.
+    QVERIFY(find(QStringLiteral("tabsItem")) == nullptr);
+    QVERIFY(find(QStringLiteral("moveToGroupItem")) == nullptr);
+
+    // New tab.
+    click(find(QStringLiteral("newTabMenuButton")));
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(!menu->property("open").toBool());
+
+    // Bookmarking is a switch, which says which way it goes.
+    tapBar(QStringLiteral("menu"));
+    QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
+    QVERIFY(!bookmark->property("checked").toBool());
+    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
+    click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QVERIFY(m_core->bookmarks()->activeUrlBookmarked());
-
+    QVERIFY(!menu->property("open").toBool());
     tapBar(QStringLiteral("menu"));
-    bookmarkLabel = find(QStringLiteral("bookmarkItem"))->findChild<QObject *>();
-    QCOMPARE(bookmarkLabel->property("text").toString(), QStringLiteral("Remove bookmark"));
-    click(find(QStringLiteral("bookmarkItem")));
+    QVERIFY(bookmark->property("checked").toBool());
+    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Remove bookmark"));
+    click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 0);
 
+    // Share sends the address.
     tapBar(QStringLiteral("menu"));
     QObject *share = find(QStringLiteral("shareAction"));
-    click(find(QStringLiteral("shareItem")));
+    click(find(QStringLiteral("shareMenuButton")));
     QCOMPARE(share->property("triggerCount").toInt(), 1);
     QCOMPARE(share->property("mimeType").toString(), QStringLiteral("text/x-url"));
     const QVariantMap resource = share->property("resources").toList().first().toMap();
-    QCOMPARE(resource.value(QStringLiteral("status")).toString(), m_core->tabs()->activeUrl());
-    popPage();
+    QCOMPARE(resource.value(QStringLiteral("status")).toString(), tabs->activeUrl());
+    QVERIFY(!menu->property("open").toBool());
 
-    QCOMPARE(openMenuItem(QStringLiteral("bookmarksItem"))->objectName(),
-             QStringLiteral("bookmarksPage"));
-    popPage();
-    QCOMPARE(openMenuItem(QStringLiteral("historyItem"))->objectName(),
-             QStringLiteral("historyPage"));
-    popPage();
-    QCOMPARE(openMenuItem(QStringLiteral("settingsItem"))->objectName(),
-             QStringLiteral("settingsPage"));
-    popPage();
+    // The desktop version is the page in front's alone, and the switch says which the
+    // page in front is in.
+    QObject *front = currentWebView();
+    QObject *desktop = find(QStringLiteral("desktopMenuButton"));
+    QVERIFY(!front->property("desktopMode").toBool());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(!desktop->property("checked").toBool());
+    click(desktop);
+    QVERIFY(front->property("desktopMode").toBool());
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(desktop->property("checked").toBool());
+    const int newest = tabs->activeTabId();
+    tabs->activateTab(0);
+    QVERIFY(currentWebView() != front);
+    QVERIFY(!currentWebView()->property("desktopMode").toBool());
+    QVERIFY(!desktop->property("checked").toBool());
+    tabs->activateTabById(newest);
+    QVERIFY(desktop->property("checked").toBool());
+    // And back.
+    tapBar(QStringLiteral("menu"));
+    click(desktop);
+    QVERIFY(!front->property("desktopMode").toBool());
+
+    // The browser's own pages go over the browsing page, which stays under them.
+    const QList<QPair<QString, QString>> pages{
+        {QStringLiteral("bookmarksMenuButton"), QStringLiteral("bookmarksPage")},
+        {QStringLiteral("historyMenuButton"), QStringLiteral("historyPage")},
+        {QStringLiteral("downloadsMenuButton"), QStringLiteral("downloadsPage")},
+        {QStringLiteral("settingsMenuButton"), QStringLiteral("settingsPage")},
+    };
+    for (const auto &entry : pages) {
+        QObject *opened = openMenuItem(entry.first);
+        QVERIFY2(opened != nullptr, qPrintable(entry.first));
+        QCOMPARE(opened->objectName(), entry.second);
+        QVERIFY(!menu->property("open").toBool());
+        QCOMPARE(pageStack()->property("depth").toInt(), 2);
+        popPage();
+        QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    }
+
+    // The sheet is about the page in front, and another page in front puts it away:
+    // the cover's new tab, say.
+    tapBar(QStringLiteral("menu"));
+    tabs->newTab(QStringLiteral("https://three.example/"));
+    QVERIFY(!menu->property("open").toBool());
+}
+
+// The sheet of icons goes back down under a finger that pulls it, begun on an icon as
+// much as anywhere, and keeps the icon under the finger: let go past a short distance
+// it goes away, short of it it comes back up. The stub icons take no presses, so what
+// this proves is the sheet's own pull; Silica's buttons giving a drag up to it is the
+// device's to show (docs/TESTING.md).
+void tst_qmlload::menuSheetUnderAFinger()
+{
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu")));
+    auto *page = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    const qreal openY = page->height() - menu->height();
+    QCOMPARE(menu->y(), openY);
+    const qreal closeDistance = menu->property("closeDistance").toReal();
+    QVERIFY(closeDistance > 0);
+    QVERIFY(closeDistance <= menu->height() / 3);
+    auto *icon = qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")));
+    const QPoint grab = centreOf(icon);
+    const qreal iconY = icon->mapToScene(QPointF(0, 0)).y();
+    const int slack = QGuiApplication::styleHints()->startDragDistance() + 1;
+    const auto pullTo = [&window, grab](int distance) {
+        const int steps = 12;
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, grab + QPoint(0, distance * step / steps));
+        }
+    };
+
+    // Short of the distance: the sheet goes down with the finger, as far as the finger
+    // less the way a drag takes to start -- not half of it, which is what the flickable
+    // itself draws -- and the icon with it. It comes back up when the finger lifts.
+    const int shortPull = int(closeDistance / 2);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    pullTo(shortPull);
+    const qreal travelled = menu->y() - openY;
+    QVERIFY(travelled <= shortPull);
+    QVERIFY2(travelled >= shortPull - 2 * slack, qPrintable(QString::number(travelled)));
+    QVERIFY(qAbs(icon->mapToScene(QPointF(0, 0)).y() - iconY - travelled) < 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, shortPull));
+    QTRY_COMPARE(menu->y(), openY);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(icon->mapToScene(QPointF(0, 0)).y(), iconY);
+
+    // Past it, the sheet is put away.
+    const int longPull = int(closeDistance * 2);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    pullTo(longPull);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, longPull));
+    QVERIFY(!menu->property("open").toBool());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
-    // Back and reload are on the bar, one tap away, and not in the menu as well.
+    // Open again, it sits where it sat, whole.
     tapBar(QStringLiteral("menu"));
-    QVERIFY(find(QStringLiteral("backItem")) == nullptr);
-    QVERIFY(find(QStringLiteral("reloadItem")) == nullptr);
-    popPage();
+    QTRY_COMPARE(menu->y(), openY);
+    QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
+}
 
-    // Tabs is the way into the grid for a hand that is already in the menu, or a
-    // device where the drag is awkward. It comes back to this page and opens the
-    // grid on it rather than pushing a page of its own.
-    QCOMPARE(openMenuItem(QStringLiteral("tabsItem"))->objectName(), QStringLiteral("browserPage"));
-    QVERIFY(find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
+// Search on page: a field over the navigation bar, whose search and steps are the
+// engine's own messages to the page, and whose answers come back on the name the
+// page was told to listen for.
+void tst_qmlload::findInPage()
+{
+    QObject *view = currentWebView();
+    QObject *bar = find(QStringLiteral("findBar"));
+    QObject *navigation = find(QStringLiteral("navigationBar"));
+    const auto lastMessage = [](QObject *of) {
+        return of->property("messages").toList().last().toMap();
+    };
+    const auto request = [&lastMessage](QObject *of) {
+        return lastMessage(of).value(QStringLiteral("data")).toMap();
+    };
+
+    // Every page listens for the answer from the start.
+    QVERIFY(
+        view->property("messageListeners").toStringList().contains(QStringLiteral("embed:find")));
+    QVERIFY(!bar->property("visible").toBool());
+
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("findMenuButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(bar->property("active").toBool());
+    QVERIFY(bar->property("visible").toBool());
+    // Over the navigation bar, which stays whole under it however the page scrolls.
+    QCOMPARE(bar->property("y").toReal(), navigation->property("y").toReal());
+    QCOMPARE(bar->property("height").toReal(), navigation->property("height").toReal());
+    view->setProperty("chrome", false);
+    QVERIFY(!navigation->property("compact").toBool());
+    view->setProperty("chrome", true);
+    QVERIFY(find(QStringLiteral("findPreviousButton"))->property("enabled").toBool() == false);
+
+    // Enter searches from the top of the page.
+    QObject *field = find(QStringLiteral("findField"));
+    field->setProperty("text", QStringLiteral("salama"));
+    enterKey(field);
+    QCOMPARE(lastMessage(view).value(QStringLiteral("name")).toString(),
+             QStringLiteral("embedui:find"));
+    QCOMPARE(request(view).value(QStringLiteral("text")).toString(), QStringLiteral("salama"));
+    QVERIFY(!request(view).value(QStringLiteral("again")).toBool());
+    QVERIFY(!request(view).value(QStringLiteral("backwards")).toBool());
+
+    // The arrows step on from there, either way.
+    click(find(QStringLiteral("findNextButton")));
+    QVERIFY(request(view).value(QStringLiteral("again")).toBool());
+    QVERIFY(!request(view).value(QStringLiteral("backwards")).toBool());
+    click(find(QStringLiteral("findPreviousButton")));
+    QVERIFY(request(view).value(QStringLiteral("again")).toBool());
+    QVERIFY(request(view).value(QStringLiteral("backwards")).toBool());
+    QCOMPARE(request(view).value(QStringLiteral("text")).toString(), QStringLiteral("salama"));
+
+    // The page answers; the field says when there is nothing to find. Another
+    // message is not an answer.
+    const auto answer = [view](const QString &name, int result) {
+        const QVariant data = QVariantMap{{QStringLiteral("r"), result}};
+        QMetaObject::invokeMethod(view, "recvAsyncMessage", Q_ARG(QString, name),
+                                  Q_ARG(QVariant, data));
+    };
+    QVERIFY(!field->property("errorHighlight").toBool());
+    answer(QStringLiteral("embed:find"), 1);
+    QVERIFY(!bar->property("found").toBool());
+    QVERIFY(field->property("errorHighlight").toBool());
+    answer(QStringLiteral("embed:other"), 0);
+    QVERIFY(!bar->property("found").toBool());
+    answer(QStringLiteral("embed:find"), 2);
+    QVERIFY(bar->property("found").toBool());
+
+    // Closed, the page is told the search is over, which takes its highlight away.
+    click(find(QStringLiteral("findCloseButton")));
+    QVERIFY(!bar->property("active").toBool());
+    QCOMPARE(request(view).value(QStringLiteral("text")).toString(), QString());
+    const int sent = view->property("messages").toList().count();
+
+    // Another page in front ends the search, on the page that was searched.
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("findMenuButton")));
+    QVERIFY(bar->property("active").toBool());
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QVERIFY(currentWebView() != view);
+    QVERIFY(!bar->property("active").toBool());
+    QCOMPARE(view->property("messages").toList().count(), sent + 1);
+    QCOMPARE(request(view).value(QStringLiteral("text")).toString(), QString());
+}
+
+// The list of downloads is the browser's own, fed by what the engine says of them on
+// the topic the browsing page subscribes to.
+void tst_qmlload::downloadsPage()
+{
+    Salama::DownloadModel *downloads = m_core->downloads();
+    // Something of BrowserPage.qml's own, whose scope has the engine.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    QVERIFY(evaluate(scope, QStringLiteral("WebEngine.observers"))
+                .toStringList()
+                .contains(downloads->topic()));
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
+                                   " id: 1, displayName: 'report.pdf',"
+                                   " sourceUrl: 'https://files.example/report.pdf',"
+                                   " targetPath: '/tmp/report.pdf', mimeType: 'application/pdf',"
+                                   " size: 2048})"));
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download',"
+                                   " {msg: 'dl-progress', id: 1, percent: 40})"));
+    QCOMPARE(downloads->count(), 1);
+
+    QObject *page = openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(page->objectName(), QStringLiteral("downloadsPage"));
+    QList<QObject *> rows = findAll(QStringLiteral("downloadDelegate"));
+    QCOMPARE(rows.count(), 1);
+    const auto text = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first()->property("text").toString();
+    };
+    const auto shows = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first()->property("visible").toBool();
+    };
+    QCOMPARE(text(rows.first(), "downloadName"), QStringLiteral("report.pdf"));
+    QCOMPARE(text(rows.first(), "downloadStatus"), QStringLiteral("Downloading, 40%"));
+    QVERIFY(shows(rows.first(), "downloadProgress"));
+
+    // Not yet there, a tap opens nothing.
+    const UrlCatcher files(QStringLiteral("file"));
+    click(rows.first());
+    QVERIFY(files.opened.isEmpty());
+
+    // Arrived, it says where it came from, and a tap opens the file.
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download',"
+                                   " {msg: 'dl-done', id: 1, targetPath: '/tmp/report.pdf'})"));
+    QCOMPARE(text(rows.first(), "downloadStatus"), QStringLiteral("files.example"));
+    QVERIFY(!shows(rows.first(), "downloadProgress"));
+    click(rows.first());
+    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(QStringLiteral("/tmp/report.pdf"))});
+    QCOMPARE(currentPage(), page);
+
+    // One that failed says so, newest first; a tap on it opens nothing.
+    evaluate(scope,
+             QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
+                            " id: 2, displayName: 'big.iso', sourceUrl: 'https://x.example/',"
+                            " targetPath: '/tmp/big.iso', mimeType: '', size: 0})"));
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download',"
+                                   " {msg: 'dl-fail', id: 2})"));
+    rows = byRow(findAll(QStringLiteral("downloadDelegate")));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(text(rows.first(), "downloadName"), QStringLiteral("big.iso"));
+    QCOMPARE(text(rows.first(), "downloadStatus"), QStringLiteral("Failed"));
+    click(rows.first());
+    QCOMPARE(files.opened.count(), 1);
+    QCOMPARE(currentPage(), page);
+
+    // Forgotten one at a time from its menu, or all at once from the pulley; the files
+    // are not the list's to delete.
+    click(findObjects(rows.first(), QStringLiteral("removeDownloadMenu")).first());
+    QCOMPARE(downloads->count(), 1);
+    QObject *clear = find(QStringLiteral("clearDownloadsMenu"));
+    QVERIFY(clear->property("enabled").toBool());
+    click(clear);
+    QCOMPARE(downloads->count(), 0);
+    QCOMPARE(findAll(QStringLiteral("downloadDelegate")).count(), 0);
+    QVERIFY(!clear->property("enabled").toBool());
 }
 
 void tst_qmlload::historyPage()
@@ -1507,7 +2424,7 @@ void tst_qmlload::historyPage()
     m_core->history()->visit(QStringLiteral("https://one.example/"), QStringLiteral("One"));
     m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
 
-    openMenuItem(QStringLiteral("historyItem"));
+    openMenuItem(QStringLiteral("historyMenuButton"));
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 3);
     QObject *search = find(QStringLiteral("historySearch"));
     search->setProperty("text", QStringLiteral("two"));
@@ -1528,13 +2445,13 @@ void tst_qmlload::historyPage()
              QStringLiteral("https://one.example/"));
     QCOMPARE(m_core->tabs()->count(), 1);
 
-    openMenuItem(QStringLiteral("historyItem"));
+    openMenuItem(QStringLiteral("historyMenuButton"));
     delegates = findAll(QStringLiteral("historyDelegate"));
     click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
-    openMenuItem(QStringLiteral("historyItem"));
+    openMenuItem(QStringLiteral("historyMenuButton"));
     const int before = m_core->history()->count();
     delegates = findAll(QStringLiteral("historyDelegate"));
     click(findObjects(delegates.at(0), QStringLiteral("removeHistoryMenu")).first());
@@ -1550,7 +2467,7 @@ void tst_qmlload::bookmarksPage()
     m_core->bookmarks()->add(QStringLiteral("https://b1.example/"), QStringLiteral("B1"));
     m_core->bookmarks()->add(QStringLiteral("https://b2.example/"), QStringLiteral("B2"));
 
-    openMenuItem(QStringLiteral("bookmarksItem"));
+    openMenuItem(QStringLiteral("bookmarksMenuButton"));
     QList<QObject *> delegates = findAll(QStringLiteral("bookmarkDelegate"));
     QCOMPARE(delegates.count(), 2);
     click(delegates.at(0));
@@ -1558,7 +2475,7 @@ void tst_qmlload::bookmarksPage()
     QCOMPARE(currentWebView()->property("url").toUrl().toString(),
              QStringLiteral("https://b1.example/"));
 
-    openMenuItem(QStringLiteral("bookmarksItem"));
+    openMenuItem(QStringLiteral("bookmarksMenuButton"));
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
     click(findObjects(delegates.at(1), QStringLiteral("editBookmarkMenu")).first());
     QObject *dialog = currentPage();
@@ -1599,7 +2516,7 @@ void tst_qmlload::bookmarksPage()
 
 void tst_qmlload::settingsPage()
 {
-    QObject *page = openMenuItem(QStringLiteral("settingsItem"));
+    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
     QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
 
     QObject *home = find(QStringLiteral("homePageField"));
@@ -1806,9 +2723,10 @@ void tst_qmlload::pagesSleepOutOfSight()
         QMetaObject::invokeMethod(page, "applicationStateChanged", Q_ARG(QVariant, state));
     };
 
-    // The engine is asked for what says a page is playing.
+    // The engine is asked for what says a page is playing, and after that for what it
+    // says of downloads.
     QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.observers")).toStringList(),
-             activity->topics());
+             activity->topics() + QStringList{m_core->downloads()->topic()});
 
     // Not the moment the application is left, but a moment after: every page, the one
     // behind the one in front as well. Until then the one in front stays active --

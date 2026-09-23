@@ -66,22 +66,11 @@ WebViewPage {
     // that used to take the whole bar off the screen -- and the view is resized with
     // the bar, so the foot of a page clears it either way.
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || dragging) {
+        if (!currentView || navigationBar.editing || findBar.active || dragging) {
             return false
         }
         // undefined on an engine with no chrome gesture: then the bar stays as it is.
         return currentView.chrome === false
-    }
-
-    // Gecko's own verdict on the connection, if this engine build hands one out:
-    // validState says it has one for this page, allGood weighs certificate, protocol
-    // and mixed content. sailfish-browser reads the same two, and only for https.
-    readonly property bool tlsBroken: {
-        if (!currentView || TabModel.activeUrl.indexOf("https://") !== 0) {
-            return false
-        }
-        var security = currentView.security
-        return !!security && !!security.validState && !security.allGood
     }
 
     // How far the deck must be dragged for the gesture to commit when the finger lifts.
@@ -219,12 +208,6 @@ WebViewPage {
         dragging = false
     }
 
-    // The way to the grid that needs no gesture, for the menu to call.
-    function showTabs() {
-        captureCurrent()
-        settle(true)
-    }
-
     // A touch the reach above the bar took from the foot of the page and handed back,
     // given to the engine as the touch it would have had, in the view's coordinates.
     // The view takes focus the way a real touch gives it, which ends editing the address.
@@ -242,13 +225,6 @@ WebViewPage {
         } else {
             currentView.synthTouchEnd(touches)
         }
-    }
-
-    // A tab chosen off the grid -- from the search page -- comes to the front, and the
-    // page comes back over the grid with it.
-    function showTab(tabId) {
-        TabModel.activateTabById(tabId)
-        settle(false)
     }
 
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
@@ -278,10 +254,13 @@ WebViewPage {
     }
 
     // What the engine says is playing, for PageActivity to weigh: a page making a
-    // sound is not put to sleep.
+    // sound is not put to sleep. And what it says of downloads, for the list of them.
     Connections {
         target: WebEngine
-        onRecvObserve: PageActivity.observe(message, data)
+        onRecvObserve: {
+            PageActivity.observe(message, data)
+            DownloadModel.observe(message, data)
+        }
     }
 
     Timer {
@@ -298,6 +277,7 @@ WebViewPage {
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }
+        WebEngine.addObserver(DownloadModel.topic)
         ensureTab()
         updateCurrentView()
     }
@@ -395,18 +375,15 @@ WebViewPage {
                 // the keyboard, and the field the bar carries has to come up with it.
                 y: browserPage.height - height
 
+                view: browserPage.currentView
                 url: TabModel.activeUrl
                 loading: browserPage.loading
-                loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
-                tlsBroken: browserPage.tlsBroken
                 compact: browserPage.barCompact
                 canGoBack: browserPage.canGoBack
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
                 onReloadOrStop: browserPage.reloadOrStop()
-                onShowMenu: pageStack.push(Qt.resolvedUrl("MenuPage.qml"), {
-                                               "browserPage": browserPage
-                                           })
+                onShowMenu: browserMenu.show()
                 // The grid is about to show, so the picture of the tab being left is
                 // taken before the first pixel of it does.
                 onDragStarted: {
@@ -418,6 +395,13 @@ WebViewPage {
                 onPageTouchStarted: browserPage.touchPage(position, "start")
                 onPageTouchMoved: browserPage.touchPage(position, "move")
                 onPageTouchEnded: browserPage.touchPage(position, "end")
+            }
+
+            FindBar {
+                id: findBar
+
+                anchors.fill: navigationBar
+                view: browserPage.currentView
             }
         }
 
@@ -435,6 +419,13 @@ WebViewPage {
             onPullFinished: browserPage.settle(distance <= browserPage.pullThreshold)
             onTabActivated: browserPage.settle(false)
         }
+    }
+
+    BrowserMenu {
+        id: browserMenu
+
+        view: browserPage.currentView
+        onFindRequested: findBar.open()
     }
 
     Component {
@@ -580,7 +571,10 @@ WebViewPage {
                     captureThumbnail()
                 }
             }
-            Component.onCompleted: url = initialUrl
+            Component.onCompleted: {
+                addMessageListener(EngineMessages.findResultMessage)
+                url = initialUrl
+            }
         }
     }
 }

@@ -66,9 +66,109 @@
     </message>
 </context>
 <context>
+    <name>BrowserMenu</name>
+    <message>
+        <source>Tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search on page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Desktop version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DownloadDelegate</name>
+    <message>
+        <source>Remove from list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading, %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DownloadsPage</name>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Files downloaded from pages are listed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FindBar</name>
+    <message>
+        <source>Search on page</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -107,53 +207,6 @@
     </message>
     <message>
         <source>No history yet</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>MenuPage</name>
-    <message>
-        <source>Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmark this page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browse</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>History</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move tab to group</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -328,10 +381,6 @@
 <context>
     <name>TabGroupsPage</name>
     <message>
-        <source>Move to tab group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Tab groups</source>
         <translation type="unfinished"></translation>
     </message>
@@ -358,24 +407,21 @@
     </message>
 </context>
 <context>
-    <name>TabSearchPage</name>
+    <name>TabsView</name>
+    <message>
+        <source>No tabs in this group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open one with the button below</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>Search tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No matching tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TabsView</name>
-    <message>
-        <source>Open one with the button below</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No tabs in this group</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

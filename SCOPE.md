@@ -65,13 +65,13 @@ Reuse policy:
 - Address bar (URL/search), configurable search engine
 - Back, forward, reload, stop, share (`Sailfish.Share`)
 - History and bookmarks (SQLite) with management UI
-- Downloads via platform transfer UI
+- Downloads through the platform download plumbing, listed in the browser
+- Find in page
 - Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows
 - Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2
-- Find in page
 - Bookmark folders, HTML import/export
 - Site-permission overview, per-site data clearing
 - Password saving via Sailfish Secrets, within WebView API limits

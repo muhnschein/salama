@@ -18,6 +18,9 @@ private slots:
     void resolveFavicon();
     void themeColor_data();
     void themeColor();
+    void findRequest();
+    void findFound_data();
+    void findFound();
 };
 
 void tst_enginemessages::constants()
@@ -36,6 +39,76 @@ void tst_enginemessages::constants()
     QVERIFY(messages.themeColorScript().contains(QStringLiteral("theme-color")));
     QVERIFY(messages.themeColorScript().contains(QStringLiteral("return ")));
     QVERIFY(!messages.themeColorScript().contains(QStringLiteral("function")));
+    // Find in page: what embedhelper.js listens for, and what it answers on.
+    QCOMPARE(messages.findMessage(), QStringLiteral("embedui:find"));
+    QCOMPARE(messages.findResultMessage(), QStringLiteral("embed:find"));
+}
+
+// The three fields embedhelper.js reads off the message, by the names it reads them by.
+void tst_enginemessages::findRequest()
+{
+    EngineMessages messages;
+    const QVariantMap first = messages.findRequest(QStringLiteral("salama"), false, false);
+    QCOMPARE(first.value(QStringLiteral("text")).toString(), QStringLiteral("salama"));
+    QCOMPARE(first.value(QStringLiteral("again")), QVariant(false));
+    QCOMPARE(first.value(QStringLiteral("backwards")), QVariant(false));
+    QCOMPARE(first.count(), 3);
+
+    const QVariantMap previous = messages.findRequest(QStringLiteral("salama"), true, true);
+    QCOMPARE(previous.value(QStringLiteral("again")), QVariant(true));
+    QCOMPARE(previous.value(QStringLiteral("backwards")), QVariant(true));
+
+    // The message that ends the search is the same one with no text in it.
+    const QVariantMap end = messages.findRequest(QString(), false, false);
+    QVERIFY(end.contains(QStringLiteral("text")));
+    QVERIFY(end.value(QStringLiteral("text")).toString().isEmpty());
+}
+
+// The page answers {"r": result} with nsITypeAheadFind's result. Found, and found after
+// going round the end, are the two that mean the text is there; anything the page did
+// not say as a number means it is not.
+void tst_enginemessages::findFound_data()
+{
+    QTest::addColumn<QVariant>("data");
+    QTest::addColumn<bool>("expected");
+    const QString r = QStringLiteral("r");
+    // JSON has one kind of number, and the device's Qt 5.6 reads every one as a
+    // double, so that is how the engine's answer arrives.
+    QTest::newRow("found") << QVariant(QVariantMap{{r, 0.0}}) << true;
+    QTest::newRow("not found") << QVariant(QVariantMap{{r, 1.0}}) << false;
+    QTest::newRow("wrapped") << QVariant(QVariantMap{{r, 2.0}}) << true;
+    QTest::newRow("pending") << QVariant(QVariantMap{{r, 3.0}}) << false;
+    // QML hands an integral number over as an int.
+    QTest::newRow("found int") << QVariant(QVariantMap{{r, 0}}) << true;
+    QTest::newRow("wrapped int") << QVariant(QVariantMap{{r, 2}}) << true;
+    QTest::newRow("not found int") << QVariant(QVariantMap{{r, 1}}) << false;
+    // Qt reads a whole number in JSON as a qlonglong from 5.15 on.
+    QTest::newRow("found longlong") << QVariant(QVariantMap{{r, 0LL}}) << true;
+    QTest::newRow("wrapped longlong") << QVariant(QVariantMap{{r, 2LL}}) << true;
+    QTest::newRow("pending longlong") << QVariant(QVariantMap{{r, 3LL}}) << false;
+    // Nothing is known to hand over an unsigned number, but it is a number all the same.
+    QTest::newRow("wrapped uint") << QVariant(QVariantMap{{r, 2U}}) << true;
+    QTest::newRow("not found uint") << QVariant(QVariantMap{{r, 1U}}) << false;
+    QTest::newRow("found ulonglong") << QVariant(QVariantMap{{r, 0ULL}}) << true;
+    QTest::newRow("not found ulonglong") << QVariant(QVariantMap{{r, 1ULL}}) << false;
+    QTest::newRow("unknown") << QVariant(QVariantMap{{r, 7.0}}) << false;
+    QTest::newRow("fraction") << QVariant(QVariantMap{{r, 0.5}}) << false;
+    QTest::newRow("missing") << QVariant(QVariantMap{}) << false;
+    QTest::newRow("null") << QVariant(QVariantMap{{r, QVariant()}}) << false;
+    // QVariant reads 0 out of these, which would be FIND_FOUND.
+    QTest::newRow("false") << QVariant(QVariantMap{{r, false}}) << false;
+    QTest::newRow("string") << QVariant(QVariantMap{{r, QStringLiteral("0")}}) << false;
+    QTest::newRow("empty string") << QVariant(QVariantMap{{r, QString()}}) << false;
+    QTest::newRow("no map") << QVariant(0.0) << false;
+    QTest::newRow("nothing") << QVariant() << false;
+    QTest::newRow("text") << QVariant(QStringLiteral("{\"r\": 0}")) << false;
+}
+
+void tst_enginemessages::findFound()
+{
+    QFETCH(QVariant, data);
+    QFETCH(bool, expected);
+    QCOMPARE(EngineMessages::findFound(data), expected);
 }
 
 // What a page's theme-color says, read into something Qt can draw with. CSS writes

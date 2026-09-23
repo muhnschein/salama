@@ -16,6 +16,8 @@ Text {
     // end; the stub's Theme has that at 24.
     property real textLeftMargin: 24
     property real textRightMargin: 24
+    // Silica's TextBase draws the text and its underline in the error colour.
+    property bool errorHighlight: false
 
     function selectAll() {
         selectAllCount += 1

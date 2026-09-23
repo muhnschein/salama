@@ -72,8 +72,10 @@ address field up and the whole url selected, so the first key typed replaces it.
 what a browser is picked up for, and the cover is the one place where the choice of a
 single action has to be right. It goes through `requestNewTab()` on the root window
 rather than acting on `TabModel` itself: the address field belongs to the browsing page,
-which a cover has no way to reach, and whatever page is on top — the menu, Settings — is
-popped first, or the new tab would arrive under a page that cannot type into it.
+which a cover has no way to reach, and whatever page is on top — Settings, a dialog — is
+popped first, or the new tab would arrive under a page that cannot type into it. The menu
+is a sheet rather than a page, and puts itself away as the new tab comes to the front
+(0021).
 
 The app's name is held in a `brandName` property rather than written into the label:
 a name is not a word to be translated, and `ci/qml-lint.sh` treats every bare string

@@ -58,6 +58,8 @@ Item {
 
     signal linkClicked(string url)
     signal viewInitialized()
+    // QuickMozView: a message from the page's own scripts, on a name listened for.
+    signal recvAsyncMessage(string message, var data)
 
     function record(name) {
         var list = calls
@@ -84,6 +86,23 @@ Item {
     function load(target, fromExternal) {
         record("load")
         url = target
+    }
+
+    // QuickMozView's messages to the page's own scripts, recorded as {name, data}, and
+    // the names of the ones from it that the view has been told to listen for.
+    property var messages: []
+    property var messageListeners: []
+
+    function sendAsyncMessage(name, data) {
+        var list = messages
+        list.push({ "name": name, "data": data })
+        messages = list
+    }
+
+    function addMessageListener(name) {
+        var list = messageListeners
+        list.push(name)
+        messageListeners = list
     }
 
     // QuickMozView's synthetic touches, in the view's own coordinates: recorded as

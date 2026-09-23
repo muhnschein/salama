@@ -17,9 +17,10 @@ ApplicationWindow {
     // What the cover's action asks for: a new tab with the address field open.
     //
     // Here rather than on the cover because the field belongs to the browsing page,
-    // and a cover has neither the page nor the page stack in its scope. Whatever is on
-    // top -- the menu, settings, a dialog -- is popped first: the action asks to type
-    // an address, and it would arrive under a page that cannot.
+    // and a cover has neither the page nor the page stack in its scope. Whatever page
+    // is on top -- settings, a dialog -- is popped first: the action asks to type an
+    // address, and it would arrive under a page that cannot. The menu is no page: its
+    // sheet puts itself away as the new tab comes to the front.
     function requestNewTab() {
         var page = pageStack.find(function (candidate) {
             return candidate.objectName === "browserPage"

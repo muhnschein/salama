@@ -20,12 +20,15 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   group, and which tabs keep their page loaded. `TabModel` owns
   three views of itself for QML: `GroupTabModel` (`GroupTabs`), the current group's
   tabs, which the grid shows; `TabGroupModel` (`TabGroups`), the groups, which the strip
-  above the grid shows and the group actions are reached through
+  along the grid's foot shows and the group actions are reached through
   (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
   (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
 - `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
+- `DownloadModel` — the downloads, read from the engine's own `embed:download`
+  notifications, because the platform's list of transfers is closed to a Harbour
+  application and would not hold a `Sailfish.WebView` application's downloads anyway.
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine.
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
@@ -69,11 +72,12 @@ grid's own overscroll drops the page back onto it. Nothing is pushed onto the pa
 stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
 `DECISIONS/0010-tab-grid-deck.md`).
 
-The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped, and
-draws a red open padlock when the engine reports a broken TLS connection for an https page
-(`DECISIONS/0011-address-and-security.md`). The bar follows the engine's own chrome gesture off the
-bottom of the page while a page is scrolled down, so the foot of a page can be reached
-under it.
+The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped,
+and draws a red open padlock when the engine reports a broken TLS connection for an
+https page (`DECISIONS/0011-address-and-security.md`). The bar slims to the host on the
+engine's own chrome gesture while a page is scrolled down, the page ending above it
+either way, and a tap on the slim bar brings the whole bar back
+(`DECISIONS/0009-navigation-bar-gesture.md`).
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
@@ -85,7 +89,7 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-6); a newer database than the build refuses to open rather than corrupt. Migration asks
+7); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 any earlier schema converges on the same shape; a column that a later schema dropped
 takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
@@ -96,6 +100,7 @@ tab_group        group_id PK, name, position
 closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
+download         id PK, name, url, path, mime, size, status, started (ms since epoch)
 setting          name PK, value          -- activeTabId, currentGroupId
 ```
 
