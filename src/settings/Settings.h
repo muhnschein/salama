@@ -83,7 +83,8 @@ public:
     };
     Q_ENUM(ReaderColors)
 
-    // The reader view's typeface, as Firefox offers it. Stored.
+    // The reader view's typeface, as Firefox offers it. Stored, and unscoped as
+    // CoverStyle is.
     enum ReaderTypeface
     {
         ReaderSansSerif = 0,
@@ -92,7 +93,8 @@ public:
     Q_ENUM(ReaderTypeface)
 
     // The reader view's text size, in Firefox's reader.font_size steps: 1 to 9, 5 the
-    // default. An enum so the slider in Settings can read its ends from here.
+    // default. An enum so the slider in Settings can read its ends from here, and
+    // unscoped as CoverStyle is, for the same reason.
     enum ReaderTextSize
     {
         ReaderTextSizeMin = 1,

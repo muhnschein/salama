@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QtMath>
+#include <array>
 
 // Resources compiled into a static library have to be asked for by name, or the linker
 // leaves them out of what links it; and from outside any namespace, as Qt's
@@ -37,10 +38,16 @@ bool isWebScheme(const QString &scheme)
 }
 
 // Firefox's Readerable._blockedHosts: "some high-profile pages have false positives".
-const char *const BlockedHosts[] = {
-    "amazon.com", "github.com",  "mail.google.com", "pinterest.com",
-    "reddit.com", "twitter.com", "youtube.com",     "app.slack.com",
-};
+const std::array<const char *, 8> BlockedHosts{{
+    "amazon.com",
+    "github.com",
+    "mail.google.com",
+    "pinterest.com",
+    "reddit.com",
+    "twitter.com",
+    "youtube.com",
+    "app.slack.com",
+}};
 
 // Reading speeds from ReaderMode._getReadingSpeedForLanguage, in characters a minute
 // and how far either side of that a reader may be, from the study it cites
@@ -53,12 +60,25 @@ struct ReadingSpeed
     int variance;
 };
 
-const ReadingSpeed ReadingSpeeds[] = {
-    {"en", 987, 118},  {"ar", 612, 88},  {"de", 920, 86},  {"es", 1025, 127}, {"fi", 1078, 121},
-    {"fr", 998, 126},  {"he", 833, 130}, {"it", 950, 140}, {"ja", 357, 56},   {"nl", 978, 143},
-    {"pl", 916, 126},  {"pt", 913, 145}, {"ru", 986, 175}, {"sl", 885, 145},  {"sv", 917, 156},
-    {"tr", 1054, 156}, {"zh", 255, 29},
-};
+const std::array<ReadingSpeed, 17> ReadingSpeeds{{
+    {"en", 987, 118},
+    {"ar", 612, 88},
+    {"de", 920, 86},
+    {"es", 1025, 127},
+    {"fi", 1078, 121},
+    {"fr", 998, 126},
+    {"he", 833, 130},
+    {"it", 950, 140},
+    {"ja", 357, 56},
+    {"nl", 978, 143},
+    {"pl", 916, 126},
+    {"pt", 913, 145},
+    {"ru", 986, 175},
+    {"sl", 885, 145},
+    {"sv", 917, 156},
+    {"tr", 1054, 156},
+    {"zh", 255, 29},
+}};
 
 const ReadingSpeed &readingSpeed(const QString &language)
 {
@@ -71,7 +91,7 @@ const ReadingSpeed &readingSpeed(const QString &language)
             return speed;
         }
     }
-    return ReadingSpeeds[0];
+    return ReadingSpeeds.front();
 }
 
 // The background each reader theme paints, from the style sheet, for the document's
@@ -105,8 +125,8 @@ QString unescapeAttribute(QString value)
 
 // The head of every reader view, as far as the page it was made from: sourceUrl()
 // reads it back from the address the engine reports.
-const char *const HeadStart = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
-                              "<meta name=\"salama-reader\" content=\"";
+const char *const HeadStart = R"(<!DOCTYPE html><html><head><meta charset="utf-8">)"
+                              R"(<meta name="salama-reader" content=")";
 
 // How much of a reader view's address sourceUrl() reads: the start of the document,
 // percent-encoded, which is up to three times its length. Enough for any address a

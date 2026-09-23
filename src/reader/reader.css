@@ -38,6 +38,11 @@ body {
   --link-selected-background: var(--selected-background);
   --link-selected-foreground: #333;
   --visited-link-foreground: #b5007f;
+  margin: 0;
+  padding: var(--body-padding);
+  background-color: var(--main-background);
+  color: var(--main-foreground);
+  font-family: var(--font-family);
 }
 
 body.light {
@@ -64,14 +69,6 @@ body.dark {
  * them; there is no page script here, so every picture in the article but an emoji. */
 body.dark .moz-reader-content img:not(.emoji):not(.wp-smiley) {
   filter: brightness(0.8) contrast(1.2);
-}
-
-body {
-  margin: 0;
-  padding: var(--body-padding);
-  background-color: var(--main-background);
-  color: var(--main-foreground);
-  font-family: var(--font-family);
 }
 
 body.sans-serif {
