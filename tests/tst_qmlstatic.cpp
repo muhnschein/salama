@@ -144,17 +144,17 @@ void tst_qmlstatic::delegateRolesExist()
     DownloadModel downloads(storage);
 
     // Which model backs the `model.` references in each file. The grid's rows come
-    // from GroupTabs, whose roles are the tab model's own.
+    // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
+    // what its search finds.
     const QHash<QString, QSet<QString>> expected{
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
-        {QStringLiteral("components/TabsView.qml"), roleSet(*tabs.groupTabs())},
+        {QStringLiteral("components/TabsView.qml"), roleSet(*tabs.groupTabs()) + roleSet(search)},
         {QStringLiteral("components/TabPreview.qml"), roleSet(*tabs.groupTabs())},
         {QStringLiteral("components/CoverTabField.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabGroupStrip.qml"), roleSet(*tabs.groupModel())},
         {QStringLiteral("components/TabGroupDelegate.qml"), roleSet(*tabs.groupModel())},
         {QStringLiteral("pages/TabGroupsPage.qml"), roleSet(*tabs.groupModel())},
         {QStringLiteral("components/TabSearchDelegate.qml"), roleSet(search)},
-        {QStringLiteral("pages/TabSearchPage.qml"), roleSet(search)},
         {QStringLiteral("components/ClosedTabDelegate.qml"), roleSet(*tabs.closedTabs())},
         {QStringLiteral("components/RecentlyClosedPanel.qml"), roleSet(*tabs.closedTabs())},
         {QStringLiteral("pages/HistoryPage.qml"), roleSet(history)},

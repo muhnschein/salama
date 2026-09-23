@@ -109,6 +109,14 @@ the whole of it takes presses, since nothing under it is the page's to take. Wha
 slim bar gives the page is the quarter of its height it gives up, which is what the
 gesture was for.
 
+A **tap on the slim bar brings the whole bar back**, the way scrolling the page back up
+does — through the engine's own `chrome`, set on the view, which the gesture slims again
+as the page is scrolled on down — and only a tap on the whole bar edits the address. A
+tap there went straight into the field at first; the person testing asked for the whole
+bar first and the field at the next tap. The bar has the view for it (`view`, as the
+menu and the find bar do), and reads the page's load progress and the engine's verdict
+on its connection from it too, rather than being handed them by the browsing page.
+
 `viewArea` is sized from the bar, so the engine's view grows into what the bar gives up —
 but sized for the **slim** height for as long as the bar is between the two (`resizing`).
 A view resized on every frame of that animation is a page relaid out on every frame, which

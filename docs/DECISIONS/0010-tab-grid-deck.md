@@ -79,20 +79,23 @@ strip of groups took every press along the head of the screen, which is exactly 
 pull down begins. On the flickable they ride on its `y`, which moves up as the view is
 pulled down, so each carries the overscroll as a margin and stays with the content:
 
-* along the **head**, new tab in the left corner and the search for a tab in the right.
-  Held rather than tapped, new tab brings up the tabs closed lately (0018). The head held
-  the strip of tab groups (0015) until the strip went to the foot, and before that "*n*
-  tabs", and before that a page header that named the active tab, which said what the
-  page behind the grid already says. The row's other work is the row of cells below it:
-  without it the first row, and the close button in its corner, sat under the device's
-  own screen cutout. The row is `Screen.topCutout.height` taller than it looks and puts
-  its controls below that height, which is what Silica's `PullDownMenu` does with its top
-  margin; the property is read through a guard, so a `Screen` that does not report a
-  cutout gives a row of the ordinary height rather than one that is undefined pixels
-  tall.
-* along the **foot**, the strip of tab groups, centred on the screen, with the way to edit
-  them in the left corner. It was in the head until a tab could be carried onto a group
-  to move it there (0015): at the foot it is under the thumb doing the carrying.
+* along the **head**, Silica's own `SearchField`, "Search tabs", across the row with its
+  words from the left edge; what it finds is listed over the cells (0015). The head held
+  the way to a new tab and a search button that opened a page of its own, and before
+  that the strip of tab groups (0015) until the strip went to the foot, and before that
+  "*n* tabs", and before that a page header that named the active tab, which said what
+  the page behind the grid already says. The row's other work is the row of cells below
+  it: without it the first row, and the close button in its corner, sat under the
+  device's own screen cutout. The row is `Screen.topCutout.height` taller than it looks
+  and puts its controls below that height, which is what Silica's `PullDownMenu` does
+  with its top margin; the property is read through a guard, so a `Screen` that does not
+  report a cutout gives a row of the ordinary height rather than one that is undefined
+  pixels tall.
+* along the **foot**, new tab in the left corner, the strip of tab groups, and the way to
+  edit them in the right corner. The corners are the same width, so the names are
+  centred on the screen. Held rather than tapped, new tab brings up the tabs closed
+  lately (0018). The strip was in the head until a tab could be carried onto a group to
+  move it there (0015): at the foot it is under the thumb doing the carrying.
 
 A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
 picture's own aspect ratio, rather than with `PreserveAspectCrop`. The picture is of a
@@ -157,7 +160,7 @@ signals from a test skips entirely.
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
-the pull and the tap, "New tab" is the button in the grid's head row, and "Close all
+the pull and the tap, "New tab" is the button in the grid's foot row, and "Close all
 tabs" is in Settings next to the other clearing actions.
 
 ### What says an edge can be dragged
@@ -183,9 +186,15 @@ first build wanted it perfectly still. How much, and in which direction, is in t
 section above.
 
 The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
-colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc
-of its own at its own transparency, baked into the icon, so the glyph alone was lost on
-most pages and a disc drawn behind it was a disc inside a disc.
+colour with a cross through it. The theme's `icon-m-clear` carries a disc of its own at
+its own transparency, baked into the icon, so the glyph alone was lost on most pages and
+a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,
+and on device it was the first thing seen on every cell; it is drawn at
+`Theme.opacityHigh` now, and opaque only under a finger.
+
+The picture and the title sit `Theme.paddingMedium` and half a `Theme.paddingSmall` in
+from the cell's edges (`inset`), so two cells stand twice that apart. It was a medium
+padding, and on device the pictures stood too close together.
 
 ### The size of the browsing page
 `qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is

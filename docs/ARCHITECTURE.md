@@ -72,11 +72,12 @@ grid's own overscroll drops the page back onto it. Nothing is pushed onto the pa
 stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
 `DECISIONS/0010-tab-grid-deck.md`).
 
-The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped, and
-draws a red open padlock when the engine reports a broken TLS connection for an https page
-(`DECISIONS/0011-address-and-security.md`). The bar follows the engine's own chrome gesture off the
-bottom of the page while a page is scrolled down, so the foot of a page can be reached
-under it.
+The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped,
+and draws a red open padlock when the engine reports a broken TLS connection for an
+https page (`DECISIONS/0011-address-and-security.md`). The bar slims to the host on the
+engine's own chrome gesture while a page is scrolled down, the page ending above it
+either way, and a tap on the slim bar brings the whole bar back
+(`DECISIONS/0009-navigation-bar-gesture.md`).
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),

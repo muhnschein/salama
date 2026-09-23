@@ -45,39 +45,45 @@ closes its tabs, moving the current group to a neighbour first, so that whoever 
 "no tabs left" by opening one does not open it in the group that is going.
 
 The **strip** (`components/TabGroupStrip.qml`) replaced the "*n* tabs" label in the
-grid's head row, and has since moved to the **foot** row, centred on the screen with the
-edit button in its left corner (below). It is Silica's own `TabBar` geometry rebuilt from
-public API, the way vuo rebuilds it: a `Flickable` over a `Row` of buttons, each its
-name's width plus `Theme.paddingLarge` either side, the current name in the highlight
-colour with a `Theme._lineWidth` underline exactly as wide as the name, the first and
-last button taking the slack so a row that fits is centred, and the current button kept
-in the middle when it does not. `TabBar` itself lives in `Sailfish.Silica.private` and
-works only inside a `TabView`, neither of which a Harbour application may have. A tap
-chooses a group. The first strip was a snapping `ListView` with each item half the width,
-whose flick chose the group; it was too sparse to read as a row of names, and the view's
-own writes to `currentIndex` during layout chose groups nobody had asked for. Small type,
-because the strip sits over the grid rather than at the head of a page. The edit button
-in its left corner pushes `pages/TabGroupsPage.qml`; the search button, in the right
-corner of the head row, pushes `pages/TabSearchPage.qml`. Both are pages over the grid,
-which stays open under them.
+grid's head row, and has since moved to the **foot** row (below), between the new-tab
+button in the left corner and the edit button in the right. The two corners are the same
+width, so the names are centred on the screen. It is Silica's own `TabBar` geometry
+rebuilt from public API, the way vuo rebuilds it: a `Flickable` over a `Row` of buttons,
+each its name's width plus `Theme.paddingLarge` either side, the current name in the
+highlight colour with a `Theme._lineWidth` underline exactly as wide as the name, the
+first and last button taking the slack so a row that fits is centred, and the current
+button kept in the middle when it does not. `TabBar` itself lives in
+`Sailfish.Silica.private` and works only inside a `TabView`, neither of which a Harbour
+application may have. A tap chooses a group. The first strip was a snapping `ListView`
+with each item half the width, whose flick chose the group; it was too sparse to read as
+a row of names, and the view's own writes to `currentIndex` during layout chose groups
+nobody had asked for. Small type, because the strip sits over the grid rather than at
+the head of a page. An end of the row with names past it **fades out** rather than
+cutting a name off, as `TabBar`'s does: two `OpacityRampEffect`s, one for each end, each
+on only while there are names out of sight past its end and narrowing away as the row
+reaches it, the second drawn from the first while both are on. `TabBar`'s fade is a
+seventh of the row; this one is at most a twentieth of the screen, the ramp Silica puts
+on a field's text where it scrolls past an end, since what was asked for was a slight
+one. A row that fits has none. The edit button in the right corner pushes
+`pages/TabGroupsPage.qml`, a page over the grid, which stays open under it.
 
 The strip is at the **foot** so that it is within reach of the thumb that carries a cell
 to it: a tab **changes group by being carried onto one**. A preview held until it comes
 up (0010) and carried down over a name lights that name, in the wash the grid marks its
 cells with, and dropped there the tab moves into that group. The cells ask the strip
 through three functions — `carryOver()` while the finger moves, `dropTab()` as it lifts,
-`endCarry()` however the carry ends — and a cell over the strip trades places with none of
-the cells hidden under it. The current group is never lit: the tab is in it already. Names
-scrolled out of the strip are not targets either. The move itself waits a turn of the event
-loop: made at once, it takes the carried cell out of the grid while that cell's own release
-handler is still running, the cell's context is cleared under it, and the rest of the
-handler fails with a TypeError — which the real-finger test
-(`tst_qmlload::carryToGroupUnderAFinger`) found, and now fails on. Carrying the tab in front
-takes the grid with it, since the tab in front is always in the group the grid shows; any
-other tab leaves the grid where it is, one cell the fewer. The row is Silica's `TabBar`
-turned into a place to put things, which Silica has no model for; the strip does not
-scroll itself while a cell is held over one end of it, so with more groups than fit, a
-name out of sight has to be scrolled to first.
+`endCarry()` however the carry ends — and a cell over the strip, its corners included,
+trades places with none of the cells hidden under it. The current group is never lit:
+the tab is in it already. Names scrolled out of the strip are not targets either. The
+move itself waits a turn of the event loop: made at once, it takes the carried cell out
+of the grid while that cell's own release handler is still running, the cell's context
+is cleared under it, and the rest of the handler fails with a TypeError — which the
+real-finger test (`tst_qmlload::carryToGroupUnderAFinger`) found, and now fails on.
+Carrying the tab in front takes the grid with it, since the tab in front is always in
+the group the grid shows; any other tab leaves the grid where it is, one cell the fewer.
+The row is Silica's `TabBar` turned into a place to put things, which Silica has no
+model for; the strip does not scroll itself while a cell is held over one end of it, so
+with more groups than fit, a name out of sight has to be scrolled to first.
 
 `TabGroupsPage` is a list with a tap to make a group current, rename and delete in each
 row's menu, and under the last row a row shaped like a group's with a plus where its name
@@ -96,13 +102,25 @@ change the list is built again, since the order it is walked in is no longer sha
 That was not the whole of it: the page still jumped at the first pause in typing. The
 search field was the list's header, and a header lives inside the view's flickable,
 whose content moves as the list narrows — and Silica takes the keyboard away when the
-content under it moves. The field is now **anchored above the list**, outside it, and
+content under it moves. The field was then **anchored above the list**, outside it, and
 the term reaches the model from a **250 ms timer** restarted on each keystroke, so a
 burst of typing asks once; both are what postivene's chat search does, for the same
 reasons.
 The group heading is a role on the first row of each group rather than a section of
-the list, so two unnamed groups holding the same number of tabs stay two headings. A
-tap calls `BrowserPage.showTab(id)`: the tab to the front, the deck settled on the page.
+the list, so two unnamed groups holding the same number of tabs stay two headings.
+
+The search was a page of its own, pushed by a button in the corner of the grid's head
+row. It is now **the head row itself**: Silica's `SearchField`, "Search tabs", across
+the row with its words from the left edge, and what it finds listed over the cells,
+between the two rows, for as long as the term is not empty; the cells are not drawn
+meanwhile, and emptying the field gives them back at once. The list is still not the
+field's flickable. Enter puts the keyboard away, leaving the whole list to be seen. A
+tap on a result brings that tab to the front and puts the grid away. The search belongs
+to the grid while it is up: put away, however that happens, the field is emptied, the
+keyboard goes and the term with it, so the next search starts empty over the cells. The
+field is not focused when the grid comes up, so the keyboard comes only for a tap on it;
+unfocused, it lets a drag down from it pull the page back, as the rest of the head row
+does. `pages/TabSearchPage.qml` is gone.
 
 Storage is schema 4: `tab.group_id`, a `tab_group` table, and `currentGroupId` beside
 `activeTabId` in `setting`. `TabModel` repairs what it loads — a tab naming a group no

@@ -15,9 +15,10 @@
 // every press on them too -- though a pull begun on the foot row has too little
 // screen below it to bring the page back.
 //
-// The head row holds the way to a new tab and the search for one; the foot row holds
-// the groups, within reach of the thumb that carries a cell down to one of them to
-// change its group (docs/DECISIONS/0015-tab-groups.md).
+// The head row holds the search for a tab, and what it finds is listed over the cells
+// while there is anything typed. The foot row holds the way to a new tab and the
+// groups, within reach of the thumb that carries a cell down to one of them to change
+// its group (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -37,8 +38,44 @@ Item {
     // out and the settings allow. Silica's own PullDownMenu adds the same to its top
     // margin in portrait (docs/DECISIONS/0013-screen-cutout.md).
     property real cutoutHeight: 0
+    // Something is typed in the search, and what it finds is shown in place of the
+    // cells.
+    readonly property bool searching: searchField.text.length > 0
+                                      && TabSearch.searchTerm.length > 0
 
     objectName: "tabsView"
+
+    // A tab found by the search comes to the front, and the page with it.
+    function openFound(tabId) {
+        TabModel.activateTabById(tabId)
+        endSearch()
+        tabActivated()
+    }
+
+    // The search is the grid's while it is up: put away, it starts empty next time,
+    // with the keyboard down.
+    function endSearch() {
+        searchField.text = ""
+        searchField.focus = false
+        searchDebounce.stop()
+        TabSearch.searchTerm = ""
+    }
+
+    onVisibleChanged: {
+        if (!visible) {
+            endSearch()
+        }
+    }
+
+    // Not bound straight to the field: only the last of a burst of keystrokes is
+    // wanted, or the list changes under the finger as the first results come in.
+    Timer {
+        id: searchDebounce
+
+        objectName: "searchDebounce"
+        interval: 250
+        onTriggered: TabSearch.searchTerm = searchField.text
+    }
 
     // The rows are declared beside the grid, where the view's own default property
     // cannot take them into the content it scrolls, and are handed to the grid once
@@ -118,18 +155,18 @@ Item {
         }
 
         ViewPlaceholder {
-            enabled: GroupTabs.count === 0
+            enabled: GroupTabs.count === 0 && !tabsView.searching
             text: qsTr("No tabs in this group")
-            hintText: qsTr("Open one with the button above")
+            hintText: qsTr("Open one with the button below")
         }
 
         VerticalScrollDecorator {}
     }
 
-    // The way to a new tab in one corner and the search for a tab in the other, over
-    // the cells rather than among them. The row is also what keeps the top row of
-    // cells clear of the screen's cutout. It rides on the grid, which moves up as it
-    // is pulled down; the margin keeps the row where the content is.
+    // The search for a tab, over the cells rather than among them. The row is also what
+    // keeps the top row of cells clear of the screen's cutout. It rides on the grid,
+    // which moves up as it is pulled down; the margin keeps the row where the content
+    // is.
     Rectangle {
         id: headRow
 
@@ -171,44 +208,62 @@ Item {
             }
             height: Theme.itemSizeLarge
 
-            // Held rather than tapped, the button brings up what was closed lately.
-            IconButton {
-                objectName: "newTabButton"
+            // Every open tab whose title or address holds what is typed, group by
+            // group. Silica's own search field, with its words from the left edge.
+            SearchField {
+                id: searchField
+
+                objectName: "tabSearchField"
                 anchors {
                     left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                    verticalCenter: parent.verticalCenter
-                }
-                width: Theme.iconSizeMedium
-                height: width
-                icon.source: "image://theme/icon-m-add"
-                onClicked: {
-                    TabModel.newTab(Settings.homePage)
-                    tabsView.tabActivated()
-                }
-                onPressAndHold: closedPanel.show()
-            }
-
-            // A page of its own over the grid, which stays open under it for when it
-            // is popped.
-            IconButton {
-                objectName: "searchTabsButton"
-                anchors {
                     right: parent.right
-                    rightMargin: Theme.horizontalPageMargin
                     verticalCenter: parent.verticalCenter
                 }
-                width: Theme.iconSizeMedium
-                height: width
-                icon.source: "image://theme/icon-m-search"
-                onClicked: pageStack.push(Qt.resolvedUrl("../pages/TabSearchPage.qml"))
+                placeholderText: qsTr("Search tabs")
+                // Enter puts the keyboard away, and the whole list is there to see.
+                EnterKey.iconSource: "image://theme/icon-m-enter-close"
+                EnterKey.onClicked: focus = false
+                onTextChanged: searchDebounce.restart()
             }
         }
     }
 
-    // The groups, along the foot of the view in the same glass as the navigation bar,
-    // with the way to edit them in the corner. On the grid as the head row is, and
-    // held still against its pull the same way.
+    // What the search finds, between the two rows and over the cells, which are not
+    // drawn meanwhile. The field is not the list's header, as it was once on a page of
+    // its own: a list that narrows on every search moves its content, and Silica takes
+    // the keyboard away from a field in a flickable whose content moves under it.
+    SilicaListView {
+        id: searchResults
+
+        objectName: "tabSearchList"
+        y: headRow.height
+        width: parent.width
+        height: parent.height - headRow.height - footRow.height
+        visible: tabsView.searching
+        clip: true
+        model: TabSearch
+
+        delegate: TabSearchDelegate {
+            onChosen: tabsView.openFound(model.tabId)
+        }
+
+        ViewPlaceholder {
+            enabled: TabSearch.count === 0
+            text: qsTr("No matching tabs")
+        }
+
+        VerticalScrollDecorator {}
+    }
+
+    Binding {
+        target: tabGrid.contentItem
+        property: "visible"
+        value: !tabsView.searching
+    }
+
+    // The way to a new tab and the groups, along the foot of the view in the same glass
+    // as the navigation bar. On the grid as the head row is, and held still against its
+    // pull the same way.
     Rectangle {
         id: footRow
 
@@ -226,6 +281,11 @@ Item {
             id: groupStrip
 
             anchors.fill: parent
+            onNewTabRequested: {
+                TabModel.newTab(Settings.homePage)
+                tabsView.tabActivated()
+            }
+            onClosedTabsRequested: closedPanel.show()
             // A page of its own over the grid, which stays open under it for when it
             // is popped.
             onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))

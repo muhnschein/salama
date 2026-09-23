@@ -21,17 +21,29 @@ import harbour.salama 1.0
 Item {
     id: navigationBar
 
+    // The page in front, or null while it is made.
+    property Item view: null
     property string url
     property bool loading: false
-    property int loadProgress: 0
     property bool canGoBack: false
+    readonly property int loadProgress: view ? view.loadProgress : 0
     // The page came over TLS and the engine is not satisfied with it: a bad
-    // certificate, a broken chain, mixed content.
-    property bool tlsBroken: false
+    // certificate, a broken chain, mixed content. Gecko's own verdict, if this engine
+    // build hands one out: validState says it has one for this page, allGood weighs
+    // certificate, protocol and mixed content. sailfish-browser reads the same two,
+    // and only for https.
+    readonly property bool tlsBroken: {
+        if (!view || url.indexOf("https://") !== 0) {
+            return false
+        }
+        var security = view.security
+        return !!security && !!security.validState && !security.allGood
+    }
     // The address turns into a field in place while it is being edited.
     property bool editing: false
     // Slimmed down to the handle and the host, with the controls faded off it: what the
-    // bar does instead of leaving when a page is scrolled (docs/DECISIONS/0009).
+    // bar does instead of leaving when a page is scrolled (docs/DECISIONS/0009). A tap
+    // on it brings the whole bar back, and only a tap on the whole bar edits.
     property bool compact: false
 
     signal accepted(string text)
@@ -169,9 +181,21 @@ Item {
         } else if (region === "reload") {
             navigationBar.reloadOrStop()
         } else if (region === "address") {
-            if (!navigationBar.editing) {
-                navigationBar.beginEditing()
+            navigationBar.tapAddress()
+        }
+    }
+
+    // A tap on the slim bar brings back the whole bar, controls and all, and the next
+    // tap edits. It is brought back the way scrolling a page back up brings it back:
+    // through the engine's chrome state, which slims it again as the page is scrolled
+    // on down.
+    function tapAddress() {
+        if (navigationBar.compact) {
+            if (navigationBar.view) {
+                navigationBar.view.chrome = true
             }
+        } else if (!navigationBar.editing) {
+            navigationBar.beginEditing()
         }
     }
 

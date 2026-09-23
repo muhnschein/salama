@@ -407,24 +407,21 @@
     </message>
 </context>
 <context>
-    <name>TabSearchPage</name>
-    <message>
-        <source>Search tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No matching tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>TabsView</name>
     <message>
         <source>No tabs in this group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open one with the button above</source>
+        <source>Open one with the button below</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No matching tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

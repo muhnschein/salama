@@ -1,21 +1,26 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The foot of the tab grid: the groups in a row, each the width of its name, the
-// current one underlined and kept in the middle, with the way to edit the groups in
-// the left corner (docs/DECISIONS/0015-tab-groups.md).
+// The foot of the tab grid: the way to a new tab in the left corner, the groups in a
+// row between, each the width of its name, the current one underlined and kept in the
+// middle, and the way to edit the groups in the right corner
+// (docs/DECISIONS/0015-tab-groups.md). The two corners are the same width, so the
+// names are centred on the screen.
 //
 // The geometry is Silica's own TabBar's, rebuilt from public API the way vuo rebuilds
 // it (ScopeTabBar.qml): a label with Theme.paddingLarge either side, an underline of
 // Theme._lineWidth exactly as wide as the current label, the current label in the
 // highlight colour, and the first and last tab taking the slack so a row that fits is
-// centred. TabBar itself lives in Sailfish.Silica.private and works only inside a
-// TabView, neither of which a Harbour application may have. Small type, because the
-// strip sits over the grid rather than at the head of a page.
+// centred. So is the way the row fades out at an end that has names past it. TabBar
+// itself lives in Sailfish.Silica.private and works only inside a TabView, neither of
+// which a Harbour application may have. Small type, because the strip sits over the
+// grid rather than at the head of a page.
 //
 // The names are also where a tab changes group. A preview carried down over one of
 // them lights it, and dropped there the tab moves into that group; the grid's cells
-// ask the strip through carryOver(), dropTab() and endCarry().
+// ask the strip through carryOver(), dropTab() and endCarry(). The whole foot is the
+// strip's for that, corners and all: a cell carried over it trades places with none of
+// the cells under it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -23,6 +28,9 @@ import harbour.salama 1.0
 Item {
     id: strip
 
+    // Held rather than tapped, the new-tab corner asks for what was closed lately.
+    signal newTabRequested()
+    signal closedTabsRequested()
     signal editRequested()
 
     // The button of the current group, once the Repeater has made it. row.children
@@ -110,12 +118,28 @@ Item {
     }
 
     IconButton {
+        id: newTabButton
+
+        objectName: "newTabButton"
+        anchors {
+            left: parent.left
+            leftMargin: Theme.horizontalPageMargin
+            verticalCenter: parent.verticalCenter
+        }
+        width: Theme.iconSizeMedium
+        height: width
+        icon.source: "image://theme/icon-m-add"
+        onClicked: strip.newTabRequested()
+        onPressAndHold: strip.closedTabsRequested()
+    }
+
+    IconButton {
         id: editButton
 
         objectName: "editGroupsButton"
         anchors {
-            left: parent.left
-            leftMargin: Theme.horizontalPageMargin
+            right: parent.right
+            rightMargin: Theme.horizontalPageMargin
             verticalCenter: parent.verticalCenter
         }
         width: Theme.iconSizeMedium
@@ -127,17 +151,18 @@ Item {
     Flickable {
         id: flick
 
+        // How much of the row is scrolled out of sight past each end.
+        readonly property real pastLeft: contentX
+        readonly property real pastRight: contentWidth - width - contentX
+
         objectName: "tabGroupList"
-        // As far from the right edge as the edit button takes from the left, so a row
-        // of names that fits sits in the middle of the screen rather than in the
-        // middle of what the button leaves.
         anchors {
-            left: editButton.right
-            right: parent.right
+            left: newTabButton.right
+            right: editButton.left
             top: parent.top
             bottom: parent.bottom
             leftMargin: Theme.paddingMedium
-            rightMargin: editButton.x + editButton.width + Theme.paddingMedium
+            rightMargin: Theme.paddingMedium
         }
         clip: true
         contentWidth: row.width
@@ -258,5 +283,31 @@ Item {
                 }
             }
         }
+    }
+
+    // An end with names past it fades out rather than cutting a name off, and the fade
+    // narrows away as the row reaches that end: TabBar's two ramps, the second drawn
+    // from the first while both are on. Over a twentieth of the screen at most, which
+    // is how far a Silica field's text fades at an end it scrolls past.
+    OpacityRampEffect {
+        id: leftFade
+
+        objectName: "tabGroupLeftFade"
+        sourceItem: flick
+        enabled: flick.interactive && flick.pastLeft > 0
+        direction: OpacityRamp.RightToLeft
+        slope: Math.max(1 + 20 * flick.width / Screen.width,
+                        flick.width / Math.max(1, flick.pastLeft))
+        offset: 1 - 1 / slope
+    }
+
+    OpacityRampEffect {
+        objectName: "tabGroupRightFade"
+        sourceItem: leftFade.enabled ? leftFade : flick
+        enabled: flick.interactive && flick.pastRight > 0
+        direction: OpacityRamp.LeftToRight
+        slope: Math.max(1 + 20 * flick.width / Screen.width,
+                        flick.width / Math.max(1, flick.pastRight))
+        offset: 1 - 1 / slope
     }
 }

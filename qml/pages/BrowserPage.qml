@@ -73,17 +73,6 @@ WebViewPage {
         return currentView.chrome === false
     }
 
-    // Gecko's own verdict on the connection, if this engine build hands one out:
-    // validState says it has one for this page, allGood weighs certificate, protocol
-    // and mixed content. sailfish-browser reads the same two, and only for https.
-    readonly property bool tlsBroken: {
-        if (!currentView || TabModel.activeUrl.indexOf("https://") !== 0) {
-            return false
-        }
-        var security = currentView.security
-        return !!security && !!security.validState && !security.allGood
-    }
-
     // How far the deck must be dragged for the gesture to commit when the finger lifts.
     // Short, because the movement has already shown what letting go will do.
     readonly property real pullThreshold: Theme.itemSizeLarge
@@ -238,13 +227,6 @@ WebViewPage {
         }
     }
 
-    // A tab chosen off the grid -- from the search page -- comes to the front, and the
-    // page comes back over the grid with it.
-    function showTab(tabId) {
-        TabModel.activateTabById(tabId)
-        settle(false)
-    }
-
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
     // pixels across a 1080 wide screen -- the width a phone layout is written for --
     // where the platform's own 1.5 gives 410. Two functions so the load tests can
@@ -393,10 +375,9 @@ WebViewPage {
                 // the keyboard, and the field the bar carries has to come up with it.
                 y: browserPage.height - height
 
+                view: browserPage.currentView
                 url: TabModel.activeUrl
                 loading: browserPage.loading
-                loadProgress: browserPage.currentView ? browserPage.currentView.loadProgress : 0
-                tlsBroken: browserPage.tlsBroken
                 compact: browserPage.barCompact
                 canGoBack: browserPage.canGoBack
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))

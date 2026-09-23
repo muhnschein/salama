@@ -407,7 +407,15 @@
     </message>
 </context>
 <context>
-    <name>TabSearchPage</name>
+    <name>TabsView</name>
+    <message>
+        <source>No tabs in this group</source>
+        <translation>Ryhmässä ei ole välilehtiä</translation>
+    </message>
+    <message>
+        <source>Open one with the button below</source>
+        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+    </message>
     <message>
         <source>Search tabs</source>
         <translation>Hae välilehdistä</translation>
@@ -415,17 +423,6 @@
     <message>
         <source>No matching tabs</source>
         <translation>Ei osuvia välilehtiä</translation>
-    </message>
-</context>
-<context>
-    <name>TabsView</name>
-    <message>
-        <source>No tabs in this group</source>
-        <translation>Ryhmässä ei ole välilehtiä</translation>
-    </message>
-    <message>
-        <source>Open one with the button above</source>
-        <translation>Avaa välilehti yllä olevalla painikkeella</translation>
     </message>
 </context>
 </TS>
