@@ -7,6 +7,7 @@
 
 using Salama::BookmarkModel;
 using Salama::Core;
+using Salama::DownloadModel;
 using Salama::HistoryModel;
 using Salama::Settings;
 
@@ -29,6 +30,8 @@ void tst_core::wiresTabsToHistory()
     QVERIFY(core.settings() != nullptr);
     QVERIFY(core.tabSearch() != nullptr);
     QCOMPARE(core.tabSearch()->count(), 0);
+    QVERIFY(core.downloads() != nullptr);
+    QCOMPARE(core.downloads()->count(), 0);
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 0);
@@ -69,9 +72,19 @@ void tst_core::restoresState()
         Core core(dir.path(), config);
         core.tabs()->newTab(QStringLiteral("https://a.example/"));
         core.settings()->setDesktopMode(true);
+        core.downloads()->observe(
+            core.downloads()->topic(),
+            QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-start")},
+                        {QStringLiteral("id"), 1.0},
+                        {QStringLiteral("displayName"), QStringLiteral("a.pdf")}});
     }
     Core core(dir.path(), config);
     QCOMPARE(core.tabs()->count(), 1);
+    // The downloads are kept in the same database; one that was running did not finish.
+    QCOMPARE(core.downloads()->count(), 1);
+    QCOMPARE(
+        core.downloads()->data(core.downloads()->index(0, 0), DownloadModel::StatusRole).toInt(),
+        static_cast<int>(DownloadModel::Failed));
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
     QVERIFY(core.settings()->desktopMode());
     // The tab model takes its live-page limit from Settings, and follows it.

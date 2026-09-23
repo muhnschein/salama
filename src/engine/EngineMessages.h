@@ -4,6 +4,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QVariant>
+#include <QVariantMap>
 
 namespace Salama {
 
@@ -20,6 +22,8 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString heapMinimizePayload READ heapMinimizePayload CONSTANT)
     Q_PROPERTY(QString faviconScript READ faviconScript CONSTANT)
     Q_PROPERTY(QString themeColorScript READ themeColorScript CONSTANT)
+    Q_PROPERTY(QString findMessage READ findMessage CONSTANT)
+    Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
 
 public:
     explicit EngineMessages(QObject *parent = nullptr);
@@ -64,6 +68,29 @@ public:
     // so those are read here. Alpha is dropped: a translucent band would show whatever
     // is behind it, which is the one thing a page's own colour must not do.
     Q_INVOKABLE static QString themeColor(const QString &value);
+
+    // Find in page, the way sailfish-browser does it: findMessage goes to the page
+    // with WebView.sendAsyncMessage (apps/browser/qml/pages/components/ToolBar.qml),
+    // and the page answers on findResultMessage, which is heard only once registered
+    // with WebView.addMessageListener (sailfish-browser registers it in
+    // apps/qtmozembed/declarativewebpage.cpp and reads it in apps/shared/WebView.qml).
+    // The page's side is embedlite-components jsscripts/embedhelper.js, which keeps
+    // one Finder per page.
+    QString findMessage() const;
+    QString findResultMessage() const;
+
+    // What to send for a search: the text; whether to go on to the next match of it
+    // rather than start over; and which way. An empty text is the message that ends
+    // the search: on it embedhelper.js takes the highlight away and destroys its
+    // Finder. Without it the last match stays highlighted.
+    Q_INVOKABLE QVariantMap findRequest(const QString &text, bool again, bool backwards) const;
+
+    // Whether the page's answer says the text is there. The answer is {"r": result},
+    // result being one of nsITypeAheadFind's FIND_FOUND 0, FIND_NOTFOUND 1,
+    // FIND_WRAPPED 2 -- found, after going round the end of the page -- and
+    // FIND_PENDING 3 (gecko-dev toolkit/components/typeaheadfind/nsITypeAheadFind.idl).
+    // An answer that carries no number says nothing was found.
+    Q_INVOKABLE static bool findFound(const QVariant &data);
 };
 
 } // namespace Salama

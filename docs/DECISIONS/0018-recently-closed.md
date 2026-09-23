@@ -13,10 +13,13 @@ all at once. `reopen(row)` opens the tab again in the current group, gives it ba
 title and icon so the grid's cell can say them before the page has loaded, and takes
 it off the list.
 
-The list is shown by **holding** the new-tab button in the grid's foot row: a tap
-still opens a tab, a hold brings up `components/RecentlyClosedPanel.qml`, a Silica
-`DockedPanel` docked to the bottom and modal, so it slides up from under the foot the
-way the platform's own sheets do and a tap outside it puts it away. Its rows are
+The list is shown by **holding** the new-tab button, which was in the grid's foot row and
+is now in the left corner of its head (0010): a tap still opens a tab, a hold brings up
+`components/RecentlyClosedPanel.qml`, a Silica `DockedPanel` docked to the bottom and
+modal, so it slides up from under the foot the way the platform's own sheets do and a tap
+outside it puts it away. It stayed at the bottom when the button moved to the top: the
+list is read and tapped with the thumb, and the browser's menu is the same kind of sheet
+from the same edge (0021). Its rows are
 `components/TabRow.qml`, the same row the search results are made of, so the two
 lists read the same. A tap on a row opens the tab, hides the panel and hands the page
 back through the grid's `tabActivated`.

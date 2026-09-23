@@ -15,6 +15,19 @@ bool isWebScheme(const QString &scheme)
     return scheme == QLatin1String("http") || scheme == QLatin1String("https");
 }
 
+// nsITypeAheadFind's answers that mean the text is on the page.
+const int FindFound = 0;
+const int FindWrapped = 2;
+
+// A number, as JSON gives one -- a double -- or as QML may hand one over. Asked by type
+// because QVariant would read a number out of a string, or out of false.
+bool isNumber(const QVariant &value)
+{
+    const int type = value.userType();
+    return type == QMetaType::Double || type == QMetaType::Int || type == QMetaType::UInt ||
+           type == QMetaType::LongLong || type == QMetaType::ULongLong;
+}
+
 } // namespace
 
 EngineMessages::EngineMessages(QObject *parent)
@@ -117,6 +130,35 @@ QString EngineMessages::resolveFavicon(const QString &pageUrl, const QString &hr
         return candidate.toString();
     }
     return defaultFavicon(pageUrl);
+}
+
+QString EngineMessages::findMessage() const
+{
+    return QStringLiteral("embedui:find");
+}
+
+QString EngineMessages::findResultMessage() const
+{
+    return QStringLiteral("embed:find");
+}
+
+QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool backwards) const
+{
+    return {
+        {QStringLiteral("text"), text},
+        {QStringLiteral("again"), again},
+        {QStringLiteral("backwards"), backwards},
+    };
+}
+
+bool EngineMessages::findFound(const QVariant &data)
+{
+    const QVariant result = data.toMap().value(QStringLiteral("r"));
+    if (!isNumber(result)) {
+        return false;
+    }
+    const double value = result.toDouble();
+    return value == FindFound || value == FindWrapped;
 }
 
 } // namespace Salama

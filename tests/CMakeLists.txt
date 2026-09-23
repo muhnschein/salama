@@ -45,6 +45,7 @@ foreach(test
     tst_tabmodel
     tst_historymodel
     tst_bookmarkmodel
+    tst_downloadmodel
     tst_settings
     tst_enginemessages
     tst_pageactivity

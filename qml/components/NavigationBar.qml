@@ -159,6 +159,8 @@ Item {
 
     function activate(region) {
         if (region === "menu") {
+            // The menu comes up from under the bar, where the keyboard would cover it.
+            navigationBar.endEditing()
             navigationBar.showMenu()
         } else if (region === "back") {
             if (navigationBar.canGoBack) {

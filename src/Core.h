@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bookmarks/BookmarkModel.h"
+#include "downloads/DownloadModel.h"
 #include "engine/EngineMessages.h"
 #include "engine/PageActivity.h"
 #include "history/HistoryModel.h"
@@ -31,6 +32,7 @@ public:
     TabSearchModel *tabSearch();
     HistoryModel *history();
     BookmarkModel *bookmarks();
+    DownloadModel *downloads();
     Settings *settings();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
@@ -42,6 +44,7 @@ private:
     TabSearchModel m_tabSearch;
     HistoryModel m_history;
     BookmarkModel m_bookmarks;
+    DownloadModel m_downloads;
     Settings m_settings;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;

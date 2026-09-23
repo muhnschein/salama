@@ -7,11 +7,12 @@
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held for a
 // second -- still, or near enough: a thumb held down drifts -- picks the cell up to
-// be carried to another place in the grid. A drag to the left slides the cell out
-// and closes the tab when it has gone far enough; released short of that it slides
-// back. A drag up or down is none of these: it is the grid's, to scroll or to hand
-// the page back. The button is drawn above the handler and keeps its own taps
-// (docs/DECISIONS/0010-tab-grid-deck.md).
+// be carried to another place in the grid, or onto a group in the strip at its
+// foot, which the tab moves into when it is dropped there. A drag to the left slides
+// the cell out and closes the tab when it has gone far enough; released short of
+// that it slides back. A drag up or down is none of these: it is the grid's, to
+// scroll or to hand the page back. The button is drawn above the handler and keeps
+// its own taps (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
 // and its highlight as a square wash across the whole cell, and this cell has rounded
@@ -29,6 +30,9 @@ Item {
     signal closeRequested()
     // The cell has been carried over another one and the two should trade places.
     signal moveRequested(int from, int to)
+
+    // Where a carried cell can go besides among its neighbours: the strip of groups.
+    property Item dropTarget: null
 
     // True while this cell is being carried, and true from the moment a press turns
     // into a carry or a swipe until the next press. MouseArea raises released before
@@ -169,6 +173,9 @@ Item {
                 // after a trade the cell underneath has already moved to meet them.
                 content.x = acrossX
                 content.y = acrossY
+                if (preview.dropTarget && preview.dropTarget.carryOver(preview, mouse.x, mouse.y)) {
+                    return
+                }
                 var target = preview.grid.indexAt(preview.x + mouse.x, preview.y + mouse.y)
                 if (target >= 0 && target !== index) {
                     preview.moveRequested(index, target)
@@ -180,6 +187,8 @@ Item {
         onReleased: {
             if (preview.swiping) {
                 preview.releaseSwipe()
+            } else if (preview.held && preview.dropTarget) {
+                preview.dropTarget.dropTab(model.tabId)
             }
             preview.drop()
         }

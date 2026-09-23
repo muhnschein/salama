@@ -21,6 +21,7 @@ private slots:
     void refusesNewerSchema();
     void migratesSchemaOne();
     void dropsPrivateTabsFromSchemaFive();
+    void addsDownloadsToSchemaSix();
     void defaultPaths();
 };
 
@@ -52,6 +53,7 @@ void tst_storage::createsSchema()
     QVERIFY(tables.contains(QStringLiteral("browser_history")));
     QVERIFY(tables.contains(QStringLiteral("bookmark")));
     QVERIFY(tables.contains(QStringLiteral("setting")));
+    QVERIFY(tables.contains(QStringLiteral("download")));
 }
 
 void tst_storage::reopenKeepsData()
@@ -229,6 +231,90 @@ void tst_storage::dropsPrivateTabsFromSchemaFive()
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 1);
     QVERIFY(query.value(1).toString().isEmpty());
+}
+
+// Schema 7 adds the download table and nothing else. A schema 6 database gains it on
+// opening, with every row it already had left where it was.
+void tst_storage::addsDownloadsToSchemaSix()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.sqlite"));
+    {
+        QSqlDatabase db =
+            QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("six"));
+        db.setDatabaseName(path);
+        QVERIFY(db.open());
+        QSqlQuery query(db);
+        const QStringList schemaSix{
+            QStringLiteral("CREATE TABLE tab (tab_id INTEGER PRIMARY KEY, "
+                           "position INTEGER NOT NULL, url TEXT NOT NULL, "
+                           "title TEXT NOT NULL DEFAULT '', favicon TEXT NOT NULL DEFAULT '', "
+                           "thumbnail TEXT NOT NULL DEFAULT '', "
+                           "last_active INTEGER NOT NULL DEFAULT 0, "
+                           "group_id INTEGER NOT NULL DEFAULT 1)"),
+            QStringLiteral("CREATE TABLE tab_group (group_id INTEGER PRIMARY KEY, "
+                           "name TEXT NOT NULL DEFAULT '', position INTEGER NOT NULL)"),
+            QStringLiteral("CREATE TABLE closed_tab (id INTEGER PRIMARY KEY, "
+                           "url TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', "
+                           "favicon TEXT NOT NULL DEFAULT '', closed INTEGER NOT NULL)"),
+            QStringLiteral("CREATE TABLE browser_history (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                           "url TEXT NOT NULL UNIQUE, title TEXT NOT NULL DEFAULT '', "
+                           "visited_count INTEGER NOT NULL DEFAULT 1, date INTEGER NOT NULL)"),
+            QStringLiteral("CREATE INDEX browser_history_date ON browser_history(date)"),
+            QStringLiteral("CREATE TABLE bookmark (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                           "url TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', "
+                           "favicon TEXT NOT NULL DEFAULT '', position INTEGER NOT NULL, "
+                           "created INTEGER NOT NULL)"),
+            QStringLiteral("CREATE TABLE setting (name TEXT PRIMARY KEY, value TEXT NOT NULL)"),
+            QStringLiteral("INSERT INTO tab (tab_id, position, url, title) "
+                           "VALUES (1, 1, 'https://a.example/', 'A')"),
+            QStringLiteral("INSERT INTO browser_history (url, title, date) "
+                           "VALUES ('https://a.example/', 'A', 5)"),
+            QStringLiteral("PRAGMA user_version = 6"),
+        };
+        for (const QString &statement : schemaSix) {
+            QVERIFY2(query.exec(statement), qPrintable(statement));
+        }
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("six"));
+
+    Storage storage(dir.path());
+    QVERIFY(storage.isOpen());
+    QCOMPARE(storage.userVersion(), 7);
+    QCOMPARE(Storage::SchemaVersion, 7);
+    QVERIFY(tableNames(storage).contains(QStringLiteral("download")));
+
+    QSqlQuery query(storage.database());
+    QVERIFY(query.exec(QStringLiteral("SELECT url, title FROM tab")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("https://a.example/"));
+    QVERIFY(query.exec(QStringLiteral("SELECT title FROM browser_history")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("A"));
+
+    // The new table is the schema's own: a row gets its defaults, and a status and a
+    // start time are what it cannot do without.
+    QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM download")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+    QVERIFY(
+        query.exec(QStringLiteral("INSERT INTO download (id, status, started) VALUES (1, 0, 9)")));
+    QVERIFY(query.exec(
+        QStringLiteral("SELECT name, url, path, mime, size FROM download WHERE id = 1")));
+    QVERIFY(query.next());
+    for (int column = 0; column < 4; ++column) {
+        QCOMPARE(query.value(column).toString(), QString());
+        QVERIFY(!query.value(column).isNull());
+    }
+    QCOMPARE(query.value(4).toLongLong(), 0LL);
+    QVERIFY(!query.exec(QStringLiteral("INSERT INTO download (id, started) VALUES (2, 9)")));
+    QVERIFY(!query.exec(QStringLiteral("INSERT INTO download (id, status) VALUES (3, 0)")));
+
+    // And opening it again finds nothing left to do.
+    Storage again(dir.path());
+    QVERIFY(again.isOpen());
+    QCOMPARE(again.userVersion(), 7);
 }
 
 void tst_storage::defaultPaths()

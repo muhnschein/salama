@@ -20,8 +20,8 @@ While the guard is on:
 
 * the engine's view starts below the cutout, and the strip it leaves is painted in the
   page's own **theme colour** when it declares one, as sailfish-browser paints it;
-* the tab grid's head row is that much taller and puts "*n* tabs" below the cutout, which
-  is also what keeps the first row of cells and their close buttons clear of it;
+* the tab grid's head row is that much taller and puts its controls below the cutout,
+  which is also what keeps the first row of cells and their close buttons clear of it;
 * `safeAreaTop` on the view is bound to **0**. The platform's `Sailfish.WebView` hands the
   engine a safe area computed from the same cutout, so that a page written for one can lay
   itself out around it — but with the view already below the cutout there is nothing left

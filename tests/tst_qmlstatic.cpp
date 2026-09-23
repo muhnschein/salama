@@ -20,6 +20,7 @@
 
 using Salama::BookmarkModel;
 using Salama::ClosedTabModel;
+using Salama::DownloadModel;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
 using Salama::HistoryModel;
@@ -140,6 +141,7 @@ void tst_qmlstatic::delegateRolesExist()
     TabSearchModel search(&tabs);
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
+    DownloadModel downloads(storage);
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own.
@@ -159,6 +161,8 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},
         {QStringLiteral("components/BookmarkDelegate.qml"), roleSet(bookmarks)},
+        {QStringLiteral("pages/DownloadsPage.qml"), roleSet(downloads)},
+        {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloads)},
     };
 
     const QRegularExpression reference(QStringLiteral("\\bmodel\\.([A-Za-z_][A-Za-z0-9_]*)"));
@@ -191,13 +195,14 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("TabSearch"), metaMembers(&TabSearchModel::staticMetaObject)},
         {QStringLiteral("HistoryModel"), metaMembers(&HistoryModel::staticMetaObject)},
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
+        {QStringLiteral("DownloadModel"), metaMembers(&DownloadModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
         {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|Settings|EngineMessages|PageActivity)\\."
+                       "BookmarkModel|DownloadModel|Settings|EngineMessages|PageActivity)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;

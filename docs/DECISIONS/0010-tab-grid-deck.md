@@ -79,16 +79,20 @@ strip of groups took every press along the head of the screen, which is exactly 
 pull down begins. On the flickable they ride on its `y`, which moves up as the view is
 pulled down, so each carries the overscroll as a margin and stays with the content:
 
-* along the **head**, the strip of tab groups (0015). It replaced "*n* tabs", which
-  replaced a page header that named the active tab, which said what the page behind the
-  grid already says. The row's other work is the row of cells below it: without it the
-  first row, and the close button in its corner, sat under the device's own screen cutout. The row is `Screen.topCutout.height`
-  taller than it looks and puts its own text below that height, which is what Silica's
-  `PullDownMenu` does with its top margin; the property is read through a guard, so a
-  `Screen` that does not report a cutout gives a row of the ordinary height rather than
-  one that is undefined pixels tall.
-* along the **foot**, the one control the grid offers: new tab. Held rather than tapped,
-  it brings up the tabs closed lately (0018).
+* along the **head**, new tab in the left corner and the search for a tab in the right.
+  Held rather than tapped, new tab brings up the tabs closed lately (0018). The head held
+  the strip of tab groups (0015) until the strip went to the foot, and before that "*n*
+  tabs", and before that a page header that named the active tab, which said what the
+  page behind the grid already says. The row's other work is the row of cells below it:
+  without it the first row, and the close button in its corner, sat under the device's
+  own screen cutout. The row is `Screen.topCutout.height` taller than it looks and puts
+  its controls below that height, which is what Silica's `PullDownMenu` does with its top
+  margin; the property is read through a guard, so a `Screen` that does not report a
+  cutout gives a row of the ordinary height rather than one that is undefined pixels
+  tall.
+* along the **foot**, the strip of tab groups, centred on the screen, with the way to edit
+  them in the left corner. It was in the head until a tab could be carried onto a group
+  to move it there (0015): at the foot it is under the thumb doing the carrying.
 
 A preview is drawn as wide as its cell and anchored to the cell's **top**, at the
 picture's own aspect ratio, rather than with `PreserveAspectCrop`. The picture is of a
@@ -151,7 +155,7 @@ signals from a test skips entirely.
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
-the pull and the tap, "New tab" is the button in the grid's header, and "Close all
+the pull and the tap, "New tab" is the button in the grid's head row, and "Close all
 tabs" is in Settings next to the other clearing actions.
 
 ### What says an edge can be dragged
@@ -218,5 +222,4 @@ window is what clips them; nothing is set to `clip`, which the engine's own comp
 surface would not have honoured anyway.
 
 While the grid is open the browsing page is still the page on the stack. Anything that
-reads `pageStack.currentPage` sees `browserPage` either way, and the menu's `Tabs` entry
-pops back to it and calls `showTabs()` on it rather than pushing a page of its own.
+reads `pageStack.currentPage` sees `browserPage` either way.

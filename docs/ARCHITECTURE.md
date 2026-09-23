@@ -26,6 +26,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
+- `DownloadModel` — the downloads, read from the engine's own `embed:download`
+  notifications, because the platform's list of transfers is closed to a Harbour
+  application and would not hold a `Sailfish.WebView` application's downloads anyway.
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine.
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
@@ -85,7 +88,7 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-6); a newer database than the build refuses to open rather than corrupt. Migration asks
+7); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 any earlier schema converges on the same shape; a column that a later schema dropped
 takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
@@ -96,6 +99,7 @@ tab_group        group_id PK, name, position
 closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
+download         id PK, name, url, path, mime, size, status, started (ms since epoch)
 setting          name PK, value          -- activeTabId, currentGroupId
 ```
 

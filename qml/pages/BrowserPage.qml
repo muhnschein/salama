@@ -66,7 +66,7 @@ WebViewPage {
     // that used to take the whole bar off the screen -- and the view is resized with
     // the bar, so the foot of a page clears it either way.
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || dragging) {
+        if (!currentView || navigationBar.editing || findBar.active || dragging) {
             return false
         }
         // undefined on an engine with no chrome gesture: then the bar stays as it is.
@@ -219,12 +219,6 @@ WebViewPage {
         dragging = false
     }
 
-    // The way to the grid that needs no gesture, for the menu to call.
-    function showTabs() {
-        captureCurrent()
-        settle(true)
-    }
-
     // A touch the reach above the bar took from the foot of the page and handed back,
     // given to the engine as the touch it would have had, in the view's coordinates.
     // The view takes focus the way a real touch gives it, which ends editing the address.
@@ -278,10 +272,13 @@ WebViewPage {
     }
 
     // What the engine says is playing, for PageActivity to weigh: a page making a
-    // sound is not put to sleep.
+    // sound is not put to sleep. And what it says of downloads, for the list of them.
     Connections {
         target: WebEngine
-        onRecvObserve: PageActivity.observe(message, data)
+        onRecvObserve: {
+            PageActivity.observe(message, data)
+            DownloadModel.observe(message, data)
+        }
     }
 
     Timer {
@@ -298,6 +295,7 @@ WebViewPage {
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }
+        WebEngine.addObserver(DownloadModel.topic)
         ensureTab()
         updateCurrentView()
     }
@@ -404,9 +402,7 @@ WebViewPage {
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
                 onReloadOrStop: browserPage.reloadOrStop()
-                onShowMenu: pageStack.push(Qt.resolvedUrl("MenuPage.qml"), {
-                                               "browserPage": browserPage
-                                           })
+                onShowMenu: browserMenu.show()
                 // The grid is about to show, so the picture of the tab being left is
                 // taken before the first pixel of it does.
                 onDragStarted: {
@@ -418,6 +414,13 @@ WebViewPage {
                 onPageTouchStarted: browserPage.touchPage(position, "start")
                 onPageTouchMoved: browserPage.touchPage(position, "move")
                 onPageTouchEnded: browserPage.touchPage(position, "end")
+            }
+
+            FindBar {
+                id: findBar
+
+                anchors.fill: navigationBar
+                view: browserPage.currentView
             }
         }
 
@@ -435,6 +438,13 @@ WebViewPage {
             onPullFinished: browserPage.settle(distance <= browserPage.pullThreshold)
             onTabActivated: browserPage.settle(false)
         }
+    }
+
+    BrowserMenu {
+        id: browserMenu
+
+        view: browserPage.currentView
+        onFindRequested: findBar.open()
     }
 
     Component {
@@ -580,7 +590,10 @@ WebViewPage {
                     captureThumbnail()
                 }
             }
-            Component.onCompleted: url = initialUrl
+            Component.onCompleted: {
+                addMessageListener(EngineMessages.findResultMessage)
+                url = initialUrl
+            }
         }
     }
 }

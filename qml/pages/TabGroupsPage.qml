@@ -2,8 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // The tab groups as a list, for editing them: a tap to make one current, rename and
-// delete in each row's menu, and a row under the last group that makes a new one. The
-// same page picks a group for a tab to move to when it is given the tab
+// delete in each row's menu, and a row under the last group that makes a new one
 // (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
@@ -13,18 +12,11 @@ import "../components"
 Page {
     id: groupsPage
 
-    // A tab to move into the group that is tapped, or 0 to edit the groups instead.
-    property int moveTabId: 0
-
     objectName: "tabGroupsPage"
     allowedOrientations: Orientation.Portrait
 
-    function choose(index, groupId) {
-        if (moveTabId > 0) {
-            TabGroups.moveTab(moveTabId, groupId)
-        } else {
-            TabGroups.activate(index)
-        }
+    function choose(index) {
+        TabGroups.activate(index)
         pageStack.pop()
     }
 
@@ -35,23 +27,20 @@ Page {
         anchors.fill: parent
         model: TabGroups
         header: PageHeader {
-            title: groupsPage.moveTabId > 0 ? qsTr("Move to tab group") : qsTr("Tab groups")
+            title: qsTr("Tab groups")
         }
 
         // The way to another group, where the next one would be listed: a row
         // shaped like a group's with a plus where its name would start, under the
         // last row rather than in a pulley, which is where a reader who has just
-        // read the list is already looking. Given the tab, the dialog moves it into
-        // the group it creates.
+        // read the list is already looking.
         footer: ListItem {
             id: newGroupRow
 
             objectName: "newGroupButton"
             width: groupList.width
             contentHeight: Theme.itemSizeMedium
-            onClicked: pageStack.push(Qt.resolvedUrl("TabGroupDialog.qml"), {
-                                          "moveTabId": groupsPage.moveTabId
-                                      })
+            onClicked: pageStack.push(Qt.resolvedUrl("TabGroupDialog.qml"))
 
             Icon {
                 id: plus
@@ -81,7 +70,7 @@ Page {
         }
 
         delegate: TabGroupDelegate {
-            onClicked: groupsPage.choose(index, model.groupId)
+            onClicked: groupsPage.choose(index)
             onRenameRequested: pageStack.push(Qt.resolvedUrl("TabGroupDialog.qml"), {
                                                   "groupId": model.groupId,
                                                   "name": model.name

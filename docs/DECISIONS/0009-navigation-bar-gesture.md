@@ -153,9 +153,11 @@ themselves, because they no longer receive the press. While the address is being
 the handler stands down, so the field keeps its own taps for the caret, and the bar
 cannot be dragged until editing ends.
 
-The menu carries a `Tabs` entry as well. The grid must be reachable when the gesture is
-awkward or, as on the first device build, not working at all; a browser whose tabs can
-only be reached by a gesture has one way in and no fallback.
+The menu carried a `Tabs` entry as well, while the grid had to be reachable with the
+gesture not working at all, as on the first device build. The menu is a sheet of icons now
+and holds no such entry (0021): the gesture has worked since, and the sheet is where the
+fallback goes back if it ever stops. The menu button also ends editing the address, since
+the sheet comes up where the keyboard is.
 
 Forward navigation is unreachable until it is given a home, which is a Phase 2 question,
 not an oversight.

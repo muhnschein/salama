@@ -13,6 +13,10 @@
 // dragged from anywhere on the screen: the cells leave a drag up or down to it, and
 // the two rows drawn over the cells are the flickable's own children, so it sees
 // every press on them too.
+//
+// The head row holds the way to a new tab and the search for one; the foot row holds
+// the groups, within reach of the thumb that carries a cell down to one of them to
+// change its group (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -42,7 +46,7 @@ Item {
     // the page could not be pulled back from there.
     Component.onCompleted: {
         headRow.parent = tabGrid
-        newTabRow.parent = tabGrid
+        footRow.parent = tabGrid
     }
 
     SilicaGridView {
@@ -90,12 +94,20 @@ Item {
 
         footer: Item {
             width: tabGrid.width
-            height: newTabRow.height
+            height: footRow.height
         }
 
         // By id rather than by row: the grid's rows are the current group's, and
-        // the tab model's are every group's.
+        // the tab model's are every group's. A cell carried down onto the strip of
+        // groups is put into the group it is dropped on, and whatever the strip lit
+        // goes out when the carry ends, dropped or cancelled.
         delegate: TabPreview {
+            dropTarget: groupStrip
+            onHeldChanged: {
+                if (!held) {
+                    groupStrip.endCarry()
+                }
+            }
             onTapped: {
                 TabModel.activateTabById(model.tabId)
                 tabsView.tabActivated()
@@ -107,29 +119,29 @@ Item {
         ViewPlaceholder {
             enabled: GroupTabs.count === 0
             text: qsTr("No tabs in this group")
-            hintText: qsTr("Open one with the button below")
+            hintText: qsTr("Open one with the button above")
         }
 
         VerticalScrollDecorator {}
     }
 
-    // The groups, over the cells rather than among them, with the way to edit them in
-    // one corner and the search for a tab in the other. The row is also what keeps
-    // the top row of cells clear of the screen's cutout. It rides on the grid, which
-    // moves up as it is pulled down; the margin keeps the row where the content is.
+    // The way to a new tab in one corner and the search for a tab in the other, over
+    // the cells rather than among them. The row is also what keeps the top row of
+    // cells clear of the screen's cutout. It rides on the grid, which moves up as it
+    // is pulled down; the margin keeps the row where the content is.
     Rectangle {
         id: headRow
 
-        objectName: "tabGroupRow"
+        objectName: "gridHeadRow"
         anchors {
             left: parent.left
             right: parent.right
             top: parent.top
             topMargin: tabGrid.overscroll
         }
-        // The cutout on top of the row's own height, and the strip below the cutout
-        // rather than centred through it: the row starts at the top of the screen,
-        // and the notch was taking a bite out of what it says.
+        // The cutout on top of the row's own height, and the controls below the
+        // cutout rather than centred through it: the row starts at the top of the
+        // screen, and the notch was taking a bite out of what it carries.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
@@ -149,27 +161,57 @@ Item {
             color: Theme.highlightBackgroundColor
         }
 
-        TabGroupStrip {
+        Item {
+            objectName: "gridHeadControls"
             anchors {
                 left: parent.left
                 right: parent.right
                 bottom: parent.bottom
             }
             height: Theme.itemSizeLarge
-            // Both are pages of their own over the grid, which stays open under them
-            // for when they are popped.
-            onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))
-            onSearchRequested: pageStack.push(Qt.resolvedUrl("../pages/TabSearchPage.qml"))
+
+            // Held rather than tapped, the button brings up what was closed lately.
+            IconButton {
+                objectName: "newTabButton"
+                anchors {
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                width: Theme.iconSizeMedium
+                height: width
+                icon.source: "image://theme/icon-m-add"
+                onClicked: {
+                    TabModel.newTab(Settings.homePage)
+                    tabsView.tabActivated()
+                }
+                onPressAndHold: closedPanel.show()
+            }
+
+            // A page of its own over the grid, which stays open under it for when it
+            // is popped.
+            IconButton {
+                objectName: "searchTabsButton"
+                anchors {
+                    right: parent.right
+                    rightMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                width: Theme.iconSizeMedium
+                height: width
+                icon.source: "image://theme/icon-m-search"
+                onClicked: pageStack.push(Qt.resolvedUrl("../pages/TabSearchPage.qml"))
+            }
         }
     }
 
-    // The one control the grid carries of its own, over the cells rather than among
-    // them: a row along the foot of the view, in the same glass as the navigation bar.
-    // On the grid as the head row is, and held still against its pull the same way.
+    // The groups, along the foot of the view in the same glass as the navigation bar,
+    // with the way to edit them in the corner. On the grid as the head row is, and
+    // held still against its pull the same way.
     Rectangle {
-        id: newTabRow
+        id: footRow
 
-        objectName: "newTabRow"
+        objectName: "gridFootRow"
         anchors {
             left: parent.left
             right: parent.right
@@ -179,18 +221,13 @@ Item {
         height: Theme.itemSizeLarge
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
 
-        // Held rather than tapped, the button brings up what was closed lately.
-        IconButton {
-            objectName: "newTabButton"
-            anchors.centerIn: parent
-            width: Theme.iconSizeMedium
-            height: width
-            icon.source: "image://theme/icon-m-add"
-            onClicked: {
-                TabModel.newTab(Settings.homePage)
-                tabsView.tabActivated()
-            }
-            onPressAndHold: closedPanel.show()
+        TabGroupStrip {
+            id: groupStrip
+
+            anchors.fill: parent
+            // A page of its own over the grid, which stays open under it for when it
+            // is popped.
+            onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))
         }
     }
 

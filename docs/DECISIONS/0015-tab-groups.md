@@ -45,7 +45,8 @@ closes its tabs, moving the current group to a neighbour first, so that whoever 
 "no tabs left" by opening one does not open it in the group that is going.
 
 The **strip** (`components/TabGroupStrip.qml`) replaced the "*n* tabs" label in the
-grid's head row. It is Silica's own `TabBar` geometry rebuilt from public API, the way
+grid's head row, and has since moved to the **foot** row, centred on the screen with the
+edit button in its left corner (below). It is Silica's own `TabBar` geometry rebuilt from public API, the way
 vuo rebuilds it: a `Flickable` over a `Row` of buttons, each its name's width plus
 `Theme.paddingLarge` either side, the current name in the highlight colour with a
 `Theme._lineWidth` underline exactly as wide as the name, the first and last button
@@ -56,18 +57,33 @@ a group. The first strip was a snapping `ListView` with each item half the width
 flick chose the group; it was too sparse to read as a row of names, and the view's own
 writes to `currentIndex` during layout chose groups nobody had asked for. Small type,
 because the strip sits over the grid rather than at the head of a page. The edit button
-in the left corner pushes `pages/TabGroupsPage.qml`; the search button in the right
-corner pushes `pages/TabSearchPage.qml`. Both are pages over the grid, which stays open
-under them.
+in its left corner pushes `pages/TabGroupsPage.qml`; the search button, in the right
+corner of the head row, pushes `pages/TabSearchPage.qml`. Both are pages over the grid,
+which stays open under them.
+
+The strip is at the **foot** so that it is within reach of the thumb that carries a cell
+to it: a tab **changes group by being carried onto one**. A preview held until it comes
+up (0010) and carried down over a name lights that name, in the wash the grid marks its
+cells with, and dropped there the tab moves into that group. The cells ask the strip
+through three functions — `carryOver()` while the finger moves, `dropTab()` as it lifts,
+`endCarry()` however the carry ends — and a cell over the strip trades places with none of
+the cells hidden under it. The current group is never lit: the tab is in it already. Names
+scrolled out of the strip are not targets either. The move itself waits a turn of the event
+loop: made at once, it takes the carried cell out of the grid while that cell's own release
+handler is still running, and Qt does not survive the cell going from under it — which the
+real-finger test (`tst_qmlload::carryToGroupUnderAFinger`) found. Carrying the tab in front
+takes the grid with it, since the tab in front is always in the group the grid shows; any
+other tab leaves the grid where it is, one cell the fewer. The row is Silica's `TabBar`
+turned into a place to put things, which Silica has no model for; the strip does not
+scroll itself while a cell is held over one end of it, so with more groups than fit, a
+name out of sight has to be scrolled to first.
 
 `TabGroupsPage` is a list with a tap to make a group current, rename and delete in each
 row's menu, and under the last row a row shaped like a group's with a plus where its name
 would start, which makes a group (`TabGroupDialog`, a name) — under the list rather than
 in a pulley, the way postivene offers another profile, because that is where a reader who
-has just read the list is looking. Given a tab (`moveTabId`) it is a picker instead: the
-tap moves the tab into that group, and the plus row makes a new group with the tab in it. The menu's "Move tab to group" opens it
-that way for the tab in front — the one way a tab changes group, beside the grid it
-leaves rather than on a cell that already carries a tap, a carry and a close button.
+has just read the list is looking. It was also a picker once, given a tab, for the menu's
+"Move tab to group"; carrying the tab onto the strip replaced both (0021).
 
 `TabSearchModel` (`TabSearch`) lists the tabs whose title or address contains the term,
 case-insensitively, group by group in the strip's order. When the **term** changes the
@@ -103,5 +119,6 @@ goes last. Two unnamed groups are told apart in the strip only by their counts. 
 private group that once sat before the default one is gone (0019).
 
 `components/TabsView.qml` keeps its size by handing the strip its own file. The load
-tests drive the strip through `select(index)`, which is what a tap calls, and the pages
-through their `objectName`s as the other pages are driven.
+tests drive the strip through `select(index)`, which is what a tap calls, and through
+`dropTab()` with `dropIndex` set; the carry itself is tested under a real finger. The
+pages are driven through their `objectName`s as the other pages are.

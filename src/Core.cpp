@@ -12,6 +12,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_tabSearch(&m_tabs)
     , m_history(m_storage)
     , m_bookmarks(m_storage)
+    , m_downloads(m_storage)
     , m_settings(configFilePath)
 {
     connect(&m_tabs, &TabModel::visited, &m_history,
@@ -51,6 +52,11 @@ HistoryModel *Core::history()
 BookmarkModel *Core::bookmarks()
 {
     return &m_bookmarks;
+}
+
+DownloadModel *Core::downloads()
+{
+    return &m_downloads;
 }
 
 Settings *Core::settings()

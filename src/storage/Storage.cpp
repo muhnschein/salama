@@ -71,6 +71,18 @@ const QStringList &schemaStatements()
         QStringLiteral("CREATE TABLE IF NOT EXISTS setting ("
                        "name TEXT PRIMARY KEY, "
                        "value TEXT NOT NULL)"),
+        // Schema 7: the browser's own list of downloads (src/downloads/DownloadModel.h).
+        // An older database gains it here as a new one does; a whole new table needs
+        // none of the column work below.
+        QStringLiteral("CREATE TABLE IF NOT EXISTS download ("
+                       "id INTEGER PRIMARY KEY, "
+                       "name TEXT NOT NULL DEFAULT '', "
+                       "url TEXT NOT NULL DEFAULT '', "
+                       "path TEXT NOT NULL DEFAULT '', "
+                       "mime TEXT NOT NULL DEFAULT '', "
+                       "size INTEGER NOT NULL DEFAULT 0, "
+                       "status INTEGER NOT NULL, "
+                       "started INTEGER NOT NULL)"),
     };
     return statements;
 }
