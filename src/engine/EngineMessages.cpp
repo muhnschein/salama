@@ -3,10 +3,12 @@
 #include "EngineMessages.h"
 
 #include "EngineData.h"
+#include "settings/Settings.h"
 
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
+#include <QVector>
 
 namespace Salama {
 
@@ -20,6 +22,72 @@ bool isWebScheme(const QString &scheme)
 // nsITypeAheadFind's answers that mean the text is on the page.
 const int FindFound = 0;
 const int FindWrapped = 2;
+
+// One engine preference, and its value at each level of Settings::TrackingProtection.
+struct TrackingPreference
+{
+    const char *name;
+    QVariant off;
+    QVariant standard;
+    QVariant strict;
+};
+
+// Names from gecko-dev modules/libpref/init/StaticPrefList.yaml; Standard's values are
+// that file's defaults as browser/app/profile/firefox.js leaves them, and Strict's are
+// what ContentBlockingPrefs.sys.mjs sets for the features named in firefox.js's
+// browser.contentblocking.features.strict, given in the comments. An engine that
+// does not know a name keeps it as a preference nothing reads.
+const QVector<TrackingPreference> &trackingPreferences()
+{
+    // Content classifier features, by their names in kFeatures (gecko-dev
+    // toolkit/components/content-classifier/ContentClassifierService.cpp). Annotating
+    // marks a request as a tracker's, which is what cookie behaviour 5 reads to refuse
+    // a tracker its cookies; blocking cancels the request. "trackers-content" is the
+    // level-2 list, which Firefox annotates in Strict and never blocks. Exception-only
+    // features go last in a blocking list, where they let an earlier match load after
+    // all: "major" for a site that breaks outright, "minor" for one missing an embed.
+    static const QString standardAnnotation =
+        QStringLiteral("trackers,social-trackers,fingerprinters,cryptominers,email-trackers");
+    static const QString strictAnnotation =
+        QStringLiteral("trackers,trackers-content,social-trackers,fingerprinters,cryptominers,"
+                       "email-trackers");
+    static const QString standardBlocking =
+        QStringLiteral("fingerprinters,cryptominers,major-exceptions,minor-exceptions");
+    static const QString strictBlocking =
+        QStringLiteral("trackers,social-trackers,fingerprinters,cryptominers,email-trackers,"
+                       "major-exceptions");
+
+    static const QVector<TrackingPreference> preferences{
+        // "cookieBehavior5": BEHAVIOR_PARTITION_FOREIGN, Total Cookie Protection; 0 is
+        // BEHAVIOR_ACCEPT (netwerk/cookie/nsICookieService.idl).
+        {"network.cookie.cookieBehavior", 0, 5, 5},
+        {"privacy.trackingprotection.content.annotation.enabled", false, true, true},
+        {"privacy.trackingprotection.content.annotation.engines", QString(), standardAnnotation,
+         strictAnnotation},
+        // "fp", "cryptoTP"; and "tp", "stp", "emailTP" in Strict.
+        {"privacy.trackingprotection.content.protection.enabled", false, true, true},
+        {"privacy.trackingprotection.content.protection.engines", QString(), standardBlocking,
+         strictBlocking},
+        // "lvl2": a request on the level-2 list counts as a tracker's.
+        {"privacy.annotate_channels.strict_list.enabled", false, false, true},
+        // The allow-lists for sites tracking protection breaks; Strict keeps the one
+        // for sites that break outright.
+        {"privacy.trackingprotection.allow_list.baseline.enabled", true, true, true},
+        {"privacy.trackingprotection.allow_list.convenience.enabled", true, true, false},
+        // "fpp"
+        {"privacy.fingerprintingProtection", false, false, true},
+        // "qps"
+        {"privacy.query_stripping.enabled", false, false, true},
+        // "rpTop"
+        {"network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation", false, false,
+         true},
+        // "btp": MODE_ENABLED 1; MODE_ENABLED_DRY_RUN 3, which Firefox counts as off
+        // (toolkit/components/antitracking/bouncetrackingprotection/
+        // nsIBounceTrackingProtection.idl).
+        {"privacy.bounceTrackingProtection.mode", 3, 3, 1},
+    };
+    return preferences;
+}
 
 } // namespace
 
@@ -152,6 +220,24 @@ bool EngineMessages::findFound(const QVariant &data)
     }
     const double value = result.toDouble();
     return value == FindFound || value == FindWrapped;
+}
+
+QVariantList EngineMessages::trackingProtectionPreferences(int level)
+{
+    QVariantList list;
+    for (const TrackingPreference &preference : trackingPreferences()) {
+        QVariant value = preference.standard;
+        if (level == Settings::TrackingProtectionOff) {
+            value = preference.off;
+        } else if (level == Settings::TrackingProtectionStrict) {
+            value = preference.strict;
+        }
+        list.append(QVariantMap{
+            {QStringLiteral("name"), QLatin1String(preference.name)},
+            {QStringLiteral("value"), value},
+        });
+    }
+    return list;
 }
 
 } // namespace Salama

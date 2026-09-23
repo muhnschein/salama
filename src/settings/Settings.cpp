@@ -17,6 +17,7 @@ const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
 const char *const LiveTabLimitKey = "liveTabLimit";
+const char *const TrackingProtectionKey = "trackingProtection";
 
 // Jolla's browser keeps five pages live and reloads the rest on return; the same
 // five here, with a way to ask for fewer, more, or all of them.
@@ -224,6 +225,26 @@ QVariantList Settings::liveTabLimitChoices() const
         choices.append(limit);
     }
     return choices;
+}
+
+int Settings::trackingProtection() const
+{
+    const int stored =
+        m_settings.value(QLatin1String(TrackingProtectionKey), TrackingProtectionStandard).toInt();
+    if (stored < TrackingProtectionOff || stored > TrackingProtectionStrict) {
+        return TrackingProtectionStandard;
+    }
+    return stored;
+}
+
+void Settings::setTrackingProtection(int level)
+{
+    if (level < TrackingProtectionOff || level > TrackingProtectionStrict ||
+        level == trackingProtection()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(TrackingProtectionKey), level);
+    emit trackingProtectionChanged();
 }
 
 QString Settings::searchUrl(const QString &query) const

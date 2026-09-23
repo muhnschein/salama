@@ -31,6 +31,10 @@ class Settings : public QObject
     Q_PROPERTY(int liveTabLimitIndex READ liveTabLimitIndex WRITE setLiveTabLimitIndex NOTIFY
                    liveTabLimitChanged)
     Q_PROPERTY(QVariantList liveTabLimitChoices READ liveTabLimitChoices CONSTANT)
+    // How much of the engine's own anti-tracking is switched on; a TrackingProtection
+    // value (docs/DECISIONS/0023-tracking-protection.md).
+    Q_PROPERTY(int trackingProtection READ trackingProtection WRITE setTrackingProtection NOTIFY
+                   trackingProtectionChanged)
 
 public:
     // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
@@ -48,6 +52,18 @@ public:
         CoverEveryTab = 2
     };
     Q_ENUM(CoverStyle)
+
+    // Firefox's Enhanced Tracking Protection categories, less protection first, with
+    // Off in place of Custom. Stored, so the numbers are part of the file format, and
+    // unscoped for the reason CoverStyle is. What each asks of the engine is
+    // EngineMessages::trackingProtectionPreferences().
+    enum TrackingProtection
+    {
+        TrackingProtectionOff = 0,
+        TrackingProtectionStandard = 1,
+        TrackingProtectionStrict = 2
+    };
+    Q_ENUM(TrackingProtection)
 
     explicit Settings(const QString &filePath, QObject *parent = nullptr);
 
@@ -80,6 +96,11 @@ public:
     QVariantList liveTabLimitChoices() const;
     static int defaultLiveTabLimit();
 
+    // Standard unless changed, as in Firefox. Out of range reads back as the default,
+    // like coverStyle.
+    int trackingProtection() const;
+    void setTrackingProtection(int level);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
@@ -96,6 +117,7 @@ signals:
     void cutoutGuardChanged();
     void coverStyleChanged();
     void liveTabLimitChanged();
+    void trackingProtectionChanged();
 
 private:
     QSettings m_settings;

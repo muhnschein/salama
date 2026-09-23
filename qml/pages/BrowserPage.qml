@@ -239,9 +239,24 @@ WebViewPage {
         return WebEngineSettings.pixelRatio
     }
 
+    // The engine's own anti-tracking, at the level Settings holds
+    // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
+    // keeps until it is up, and again whenever the level changes.
+    function applyTrackingProtection() {
+        var preferences = EngineMessages.trackingProtectionPreferences(Settings.trackingProtection)
+        for (var i = 0; i < preferences.length; ++i) {
+            WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
+        }
+    }
+
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
+    }
+
+    Connections {
+        target: Settings
+        onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 
     Connections {
@@ -274,6 +289,7 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }

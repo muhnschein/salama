@@ -29,8 +29,11 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
   notifications, because the platform's list of transfers is closed to a Harbour
   application and would not hold a `Sailfish.WebView` application's downloads anyway.
-- `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
-- `EngineMessages` — the engine-specific strings QML hands to the engine.
+- `Settings` — home page, search engine, desktop mode, cover style, tracking protection
+  level, address-bar heuristics.
+- `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
+  preferences each tracking-protection level stands for, which `BrowserPage` writes through
+  `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
