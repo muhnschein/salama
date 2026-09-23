@@ -55,6 +55,7 @@ private slots:
     void unknownDecodersCountAsSound();
     void forgottenDecodersAreBounded();
     void otherMessagesIgnored();
+    void playStateChangesAreTold();
 };
 
 void tst_pageactivity::defaults()
@@ -210,6 +211,23 @@ void tst_pageactivity::otherMessagesIgnored()
     activity.observe(CallTopic, QVariant());
     QVERIFY(!activity.audible());
     QCOMPARE(audible.count(), 0);
+}
+
+// Every change of a decoder's play state is told on, for PageMedia to ask the pages
+// what plays; what a decoder's stream holds, and a call, are not.
+void tst_pageactivity::playStateChangesAreTold()
+{
+    PageActivity activity(Settle, Grace);
+    QSignalSpy changed(&activity, &PageActivity::playStateChanged);
+    activity.observe(DecoderTopic, meta(QStringLiteral("0x1"), true, true));
+    activity.observe(CallTopic, call(true, false));
+    QCOMPARE(changed.count(), 0);
+    activity.observe(DecoderTopic, decoder(QStringLiteral("0x1"), QStringLiteral("play")));
+    QCOMPARE(changed.count(), 1);
+    activity.observe(DecoderTopic, decoder(QStringLiteral("0x1"), QStringLiteral("pause")));
+    QCOMPARE(changed.count(), 2);
+    activity.observe(DecoderTopic, decoder(QString(), QStringLiteral("play")));
+    QCOMPARE(changed.count(), 2);
 }
 
 QTEST_GUILESS_MAIN(tst_pageactivity)

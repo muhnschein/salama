@@ -380,10 +380,14 @@ WebViewPage {
                 loading: browserPage.loading
                 compact: browserPage.barCompact
                 canGoBack: browserPage.canGoBack
+                mediaState: TabModel.activeMediaState
+                muted: TabModel.activeMuted
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
                 onReloadOrStop: browserPage.reloadOrStop()
                 onShowMenu: browserMenu.show()
+                onTogglePlayback: PageMedia.togglePlayback(TabModel.activeTabId)
+                onToggleMuted: PageMedia.toggleMuted(TabModel.activeTabId)
                 // The grid is about to show, so the picture of the tab being left is
                 // taken before the first pixel of it does.
                 onDragStarted: {
@@ -526,6 +530,11 @@ WebViewPage {
                 }
             }
 
+            PageMediaLink {
+                view: webView
+                pageTabId: tabId
+            }
+
             // The model hands out a fresh file name per capture and removes the one it
             // replaces.
             function captureThumbnail() {
@@ -562,9 +571,11 @@ WebViewPage {
                 if (loading) {
                     // A new page starts at the top, and the bar starts whole: it would
                     // otherwise stay slim from whatever was scrolled before it. The
-                    // colour goes with the page that declared it.
+                    // colour goes with the page that declared it, and so does whatever
+                    // it played.
                     chrome = true
                     pageThemeColor = ""
+                    PageMedia.forget(tabId)
                 } else {
                     fetchFavicon()
                     fetchThemeColor()

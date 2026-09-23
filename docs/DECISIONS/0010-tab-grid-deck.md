@@ -195,7 +195,8 @@ across the top of every grid. The hold tolerates drift: a thumb held down moves,
 first build wanted it perfectly still. How much, and in which direction, is in the
 section above.
 
-The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
+The close button on a cell is drawn by the cell (`closeTabMark`, a `PreviewButton`, which
+the media controls along the picture's foot are made of too): a disc in the highlight
 colour with a cross through it. The theme's `icon-m-clear` carries a disc of its own at
 its own transparency, baked into the icon, so the glyph alone was lost on most pages and
 a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,

@@ -6,6 +6,7 @@
 #include "downloads/DownloadModel.h"
 #include "engine/EngineMessages.h"
 #include "engine/PageActivity.h"
+#include "engine/PageMedia.h"
 #include "history/HistoryModel.h"
 #include "settings/Settings.h"
 #include "storage/Storage.h"
@@ -36,6 +37,7 @@ public:
     Settings *settings();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
+    PageMedia *pageMedia();
 
 private:
     Storage m_storage;
@@ -48,6 +50,7 @@ private:
     Settings m_settings;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
+    PageMedia m_pageMedia;
 };
 
 } // namespace Salama

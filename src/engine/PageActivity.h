@@ -78,6 +78,9 @@ signals:
     void backgroundChanged();
     void audibleChanged();
     void asleepChanged();
+    // A decoder started or stopped playing, in some page: which one, the engine does
+    // not say. PageMedia asks the pages.
+    void playStateChanged();
 
 private:
     void observeDecoder(const QVariantMap &info);

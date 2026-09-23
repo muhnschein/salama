@@ -2,7 +2,8 @@
 // Copyright (c) 2026 salama contributors
 //
 // One cell of the tab grid: the captured page preview with a close button in its
-// top-right corner, and the favicon and title underneath.
+// top-right corner and, while the page plays something, its media controls along its
+// foot; the favicon and title underneath.
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held for a
@@ -11,8 +12,8 @@
 // foot, which the tab moves into when it is dropped there. A drag to the left slides
 // the cell out and closes the tab when it has gone far enough; released short of
 // that it slides back. A drag up or down is none of these: it is the grid's, to
-// scroll or to hand the page back. The button is drawn above the handler and keeps
-// its own taps (docs/DECISIONS/0010-tab-grid-deck.md).
+// scroll or to hand the page back. The buttons are drawn above the handler and keep
+// their own taps (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
 // and its highlight as a wash across the whole cell, edge to edge; the wash here is as
@@ -20,6 +21,7 @@
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
+import harbour.salama 1.0
 
 Item {
     id: preview
@@ -28,6 +30,9 @@ Item {
     // event, which this handler has not got to give it.
     signal tapped()
     signal closeRequested()
+    // The media controls over the picture (docs/DECISIONS/0023-media-controls.md).
+    signal playbackToggled()
+    signal muteToggled()
     // The cell has been carried over another one and the two should trade places.
     signal moveRequested(int from, int to)
 
@@ -308,59 +313,45 @@ Item {
             }
 
             // The close button: a disc of the highlight colour with a cross cut through
-            // it, faint enough not to be the first thing seen on each cell. Drawn here,
-            // not the theme's icon-m-clear: that icon carries a disc of its own at its
-            // own transparency, so the glyph alone was lost on most pages and a disc
-            // behind it was a disc inside a disc.
-            Item {
-                id: closeButton
-
-                // Its own tap signal, as the cell has: the handler's carries a mouse
-                // event, which a test cannot give it.
-                signal clicked()
-
+            // it. Drawn here, not the theme's icon-m-clear: that icon carries a disc of
+            // its own at its own transparency, so the glyph alone was lost on most pages
+            // and a disc behind it was a disc inside a disc.
+            PreviewButton {
                 objectName: "closeTabButton"
+                markName: "closeTabMark"
                 anchors {
                     right: parent.right
                     top: parent.top
                 }
-                // The touch target is the whole corner; the mark is what shows.
-                width: Theme.iconSizeMedium + Theme.paddingSmall
-                height: width
                 onClicked: preview.closeRequested()
 
-                MouseArea {
-                    id: closeTap
+                Repeater {
+                    model: 2
 
-                    anchors.fill: parent
-                    onClicked: closeButton.clicked()
-                }
-
-                Rectangle {
-                    id: closeMark
-
-                    objectName: "closeTabMark"
-                    anchors.centerIn: parent
-                    width: Theme.iconSizeSmall + Theme.paddingMedium
-                    height: width
-                    radius: width / 2
-                    color: closeTap.pressed ? Theme.highlightColor
-                                            : Theme.highlightBackgroundColor
-                    opacity: closeTap.pressed ? 1.0 : Theme.opacityHigh
-
-                    Repeater {
-                        model: 2
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: closeMark.width / 2
-                            height: Theme.paddingSmall / 2
-                            radius: height / 2
-                            rotation: index === 0 ? 45 : -45
-                            color: Theme.primaryColor
-                        }
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width / 2
+                        height: Theme.paddingSmall / 2
+                        radius: height / 2
+                        rotation: index === 0 ? 45 : -45
+                        color: Theme.primaryColor
                     }
                 }
+            }
+
+            // In the corner across from the close button's, the picture's bottom-left.
+            // Like the active role, the two below are undefined for a cell that
+            // outlives its row.
+            PreviewMediaControls {
+                objectName: "previewMediaControls"
+                anchors {
+                    left: parent.left
+                    bottom: parent.bottom
+                }
+                mediaState: model.mediaState === undefined ? TabModel.NoMedia : model.mediaState
+                muted: model.muted === true
+                onPlaybackToggled: preview.playbackToggled()
+                onMuteToggled: preview.muteToggled()
             }
         }
 

@@ -56,6 +56,7 @@ private slots:
     void searchRefinesWithoutResetting();
     void closedTabsCanBeReopened();
     void livePagesAreCapped();
+    void mediaFollowsThePage();
 };
 
 namespace {
@@ -1210,6 +1211,100 @@ void tst_tabmodel::livePagesAreCapped()
     model.closeTabById(ids.at(5));
     QVERIFY(role(model, model.indexOf(ids.at(3)), TabModel::LiveRole).toBool());
     model.closeAllTabs();
+}
+
+// What a page plays is the page's, and goes with it; whether its tab is muted is the
+// tab's, for as long as it is open (docs/DECISIONS/0023-media-controls.md).
+void tst_tabmodel::mediaFollowsThePage()
+{
+    TabModel model(nullptr);
+    QCOMPARE(model.roleNames().value(TabModel::MediaRole), QByteArrayLiteral("mediaState"));
+    QCOMPARE(model.roleNames().value(TabModel::MutedRole), QByteArrayLiteral("muted"));
+    QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::NoMedia));
+    QVERIFY(!model.activeMuted());
+    const int behind = model.newTab(QStringLiteral("https://a.example/"));
+    const int front = model.newTab(QStringLiteral("https://b.example/"));
+    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::NoMedia));
+
+    // The tab in front plays: its row says so, and so does the model's front.
+    QSignalSpy rowSpy(&model, &TabModel::dataChanged);
+    QSignalSpy groupRowSpy(model.groupTabs(), &GroupTabModel::dataChanged);
+    QSignalSpy activeSpy(&model, &TabModel::activeMediaChanged);
+    model.setMediaState(front, TabModel::MediaPlaying);
+    QCOMPARE(rowSpy.count(), 1);
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::MediaRole});
+    QCOMPARE(groupRowSpy.count(), 1);
+    QCOMPARE(activeSpy.count(), 1);
+    QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::MediaPlaying));
+    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPlaying));
+    // Said twice, it is said once.
+    model.setMediaState(front, TabModel::MediaPlaying);
+    QCOMPARE(rowSpy.count(), 1);
+
+    // Behind the one in front a page that says it plays is held, and shows as paused;
+    // brought to the front, it plays again, and the one it replaced is held.
+    model.setMediaState(behind, TabModel::MediaPlaying);
+    QCOMPARE(activeSpy.count(), 1);
+    QCOMPARE(model.mediaState(behind), TabModel::MediaPlaying);
+    QCOMPARE(model.shownMediaState(behind), TabModel::MediaPaused);
+    QCOMPARE(role(model, 0, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPaused));
+    rowSpy.clear();
+    model.activateTabById(behind);
+    QCOMPARE(role(model, 0, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPlaying));
+    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPaused));
+    int mediaRows = 0;
+    for (const QList<QVariant> &change : rowSpy) {
+        if (change.at(2).value<QVector<int>>().contains(TabModel::MediaRole)) {
+            ++mediaRows;
+        }
+    }
+    QCOMPARE(mediaRows, 2);
+    QVERIFY(activeSpy.count() > 1);
+    model.activateTabById(front);
+
+    // Muted is the tab's: it outlives what the page plays.
+    activeSpy.clear();
+    model.setMuted(front, true);
+    QVERIFY(model.isMuted(front));
+    QVERIFY(model.activeMuted());
+    QVERIFY(role(model, 1, TabModel::MutedRole).toBool());
+    QCOMPARE(activeSpy.count(), 1);
+    model.setMuted(front, true);
+    QCOMPARE(activeSpy.count(), 1);
+    model.setMediaState(front, TabModel::NoMedia);
+    QVERIFY(model.isMuted(front));
+    QCOMPARE(activeSpy.count(), 2);
+    // Behind, it is not the front's to tell.
+    model.setMuted(behind, true);
+    QCOMPARE(activeSpy.count(), 2);
+    model.setMuted(behind, false);
+    QVERIFY(!model.isMuted(behind));
+    // A tab that is not there is neither.
+    model.setMuted(front + 10, true);
+    model.setMediaState(front + 10, TabModel::MediaPlaying);
+    QVERIFY(!model.isMuted(front + 10));
+    QCOMPARE(model.mediaState(front + 10), TabModel::NoMedia);
+
+    // A page that gives up its view gives up what it played, and one without a view
+    // plays nothing, whatever arrives late for it.
+    model.setMediaState(behind, TabModel::MediaPaused);
+    model.setLiveTabLimit(1);
+    QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
+    model.setMediaState(behind, TabModel::MediaPlaying);
+    QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
+    model.setLiveTabLimit(0);
+
+    // Closed, the tab takes both with it.
+    model.setMediaState(front, TabModel::MediaPlaying);
+    model.closeTabById(front);
+    QCOMPARE(model.mediaState(front), TabModel::NoMedia);
+    QVERIFY(!model.isMuted(front));
+    model.setMuted(behind, true);
+    model.setMediaState(behind, TabModel::MediaPlaying);
+    model.closeAllTabs();
+    QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
+    QVERIFY(!model.isMuted(behind));
+    QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::NoMedia));
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

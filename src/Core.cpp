@@ -14,6 +14,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_bookmarks(m_storage)
     , m_downloads(m_storage)
     , m_settings(configFilePath)
+    , m_pageMedia(&m_tabs)
 {
     connect(&m_tabs, &TabModel::visited, &m_history,
             [this](const QString &url) { m_history.visit(url); });
@@ -27,6 +28,10 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     connect(&m_settings, &Settings::liveTabLimitChanged, &m_tabs,
             [this]() { m_tabs.setLiveTabLimit(m_settings.liveTabLimit()); });
     m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
+
+    // The engine says something started or stopped playing, and not where; the pages
+    // are asked (docs/DECISIONS/0023-media-controls.md).
+    connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
 }
 
 Storage &Core::storage()
@@ -72,6 +77,11 @@ EngineMessages *Core::engineMessages()
 PageActivity *Core::pageActivity()
 {
     return &m_pageActivity;
+}
+
+PageMedia *Core::pageMedia()
+{
+    return &m_pageMedia;
 }
 
 } // namespace Salama

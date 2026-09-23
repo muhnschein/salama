@@ -34,6 +34,10 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
+- `PageMedia` — which tab plays: on the engine's word that something started or
+  stopped, every loaded page is asked with a script, and the answer and the tab's
+  muted flag are `TabModel` roles the grid's previews and the bar draw controls from.
+  While the tab in front plays, no other does (`DECISIONS/0023-media-controls.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 

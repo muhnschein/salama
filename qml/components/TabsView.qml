@@ -152,6 +152,8 @@ Item {
             }
             onCloseRequested: TabModel.closeTabById(model.tabId)
             onMoveRequested: GroupTabs.moveTab(from, to)
+            onPlaybackToggled: PageMedia.togglePlayback(model.tabId)
+            onMuteToggled: PageMedia.toggleMuted(model.tabId)
         }
 
         ViewPlaceholder {

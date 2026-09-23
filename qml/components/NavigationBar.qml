@@ -2,7 +2,9 @@
 // Copyright (c) 2026 salama contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
-// the menu. Dragging it upwards pulls the tab grid up from underneath the page.
+// the menu, and left of the host the media controls while the page plays something
+// (docs/DECISIONS/0023-media-controls.md). Dragging it upwards pulls the tab grid up
+// from underneath the page.
 //
 // While the address is being edited the bar belongs to the field: back and reload are
 // not drawn and the field takes their room, from the edge of the screen to the menu
@@ -39,6 +41,9 @@ Item {
         var security = view.security
         return !!security && !!security.validState && !security.allGood
     }
+    // What the page plays, a TabModel.MediaState, and whether its tab is muted.
+    property int mediaState: TabModel.NoMedia
+    property bool muted: false
     // The address turns into a field in place while it is being edited.
     property bool editing: false
     // Slimmed down to the handle and the host, with the controls faded off it: what the
@@ -50,6 +55,8 @@ Item {
     signal back()
     signal reloadOrStop()
     signal showMenu()
+    signal togglePlayback()
+    signal toggleMuted()
     // Upward drag, in pixels from where the finger went down. Negative means it has
     // come back below its own starting point.
     signal dragStarted()
@@ -165,6 +172,15 @@ Item {
             if (x >= navigationBar.addressRight) {
                 return "reload"
             }
+            // Left of the host, the media controls take everything from back's region
+            // to the host's.
+            var inRow = x - addressRow.x
+            if (addressRow.showsPlayback && inRow < addressRow.playbackEnd) {
+                return "playback"
+            }
+            if (addressRow.showsMute && inRow < addressRow.mediaEnd) {
+                return "mute"
+            }
         }
         return "address"
     }
@@ -180,6 +196,10 @@ Item {
             }
         } else if (region === "reload") {
             navigationBar.reloadOrStop()
+        } else if (region === "playback") {
+            navigationBar.togglePlayback()
+        } else if (region === "mute") {
+            navigationBar.toggleMuted()
         } else if (region === "address") {
             navigationBar.tapAddress()
         }
@@ -274,6 +294,8 @@ Item {
     // Centred on the screen rather than in the space between the controls: an address
     // that sits off to one side reads as a label rather than as the bar's subject.
     AddressLabel {
+        id: addressRow
+
         objectName: "addressRow"
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -286,6 +308,11 @@ Item {
         url: navigationBar.url
         tlsBroken: navigationBar.tlsBroken
         pressed: gestureArea.pressedRegion === "address"
+        // On the slim bar too, as the warning is: there they say what plays, and a tap
+        // brings the whole bar back, as a tap anywhere on it does.
+        mediaState: navigationBar.mediaState
+        muted: navigationBar.muted
+        pressedControl: gestureArea.pressedRegion
         maximumWidth: navigationBar.centredWidth
         fontSize: Theme.fontSizeSmall
                   + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion

@@ -61,6 +61,10 @@ workaround; a failure blocks the tag.
 - [ ] A video with sound plays aloud, through the speaker and through headphones, and the volume keys change its volume.
 - [ ] Open a busy site (a news front page with video and ads) in two tabs, minimise: within a few seconds `top` shows harbour-salama near idle, where before it kept a core busy. Back in the app, the page in front carries on where it was; the other tab does too when brought to the front.
 - [ ] Play music or a video with sound, minimise, lock the phone: it keeps playing, and a playlist moves on to the next track. Pause it from the page before minimising instead: the pages go idle as above.
+- [ ] Play a video with sound (a YouTube page, not one embedded in an article): within a moment a pause and a speaker glyph appear left of the host, and on its preview in the grid a pause and a speaker disc in the picture's bottom-left corner, readable over a white page and a dark one. Nothing appears for a muted autoplaying video, or on a page with no media.
+- [ ] Pause from the bar: the video stops and the glyph turns to play; play resumes it. The same from the preview, with the grid staying open. Mute from either: the sound goes and the speaker is struck through on both; a new video opened in that tab is muted too, and unmute brings the sound back.
+- [ ] With the bar slim, the two glyphs still show beside the host; a tap there brings the whole bar back and plays or mutes nothing.
+- [ ] Music playing in one tab, a video started in another: the music pauses, and its preview shows play. Tapping play there brings that tab to the front and plays the music, and the video pauses. A tab left while playing shows play on its preview, and coming back to it plays on.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.

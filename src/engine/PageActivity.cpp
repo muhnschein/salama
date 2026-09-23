@@ -108,9 +108,11 @@ void PageActivity::observeDecoder(const QVariantMap &info)
         m_hasSound.insert(owner, info.value(QStringLiteral("a")).toBool());
     } else if (state == QLatin1String("play")) {
         m_playing.insert(owner);
+        emit playStateChanged();
     } else {
         // "pause" is every state but playing, the decoder's shutdown included.
         m_playing.remove(owner);
+        emit playStateChanged();
     }
 }
 
