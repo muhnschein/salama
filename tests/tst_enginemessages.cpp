@@ -1,10 +1,47 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "engine/EngineMessages.h"
+#include "settings/Settings.h"
 
 #include <QtTest>
 
 using Salama::EngineMessages;
+using Salama::Settings;
+
+namespace {
+
+QVariantMap trackingValues(int level)
+{
+    QVariantMap values;
+    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(level)) {
+        const QVariantMap preference = entry.toMap();
+        values.insert(preference.value(QStringLiteral("name")).toString(),
+                      preference.value(QStringLiteral("value")));
+    }
+    return values;
+}
+
+QStringList trackingNames(int level)
+{
+    QStringList names;
+    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(level)) {
+        names.append(entry.toMap().value(QStringLiteral("name")).toString());
+    }
+    return names;
+}
+
+// Split by hand for an empty list: Qt 5.6 has no Qt::SkipEmptyParts, and host Qt
+// deprecates QString::SkipEmptyParts.
+QStringList features(const QVariant &engines)
+{
+    const QString list = engines.toString();
+    return list.isEmpty() ? QStringList() : list.split(QLatin1Char(','));
+}
+
+const char *const ContentBlocking = "privacy.trackingprotection.content.protection.engines";
+const char *const ContentAnnotation = "privacy.trackingprotection.content.annotation.engines";
+
+} // namespace
 
 class tst_enginemessages : public QObject
 {
@@ -21,6 +58,9 @@ private slots:
     void findRequest();
     void findFound_data();
     void findFound();
+    void trackingProtectionNamesTheSamePreferences();
+    void trackingProtectionLevels();
+    void trackingProtectionFeatures();
 };
 
 void tst_enginemessages::constants()
@@ -196,6 +236,148 @@ void tst_enginemessages::resolveFavicon()
     QFETCH(QString, expected);
     EngineMessages messages;
     QCOMPARE(messages.resolveFavicon(page, href), expected);
+}
+
+// Every level writes every preference, in one order and with one type each, so that
+// moving from Strict to Off leaves nothing of Strict in the profile, and a number is
+// never handed to the engine as text: setPreference() picks the engine's setter by the
+// value's type, and the engine refuses a value of the wrong one.
+void tst_enginemessages::trackingProtectionNamesTheSamePreferences()
+{
+    QStringList names = trackingNames(Settings::TrackingProtectionStandard);
+    QCOMPARE(names.count(), 12);
+    QCOMPARE(names.removeDuplicates(), 0);
+    QCOMPARE(trackingNames(Settings::TrackingProtectionOff), names);
+    QCOMPARE(trackingNames(Settings::TrackingProtectionStrict), names);
+
+    for (const QVariant &entry :
+         EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard)) {
+        QCOMPARE(entry.toMap().count(), 2);
+    }
+    const QVariantMap off = trackingValues(Settings::TrackingProtectionOff);
+    const QVariantMap standard = trackingValues(Settings::TrackingProtectionStandard);
+    const QVariantMap strict = trackingValues(Settings::TrackingProtectionStrict);
+    for (const QString &name : names) {
+        QCOMPARE(off.value(name).userType(), standard.value(name).userType());
+        QCOMPARE(strict.value(name).userType(), standard.value(name).userType());
+    }
+    QCOMPARE(standard.value(QStringLiteral("network.cookie.cookieBehavior")).userType(),
+             int(QMetaType::Int));
+    QCOMPARE(standard.value(QStringLiteral("privacy.bounceTrackingProtection.mode")).userType(),
+             int(QMetaType::Int));
+    QCOMPARE(standard.value(QLatin1String(ContentBlocking)).userType(), int(QMetaType::QString));
+    QCOMPARE(standard.value(QStringLiteral("privacy.fingerprintingProtection")).userType(),
+             int(QMetaType::Bool));
+}
+
+void tst_enginemessages::trackingProtectionLevels()
+{
+    const QString cookies = QStringLiteral("network.cookie.cookieBehavior");
+    const QString blocking =
+        QStringLiteral("privacy.trackingprotection.content.protection.enabled");
+    const QString annotation =
+        QStringLiteral("privacy.trackingprotection.content.annotation.enabled");
+    const QString bounceTracking = QStringLiteral("privacy.bounceTrackingProtection.mode");
+    const QStringList strictOnly{
+        QStringLiteral("privacy.annotate_channels.strict_list.enabled"),
+        QStringLiteral("privacy.fingerprintingProtection"),
+        QStringLiteral("privacy.query_stripping.enabled"),
+        QStringLiteral("network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation"),
+    };
+    const QString convenience =
+        QStringLiteral("privacy.trackingprotection.allow_list.convenience.enabled");
+
+    // Off is the engine as it comes: every cookie accepted, nothing classified,
+    // bounce tracking watched and never acted on.
+    const QVariantMap off = trackingValues(Settings::TrackingProtectionOff);
+    QCOMPARE(off.value(cookies), QVariant(0));
+    QCOMPARE(off.value(blocking), QVariant(false));
+    QCOMPARE(off.value(annotation), QVariant(false));
+    QCOMPARE(off.value(bounceTracking), QVariant(3));
+    QVERIFY(features(off.value(QLatin1String(ContentBlocking))).isEmpty());
+    QVERIFY(features(off.value(QLatin1String(ContentAnnotation))).isEmpty());
+    for (const QString &name : strictOnly) {
+        QCOMPARE(off.value(name), QVariant(false));
+    }
+    QCOMPARE(off.value(convenience), QVariant(true));
+
+    // Standard is Firefox's: Total Cookie Protection, and fingerprinters and
+    // cryptominers blocked.
+    const QVariantMap standard = trackingValues(Settings::TrackingProtectionStandard);
+    QCOMPARE(standard.value(cookies), QVariant(5));
+    QCOMPARE(standard.value(blocking), QVariant(true));
+    QCOMPARE(standard.value(annotation), QVariant(true));
+    QCOMPARE(standard.value(bounceTracking), QVariant(3));
+    QCOMPARE(features(standard.value(QLatin1String(ContentBlocking))),
+             (QStringList{QStringLiteral("fingerprinters"), QStringLiteral("cryptominers"),
+                          QStringLiteral("major-exceptions"), QStringLiteral("minor-exceptions")}));
+    for (const QString &name : strictOnly) {
+        QCOMPARE(standard.value(name), QVariant(false));
+    }
+    QCOMPARE(standard.value(convenience), QVariant(true));
+
+    // Strict blocks every tracker list, and switches on what Standard leaves off.
+    const QVariantMap strict = trackingValues(Settings::TrackingProtectionStrict);
+    QCOMPARE(strict.value(cookies), QVariant(5));
+    QCOMPARE(strict.value(bounceTracking), QVariant(1));
+    for (const QString &name : strictOnly) {
+        QCOMPARE(strict.value(name), QVariant(true));
+    }
+    QCOMPARE(strict.value(convenience), QVariant(false));
+    const QStringList strictBlocking = features(strict.value(QLatin1String(ContentBlocking)));
+    for (const QString &feature : features(standard.value(QLatin1String(ContentBlocking)))) {
+        if (feature != QLatin1String("minor-exceptions")) {
+            QVERIFY2(strictBlocking.contains(feature), qPrintable(feature));
+        }
+    }
+    QVERIFY(strictBlocking.contains(QStringLiteral("trackers")));
+    QVERIFY(strictBlocking.contains(QStringLiteral("social-trackers")));
+    QVERIFY(!strictBlocking.contains(QStringLiteral("minor-exceptions")));
+
+    // A level from outside the range is Standard, as Settings reads one back.
+    QCOMPARE(trackingValues(3), standard);
+    QCOMPARE(trackingValues(-1), standard);
+}
+
+// The feature names are the engine's own, and the order it needs them in: a blocking
+// list ends with its exception-only features, and annotation has none of them.
+void tst_enginemessages::trackingProtectionFeatures()
+{
+    // kFeatures in gecko-dev toolkit/components/content-classifier/
+    // ContentClassifierService.cpp, less the two test-only ones.
+    const QStringList engine{
+        QStringLiteral("trackers"),        QStringLiteral("trackers-content"),
+        QStringLiteral("social-trackers"), QStringLiteral("fingerprinters"),
+        QStringLiteral("email-trackers"),  QStringLiteral("cryptominers"),
+    };
+    const QStringList exceptions{QStringLiteral("minor-exceptions"),
+                                 QStringLiteral("major-exceptions")};
+
+    for (int level :
+         {int(Settings::TrackingProtectionStandard), int(Settings::TrackingProtectionStrict)}) {
+        const QVariantMap values = trackingValues(level);
+        const QStringList blocking = features(values.value(QLatin1String(ContentBlocking)));
+        bool inExceptions = false;
+        for (const QString &feature : blocking) {
+            QVERIFY2(engine.contains(feature) || exceptions.contains(feature), qPrintable(feature));
+            if (exceptions.contains(feature)) {
+                inExceptions = true;
+            } else {
+                QVERIFY2(!inExceptions, qPrintable(feature));
+            }
+        }
+        QVERIFY(inExceptions);
+        // The level-2 list is only ever annotated.
+        QVERIFY(!blocking.contains(QStringLiteral("trackers-content")));
+
+        const QStringList annotation = features(values.value(QLatin1String(ContentAnnotation)));
+        QVERIFY(!annotation.isEmpty());
+        for (const QString &feature : annotation) {
+            QVERIFY2(engine.contains(feature), qPrintable(feature));
+        }
+        QCOMPARE(annotation.contains(QStringLiteral("trackers-content")),
+                 level == Settings::TrackingProtectionStrict);
+    }
 }
 
 QTEST_GUILESS_MAIN(tst_enginemessages)

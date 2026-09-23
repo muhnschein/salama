@@ -64,6 +64,8 @@ workaround; a failure blocks the tag.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.
+- [ ] Settings > Privacy > Tracking protection reads Standard. Quit, and the `prefs.js` that `find ~/.local/share/io.github.muhnschein/salama -name prefs.js` names holds `network.cookie.cookieBehavior` 5 and `privacy.trackingprotection.content.protection.enabled` true; set Strict and quit, and it holds `privacy.fingerprintingProtection` true; Off takes the cookie behaviour out of it again, the engine's default of 0 being written nowhere. A video embedded in another site, and a site's comments widget, still work under Standard.
+- [ ] On the ESR 153 engine only, Strict: a news front page leaves its ad slots empty where Off fills them, which says the content classifier's lists synced (`DECISIONS/0023-tracking-protection.md`).
 - [ ] Cover shows "Salama", "Tabs" and the tab count, over a grey field of the open tabs' previews that fades in below the heading. The field fills the cover at one tab, at two, at four and at a dozen (six cells at most), and the count and the field follow opening and closing tabs.
 - [ ] The field is ordered by what was read last: switch tabs, minimise, and the tab just left leads it. The order survives a restart.
 - [ ] Scroll a page well down, minimise: the cover shows it scrolled, not as it was loaded. Same after stepping through a site that navigates without loading.
