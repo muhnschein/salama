@@ -15,6 +15,7 @@ QtObject {
     readonly property real fontSizeExtraLarge: 50
     readonly property real fontSizeHuge: 90
     readonly property real iconSizeSmall: 32
+    readonly property real iconSizeSmallPlus: 48
     readonly property real iconSizeMedium: 64
     readonly property real iconSizeLarge: 96
     readonly property real itemSizeSmall: 80
@@ -37,6 +38,9 @@ QtObject {
     readonly property real itemSizeExtraSmall: 60
     readonly property real pixelRatio: 2.0
     readonly property real _lineWidth: 2
+    // Silica's names the pattern the ambience lays over its glass; the stub's names an
+    // image its own theme provider draws.
+    readonly property url _patternImage: "image://theme/glass-pattern"
 
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)

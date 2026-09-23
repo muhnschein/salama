@@ -57,15 +57,21 @@ button kept in the middle when it does not. `TabBar` itself lives in
 application may have. A tap chooses a group. The first strip was a snapping `ListView`
 with each item half the width, whose flick chose the group; it was too sparse to read as
 a row of names, and the view's own writes to `currentIndex` during layout chose groups
-nobody had asked for. Small type, because the strip sits over the grid rather than at
-the head of a page. An end of the row with names past it **fades out** rather than
-cutting a name off, as `TabBar`'s does: two `OpacityRampEffect`s, one for each end, each
-on only while there are names out of sight past its end and narrowing away as the row
-reaches it, the second drawn from the first while both are on. `TabBar`'s fade is a
-seventh of the row; this one is at most a twentieth of the screen, the ramp Silica puts
-on a field's text where it scrolls past an end, since what was asked for was a slight
-one. A row that fits has none. The edit button in the right corner pushes
-`pages/TabGroupsPage.qml`, a page over the grid, which stays open under it.
+nobody had asked for. The names are in medium type and the icons in the corners at
+`Theme.iconSizeSmallPlus`, so the row sits with the search field at the head of the grid.
+The names began in small type, as over the grid rather than at the head of a page, beside
+icons of Silica's medium size; on device they were asked to match the field, whose large
+type would make the names as big as a page's header, so the names went one step up
+Silica's scale and the icons one step down. Each icon's button is a padding wider than it
+either side and the row's height, the icon at the page margin. An end of the row with
+names past it **fades out** rather than cutting a name off, as `TabBar`'s does: two
+`OpacityRampEffect`s, one for each end, each on only while there are names out of sight
+past its end and narrowing away as the row reaches it, the second drawn from the first
+while both are on. `TabBar`'s fade is a seventh of the row; this one is at most a
+twentieth of the screen, the ramp Silica puts on a field's text where it scrolls past an
+end, since what was asked for was a slight one. A row that fits has none. The edit button
+in the right corner pushes `pages/TabGroupsPage.qml`, a page over the grid, which stays
+open under it.
 
 The strip is at the **foot** so that it is within reach of the thumb that carries a cell
 to it: a tab **changes group by being carried onto one**. A preview held until it comes

@@ -13,8 +13,12 @@
 // highlight colour, and the first and last tab taking the slack so a row that fits is
 // centred. So is the way the row fades out at an end that has names past it. TabBar
 // itself lives in Sailfish.Silica.private and works only inside a TabView, neither of
-// which a Harbour application may have. Small type, because the strip sits over the
-// grid rather than at the head of a page.
+// which a Harbour application may have.
+//
+// The row is sized to sit with the search field at the grid's head. The names are in
+// medium type, a step up from small and a step short of the field's large, which would
+// make them as big as a page's header; the icons in the corners are small-plus, a step
+// down from medium, so the two meet between.
 //
 // The names are also where a tab changes group. A preview carried down over one of
 // them lights it, and dropped there the tab moves into that group; the grid's cells
@@ -117,18 +121,21 @@ Item {
         onTriggered: TabGroups.moveTab(tabId, groupId)
     }
 
+    // Each corner's icon at the page margin, and its button round it a padding either
+    // side and the height of the row: the thumb has more to find than the icon.
     IconButton {
         id: newTabButton
 
         objectName: "newTabButton"
         anchors {
             left: parent.left
-            leftMargin: Theme.horizontalPageMargin
+            leftMargin: Theme.horizontalPageMargin - Theme.paddingMedium
             verticalCenter: parent.verticalCenter
         }
-        width: Theme.iconSizeMedium
-        height: width
+        width: Theme.iconSizeSmallPlus + 2 * Theme.paddingMedium
+        height: parent.height
         icon.source: "image://theme/icon-m-add"
+        icon.sourceSize: Qt.size(Theme.iconSizeSmallPlus, Theme.iconSizeSmallPlus)
         onClicked: strip.newTabRequested()
         onPressAndHold: strip.closedTabsRequested()
     }
@@ -139,12 +146,13 @@ Item {
         objectName: "editGroupsButton"
         anchors {
             right: parent.right
-            rightMargin: Theme.horizontalPageMargin
+            rightMargin: Theme.horizontalPageMargin - Theme.paddingMedium
             verticalCenter: parent.verticalCenter
         }
-        width: Theme.iconSizeMedium
-        height: width
+        width: Theme.iconSizeSmallPlus + 2 * Theme.paddingMedium
+        height: parent.height
         icon.source: "image://theme/icon-m-edit"
+        icon.sourceSize: Qt.size(Theme.iconSizeSmallPlus, Theme.iconSizeSmallPlus)
         onClicked: strip.editRequested()
     }
 
@@ -161,8 +169,6 @@ Item {
             right: editButton.left
             top: parent.top
             bottom: parent.bottom
-            leftMargin: Theme.paddingMedium
-            rightMargin: Theme.paddingMedium
         }
         clip: true
         contentWidth: row.width
@@ -226,13 +232,12 @@ Item {
                     height: row.height
 
                     // What marks the group a carried tab would go into: the wash the
-                    // grid marks its cells with, round the name.
+                    // grid marks its cells with, square as theirs is, round the name.
                     Rectangle {
                         objectName: "tabGroupDropHighlight"
                         anchors.centerIn: label
                         width: label.width + 2 * Theme.paddingMedium
                         height: label.height + 2 * Theme.paddingSmall
-                        radius: Theme.paddingMedium
                         color: Theme.rgba(Theme.highlightBackgroundColor,
                                           Theme.highlightBackgroundOpacity)
                         visible: button.target
@@ -258,7 +263,7 @@ Item {
                         // the tabs outside every group.
                         text: model.name.length > 0 ? model.name
                                                     : qsTr("%n tab(s)", "", model.tabCount)
-                        font.pixelSize: Theme.fontSizeSmall
+                        font.pixelSize: Theme.fontSizeMedium
                         color: button.current || button.target || tap.pressed
                                ? Theme.highlightColor : Theme.primaryColor
                     }

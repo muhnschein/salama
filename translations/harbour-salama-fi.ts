@@ -88,10 +88,6 @@
         <translation>Poista kirjanmerkki</translation>
     </message>
     <message>
-        <source>Bookmark this page</source>
-        <translation>Lisää kirjanmerkkeihin</translation>
-    </message>
-    <message>
         <source>Share</source>
         <translation>Jaa</translation>
     </message>
@@ -118,6 +114,10 @@
     <message>
         <source>Settings</source>
         <translation>Asetukset</translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation>Kirjanmerkki</translation>
     </message>
 </context>
 <context>

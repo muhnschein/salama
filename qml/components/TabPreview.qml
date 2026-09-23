@@ -15,8 +15,8 @@
 // its own taps (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
-// and its highlight as a square wash across the whole cell, and this cell has rounded
-// corners; what marks it is its own box.
+// and its highlight as a wash across the whole cell, edge to edge; the wash here is as
+// square, but stops short of the edges, round the picture and the title.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -56,9 +56,9 @@ Item {
     readonly property real closeDistance: width / 3
     // The picture and title's inset from the cell's edges, half the gap between cells.
     readonly property real inset: Theme.paddingMedium + Theme.paddingSmall / 2
-    // Drawn on the rounded box below: this cell is the active tab, or has a finger. A
-    // cell whose tab has just been closed outlives its row for a moment, and its role
-    // is then undefined, which a bool cannot be.
+    // What the wash and the border below mark: this cell is the active tab, or has a
+    // finger. A cell whose tab has just been closed outlives its row for a moment, and
+    // its role is then undefined, which a bool cannot be.
     readonly property bool highlighted: dragArea.pressed || model.activeTab === true
     readonly property Item grid: GridView.view
 
@@ -230,9 +230,9 @@ Item {
         }
 
         // What marks the active cell, and the one under a finger: the wash Silica's
-        // BackgroundItem would have drawn across the cell, in the shape this cell
-        // actually has. The thin border below says the same thing quietly; on device
-        // it turned out to say nothing at all on its own.
+        // BackgroundItem would have drawn across the cell, square as that one is, round
+        // the picture and the title. The thin border below says the same thing quietly;
+        // on device it turned out to say nothing at all on its own.
         Rectangle {
             objectName: "tabPreviewHighlight"
             anchors {
@@ -241,7 +241,6 @@ Item {
                 // Further down than the rest: the title sat close to the edge of it.
                 bottomMargin: preview.inset - Theme.paddingSmall * 1.5
             }
-            radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
             visible: preview.highlighted
         }

@@ -796,6 +796,24 @@ void tst_qmlload::tabGrid()
     QList<QObject *> groupLabels = findAll(QStringLiteral("tabGroupLabel"));
     QCOMPARE(groupLabels.count(), 1);
     QCOMPARE(groupLabels.first()->property("text").toString(), QStringLiteral("2 tab(s)"));
+    // The row is sized to sit with the search field: the names in medium type, and the
+    // corners' icons a step below Silica's medium size, each at the page margin inside
+    // a button a padding wider either side and the row's height.
+    QCOMPARE(groupLabels.first()->property("font").value<QFont>().pixelSize(),
+             evaluate(grid, QStringLiteral("Theme.fontSizeMedium")).toInt());
+    const qreal smallPlus = evaluate(grid, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QVERIFY(smallPlus < evaluate(grid, QStringLiteral("Theme.iconSizeMedium")).toReal());
+    const qreal margin = evaluate(grid, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    for (QQuickItem *corner : {item("newTabButton"), item("editGroupsButton")}) {
+        auto *icon = corner->property("icon").value<QObject *>();
+        QVERIFY(icon != nullptr);
+        QCOMPARE(icon->property("sourceSize").toSizeF(), QSizeF(smallPlus, smallPlus));
+        QCOMPARE(corner->height(), footRow->height());
+        QVERIFY(corner->width() > smallPlus);
+    }
+    QCOMPARE(sceneX(item("newTabButton"), (item("newTabButton")->width() - smallPlus) / 2), margin);
+    QCOMPARE(sceneX(item("editGroupsButton"), (item("editGroupsButton")->width() + smallPlus) / 2),
+             screenWidth - margin);
     // The current group is the one underlined.
     QList<QObject *> underlines = findAll(QStringLiteral("tabGroupUnderline"));
     QCOMPARE(underlines.count(), 1);
@@ -818,6 +836,24 @@ void tst_qmlload::tabGrid()
     QCOMPARE(indicator->property("width").toReal(), headRow->width());
     QVERIFY(indicator->property("height").toReal() > 0);
     QVERIFY(find(QStringLiteral("gridDragHandle")) == nullptr);
+    // Both rows are panes of Silica's glass: the tint, and over it the ambience's own
+    // pattern, tiled and drawn at the tenth the glass draws it at -- under whatever the
+    // row carries, and loaded, which the stub's theme lets every image be.
+    const QString pattern = evaluate(grid, QStringLiteral("Theme._patternImage")).toString();
+    QVERIFY(!pattern.isEmpty());
+    for (QQuickItem *row : {headRow, footRow}) {
+        QQuickItem *glass = row->childItems().value(0);
+        QVERIFY(glass != nullptr);
+        QVERIFY(glass->objectName().endsWith(QLatin1String("Glass")));
+        QCOMPARE(glass->property("source").toUrl().toString(), pattern);
+        QVERIFY(evaluate(glass, QStringLiteral("fillMode === Image.Tile")).toBool());
+        QCOMPARE(glass->opacity(), 0.1);
+        QCOMPARE(glass->width(), row->width());
+        QCOMPARE(glass->height(), row->height());
+        QTRY_VERIFY(evaluate(glass, QStringLiteral("status === Image.Ready")).toBool());
+    }
+    QCOMPARE(item("gridHeadGlass")->parentItem(), headRow);
+    QCOMPARE(item("gridFootGlass")->parentItem(), footRow);
     // Room in the scrolled content for each row, so no cell is stranded under one.
     auto *headerItem = find(QStringLiteral("tabGrid"))->property("headerItem").value<QObject *>();
     QVERIFY(headerItem != nullptr);
@@ -829,11 +865,14 @@ void tst_qmlload::tabGrid()
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
 
-    // The preview box is rounded, and so is the highlight drawn round the active
-    // one. Clipping is rectangular whatever the shape of the item doing it, so the
-    // picture is cut to the same corners by a mask.
+    // The preview box is rounded, and the wash drawn round the active one is square,
+    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
+    // it, so the picture is cut to the box's corners by a mask.
     QObject *shot = findObjects(previews.at(1), QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
+    QObject *wash = findObjects(previews.at(1), QStringLiteral("tabPreviewHighlight")).first();
+    QVERIFY(wash->property("visible").toBool());
+    QCOMPARE(wash->property("radius").toReal(), qreal(0));
     // The picture sits in from the cell's edges by a little more than a medium padding,
     // and two cells stand twice that apart.
     const qreal inset = previews.at(1)->property("inset").toReal();
@@ -841,8 +880,7 @@ void tst_qmlload::tabGrid()
     QCOMPARE(shot->property("x").toReal(), inset);
     QCOMPARE(shot->property("width").toReal(),
              previews.at(1)->property("width").toReal() - 2 * inset);
-    // The active cell is marked on that same box -- a Silica BackgroundItem would
-    // have drawn a square wash across the whole cell instead.
+    // The active cell's box is marked as well, by its border.
     auto *border = shot->property("border").value<QObject *>();
     QVERIFY(border != nullptr);
     QVERIFY(border->property("width").toReal() > 0);
@@ -1595,6 +1633,9 @@ void tst_qmlload::carryToGroupUnderAFinger()
     carry(at, workName);
     QCOMPARE(strip->property("dropIndex").toInt(), 1);
     QCOMPARE(highlights(), 1);
+    // The cells' own wash, square as theirs is.
+    QCOMPARE(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("radius").toReal(),
+             qreal(0));
     QCOMPARE(workLabel->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
     QCOMPARE(tabOrder(), order);
 
@@ -2090,7 +2131,7 @@ void tst_qmlload::browserMenu()
     tapBar(QStringLiteral("menu"));
     QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
     QVERIFY(!bookmark->property("checked").toBool());
-    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark this page"));
+    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
     click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QVERIFY(m_core->bookmarks()->activeUrlBookmarked());

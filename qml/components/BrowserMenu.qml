@@ -168,7 +168,7 @@ DockedPanel {
                     checked: BookmarkModel.activeUrlBookmarked
                     iconSource: checked ? "image://theme/icon-m-favorite-selected"
                                         : "image://theme/icon-m-favorite"
-                    text: checked ? qsTr("Remove bookmark") : qsTr("Bookmark this page")
+                    text: checked ? qsTr("Remove bookmark") : qsTr("Bookmark")
                     onClicked: {
                         menu.hide()
                         if (BookmarkModel.activeUrlBookmarked) {

@@ -88,10 +88,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bookmark this page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
@@ -117,6 +113,10 @@
     </message>
     <message>
         <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

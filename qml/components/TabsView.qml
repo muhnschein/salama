@@ -167,6 +167,9 @@ Item {
     // keeps the top row of cells clear of the screen's cutout. It rides on the grid,
     // which moves up as it is pulled down; the margin keeps the row where the content
     // is.
+    //
+    // Both rows are panes of Silica's glass: a tint with the ambience's own pattern over
+    // it. The tint alone was a smooth band where Silica's own panes are textured.
     Rectangle {
         id: headRow
 
@@ -182,6 +185,11 @@ Item {
         // screen, and the notch was taking a bite out of what it carries.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+
+        GlassTexture {
+            objectName: "gridHeadGlass"
+            anchors.fill: parent
+        }
 
         // The grid's own edge is a pulley too: dragged down it hands the page back.
         // Said the way Silica says a pulley menu is there -- a line across the whole
@@ -262,8 +270,8 @@ Item {
     }
 
     // The way to a new tab and the groups, along the foot of the view in the same glass
-    // as the navigation bar. On the grid as the head row is, and held still against its
-    // pull the same way.
+    // as the head. On the grid as the head row is, and held still against its pull the
+    // same way.
     Rectangle {
         id: footRow
 
@@ -276,6 +284,11 @@ Item {
         }
         height: Theme.itemSizeLarge
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+
+        GlassTexture {
+            objectName: "gridFootGlass"
+            anchors.fill: parent
+        }
 
         TabGroupStrip {
             id: groupStrip
