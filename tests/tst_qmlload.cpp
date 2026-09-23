@@ -55,6 +55,7 @@ private slots:
     void faviconResolvedAfterLoad();
     void tabGrid();
     void tabGroups();
+    void tabsDropOntoGroups();
     void previewGestures();
     void gridGesturesUnderAFinger();
     void carryToGroupUnderAFinger();
@@ -1014,36 +1015,8 @@ void tst_qmlload::tabGroups()
     // The term does not outlive the page.
     QVERIFY(m_core->tabSearch()->searchTerm().isEmpty());
 
-    // A tab carried down onto a group in the strip moves into that group. Here it is
-    // the tab in front, and the grid goes with it: the tab in front is always in the
-    // group the grid shows. The view behind the tab is the one it had.
-    pullUpToTabs();
-    QCOMPARE(strip->property("dropIndex").toInt(), -1);
-    strip->setProperty("dropIndex", 0);
-    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
-    QCOMPARE(strip->property("dropIndex").toInt(), -1);
-    // A moment later: the carried cell's own release is still running when it is let
-    // go, and the move takes the cell out of the grid.
-    QCOMPARE(tabs->tabCountInGroup(work), 1);
-    QTRY_COMPARE(tabs->tabCountInGroup(home), 2);
-    QCOMPARE(tabs->tabCountInGroup(work), 0);
-    QCOMPARE(tabs->currentGroupId(), home);
-    QCOMPARE(tabs->activeTabId(), second);
-    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
-    QVERIFY(page->property("tabsOpen").toBool());
-    // Let go with nothing lit, and nothing moves.
-    QVERIFY(!evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
-    QCOMPARE(tabs->tabCountInGroup(home), 2);
-    // A finger nowhere near the strip lights nothing, and the carry is the grid's.
-    strip->setProperty("dropIndex", 1);
-    QVERIFY(!evaluate(strip, QStringLiteral("carryOver(null, -1, -1)")).toBool());
-    QCOMPARE(strip->property("dropIndex").toInt(), -1);
-    strip->setProperty("dropIndex", 1);
-    evaluate(strip, QStringLiteral("endCarry()"));
-    QCOMPARE(strip->property("dropIndex").toInt(), -1);
-
     // Into a group made for it: made from the list of groups, which makes it current
-    // and empty, and the tab carried there from its own.
+    // and empty. How a tab is carried there from the grid is tabsDropOntoGroups().
     click(find(QStringLiteral("editGroupsButton")));
     click(find(QStringLiteral("newGroupButton")));
     dialog = currentPage();
@@ -1053,25 +1026,10 @@ void tst_qmlload::tabGroups()
     popPage();
     popPage();
     QCOMPARE(tabs->groups().count(), 3);
-    evaluate(strip, QStringLiteral("select(0)"));
-    QCOMPARE(tabs->currentGroupId(), home);
-    strip->setProperty("dropIndex", 2);
-    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
-    QTRY_COMPARE(tabs->currentGroupId(), tabs->groups().at(2).id);
-    QCOMPARE(tabs->tabCountInGroup(tabs->groups().at(2).id), 1);
+    QVERIFY(tabs->moveTabToGroup(second, tabs->groups().at(2).id));
+    QCOMPARE(tabs->currentGroupId(), tabs->groups().at(2).id);
+    QCOMPARE(tabs->tabCountInGroup(work), 0);
     QCOMPARE(tabs->tabCountInGroup(home), 1);
-    // A tab that is not the one in front leaves the grid where it is.
-    evaluate(strip, QStringLiteral("select(0)"));
-    QCOMPARE(tabs->activeTabId(), first);
-    const int third = tabs->newTab(QStringLiteral("https://three.example/"));
-    tabs->activateTabById(first);
-    pullUpToTabs();
-    strip->setProperty("dropIndex", 1);
-    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(third)).toBool());
-    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
-    QCOMPARE(tabs->currentGroupId(), home);
-    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
-    tabs->closeTabById(third);
 
     // Rename and delete are in the group's own menu; the default group has neither.
     pullUpToTabs();
@@ -1105,6 +1063,64 @@ void tst_qmlload::tabGroups()
                  .toBool());
     QCOMPARE(tabs->currentGroupIndex(), 0);
     popPage();
+}
+
+// A tab carried down onto a group in the strip moves into that group, the way a tap
+// on a name chooses it: through the strip's own functions. The finger that carries it
+// is carryToGroupUnderAFinger().
+void tst_qmlload::tabsDropOntoGroups()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->activeTabId(), second);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    pullUpToTabs();
+
+    // The tab in front takes the grid with it: the tab in front is always in the group
+    // the grid shows. The view behind the tab is the one it had.
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    strip->setProperty("dropIndex", 1);
+    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    // A moment later: the carried cell's own release is still running when the finger
+    // lifts, and the move takes the cell out of the grid.
+    QCOMPARE(tabs->tabCountInGroup(home), 2);
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Dropped with nothing lit, nothing moves, then or a moment later.
+    QVERIFY(!evaluate(strip, QStringLiteral("dropTab(%1)").arg(second)).toBool());
+    QCoreApplication::processEvents();
+    QCOMPARE(tabs->tabCountInGroup(work), 1);
+    // A finger nowhere near the strip lights nothing, and the carry is the grid's;
+    // however the carry ends, nothing stays lit.
+    strip->setProperty("dropIndex", 0);
+    QVERIFY(!evaluate(strip, QStringLiteral("carryOver(null, -1, -1)")).toBool());
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    strip->setProperty("dropIndex", 0);
+    evaluate(strip, QStringLiteral("endCarry()"));
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+
+    // A tab that is not the one in front leaves the grid where it is, a cell fewer.
+    evaluate(strip, QStringLiteral("select(0)"));
+    QCOMPARE(tabs->activeTabId(), first);
+    const int third = tabs->newTab(QStringLiteral("https://three.example/"));
+    tabs->activateTabById(first);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    strip->setProperty("dropIndex", 1);
+    QVERIFY(evaluate(strip, QStringLiteral("dropTab(%1)").arg(third)).toBool());
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 2);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), first);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
 }
 
 void tst_qmlload::previewGestures()
