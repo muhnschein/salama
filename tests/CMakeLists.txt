@@ -47,6 +47,7 @@ foreach(test
     tst_bookmarkmodel
     tst_settings
     tst_enginemessages
+    tst_pageactivity
     tst_core
     tst_qmlload
     tst_qmlstatic

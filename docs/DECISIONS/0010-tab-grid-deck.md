@@ -46,16 +46,17 @@ Tapping a preview does the same thing as the pull, with the tab it names.
 
 A cell can also be **carried** to another place in the grid, and **slid away** to close
 its tab. The two share the sideways movement, so a hold tells them apart: a finger held
-for **a second and a half** picks the cell up (a timer the delegate owns, since
+for **a second** picks the cell up (a timer the delegate owns, since
 `MouseArea.pressAndHoldInterval` came with Qt 5.9), and the cell comes up a little so the
-hand knows it has it; a finger that moves sideways before then is sliding the cell, to
+hand knows it has it. It was a second and a half until the person testing on device
+asked for a second. A finger that moves sideways before then is sliding the cell, to
 the left only, because the grid has nothing to the right. Slid past a third of its width
 and released, the cell closes its tab; released short of that it slides back. It fades as
 it goes, so the finger sees what lifting will do. A first build picked the cell up on
 the sideways movement alone, with no hold, and on device that was too easy to do by
 accident and left no gesture for closing. Once a cell is held or sliding the delegate sets
-`preventStealing`, so the grid cannot take the drag back, and what moves is the cell's
-*contents*, not the cell: the view owns where cells are, and after `GroupTabs.moveTab()`
+`preventStealing`, so the grid cannot take the drag back -- and **not before**, which is
+the subject of the next section. What moves is the cell's *contents*, not the cell: the view owns where cells are, and after `GroupTabs.moveTab()`
 the cell underneath has already moved to meet them. Only the displaced cells are animated;
 the carried one is under a finger and must not be animated away from it.
 
@@ -70,7 +71,13 @@ cell; the theme icon it replaced is discussed below.
 
 The grid carries two rows of its own, both drawn over the cells in the same glass as the
 navigation bar rather than scrolling among them, each with a spacer of the same height in
-the view's header and footer so that no cell is stranded under either:
+the view's header and footer so that no cell is stranded under either. Both are
+**children of the flickable itself** -- declared beside it and handed to it once made,
+since anything declared inside a view goes into the content it scrolls -- because a
+flickable filters the presses of its own children and nothing else's: beside it, the
+strip of groups took every press along the head of the screen, which is exactly where a
+pull down begins. On the flickable they ride on its `y`, which moves up as the view is
+pulled down, so each carries the overscroll as a margin and stays with the content:
 
 * along the **head**, the strip of tab groups (0015). It replaced "*n* tabs", which
   replaced a page header that named the active tab, which said what the page behind the
@@ -102,6 +109,45 @@ how sailfish-browser rounds its own tab previews
 visible cell, which is the price of the shape; the radius is `Theme.paddingMedium`, the
 same number upstream writes as `12 * Theme.pixelRatio`.
 
+### Every drag up or down is the grid's
+The grid is pulled back, and scrolled, from **anywhere on it**: a cell, the gaps between
+cells, the row of groups, the foot row. The cells do not keep a press for themselves
+while a hold is still forming, and that is a rule of Qt's, not a preference.
+
+The build that introduced the hold did keep it: `preventStealing` was up from the press,
+so that a thumb drifting while it held would not hand the grid a scroll before the hold
+ran out, with the expectation that past the drift tolerance the grid would "take the drag
+from the next move". It never did. A `Flickable` that filters a move while another item
+keeps the grab gives the touch up for good -- it forgets the press (`lastPosTime = -1`,
+`pressed = false`, in `QQuickFlickable::sendMouseEvent` on Qt 5.6 and `filterMouseEvent`
+on 5.15) and ignores every move after it -- and it cannot be handed the touch back. So any drag begun on a
+cell went nowhere: the page could only be pulled back from the gaps between cells, and a
+grid longer than the screen could not be scrolled from one. Qt 5.6 also runs every
+ancestor's filter on every event whatever a nearer one decided, so no item placed between
+the cell and the grid can hold the flickable off without the same result.
+
+What that costs is drift. A hold now tolerates `Theme.iconSizeSmall` of it **sideways**,
+where only the slide is waiting, and **up and down only as far as the grid's own drag
+distance**: past that the grid takes the drag, the cell's handler is cancelled, and the
+hold is off -- which is what a press-and-hold does in every Silica list. Keeping the full
+tolerance vertically was possible only by having the cell keep the touch and drive the
+grid's scrolling and pulling itself, by hand, for every drag that starts on a cell: the
+flickable's own physics traded for an imitation, on the gesture the grid is used for
+most. The shorter hold is the other half of the answer; a second is less time to drift.
+
+Sideways is the cell's, and it has to be claimed before the grid can take it. A slide
+slants as a thumb does, and a slide that drifted down by the grid's drag distance before
+it had gone the hold's tolerance across went to the grid, to scroll or to pull. So once
+the finger has moved more across than up or down, by three quarters of that drag
+distance, the cell keeps the touch: from then on it is a hold or a slide and never the
+grid's. The distance is Qt's style hint, `Qt.styleHints.startDragDistance`, since that
+is the one the flickable measures by, rather than Silica's `Theme` value.
+
+The gestures are tested under a real finger (`tst_qmlload::gridGesturesUnderAFinger`):
+the application is put in a window and pressed on, because whether a drag begun on a
+cell reaches the grid is decided inside Qt's event delivery, which raising the gesture's
+signals from a test skips entirely.
+
 The grid's `PullDownMenu` is gone. It was the only pulley in the application, it sat
 inside a view that now owns dragging past its own top for the way back, and two
 meanings for one drag is one too many. What it carried went elsewhere: "Go to tab" is
@@ -127,10 +173,8 @@ device it read as a second handle to find; it now has a **line across the very t
 screen**, as thick as the handle, which is how Silica's own pulley menu says it is there —
 in the highlight *background* colour, the highlight itself being too loud a line to have
 across the top of every grid. The hold tolerates drift: a thumb held down moves, and the
-first build wanted it perfectly still. Within `Theme.iconSizeSmall` of the press the
-finger is still holding, and while it may yet be a hold the delegate keeps
-`preventStealing` up so the grid does not take the drag first; past the tolerance the
-hold is off and the grid takes the drag from the next move.
+first build wanted it perfectly still. How much, and in which direction, is in the
+section above.
 
 The close button on a cell is drawn by the cell (`closeTabMark`): a disc in the highlight
 colour, all but opaque, with a cross through it. The theme's `icon-m-clear` carries a disc

@@ -27,7 +27,10 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `HistoryModel` — visited pages, search, pruning.
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
 - `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
-- `EngineMessages` — the only place engine-specific strings live.
+- `EngineMessages` — the engine-specific strings QML hands to the engine.
+- `PageActivity` — what the engine says is playing, read from its own observer topics,
+  and so when the loaded pages are put to sleep out of sight
+  (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 

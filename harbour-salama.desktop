@@ -9,6 +9,6 @@ Exec=harbour-salama
 X-Nemo-Application-Type=silica-qt5
 
 [X-Sailjail]
-Permissions=Internet;WebView;Downloads;Pictures;Documents
+Permissions=Internet;WebView;Audio;Downloads;Pictures;Documents
 OrganizationName=io.github.muhnschein
 ApplicationName=salama

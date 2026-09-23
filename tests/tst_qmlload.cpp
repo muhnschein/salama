@@ -9,13 +9,17 @@
 
 #include <QColor>
 #include <QFont>
+#include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlExpression>
 #include <QQuickItem>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <QScopedPointer>
 #include <QSet>
+#include <QStyleHints>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <algorithm>
@@ -36,6 +40,7 @@ class tst_qmlload : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void init();
     void cleanup();
 
@@ -50,6 +55,8 @@ private slots:
     void tabGrid();
     void tabGroups();
     void previewGestures();
+    void gridGesturesUnderAFinger();
+    void barReachUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -61,6 +68,7 @@ private slots:
     void coverFieldFollowsTheFront();
     void coverStyleIsConfigurable();
     void thumbnailCapturedOnLeavingTheApp();
+    void pagesSleepOutOfSight();
 
 private:
     bool loadWindow();
@@ -84,6 +92,13 @@ private:
     QScopedPointer<QQmlEngine> m_engine;
     QScopedPointer<QObject> m_window;
 };
+
+// Software rendering, set before anything loads QtQuick: the offscreen platform has no
+// OpenGL, and gridGesturesUnderAFinger() needs a real window to press on.
+void tst_qmlload::initTestCase()
+{
+    QQuickWindow::setSceneGraphBackend(QSGRendererInterface::Software);
+}
 
 void tst_qmlload::init()
 {
@@ -1040,31 +1055,28 @@ void tst_qmlload::previewGestures()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(0);
 
-    // A second and a half of holding still picks a cell up to be carried; a cell
-    // picked up does not open when the finger lifts.
+    // A second of holding still picks a cell up to be carried; a cell picked up does
+    // not open when the finger lifts.
     QObject *timer = findObjects(cell, QStringLiteral("holdTimer")).first();
-    QCOMPARE(timer->property("interval").toInt(), 1500);
-    QCOMPARE(cell->property("holdInterval").toInt(), 1500);
-    // A thumb drifts while it holds: some movement still counts as holding, and
-    // while it may yet be a hold the grid may not take the drag.
+    QCOMPARE(timer->property("interval").toInt(), 1000);
+    QCOMPARE(cell->property("holdInterval").toInt(), 1000);
+    // A thumb drifts while it holds: some movement still counts as holding. The grid
+    // may still take the drag while a hold is forming -- a flickable refused a touch
+    // once never takes it back, and the grid could then be neither scrolled nor
+    // pulled from a cell -- and may not once the cell is up (gridGesturesUnderAFinger).
+    QObject *gesture = findObjects(cell, QStringLiteral("tabPreviewGesture")).first();
     QVERIFY(cell->property("holdTolerance").toReal() > 0);
     QVERIFY(!cell->property("held").toBool());
     cell->setProperty("holding", true);
-    QVERIFY(findObjects(cell, QStringLiteral("tabPreviewGesture"))
-                .first()
-                ->property("preventStealing")
-                .toBool());
+    QVERIFY(!gesture->property("preventStealing").toBool());
     evaluate(cell, QStringLiteral("letGo()"));
     QVERIFY(!cell->property("holding").toBool());
-    QVERIFY(!findObjects(cell, QStringLiteral("tabPreviewGesture"))
-                 .first()
-                 ->property("preventStealing")
-                 .toBool());
     evaluate(cell, QStringLiteral("pickUp()"));
     QVERIFY(cell->property("held").toBool());
     QVERIFY(cell->property("carried").toBool());
     QVERIFY(!cell->property("holding").toBool());
     QVERIFY(!timer->property("running").toBool());
+    QVERIFY(gesture->property("preventStealing").toBool());
     evaluate(cell, QStringLiteral("releaseTap()"));
     QVERIFY(page->property("tabsOpen").toBool());
     evaluate(cell, QStringLiteral("drop()"));
@@ -1098,6 +1110,230 @@ void tst_qmlload::previewGestures()
     QVERIFY(mark->property("opacity").toReal() >= 0.9);
     QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
+}
+
+namespace {
+
+QPoint centreOf(QObject *object)
+{
+    auto *item = qobject_cast<QQuickItem *>(object);
+    return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint();
+}
+
+// The application in a real window, for as long as this lives: for the gestures whose
+// outcome Qt's own event delivery decides.
+class FingerWindow
+{
+public:
+    explicit FingerWindow(QObject *root)
+        : m_root(qobject_cast<QQuickItem *>(root))
+    {
+        m_window.resize(int(m_root->width()), int(m_root->height()));
+        m_root->setParentItem(m_window.contentItem());
+        m_window.show();
+    }
+    ~FingerWindow()
+    {
+        m_root->setParentItem(nullptr);
+    }
+    FingerWindow(const FingerWindow &) = delete;
+    FingerWindow &operator=(const FingerWindow &) = delete;
+
+    QQuickWindow *window()
+    {
+        return &m_window;
+    }
+
+private:
+    QQuickItem *m_root;
+    QQuickWindow m_window;
+};
+
+// A finger put down at one point, moved to another in even steps and lifted there.
+void drag(QWindow *window, const QPoint &from, const QPoint &to)
+{
+    const int steps = 24;
+    QTest::mousePress(window, Qt::LeftButton, Qt::NoModifier, from);
+    for (int step = 1; step <= steps; ++step) {
+        QTest::mouseMove(window, from + (to - from) * step / steps);
+    }
+    QTest::mouseRelease(window, Qt::LeftButton, Qt::NoModifier, to);
+}
+
+} // namespace
+
+// The grid's gestures under a real finger, in a real window. Whether a drag begun on a
+// cell ever reaches the grid is decided inside Qt's own delivery -- a cell that keeps
+// the touch from the moment it is pressed leaves the flickable nothing to take for the
+// rest of it -- so raising the signals the gestures end in, as the rest of this file
+// does, cannot see that go wrong. It went wrong once: the grid could only be pulled
+// back from the gaps between its cells.
+void tst_qmlload::gridGesturesUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    const auto openGrid = [&]() {
+        pullUpToTabs();
+        QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    };
+    const auto cells = [&]() { return byRow(findAll(QStringLiteral("tabPreview"))); };
+    const QPoint down(0, 3 * page->property("pullThreshold").toInt());
+
+    // Dragged down from a cell, the grid hands the page back, as it does from the gaps
+    // between the cells and from the row of groups over them.
+    openGrid();
+    drag(&window, centreOf(cells().first()), centreOf(cells().first()) + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    openGrid();
+    drag(&window, centreOf(find(QStringLiteral("tabGroupLabel"))),
+         centreOf(find(QStringLiteral("tabGroupLabel"))) + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    openGrid();
+    const QPoint gap(int(root->width()) / 2, int(root->height()) * 3 / 4);
+    drag(&window, gap, gap + down);
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // A tap on a cell opens its tab.
+    openGrid();
+    QCOMPARE(tabs->activeTabId(), second);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(cells().first()));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QVERIFY(tabs->activeTabId() != second);
+
+    // Held still for the hold interval -- or all but still: a thumb drifts, and a
+    // drift short of a drag is still a hold -- a cell comes up and is carried to
+    // another place in the grid, and letting go of it opens nothing.
+    openGrid();
+    QObject *first = cells().first();
+    const QPoint grab = centreOf(first);
+    const int firstId = tabs->data(tabs->index(0, 0), TabModel::TabIdRole).toInt();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    QTest::mouseMove(&window, grab + QPoint(first->property("holdTolerance").toInt() / 2, 2));
+    QTRY_VERIFY(first->property("held").toBool());
+    const QPoint target = centreOf(cells().last());
+    QTest::mouseMove(&window, (grab + target) / 2);
+    QTest::mouseMove(&window, target);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, target);
+    QCOMPARE(tabs->data(tabs->index(1, 0), TabModel::TabIdRole).toInt(), firstId);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Slid to the left, a cell closes its tab -- slanting as a thumb does, too: the
+    // grid would take a slide that drifted down by its drag distance before it had
+    // gone across by the hold's tolerance, and scroll or pull instead.
+    const int across = cells().first()->property("width").toInt() / 2;
+    const QPoint slant = centreOf(cells().first());
+    drag(&window, slant, slant + QPoint(-across, across * 3 / 5));
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    openGrid();
+    const QPoint slide = centreOf(cells().first());
+    drag(&window, slide, slide - QPoint(across, 0));
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // With more tabs than the screen holds, a drag begun on a cell scrolls the grid,
+    // and a pull back down on one scrolls it back rather than dropping the grid.
+    for (int i = 0; i < 9; ++i) {
+        tabs->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    openGrid();
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    const qreal top = grid->property("contentY").toReal();
+    const QPoint middle = centreOf(cells().at(4));
+    drag(&window, middle, middle - down);
+    QTRY_VERIFY(!grid->property("moving").toBool());
+    const qreal scrolled = grid->property("contentY").toReal();
+    QVERIFY(scrolled > top);
+    const QPoint lower = centreOf(cells().at(4)) - down / 3;
+    drag(&window, lower, lower + down / 3);
+    QTRY_VERIFY(!grid->property("moving").toBool());
+    QVERIFY(grid->property("contentY").toReal() < scrolled);
+    QVERIFY(page->property("tabsOpen").toBool());
+}
+
+// The reach above the navigation bar lies over the foot of the page, where a player
+// keeps its seek bar and its buttons. It keeps the one thing it is there for -- a drag
+// upwards, which opens the grid -- and hands the page everything else: a tap, a drag
+// sideways or down. A press held there is kept, since the handle sits in the reach.
+void tst_qmlload::barReachUnderAFinger()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *view = qobject_cast<QQuickItem *>(currentWebView());
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int inReach = int(gestureTop.y() + reach / 2);
+    const int onBar = int(gestureTop.y() + reach + gesture->property("strip").toReal() / 2);
+    const auto touches = [view]() { return view->property("touches").toList(); };
+    const auto touch = [&](int i) { return touches().at(i).toMap(); };
+    const int shake = evaluate(page, QStringLiteral("Theme.startDragDistance")).toInt();
+
+    // A tap goes down and up on the page where the finger was, in the view's own
+    // coordinates, and the view has the focus a real touch would have given it.
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(200, inReach));
+    QCOMPARE(touches().count(), 2);
+    QCOMPARE(touch(0).value(QStringLiteral("phase")).toString(), QStringLiteral("begin"));
+    QCOMPARE(touch(1).value(QStringLiteral("phase")).toString(), QStringLiteral("end"));
+    const QPointF local = view->mapFromScene(QPointF(200, inReach));
+    QCOMPARE(touch(0).value(QStringLiteral("x")).toReal(), local.x());
+    QCOMPARE(touch(0).value(QStringLiteral("y")).toReal(), local.y());
+    QVERIFY(local.y() > view->height() - reach && local.y() < view->height());
+    QVERIFY(view->hasActiveFocus());
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // A drag along a seek bar goes to the page from where it started, move by move.
+    drag(&window, QPoint(200, inReach), QPoint(700, inReach));
+    QCOMPARE(touch(2).value(QStringLiteral("phase")).toString(), QStringLiteral("begin"));
+    QCOMPARE(touch(2).value(QStringLiteral("x")).toReal(), local.x());
+    QVERIFY(touches().count() > 5);
+    QCOMPARE(touches().last().toMap().value(QStringLiteral("phase")).toString(),
+             QStringLiteral("end"));
+    QCOMPARE(touches().last().toMap().value(QStringLiteral("x")).toReal(),
+             view->mapFromScene(QPointF(700, inReach)).x());
+    QVERIFY(!page->property("tabsOpen").toBool());
+
+    // So does one downwards, and a shake smaller than a drag is still a tap.
+    int before = touches().count();
+    drag(&window, QPoint(300, int(gestureTop.y()) + 1), QPoint(300, inReach + shake));
+    QVERIFY(touches().count() > before + 2);
+    before = touches().count();
+    drag(&window, QPoint(300, inReach), QPoint(300 + shake / 2, inReach));
+    QCOMPARE(touches().count(), before + 2);
+
+    // A press held, and a tap on the bar itself, are not the page's.
+    before = touches().count();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(300, inReach));
+    QTRY_VERIFY(gesture->property("heldDown").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(300, inReach));
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(int(gesture->width()) / 2, onBar));
+    QCOMPARE(touches().count(), before);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    // On the bar itself a slow tap is a tap: the hold is the reach's alone.
+    const QPoint address(int(gesture->width()) / 2, onBar);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, address);
+    QTest::qWait(QGuiApplication::styleHints()->mousePressAndHoldInterval() + 200);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, address);
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    QCOMPARE(touches().count(), before);
+
+    // A drag upwards from the reach is still the one that opens the grid.
+    drag(&window, QPoint(540, inReach),
+         QPoint(540, inReach - 3 * page->property("pullThreshold").toInt()));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(touches().count(), before);
 }
 
 void tst_qmlload::recentlyClosedTabs()
@@ -1545,6 +1781,95 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
     QVERIFY(onLeaving != onLoad);
     QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
              onLeaving);
+}
+
+// Out of sight for a moment, every loaded page is put to sleep -- unless one is making
+// a sound -- and each wakes when its view is next on the screen. When is PageActivity's
+// to say, and tst_pageactivity tests it; this is what the browsing page does about it.
+void tst_qmlload::pagesSleepOutOfSight()
+{
+    const int firstTab = m_core->tabs()->activeTabId();
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QList<QObject *> views = findAll(QStringLiteral("webView"));
+    QCOMPARE(views.count(), 2);
+    QObject *front = currentWebView();
+    QObject *behind = views.at(0) == front ? views.at(1) : views.at(0);
+    QObject *page = find(QStringLiteral("browserPage"));
+    // Something of BrowserPage.qml's own, whose scope has the engine: the page item's
+    // is the root file's.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    Salama::PageActivity *activity = m_core->pageActivity();
+    const auto calls = [](QObject *view, const char *name) {
+        return view->property("calls").toStringList().count(QLatin1String(name));
+    };
+    const auto setState = [page](Qt::ApplicationState state) {
+        QMetaObject::invokeMethod(page, "applicationStateChanged", Q_ARG(QVariant, state));
+    };
+
+    // The engine is asked for what says a page is playing.
+    QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.observers")).toStringList(),
+             activity->topics());
+
+    // Not the moment the application is left, but a moment after: every page, the one
+    // behind the one in front as well. Until then the one in front stays active --
+    // an inactive view's document is hidden, and a hidden document's media paused.
+    QVERIFY(front->property("active").toBool());
+    QVERIFY(!behind->property("active").toBool());
+    setState(Qt::ApplicationInactive);
+    QVERIFY(activity->background());
+    QVERIFY(front->property("active").toBool());
+    QCOMPARE(calls(front, "suspendView"), 0);
+    QTRY_VERIFY(activity->asleep());
+    QVERIFY(!front->property("active").toBool());
+    QCOMPARE(calls(front, "suspendView"), 1);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    QVERIFY(front->property("suspended").toBool());
+
+    // A document that arrives while its view is asleep is put to sleep with the rest.
+    front->setProperty("loading", true);
+    front->setProperty("loading", false);
+    QCOMPARE(calls(front, "suspendView"), 3);
+
+    // Back, and a view wakes as it goes active on the screen: the one in front now, the
+    // one behind when it next comes to the front. Once each.
+    setState(Qt::ApplicationActive);
+    QVERIFY(!activity->asleep());
+    QVERIFY(front->property("active").toBool());
+    QCOMPARE(calls(front, "resumeView"), 1);
+    QVERIFY(!front->property("suspended").toBool());
+    QCOMPARE(calls(behind, "resumeView"), 0);
+    QVERIFY(behind->property("suspended").toBool());
+    // The one behind still sleeps, but a document arriving in it now is left awake:
+    // suspending a view stops the one window every view draws into, and the page on
+    // the screen with it.
+    behind->setProperty("loading", true);
+    behind->setProperty("loading", false);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    m_core->tabs()->activateTabById(firstTab);
+    QVERIFY(behind->property("active").toBool());
+    QCOMPARE(calls(behind, "resumeView"), 1);
+    QVERIFY(!behind->property("suspended").toBool());
+    // Awake, a load changes nothing.
+    front->setProperty("loading", true);
+    front->setProperty("loading", false);
+    QCOMPARE(calls(front, "suspendView"), 3);
+    m_core->tabs()->activateTabById(
+        m_core->tabs()->data(m_core->tabs()->index(1, 0), TabModel::TabIdRole).toInt());
+    QCOMPARE(currentWebView(), front);
+
+    // Something with sound playing keeps every page awake out of sight.
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
+                                   " {owner: '0x1', state: 'meta', a: 1, v: 0})"));
+    evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
+                                   " {owner: '0x1', state: 'play'})"));
+    QVERIFY(activity->audible());
+    setState(Qt::ApplicationInactive);
+    QTest::qWait(activity->settleDelay() * 3 / 2);
+    QVERIFY(!activity->asleep());
+    QVERIFY(front->property("active").toBool());
+    QCOMPARE(calls(front, "suspendView"), 3);
+    QCOMPARE(calls(behind, "suspendView"), 1);
+    setState(Qt::ApplicationActive);
 }
 
 QTEST_MAIN(tst_qmlload)

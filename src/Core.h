@@ -4,6 +4,7 @@
 
 #include "bookmarks/BookmarkModel.h"
 #include "engine/EngineMessages.h"
+#include "engine/PageActivity.h"
 #include "history/HistoryModel.h"
 #include "settings/Settings.h"
 #include "storage/Storage.h"
@@ -32,6 +33,7 @@ public:
     BookmarkModel *bookmarks();
     Settings *settings();
     EngineMessages *engineMessages();
+    PageActivity *pageActivity();
 
 private:
     Storage m_storage;
@@ -42,6 +44,7 @@ private:
     BookmarkModel m_bookmarks;
     Settings m_settings;
     EngineMessages m_engineMessages;
+    PageActivity m_pageActivity;
 };
 
 } // namespace Salama

@@ -33,7 +33,9 @@ that scrolls itself, so a stock pulley cannot be used on the browsing page. The 
 handles the drag itself, and **one `MouseArea` covering the whole bar owns every press**:
 the icons are icons, the region under the press decides what a tap means, and the same
 region drives the pressed highlight. The regions live in `regionAt()`, so they can be
-checked from the load tests, which have no window to send real presses to.
+checked from the load tests directly; what a real press on the bar and its reach does is
+checked by putting the application in a window and pressing on it
+(`tst_qmlload::barReachUnderAFinger`).
 
 The bar reports the drag as a **distance**, not as a finished gesture: `dragStarted`,
 `dragMoved(distance)`, `dragFinished(distance)`. What that distance moves, and the
@@ -48,10 +50,34 @@ screen jumping up and down for as long as the finger was held.
 The handler also **reaches above the bar**, by three quarters of
 `Theme.itemSizeExtraSmall`. The drag has to
 start somewhere the system's bottom-edge swipe has not already taken, and the bar alone
-lies in that strip. A tap in the reach does nothing — the page does not get it either,
-which is the price of the reach and the reason it is only a strip. What says the bar can
-be dragged is drawn along its top edge, inside that reach: `components/DragHandle.qml`
-(`0010-tab-grid-deck.md`).
+lies in that strip. What says the bar can be dragged is drawn along its top edge, inside
+that reach: `components/DragHandle.qml` (`0010-tab-grid-deck.md`).
+
+The reach lies over the foot of the page, and at first it kept every press there: a tap
+in it did nothing, and the page did not get it either. On device that left a media
+player's controls out of reach wherever they sat at the foot of the page — a seek bar
+runs along a player's bottom edge, and a full-screen player's bottom edge is the
+page's. So the reach **hands the page everything that is not the drag**. A press there is undecided until the finger moves or
+lifts: moved upwards past `Theme.startDragDistance` it is the drag, as before; moved
+any other way that far, or lifted without moving that far, it is the page's, and the
+browsing page gives it to the engine as the touch it would have had —
+`synthTouchBegin`, `synthTouchMove`, `synthTouchEnd`, which qtmozembed's view takes in
+its own coordinates, the ones a real touch arrives in — from where it went down. The
+view takes focus as a real touch gives it, which also ends editing the address. A
+press **held** in the reach is not handed on: the handle is in the reach, and a finger
+resting on it before it moves up is the grid's. A long press on a link in that strip is
+the price of that. On the bar itself a hold changes nothing — a slow tap on back or the
+address is still a tap — so the handler hands the held event back to `MouseArea`, which
+then raises `clicked` as though it had never been held.
+
+Detecting players instead — asking the page where its media sits, and shrinking the
+reach over one — was the other way. It needs a script run on every scroll, and it
+could only ever find the players it knows the shape of; the hand-back covers whatever
+is under the finger. Shrinking the reach alone would have given back only as much of a
+player as it gave up, and the drag would have lost the room.
+
+The handler is `components/BarGesture.qml`, the bar's own file having grown past what
+one responsibility should take.
 
 The bar is **opaque**, and the engine's view ends where the bar begins: `viewArea` is
 `fullHeight - barHeight` tall. Both of those replace a translucent bar that lay over the
