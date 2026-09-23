@@ -31,7 +31,11 @@ class Settings : public QObject
     Q_PROPERTY(int liveTabLimitIndex READ liveTabLimitIndex WRITE setLiveTabLimitIndex NOTIFY
                    liveTabLimitChanged)
     Q_PROPERTY(QVariantList liveTabLimitChoices READ liveTabLimitChoices CONSTANT)
-    // How the reader view sets an article (docs/DECISIONS/0023-reader-view.md).
+    // How much of the engine's own anti-tracking is switched on; a TrackingProtection
+    // value (docs/DECISIONS/0023-tracking-protection.md).
+    Q_PROPERTY(int trackingProtection READ trackingProtection WRITE setTrackingProtection NOTIFY
+                   trackingProtectionChanged)
+    // How the reader view sets an article (docs/DECISIONS/0024-reader-view.md).
     Q_PROPERTY(int readerColors READ readerColors WRITE setReaderColors NOTIFY readerColorsChanged)
     Q_PROPERTY(
         int readerTypeface READ readerTypeface WRITE setReaderTypeface NOTIFY readerTypefaceChanged)
@@ -54,6 +58,18 @@ public:
         CoverEveryTab = 2
     };
     Q_ENUM(CoverStyle)
+
+    // Firefox's Enhanced Tracking Protection categories, less protection first, with
+    // Off in place of Custom. Stored, so the numbers are part of the file format, and
+    // unscoped for the reason CoverStyle is. What each asks of the engine is
+    // EngineMessages::trackingProtectionPreferences().
+    enum TrackingProtection
+    {
+        TrackingProtectionOff = 0,
+        TrackingProtectionStandard = 1,
+        TrackingProtectionStrict = 2
+    };
+    Q_ENUM(TrackingProtection)
 
     // The reader view's colours: the ambience's own, light or dark as it is, or one of
     // Firefox's reader themes whatever the ambience. Stored, like CoverStyle, and
@@ -116,6 +132,11 @@ public:
     QVariantList liveTabLimitChoices() const;
     static int defaultLiveTabLimit();
 
+    // Standard unless changed, as in Firefox. Out of range reads back as the default,
+    // like coverStyle.
+    int trackingProtection() const;
+    void setTrackingProtection(int level);
+
     // Out-of-range values read back as the defaults, as coverStyle's do.
     int readerColors() const;
     void setReaderColors(int colors);
@@ -140,6 +161,7 @@ signals:
     void cutoutGuardChanged();
     void coverStyleChanged();
     void liveTabLimitChanged();
+    void trackingProtectionChanged();
     void readerColorsChanged();
     void readerTypefaceChanged();
     void readerTextSizeChanged();

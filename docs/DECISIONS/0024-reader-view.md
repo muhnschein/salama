@@ -1,4 +1,4 @@
-# 0023 — The reader view is Firefox's, run in the page
+# 0024 — The reader view is Firefox's, run in the page
 
 ## Context
 Firefox and Mobile Safari both offer a page's article alone — its title, its byline and
@@ -86,6 +86,10 @@ page's own pinch zoom still works. Only `http` and `https` pages are offered one
 
 The article's pictures are fetched by a document with no origin of its own, so without a
 referrer; a site that refuses pictures to requests without one shows none.
+
+What the reader view needs of the browsing page is two lines on each view, the rest being
+`components/ReaderMode.qml`. With them, and tracking protection (0023), the page is at the
+600-line ceiling 0010 sets; the next thing it gains wants the split 0010 names first.
 
 Readability is refreshed by copying the four files from a newer commit and updating
 `UPSTREAM`; `tests/tst_reader.cpp` checks that the scripts carry the files as they are.

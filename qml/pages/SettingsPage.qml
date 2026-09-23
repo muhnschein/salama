@@ -96,7 +96,7 @@ Page {
 
             // How the reader view sets an article, as Firefox's reader view offers it:
             // its colours, typeface and text size, each index or value the stored one
-            // (docs/DECISIONS/0023-reader-view.md). A reader view on the screen follows
+            // (docs/DECISIONS/0024-reader-view.md). A reader view on the screen follows
             // them at once.
             SectionHeader {
                 text: qsTr("Reader view")
@@ -156,6 +156,41 @@ Page {
                 valueText: qsTr("%1 %").arg(Math.round(100 * (10 + 2 * value)
                                                        / (10 + 2 * Settings.ReaderTextSizeDefault)))
                 onValueChanged: Settings.readerTextSize = Math.round(value)
+            }
+
+            SectionHeader {
+                text: qsTr("Privacy")
+            }
+
+            // Firefox's tracking protection categories, least first, with Off in place
+            // of Custom; the index is the stored value -- Settings.TrackingProtectionOff,
+            // TrackingProtectionStandard, TrackingProtectionStrict
+            // (docs/DECISIONS/0023-tracking-protection.md). The description promises
+            // only what every engine this runs on does.
+            ComboBox {
+                objectName: "trackingProtectionCombo"
+                width: parent.width
+                label: qsTr("Tracking protection")
+                description: currentIndex === Settings.TrackingProtectionOff
+                             ? qsTr("Sites can follow you from one to another")
+                             : currentIndex === Settings.TrackingProtectionStrict
+                               ? qsTr("Stops more tracking, and can break some sites")
+                               : qsTr("Stops sites following you with cookies")
+                currentIndex: Settings.trackingProtection
+                menu: ContextMenu {
+                    MenuItem {
+                        text: qsTr("Off")
+                    }
+
+                    MenuItem {
+                        text: qsTr("Standard")
+                    }
+
+                    MenuItem {
+                        text: qsTr("Strict")
+                    }
+                }
+                onCurrentIndexChanged: Settings.trackingProtection = currentIndex
             }
 
             SectionHeader {

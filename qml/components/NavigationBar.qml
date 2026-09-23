@@ -33,7 +33,7 @@ Item {
     // certificate, protocol and mixed content. sailfish-browser reads the same two,
     // and only for https. Not for a reader view, whose address is the article's but
     // whose document is one of this application's, and came over no connection at all
-    // (docs/DECISIONS/0023-reader-view.md).
+    // (docs/DECISIONS/0024-reader-view.md).
     readonly property bool tlsBroken: {
         if (!view || url.indexOf("https://") !== 0 || (view.reader && view.reader.active)) {
             return false

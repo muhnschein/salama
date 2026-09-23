@@ -17,6 +17,7 @@ const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
 const char *const LiveTabLimitKey = "liveTabLimit";
+const char *const TrackingProtectionKey = "trackingProtection";
 const char *const ReaderColorsKey = "readerColors";
 const char *const ReaderTypefaceKey = "readerTypeface";
 const char *const ReaderTextSizeKey = "readerTextSize";
@@ -227,6 +228,26 @@ QVariantList Settings::liveTabLimitChoices() const
         choices.append(limit);
     }
     return choices;
+}
+
+int Settings::trackingProtection() const
+{
+    const int stored =
+        m_settings.value(QLatin1String(TrackingProtectionKey), TrackingProtectionStandard).toInt();
+    if (stored < TrackingProtectionOff || stored > TrackingProtectionStrict) {
+        return TrackingProtectionStandard;
+    }
+    return stored;
+}
+
+void Settings::setTrackingProtection(int level)
+{
+    if (level < TrackingProtectionOff || level > TrackingProtectionStrict ||
+        level == trackingProtection()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(TrackingProtectionKey), level);
+    emit trackingProtectionChanged();
 }
 
 int Settings::readerColors() const

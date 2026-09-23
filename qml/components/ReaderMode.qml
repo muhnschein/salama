@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // One page's reader view: whether the page in the view reads as an article, and the
-// way into its reader view and back out (docs/DECISIONS/0023-reader-view.md).
+// way into its reader view and back out (docs/DECISIONS/0024-reader-view.md).
 //
 // As Firefox has it: Readability decides after each load whether the page is worth
 // offering, and reading it is a page of its own in the view's history, so back leaves
@@ -35,7 +35,8 @@ QtObject {
     onDarkAmbienceChanged: restyle()
 
     // The view is somewhere new: a reader view, or a page to be looked at afresh once it
-    // has loaded. One that changes its address without loading is looked at now.
+    // has loaded -- or now, if it changed its address without loading. Answers the
+    // address the tab keeps for it: the article's own, for its reader view.
     function follow(url) {
         source = Reader.sourceUrl(url)
         readerable = false
@@ -43,6 +44,7 @@ QtObject {
         if (view && !view.loading) {
             check()
         }
+        return active ? source : String(url)
     }
 
     // Whether the page is worth offering the reader view of, as Firefox asks after every
@@ -123,5 +125,15 @@ QtObject {
     property Connections settings: Connections {
         target: Reader
         onStyleChanged: reader.restyle()
+    }
+
+    // Looked at again after every load, as Firefox looks.
+    property Connections loads: Connections {
+        target: reader.view
+        onLoadingChanged: {
+            if (!reader.view.loading) {
+                reader.check()
+            }
+        }
     }
 }

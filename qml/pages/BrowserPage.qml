@@ -239,9 +239,24 @@ WebViewPage {
         return WebEngineSettings.pixelRatio
     }
 
+    // The engine's own anti-tracking, at the level Settings holds
+    // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
+    // keeps until it is up, and again whenever the level changes.
+    function applyTrackingProtection() {
+        var preferences = EngineMessages.trackingProtectionPreferences(Settings.trackingProtection)
+        for (var i = 0; i < preferences.length; ++i) {
+            WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
+        }
+    }
+
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
+    }
+
+    Connections {
+        target: Settings
+        onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 
     Connections {
@@ -274,6 +289,7 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }
@@ -546,17 +562,11 @@ WebViewPage {
                 }, Qt.size(width / 2, height / 2))
             }
 
-            // What the page is, and whether it reads as an article; and while it is
-            // the reader view of one, the article's own address is the tab's
-            // (docs/DECISIONS/0023-reader-view.md).
-            property ReaderMode reader: ReaderMode {
-                view: webView
-            }
+            // Whether the page reads as an article, and the article's own address while
+            // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
+            property ReaderMode reader: ReaderMode { view: webView }
 
-            onUrlChanged: {
-                reader.follow(url)
-                TabModel.updateUrl(tabId, reader.active ? reader.source : url)
-            }
+            onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 // What sleeps is a document, and one that arrives while its view is
@@ -579,7 +589,6 @@ WebViewPage {
                     fetchFavicon()
                     fetchThemeColor()
                     captureThumbnail()
-                    reader.check()
                 }
             }
             Component.onCompleted: {

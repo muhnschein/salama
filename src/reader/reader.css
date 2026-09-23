@@ -7,7 +7,7 @@
  * Firefox's own chrome taken out -- the toolbar and its popups, the high-contrast and
  * custom themes, print rules -- and the design tokens it reads from chrome:// written
  * in as values. The article rules are Firefox's as they stand. What changed, and why,
- * is in docs/DECISIONS/0023-reader-view.md.
+ * is in docs/DECISIONS/0024-reader-view.md.
  *
  * Avoid adding ID selector rules in this style sheet, since they could
  * inadvertently match elements in the article content. */

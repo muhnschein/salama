@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariant>
+#include <QVariantList>
 #include <QVariantMap>
 
 namespace Salama {
@@ -91,6 +92,16 @@ public:
     // FIND_PENDING 3 (gecko-dev toolkit/components/typeaheadfind/nsITypeAheadFind.idl).
     // An answer that carries no number says nothing was found.
     Q_INVOKABLE static bool findFound(const QVariant &data);
+
+    // What the engine is told for a level of Settings::TrackingProtection: a list of
+    // {name, value}, each for WebEngineSettings.setPreference(). Every level names the
+    // same preferences in the same order, so a move between levels leaves nothing of
+    // the last one in the profile. Standard and Strict are Firefox's own categories
+    // (browser/components/protections/ContentBlockingPrefs.sys.mjs), Off is the
+    // engine's defaults, and a level out of range is Standard. Trackers are blocked
+    // through the content classifier, the one list-driven path this embedding keeps
+    // fed (docs/DECISIONS/0023-tracking-protection.md).
+    Q_INVOKABLE static QVariantList trackingProtectionPreferences(int level);
 };
 
 } // namespace Salama

@@ -25,7 +25,7 @@ DockedPanel {
     // The page in front, which the second row acts on, or null while it is made.
     property Item view: null
     readonly property bool hasPage: TabModel.activeUrl.length > 0
-    // The page in front's reader view (docs/DECISIONS/0023-reader-view.md).
+    // The page in front's reader view (docs/DECISIONS/0024-reader-view.md).
     readonly property QtObject reader: view !== null && view.reader ? view.reader : null
     // How far a finger has the sheet pulled down past where it sits open, and how far
     // letting go puts it away rather than back: DockedPanel's own distance, a third of

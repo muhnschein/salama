@@ -13,7 +13,7 @@ namespace Salama {
 class Settings;
 
 // The reader view: a page's article alone, set the way Firefox's reader view sets it
-// (docs/DECISIONS/0023-reader-view.md).
+// (docs/DECISIONS/0024-reader-view.md).
 //
 // Firefox runs Mozilla's Readability over the page, and shows what it finds in a page
 // of its own, about:reader, styled by aboutReader.css. The same two halves here: the

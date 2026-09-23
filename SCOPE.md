@@ -26,7 +26,7 @@ No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulato
 - Any language other than QML and C++. The scripts the engine runs in a page are the web
   platform's, not the application's: the favicon and theme-colour lookups, and the reader
   view's Readability, which is Mozilla's, verbatim, in `third_party/`
-  (`docs/DECISIONS/0023-reader-view.md`).
+  (`docs/DECISIONS/0024-reader-view.md`).
 
 ## 4. Constraints
 
@@ -74,7 +74,7 @@ Reuse policy:
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
-- Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows
+- Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows, tracking protection level
 - Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
@@ -148,7 +148,7 @@ Not maintained: design narratives, roadmaps beyond this file, tutorials, marketi
 ## 9. Verify before Phase 1
 
 1. `sdk-harbour-rpmvalidator` rules on `MimeType=` and `x-scheme-handler` in `.desktop` files.
-2. `WebEngineSettings` support for UA switching and tracking-protection flags on the 5.2 engine.
+2. `WebEngineSettings` support for UA switching and tracking-protection flags on the 5.2 engine. Tracking protection: engine preferences through `setPreference`; list blocking only on ESR 153 (`docs/DECISIONS/0023-tracking-protection.md`).
 3. Download ownership when the app is not the default browser.
 5. Which Sailjail permissions the WebView needs for downloads and pickers.
 
