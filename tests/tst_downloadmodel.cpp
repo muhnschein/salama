@@ -23,6 +23,7 @@ private slots:
     void startsAtTheTop();
     void nameFallsBackToTheFile();
     void progress();
+    void wholeNumbers();
     void done();
     void failAndCancel();
     void restart();
@@ -42,7 +43,7 @@ const QString Topic = QStringLiteral("embed:download");
 const QString Downloads = QStringLiteral("/home/defaultuser/Downloads/");
 
 // What EmbedliteDownloadManager.js sends as a download starts, as qtmozembed hands it
-// over once the JSON is read: every number a double.
+// over once the device's Qt 5.6 has read the JSON: every number a double.
 QVariantMap startMessage(int id, const QString &file)
 {
     return {
@@ -186,6 +187,11 @@ void tst_downloadmodel::startsAtTheTop()
     negative.insert(QStringLiteral("size"), -5.0);
     model.observe(Topic, negative);
     QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 0LL);
+    // Nor is a size that is not a number, though QVariant would read one out of it.
+    QVariantMap spelled = startMessage(5, QStringLiteral("e.bin"));
+    spelled.insert(QStringLiteral("size"), QStringLiteral("2048"));
+    model.observe(Topic, spelled);
+    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 0LL);
 }
 
 void tst_downloadmodel::nameFallsBackToTheFile()
@@ -237,12 +243,55 @@ void tst_downloadmodel::progress()
     QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 67);
     QCOMPARE(changeSpy.count(), 5);
 
-    // A message with no figure in it says nothing.
+    // A message with no figure in it says nothing; nor does one whose figure is not a
+    // number, though QVariant would read 42 out of the one and 1 out of the other.
     model.observe(Topic, progressMessage(1, QStringLiteral("most of it")));
     model.observe(Topic, progressMessage(1, QVariant()));
     model.observe(Topic, message(QStringLiteral("dl-progress"), 1));
+    model.observe(Topic, progressMessage(1, QStringLiteral("42")));
+    model.observe(Topic, progressMessage(1, true));
     QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 67);
     QCOMPARE(changeSpy.count(), 5);
+}
+
+// The same messages with their whole numbers as other readers give them: a qlonglong,
+// as Qt reads the engine's JSON from 5.15 on, and an int, as QML hands one over.
+void tst_downloadmodel::wholeNumbers()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage);
+
+    QVariantMap start = startMessage(1, QStringLiteral("a.iso"));
+    start.insert(QStringLiteral("id"), QVariant(1LL));
+    start.insert(QStringLiteral("size"), QVariant(5000000000LL));
+    model.observe(Topic, start);
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 5000000000LL);
+    QVariantMap progress = progressMessage(1, QVariant(40LL));
+    progress.insert(QStringLiteral("id"), QVariant(1LL));
+    model.observe(Topic, progress);
+    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 40);
+
+    const QVariantMap fromQml{
+        {QStringLiteral("msg"), QStringLiteral("dl-start")},
+        {QStringLiteral("id"), 2},
+        {QStringLiteral("displayName"), QStringLiteral("b.pdf")},
+        {QStringLiteral("size"), 10},
+    };
+    model.observe(Topic, fromQml);
+    QCOMPARE(model.count(), 2);
+    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 10LL);
+    model.observe(Topic, QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-progress")},
+                                     {QStringLiteral("id"), 2},
+                                     {QStringLiteral("percent"), 55}});
+    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 55);
+    model.observe(Topic, QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-done")},
+                                     {QStringLiteral("id"), 2}});
+    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+             static_cast<int>(DownloadModel::Done));
+    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+             static_cast<int>(DownloadModel::Running));
 }
 
 void tst_downloadmodel::done()
@@ -364,9 +413,13 @@ void tst_downloadmodel::ignoresWhatItDoesNotKnow()
     model.observe(Topic, QVariant());
     model.observe(Topic, QStringLiteral("dl-start"));
     model.observe(Topic, QVariantList{1, 2});
-    // Starts without an id the engine would give.
+    // Starts without an id the engine would give -- among them ones QVariant would read
+    // an id out of: 1 from true and from a string, 1 rounded from 1.4, and a number
+    // past what an int holds.
     for (const QVariant &id :
-         {QVariant(), QVariant(0.0), QVariant(-2.0), QVariant(QStringLiteral("first"))}) {
+         {QVariant(), QVariant(0.0), QVariant(-2.0), QVariant(QStringLiteral("first")),
+          QVariant(true), QVariant(QStringLiteral("1")), QVariant(1.4), QVariant(3e9),
+          QVariant(qQNaN())}) {
         QVariantMap start = startMessage(1, QStringLiteral("a.pdf"));
         start.insert(QStringLiteral("id"), id);
         model.observe(Topic, start);
@@ -389,6 +442,12 @@ void tst_downloadmodel::ignoresWhatItDoesNotKnow()
     model.observe(Topic, message(QStringLiteral("dl-pause"), 1));
     model.observe(Topic, message(QString(), 1));
     model.observe(Topic, message(QStringLiteral("retryDownload"), 1));
+    // Nor does a message reach it by something QVariant would read its id out of.
+    for (const QVariant &id : {QVariant(true), QVariant(QStringLiteral("1")), QVariant(1.4)}) {
+        QVariantMap fail = message(QStringLiteral("dl-fail"), 1);
+        fail.insert(QStringLiteral("id"), id);
+        model.observe(Topic, fail);
+    }
     QCOMPARE(model.count(), 1);
     QCOMPARE(changeSpy.count(), 0);
     QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),

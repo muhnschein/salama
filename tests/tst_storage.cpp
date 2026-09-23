@@ -281,8 +281,7 @@ void tst_storage::addsDownloadsToSchemaSix()
 
     Storage storage(dir.path());
     QVERIFY(storage.isOpen());
-    QCOMPARE(storage.userVersion(), 7);
-    QCOMPARE(Storage::SchemaVersion, 7);
+    QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
     QVERIFY(tableNames(storage).contains(QStringLiteral("download")));
 
     QSqlQuery query(storage.database());
@@ -314,7 +313,7 @@ void tst_storage::addsDownloadsToSchemaSix()
     // And opening it again finds nothing left to do.
     Storage again(dir.path());
     QVERIFY(again.isOpen());
-    QCOMPARE(again.userVersion(), 7);
+    QCOMPARE(again.userVersion(), Storage::SchemaVersion);
 }
 
 void tst_storage::defaultPaths()

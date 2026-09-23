@@ -37,7 +37,6 @@ class Storage;
 // The id is the engine's, counted from 1 each time the engine starts, so it names a
 // download only for as long as this process runs; the rows carry an id of their own,
 // which lasts. A dl-start for an id already seen is the same download started again.
-// A page saved as PDF arrives the same way, and is a file in Downloads like any other.
 class DownloadModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -82,7 +81,8 @@ public:
 
     // What WebEngine.recvObserve() delivered: the data is the engine's JSON, already
     // read into a map (qtmozembed src/qmozcontext.cpp). Any other topic, a message it
-    // does not know, and an id it has not seen start are ignored.
+    // does not know, and an id it has not seen start are ignored, and so is an id or a
+    // percentage that is not a number as the engine sends one (engine/EngineData.h).
     Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
 
     // Forget rows. The files stay where they are.

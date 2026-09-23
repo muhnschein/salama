@@ -72,7 +72,8 @@ void tst_enginemessages::findFound_data()
     QTest::addColumn<QVariant>("data");
     QTest::addColumn<bool>("expected");
     const QString r = QStringLiteral("r");
-    // JSON has one kind of number, so the engine's answer arrives as a double.
+    // JSON has one kind of number, and the device's Qt 5.6 reads every one as a
+    // double, so that is how the engine's answer arrives.
     QTest::newRow("found") << QVariant(QVariantMap{{r, 0.0}}) << true;
     QTest::newRow("not found") << QVariant(QVariantMap{{r, 1.0}}) << false;
     QTest::newRow("wrapped") << QVariant(QVariantMap{{r, 2.0}}) << true;
@@ -81,6 +82,15 @@ void tst_enginemessages::findFound_data()
     QTest::newRow("found int") << QVariant(QVariantMap{{r, 0}}) << true;
     QTest::newRow("wrapped int") << QVariant(QVariantMap{{r, 2}}) << true;
     QTest::newRow("not found int") << QVariant(QVariantMap{{r, 1}}) << false;
+    // Qt reads a whole number in JSON as a qlonglong from 5.15 on.
+    QTest::newRow("found longlong") << QVariant(QVariantMap{{r, 0LL}}) << true;
+    QTest::newRow("wrapped longlong") << QVariant(QVariantMap{{r, 2LL}}) << true;
+    QTest::newRow("pending longlong") << QVariant(QVariantMap{{r, 3LL}}) << false;
+    // Nothing is known to hand over an unsigned number, but it is a number all the same.
+    QTest::newRow("wrapped uint") << QVariant(QVariantMap{{r, 2U}}) << true;
+    QTest::newRow("not found uint") << QVariant(QVariantMap{{r, 1U}}) << false;
+    QTest::newRow("found ulonglong") << QVariant(QVariantMap{{r, 0ULL}}) << true;
+    QTest::newRow("not found ulonglong") << QVariant(QVariantMap{{r, 1ULL}}) << false;
     QTest::newRow("unknown") << QVariant(QVariantMap{{r, 7.0}}) << false;
     QTest::newRow("fraction") << QVariant(QVariantMap{{r, 0.5}}) << false;
     QTest::newRow("missing") << QVariant(QVariantMap{}) << false;

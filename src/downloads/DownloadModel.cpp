@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "DownloadModel.h"
 
+#include "engine/EngineData.h"
 #include "storage/Storage.h"
 
 #include <QDateTime>
@@ -106,9 +107,8 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
         return;
     }
     const QVariantMap message = data.toMap();
-    bool ok = false;
-    const int engineId = message.value(QStringLiteral("id")).toInt(&ok);
-    if (!ok || engineId <= 0) {
+    const int engineId = EngineData::id(message.value(QStringLiteral("id")));
+    if (engineId == 0) {
         return;
     }
     const QString msg = message.value(QStringLiteral("msg")).toString();
@@ -184,8 +184,10 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     }
     download.url = message.value(QStringLiteral("sourceUrl")).toString();
     download.mimeType = message.value(QStringLiteral("mimeType")).toString();
-    // The engine's totalBytes, which is 0 while the size is not known.
-    download.size = std::max<qint64>(0, message.value(QStringLiteral("size")).toLongLong());
+    // The engine's totalBytes, which is 0 while the size is not known; a size that is
+    // not a number says no more than that.
+    const QVariant size = message.value(QStringLiteral("size"));
+    download.size = EngineData::isNumber(size) ? std::max<qint64>(0, size.toLongLong()) : 0;
     download.status = Running;
     download.started = QDateTime::currentMSecsSinceEpoch();
 
@@ -202,14 +204,12 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
 {
-    bool ok = false;
-    const double value = percent.toDouble(&ok);
-    if (!ok) {
+    if (!EngineData::isNumber(percent)) {
         return;
     }
     // Bounded as a double, before rounding: a number past what an int holds has no
     // int to round to.
-    const int progress = qRound(qBound(0.0, value, 100.0));
+    const int progress = qRound(qBound(0.0, percent.toDouble(), 100.0));
     Download &download = m_downloads[row];
     if (download.progress == progress) {
         return;

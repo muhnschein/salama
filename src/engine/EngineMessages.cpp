@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "EngineMessages.h"
 
+#include "EngineData.h"
+
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
@@ -18,15 +20,6 @@ bool isWebScheme(const QString &scheme)
 // nsITypeAheadFind's answers that mean the text is on the page.
 const int FindFound = 0;
 const int FindWrapped = 2;
-
-// A number, as JSON gives one -- a double -- or as QML may hand one over. Asked by type
-// because QVariant would read a number out of a string, or out of false.
-bool isNumber(const QVariant &value)
-{
-    const int type = value.userType();
-    return type == QMetaType::Double || type == QMetaType::Int || type == QMetaType::UInt ||
-           type == QMetaType::LongLong || type == QMetaType::ULongLong;
-}
 
 } // namespace
 
@@ -154,7 +147,7 @@ QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool ba
 bool EngineMessages::findFound(const QVariant &data)
 {
     const QVariant result = data.toMap().value(QStringLiteral("r"));
-    if (!isNumber(result)) {
+    if (!EngineData::isNumber(result)) {
         return false;
     }
     const double value = result.toDouble();
