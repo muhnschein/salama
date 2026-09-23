@@ -9,8 +9,8 @@ D-Bus. Sailjail lets **only the platform's own applications' profiles** make tha
 Harbour application may ask for grants it. The list would not hold this browser's
 downloads in any case: its entries are made by sailfish-browser itself
 (`apps/core/downloadmanager.cpp`), from the engine's `embed:download` notifications, and
-sailfish-components-webview makes none for the other applications that embed the engine. SCOPE.md's "Downloads via platform
-transfer UI" had no list behind it.
+sailfish-components-webview makes none for the other applications that embed the engine.
+SCOPE.md's "Downloads via platform transfer UI" had no list behind it.
 
 ## Decision
 `DownloadModel` (`src/downloads/`) listens to the same notifications, which

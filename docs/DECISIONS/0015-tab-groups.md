@@ -46,16 +46,16 @@ closes its tabs, moving the current group to a neighbour first, so that whoever 
 
 The **strip** (`components/TabGroupStrip.qml`) replaced the "*n* tabs" label in the
 grid's head row, and has since moved to the **foot** row, centred on the screen with the
-edit button in its left corner (below). It is Silica's own `TabBar` geometry rebuilt from public API, the way
-vuo rebuilds it: a `Flickable` over a `Row` of buttons, each its name's width plus
-`Theme.paddingLarge` either side, the current name in the highlight colour with a
-`Theme._lineWidth` underline exactly as wide as the name, the first and last button
-taking the slack so a row that fits is centred, and the current button kept in the
-middle when it does not. `TabBar` itself lives in `Sailfish.Silica.private` and works
-only inside a `TabView`, neither of which a Harbour application may have. A tap chooses
-a group. The first strip was a snapping `ListView` with each item half the width, whose
-flick chose the group; it was too sparse to read as a row of names, and the view's own
-writes to `currentIndex` during layout chose groups nobody had asked for. Small type,
+edit button in its left corner (below). It is Silica's own `TabBar` geometry rebuilt from
+public API, the way vuo rebuilds it: a `Flickable` over a `Row` of buttons, each its
+name's width plus `Theme.paddingLarge` either side, the current name in the highlight
+colour with a `Theme._lineWidth` underline exactly as wide as the name, the first and
+last button taking the slack so a row that fits is centred, and the current button kept
+in the middle when it does not. `TabBar` itself lives in `Sailfish.Silica.private` and
+works only inside a `TabView`, neither of which a Harbour application may have. A tap
+chooses a group. The first strip was a snapping `ListView` with each item half the width,
+whose flick chose the group; it was too sparse to read as a row of names, and the view's
+own writes to `currentIndex` during layout chose groups nobody had asked for. Small type,
 because the strip sits over the grid rather than at the head of a page. The edit button
 in its left corner pushes `pages/TabGroupsPage.qml`; the search button, in the right
 corner of the head row, pushes `pages/TabSearchPage.qml`. Both are pages over the grid,

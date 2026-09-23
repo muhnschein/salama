@@ -18,5 +18,6 @@ topics and parses their payloads (`0020-pages-sleep-out-of-sight.md`), and
 numbers in those payloads are read is `src/engine/EngineData`'s, for both.
 
 ## Consequences
-A change in the engine touches the class that reads what changed, and its unit test. Linking `libsailfishwebengine`
-from C++ was rejected because it would need another host stub for no gain.
+A change in the engine touches the class that reads what changed, and its unit test.
+Linking `libsailfishwebengine` from C++ was rejected because it would need another host
+stub for no gain.
