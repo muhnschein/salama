@@ -16,9 +16,10 @@ class Storage;
 // The browser's own list of downloads, newest first.
 //
 // The platform keeps a list of transfers, Settings > Transfers, but it is not this
-// application's to use. A Harbour application under Sailjail may not open it: only
-// sailfish-browser's own profile may call com.jolla.settings.ui.showTransfers
-// (sailjail-permissions permissions/sailfish-browser.profile). And nothing would be in
+// application's to use. A Harbour application under Sailjail may not open it: only the
+// platform's own applications' profiles may call com.jolla.settings.ui.showTransfers
+// (sailjail-permissions permissions/sailfish-browser.profile, jolla-contacts.profile),
+// and no permission a Harbour application may ask for grants it. And nothing would be in
 // it if it could: nothing registers a Sailfish.WebView application's downloads there.
 // sailfish-browser creates those transfers itself, in apps/core/downloadmanager.cpp,
 // from the engine's "embed:download" observer notifications, which

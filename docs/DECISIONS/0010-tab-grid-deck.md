@@ -115,8 +115,10 @@ same number upstream writes as `12 * Theme.pixelRatio`.
 
 ### Every drag up or down is the grid's
 The grid is pulled back, and scrolled, from **anywhere on it**: a cell, the gaps between
-cells, the row of groups, the foot row. The cells do not keep a press for themselves
-while a hold is still forming, and that is a rule of Qt's, not a preference.
+cells, the head row. The foot row hands its presses to the grid as well, but a pull begun
+there has too little screen below it to go past the threshold. The cells do not keep a
+press for themselves while a hold is still forming, and that is a rule of Qt's, not a
+preference.
 
 The build that introduced the hold did keep it: `preventStealing` was up from the press,
 so that a thumb drifting while it held would not hand the grid a scroll before the hold

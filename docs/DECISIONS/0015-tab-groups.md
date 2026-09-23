@@ -70,8 +70,9 @@ through three functions — `carryOver()` while the finger moves, `dropTab()` as
 the cells hidden under it. The current group is never lit: the tab is in it already. Names
 scrolled out of the strip are not targets either. The move itself waits a turn of the event
 loop: made at once, it takes the carried cell out of the grid while that cell's own release
-handler is still running, and Qt does not survive the cell going from under it — which the
-real-finger test (`tst_qmlload::carryToGroupUnderAFinger`) found. Carrying the tab in front
+handler is still running, the cell's context is cleared under it, and the rest of the
+handler fails with a TypeError — which the real-finger test
+(`tst_qmlload::carryToGroupUnderAFinger`) found, and now fails on. Carrying the tab in front
 takes the grid with it, since the tab in front is always in the group the grid shows; any
 other tab leaves the grid where it is, one cell the fewer. The row is Silica's `TabBar`
 turned into a place to put things, which Silica has no model for; the strip does not

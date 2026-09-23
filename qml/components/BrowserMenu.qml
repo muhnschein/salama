@@ -79,6 +79,7 @@ DockedPanel {
         }
 
         Grid {
+            objectName: "menuTabsRow"
             width: parent.width
             columns: 4
 
@@ -99,6 +100,7 @@ DockedPanel {
         }
 
         Grid {
+            objectName: "menuPageRow"
             width: parent.width
             columns: 4
 
@@ -171,6 +173,7 @@ DockedPanel {
         }
 
         Grid {
+            objectName: "menuBrowserRow"
             width: parent.width
             columns: 4
 

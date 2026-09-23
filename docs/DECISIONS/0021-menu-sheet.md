@@ -20,12 +20,13 @@ page in its desktop version) is drawn in the highlight colour while it is on. Ea
 does what it says and puts the sheet away; the browser's own pages are pushed over the
 browsing page, which stays where it was under them.
 
-The icons are the theme's, by the names sailfish-browser gives the same entries
-(`apps/browser/qml/pages/components/PopUpMenuItem.qml`): `icon-m-tab-new`,
-`icon-m-search-on-page`, `icon-m-favorite` and `-selected`, `icon-m-share`,
-`icon-m-computer`, `icon-m-history`, `icon-m-downloads`, `icon-m-setting`. The host tests
-draw nothing, so a name that is not in the device's theme would pass them; names a Jolla
-application ships with are the best evidence available off the device.
+The icons are the theme's, by the names sailfish-browser gives the same entries in
+`apps/browser/qml/pages/components/PopUpMenuItem.qml`: `icon-m-tab-new`,
+`icon-m-search-on-page`, `icon-m-share`, `icon-m-computer`, `icon-m-favorite-selected`
+(Bookmarks), `icon-m-history`, `icon-m-downloads`, `icon-m-setting`; and in
+`PopUpMenuFooter.qml` beside it, `icon-m-favorite` and `-selected` for bookmarking the
+page. The host tests draw nothing, so a name that is not in the device's theme would pass
+them; names a Jolla application ships with are the best evidence available off the device.
 
 Opening the menu **ends editing the address**: the sheet comes up where the keyboard would
 be sitting over it. **Another page in front** — the cover's new tab, say — puts the sheet
@@ -52,8 +53,11 @@ own; qtmozembed hands it to the engine, which loads the page again as a desktop 
 would be sent it. The switch is on while the page in front is in its desktop version,
 whether it got there by the switch or by the setting every page starts from, and the choice
 is that view's alone. The view keeps it for as long as it lives: one given up past the limit
-of loaded pages (0016) comes back as Settings says. sailfish-browser keeps it with the tab
-in its database; here that would be a schema change for a choice most pages are asked once.
+of loaded pages (0016) comes back as Settings says. sailfish-browser keeps it on its tab in
+memory (`Tab::m_desktopMode`, `apps/storage/tab.h`) and hands it to the page it makes again
+(`apps/qtmozembed/declarativewebpage.cpp`); here that would be a role on the tab model and
+the browsing page handing it back, for a page asked for its desktop version and then
+unloaded, which is rare.
 
 **Downloads** is the browser's own list of them (0022).
 
@@ -72,7 +76,7 @@ stays under the 600 lines 0010 allows it: 599. The next thing it needs has to co
 it first, as 0010 says.
 
 `tests/tst_qmlload.cpp` drives the sheet, the find bar and their pages by `objectName`
-(`browserMenu`, `findInPage`); the WebView stub records what is sent to the page and which
+(`browserMenu`, `findBar`); the WebView stub records what is sent to the page and which
 names it listens for, and a test raises the page's reply. Whether the icons are the right
 ones, whether a match is marked and scrolled to, and whether a page comes back in its
 desktop version are device checks (`docs/TESTING.md`).

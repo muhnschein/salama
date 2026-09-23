@@ -96,8 +96,8 @@ Item {
 
     // The move itself waits for the finger's release to be over. Made at once, it
     // takes the carried cell out of the grid -- the tab is not in this group any more
-    // -- while the cell's own handler is still running, and the cell is gone from
-    // under it.
+    // -- while the cell's own handler is still running, and the rest of the handler
+    // finds its context cleared under it.
     Timer {
         id: dropMove
 

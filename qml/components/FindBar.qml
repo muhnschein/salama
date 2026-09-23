@@ -105,6 +105,11 @@ Rectangle {
             right: previousButton.left
             leftMargin: Theme.paddingMedium
             verticalCenter: parent.verticalCenter
+            // Its text on the line the address field's is on: Silica lays a field out
+            // with room for its label and underline, and says how far off centre that
+            // leaves the text.
+            verticalCenterOffset: field.textVerticalCenterOffset === undefined
+                                  ? 0 : field.textVerticalCenterOffset
         }
         placeholderText: qsTr("Search on page")
         font.pixelSize: Theme.fontSizeMedium

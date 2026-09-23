@@ -12,7 +12,8 @@
 // put it while the deck behind it slides down and brings the page back. It is
 // dragged from anywhere on the screen: the cells leave a drag up or down to it, and
 // the two rows drawn over the cells are the flickable's own children, so it sees
-// every press on them too.
+// every press on them too -- though a pull begun on the foot row has too little
+// screen below it to bring the page back.
 //
 // The head row holds the way to a new tab and the search for one; the foot row holds
 // the groups, within reach of the thumb that carries a cell down to one of them to
