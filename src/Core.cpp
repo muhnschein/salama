@@ -14,6 +14,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_bookmarks(m_storage)
     , m_downloads(m_storage)
     , m_settings(configFilePath)
+    , m_reader(m_settings)
 {
     connect(&m_tabs, &TabModel::visited, &m_history,
             [this](const QString &url) { m_history.visit(url); });
@@ -72,6 +73,11 @@ EngineMessages *Core::engineMessages()
 PageActivity *Core::pageActivity()
 {
     return &m_pageActivity;
+}
+
+Reader *Core::reader()
+{
+    return &m_reader;
 }
 
 } // namespace Salama

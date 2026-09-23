@@ -493,7 +493,7 @@ WebViewPage {
             }
 
             function fetchFavicon() {
-                var pageUrl = url
+                var pageUrl = reader.active ? reader.source : url
                 runJavaScript(EngineMessages.faviconScript, function (href) {
                     TabModel.updateFavicon(tabId, EngineMessages.resolveFavicon(pageUrl, href))
                 }, function () {
@@ -546,7 +546,17 @@ WebViewPage {
                 }, Qt.size(width / 2, height / 2))
             }
 
-            onUrlChanged: TabModel.updateUrl(tabId, url)
+            // What the page is, and whether it reads as an article; and while it is
+            // the reader view of one, the article's own address is the tab's
+            // (docs/DECISIONS/0023-reader-view.md).
+            property ReaderMode reader: ReaderMode {
+                view: webView
+            }
+
+            onUrlChanged: {
+                reader.follow(url)
+                TabModel.updateUrl(tabId, reader.active ? reader.source : url)
+            }
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 // What sleeps is a document, and one that arrives while its view is
@@ -569,6 +579,7 @@ WebViewPage {
                     fetchFavicon()
                     fetchThemeColor()
                     captureThumbnail()
+                    reader.check()
                 }
             }
             Component.onCompleted: {
