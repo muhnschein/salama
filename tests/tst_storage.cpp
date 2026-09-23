@@ -4,6 +4,7 @@
 
 #include <QDir>
 #include <QSqlQuery>
+#include <QStandardPaths>
 #include <QStringList>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -321,6 +322,10 @@ void tst_storage::defaultPaths()
     QVERIFY(!Storage::defaultDataDirectory().isEmpty());
     QVERIFY(Storage::defaultConfigFilePath().endsWith(QStringLiteral(".conf")));
     QVERIFY(!Storage::defaultCacheDirectory().isEmpty());
+    // A folder of the application's own inside the one the Downloads permission opens.
+    QCOMPARE(Storage::defaultDownloadDirectory(),
+             QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) +
+                 QStringLiteral("/Salama"));
 }
 
 QTEST_GUILESS_MAIN(tst_storage)
