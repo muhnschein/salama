@@ -25,6 +25,7 @@ private slots:
     void displayAddress();
     void coverStyle();
     void liveTabLimit();
+    void trackingProtection();
 };
 
 void tst_settings::defaults()
@@ -273,6 +274,47 @@ void tst_settings::liveTabLimit()
     {
         Settings again(path);
         QCOMPARE(again.liveTabLimit(), 5);
+    }
+}
+
+void tst_settings::trackingProtection()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::trackingProtectionChanged);
+
+    // Standard by default, as in Firefox (docs/DECISIONS/0023-tracking-protection.md).
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStandard));
+
+    settings.setTrackingProtection(Settings::TrackingProtectionStrict);
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStrict));
+    QCOMPARE(spy.count(), 1);
+    settings.setTrackingProtection(Settings::TrackingProtectionStrict);
+    QCOMPARE(spy.count(), 1);
+
+    // Refused rather than stored, as the cover's style is.
+    settings.setTrackingProtection(3);
+    settings.setTrackingProtection(-1);
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStrict));
+    QCOMPARE(spy.count(), 1);
+
+    settings.setTrackingProtection(Settings::TrackingProtectionOff);
+    QCOMPARE(spy.count(), 2);
+    {
+        Settings again(path);
+        QCOMPARE(again.trackingProtection(), int(Settings::TrackingProtectionOff));
+    }
+
+    // Written by hand, out of range: the default, not a level the engine has no
+    // preferences for.
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("trackingProtection"), 9);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.trackingProtection(), int(Settings::TrackingProtectionStandard));
     }
 }
 

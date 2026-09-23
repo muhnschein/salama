@@ -326,6 +326,38 @@
         <source>All</source>
         <translation>Kaikki</translation>
     </message>
+    <message>
+        <source>Privacy</source>
+        <translation>Yksityisyys</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Seurannan esto</translation>
+    </message>
+    <message>
+        <source>Sites can follow you from one to another</source>
+        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
+    </message>
+    <message>
+        <source>Stops more tracking, and can break some sites</source>
+        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+    </message>
+    <message>
+        <source>Stops sites following you with cookies</source>
+        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Pois</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>Tavallinen</translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation>Tiukka</translation>
+    </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>

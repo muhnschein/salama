@@ -95,6 +95,41 @@ Page {
             }
 
             SectionHeader {
+                text: qsTr("Privacy")
+            }
+
+            // Firefox's tracking protection categories, least first, with Off in place
+            // of Custom; the index is the stored value -- Settings.TrackingProtectionOff,
+            // TrackingProtectionStandard, TrackingProtectionStrict
+            // (docs/DECISIONS/0023-tracking-protection.md). The description promises
+            // only what every engine this runs on does.
+            ComboBox {
+                objectName: "trackingProtectionCombo"
+                width: parent.width
+                label: qsTr("Tracking protection")
+                description: currentIndex === Settings.TrackingProtectionOff
+                             ? qsTr("Sites can follow you from one to another")
+                             : currentIndex === Settings.TrackingProtectionStrict
+                               ? qsTr("Stops more tracking, and can break some sites")
+                               : qsTr("Stops sites following you with cookies")
+                currentIndex: Settings.trackingProtection
+                menu: ContextMenu {
+                    MenuItem {
+                        text: qsTr("Off")
+                    }
+
+                    MenuItem {
+                        text: qsTr("Standard")
+                    }
+
+                    MenuItem {
+                        text: qsTr("Strict")
+                    }
+                }
+                onCurrentIndexChanged: Settings.trackingProtection = currentIndex
+            }
+
+            SectionHeader {
                 text: qsTr("Cover")
             }
 

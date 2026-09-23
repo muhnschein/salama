@@ -97,7 +97,7 @@ void tst_core::restoresState()
 }
 
 // The engine's word that something plays, which PageActivity hears, has every loaded
-// page asked what it plays (docs/DECISIONS/0023-media-controls.md).
+// page asked what it plays (docs/DECISIONS/0024-media-controls.md).
 void tst_core::wiresPlaybackToPageMedia()
 {
     QTemporaryDir dir;

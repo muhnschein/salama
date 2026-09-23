@@ -4,7 +4,7 @@
 // What the navigation bar shows while the address is not being edited: the host, a
 // warning beside it when the engine is unhappy with the connection
 // (docs/DECISIONS/0011-address-and-security.md), and left of both the media controls
-// while the page plays something (docs/DECISIONS/0023-media-controls.md). Safari puts
+// while the page plays something (docs/DECISIONS/0024-media-controls.md). Safari puts
 // its mute in the address field the same way.
 import QtQuick 2.6
 import Sailfish.Silica 1.0

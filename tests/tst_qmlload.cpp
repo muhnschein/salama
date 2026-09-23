@@ -5,6 +5,7 @@
 // The stubs imitate no layout: these tests prove structure and wiring, not appearance.
 #include "Core.h"
 #include "QmlTypes.h"
+#include "engine/EngineMessages.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/TabGroupModel.h"
 
@@ -29,6 +30,7 @@
 
 using Salama::BookmarkModel;
 using Salama::Core;
+using Salama::EngineMessages;
 using Salama::Settings;
 using Salama::TabModel;
 
@@ -359,6 +361,21 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(evaluate(page, QStringLiteral("engineZoom()")).toReal(), zoom);
     QVERIFY(webView->property("downloadsEnabled").toBool());
     QVERIFY(!webView->property("desktopMode").toBool());
+
+    // The engine is given its tracking protection on start, at the level Settings
+    // holds: Standard, until it is changed.
+    const QVariantList given =
+        evaluate(find(QStringLiteral("viewArea")), QStringLiteral("WebEngineSettings.preferences"))
+            .toList();
+    const QVariantList standard =
+        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard);
+    QCOMPARE(given.count(), standard.count());
+    for (int i = 0; i < given.count(); ++i) {
+        QCOMPARE(given.at(i).toMap().value(QStringLiteral("key")),
+                 standard.at(i).toMap().value(QStringLiteral("name")));
+        QCOMPARE(given.at(i).toMap().value(QStringLiteral("value")),
+                 standard.at(i).toMap().value(QStringLiteral("value")));
+    }
 
     // The engine reporting the first url is the first visit.
     QCOMPARE(m_core->history()->count(), 1);
@@ -2554,6 +2571,38 @@ void tst_qmlload::settingsPage()
                  .toBool());
     coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
 
+    // Tracking protection is Standard until it is changed here, and a change reaches
+    // the engine at once, every preference of the new level after the old ones.
+    QObject *trackingCombo = find(QStringLiteral("trackingProtectionCombo"));
+    QCOMPARE(trackingCombo->property("currentIndex").toInt(),
+             int(Settings::TrackingProtectionStandard));
+    const QString standardDescription = trackingCombo->property("description").toString();
+    const int given =
+        evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
+    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionStrict));
+    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionStrict));
+    const QVariantList strict =
+        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStrict);
+    const QVariantList preferences =
+        evaluate(page, QStringLiteral("WebEngineSettings.preferences")).toList();
+    QCOMPARE(preferences.count(), given + strict.count());
+    for (int i = 0; i < strict.count(); ++i) {
+        QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("key")),
+                 strict.at(i).toMap().value(QStringLiteral("name")));
+        QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("value")),
+                 strict.at(i).toMap().value(QStringLiteral("value")));
+    }
+    const QString strictDescription = trackingCombo->property("description").toString();
+    QVERIFY(!strictDescription.isEmpty());
+    QVERIFY(strictDescription != standardDescription);
+    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionOff));
+    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionOff));
+    QCOMPARE(evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
+             given + 2 * strict.count());
+    const QString offDescription = trackingCombo->property("description").toString();
+    QVERIFY(!offDescription.isEmpty());
+    QVERIFY(offDescription != standardDescription && offDescription != strictDescription);
+
     click(find(QStringLiteral("clearHistoryButton")));
     QCOMPARE(m_core->history()->count(), 0);
 
@@ -2793,7 +2842,7 @@ void tst_qmlload::pagesSleepOutOfSight()
 
 // A page that plays something says so on the bar and on its preview, with a control to
 // pause it and one to mute its tab; and while the tab in front plays, no other does
-// (docs/DECISIONS/0023-media-controls.md). The engine's word is that something plays,
+// (docs/DECISIONS/0024-media-controls.md). The engine's word is that something plays,
 // not where: every loaded page is asked, and the stub's scriptResult is its answer.
 void tst_qmlload::mediaControls()
 {

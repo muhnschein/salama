@@ -4,7 +4,7 @@
 // What a tab's page plays, over the foot of its preview in the grid: pause while it
 // plays and play once paused from here, and beside it the tab's sound, on or muted. As
 // Firefox for Android put play and pause on its tab previews, and Firefox and Safari
-// put the mute on the tab (docs/DECISIONS/0023-media-controls.md). Nothing is drawn
+// put the mute on the tab (docs/DECISIONS/0024-media-controls.md). Nothing is drawn
 // for a page that plays nothing, unless its tab is muted.
 import QtQuick 2.6
 import Sailfish.Silica 1.0

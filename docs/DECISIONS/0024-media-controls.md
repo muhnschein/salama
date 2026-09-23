@@ -1,4 +1,4 @@
-# 0023 — Media controls on the preview and the bar; one tab plays at a time
+# 0024 — Media controls on the preview and the bar; one tab plays at a time
 
 ## Context
 A page playing something said so nowhere but on itself: the grid did not say which tab

@@ -30,7 +30,7 @@ Item {
     // event, which this handler has not got to give it.
     signal tapped()
     signal closeRequested()
-    // The media controls over the picture (docs/DECISIONS/0023-media-controls.md).
+    // The media controls over the picture (docs/DECISIONS/0024-media-controls.md).
     signal playbackToggled()
     signal muteToggled()
     // The cell has been carried over another one and the two should trade places.

@@ -30,7 +30,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
 
     // The engine says something started or stopped playing, and not where; the pages
-    // are asked (docs/DECISIONS/0023-media-controls.md).
+    // are asked (docs/DECISIONS/0024-media-controls.md).
     connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
 }
 

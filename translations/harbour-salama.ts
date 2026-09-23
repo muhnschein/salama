@@ -326,6 +326,38 @@
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Privacy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites can follow you from one to another</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stops more tracking, and can break some sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stops sites following you with cookies</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>

@@ -46,7 +46,7 @@ class TabModel : public QAbstractListModel
         int currentGroupId READ currentGroupId WRITE setCurrentGroupId NOTIFY currentGroupChanged)
     Q_PROPERTY(int currentGroupIndex READ currentGroupIndex NOTIFY currentGroupChanged)
     // What the tab in front is playing, and whether it is muted: what the navigation
-    // bar's media controls show (docs/DECISIONS/0023-media-controls.md).
+    // bar's media controls show (docs/DECISIONS/0024-media-controls.md).
     Q_PROPERTY(int activeMediaState READ activeMediaState NOTIFY activeMediaChanged)
     Q_PROPERTY(bool activeMuted READ activeMuted NOTIFY activeMediaChanged)
 
@@ -67,13 +67,15 @@ public:
         // page behind the one in front that says it plays shows as paused, below -- and
         // whether the tab is muted. Neither is persisted: the one is the page's own, and
         // goes with it; the other is kept for as long as the tab is open
-        // (docs/DECISIONS/0023-media-controls.md).
+        // (docs/DECISIONS/0024-media-controls.md).
         MediaRole,
         MutedRole
     };
 
     // Something with sound is playing on the page; or this browser paused it, and it
-    // can be played again from here; or neither.
+    // can be played again from here; or neither. Unscoped on purpose, as
+    // Settings::CoverStyle is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
+    // cannot do for a scoped enum (cpp:S3642).
     enum MediaState
     {
         NoMedia,

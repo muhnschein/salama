@@ -3,7 +3,7 @@
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
 // the menu, and left of the host the media controls while the page plays something
-// (docs/DECISIONS/0023-media-controls.md). Dragging it upwards pulls the tab grid up
+// (docs/DECISIONS/0024-media-controls.md). Dragging it upwards pulls the tab grid up
 // from underneath the page.
 //
 // While the address is being edited the bar belongs to the field: back and reload are
@@ -25,7 +25,8 @@ Item {
 
     // The page in front, or null while it is made.
     property Item view: null
-    property string url
+    // The front tab's address, and below what its page plays; the bar reads both itself.
+    property string url: TabModel.activeUrl
     property bool loading: false
     property bool canGoBack: false
     readonly property int loadProgress: view ? view.loadProgress : 0
@@ -42,8 +43,8 @@ Item {
         return !!security && !!security.validState && !security.allGood
     }
     // What the page plays, a TabModel.MediaState, and whether its tab is muted.
-    property int mediaState: TabModel.NoMedia
-    property bool muted: false
+    readonly property int mediaState: TabModel.activeMediaState
+    readonly property bool muted: TabModel.activeMuted
     // The address turns into a field in place while it is being edited.
     property bool editing: false
     // Slimmed down to the handle and the host, with the controls faded off it: what the
@@ -55,8 +56,6 @@ Item {
     signal back()
     signal reloadOrStop()
     signal showMenu()
-    signal togglePlayback()
-    signal toggleMuted()
     // Upward drag, in pixels from where the finger went down. Negative means it has
     // come back below its own starting point.
     signal dragStarted()
@@ -197,9 +196,9 @@ Item {
         } else if (region === "reload") {
             navigationBar.reloadOrStop()
         } else if (region === "playback") {
-            navigationBar.togglePlayback()
+            PageMedia.togglePlayback(TabModel.activeTabId)
         } else if (region === "mute") {
-            navigationBar.toggleMuted()
+            PageMedia.toggleMuted(TabModel.activeTabId)
         } else if (region === "address") {
             navigationBar.tapAddress()
         }

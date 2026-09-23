@@ -1214,7 +1214,7 @@ void tst_tabmodel::livePagesAreCapped()
 }
 
 // What a page plays is the page's, and goes with it; whether its tab is muted is the
-// tab's, for as long as it is open (docs/DECISIONS/0023-media-controls.md).
+// tab's, for as long as it is open (docs/DECISIONS/0024-media-controls.md).
 void tst_tabmodel::mediaFollowsThePage()
 {
     TabModel model(nullptr);

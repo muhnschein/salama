@@ -239,9 +239,24 @@ WebViewPage {
         return WebEngineSettings.pixelRatio
     }
 
+    // The engine's own anti-tracking, at the level Settings holds
+    // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
+    // keeps until it is up, and again whenever the level changes.
+    function applyTrackingProtection() {
+        var preferences = EngineMessages.trackingProtectionPreferences(Settings.trackingProtection)
+        for (var i = 0; i < preferences.length; ++i) {
+            WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
+        }
+    }
+
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
+    }
+
+    Connections {
+        target: Settings
+        onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 
     Connections {
@@ -274,6 +289,7 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }
@@ -376,18 +392,13 @@ WebViewPage {
                 y: browserPage.height - height
 
                 view: browserPage.currentView
-                url: TabModel.activeUrl
                 loading: browserPage.loading
                 compact: browserPage.barCompact
                 canGoBack: browserPage.canGoBack
-                mediaState: TabModel.activeMediaState
-                muted: TabModel.activeMuted
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
                 onReloadOrStop: browserPage.reloadOrStop()
                 onShowMenu: browserMenu.show()
-                onTogglePlayback: PageMedia.togglePlayback(TabModel.activeTabId)
-                onToggleMuted: PageMedia.toggleMuted(TabModel.activeTabId)
                 // The grid is about to show, so the picture of the tab being left is
                 // taken before the first pixel of it does.
                 onDragStarted: {
@@ -571,11 +582,9 @@ WebViewPage {
                 if (loading) {
                     // A new page starts at the top, and the bar starts whole: it would
                     // otherwise stay slim from whatever was scrolled before it. The
-                    // colour goes with the page that declared it, and so does whatever
-                    // it played.
+                    // colour goes with the page that declared it.
                     chrome = true
                     pageThemeColor = ""
-                    PageMedia.forget(tabId)
                 } else {
                     fetchFavicon()
                     fetchThemeColor()

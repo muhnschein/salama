@@ -7,7 +7,7 @@
 // are in use elsewhere, none guessed: play and pause are Jolla's media controls', the
 // two speakers those of the Harbour players that mute (Jupii, harbour-sailfishconnect).
 // There is no small size of any of them, so the medium ones are drawn small
-// (docs/DECISIONS/0023-media-controls.md).
+// (docs/DECISIONS/0024-media-controls.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
