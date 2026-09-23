@@ -4,6 +4,8 @@
 #include "storage/Storage.h"
 
 #include <QDateTime>
+#include <QFile>
+#include <QFileInfo>
 #include <QMetaEnum>
 #include <QSignalSpy>
 #include <QSqlQuery>
@@ -34,6 +36,7 @@ private slots:
     void remove();
     void clear();
     void fileUrl();
+    void directory();
     void withoutDatabase();
 };
 
@@ -102,7 +105,7 @@ void tst_downloadmodel::topicRolesAndStatuses()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     // The topic sailfish-browser's DownloadManager listens on for the same messages.
     QCOMPARE(model.topic(), Topic);
     QCOMPARE(model.count(), 0);
@@ -139,7 +142,7 @@ void tst_downloadmodel::startsAtTheTop()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QSignalSpy countSpy(&model, &DownloadModel::countChanged);
     QSignalSpy insertSpy(&model, &DownloadModel::rowsInserted);
 
@@ -198,7 +201,7 @@ void tst_downloadmodel::nameFallsBackToTheFile()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
 
     QVariantMap nameless = startMessage(1, QStringLiteral("report.pdf"));
     nameless.remove(QStringLiteral("displayName"));
@@ -215,7 +218,7 @@ void tst_downloadmodel::progress()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
     QSignalSpy changeSpy(&model, &DownloadModel::dataChanged);
@@ -260,7 +263,7 @@ void tst_downloadmodel::wholeNumbers()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
 
     QVariantMap start = startMessage(1, QStringLiteral("a.iso"));
     start.insert(QStringLiteral("id"), QVariant(1LL));
@@ -298,7 +301,7 @@ void tst_downloadmodel::done()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, progressMessage(1, 40.0));
     QSignalSpy changeSpy(&model, &DownloadModel::dataChanged);
@@ -336,7 +339,7 @@ void tst_downloadmodel::failAndCancel()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
     QSignalSpy changeSpy(&model, &DownloadModel::dataChanged);
@@ -368,7 +371,7 @@ void tst_downloadmodel::restart()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, progressMessage(1, 30.0));
     model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
@@ -403,7 +406,7 @@ void tst_downloadmodel::ignoresWhatItDoesNotKnow()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QSignalSpy insertSpy(&model, &DownloadModel::rowsInserted);
 
     // Another topic, with a message that would otherwise start a download.
@@ -460,7 +463,7 @@ void tst_downloadmodel::persists()
     qint64 started = 0;
     {
         Storage storage(dir.path());
-        DownloadModel model(storage);
+        DownloadModel model(storage, dir.path());
         model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
         QVariantMap done = message(QStringLiteral("dl-done"), 1);
         done.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("a(1).pdf"));
@@ -472,7 +475,7 @@ void tst_downloadmodel::persists()
     }
 
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), 2);
     // Newest first, as they were.
     QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 2);
@@ -515,7 +518,7 @@ void tst_downloadmodel::runningFailsOnReload()
     QTemporaryDir dir;
     {
         Storage storage(dir.path());
-        DownloadModel model(storage);
+        DownloadModel model(storage, dir.path());
         model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
         model.observe(Topic, progressMessage(1, 80.0));
         model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
@@ -527,7 +530,7 @@ void tst_downloadmodel::runningFailsOnReload()
     }
 
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), 3);
     QCOMPARE(role(model, 1, DownloadModel::NameRole).toString(), QStringLiteral("a.pdf"));
     QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
@@ -550,7 +553,7 @@ void tst_downloadmodel::limit()
     QTemporaryDir dir;
     {
         Storage storage(dir.path());
-        DownloadModel model(storage);
+        DownloadModel model(storage, dir.path());
         QSignalSpy countSpy(&model, &DownloadModel::countChanged);
         QSignalSpy removeSpy(&model, &DownloadModel::rowsRemoved);
         for (int i = 1; i <= DownloadModel::Limit + 5; ++i) {
@@ -587,7 +590,7 @@ void tst_downloadmodel::limit()
     }
 
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), DownloadModel::Limit);
     QCOMPARE(rowsInDatabase(storage), DownloadModel::Limit);
     QCOMPARE(storedStatus(storage, 1000), -1);
@@ -599,7 +602,7 @@ void tst_downloadmodel::remove()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
     QSignalSpy countSpy(&model, &DownloadModel::countChanged);
@@ -630,7 +633,7 @@ void tst_downloadmodel::clear()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QSignalSpy countSpy(&model, &DownloadModel::countChanged);
     model.clear();
     QCOMPARE(countSpy.count(), 0);
@@ -643,7 +646,7 @@ void tst_downloadmodel::clear()
     QCOMPARE(countSpy.count(), 3);
     QCOMPARE(rowsInDatabase(storage), 0);
 
-    DownloadModel reloaded(storage);
+    DownloadModel reloaded(storage, dir.path());
     QCOMPARE(reloaded.count(), 0);
 }
 
@@ -651,7 +654,7 @@ void tst_downloadmodel::fileUrl()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     QCOMPARE(model.fileUrl(0), QStringLiteral("file:///home/defaultuser/Downloads/a.pdf"));
 
@@ -672,12 +675,36 @@ void tst_downloadmodel::fileUrl()
     QVERIFY(model.fileUrl(-1).isEmpty());
 }
 
+// The engine saves into the folder only if it is already there, so the model makes it,
+// and the folders above it, before the engine is told of it.
+void tst_downloadmodel::directory()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const QString folder = dir.filePath(QStringLiteral("Downloads/Salama"));
+    QVERIFY(!QFileInfo::exists(dir.filePath(QStringLiteral("Downloads"))));
+    DownloadModel model(storage, folder);
+    QCOMPARE(model.directory(), folder);
+    QVERIFY(QFileInfo(folder).isDir());
+
+    // One that cannot be made -- a file stands where it would go -- is still the one
+    // the engine is told of: the engine saves into ~/Downloads instead.
+    QFile file(dir.filePath(QStringLiteral("file")));
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.close();
+    const QString blocked = file.fileName() + QStringLiteral("/Salama");
+    DownloadModel unmade(storage, blocked);
+    QCOMPARE(unmade.directory(), blocked);
+    QVERIFY(!QFileInfo::exists(blocked));
+}
+
 // A database that would not open costs the list its memory, not its use.
 void tst_downloadmodel::withoutDatabase()
 {
+    QTemporaryDir dir;
     Storage storage{QString()};
     QVERIFY(!storage.isOpen());
-    DownloadModel model(storage);
+    DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), 0);
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, message(QStringLiteral("dl-fail"), 1));

@@ -56,18 +56,21 @@ None.
 | `Internet` | network access for the engine and favicon images |
 | `WebView` | Gecko embedding: `/usr/share/mozilla`, the transfer engine for downloads (required for any `Sailfish.WebView` user) |
 | `Audio` | sound from pages: Sailjail's `Base` profile shuts every application out of PulseAudio (`nosound`) unless it holds this, and `WebView` does not include it, so without it the engine plays video and audio in silence. It also admits the microphone at the PulseAudio level; nothing here records, and the `Microphone` permission, which recording is meant to need, is not asked for |
-| `Downloads` | the engine saves downloads to `~/Downloads` |
+| `Downloads` | the engine saves downloads to `~/Downloads/Salama`, a folder the application creates (`DECISIONS/0023-downloads-folder.md`) |
 | `Pictures` | uploading a photo through the platform picker in web forms |
 | `Documents` | uploading a document through the platform picker |
 
 `OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
-data, cache and config directories; nothing is stored anywhere else. Sharing needs no
-permission (part of the `Base` set). Whether the pickers need more than `Pictures` and
-`Documents` is SCOPE.md §9 item 5 and is verified on the device smoke test.
+data, cache and config directories; apart from downloads, nothing is stored anywhere
+else. Sharing needs no permission (part of the `Base` set). Whether the pickers need more
+than `Pictures` and `Documents` is SCOPE.md §9 item 5 and is verified on the device smoke
+test.
 
 ## Runtime path policy
 
 Only `QStandardPaths::AppDataLocation`, `AppConfigLocation` and `CacheLocation` are
-written; `QSettings` always gets an explicit file path (sailjail-permissions README).
+written, plus the `Salama` folder in `DownloadLocation`, which the application creates and
+the engine saves downloads to; `QSettings` always gets an explicit file path
+(sailjail-permissions README).
 `ci/harbour-check.sh` fails on other standard locations and on `/home/nemo` or
 `/home/defaultuser` literals.

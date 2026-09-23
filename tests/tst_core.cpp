@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "Core.h"
 
+#include <QFileInfo>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -24,7 +25,8 @@ private slots:
 void tst_core::wiresTabsToHistory()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
+    const QString downloads = dir.path() + QStringLiteral("/Downloads/Salama");
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), downloads);
     QVERIFY(core.storage().isOpen());
     QVERIFY(core.engineMessages() != nullptr);
     QVERIFY(core.settings() != nullptr);
@@ -32,6 +34,8 @@ void tst_core::wiresTabsToHistory()
     QCOMPARE(core.tabSearch()->count(), 0);
     QVERIFY(core.downloads() != nullptr);
     QCOMPARE(core.downloads()->count(), 0);
+    QCOMPARE(core.downloads()->directory(), downloads);
+    QVERIFY(QFileInfo(downloads).isDir());
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
     QCOMPARE(core.history()->count(), 0);
@@ -46,7 +50,7 @@ void tst_core::wiresTabsToHistory()
 void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 {
     QTemporaryDir dir;
-    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"));
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
     QVERIFY(core.bookmarks()->activeUrl().isEmpty());
 
     const int id = core.tabs()->newTab(QStringLiteral("https://a.example/"));
@@ -69,7 +73,7 @@ void tst_core::restoresState()
     QTemporaryDir dir;
     const QString config = dir.path() + QStringLiteral("/salama.conf");
     {
-        Core core(dir.path(), config);
+        Core core(dir.path(), config, dir.path());
         core.tabs()->newTab(QStringLiteral("https://a.example/"));
         core.settings()->setDesktopMode(true);
         core.downloads()->observe(
@@ -78,7 +82,7 @@ void tst_core::restoresState()
                         {QStringLiteral("id"), 1.0},
                         {QStringLiteral("displayName"), QStringLiteral("a.pdf")}});
     }
-    Core core(dir.path(), config);
+    Core core(dir.path(), config, dir.path());
     QCOMPARE(core.tabs()->count(), 1);
     // The downloads are kept in the same database; one that was running did not finish.
     QCOMPARE(core.downloads()->count(), 1);

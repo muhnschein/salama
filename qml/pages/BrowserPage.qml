@@ -274,6 +274,10 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        // Downloads go to a folder of this browser's own, without the engine asking
+        // where each time (docs/DECISIONS/0023-downloads-folder.md).
+        WebEngineSettings.downloadDir = DownloadModel.directory
+        WebEngineSettings.useDownloadDir = true
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }

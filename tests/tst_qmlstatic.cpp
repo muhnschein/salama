@@ -141,7 +141,7 @@ void tst_qmlstatic::delegateRolesExist()
     TabSearchModel search(&tabs);
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
-    DownloadModel downloads(storage);
+    DownloadModel downloads(storage, dir.path());
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
