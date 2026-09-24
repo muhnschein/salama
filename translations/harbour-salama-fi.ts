@@ -604,15 +604,15 @@
     </message>
     <message>
         <source>The icon alone</source>
-        <translation>Vain kuvakkeen</translation>
+        <translation>Vain kuvake</translation>
     </message>
     <message>
         <source>The tab count and the last tab</source>
-        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
+        <translation>Välilehtien määrä ja viimeisin välilehti</translation>
     </message>
     <message>
         <source>The tab count and the most recent tabs</source>
-        <translation>Välilehtien määrän ja viimeisimmät välilehdet</translation>
+        <translation>Välilehtien määrä ja viimeisimmät välilehdet</translation>
     </message>
     <message>
         <source>Pages kept loaded</source>
