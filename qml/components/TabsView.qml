@@ -42,10 +42,6 @@ Item {
     // cells.
     readonly property bool searching: searchField.text.length > 0
                                       && TabSearch.searchTerm.length > 0
-    // How much of the rows' tint is drawn: halfway from Silica's overlay to opaque. At
-    // the overlay's own strength the cells showed through the rows more than the rows
-    // could carry (docs/DECISIONS/0010-tab-grid-deck.md).
-    readonly property real glassOpacity: (1 + Theme.opacityOverlay) / 2
 
     objectName: "tabsView"
 
@@ -174,7 +170,9 @@ Item {
     // is.
     //
     // Both rows are panes of Silica's glass: a tint with the ambience's own pattern over
-    // it. The tint alone was a smooth band where Silica's own panes are textured.
+    // it. The tint alone was a smooth band where Silica's own panes are textured. The
+    // tint is opaque, as the navigation bar's is: any cell showing through a row, however
+    // faintly, was one more thing on a busy screen (docs/DECISIONS/0010-tab-grid-deck.md).
     Rectangle {
         id: headRow
 
@@ -189,7 +187,7 @@ Item {
         // cutout rather than centred through it: the row starts at the top of the
         // screen, and the notch was taking a bite out of what it carries.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
-        color: Theme.rgba(Theme.highlightDimmerColor, tabsView.glassOpacity)
+        color: Theme.highlightDimmerColor
 
         GlassTexture {
             objectName: "gridHeadGlass"
@@ -288,7 +286,7 @@ Item {
             bottomMargin: -tabGrid.overscroll
         }
         height: Theme.itemSizeLarge
-        color: Theme.rgba(Theme.highlightDimmerColor, tabsView.glassOpacity)
+        color: Theme.highlightDimmerColor
 
         GlassTexture {
             objectName: "gridFootGlass"

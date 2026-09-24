@@ -98,7 +98,8 @@ private slots:
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabGrid();
-    void gridRowsAreDenseGlass();
+    void gridCellsArePicturesAlone();
+    void gridRowsAreOpaque();
     void tabGroups();
     void tabSearch();
     void tabsDropOntoGroups();
@@ -1355,35 +1356,6 @@ void tst_qmlload::tabGrid()
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
 
-    // The preview box is rounded, and the wash drawn round the active one is square,
-    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
-    // it, so the picture is cut to the box's corners by a mask.
-    QObject *shot = findObjects(previews.at(1), QStringLiteral("tabPreviewShot")).first();
-    QVERIFY(shot->property("radius").toReal() > 0);
-    QObject *wash = findObjects(previews.at(1), QStringLiteral("tabPreviewHighlight")).first();
-    QVERIFY(wash->property("visible").toBool());
-    QCOMPARE(wash->property("radius").toReal(), qreal(0));
-    // The picture sits in from the cell's edges by a little more than a medium padding,
-    // and two cells stand twice that apart.
-    const qreal inset = previews.at(1)->property("inset").toReal();
-    QVERIFY(inset > evaluate(grid, QStringLiteral("Theme.paddingMedium")).toReal());
-    QCOMPARE(shot->property("x").toReal(), inset);
-    QCOMPARE(shot->property("width").toReal(),
-             previews.at(1)->property("width").toReal() - 2 * inset);
-    // The active cell's box is marked as well, by its border.
-    auto *border = shot->property("border").value<QObject *>();
-    QVERIFY(border != nullptr);
-    QVERIFY(border->property("width").toReal() > 0);
-    auto *shotLayer = shot->property("layer").value<QObject *>();
-    QVERIFY(shotLayer != nullptr);
-    QVERIFY(shotLayer->property("enabled").toBool());
-
-    QCOMPARE(findObjects(previews.at(1), QStringLiteral("tabTitle"))
-                 .first()
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("https://two.example/"));
-    QVERIFY(previews.at(1)->property("highlighted").toBool());
     // Opening the grid captured the tab being left, so that cell has a preview while
     // the one never displayed still shows its placeholder.
     QVERIFY(!m_core->tabs()
@@ -1823,11 +1795,25 @@ void tst_qmlload::previewGestures()
 
     // The close button is its own mark, a disc faint enough not to be the first thing
     // seen on each cell -- it is opaque only under a finger, which
-    // gridGesturesUnderAFinger() puts on it; there is no second disc under it.
+    // gridGesturesUnderAFinger() puts on it; there is no second disc under it. The disc
+    // is in no colour of the ambience's but the ground Silica lays under what goes over
+    // a picture, black in the stub's dark theme, and the cross on it is opaque in the
+    // primary colour: the disc's colour carries its faintness, not the item.
     QObject *mark = find(QStringLiteral("closeTabMark"));
     QVERIFY(mark != nullptr);
-    QCOMPARE(mark->property("opacity").toReal(),
-             evaluate(mark, QStringLiteral("Theme.opacityHigh")).toReal());
+    const QColor disc = mark->property("color").value<QColor>();
+    QCOMPARE(disc.alphaF(), evaluate(mark, QStringLiteral("Theme.opacityHigh")).toReal());
+    QCOMPARE(disc.rgb(),
+             evaluate(mark, QStringLiteral("Theme.overlayBackgroundColor")).value<QColor>().rgb());
+    QCOMPARE(mark->property("opacity").toReal(), 1.0);
+    const QList<QQuickItem *> cross = qobject_cast<QQuickItem *>(mark)->childItems();
+    QCOMPARE(cross.count(), 3); // the two strokes and the Repeater that made them
+    for (QQuickItem *stroke : cross) {
+        if (stroke->property("rotation").toReal() != 0) {
+            QCOMPARE(stroke->property("color").value<QColor>(),
+                     evaluate(mark, QStringLiteral("Theme.primaryColor")).value<QColor>());
+        }
+    }
     QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
 }
@@ -1939,9 +1925,14 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QQuickWindow &window = *host.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
 
+    // Up, and at rest: a pull back to the page leaves the grid springing back from past
+    // its top, and a press on a grid still moving stops it rather than reaching the cell
+    // under the finger -- which the deck settling first does not rule out.
+    QObject *gridView = find(QStringLiteral("tabGrid"));
     const auto openGrid = [&]() {
         pullUpToTabs();
         QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+        QTRY_VERIFY(!gridView->property("moving").toBool());
     };
     const auto cells = [&]() { return byRow(findAll(QStringLiteral("tabPreview"))); };
     const QPoint down(0, 3 * page->property("pullThreshold").toInt());
@@ -1971,14 +1962,15 @@ void tst_qmlload::gridGesturesUnderAFinger()
     // before it lifts closes nothing.
     openGrid();
     QObject *mark = findObjects(cells().first(), QStringLiteral("closeTabMark")).first();
-    QVERIFY(mark->property("opacity").toReal() < 1.0);
+    const auto discAlpha = [mark]() { return mark->property("color").value<QColor>().alphaF(); };
+    QVERIFY(discAlpha() < 1.0);
     const QPoint onMark = centreOf(mark);
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onMark);
-    QCOMPARE(mark->property("opacity").toReal(), 1.0);
+    QCOMPARE(discAlpha(), 1.0);
     const QPoint offMark = onMark - QPoint(3 * mark->property("width").toInt(), 0);
     QTest::mouseMove(&window, offMark);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, offMark);
-    QVERIFY(mark->property("opacity").toReal() < 1.0);
+    QVERIFY(discAlpha() < 1.0);
     QCOMPARE(tabs->count(), 2);
     QVERIFY(page->property("tabsOpen").toBool());
 
@@ -4329,16 +4321,52 @@ void tst_qmlload::pagesSleepOutOfSight()
 // pause it and one to mute its tab; and while the tab in front plays, no other does
 // (docs/DECISIONS/0026-media-controls.md). The engine's word is that something plays,
 // not where: every loaded page is asked, and the stub's scriptResult is its answer.
-// The rows along the grid's head and foot: their tint denser than Silica's overlay, at
-// which the cells showed through them, and still short of opaque -- glass.
-void tst_qmlload::gridRowsAreDenseGlass()
+// A cell of the grid is its picture alone, marked when it is the active tab by the
+// wash round it and nothing else.
+void tst_qmlload::gridCellsArePicturesAlone()
+{
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    pullUpToTabs();
+    QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 2);
+    QObject *cell = previews.at(1);
+
+    // The preview box is rounded, and the wash drawn round the active one is square,
+    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
+    // it, so the picture is cut to the box's corners by a mask.
+    QObject *shot = findObjects(cell, QStringLiteral("tabPreviewShot")).first();
+    QVERIFY(shot->property("radius").toReal() > 0);
+    QObject *wash = findObjects(cell, QStringLiteral("tabPreviewHighlight")).first();
+    QVERIFY(wash->property("visible").toBool());
+    QCOMPARE(wash->property("radius").toReal(), qreal(0));
+    // The picture sits in from the cell's edges by a little more than a medium padding,
+    // and two cells stand twice that apart. Nothing is under it: no favicon and no
+    // title, so it runs down to the same inset at the foot.
+    const qreal inset = cell->property("inset").toReal();
+    QVERIFY(inset > evaluate(cell, QStringLiteral("Theme.paddingMedium")).toReal());
+    QCOMPARE(shot->property("x").toReal(), inset);
+    QCOMPARE(shot->property("y").toReal(), inset);
+    QCOMPARE(shot->property("width").toReal(), cell->property("width").toReal() - 2 * inset);
+    QCOMPARE(shot->property("height").toReal(), cell->property("height").toReal() - 2 * inset);
+    QVERIFY(findObjects(cell, QStringLiteral("tabTitle")).isEmpty());
+    QVERIFY(findObjects(cell, QStringLiteral("tabFavicon")).isEmpty());
+    auto *shotLayer = shot->property("layer").value<QObject *>();
+    QVERIFY(shotLayer != nullptr);
+    QVERIFY(shotLayer->property("enabled").toBool());
+    QVERIFY(cell->property("highlighted").toBool());
+}
+
+// The rows along the grid's head and foot: their tint opaque, as the navigation bar's
+// is, so no cell shows through either.
+void tst_qmlload::gridRowsAreOpaque()
 {
     QObject *headRow = find(QStringLiteral("gridHeadRow"));
     QObject *footRow = find(QStringLiteral("gridFootRow"));
     QVERIFY(headRow != nullptr);
     QVERIFY(footRow != nullptr);
     const QColor tint = headRow->property("color").value<QColor>();
-    QVERIFY(tint.alphaF() > 0.8 && tint.alphaF() < 1.0);
+    QCOMPARE(tint.alphaF(), 1.0);
+    QCOMPARE(tint, evaluate(headRow, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
     QCOMPARE(footRow->property("color"), headRow->property("color"));
 }
 
