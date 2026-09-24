@@ -63,6 +63,13 @@ workaround; a failure blocks the tag.
 - [ ] A video with sound plays aloud, through the speaker and through headphones, and the volume keys change its volume.
 - [ ] Open a busy site (a news front page with video and ads) in two tabs, minimise: within a few seconds `top` shows harbour-salama near idle, where before it kept a core busy. Back in the app, the page in front carries on where it was; the other tab does too when brought to the front.
 - [ ] Play music or a video with sound, minimise, lock the phone: it keeps playing, and a playlist moves on to the next track. Pause it from the page before minimising instead: the pages go idle as above.
+- [ ] Play a video with sound (a YouTube page, not one embedded in an article): within a moment a speaker glyph appears left of the host in the ambience's colour, the host staying in the middle of the bar; on its preview in the grid a speaker centred at the picture's foot, the picture fading out under it, readable over a white page and a dark one; and minimised, a second action on the cover beside the search. Nothing appears for a muted autoplaying video, or on a page with no media.
+- [ ] Mute from the bar: the video pauses and the speaker is struck through, on the preview and the cover too; unmute and it plays on, aloud. The same from the preview, with the grid staying open, and from the cover. A new video opened in a muted tab is muted too.
+- [ ] With the bar slim, the speaker still shows left of the host, smaller; a tap there brings the whole bar back and mutes nothing.
+- [ ] A YouTube music video playing, switch to another tab: it stops, and its preview shows the speaker struck through; back in its tab, it plays on from where it stopped, and the speaker in the bar is whole again. Tap the struck speaker on its preview from another tab instead: the tab comes to the front behind the grid and plays.
+- [ ] Two tabs with media, played one after the other: never more than one preview shows a whole speaker, and it is the tab in front's.
+- [ ] Play a video with sound, minimise: the sound goes on, and after ten seconds or so `top` shows harbour-salama well below what it takes with the app on the screen playing the same video. Back in the app, the video shows and plays on.
+- [ ] The rows along the grid's head and foot: the cells scrolling under them barely show through.
 - [ ] Upload a photo in a web form through the platform picker (permissions check).
 - [ ] Settings: the engines are Qwant, Ecosia and Startpage, Qwant first; change the home page and search engine; toggle desktop sites and confirm a site serves its desktop layout.
 - [ ] Clear cookies and site data: a logged-in site asks to log in again.

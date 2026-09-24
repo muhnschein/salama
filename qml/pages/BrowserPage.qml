@@ -392,10 +392,7 @@ WebViewPage {
                 y: browserPage.height - height
 
                 view: browserPage.currentView
-                url: TabModel.activeUrl
-                loading: browserPage.loading
                 compact: browserPage.barCompact
-                canGoBack: browserPage.canGoBack
                 onAccepted: browserPage.openUrl(Settings.urlForInput(text))
                 onBack: browserPage.goBack()
                 onReloadOrStop: browserPage.reloadOrStop()
@@ -565,6 +562,8 @@ WebViewPage {
             // Whether the page reads as an article, and the article's own address while
             // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
             property ReaderMode reader: ReaderMode { view: webView }
+            // What the page plays, asked and told (docs/DECISIONS/0026-media-controls.md).
+            property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

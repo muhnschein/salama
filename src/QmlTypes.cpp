@@ -79,6 +79,11 @@ QObject *pageActivityProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngin
     return keepOwnership(coreInstance->pageActivity());
 }
 
+QObject *pageMediaProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->pageMedia());
+}
+
 QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(coreInstance->reader());
@@ -109,6 +114,7 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);
+    qmlRegisterSingletonType<PageMedia>(ModuleUri, 1, 0, "PageMedia", &pageMediaProvider);
     qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
 }
 

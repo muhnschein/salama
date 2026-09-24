@@ -14,6 +14,8 @@ add_library(salama-core STATIC
     engine/EngineMessages.h
     engine/PageActivity.cpp
     engine/PageActivity.h
+    engine/PageMedia.cpp
+    engine/PageMedia.h
     history/HistoryModel.cpp
     history/HistoryModel.h
     reader/Reader.cpp

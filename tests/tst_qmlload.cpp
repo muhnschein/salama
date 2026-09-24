@@ -11,6 +11,7 @@
 
 #include <QColor>
 #include <QDesktopServices>
+#include <QFile>
 #include <QFont>
 #include <QGuiApplication>
 #include <QJsonArray>
@@ -92,6 +93,7 @@ private slots:
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
     void tabGrid();
+    void gridRowsAreDenseGlass();
     void tabGroups();
     void tabSearch();
     void tabsDropOntoGroups();
@@ -117,6 +119,8 @@ private slots:
     void coverStyleIsConfigurable();
     void thumbnailCapturedOnLeavingTheApp();
     void pagesSleepOutOfSight();
+    void mediaControls();
+    void muteOnTheGrid();
 
 private:
     bool loadWindow();
@@ -3038,6 +3042,262 @@ void tst_qmlload::pagesSleepOutOfSight()
     QCOMPARE(calls(front, "suspendView"), 3);
     QCOMPARE(calls(behind, "suspendView"), 1);
     setState(Qt::ApplicationActive);
+}
+
+// A page that plays something says so on the bar and on its preview, with a control to
+// pause it and one to mute its tab; and while the tab in front plays, no other does
+// (docs/DECISIONS/0026-media-controls.md). The engine's word is that something plays,
+// not where: every loaded page is asked, and the stub's scriptResult is its answer.
+// The rows along the grid's head and foot: their tint denser than Silica's overlay, at
+// which the cells showed through them, and still short of opaque -- glass.
+void tst_qmlload::gridRowsAreDenseGlass()
+{
+    QObject *headRow = find(QStringLiteral("gridHeadRow"));
+    QObject *footRow = find(QStringLiteral("gridFootRow"));
+    QVERIFY(headRow != nullptr);
+    QVERIFY(footRow != nullptr);
+    const QColor tint = headRow->property("color").value<QColor>();
+    QVERIFY(tint.alphaF() > 0.8 && tint.alphaF() < 1.0);
+    QCOMPARE(footRow->property("color"), headRow->property("color"));
+}
+
+void tst_qmlload::mediaControls()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    Salama::PageMedia *media = m_core->pageMedia();
+    const int first = tabs->activeTabId();
+    QObject *behind = currentWebView();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    QObject *front = currentWebView();
+    QVERIFY(front != behind);
+    // A real window: the bar's row is laid out as it is drawn, and the grid's controls
+    // are tapped with a finger.
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow fingers(root);
+    QQuickWindow &window = *fingers.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
+    QObject *scope = find(QStringLiteral("viewArea"));
+    QObject *mute = find(QStringLiteral("muteButton"));
+    QObject *host = find(QStringLiteral("addressLabel"));
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    auto *searchActions = coverItem->findChild<QObject *>(QStringLiteral("searchCoverActions"));
+    auto *mediaActions = coverItem->findChild<QObject *>(QStringLiteral("mediaCoverActions"));
+    auto *coverMute = coverItem->findChild<QObject *>(QStringLiteral("muteCoverAction"));
+    const auto engineSays = [this, scope](const char *state) {
+        evaluate(scope, QStringLiteral("WebEngine.recvObserve('media-decoder-info',"
+                                       " {owner: '0x1', state: '%1'})")
+                            .arg(QLatin1String(state)));
+    };
+    const auto asked = [](QObject *view) {
+        QStringList commands;
+        for (const QString &script : view->property("scripts").toStringList()) {
+            if (script.contains(QLatin1String("var command = 'query'"))) {
+                commands.append(QStringLiteral("query"));
+            } else if (script.contains(QLatin1String("var command = 'pause'"))) {
+                commands.append(QStringLiteral("pause"));
+            } else if (script.contains(QLatin1String("var command = 'play'"))) {
+                commands.append(QStringLiteral("play"));
+            }
+        }
+        return commands;
+    };
+    const auto icon = [](QObject *item) { return item->property("source").toString(); };
+    const auto coverIcon = [coverMute]() { return coverMute->property("iconSource").toUrl(); };
+    const auto centreX = [bar](QObject *object) {
+        auto *item = qobject_cast<QQuickItem *>(object);
+        return item->mapToItem(bar, QPointF(item->width() / 2, 0)).x();
+    };
+    const auto regionOf = [this, bar, centreX](QObject *object) {
+        return evaluate(bar, QStringLiteral("regionAt(%1)").arg(centreX(object))).toString();
+    };
+
+    // Nothing plays, and neither the bar nor the cover says anything of it.
+    QVERIFY(!mute->property("visible").toBool());
+    QVERIFY(searchActions->property("enabled").toBool());
+    QVERIFY(!mediaActions->property("enabled").toBool());
+    // Anchors put a centred item on a whole pixel: to within half of one.
+    const auto centred = [bar, centreX](QObject *object) {
+        return qAbs(centreX(object) - bar->width() / 2) <= 0.5;
+    };
+    QTRY_VERIFY(centred(host));
+
+    // The engine says a decoder plays: a moment later every loaded page is asked once,
+    // and the one that answers that it plays shows it.
+    front->setProperty("scriptResult", QStringLiteral("playing"));
+    engineSays("meta");
+    engineSays("play");
+    QVERIFY(asked(front).isEmpty());
+    QTRY_COMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
+    QTest::qWait(media->queryDelay() * 2);
+    QCOMPARE(asked(front), QStringList({QStringLiteral("query")}));
+    QCOMPARE(asked(behind), QStringList({QStringLiteral("query")}));
+    QCOMPARE(tabs->mediaState(first), TabModel::NoMedia);
+    QVERIFY(mute->property("visible").toBool());
+    QVERIFY(icon(mute).endsWith(QLatin1String("icon-m-speaker-on")));
+    // In the ambience's colour, and a step larger than the small icons.
+    QCOMPARE(mute->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
+    QCOMPARE(mute->property("width").toReal(), qreal(48));
+    // The cover offers it beside the search, in a picture of its own drawn for this
+    // size and ambience.
+    QVERIFY(!searchActions->property("enabled").toBool());
+    QVERIFY(mediaActions->property("enabled").toBool());
+    QVERIFY(coverIcon().toString().endsWith(QLatin1String("art/cover/speaker-on-32-white.png")));
+    QVERIFY2(QFile::exists(coverIcon().toLocalFile()), qPrintable(coverIcon().toString()));
+
+    // Left of the host, which stays where it was, in the middle of the bar: the mute
+    // takes what lies between back and the host, and the host is still the address's.
+    QTRY_COMPARE(regionOf(mute), QStringLiteral("mute"));
+    QVERIFY(centred(host));
+    QCOMPARE(regionOf(host), QStringLiteral("address"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(0)")).toString(), QStringLiteral("back"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(addressLeft)")).toString(),
+             QStringLiteral("mute"));
+    auto *muteItem = qobject_cast<QQuickItem *>(mute);
+    QVERIFY(muteItem->mapToItem(bar, QPointF(muteItem->width(), 0)).x() <
+            qobject_cast<QQuickItem *>(host)->mapToItem(bar, QPointF(0, 0)).x());
+
+    // Muted from the bar: the flag is the tab's, and the page is paused at once, muted
+    // as it is paused. Unmuted, it plays again what that paused.
+    front->setProperty("scriptResult", QStringLiteral("paused"));
+    tapBar(QStringLiteral("mute"));
+    QVERIFY(tabs->isMuted(second));
+    QCOMPARE(asked(front).last(), QStringLiteral("pause"));
+    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = true,")));
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPaused);
+    QVERIFY(icon(mute).endsWith(QLatin1String("icon-m-speaker-mute")));
+    QVERIFY(coverIcon().toString().endsWith(QLatin1String("speaker-mute-32-white.png")));
+    QVERIFY(QFile::exists(coverIcon().toLocalFile()));
+    front->setProperty("scriptResult", QStringLiteral("playing"));
+    tapBar(QStringLiteral("mute"));
+    QVERIFY(!tabs->isMuted(second));
+    QCOMPARE(asked(front).last(), QStringLiteral("play"));
+    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = false,")));
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
+
+    // Left for another tab while it plays, it is paused while its view is still the
+    // one in front -- before its page is told it is hidden -- and plays again when it
+    // is back in front.
+    QVERIFY(front->property("active").toBool());
+    front->setProperty("scriptResult", QStringLiteral("paused"));
+    tabs->activateTabById(first);
+    QCOMPARE(asked(front).last(), QStringLiteral("pause"));
+    QVERIFY(front->property("activeWhenRun").toList().last().toBool());
+    QVERIFY(!front->property("active").toBool());
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPaused);
+    front->setProperty("scriptResult", QStringLiteral("playing"));
+    tabs->activateTabById(second);
+    QCOMPARE(asked(front).last(), QStringLiteral("play"));
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
+
+    // The tab behind starts too, and is paused: the one in front plays. Behind, a page
+    // that says it plays is held by the engine, and shows as paused.
+    behind->setProperty("scriptResult", QStringLiteral("playing"));
+    engineSays("play");
+    QTRY_COMPARE(asked(behind).last(), QStringLiteral("pause"));
+    QCOMPARE(tabs->shownMediaState(first), TabModel::MediaPaused);
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
+
+    // Muted from the cover, as from the bar.
+    front->setProperty("scriptResult", QStringLiteral("paused"));
+    QMetaObject::invokeMethod(coverMute, "triggered");
+    QVERIFY(tabs->isMuted(second));
+    QCOMPARE(asked(front).last(), QStringLiteral("pause"));
+
+    // A new page takes what the old one played with it; the tab stays muted, and the
+    // mute stays where it can be undone.
+    front->setProperty("loading", true);
+    QCOMPARE(tabs->mediaState(second), TabModel::NoMedia);
+    QVERIFY(mute->property("visible").toBool());
+    QVERIFY(mediaActions->property("enabled").toBool());
+    front->setProperty("scriptResult", QString());
+    front->setProperty("loading", false);
+
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// The mute over a tab's preview in the grid.
+void tst_qmlload::muteOnTheGrid()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    Salama::PageMedia *media = m_core->pageMedia();
+    const int first = tabs->activeTabId();
+    QObject *behind = currentWebView();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow fingers(root);
+    QQuickWindow &window = *fingers.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    // The command in the last script the page was asked to run.
+    const auto asked = [](QObject *view) {
+        const QString script = view->property("lastScript").toString();
+        for (const QString &command : {QStringLiteral("play"), QStringLiteral("pause")}) {
+            if (script.contains(QStringLiteral("var command = '%1'").arg(command))) {
+                return command;
+            }
+        }
+        return QString();
+    };
+    const auto icon = [](QObject *item) { return item->property("source").toString(); };
+    // The tab behind says it plays, which there means held, and goes on saying so each
+    // time it is asked; the one in front plays nothing, and is muted.
+    behind->setProperty("scriptResult", QStringLiteral("playing"));
+    media->answer(first, Salama::PageMedia::Query, QStringLiteral("playing"));
+    tabs->setMuted(second, true);
+
+    // Under a finger. The tab behind is held by the engine and is not heard: its
+    // speaker is struck through. A tap on it brings it to the front to be played,
+    // with the grid staying open; heard, a tap silences it where it is. The cell is not
+    // opened by either. While the mute is drawn, the picture under it fades out.
+    pullUpToTabs();
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    QCOMPARE(tabs->shownMediaState(first), TabModel::MediaPaused);
+    const QList<QObject *> cells = byRow(findAll(QStringLiteral("tabPreview")));
+    QCOMPARE(cells.count(), 2);
+    QObject *firstAction = findObjects(cells.at(0), QStringLiteral("previewMuteAction")).first();
+    QObject *secondAction = findObjects(cells.at(1), QStringLiteral("previewMuteAction")).first();
+    QObject *firstIcon = findObjects(cells.at(0), QStringLiteral("previewMuteIcon")).first();
+    QVERIFY(firstAction->property("visible").toBool());
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-mute")));
+    // Nothing plays in the tab in front, but it is muted, and says so.
+    QVERIFY(secondAction->property("visible").toBool());
+    QVERIFY(icon(findObjects(cells.at(1), QStringLiteral("previewMuteIcon")).first())
+                .endsWith(QLatin1String("icon-m-speaker-mute")));
+    QObject *firstPicture = findObjects(cells.at(0), QStringLiteral("tabPreviewPicture")).first();
+    QVERIFY(evaluate(firstPicture, QStringLiteral("layer.enabled")).toBool());
+    // Centred along the foot of the picture.
+    auto *actionItem = qobject_cast<QQuickItem *>(firstAction);
+    auto *shotItem = qobject_cast<QQuickItem *>(
+        findObjects(cells.at(0), QStringLiteral("tabPreviewShot")).first());
+    QCOMPARE(actionItem->x() + actionItem->width() / 2, shotItem->width() / 2);
+    QCOMPARE(actionItem->y() + actionItem->height(), shotItem->height());
+
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(firstAction));
+    QCOMPARE(tabs->activeTabId(), first);
+    QCOMPARE(asked(behind), QStringLiteral("play"));
+    QCOMPARE(tabs->shownMediaState(first), TabModel::MediaPlaying);
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-on")));
+    QVERIFY(page->property("tabsOpen").toBool());
+    behind->setProperty("scriptResult", QStringLiteral("paused"));
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(firstAction));
+    QVERIFY(tabs->isMuted(first));
+    QCOMPARE(asked(behind), QStringLiteral("pause"));
+    QVERIFY(behind->property("lastScript").toString().contains(QLatin1String("muted = true,")));
+    QCOMPARE(tabs->activeTabId(), first);
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-mute")));
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // A page that plays nothing and is not muted has no mute, and its picture runs to
+    // the foot.
+    behind->setProperty("scriptResult", QString());
+    tabs->setMuted(first, false);
+    media->forget(first);
+    QVERIFY(!firstAction->property("visible").toBool());
+    QVERIFY(!evaluate(firstPicture, QStringLiteral("layer.enabled")).toBool());
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
 }
 
 QTEST_MAIN(tst_qmlload)

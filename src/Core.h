@@ -6,6 +6,7 @@
 #include "downloads/DownloadModel.h"
 #include "engine/EngineMessages.h"
 #include "engine/PageActivity.h"
+#include "engine/PageMedia.h"
 #include "history/HistoryModel.h"
 #include "reader/Reader.h"
 #include "settings/Settings.h"
@@ -38,6 +39,7 @@ public:
     Settings *settings();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
+    PageMedia *pageMedia();
     Reader *reader();
 
 private:
@@ -51,6 +53,7 @@ private:
     Settings m_settings;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
+    PageMedia m_pageMedia;
     Reader m_reader;
 };
 

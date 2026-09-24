@@ -15,6 +15,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
     , m_settings(configFilePath)
+    , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
 {
     connect(&m_tabs, &TabModel::visited, &m_history,
@@ -29,6 +30,12 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     connect(&m_settings, &Settings::liveTabLimitChanged, &m_tabs,
             [this]() { m_tabs.setLiveTabLimit(m_settings.liveTabLimit()); });
     m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
+
+    // The engine says something started or stopped playing, and not where; the pages
+    // are asked (docs/DECISIONS/0026-media-controls.md).
+    connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
+    connect(&m_pageActivity, &PageActivity::backgroundChanged, &m_pageMedia,
+            [this]() { m_pageMedia.setBackground(m_pageActivity.background()); });
 }
 
 Storage &Core::storage()
@@ -74,6 +81,11 @@ EngineMessages *Core::engineMessages()
 PageActivity *Core::pageActivity()
 {
     return &m_pageActivity;
+}
+
+PageMedia *Core::pageMedia()
+{
+    return &m_pageMedia;
 }
 
 Reader *Core::reader()

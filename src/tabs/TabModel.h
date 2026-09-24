@@ -10,6 +10,7 @@
 #include "Tab.h"
 
 #include <QAbstractListModel>
+#include <QHash>
 #include <QList>
 #include <QSet>
 #include <QString>
@@ -44,6 +45,10 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(
         int currentGroupId READ currentGroupId WRITE setCurrentGroupId NOTIFY currentGroupChanged)
     Q_PROPERTY(int currentGroupIndex READ currentGroupIndex NOTIFY currentGroupChanged)
+    // What the tab in front is playing, and whether it is muted: what the navigation
+    // bar's media controls show (docs/DECISIONS/0026-media-controls.md).
+    Q_PROPERTY(int activeMediaState READ activeMediaState NOTIFY activeMediaChanged)
+    Q_PROPERTY(bool activeMuted READ activeMuted NOTIFY activeMediaChanged)
 
 public:
     enum Role
@@ -57,8 +62,27 @@ public:
         GroupRole,
         // Whether the page keeps its view: the tab in front and the ones read most
         // recently, up to the limit (docs/DECISIONS/0016-five-live-pages.md).
-        LiveRole
+        LiveRole,
+        // What the page is playing, a MediaState, as the tab's controls show it -- a
+        // page behind the one in front that says it plays shows as paused, below -- and
+        // whether the tab is muted. Neither is persisted: the one is the page's own, and
+        // goes with it; the other is kept for as long as the tab is open
+        // (docs/DECISIONS/0026-media-controls.md).
+        MediaRole,
+        MutedRole
     };
+
+    // Something with sound is playing on the page; or this browser paused it, and it
+    // can be played again from here; or neither. Unscoped on purpose, as
+    // Settings::CoverStyle is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
+    // cannot do for a scoped enum (cpp:S3642).
+    enum MediaState
+    {
+        NoMedia,
+        MediaPlaying,
+        MediaPaused
+    };
+    Q_ENUM(MediaState)
 
     // A null persistence keeps the model in memory only (used by tests). An empty
     // thumbnail directory turns page previews off.
@@ -75,6 +99,8 @@ public:
     QString activeUrl() const;
     QString activeTitle() const;
     QString activeFavicon() const;
+    int activeMediaState() const;
+    bool activeMuted() const;
     QStringList recentThumbnails() const;
     const QList<Tab> &tabs() const;
 
@@ -102,6 +128,18 @@ public:
     // updateThumbnail(). Empty when previews are off.
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
+
+    // What a page is playing, as PageMedia reads it from the page, and whether its tab
+    // is muted. A tab whose page is not kept loaded plays nothing.
+    MediaState mediaState(int tabId) const;
+    // The same, as the tab's controls show it. A page behind the one in front can say
+    // it plays, but its document is hidden and the engine holds a hidden document's
+    // media until it is shown again: to anyone looking it is paused, and it plays
+    // when it is brought to the front.
+    MediaState shownMediaState(int tabId) const;
+    void setMediaState(int tabId, MediaState state);
+    bool isMuted(int tabId) const;
+    void setMuted(int tabId, bool muted);
 
     // Tab groups. There is always one default group, first in the list, which can be
     // neither renamed nor removed.
@@ -136,11 +174,17 @@ public:
 
 signals:
     void countChanged();
+    // The tab in front is about to be another: told before anything else hears of it,
+    // while the page being left is still the one on the screen (PageMedia).
+    void activeTabLeaving(int tabId);
     void activeTabChanged();
     // The cover's list has changed: a tab opened or closed, one came to the front, or
     // a preview was captured.
     void recentTabsChanged();
     void activeTabDataChanged();
+    // What the tab in front plays, or whether it is muted, has changed -- or another tab
+    // has come to the front.
+    void activeMediaChanged();
     void tabAdded(int tabId);
     void tabClosed(int tabId);
     // Wired to the history model.
@@ -182,6 +226,9 @@ private:
     TabGroupModel *m_groupModel;
     ClosedTabModel *m_closedTabs;
     QSet<int> m_liveIds;
+    // Only the tabs whose page plays something, and only the muted tabs.
+    QHash<int, MediaState> m_media;
+    QSet<int> m_muted;
     int m_liveLimit = 0;
     int m_activeTabId = 0;
     int m_currentGroupId = 0;

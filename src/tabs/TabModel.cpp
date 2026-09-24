@@ -29,6 +29,8 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     load();
     ensureGroups();
     m_liveIds = liveSet();
+    // Another tab in front is other media in front.
+    connect(this, &TabModel::activeTabChanged, this, &TabModel::activeMediaChanged);
 }
 
 void TabModel::load()
@@ -156,6 +158,10 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
         return tab.groupId;
     case LiveRole:
         return m_liveIds.contains(tab.id);
+    case MediaRole:
+        return shownMediaState(tab.id);
+    case MutedRole:
+        return m_muted.contains(tab.id);
     default:
         return {};
     }
@@ -172,6 +178,8 @@ QHash<int, QByteArray> TabModel::roleNames() const
         {ActiveRole, QByteArrayLiteral("activeTab")},
         {GroupRole, QByteArrayLiteral("groupId")},
         {LiveRole, QByteArrayLiteral("liveTab")},
+        {MediaRole, QByteArrayLiteral("mediaState")},
+        {MutedRole, QByteArrayLiteral("muted")},
     };
 }
 
@@ -206,6 +214,16 @@ QString TabModel::activeFavicon() const
 {
     const int index = activeTabIndex();
     return index >= 0 ? m_tabs.at(index).favicon : QString();
+}
+
+int TabModel::activeMediaState() const
+{
+    return shownMediaState(m_activeTabId);
+}
+
+bool TabModel::activeMuted() const
+{
+    return isMuted(m_activeTabId);
 }
 
 QStringList TabModel::recentThumbnails() const
@@ -391,6 +409,8 @@ void TabModel::closeTab(int index)
     m_tabs.removeAt(index);
     endRemoveRows();
     m_awaitingFirstUrl.removeAll(closing.id);
+    m_media.remove(closing.id);
+    m_muted.remove(closing.id);
     m_groupTabs->remove(closing.id);
     m_groupModel->changed(groupIndexOf(closing.groupId), TabGroupModel::TabCountRole);
 
@@ -445,6 +465,8 @@ void TabModel::closeAllTabs()
     m_awaitingFirstUrl.clear();
     m_activeTabId = 0;
     m_liveIds.clear();
+    m_media.clear();
+    m_muted.clear();
     m_groupTabs->reset(QList<int>());
     m_groupModel->changedAll(TabGroupModel::TabCountRole);
     for (const Tab &tab : closed) {
@@ -561,6 +583,58 @@ void TabModel::updateThumbnail(int tabId, const QString &path)
     notifyRow(index, ThumbnailRole);
     persist(tab);
     emit recentTabsChanged();
+}
+
+TabModel::MediaState TabModel::mediaState(int tabId) const
+{
+    return m_media.value(tabId, NoMedia);
+}
+
+TabModel::MediaState TabModel::shownMediaState(int tabId) const
+{
+    const MediaState state = mediaState(tabId);
+    return state == MediaPlaying && tabId != m_activeTabId ? MediaPaused : state;
+}
+
+void TabModel::setMediaState(int tabId, MediaState state)
+{
+    const int index = indexOf(tabId);
+    // An answer that arrives after its page was given up is about a page that is gone.
+    if (index < 0 || mediaState(tabId) == state ||
+        (state != NoMedia && !m_liveIds.contains(tabId))) {
+        return;
+    }
+    if (state == NoMedia) {
+        m_media.remove(tabId);
+    } else {
+        m_media.insert(tabId, state);
+    }
+    notifyRow(index, MediaRole);
+    if (tabId == m_activeTabId) {
+        emit activeMediaChanged();
+    }
+}
+
+bool TabModel::isMuted(int tabId) const
+{
+    return m_muted.contains(tabId);
+}
+
+void TabModel::setMuted(int tabId, bool muted)
+{
+    const int index = indexOf(tabId);
+    if (index < 0 || isMuted(tabId) == muted) {
+        return;
+    }
+    if (muted) {
+        m_muted.insert(tabId);
+    } else {
+        m_muted.remove(tabId);
+    }
+    notifyRow(index, MutedRole);
+    if (tabId == m_activeTabId) {
+        emit activeMediaChanged();
+    }
 }
 
 void TabModel::discardThumbnail(const QString &path) const
@@ -795,6 +869,10 @@ void TabModel::refreshLive()
         if (before.contains(id) != live.contains(id)) {
             notifyRow(i, LiveRole);
         }
+        // Its view goes, and whatever it was playing with it.
+        if (!live.contains(id)) {
+            setMediaState(id, NoMedia);
+        }
     }
 }
 
@@ -830,14 +908,19 @@ void TabModel::setActiveTab(int tabId)
 
 void TabModel::applyActiveTab(int tabId)
 {
+    if (m_activeTabId != 0 && m_activeTabId != tabId) {
+        emit activeTabLeaving(m_activeTabId);
+    }
     const int oldIndex = indexOf(m_activeTabId);
     m_activeTabId = tabId;
-    if (oldIndex >= 0) {
-        notifyRow(oldIndex, ActiveRole);
-    }
-    const int newIndex = indexOf(tabId);
-    if (newIndex >= 0) {
-        notifyRow(newIndex, ActiveRole);
+    // Media shown as held behind the front, or no longer (shownMediaState()).
+    for (const int index : {oldIndex, indexOf(tabId)}) {
+        if (index >= 0) {
+            notifyRow(index, ActiveRole);
+            if (m_media.value(m_tabs.at(index).id, NoMedia) == MediaPlaying) {
+                notifyRow(index, MediaRole);
+            }
+        }
     }
     if (m_persistence != nullptr) {
         m_persistence->setActiveTabId(tabId);

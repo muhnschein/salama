@@ -48,6 +48,8 @@ Item {
     // Every script run since the view was made: a page is asked more than one thing
     // when it finishes loading, and only the last of them would be seen otherwise.
     property var scripts: []
+    // Whether the view was active as each of them was run.
+    property var activeWhenRun: []
     // What a script answers: scriptResult, or what answer(script) says when a test
     // has set it, for a page asked more than one thing.
     property var scriptResult: ""
@@ -172,6 +174,9 @@ Item {
         var list = scripts
         list.push(script)
         scripts = list
+        var states = activeWhenRun
+        states.push(active)
+        activeWhenRun = states
         if (scriptFails) {
             if (errorCallback) {
                 errorCallback("stub failure")

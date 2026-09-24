@@ -3,6 +3,7 @@
 #include "Core.h"
 
 #include <QFileInfo>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -20,6 +21,7 @@ private slots:
     void wiresTabsToHistory();
     void wiresFaviconsAndActiveUrlToBookmarks();
     void restoresState();
+    void wiresPlaybackToPageMedia();
 };
 
 void tst_core::wiresTabsToHistory()
@@ -96,6 +98,36 @@ void tst_core::restoresState()
     core.settings()->setLiveTabLimitIndex(0);
     QCOMPARE(core.tabs()->liveTabLimit(), core.settings()->liveTabLimit());
     QCOMPARE(core.tabs()->liveTabLimit(), 3);
+}
+
+// The engine's word that something plays, which PageActivity hears, has every loaded
+// page asked what it plays (docs/DECISIONS/0026-media-controls.md).
+void tst_core::wiresPlaybackToPageMedia()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    QVERIFY(core.pageMedia() != nullptr);
+    core.tabs()->newTab(QStringLiteral("https://a.example/"));
+    QSignalSpy requested(core.pageMedia(), &Salama::PageMedia::requested);
+    QVERIFY(requested.wait(core.pageMedia()->queryDelay() * 10));
+    requested.clear();
+    core.pageActivity()->observe(QStringLiteral("media-decoder-info"),
+                                 QVariantMap{{QStringLiteral("owner"), QStringLiteral("0x1")},
+                                             {QStringLiteral("state"), QStringLiteral("play")}});
+    QVERIFY(requested.wait(core.pageMedia()->queryDelay() * 10));
+    QCOMPARE(requested.first().at(0).toInt(), 0);
+    QCOMPARE(requested.first().at(1).toInt(), static_cast<int>(Salama::PageMedia::Query));
+
+    // Out of sight, the pages hear of it: what plays is hidden from them.
+    const int id = core.tabs()->activeTabId();
+    core.pageActivity()->setBackground(true);
+    QVERIFY(core.pageMedia()
+                ->script(id, Salama::PageMedia::Query)
+                .contains(QLatin1String("concealed = true;")));
+    core.pageActivity()->setBackground(false);
+    QVERIFY(core.pageMedia()
+                ->script(id, Salama::PageMedia::Query)
+                .contains(QLatin1String("concealed = false;")));
 }
 
 QTEST_GUILESS_MAIN(tst_core)

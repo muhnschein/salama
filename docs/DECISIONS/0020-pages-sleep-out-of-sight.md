@@ -77,7 +77,9 @@ What the engine calls a sound is a stream with an audio track; a video with a tr
 and the sound muted counts as sound and keeps pages awake. Media that plays from a page
 already asleep, which a frozen page cannot start, is not handled. A page behind the one
 in front never keeps anything awake: its view is inactive, so its media is paused the
-moment it is left, which was so before this.
+moment it is left, which was so before this. (0026 pauses it itself as it is left, and
+plays it again when it is back in front; and hides the videos of the page in front while
+it plays out of sight, so that what goes on is the sound.)
 
 Out of sight the view in front still draws for as long as it is active — a second, or
 the length of the sound — into a window nobody sees; the platform browser has a way to

@@ -2,7 +2,8 @@
 // Copyright (c) 2026 salama contributors
 //
 // What the cover has to say while the app is minimised: how many tabs are open,
-// and what they are.
+// and what they are. While the tab in front plays something, its mute is a second
+// action beside the search (docs/DECISIONS/0026-media-controls.md).
 //
 // The heading is laid out as the platform's own covers lay theirs out, and with
 // postivene's and vuo's measures exactly: the name top left with a line under it,
@@ -32,6 +33,26 @@ CoverBackground {
     /// Everything below turns on these two.
     readonly property bool showsHeading: Settings.coverStyle !== Settings.CoverIconOnly
     readonly property bool showsEveryTab: Settings.coverStyle === Settings.CoverEveryTab
+
+    /// The front tab plays something, or is muted: its mute is offered, as the bar
+    /// offers it (components/AddressLabel.qml).
+    readonly property bool showsMute: TabModel.activeMediaState !== TabModel.NoMedia
+                                      || TabModel.activeMuted
+    /// The mute's picture, as a whole URL. The home screen draws an action's picture
+    /// itself, from the file as it is, so it is one drawn at the size Silica's small
+    /// icon takes on this phone, and in white for a dark ambience and black for a
+    /// light one -- see icons/render.sh, which draws them from icons/cover/. The
+    /// speaker while the tab is heard, struck through while it is not, as on the
+    /// bar. Drawn here rather than taken from the theme's icon-cover-mute, whose
+    /// glyph could not be checked against the bar's speaker.
+    readonly property string muteIcon: {
+        var size = Math.max(32, Math.min(64, Math.round(Theme.iconSizeSmall / 8) * 8))
+        var ink = Theme.primaryColor
+        var onDark = 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
+        var heard = TabModel.activeMediaState === TabModel.MediaPlaying && !TabModel.activeMuted
+        return Qt.resolvedUrl("../../art/cover/speaker-" + (heard ? "on" : "mute")
+                              + "-" + size + "-" + (onDark ? "white" : "black") + ".png")
+    }
 
     objectName: "coverPage"
 
@@ -137,11 +158,33 @@ CoverBackground {
     // One action, and it is the one a browser is opened for: a new tab with the
     // address field already up and the keyboard with it. The window does the work --
     // the field belongs to the browsing page, which is not in a cover's scope.
+    //
+    // While the tab in front plays, the same and its mute beside it. The home screen
+    // draws the one list that is enabled, so there is one for each.
     CoverActionList {
+        objectName: "searchCoverActions"
+        enabled: !cover.showsMute
+
         CoverAction {
             objectName: "searchCoverAction"
             iconSource: "image://theme/icon-cover-search"
             onTriggered: window.requestNewTab()
+        }
+    }
+
+    CoverActionList {
+        objectName: "mediaCoverActions"
+        enabled: cover.showsMute
+
+        CoverAction {
+            iconSource: "image://theme/icon-cover-search"
+            onTriggered: window.requestNewTab()
+        }
+
+        CoverAction {
+            objectName: "muteCoverAction"
+            iconSource: cover.muteIcon
+            onTriggered: PageMedia.toggleMuted(TabModel.activeTabId)
         }
     }
 }

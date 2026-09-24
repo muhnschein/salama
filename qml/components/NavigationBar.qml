@@ -2,7 +2,9 @@
 // Copyright (c) 2026 salama contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
-// the menu. Dragging it upwards pulls the tab grid up from underneath the page.
+// the menu, and left of the host the tab's mute while the page plays something
+// (docs/DECISIONS/0026-media-controls.md). Dragging it upwards pulls the tab grid up
+// from underneath the page.
 //
 // While the address is being edited the bar belongs to the field: back and reload are
 // not drawn and the field takes their room, from the edge of the screen to the menu
@@ -23,9 +25,11 @@ Item {
 
     // The page in front, or null while it is made.
     property Item view: null
-    property string url
-    property bool loading: false
-    property bool canGoBack: false
+    // The front tab's address, and below what its page plays; the bar reads both itself,
+    // and whether the page loads and can go back off the view.
+    property string url: TabModel.activeUrl
+    readonly property bool loading: view ? view.loading === true : false
+    readonly property bool canGoBack: view ? view.canGoBack === true : false
     readonly property int loadProgress: view ? view.loadProgress : 0
     // The page came over TLS and the engine is not satisfied with it: a bad
     // certificate, a broken chain, mixed content. Gecko's own verdict, if this engine
@@ -41,6 +45,9 @@ Item {
         var security = view.security
         return !!security && !!security.validState && !security.allGood
     }
+    // What the page plays, a TabModel.MediaState, and whether its tab is muted.
+    readonly property int mediaState: TabModel.activeMediaState
+    readonly property bool muted: TabModel.activeMuted
     // The address turns into a field in place while it is being edited.
     property bool editing: false
     // Slimmed down to the handle and the host, with the controls faded off it: what the
@@ -167,6 +174,11 @@ Item {
             if (x >= navigationBar.addressRight) {
                 return "reload"
             }
+            // Left of the host, the mute takes everything from back's region to the
+            // host's, and half the gap between them.
+            if (addressRow.showsMute && x - addressRow.x < addressRow.muteEnd) {
+                return "mute"
+            }
         }
         return "address"
     }
@@ -182,6 +194,8 @@ Item {
             }
         } else if (region === "reload") {
             navigationBar.reloadOrStop()
+        } else if (region === "mute") {
+            PageMedia.toggleMuted(TabModel.activeTabId)
         } else if (region === "address") {
             navigationBar.tapAddress()
         }
@@ -276,6 +290,8 @@ Item {
     // Centred on the screen rather than in the space between the controls: an address
     // that sits off to one side reads as a label rather than as the bar's subject.
     AddressLabel {
+        id: addressRow
+
         objectName: "addressRow"
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -288,9 +304,17 @@ Item {
         url: navigationBar.url
         tlsBroken: navigationBar.tlsBroken
         pressed: gestureArea.pressedRegion === "address"
+        // On the slim bar too, as the warning is: there it says what plays, and a tap
+        // brings the whole bar back, as a tap anywhere on it does. It shrinks with the
+        // host as the bar slims.
+        mediaState: navigationBar.mediaState
+        muted: navigationBar.muted
+        mutePressed: gestureArea.pressedRegion === "mute"
         maximumWidth: navigationBar.centredWidth
         fontSize: Theme.fontSizeSmall
                   + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion
+        iconSize: Theme.iconSizeSmall
+                  + (Theme.iconSizeSmallPlus - Theme.iconSizeSmall) * navigationBar.expansion
     }
 
     TextField {

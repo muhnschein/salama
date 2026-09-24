@@ -42,6 +42,10 @@ Item {
     // cells.
     readonly property bool searching: searchField.text.length > 0
                                       && TabSearch.searchTerm.length > 0
+    // How much of the rows' tint is drawn: halfway from Silica's overlay to opaque. At
+    // the overlay's own strength the cells showed through the rows more than the rows
+    // could carry (docs/DECISIONS/0010-tab-grid-deck.md).
+    readonly property real glassOpacity: (1 + Theme.opacityOverlay) / 2
 
     objectName: "tabsView"
 
@@ -152,6 +156,7 @@ Item {
             }
             onCloseRequested: TabModel.closeTabById(model.tabId)
             onMoveRequested: GroupTabs.moveTab(from, to)
+            onMuteToggled: PageMedia.toggleMuted(model.tabId)
         }
 
         ViewPlaceholder {
@@ -184,7 +189,7 @@ Item {
         // cutout rather than centred through it: the row starts at the top of the
         // screen, and the notch was taking a bite out of what it carries.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
-        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+        color: Theme.rgba(Theme.highlightDimmerColor, tabsView.glassOpacity)
 
         GlassTexture {
             objectName: "gridHeadGlass"
@@ -283,7 +288,7 @@ Item {
             bottomMargin: -tabGrid.overscroll
         }
         height: Theme.itemSizeLarge
-        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
+        color: Theme.rgba(Theme.highlightDimmerColor, tabsView.glassOpacity)
 
         GlassTexture {
             objectName: "gridFootGlass"
