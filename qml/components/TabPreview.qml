@@ -2,8 +2,8 @@
 // Copyright (c) 2026 salama contributors
 //
 // One cell of the tab grid: the captured page preview with a close button in its
-// top-right corner and, while the page plays something, its media controls along its
-// foot; the favicon and title underneath.
+// top-right corner and, while the page plays something, the tab's mute at its foot;
+// the favicon and title underneath.
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held for a
@@ -30,8 +30,7 @@ Item {
     // event, which this handler has not got to give it.
     signal tapped()
     signal closeRequested()
-    // The media controls over the picture (docs/DECISIONS/0024-media-controls.md).
-    signal playbackToggled()
+    // The mute over the picture (docs/DECISIONS/0024-media-controls.md).
     signal muteToggled()
     // The cell has been carried over another one and the two should trade places.
     signal moveRequested(int from, int to)
@@ -281,25 +280,37 @@ Item {
                 }
             }
 
-            // As wide as the cell and anchored to its top, at the picture's own
-            // aspect: what shows is then the top of what was last on the screen.
-            // PreserveAspectCrop centres instead, and a screen-shaped picture in a
-            // cell-shaped box centres on the middle of the page -- which is neither
-            // where the reader was at the top of a page nor where they were at its
-            // foot.
-            Image {
-                objectName: "tabPreviewImage"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: parent.top
+            // The picture runs out towards its foot while the mute is drawn there, so
+            // the glyph sits on the cell's own ground rather than on the page, as a
+            // cover's quick actions sit on the cover's.
+            Item {
+                objectName: "tabPreviewPicture"
+                anchors.fill: parent
+                layer.enabled: muteAction.visible
+                layer.effect: FootFade {
+                    band: muteAction.height * 2
                 }
-                height: sourceSize.width > 0 ? width * sourceSize.height / sourceSize.width
-                                             : parent.height
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
-                visible: status === Image.Ready
+
+                // As wide as the cell and anchored to its top, at the picture's own
+                // aspect: what shows is then the top of what was last on the screen.
+                // PreserveAspectCrop centres instead, and a screen-shaped picture in a
+                // cell-shaped box centres on the middle of the page -- which is neither
+                // where the reader was at the top of a page nor where they were at its
+                // foot.
+                Image {
+                    objectName: "tabPreviewImage"
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                    }
+                    height: sourceSize.width > 0 ? width * sourceSize.height / sourceSize.width
+                                                 : parent.height
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
+                    visible: status === Image.Ready
+                }
             }
 
             // Shown until the tab has been displayed at least once.
@@ -339,19 +350,19 @@ Item {
                 }
             }
 
-            // In the corner across from the close button's, the picture's bottom-left.
-            // Like the active role, the two below are undefined for a cell that
-            // outlives its row.
-            PreviewMediaControls {
-                objectName: "previewMediaControls"
+            // Centred along the picture's foot, where a cover has its actions. Like the
+            // active role, the two below are undefined for a cell that outlives its row.
+            PreviewMuteAction {
+                id: muteAction
+
+                objectName: "previewMuteAction"
                 anchors {
-                    left: parent.left
+                    horizontalCenter: parent.horizontalCenter
                     bottom: parent.bottom
                 }
                 mediaState: model.mediaState === undefined ? TabModel.NoMedia : model.mediaState
                 muted: model.muted === true
-                onPlaybackToggled: preview.playbackToggled()
-                onMuteToggled: preview.muteToggled()
+                onToggled: preview.muteToggled()
             }
         }
 

@@ -11,9 +11,10 @@ namespace Salama {
 
 class TabModel;
 
-// What each page is playing, and the controls a tab has over it: play and pause, mute
-// and unmute. Only one tab plays at a time: while the tab in front plays, every other
-// tab that plays is paused (docs/DECISIONS/0024-media-controls.md).
+// What each page is playing, and the one control a tab has over it: muted, which
+// pauses it too, and unmuted, which plays again what that paused. Only one tab plays
+// at a time: while the tab in front plays, every other tab that plays is paused
+// (docs/DECISIONS/0024-media-controls.md).
 //
 // The engine says that something started or stopped playing, but not where: its
 // "media-decoder-info" notification, which PageActivity reads, names a decoder by its
@@ -63,11 +64,11 @@ public:
     // The tab's page is going, and what it played with it: a new one is loading.
     Q_INVOKABLE void forget(int tabId);
 
-    // The two controls, on the grid's previews and on the navigation bar. Playing a
-    // tab that is not in front brings it to the front: a page behind the one in front
-    // is hidden, and the engine does not play a hidden page's media
-    // (TabModel::shownMediaState()).
-    Q_INVOKABLE void togglePlayback(int tabId);
+    // The control, on the grid's previews, on the navigation bar and on the cover. A
+    // muted tab is paused as well, and unmuted it plays again what that paused: a
+    // page silenced and left to play on would still be going when it was wanted
+    // back. A tab behind the one in front stays where it is, and what it plays again
+    // is held until it comes to the front (TabModel::shownMediaState()).
     Q_INVOKABLE void toggleMuted(int tabId);
 
     // Something started or stopped playing somewhere: every loaded page is asked, a

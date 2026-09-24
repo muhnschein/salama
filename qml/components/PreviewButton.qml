@@ -5,7 +5,7 @@
 // it, faint enough not to be the first thing seen on each cell and opaque under a
 // finger. The disc is what keeps the mark readable over a white page and a dark one
 // alike (docs/DECISIONS/0010-tab-grid-deck.md). The close button in a preview's corner
-// is one, and so are the media controls along its foot.
+// is one.
 //
 // It takes its own presses, above the handler the cell's gestures go through, so a
 // tap on it is never a tap on the cell.

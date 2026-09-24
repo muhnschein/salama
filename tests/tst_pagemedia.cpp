@@ -70,7 +70,6 @@ private slots:
     void theTabInFrontPausesTheOthers();
     void aTabBehindIsPausedWhileTheFrontPlays();
     void aTabBehindMayPlayWhileTheFrontIsSilent();
-    void togglePlayback();
     void toggleMuted();
     void refreshAsksEveryPageOnce();
     void anotherTabInFrontAsksAgain();
@@ -173,6 +172,16 @@ void tst_pagemedia::scriptOverAPage()
              QStringLiteral("playing"));
     QVERIFY(js(QStringLiteral("!video.muted && video.salamaMuted === undefined")).toBool());
     QVERIFY(js(QStringLiteral("hushed.muted")).toBool());
+
+    // Muted from the control, and paused in the same run: the tab says it is paused,
+    // and what was paused is muted as well. Unmuted, it plays again, and is heard.
+    tabs.setMuted(id, true);
+    QCOMPARE(run(PageMedia::Pause, QStringLiteral("page([video])")), QStringLiteral("paused"));
+    QVERIFY(
+        js(QStringLiteral("video.paused && video.muted && video.salamaPaused === true")).toBool());
+    tabs.setMuted(id, false);
+    QCOMPARE(run(PageMedia::Play, QStringLiteral("page([video])")), QStringLiteral("playing"));
+    QVERIFY(js(QStringLiteral("!video.paused && !video.muted")).toBool());
 }
 
 void tst_pagemedia::answersBecomeTheTabsState()
@@ -278,66 +287,37 @@ void tst_pagemedia::aTabBehindMayPlayWhileTheFrontIsSilent()
     QCOMPARE(tabs.mediaState(behind), TabModel::MediaPlaying);
 }
 
-void tst_pagemedia::togglePlayback()
-{
-    TabModel tabs(nullptr);
-    PageMedia media(&tabs, Delay);
-    const int behind = tabs.newTab(QStringLiteral("https://a.example/"));
-    const int front = tabs.newTab(QStringLiteral("https://b.example/"));
-    QSignalSpy spy(&media, &PageMedia::requested);
-
-    // Nothing to play or pause, and nothing is asked.
-    media.togglePlayback(front);
-    QVERIFY(spy.isEmpty());
-
-    media.answer(front, PageMedia::Query, QStringLiteral("playing"));
-    media.togglePlayback(front);
-    QCOMPARE(requests(spy), QStringList({request(front, PageMedia::Pause)}));
-
-    // Paused in front, it plays.
-    spy.clear();
-    media.answer(front, PageMedia::Query, QStringLiteral("paused"));
-    media.togglePlayback(front);
-    QCOMPARE(requests(spy), QStringList({request(front, PageMedia::Play)}));
-
-    // A tab behind is played in front: behind, the engine would hold it. So is one
-    // that says it plays, which behind the front means held.
-    spy.clear();
-    media.answer(behind, PageMedia::Query, QStringLiteral("paused"));
-    media.togglePlayback(behind);
-    QCOMPARE(tabs.activeTabId(), behind);
-    QCOMPARE(requests(spy), QStringList({request(behind, PageMedia::Play)}));
-    spy.clear();
-    media.answer(front, PageMedia::Query, QStringLiteral("playing"));
-    QCOMPARE(tabs.shownMediaState(front), TabModel::MediaPaused);
-    media.togglePlayback(front);
-    QCOMPARE(tabs.activeTabId(), front);
-    QCOMPARE(requests(spy), QStringList({request(front, PageMedia::Play)}));
-
-    // A tab that is not there is left alone.
-    spy.clear();
-    media.togglePlayback(front + 1);
-    QVERIFY(spy.isEmpty());
-}
-
 void tst_pagemedia::toggleMuted()
 {
     TabModel tabs(nullptr);
     PageMedia media(&tabs, Delay);
-    const int id = tabs.newTab(QStringLiteral("https://a.example/"));
+    const int behind = tabs.newTab(QStringLiteral("https://a.example/"));
+    const int id = tabs.newTab(QStringLiteral("https://b.example/"));
     QSignalSpy spy(&media, &PageMedia::requested);
 
-    // The flag is the tab's, and the page is asked at once, which applies it.
+    // The flag is the tab's. Muted, the page is paused at once, which mutes it as it
+    // pauses; unmuted, it plays again what that paused.
     media.toggleMuted(id);
     QVERIFY(tabs.isMuted(id));
-    QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Query)}));
+    QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Pause)}));
+    spy.clear();
     media.toggleMuted(id);
     QVERIFY(!tabs.isMuted(id));
-    QCOMPARE(spy.count(), 2);
+    QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Play)}));
 
+    // A tab behind the front is muted and unmuted where it is.
+    spy.clear();
+    media.toggleMuted(behind);
+    media.toggleMuted(behind);
+    QCOMPARE(tabs.activeTabId(), id);
+    QCOMPARE(requests(spy),
+             QStringList({request(behind, PageMedia::Pause), request(behind, PageMedia::Play)}));
+
+    // A tab that is not there is left alone.
+    spy.clear();
     media.toggleMuted(id + 1);
     QVERIFY(!tabs.isMuted(id + 1));
-    QCOMPARE(spy.count(), 2);
+    QVERIFY(spy.isEmpty());
 }
 
 void tst_pagemedia::refreshAsksEveryPageOnce()

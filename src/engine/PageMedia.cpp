@@ -127,30 +127,14 @@ void PageMedia::forget(int tabId)
     m_tabs->setMediaState(tabId, TabModel::NoMedia);
 }
 
-void PageMedia::togglePlayback(int tabId)
-{
-    const TabModel::MediaState state = m_tabs->mediaState(tabId);
-    if (state == TabModel::NoMedia) {
-        return;
-    }
-    // Behind the one in front a page's media is held, whatever it says: it is played
-    // by bringing it to the front, where the engine lets go of what it held, and what
-    // was paused from here is played with it.
-    if (tabId != m_tabs->activeTabId()) {
-        m_tabs->activateTabById(tabId);
-        emit requested(tabId, Play);
-        return;
-    }
-    emit requested(tabId, state == TabModel::MediaPlaying ? Pause : Play);
-}
-
 void PageMedia::toggleMuted(int tabId)
 {
     if (m_tabs->indexOf(tabId) < 0) {
         return;
     }
-    m_tabs->setMuted(tabId, !m_tabs->isMuted(tabId));
-    emit requested(tabId, Query);
+    const bool muted = !m_tabs->isMuted(tabId);
+    m_tabs->setMuted(tabId, muted);
+    emit requested(tabId, muted ? Pause : Play);
 }
 
 void PageMedia::refresh()

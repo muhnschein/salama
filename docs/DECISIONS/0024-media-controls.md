@@ -1,4 +1,4 @@
-# 0024 — Media controls on the preview and the bar; one tab plays at a time
+# 0024 — A tab's mute on the preview, the bar and the cover; one tab plays at a time
 
 ## Context
 A page playing something said so nowhere but on itself: the grid did not say which tab
@@ -19,21 +19,36 @@ the view of a tab behind the one in front is inactive, and its document hidden �
 touching the element's `paused`, and plays it on when the document is shown again.
 
 ## Decision
-**Two controls, on both surfaces**, separate as everywhere else: play/pause as Firefox
-for Android had it, mute as Firefox and Safari have it.
+**One control, the mute, and muting pauses.** The first build had two, play/pause as
+Firefox for Android had it and mute as Firefox and Safari have it; on device, two
+glyphs were one more than a preview or the bar could carry, and a muted page left
+playing was still going when it was wanted back. So a muted tab is paused as well, and
+unmuted it plays again what that paused. The control shows while the tab's page plays
+something or was paused from here, and whenever the tab is muted.
 
-- On a preview in the grid (`PreviewMediaControls`), two discs in the picture's
-  bottom-left corner, drawn as the close button's disc is (`PreviewButton`): play/pause
-  while the page plays or was paused from here, and mute then too, or whenever the tab
-  is muted. They keep their own taps; the cell under them does not open.
-- On the bar, the same two glyphs (`MediaIcon`) left of the host, in the row the TLS
-  warning is in (0011), and on the slim bar too, as the warning is — where a tap brings
-  the whole bar back, as any tap on it does (0009). What lies between back's region and
-  the host is theirs to tap.
-- The glyphs say what the page does now: pause while it plays, the speaker struck
-  through while muted. `icon-m-play` and `icon-m-pause` are Jolla's media controls';
-  `icon-m-speaker-on` and `icon-m-speaker-mute` those of the Harbour players that mute
-  (Jupii, harbour-sailfishconnect). None has a small size, so they are drawn small.
+- On a preview in the grid (`PreviewMuteAction`), drawn as a cover draws its quick
+  actions: the glyph alone, centred along the picture's foot, a step larger than the
+  small icons. Under it the picture fades out towards its bottom edge over twice the
+  action's height (`FootFade`), so the glyph sits on the cell's own ground rather than
+  on the page — how piirit's and vuo's covers make room for what they draw at their
+  foot, eased as piirit's is. It keeps its own taps; the cell under it does not open,
+  and does not come to the front.
+- On the bar (`AddressLabel`), the glyph hangs off the left of the host rather than
+  being part of the row the bar centres, which is the host and the TLS warning (0011):
+  counted in, it pushed the host off the middle of the bar whenever something played.
+  It is drawn in the ambience's colour where the bar's other controls are in the
+  primary one, a step larger than the small icons, and shrinks with the host on the
+  slim bar, where a tap brings the whole bar back, as any tap on it does (0009). What
+  lies between back's region and the host is its to tap.
+- On the cover, while the tab in front plays or is muted, a second action beside the
+  search (0014). The home screen draws an action's picture from its file as it is, so
+  the two speakers are drawn for it (`icons/cover/`, rendered by `icons/render.sh` into
+  `art/cover/` at each size Silica's small icon takes, in white and in black), as piirit
+  draws its own; the theme's `icon-cover-mute` is not used, its glyph unchecked.
+- The glyph says what the tab's sound is now: the speaker while it is on, struck
+  through while muted — `icon-m-speaker-on` and `icon-m-speaker-mute`, those of the
+  Harbour players that mute (Jupii, harbour-sailfishconnect). Neither has a small size,
+  so they are drawn smaller.
 
 **What plays is asked of the pages** (`src/engine/PageMedia`). `PageActivity` tells it
 when a decoder's play state changes, and so does the tab model when another tab comes
@@ -50,9 +65,9 @@ page that is loading, a view given up (0016) or a tab closed plays nothing. `mut
 the tab's, kept while it is open and applied each time its page is asked.
 
 **Behind the front, playing is held.** A page behind the one in front that says it plays
-is shown paused (`TabModel::shownMediaState`), since it is silent; its play button brings
-the tab to the front, where the engine lets it go on, and plays what was paused from
-here. The grid stays open.
+is shown paused (`TabModel::shownMediaState`), since it is silent. Muted and unmuted from
+its preview, it stays where it is: what unmuting plays again is held until the tab comes
+to the front, where the engine lets it go on.
 
 **One tab plays at a time**, the one in front. When it answers that it plays, every other
 tab whose page says it plays is paused, for real — brought back, it stays paused — and a
@@ -77,6 +92,9 @@ resume its own media; the next ask shows it as it is. Mute does not survive a re
 which Firefox's does. The two marks are properties on the page's elements, which the page
 can see.
 
+There is no pause without the mute, nor a way to resume a tab paused for another's sake
+but the page's own player. A tab paused so shows its mute, unmuted.
+
 `tst_pagemedia` runs the script over a page made of the parts of the DOM it reads;
-`tst_qmlload::mediaControls` drives the bar and the grid. What a real page answers, and
+`tst_qmlload::mediaControls` drives the bar, the grid and the cover. What a real page answers, and
 how quickly, is on the device checklist.

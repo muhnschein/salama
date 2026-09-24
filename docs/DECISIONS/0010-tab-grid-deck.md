@@ -98,7 +98,8 @@ stays with the content:
   move it there (0015): at the foot it is under the thumb doing the carrying.
 
 Both rows are panes of **Silica's glass**: their tint, `Theme.highlightDimmerColor` at
-`Theme.opacityOverlay`, with the ambience's own pattern, `Theme._patternImage`, tiled over
+halfway from `Theme.opacityOverlay` to opaque (at the overlay's own strength the cells
+showed through the rows more than they could carry), with the ambience's own pattern, `Theme._patternImage`, tiled over
 it a pixel to a pixel of the screen and drawn at a tenth, as Silica's glass material draws
 its pattern; the keyboard's glass draws this one (`components/GlassTexture.qml`). The tint
 alone was a smooth band where Silica's own panes are textured. The material itself is in
@@ -195,11 +196,10 @@ across the top of every grid. The hold tolerates drift: a thumb held down moves,
 first build wanted it perfectly still. How much, and in which direction, is in the
 section above.
 
-The close button on a cell is drawn by the cell (`closeTabMark`, a `PreviewButton`, which
-the media controls along the picture's foot are made of too): a disc in the highlight
-colour with a cross through it. The theme's `icon-m-clear` carries a disc of its own at
-its own transparency, baked into the icon, so the glyph alone was lost on most pages and
-a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,
+The close button on a cell is drawn by the cell (`closeTabMark`, a `PreviewButton`): a
+disc in the highlight colour with a cross through it. The theme's `icon-m-clear` carries
+a disc of its own at its own transparency, baked into the icon, so the glyph alone was
+lost on most pages and a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,
 and on device it was the first thing seen on every cell; it is drawn at
 `Theme.opacityHigh` now, and opaque only under a finger.
 

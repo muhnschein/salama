@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
-// the menu, and left of the host the media controls while the page plays something
+// the menu, and left of the host the tab's mute while the page plays something
 // (docs/DECISIONS/0024-media-controls.md). Dragging it upwards pulls the tab grid up
 // from underneath the page.
 //
@@ -171,13 +171,9 @@ Item {
             if (x >= navigationBar.addressRight) {
                 return "reload"
             }
-            // Left of the host, the media controls take everything from back's region
-            // to the host's.
-            var inRow = x - addressRow.x
-            if (addressRow.showsPlayback && inRow < addressRow.playbackEnd) {
-                return "playback"
-            }
-            if (addressRow.showsMute && inRow < addressRow.mediaEnd) {
+            // Left of the host, the mute takes everything from back's region to the
+            // host's, and half the gap between them.
+            if (addressRow.showsMute && x - addressRow.x < addressRow.muteEnd) {
                 return "mute"
             }
         }
@@ -195,8 +191,6 @@ Item {
             }
         } else if (region === "reload") {
             navigationBar.reloadOrStop()
-        } else if (region === "playback") {
-            PageMedia.togglePlayback(TabModel.activeTabId)
         } else if (region === "mute") {
             PageMedia.toggleMuted(TabModel.activeTabId)
         } else if (region === "address") {
@@ -307,14 +301,17 @@ Item {
         url: navigationBar.url
         tlsBroken: navigationBar.tlsBroken
         pressed: gestureArea.pressedRegion === "address"
-        // On the slim bar too, as the warning is: there they say what plays, and a tap
-        // brings the whole bar back, as a tap anywhere on it does.
+        // On the slim bar too, as the warning is: there it says what plays, and a tap
+        // brings the whole bar back, as a tap anywhere on it does. It shrinks with the
+        // host as the bar slims.
         mediaState: navigationBar.mediaState
         muted: navigationBar.muted
-        pressedControl: gestureArea.pressedRegion
+        mutePressed: gestureArea.pressedRegion === "mute"
         maximumWidth: navigationBar.centredWidth
         fontSize: Theme.fontSizeSmall
                   + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion
+        iconSize: Theme.iconSizeSmall
+                  + (Theme.iconSizeSmallPlus - Theme.iconSizeSmall) * navigationBar.expansion
     }
 
     TextField {
