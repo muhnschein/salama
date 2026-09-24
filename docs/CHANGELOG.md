@@ -11,7 +11,7 @@ Versions follow semantic versioning.
 - The grid can be pulled back to the page from anywhere on it again, a preview or the head row included, and a grid longer than the screen scrolls from a drag begun on a preview. A preview being held is let go when the finger moves up or down, as a held list item is.
 
 ### Changed
-- A new application icon: a lightning bolt on a dark disc in a gold frame.
+- A new application icon: a pale pink lightning bolt on a plum-to-navy disc in a mauve frame.
 - A preview in the grid is picked up after a second of holding rather than a second and a half.
 - Private tabs are gone, and the private group with them: the platform offers a Harbour application no way to put a device-lock or fingerprint gate on them, and an unlocked "Private" group would promise what it cannot keep. A database that still has private tabs loses them on first start.
 - The application is now called salama (it was tuuli): package `harbour-salama`, Sailjail application name `salama`. The data directory changes with the name, so tabs, bookmarks, history and settings from a tuuli build do not carry over.
