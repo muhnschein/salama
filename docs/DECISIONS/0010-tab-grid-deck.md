@@ -97,12 +97,14 @@ stays with the content:
   lately (0018). The strip was in the head until a tab could be carried onto a group to
   move it there (0015): at the foot it is under the thumb doing the carrying.
 
-Both rows are panes of **Silica's glass**: their tint, `Theme.highlightDimmerColor` at
-halfway from `Theme.opacityOverlay` to opaque (at the overlay's own strength the cells
-showed through the rows more than they could carry), with the ambience's own pattern, `Theme._patternImage`, tiled over
+Both rows are panes of **Silica's glass**: their tint, `Theme.highlightDimmerColor`,
+**opaque** as the navigation bar's is, with the ambience's own pattern, `Theme._patternImage`, tiled over
 it a pixel to a pixel of the screen and drawn at a tenth, as Silica's glass material draws
 its pattern; the keyboard's glass draws this one (`components/GlassTexture.qml`). The tint
-alone was a smooth band where Silica's own panes are textured. The material itself is in
+alone was a smooth band where Silica's own panes are textured. The tint was see-through
+at first, at `Theme.opacityOverlay` and then halfway from that to opaque, and the cells
+showed through the rows more than the rows could carry; even the denser tint was one
+more thing moving on a screen that was already too busy, and it is opaque now. The material itself is in
 `Sailfish.Silica.Background`, which is not on Harbour's import allow-list; the pattern is
 the theme's, an underscored `Theme` property as `_lineWidth` is (0015).
 
@@ -114,10 +116,18 @@ shows is the top of what was last on the screen.
 
 The cell is a plain `Item`, not a Silica `BackgroundItem`. That one draws both its press
 feedback and its highlight as a wash across the whole cell, edge to edge. The cell draws
-the same square wash itself, stopped short of its edges round the picture and the title,
-and marks its rounded box with a border as well. The wash was once left out for the border
-alone, which on device said nothing at all; it came back with the box's rounded corners,
-and after another look on device it is square, as Silica's own is.
+the same square wash itself, stopped short of its edges round the picture. The wash was
+once left out for a border in the highlight colour on the rounded box alone, which on
+device said nothing at all; it came back with the box's rounded corners, and after
+another look on device it is square, as Silica's own is. For a while the border stayed
+beside it, and the active cell's title was lit as well; three marks for one thing made
+the grid busy, and the wash, the quietest of them, is the only one left.
+
+Nothing is drawn under the picture. There were the tab's favicon and title, and on device
+they made the grid busier than the pictures, which are what tells one page from another;
+the picture runs down into the room they took. A tab never shown since it was opened has
+no picture, and says so ("No preview") with nothing else to tell it by; the search in the
+head row finds it by title or address.
 
 The box has rounded corners, and so does the picture: `clip` is rectangular
 whatever the shape of the item doing the clipping, so the corners are cut by an
@@ -197,13 +207,22 @@ first build wanted it perfectly still. How much, and in which direction, is in t
 section above.
 
 The close button on a cell is drawn by the cell (`closeTabMark`, a `PreviewButton`): a
-disc in the highlight colour with a cross through it. The theme's `icon-m-clear` carries
+disc with a cross through it. The theme's `icon-m-clear` carries
 a disc of its own at its own transparency, baked into the icon, so the glyph alone was
 lost on most pages and a disc drawn behind it was a disc inside a disc. The disc was all but opaque at first,
 and on device it was the first thing seen on every cell; it is drawn at
 `Theme.opacityHigh` now, and opaque only under a finger.
 
-The picture and the title sit `Theme.paddingMedium` and half a `Theme.paddingSmall` in
+The disc was in the highlight colour, and it was still the loudest thing on the cell: an
+ambience's colour on every picture, and on a pale page a pale disc with a pale cross. It
+is in no colour of the ambience's now but `Theme.overlayBackgroundColor`, the ground
+Silica lays under what goes over a picture -- black in a dark ambience, white in a light
+one -- and the cross on it is `Theme.primaryColor`, which is the one set against that
+ground. The faintness is in the disc's colour rather than the item's opacity, so the
+cross is drawn opaque: white on a dark disc reads over a white page and a black one
+alike, and the same holds the other way round in a light ambience.
+
+The picture sits `Theme.paddingMedium` and half a `Theme.paddingSmall` in
 from the cell's edges (`inset`), so two cells stand twice that apart. It was a medium
 padding, and on device the pictures stood too close together.
 

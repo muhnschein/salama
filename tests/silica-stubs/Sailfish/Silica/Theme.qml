@@ -29,6 +29,8 @@ QtObject {
     readonly property color errorColor: "#ff4d4d"
     readonly property color highlightBackgroundColor: "#aaccff"
     readonly property color highlightDimmerColor: "#22447f"
+    // A dark ambience's: black, as white is a light one's.
+    readonly property color overlayBackgroundColor: "#000000"
     readonly property real highlightBackgroundOpacity: 0.3
     readonly property real opacityFaint: 0.2
     readonly property real opacityLow: 0.4

@@ -2,8 +2,9 @@
 // Copyright (c) 2026 salama contributors
 //
 // One cell of the tab grid: the captured page preview with a close button in its
-// top-right corner and, while the page plays something, the tab's mute at its foot;
-// the favicon and title underneath.
+// top-right corner and, while the page plays something, the tab's mute at its foot.
+// Nothing underneath: the favicon and title that were there made the grid busier than
+// the pictures that say which page is which (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // Three gestures share the cell, and one MouseArea under the contents tells them
 // apart the way the navigation bar's does. A tap opens the tab. A finger held for a
@@ -17,7 +18,7 @@
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
 // and its highlight as a wash across the whole cell, edge to edge; the wash here is as
-// square, but stops short of the edges, round the picture and the title.
+// square, but stops short of the edges, round the picture.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -58,11 +59,11 @@ Item {
     property bool sideways: false
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
-    // The picture and title's inset from the cell's edges, half the gap between cells.
+    // The picture's inset from the cell's edges, half the gap between cells.
     readonly property real inset: Theme.paddingMedium + Theme.paddingSmall / 2
-    // What the wash and the border below mark: this cell is the active tab, or has a
-    // finger. A cell whose tab has just been closed outlives its row for a moment, and
-    // its role is then undefined, which a bool cannot be.
+    // What the wash below marks: this cell is the active tab, or has a finger. A cell
+    // whose tab has just been closed outlives its row for a moment, and its role is then
+    // undefined, which a bool cannot be.
     readonly property bool highlighted: dragArea.pressed || model.activeTab === true
     readonly property Item grid: GridView.view
 
@@ -235,15 +236,13 @@ Item {
 
         // What marks the active cell, and the one under a finger: the wash Silica's
         // BackgroundItem would have drawn across the cell, square as that one is, round
-        // the picture and the title. The thin border below says the same thing quietly;
-        // on device it turned out to say nothing at all on its own.
+        // the picture. It is the only mark: a border in the highlight colour on the box
+        // as well, and the title lit, said it three times over.
         Rectangle {
             objectName: "tabPreviewHighlight"
             anchors {
                 fill: parent
                 margins: preview.inset - Theme.paddingSmall
-                // Further down than the rest: the title sat close to the edge of it.
-                bottomMargin: preview.inset - Theme.paddingSmall * 1.5
             }
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
             visible: preview.highlighted
@@ -254,17 +253,12 @@ Item {
 
             objectName: "tabPreviewShot"
             anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
+                fill: parent
                 margins: preview.inset
             }
-            height: parent.height - caption.height - preview.inset * 2 - Theme.paddingMedium
             clip: true
             radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
-            border.width: preview.highlighted ? Theme.paddingSmall / 2 : 0
-            border.color: Theme.highlightColor
 
             // Rounded at the corners, picture and all. Clipping is rectangular
             // whatever the shape of the item doing it, so the corners are cut by a
@@ -323,10 +317,10 @@ Item {
                 color: Theme.secondaryColor
             }
 
-            // The close button: a disc of the highlight colour with a cross cut through
-            // it. Drawn here, not the theme's icon-m-clear: that icon carries a disc of
-            // its own at its own transparency, so the glyph alone was lost on most pages
-            // and a disc behind it was a disc inside a disc.
+            // The close button: a plain dark or light disc with a cross through it in
+            // the colour set against it. Drawn here, not the theme's icon-m-clear: that
+            // icon carries a disc of its own at its own transparency, so the glyph alone
+            // was lost on most pages and a disc behind it was a disc inside a disc.
             PreviewButton {
                 objectName: "closeTabButton"
                 markName: "closeTabMark"
@@ -363,37 +357,6 @@ Item {
                 mediaState: model.mediaState === undefined ? TabModel.NoMedia : model.mediaState
                 muted: model.muted === true
                 onToggled: preview.muteToggled()
-            }
-        }
-
-        Row {
-            id: caption
-
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                margins: preview.inset
-            }
-            height: Theme.iconSizeSmall
-            spacing: Theme.paddingSmall
-
-            Image {
-                objectName: "tabFavicon"
-                width: Theme.iconSizeSmall
-                height: width
-                fillMode: Image.PreserveAspectFit
-                source: model.favicon
-            }
-
-            Label {
-                objectName: "tabTitle"
-                width: parent.width - Theme.iconSizeSmall - Theme.paddingSmall
-                anchors.verticalCenter: parent.verticalCenter
-                text: model.title.length > 0 ? model.title : model.url
-                truncationMode: TruncationMode.Fade
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: preview.highlighted ? Theme.highlightColor : Theme.primaryColor
             }
         }
     }
