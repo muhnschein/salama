@@ -18,6 +18,9 @@ const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
 const char *const LiveTabLimitKey = "liveTabLimit";
 const char *const TrackingProtectionKey = "trackingProtection";
+const char *const ReaderColorsKey = "readerColors";
+const char *const ReaderTypefaceKey = "readerTypeface";
+const char *const ReaderTextSizeKey = "readerTextSize";
 
 // Jolla's browser keeps five pages live and reloads the rest on return; the same
 // five here, with a way to ask for fewer, more, or all of them.
@@ -245,6 +248,53 @@ void Settings::setTrackingProtection(int level)
     }
     m_settings.setValue(QLatin1String(TrackingProtectionKey), level);
     emit trackingProtectionChanged();
+}
+
+int Settings::readerColors() const
+{
+    const int stored = m_settings.value(QLatin1String(ReaderColorsKey), ReaderAmbience).toInt();
+    return stored < ReaderAmbience || stored > ReaderDark ? int(ReaderAmbience) : stored;
+}
+
+void Settings::setReaderColors(int colors)
+{
+    if (colors < ReaderAmbience || colors > ReaderDark || colors == readerColors()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(ReaderColorsKey), colors);
+    emit readerColorsChanged();
+}
+
+int Settings::readerTypeface() const
+{
+    const int stored = m_settings.value(QLatin1String(ReaderTypefaceKey), ReaderSansSerif).toInt();
+    return stored < ReaderSansSerif || stored > ReaderSerif ? int(ReaderSansSerif) : stored;
+}
+
+void Settings::setReaderTypeface(int typeface)
+{
+    if (typeface < ReaderSansSerif || typeface > ReaderSerif || typeface == readerTypeface()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(ReaderTypefaceKey), typeface);
+    emit readerTypefaceChanged();
+}
+
+int Settings::readerTextSize() const
+{
+    const int stored =
+        m_settings.value(QLatin1String(ReaderTextSizeKey), ReaderTextSizeDefault).toInt();
+    return stored < ReaderTextSizeMin || stored > ReaderTextSizeMax ? ReaderTextSizeDefault
+                                                                    : stored;
+}
+
+void Settings::setReaderTextSize(int size)
+{
+    if (size < ReaderTextSizeMin || size > ReaderTextSizeMax || size == readerTextSize()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(ReaderTextSizeKey), size);
+    emit readerTextSizeChanged();
 }
 
 QString Settings::searchUrl(const QString &query) const

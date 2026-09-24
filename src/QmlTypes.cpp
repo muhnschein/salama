@@ -79,6 +79,11 @@ QObject *pageActivityProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngin
     return keepOwnership(coreInstance->pageActivity());
 }
 
+QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->reader());
+}
+
 } // namespace
 
 void registerQmlTypes(Core *core)
@@ -104,6 +109,7 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);
+    qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
 }
 
 } // namespace Salama

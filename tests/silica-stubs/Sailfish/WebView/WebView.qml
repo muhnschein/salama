@@ -48,7 +48,10 @@ Item {
     // Every script run since the view was made: a page is asked more than one thing
     // when it finishes loading, and only the last of them would be seen otherwise.
     property var scripts: []
-    property string scriptResult: ""
+    // What a script answers: scriptResult, or what answer(script) says when a test
+    // has set it, for a page asked more than one thing.
+    property var scriptResult: ""
+    property var answer: null
     property bool scriptFails: false
     property string lastGrabPath: ""
     property var lastGrabSize
@@ -86,6 +89,15 @@ Item {
     function load(target, fromExternal) {
         record("load")
         url = target
+    }
+
+    // qtmozembed's QuickMozView::loadHtml: the text loaded as a data: url.
+    property string lastHtml
+
+    function loadHtml(html, baseUrl) {
+        record("loadHtml")
+        lastHtml = html
+        url = "data:text/html;charset=utf-8," + encodeURIComponent(html)
     }
 
     // QuickMozView's messages to the page's own scripts, recorded as {name, data}, and
@@ -165,7 +177,7 @@ Item {
                 errorCallback("stub failure")
             }
         } else if (callback) {
-            callback(scriptResult)
+            callback(answer ? answer(script) : scriptResult)
         }
     }
 }

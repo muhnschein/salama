@@ -7,6 +7,7 @@
 #include "engine/EngineMessages.h"
 #include "engine/PageActivity.h"
 #include "history/HistoryModel.h"
+#include "reader/Reader.h"
 #include "settings/Settings.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
@@ -36,6 +37,7 @@ public:
     Settings *settings();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
+    Reader *reader();
 
 private:
     Storage m_storage;
@@ -48,6 +50,7 @@ private:
     Settings m_settings;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
+    Reader m_reader;
 };
 
 } // namespace Salama

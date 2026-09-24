@@ -119,6 +119,10 @@
         <source>Bookmark</source>
         <translation>Kirjanmerkki</translation>
     </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -226,6 +230,25 @@
     <message>
         <source>Nothing closed recently</source>
         <translation>Ei äskettäin suljettuja välilehtiä</translation>
+    </message>
+</context>
+<context>
+    <name>Salama::Reader</name>
+    <message numerus="yes">
+        <source>%1 hour(s)</source>
+        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 tunti</numerusform>
+            <numerusform>%1 tuntia</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s)</source>
+        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 minuutti</numerusform>
+            <numerusform>%1 minuuttia</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -357,6 +380,50 @@
     <message>
         <source>Strict</source>
         <translation>Tiukka</translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
+    <message>
+        <source>Colours</source>
+        <translation>Värit</translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <translation>Ambienssi</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Vaalea</translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation>Seepia</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Tumma</translation>
+    </message>
+    <message>
+        <source>Typeface</source>
+        <translation>Kirjasin</translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation>Pääteviivaton</translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation>Päätteellinen</translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation>Tekstin koko</translation>
+    </message>
+    <message>
+        <source>%1 %</source>
+        <translation>%1 %</translation>
     </message>
 </context>
 <context>
