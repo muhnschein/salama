@@ -24,6 +24,35 @@ bool run(QSqlQuery &query)
     return true;
 }
 
+// The helpers below read the list rather than the model, so that they are this file's
+// own rather than more members of a class Qt's model interface already makes long.
+
+// What a bookmark is called where it is shown: its title, or its address without one.
+QString shownTitle(const BookmarkModel::Bookmark &bookmark)
+{
+    return bookmark.title.isEmpty() ? bookmark.url : bookmark.title;
+}
+
+int indexOfId(const QList<BookmarkModel::Bookmark> &bookmarks, int id)
+{
+    for (int i = 0; i < bookmarks.count(); ++i) {
+        if (bookmarks.at(i).id == id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int indexOfUrl(const QList<BookmarkModel::Bookmark> &bookmarks, const QString &url)
+{
+    for (int i = 0; i < bookmarks.count(); ++i) {
+        if (bookmarks.at(i).url == url) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 } // namespace
 
 BookmarkModel::BookmarkModel(Storage &storage, QObject *parent)
@@ -108,24 +137,24 @@ const QList<BookmarkModel::Bookmark> &BookmarkModel::bookmarks() const
 
 bool BookmarkModel::hasBookmark(int id) const
 {
-    return indexOfId(id) >= 0;
+    return indexOfId(m_bookmarks, id) >= 0;
 }
 
 QString BookmarkModel::urlOf(int id) const
 {
-    const int index = indexOfId(id);
+    const int index = indexOfId(m_bookmarks, id);
     return index >= 0 ? m_bookmarks.at(index).url : QString();
 }
 
 QString BookmarkModel::titleOf(int id) const
 {
-    const int index = indexOfId(id);
+    const int index = indexOfId(m_bookmarks, id);
     return index >= 0 ? shownTitle(m_bookmarks.at(index)) : QString();
 }
 
 int BookmarkModel::idForUrl(const QString &url) const
 {
-    const int index = indexOfUrl(url);
+    const int index = indexOfUrl(m_bookmarks, url);
     return index >= 0 ? m_bookmarks.at(index).id : 0;
 }
 
@@ -152,7 +181,7 @@ int BookmarkModel::add(const QString &url, const QString &title, const QString &
     if (url.isEmpty()) {
         return 0;
     }
-    const int existing = indexOfUrl(url);
+    const int existing = indexOfUrl(m_bookmarks, url);
     if (existing >= 0) {
         return m_bookmarks.at(existing).id;
     }
@@ -206,7 +235,7 @@ void BookmarkModel::remove(int index)
 
 bool BookmarkModel::removeByUrl(const QString &url)
 {
-    const int index = indexOfUrl(url);
+    const int index = indexOfUrl(m_bookmarks, url);
     if (index < 0) {
         return false;
     }
@@ -247,12 +276,12 @@ void BookmarkModel::edit(int index, const QString &url, const QString &title)
 
 bool BookmarkModel::contains(const QString &url) const
 {
-    return indexOfUrl(url) >= 0;
+    return indexOfUrl(m_bookmarks, url) >= 0;
 }
 
 void BookmarkModel::updateFavicon(const QString &url, const QString &favicon)
 {
-    const int index = indexOfUrl(url);
+    const int index = indexOfUrl(m_bookmarks, url);
     if (index < 0 || m_bookmarks.at(index).favicon == favicon) {
         return;
     }
@@ -275,31 +304,6 @@ void BookmarkModel::clear()
     if (run(query)) {
         reload();
     }
-}
-
-QString BookmarkModel::shownTitle(const Bookmark &bookmark)
-{
-    return bookmark.title.isEmpty() ? bookmark.url : bookmark.title;
-}
-
-int BookmarkModel::indexOfId(int id) const
-{
-    for (int i = 0; i < m_bookmarks.count(); ++i) {
-        if (m_bookmarks.at(i).id == id) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-int BookmarkModel::indexOfUrl(const QString &url) const
-{
-    for (int i = 0; i < m_bookmarks.count(); ++i) {
-        if (m_bookmarks.at(i).url == url) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 void BookmarkModel::notifyRow(int index, const QVector<int> &roles)

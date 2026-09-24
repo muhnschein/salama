@@ -93,9 +93,6 @@ signals:
     void revisionChanged();
 
 private:
-    static QString shownTitle(const Bookmark &bookmark);
-    int indexOfId(int id) const;
-    int indexOfUrl(const QString &url) const;
     void notifyRow(int index, const QVector<int> &roles);
     void reload();
     void bump();

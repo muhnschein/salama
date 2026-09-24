@@ -19,6 +19,59 @@ class SearchWords;
 class Settings;
 class TabModel;
 
+// What the omnibar's rows are made of, kept beside the model rather than inside it, as
+// Tab and TabGroup are kept beside the tab model: the functions that rank, cap and count
+// the rows are then OmnibarModel.cpp's own, and not more members of a class Qt's model
+// interface already makes long.
+enum class OmnibarKind
+{
+    Tab,
+    Bookmark,
+    History,
+    Download
+};
+
+// How many kinds there are: the length of the per-kind totals.
+const std::size_t OmnibarKinds = 4;
+
+struct OmnibarRow
+{
+    OmnibarKind kind = OmnibarKind::Tab;
+    int id = 0;
+    QString title;
+    QString url;
+    QString host;
+    QString favicon;
+    int groupId = 0;
+    QString groupName;
+    int groupTabCount = 0;
+    int downloadStatus = 0;
+    int progress = 0;
+    QDateTime date;
+
+    friend bool operator==(const OmnibarRow &one, const OmnibarRow &other)
+    {
+        return one.kind == other.kind && one.id == other.id && one.title == other.title &&
+               one.url == other.url && one.host == other.host && one.favicon == other.favicon &&
+               one.groupId == other.groupId && one.groupName == other.groupName &&
+               one.groupTabCount == other.groupTabCount &&
+               one.downloadStatus == other.downloadStatus && one.progress == other.progress &&
+               one.date == other.date;
+    }
+
+    friend bool operator!=(const OmnibarRow &one, const OmnibarRow &other)
+    {
+        return !(one == other);
+    }
+};
+
+// A row with the rank it is sorted by, before it is capped.
+struct OmnibarCandidate
+{
+    OmnibarRow row;
+    int rank = 0;
+};
+
 // What the address bar finds as it is typed into: the open tabs, the bookmarks, the
 // history and the downloads that hold every word typed, one section of each, in that
 // order -- the pane above the bar lists them under a heading per kind, as piirit lists
@@ -130,42 +183,7 @@ signals:
     void resultsChanged();
 
 private:
-    enum Kind
-    {
-        TabKind,
-        BookmarkKind,
-        HistoryKind,
-        DownloadKind,
-        KindCount
-    };
-
-    struct Row
-    {
-        Kind kind = TabKind;
-        int id = 0;
-        QString title;
-        QString url;
-        QString host;
-        QString favicon;
-        int groupId = 0;
-        QString groupName;
-        int groupTabCount = 0;
-        int downloadStatus = 0;
-        int progress = 0;
-        QDateTime date;
-
-        bool operator==(const Row &other) const;
-        bool operator!=(const Row &other) const;
-    };
-
-    // A row with the rank it is sorted by, before it is capped.
-    struct Candidate
-    {
-        Row row;
-        int rank = 0;
-    };
-
-    using Totals = std::array<int, KindCount>;
+    using Totals = std::array<int, OmnibarKinds>;
 
     bool active() const;
     // A source changed: the rows are built again once the event loop comes round,
@@ -173,19 +191,13 @@ private:
     // its address, its title, its icon and its visit.
     void sourceChanged();
     void rebuild();
-    QList<Row> collect(Totals &totals) const;
-    QList<Candidate> tabCandidates(const SearchWords &words) const;
-    QList<Candidate> bookmarkCandidates(const SearchWords &words,
-                                        const QSet<QString> &listed) const;
-    QList<Candidate> historyCandidates(const SearchWords &words, const QSet<QString> &listed) const;
-    QList<Candidate> downloadCandidates(const SearchWords &words) const;
-    static int rank(const SearchWords &words, const QString &host, const QString &title);
-    // Ranks the candidates, stable over the order they came in, and appends the first
-    // cap of them to the rows and their addresses to the listed ones. Returns how many
-    // there were.
-    static int take(QList<Candidate> candidates, int cap, QList<Row> &rows, QSet<QString> &listed);
-    int shown(Kind kind) const;
-    static QString kindName(Kind kind);
+    QList<OmnibarRow> collect(Totals &totals) const;
+    QList<OmnibarCandidate> tabCandidates(const SearchWords &words) const;
+    QList<OmnibarCandidate> bookmarkCandidates(const SearchWords &words,
+                                               const QSet<QString> &listed) const;
+    QList<OmnibarCandidate> historyCandidates(const SearchWords &words,
+                                              const QSet<QString> &listed) const;
+    QList<OmnibarCandidate> downloadCandidates(const SearchWords &words) const;
 
     TabModel *m_tabs;
     BookmarkModel *m_bookmarks;
@@ -194,7 +206,7 @@ private:
     Settings *m_settings;
     QString m_query;
     bool m_bookmarksWhenEmpty = false;
-    QList<Row> m_rows;
+    QList<OmnibarRow> m_rows;
     Totals m_totals{};
     QTimer m_refresh;
 };
