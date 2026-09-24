@@ -10,8 +10,8 @@
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
 the engine package fails to open that page, not the application. `Sailfish.WebEngine`
-is imported there and in `SettingsPage.qml` (data clearing). `tests/tst_qmlstatic.cpp`
-enforces both.
+is imported there and in `PrivacySettingsPage.qml`, which clears browsing data behind
+its dialog (`DECISIONS/0028-settings-pages.md`). `tests/tst_qmlstatic.cpp` enforces both.
 
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 

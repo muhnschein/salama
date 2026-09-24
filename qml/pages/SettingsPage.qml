@@ -1,15 +1,52 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
+//
+// Settings: the few that take a line each, and a way to each subject that takes more --
+// search, the reader view, the cover, privacy -- on a page of its own, in headed
+// groups, as Firefox for Android arranges its settings and Jolla's own browser reaches
+// its privacy settings (docs/DECISIONS/0028-settings-pages.md). Under each way in, a
+// line says how that subject is set now, so this page is also where to read it.
+//
+// Every control writes its setting as it changes; nothing waits on a Save.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import Sailfish.WebEngine 1.0
 import harbour.salama 1.0
+import "../components"
 
 Page {
     id: settingsPage
 
     objectName: "settingsPage"
     allowedOrientations: Orientation.Portrait
+
+    function open(page) {
+        pageStack.push(Qt.resolvedUrl(page))
+    }
+
+    // The summaries are in the words the subjects' pages offer their choices in, and
+    // each is a binding on the settings it names: a change made on the subject's page
+    // is already written here when that page is popped.
+    function readerSummary(colors, typeface, textSize) {
+        var colorNames = [qsTr("Ambience"), qsTr("Light"), qsTr("Sepia"), qsTr("Dark")]
+        var typefaceNames = [qsTr("Sans serif"), qsTr("Serif")]
+        // As the reader page's slider writes it: Firefox's middle size is the whole.
+        var share = qsTr("%1 %").arg(Math.round(100 * (10 + 2 * textSize)
+                                                / (10 + 2 * Settings.ReaderTextSizeDefault)))
+        //: The reader view's look in one line: its colours, typeface and text size,
+        //: e.g. "Ambience · Sans serif · 100 %"
+        return qsTr("%1 · %2 · %3").arg(colorNames[colors]).arg(typefaceNames[typeface]).arg(share)
+    }
+
+    function privacySummary(level) {
+        //: A tracking protection level
+        var levelNames = [qsTr("Off"), qsTr("Standard"), qsTr("Strict")]
+        return qsTr("Tracking protection: %1").arg(levelNames[level])
+    }
+
+    function coverSummary(style) {
+        return [qsTr("The icon alone"), qsTr("The tab count and the last tab"),
+                qsTr("The tab count and the most recent tabs")][style]
+    }
 
     SilicaFlickable {
         anchors.fill: parent
@@ -23,6 +60,22 @@ Page {
 
             PageHeader {
                 title: qsTr("Settings")
+            }
+
+            SectionHeader {
+                text: qsTr("General")
+            }
+
+            // First, as Firefox for Android puts it: what the address bar searches with
+            // and suggests from is what a browser is used for most.
+            SettingsEntry {
+                objectName: "searchSettingsEntry"
+                // sailfish-browser's for its search engine
+                // (apps/browser/qml/pages/SettingsPage.qml:117).
+                iconSource: "image://theme/icon-m-search"
+                text: qsTr("Search")
+                summary: Settings.searchEngineNames[Settings.searchEngineIndex]
+                onClicked: settingsPage.open("SearchSettingsPage.qml")
             }
 
             TextField {
@@ -39,23 +92,6 @@ Page {
                     Settings.homePage = Settings.urlForInput(text)
                     focus = false
                 }
-            }
-
-            ComboBox {
-                objectName: "searchEngineCombo"
-                width: parent.width
-                label: qsTr("Search engine")
-                currentIndex: Settings.searchEngineIndex
-                menu: ContextMenu {
-                    Repeater {
-                        model: Settings.searchEngineNames
-
-                        MenuItem {
-                            text: modelData
-                        }
-                    }
-                }
-                onCurrentIndexChanged: Settings.searchEngineIndex = currentIndex
             }
 
             TextSwitch {
@@ -94,179 +130,46 @@ Page {
                 onCurrentIndexChanged: Settings.liveTabLimitIndex = currentIndex
             }
 
-            // How the reader view sets an article, as Firefox's reader view offers it:
-            // its colours, typeface and text size, each index or value the stored one
-            // (docs/DECISIONS/0024-reader-view.md). A reader view on the screen follows
-            // them at once.
             SectionHeader {
+                text: qsTr("Appearance")
+            }
+
+            SettingsEntry {
+                objectName: "readerSettingsEntry"
+                // The menu's own for the reader view, which is Jolla's Documents' for a
+                // text document (docs/DECISIONS/0024-reader-view.md).
+                iconSource: "image://theme/icon-m-file-formatted"
                 text: qsTr("Reader view")
+                summary: settingsPage.readerSummary(Settings.readerColors, Settings.readerTypeface,
+                                                    Settings.readerTextSize)
+                onClicked: settingsPage.open("ReaderSettingsPage.qml")
             }
 
-            ComboBox {
-                objectName: "readerColorsCombo"
-                width: parent.width
-                label: qsTr("Colours")
-                currentIndex: Settings.readerColors
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Ambience")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Light")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Sepia")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Dark")
-                    }
-                }
-                onCurrentIndexChanged: Settings.readerColors = currentIndex
-            }
-
-            ComboBox {
-                objectName: "readerTypefaceCombo"
-                width: parent.width
-                label: qsTr("Typeface")
-                currentIndex: Settings.readerTypeface
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Sans serif")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Serif")
-                    }
-                }
-                onCurrentIndexChanged: Settings.readerTypeface = currentIndex
-            }
-
-            // Firefox's nine steps, the middle one its default, written as a share of it.
-            Slider {
-                objectName: "readerTextSizeSlider"
-                width: parent.width
-                label: qsTr("Text size")
-                minimumValue: Settings.ReaderTextSizeMin
-                maximumValue: Settings.ReaderTextSizeMax
-                stepSize: 1
-                value: Settings.readerTextSize
-                valueText: qsTr("%1 %").arg(Math.round(100 * (10 + 2 * value)
-                                                       / (10 + 2 * Settings.ReaderTextSizeDefault)))
-                onValueChanged: Settings.readerTextSize = Math.round(value)
+            SettingsEntry {
+                objectName: "coverSettingsEntry"
+                // The one sailfish-browser's toolbar writes the tab count into
+                // (apps/browser/qml/pages/components/ToolBar.qml:162), which is what
+                // the cover is (docs/DECISIONS/0014-cover-is-the-tab-count.md). Not
+                // icon-m-display: sailfish-browser has that for its notch guard, which
+                // is the screen cutout here.
+                iconSource: "image://theme/icon-m-tabs"
+                text: qsTr("Cover")
+                summary: settingsPage.coverSummary(Settings.coverStyle)
+                onClicked: settingsPage.open("CoverSettingsPage.qml")
             }
 
             SectionHeader {
                 text: qsTr("Privacy")
             }
 
-            // Firefox's tracking protection categories, least first, with Off in place
-            // of Custom; the index is the stored value -- Settings.TrackingProtectionOff,
-            // TrackingProtectionStandard, TrackingProtectionStrict
-            // (docs/DECISIONS/0023-tracking-protection.md). The description promises
-            // only what every engine this runs on does.
-            ComboBox {
-                objectName: "trackingProtectionCombo"
-                width: parent.width
-                label: qsTr("Tracking protection")
-                description: currentIndex === Settings.TrackingProtectionOff
-                             ? qsTr("Sites can follow you from one to another")
-                             : currentIndex === Settings.TrackingProtectionStrict
-                               ? qsTr("Stops more tracking, and can break some sites")
-                               : qsTr("Stops sites following you with cookies")
-                currentIndex: Settings.trackingProtection
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Off")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Standard")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Strict")
-                    }
-                }
-                onCurrentIndexChanged: Settings.trackingProtection = currentIndex
-            }
-
-            SectionHeader {
-                text: qsTr("Cover")
-            }
-
-            // The order is how much the cover says, least first, and the index is the
-            // stored value -- Settings.CoverIconOnly, CoverLatestTab, CoverEveryTab.
-            // A combo rather than three switches: these are one choice, not three.
-            ComboBox {
-                objectName: "coverStyleCombo"
-                width: parent.width
-                label: qsTr("Shows")
-                currentIndex: Settings.coverStyle
-                menu: ContextMenu {
-                    MenuItem {
-                        objectName: "coverIconOnlyItem"
-                        text: qsTr("The icon alone")
-                    }
-
-                    MenuItem {
-                        objectName: "coverLatestTabItem"
-                        text: qsTr("The tab count and the last tab")
-                    }
-
-                    // "Most recent" rather than "every": the field draws six cells at
-                    // most, most recently read first, and the number above it is what
-                    // says how many there are (docs/DECISIONS/0014-cover-is-the-tab-count.md).
-                    MenuItem {
-                        objectName: "coverEveryTabItem"
-                        text: qsTr("The tab count and the most recent tabs")
-                    }
-                }
-                onCurrentIndexChanged: Settings.coverStyle = currentIndex
-            }
-
-            SectionHeader {
-                text: qsTr("Clear data")
-            }
-
-            Button {
-                objectName: "clearHistoryButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Clear history")
-                onClicked: Remorse.popupAction(settingsPage, qsTr("Clearing history"), function () {
-                    HistoryModel.clear()
-                })
-            }
-
-            Button {
-                objectName: "clearSiteDataButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Clear cookies and site data")
-                onClicked: Remorse.popupAction(settingsPage, qsTr("Clearing site data"), function () {
-                    WebEngine.notifyObservers(EngineMessages.clearPrivateDataTopic,
-                                              EngineMessages.cookiesAndSiteDataPayload)
-                })
-            }
-
-            Button {
-                objectName: "clearCacheButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Clear cache")
-                onClicked: Remorse.popupAction(settingsPage, qsTr("Clearing cache"), function () {
-                    WebEngine.notifyObservers(EngineMessages.clearPrivateDataTopic,
-                                              EngineMessages.cachePayload)
-                })
-            }
-
-            Button {
-                objectName: "closeAllTabsButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Close all tabs")
-                onClicked: Remorse.popupAction(settingsPage, qsTr("Closing all tabs"), function () {
-                    TabModel.closeAllTabs()
-                })
+            SettingsEntry {
+                objectName: "privacySettingsEntry"
+                // sailfish-browser's for a secure connection
+                // (apps/browser/qml/pages/components/CertificateInfo.qml:65).
+                iconSource: "image://theme/icon-m-device-lock"
+                text: qsTr("Privacy")
+                summary: settingsPage.privacySummary(Settings.trackingProtection)
+                onClicked: settingsPage.open("PrivacySettingsPage.qml")
             }
         }
 

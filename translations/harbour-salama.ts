@@ -75,14 +75,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This page</source>
         <translation type="unfinished"></translation>
     </message>
@@ -132,9 +124,60 @@
     </message>
 </context>
 <context>
+    <name>ClearDataDialog</name>
+    <message>
+        <source>Clear browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cookies and site data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CoverSettingsPage</name>
+    <message>
+        <source>Cover</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the most recent tabs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -294,131 +337,9 @@
     </message>
 </context>
 <context>
-    <name>RecentlyClosedPanel</name>
+    <name>PrivacySettingsPage</name>
     <message>
-        <source>Recently closed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Nothing closed recently</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Salama::Reader</name>
-    <message numerus="yes">
-        <source>%1 hour(s)</source>
-        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 hour</numerusform>
-            <numerusform>%1 hours</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%1 minute(s)</source>
-        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
-        <translation type="unfinished">
-            <numerusform>%1 minute</numerusform>
-            <numerusform>%1 minutes</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
-    <name>SettingsPage</name>
-    <message>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Home page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search engine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Request desktop sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Identify as a desktop browser to web sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clearing history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear cookies and site data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clearing site data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clearing cache</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close all tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Closing all tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Avoid the screen cutout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep pages and the tab grid out from under the camera cutout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cover</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The icon alone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the last tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the most recent tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pages kept loaded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tabs beyond this many reload their page when opened again</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All</source>
+        <source>Clearing browsing data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -451,8 +372,15 @@
     </message>
     <message>
         <source>Strict</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
         <translation type="unfinished"></translation>
@@ -495,6 +423,192 @@
     </message>
     <message>
         <source>%1 %</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RecentlyClosedPanel</name>
+    <message>
+        <source>Recently closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing closed recently</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Salama::Reader</name>
+    <message numerus="yes">
+        <source>%1 hour(s)</source>
+        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
+        <translation type="unfinished">
+            <numerusform>%1 hour</numerusform>
+            <numerusform>%1 hours</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s)</source>
+        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
+        <translation type="unfinished">
+            <numerusform>%1 minute</numerusform>
+            <numerusform>%1 minutes</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>SearchSettingsPage</name>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address bar suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SettingsPage</name>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Request desktop sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Identify as a desktop browser to web sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Avoid the screen cutout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep pages and the tab grid out from under the camera cutout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cover</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The tab count and the most recent tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pages kept loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tabs beyond this many reload their page when opened again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Privacy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <extracomment>A tracking protection level</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 %</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · %2 · %3</source>
+        <extracomment>The reader view&apos;s look in one line: its colours, typeface and text size, e.g. &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tracking protection: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

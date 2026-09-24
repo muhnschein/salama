@@ -75,14 +75,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Tabs</source>
-        <translation>Välilehdet</translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation>Uusi välilehti</translation>
-    </message>
-    <message>
         <source>This page</source>
         <translation>Tämä sivu</translation>
     </message>
@@ -132,10 +124,61 @@
     </message>
 </context>
 <context>
+    <name>ClearDataDialog</name>
+    <message>
+        <source>Clear browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished">Historia</translation>
+    </message>
+    <message>
+        <source>Cookies and site data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Tabs</source>
         <translation>Välilehdet</translation>
+    </message>
+</context>
+<context>
+    <name>CoverSettingsPage</name>
+    <message>
+        <source>Cover</source>
+        <translation type="unfinished">Kansi</translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation type="unfinished">Näyttää</translation>
+    </message>
+    <message>
+        <source>The icon alone</source>
+        <translation type="unfinished">Vain kuvakkeen</translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation type="unfinished">Välilehtien määrän ja viimeisimmän välilehden</translation>
+    </message>
+    <message>
+        <source>The tab count and the most recent tabs</source>
+        <translation type="unfinished">Välilehtien määrän ja viimeisimmät välilehdet</translation>
     </message>
 </context>
 <context>
@@ -294,6 +337,96 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Privacy</source>
+        <translation type="unfinished">Yksityisyys</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation type="unfinished">Seurannan esto</translation>
+    </message>
+    <message>
+        <source>Sites can follow you from one to another</source>
+        <translation type="unfinished">Sivustot voivat seurata sinua sivustolta toiselle</translation>
+    </message>
+    <message>
+        <source>Stops more tracking, and can break some sites</source>
+        <translation type="unfinished">Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+    </message>
+    <message>
+        <source>Stops sites following you with cookies</source>
+        <translation type="unfinished">Estää sivustoja seuraamasta sinua evästeillä</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished">Pois</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished">Tavallinen</translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation type="unfinished">Tiukka</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ReaderSettingsPage</name>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished">Lukunäkymä</translation>
+    </message>
+    <message>
+        <source>Colours</source>
+        <translation type="unfinished">Värit</translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <translation type="unfinished">Ambienssi</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished">Vaalea</translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation type="unfinished">Seepia</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished">Tumma</translation>
+    </message>
+    <message>
+        <source>Typeface</source>
+        <translation type="unfinished">Kirjasin</translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation type="unfinished">Pääteviivaton</translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation type="unfinished">Päätteellinen</translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation type="unfinished">Tekstin koko</translation>
+    </message>
+    <message>
+        <source>%1 %</source>
+        <translation type="unfinished">%1 %</translation>
+    </message>
+</context>
+<context>
     <name>RecentlyClosedPanel</name>
     <message>
         <source>Recently closed</source>
@@ -324,6 +457,37 @@
     </message>
 </context>
 <context>
+    <name>SearchSettingsPage</name>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search engine</source>
+        <translation type="unfinished">Hakukone</translation>
+    </message>
+    <message>
+        <source>Address bar suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished">Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished">Historia</translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished">Lataukset</translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -334,52 +498,12 @@
         <translation>Kotisivu</translation>
     </message>
     <message>
-        <source>Search engine</source>
-        <translation>Hakukone</translation>
-    </message>
-    <message>
         <source>Request desktop sites</source>
         <translation>Pyydä työpöytäsivustoja</translation>
     </message>
     <message>
         <source>Identify as a desktop browser to web sites</source>
         <translation>Esittäydy sivustoille työpöytäselaimena</translation>
-    </message>
-    <message>
-        <source>Clear data</source>
-        <translation>Tietojen poisto</translation>
-    </message>
-    <message>
-        <source>Clear history</source>
-        <translation>Tyhjennä historia</translation>
-    </message>
-    <message>
-        <source>Clearing history</source>
-        <translation>Tyhjennetään historia</translation>
-    </message>
-    <message>
-        <source>Clear cookies and site data</source>
-        <translation>Poista evästeet ja sivustotiedot</translation>
-    </message>
-    <message>
-        <source>Clearing site data</source>
-        <translation>Poistetaan sivustotiedot</translation>
-    </message>
-    <message>
-        <source>Clear cache</source>
-        <translation>Tyhjennä välimuisti</translation>
-    </message>
-    <message>
-        <source>Clearing cache</source>
-        <translation>Tyhjennetään välimuisti</translation>
-    </message>
-    <message>
-        <source>Close all tabs</source>
-        <translation>Sulje kaikki välilehdet</translation>
-    </message>
-    <message>
-        <source>Closing all tabs</source>
-        <translation>Suljetaan kaikki välilehdet</translation>
     </message>
     <message>
         <source>Avoid the screen cutout</source>
@@ -392,10 +516,6 @@
     <message>
         <source>Cover</source>
         <translation>Kansi</translation>
-    </message>
-    <message>
-        <source>Shows</source>
-        <translation>Näyttää</translation>
     </message>
     <message>
         <source>The icon alone</source>
@@ -426,23 +546,8 @@
         <translation>Yksityisyys</translation>
     </message>
     <message>
-        <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
-    </message>
-    <message>
-        <source>Sites can follow you from one to another</source>
-        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
-    </message>
-    <message>
-        <source>Stops more tracking, and can break some sites</source>
-        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
-    </message>
-    <message>
-        <source>Stops sites following you with cookies</source>
-        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
-    </message>
-    <message>
         <source>Off</source>
+        <extracomment>A tracking protection level</extracomment>
         <translation>Pois</translation>
     </message>
     <message>
@@ -456,10 +561,6 @@
     <message>
         <source>Reader view</source>
         <translation>Lukunäkymä</translation>
-    </message>
-    <message>
-        <source>Colours</source>
-        <translation>Värit</translation>
     </message>
     <message>
         <source>Ambience</source>
@@ -478,10 +579,6 @@
         <translation>Tumma</translation>
     </message>
     <message>
-        <source>Typeface</source>
-        <translation>Kirjasin</translation>
-    </message>
-    <message>
         <source>Sans serif</source>
         <translation>Pääteviivaton</translation>
     </message>
@@ -490,12 +587,29 @@
         <translation>Päätteellinen</translation>
     </message>
     <message>
-        <source>Text size</source>
-        <translation>Tekstin koko</translation>
-    </message>
-    <message>
         <source>%1 %</source>
         <translation>%1 %</translation>
+    </message>
+    <message>
+        <source>%1 · %2 · %3</source>
+        <extracomment>The reader view&apos;s look in one line: its colours, typeface and text size, e.g. &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tracking protection: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

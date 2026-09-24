@@ -119,6 +119,11 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void searchSettingsPage();
+    void readerSettingsPage();
+    void privacySettingsPage();
+    void clearDataDialog();
+    void coverSettingsPage();
     void cover();
     void coverFieldFollowsTheFront();
     void coverStyleIsConfigurable();
@@ -2471,9 +2476,10 @@ void tst_qmlload::recentlyClosedTabs()
 void tst_qmlload::pagesBeyondTheLimitUnload()
 {
     TabModel *tabs = m_core->tabs();
-    // Five by default, and Settings offers the choice.
+    // Five by default, and the main page of Settings offers the choice.
     QCOMPARE(tabs->liveTabLimit(), 5);
-    QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(openMenuItem(QStringLiteral("settingsMenuButton"))->objectName(),
+             QStringLiteral("settingsPage"));
     QObject *combo = find(QStringLiteral("liveTabLimitCombo"));
     QCOMPARE(combo->property("currentIndex").toInt(), 1);
     combo->setProperty("currentIndex", 0);
@@ -2481,16 +2487,18 @@ void tst_qmlload::pagesBeyondTheLimitUnload()
     QCOMPARE(tabs->liveTabLimit(), 3);
 
     // Ten minutes in the background, and the engine is asked to trim its heap with
-    // the words sailfish-browser uses. Read through the settings page, whose scope
-    // has the engine singleton the browsing page's inline component has not.
+    // the words sailfish-browser uses. Read through something of BrowserPage.qml's
+    // own, whose scope has the engine singleton the browsing page's inline component
+    // has not.
     QObject *page = find(QStringLiteral("browserPage"));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
     QCOMPARE(find(QStringLiteral("trimTimer"))->property("interval").toInt(), 600000);
-    QCOMPARE(evaluate(settings, QStringLiteral("WebEngine.notifications.length")).toInt(), 0);
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngine.notifications.length")).toInt(), 0);
     evaluate(page, QStringLiteral("trimMemory()"));
-    QCOMPARE(evaluate(settings, QStringLiteral("WebEngine.notifications.length")).toInt(), 1);
-    QCOMPARE(evaluate(settings, QStringLiteral("WebEngine.notifications[0].topic")).toString(),
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngine.notifications.length")).toInt(), 1);
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngine.notifications[0].topic")).toString(),
              QStringLiteral("memory-pressure"));
-    QCOMPARE(evaluate(settings, QStringLiteral("WebEngine.notifications[0].value")).toString(),
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngine.notifications[0].value")).toString(),
              QStringLiteral("heap-minimize"));
     popPage();
 
@@ -2542,9 +2550,9 @@ void tst_qmlload::restoredTabsLoadLazily()
     QCOMPARE(m_core->history()->count(), 3);
 }
 
-// The bar's menu button brings up a sheet of icons from under the bar, in three rows:
-// the tabs, the page in front, the browser. Nothing is pushed for it, and each icon
-// puts it away as it does what it says.
+// The bar's menu button brings up a sheet of icons from under the bar, in two rows:
+// the page in front, the browser. Nothing is pushed for it, and each icon puts it
+// away as it does what it says. A new tab is not on it: that is the grid's plus.
 void tst_qmlload::browserMenu()
 {
     TabModel *tabs = m_core->tabs();
@@ -2557,11 +2565,10 @@ void tst_qmlload::browserMenu()
     QVERIFY(menu->property("open").toBool());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     const QStringList entries{
-        QStringLiteral("newTabMenuButton"),   QStringLiteral("findMenuButton"),
-        QStringLiteral("bookmarkMenuButton"), QStringLiteral("shareMenuButton"),
-        QStringLiteral("desktopMenuButton"),  QStringLiteral("bookmarksMenuButton"),
-        QStringLiteral("historyMenuButton"),  QStringLiteral("downloadsMenuButton"),
-        QStringLiteral("settingsMenuButton"),
+        QStringLiteral("findMenuButton"),      QStringLiteral("bookmarkMenuButton"),
+        QStringLiteral("shareMenuButton"),     QStringLiteral("desktopMenuButton"),
+        QStringLiteral("bookmarksMenuButton"), QStringLiteral("historyMenuButton"),
+        QStringLiteral("downloadsMenuButton"), QStringLiteral("settingsMenuButton"),
     };
     for (const QString &entry : entries) {
         QObject *button = find(entry);
@@ -2570,9 +2577,11 @@ void tst_qmlload::browserMenu()
         QVERIFY2(!button->property("iconSource").toString().isEmpty(), qPrintable(entry));
         QVERIFY2(!button->property("text").toString().isEmpty(), qPrintable(entry));
     }
-    // In the three rows asked for: the tabs, the page in front, the browser.
+    // In the two rows asked for: the page in front, the browser. The row of the tabs,
+    // which held New tab alone, is gone with it.
+    QVERIFY(find(QStringLiteral("newTabMenuButton")) == nullptr);
+    QVERIFY(find(QStringLiteral("menuTabsRow")) == nullptr);
     const QHash<QString, QString> rows{
-        {QStringLiteral("newTabMenuButton"), QStringLiteral("menuTabsRow")},
         {QStringLiteral("findMenuButton"), QStringLiteral("menuPageRow")},
         {QStringLiteral("bookmarkMenuButton"), QStringLiteral("menuPageRow")},
         {QStringLiteral("shareMenuButton"), QStringLiteral("menuPageRow")},
@@ -2612,10 +2621,13 @@ void tst_qmlload::browserMenu()
     QVERIFY(find(QStringLiteral("tabsItem")) == nullptr);
     QVERIFY(find(QStringLiteral("moveToGroupItem")) == nullptr);
 
-    // New tab.
-    click(find(QStringLiteral("newTabMenuButton")));
+    // A new tab is the plus at the grid's foot, which still opens the home page in one.
+    QMetaObject::invokeMethod(menu, "hide");
+    pullUpToTabs();
+    click(find(QStringLiteral("newTabButton")));
     QCOMPARE(tabs->count(), 2);
     QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(!find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
     QVERIFY(!menu->property("open").toBool());
 
     // Bookmarking is a switch, which says which way it goes.
@@ -3162,19 +3174,115 @@ void tst_qmlload::bookmarksPage()
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 }
 
+namespace {
+
+// What the column an item of a settings page sits in holds, in order: each item's
+// objectName, and each section header as "#" and its text. Declaration order rather
+// than laid-out y: a Column places its items as it is polished, which a window that
+// draws nothing never is.
+QStringList columnOf(QObject *item)
+{
+    QStringList held;
+    for (QQuickItem *child : qobject_cast<QQuickItem *>(item)->parentItem()->childItems()) {
+        if (QString::fromLatin1(child->metaObject()->className())
+                .startsWith(QLatin1String("SectionHeader"))) {
+            held.append(QLatin1Char('#') + child->property("text").toString());
+        } else if (!child->objectName().isEmpty()) {
+            held.append(child->objectName());
+        }
+    }
+    return held;
+}
+
+} // namespace
+
+// Settings is a main page of what is set in a line, and a way each to a page of its own
+// for search, the reader view, the cover and privacy, under the headings General,
+// Appearance and Privacy (docs/DECISIONS/0028-settings-pages.md). Each way in is a
+// theme icon, a name and a line saying how its subject is set, and pushes its page
+// over the main one.
 void tst_qmlload::settingsPage()
 {
     QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
     QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
 
+    // In the order asked for: Search first, ahead of what stayed on the main page.
+    const QStringList expected{
+        QStringLiteral("#General"),
+        QStringLiteral("searchSettingsEntry"),
+        QStringLiteral("homePageField"),
+        QStringLiteral("desktopModeSwitch"),
+        QStringLiteral("cutoutGuardSwitch"),
+        QStringLiteral("liveTabLimitCombo"),
+        QStringLiteral("#Appearance"),
+        QStringLiteral("readerSettingsEntry"),
+        QStringLiteral("coverSettingsEntry"),
+        QStringLiteral("#Privacy"),
+        QStringLiteral("privacySettingsEntry"),
+    };
+    QCOMPARE(columnOf(find(QStringLiteral("searchSettingsEntry"))), expected);
+
+    // Each way in, with the theme icon a Jolla application gives the same subject --
+    // the cover's is the tab count's, not the display's, which sailfish-browser has
+    // for what is the screen cutout here.
+    struct Entry
+    {
+        QString name;
+        QString icon;
+        QString page;
+    };
+    const QList<Entry> entries{
+        {QStringLiteral("searchSettingsEntry"), QStringLiteral("icon-m-search"),
+         QStringLiteral("searchSettingsPage")},
+        {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
+         QStringLiteral("readerSettingsPage")},
+        {QStringLiteral("coverSettingsEntry"), QStringLiteral("icon-m-tabs"),
+         QStringLiteral("coverSettingsPage")},
+        {QStringLiteral("privacySettingsEntry"), QStringLiteral("icon-m-device-lock"),
+         QStringLiteral("privacySettingsPage")},
+    };
+    const qreal itemSize = evaluate(page, QStringLiteral("Theme.itemSizeMedium")).toReal();
+    const qreal iconSize = evaluate(page, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    for (const Entry &entry : entries) {
+        QObject *item = find(entry.name);
+        QVERIFY2(item != nullptr, qPrintable(entry.name));
+        QCOMPARE(item->property("iconSource").toString(),
+                 QStringLiteral("image://theme/") + entry.icon);
+        QVERIFY2(!item->property("text").toString().isEmpty(), qPrintable(entry.name));
+        QVERIFY2(!item->property("summary").toString().isEmpty(), qPrintable(entry.name));
+        QCOMPARE(item->property("height").toReal(), itemSize);
+        QObject *icon = findObjects(item, QStringLiteral("settingsEntryIcon")).first();
+        QCOMPARE(icon->property("width").toReal(), iconSize);
+        QCOMPARE(findObjects(item, QStringLiteral("settingsEntryName")).first()->property("text"),
+                 item->property("text"));
+        QObject *summary = findObjects(item, QStringLiteral("settingsEntrySummary")).first();
+        QCOMPARE(summary->property("text"), item->property("summary"));
+        QVERIFY(summary->property("visible").toBool());
+        click(item);
+        QCOMPARE(currentPage()->objectName(), entry.page);
+        QCOMPARE(pageStack()->property("depth").toInt(), 3);
+        popPage();
+        QCOMPARE(currentPage(), page);
+    }
+
+    // Lit while it is pressed, as Silica's rows are.
+    QObject *search = find(QStringLiteral("searchSettingsEntry"));
+    QObject *searchName = findObjects(search, QStringLiteral("settingsEntryName")).first();
+    QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.primaryColor")));
+    search->setProperty("down", true);
+    QVERIFY(findObjects(search, QStringLiteral("settingsEntryIcon"))
+                .first()
+                ->property("highlighted")
+                .toBool());
+    QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.highlightColor")));
+    search->setProperty("down", false);
+
+    // What stayed on the main page is set here as it was.
     QObject *home = find(QStringLiteral("homePageField"));
     QCOMPARE(home->property("text").toString(), Settings::defaultHomePage());
     home->setProperty("text", QStringLiteral("sailfishos.org"));
     enterKey(home);
     QCOMPARE(m_core->settings()->homePage(), QStringLiteral("https://sailfishos.org"));
-
-    find(QStringLiteral("searchEngineCombo"))->setProperty("currentIndex", 1);
-    QCOMPARE(m_core->settings()->searchEngineIndex(), 1);
 
     find(QStringLiteral("desktopModeSwitch"))->setProperty("checked", true);
     QVERIFY(m_core->settings()->desktopMode());
@@ -3189,17 +3297,81 @@ void tst_qmlload::settingsPage()
     QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), qreal(0));
     cutoutSwitch->setProperty("checked", true);
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
+}
 
-    // How the reader view sets an article: each choice the stored value, Firefox's
-    // middle text size written as the whole of itself.
+// Search: the engine the address bar searches with, and the sources its suggestions
+// are drawn from, each a switch that is on until it is turned off. The way in names
+// the engine.
+void tst_qmlload::searchSettingsPage()
+{
+    Settings *settings = m_core->settings();
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *entry = find(QStringLiteral("searchSettingsEntry"));
+    const QStringList engines = settings->searchEngineNames();
+    QCOMPARE(entry->property("summary").toString(), engines.at(settings->searchEngineIndex()));
+    click(entry);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
+
+    QObject *combo = find(QStringLiteral("searchEngineCombo"));
+    QCOMPARE(combo->property("currentIndex").toInt(), settings->searchEngineIndex());
+    const int other = settings->searchEngineIndex() == 1 ? 0 : 1;
+    combo->setProperty("currentIndex", other);
+    QCOMPARE(settings->searchEngineIndex(), other);
+    QCOMPARE(entry->property("summary").toString(), engines.at(other));
+
+    // A switch for each source, in the order the address bar lists them, each writing
+    // its own setting and no other.
+    using Flag = bool (Settings::*)() const;
+    const QList<QPair<QString, Flag>> sources{
+        {QStringLiteral("omnibarTabsSwitch"), &Settings::omnibarTabs},
+        {QStringLiteral("omnibarBookmarksSwitch"), &Settings::omnibarBookmarks},
+        {QStringLiteral("omnibarHistorySwitch"), &Settings::omnibarHistory},
+        {QStringLiteral("omnibarDownloadsSwitch"), &Settings::omnibarDownloads},
+    };
+    const QStringList layout{
+        QStringLiteral("searchEngineCombo"),    QStringLiteral("#Address bar suggestions"),
+        QStringLiteral("omnibarTabsSwitch"),    QStringLiteral("omnibarBookmarksSwitch"),
+        QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch"),
+    };
+    QCOMPARE(columnOf(combo), layout);
+    for (const auto &source : sources) {
+        QObject *toggle = find(source.first);
+        QVERIFY2(!toggle->property("text").toString().isEmpty(), qPrintable(source.first));
+        QVERIFY2(toggle->property("checked").toBool(), qPrintable(source.first));
+        QVERIFY((settings->*source.second)());
+        toggle->setProperty("checked", false);
+        QVERIFY2(!(settings->*source.second)(), qPrintable(source.first));
+        for (const auto &rest : sources) {
+            if (rest.first != source.first) {
+                QVERIFY2((settings->*rest.second)(), qPrintable(rest.first));
+            }
+        }
+        toggle->setProperty("checked", true);
+        QVERIFY((settings->*source.second)());
+    }
+}
+
+// The reader view's look: each choice the stored value, Firefox's middle text size
+// written as the whole of itself, and the way in says all three in a line.
+void tst_qmlload::readerSettingsPage()
+{
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *entry = find(QStringLiteral("readerSettingsEntry"));
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("Ambience · Sans serif · 100 %"));
+    click(entry);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("readerSettingsPage"));
+
     QObject *readerColors = find(QStringLiteral("readerColorsCombo"));
     QCOMPARE(readerColors->property("currentIndex").toInt(), int(Settings::ReaderAmbience));
     readerColors->setProperty("currentIndex", int(Settings::ReaderSepia));
     QCOMPARE(m_core->settings()->readerColors(), int(Settings::ReaderSepia));
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Sans serif · 100 %"));
     QObject *readerTypeface = find(QStringLiteral("readerTypefaceCombo"));
     QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(Settings::ReaderSansSerif));
     readerTypeface->setProperty("currentIndex", int(Settings::ReaderSerif));
     QCOMPARE(m_core->settings()->readerTypeface(), int(Settings::ReaderSerif));
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 100 %"));
     QObject *readerSize = find(QStringLiteral("readerTextSizeSlider"));
     QCOMPARE(readerSize->property("minimumValue").toInt(), int(Settings::ReaderTextSizeMin));
     QCOMPARE(readerSize->property("maximumValue").toInt(), int(Settings::ReaderTextSizeMax));
@@ -3208,34 +3380,45 @@ void tst_qmlload::settingsPage()
     readerSize->setProperty("value", 9);
     QCOMPARE(m_core->settings()->readerTextSize(), 9);
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("140 %"));
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 140 %"));
     readerSize->setProperty("value", 1);
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("60 %"));
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 60 %"));
 
-    // The cover's style is the one choice here that another page has to answer.
-    QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
-    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
-    coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
-    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
-    auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
-                 ->property("visible")
-                 .toBool());
-    coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
+    // The line follows the setting wherever it is written from.
+    m_core->settings()->setReaderColors(Settings::ReaderDark);
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Dark · Serif · 60 %"));
+}
+
+// Privacy: tracking protection, which reaches the engine at once, and the way to clear
+// browsing data, which asks first. The way in names the level.
+void tst_qmlload::privacySettingsPage()
+{
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *entry = find(QStringLiteral("privacySettingsEntry"));
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("Tracking protection: Standard"));
+    click(entry);
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("privacySettingsPage"));
 
     // Tracking protection is Standard until it is changed here, and a change reaches
-    // the engine at once, every preference of the new level after the old ones.
+    // the engine at once, every preference of the new level after the old ones. The
+    // browsing page writes them, so they are read through something of BrowserPage.qml's
+    // own.
+    QObject *pageScope = find(QStringLiteral("viewArea"));
     QObject *trackingCombo = find(QStringLiteral("trackingProtectionCombo"));
     QCOMPARE(trackingCombo->property("currentIndex").toInt(),
              int(Settings::TrackingProtectionStandard));
     const QString standardDescription = trackingCombo->property("description").toString();
     const int given =
-        evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
+        evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
     trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionStrict));
     QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionStrict));
     const QVariantList strict =
         EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStrict);
     const QVariantList preferences =
-        evaluate(page, QStringLiteral("WebEngineSettings.preferences")).toList();
+        evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
     QCOMPARE(preferences.count(), given + strict.count());
     for (int i = 0; i < strict.count(); ++i) {
         QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("key")),
@@ -3246,30 +3429,202 @@ void tst_qmlload::settingsPage()
     const QString strictDescription = trackingCombo->property("description").toString();
     QVERIFY(!strictDescription.isEmpty());
     QVERIFY(strictDescription != standardDescription);
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Tracking protection: Strict"));
     trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionOff));
     QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionOff));
-    QCOMPARE(evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
              given + 2 * strict.count());
     const QString offDescription = trackingCombo->property("description").toString();
     QVERIFY(!offDescription.isEmpty());
     QVERIFY(offDescription != standardDescription && offDescription != strictDescription);
+    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Tracking protection: Off"));
 
-    click(find(QStringLiteral("clearHistoryButton")));
-    QCOMPARE(m_core->history()->count(), 0);
-
-    click(find(QStringLiteral("clearSiteDataButton")));
-    click(find(QStringLiteral("clearCacheButton")));
-    QCOMPARE(evaluate(page, QStringLiteral("WebEngine.notifications.length")).toInt(), 2);
-    QCOMPARE(evaluate(page, QStringLiteral("WebEngine.notifications[0].topic")).toString(),
-             QStringLiteral("clear-private-data"));
-    QCOMPARE(evaluate(page, QStringLiteral("WebEngine.notifications[0].value")).toString(),
-             QStringLiteral("cookies-and-site-data"));
-    QCOMPARE(evaluate(page, QStringLiteral("WebEngine.notifications[1].value")).toString(),
-             QStringLiteral("cache"));
-
-    click(find(QStringLiteral("closeAllTabsButton")));
+    // Clearing browsing data is a way in of its own, under the level, to a dialog that
+    // asks which kinds (clearDataDialog()); backed out of, it clears nothing.
+    const int visits = m_core->history()->count();
+    const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
+    QObject *clear = find(QStringLiteral("clearDataEntry"));
+    QCOMPARE(clear->property("iconSource").toString(),
+             QStringLiteral("image://theme/icon-m-delete"));
+    QCOMPARE(clear->property("text").toString(), QStringLiteral("Clear browsing data"));
+    QCOMPARE(columnOf(clear), QStringList({QStringLiteral("trackingProtectionCombo"),
+                                           QStringLiteral("clearDataEntry")}));
+    click(clear);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("clearDataDialog"));
+    popPage();
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupCount")).toInt(), remorses);
+    QCOMPARE(evaluate(page, QStringLiteral("WebEngine.notifications.length")).toInt(), 0);
+    QCOMPARE(m_core->history()->count(), visits);
     QCOMPARE(m_core->tabs()->count(), 1);
-    QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://sailfishos.org"));
+}
+
+// Clear browsing data asks which kinds in a dialog -- the open tabs off to begin with,
+// the rest on, and Clear dimmed while none is -- and what it is accepted with is
+// cleared under one remorse on the privacy page, each kind as its own button used to
+// clear it.
+void tst_qmlload::clearDataDialog()
+{
+    TabModel *tabs = m_core->tabs();
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    QVERIFY(m_core->history()->count() > 0);
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("privacySettingsEntry")));
+    QObject *privacy = currentPage();
+    QCOMPARE(privacy->objectName(), QStringLiteral("privacySettingsPage"));
+    const auto remorses = [this, privacy]() {
+        return evaluate(privacy, QStringLiteral("Remorse.popupCount")).toInt();
+    };
+    const auto sent = [this, privacy]() {
+        return evaluate(privacy, QStringLiteral("WebEngine.notifications.length")).toInt();
+    };
+    const auto notification = [this, privacy](int index, const QString &field) {
+        return evaluate(privacy,
+                        QStringLiteral("WebEngine.notifications[%1].%2").arg(index).arg(field))
+            .toString();
+    };
+    const QStringList switches{
+        QStringLiteral("clearTabsSwitch"),
+        QStringLiteral("clearHistorySwitch"),
+        QStringLiteral("clearSiteDataSwitch"),
+        QStringLiteral("clearCacheSwitch"),
+    };
+    // Asks again, with the switches set in the order above, and accepts. The stub page
+    // stack leaves popping an accepted dialog to its caller, as the other tests do.
+    const auto clear = [this, &switches](const QList<bool> &on) {
+        click(find(QStringLiteral("clearDataEntry")));
+        QObject *dialog = currentPage();
+        QCOMPARE(dialog->objectName(), QStringLiteral("clearDataDialog"));
+        for (int i = 0; i < switches.count(); ++i) {
+            find(switches.at(i))->setProperty("checked", on.at(i));
+        }
+        QMetaObject::invokeMethod(dialog, "accept");
+        popPage();
+    };
+
+    // The dialog as it opens, in Firefox's order: all but the open tabs on.
+    click(find(QStringLiteral("clearDataEntry")));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("clearDataDialog"));
+    const QList<bool> initially{false, true, true, true};
+    QCOMPARE(columnOf(find(switches.first())), switches);
+    for (int i = 0; i < switches.count(); ++i) {
+        QObject *toggle = find(switches.at(i));
+        QVERIFY2(!toggle->property("text").toString().isEmpty(), qPrintable(switches.at(i)));
+        QCOMPARE(toggle->property("checked").toBool(), initially.at(i));
+    }
+    QVERIFY(dialog->property("canAccept").toBool());
+
+    // With nothing on, Clear is dimmed and does nothing; any one on is enough.
+    for (const QString &name : switches) {
+        find(name)->setProperty("checked", false);
+    }
+    QVERIFY(!dialog->property("canAccept").toBool());
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(currentPage(), dialog);
+    for (const QString &name : switches) {
+        find(name)->setProperty("checked", true);
+        QVERIFY2(dialog->property("canAccept").toBool(), qPrintable(name));
+        find(name)->setProperty("checked", false);
+    }
+    // Backed out of, it clears nothing.
+    popPage();
+    QCOMPARE(currentPage(), privacy);
+    QCOMPARE(remorses(), 0);
+    QCOMPARE(tabs->count(), 2);
+    QVERIFY(m_core->history()->count() > 0);
+    QCOMPARE(sent(), 0);
+
+    // The history alone, as its button cleared it, under one remorse on the privacy
+    // page that says what it is doing.
+    clear({false, true, false, false});
+    QCOMPARE(remorses(), 1);
+    QCOMPARE(evaluate(privacy, QStringLiteral("Remorse.popupItem")).value<QObject *>(), privacy);
+    QCOMPARE(evaluate(privacy, QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Clearing browsing data"));
+    QCOMPARE(currentPage(), privacy);
+    QCOMPARE(m_core->history()->count(), 0);
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(sent(), 0);
+
+    // Cookies and site data alone: the engine's own notification, and nothing else.
+    tabs->newTab(QStringLiteral("https://three.example/"));
+    const int visits = m_core->history()->count();
+    QVERIFY(visits > 0);
+    clear({false, false, true, false});
+    QCOMPARE(remorses(), 2);
+    QCOMPARE(sent(), 1);
+    QCOMPARE(notification(0, QStringLiteral("topic")), QStringLiteral("clear-private-data"));
+    QCOMPARE(notification(0, QStringLiteral("value")), QStringLiteral("cookies-and-site-data"));
+    QCOMPARE(m_core->history()->count(), visits);
+    QCOMPARE(tabs->count(), 3);
+
+    // The cache alone.
+    clear({false, false, false, true});
+    QCOMPARE(remorses(), 3);
+    QCOMPARE(sent(), 2);
+    QCOMPARE(notification(1, QStringLiteral("topic")), QStringLiteral("clear-private-data"));
+    QCOMPARE(notification(1, QStringLiteral("value")), QStringLiteral("cache"));
+    QCOMPARE(m_core->history()->count(), visits);
+    QCOMPARE(tabs->count(), 3);
+
+    // The open tabs alone: every one closed, and the browsing page opens its home page
+    // in their place.
+    clear({true, false, false, false});
+    QCOMPARE(remorses(), 4);
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(m_core->history()->count() >= visits);
+    QCOMPARE(sent(), 2);
+    QCOMPARE(currentPage(), privacy);
+
+    // All four together are still one remorse. The tabs go first, so the history
+    // cleared after them does not keep the page that took their place.
+    tabs->newTab(QStringLiteral("https://four.example/"));
+    clear({true, true, true, true});
+    QCOMPARE(remorses(), 5);
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QCOMPARE(m_core->history()->count(), 0);
+    QCOMPARE(sent(), 4);
+    QCOMPARE(notification(2, QStringLiteral("value")), QStringLiteral("cookies-and-site-data"));
+    QCOMPARE(notification(3, QStringLiteral("value")), QStringLiteral("cache"));
+}
+
+// The cover's style, the one choice among the settings that another page has to
+// answer. The way in says what the cover shows, in the words the choice is offered in.
+void tst_qmlload::coverSettingsPage()
+{
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *entry = find(QStringLiteral("coverSettingsEntry"));
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("The tab count and the most recent tabs"));
+    click(entry);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("coverSettingsPage"));
+
+    QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
+    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
+    coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
+    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
+                 ->property("visible")
+                 .toBool());
+
+    const QList<QPair<Settings::CoverStyle, QString>> styles{
+        {Settings::CoverIconOnly, QStringLiteral("coverIconOnlyItem")},
+        {Settings::CoverLatestTab, QStringLiteral("coverLatestTabItem")},
+        {Settings::CoverEveryTab, QStringLiteral("coverEveryTabItem")},
+    };
+    for (const auto &style : styles) {
+        coverCombo->setProperty("currentIndex", int(style.first));
+        QCOMPARE(m_core->settings()->coverStyle(), int(style.first));
+        QCOMPARE(entry->property("summary").toString(),
+                 find(style.second)->property("text").toString());
+    }
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("The tab count and the last tab"));
 }
 
 void tst_qmlload::cover()

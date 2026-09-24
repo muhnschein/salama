@@ -117,8 +117,9 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
                                      QRegularExpression::MultilineOption);
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
+    // The browsing page, which drives the engine, and the privacy settings, which tell
+    // it to clear its data (docs/ARCHITECTURE.md).
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
-                                    QStringLiteral("pages/SettingsPage.qml"),
                                     QStringLiteral("pages/PrivacySettingsPage.qml")};
 
     bool browserPageImportsWebView = false;
