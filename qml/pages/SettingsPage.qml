@@ -43,9 +43,27 @@ Page {
         return qsTr("Tracking protection: %1").arg(levelNames[level])
     }
 
-    function coverSummary(style) {
-        return [qsTr("The icon alone"), qsTr("The tab count and the last tab"),
-                qsTr("The tab count and the most recent tabs")][style]
+    // What the cover shows, then its quick action (docs/DECISIONS/0029-quick-action.md).
+    function coverSummary(style, action) {
+        var styleNames = [qsTr("The icon alone"), qsTr("The tab count and the last tab"),
+                          qsTr("The tab count and the most recent tabs")]
+        var actionNames = [
+            //: The cover has no quick action
+            qsTr("No quick action"),
+            // The Search entry's own word, which a translator sees once.
+            qsTr("Search"),
+            //: A quick action on the cover: the list of bookmarks
+            qsTr("Bookmarks"),
+            //: A quick action on the cover: one bookmark's page
+            qsTr("Open a bookmark"),
+            //: A quick action on the cover: the list of downloads
+            qsTr("Downloads"),
+            //: A quick action on the cover: the history
+            qsTr("History")
+        ]
+        //: The cover's settings in one line: what it shows, then its quick action,
+        //: e.g. "The icon alone · Search"
+        return qsTr("%1 · %2").arg(styleNames[style]).arg(actionNames[action])
     }
 
     SilicaFlickable {
@@ -154,7 +172,7 @@ Page {
                 // is the screen cutout here.
                 iconSource: "image://theme/icon-m-tabs"
                 text: qsTr("Cover")
-                summary: settingsPage.coverSummary(Settings.coverStyle)
+                summary: settingsPage.coverSummary(Settings.coverStyle, Settings.quickAction)
                 onClicked: settingsPage.open("CoverSettingsPage.qml")
             }
 

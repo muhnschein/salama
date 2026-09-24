@@ -127,6 +127,10 @@ private slots:
     void cover();
     void coverFieldFollowsTheFront();
     void coverStyleIsConfigurable();
+    void quickActions();
+    void quickActionLists();
+    void quickActionChoice();
+    void quickActionBookmarkFollows();
     void thumbnailCapturedOnLeavingTheApp();
     void pagesSleepOutOfSight();
     void mediaControls();
@@ -3592,20 +3596,29 @@ void tst_qmlload::clearDataDialog()
 }
 
 // The cover's style, the one choice among the settings that another page has to
-// answer. The way in says what the cover shows, in the words the choice is offered in.
+// answer, and under it the cover's quick action. The way in says what the cover shows
+// and what its action is, in the words the choices are offered in.
 void tst_qmlload::coverSettingsPage()
 {
+    Settings *settings = m_core->settings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("coverSettingsEntry"));
     QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the most recent tabs"));
+             QStringLiteral("The tab count and the most recent tabs \u00b7 Search"));
     click(entry);
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("coverSettingsPage"));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
 
     QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
+    const QStringList layout{
+        QStringLiteral("coverStyleCombo"),      QStringLiteral("#Quick action"),
+        QStringLiteral("quickActionExplained"), QStringLiteral("quickActionPreviews"),
+        QStringLiteral("quickActionChoice"),    QStringLiteral("quickActionIcons"),
+    };
+    QCOMPARE(columnOf(coverCombo), layout);
     QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
     coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
-    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
+    QCOMPARE(settings->coverStyle(), int(Settings::CoverIconOnly));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
                  ->property("visible")
@@ -3618,13 +3631,60 @@ void tst_qmlload::coverSettingsPage()
     };
     for (const auto &style : styles) {
         coverCombo->setProperty("currentIndex", int(style.first));
-        QCOMPARE(m_core->settings()->coverStyle(), int(style.first));
+        QCOMPARE(settings->coverStyle(), int(style.first));
         QCOMPARE(entry->property("summary").toString(),
-                 find(style.second)->property("text").toString());
+                 find(style.second)->property("text").toString() +
+                     QStringLiteral(" \u00b7 Search"));
     }
-    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    settings->setCoverStyle(Settings::CoverLatestTab);
     QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the last tab"));
+             QStringLiteral("The tab count and the last tab \u00b7 Search"));
+    settings->setQuickAction(Settings::QuickActionNone);
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("The tab count and the last tab \u00b7 No quick action"));
+    settings->setQuickAction(Settings::QuickActionBookmark);
+    QCOMPARE(entry->property("summary").toString(),
+             QStringLiteral("The tab count and the last tab \u00b7 Open a bookmark"));
+
+    // Why there is one action, in the voice of a hint rather than a control: small, in
+    // the secondary highlight, and the words of a sentence rather than rich text.
+    QObject *explained = find(QStringLiteral("quickActionExplained"));
+    QCOMPARE(explained->property("text").toString(),
+             QStringLiteral("The cover on the home screen shows one quick action. The place "
+                            "beside it is kept for the media control, which appears there "
+                            "while the tab in front plays something."));
+    QCOMPARE(explained->property("textFormat").toInt(), int(Qt::PlainText));
+    QCOMPARE(explained->property("wrapMode").toInt(),
+             evaluate(explained, QStringLiteral("Text.Wrap")).toInt());
+    QCOMPARE(explained->property("font").value<QFont>().pixelSize(),
+             evaluate(page, QStringLiteral("Theme.fontSizeSmall")).toInt());
+    QCOMPARE(explained->property("color"),
+             evaluate(page, QStringLiteral("Theme.secondaryHighlightColor")));
+
+    // The pictures are a real cover's shape, two thirds its size, side by side, and the
+    // row is drawn as Silica draws a ComboBox: the name, and what it is set to in the
+    // highlight colour.
+    const qreal coverWidth = evaluate(page, QStringLiteral("Theme.coverSizeLarge.width")).toReal();
+    const qreal coverHeight =
+        evaluate(page, QStringLiteral("Theme.coverSizeLarge.height")).toReal();
+    auto *quiet = qobject_cast<QQuickItem *>(find(QStringLiteral("quietCoverPreview")));
+    auto *playing = qobject_cast<QQuickItem *>(find(QStringLiteral("playingCoverPreview")));
+    QCOMPARE(quiet->width(), coverWidth * 2 / 3);
+    QCOMPARE(playing->width(), quiet->width());
+    QVERIFY(quiet->x() + quiet->width() < playing->x());
+    auto *picture =
+        qobject_cast<QQuickItem *>(findObjects(quiet, QStringLiteral("previewPicture")).first());
+    QCOMPARE(picture->height(), qreal(qRound(picture->width() * coverHeight / coverWidth)));
+    QCOMPARE(quiet->property("text").toString(), QStringLiteral("Nothing playing"));
+    QCOMPARE(playing->property("text").toString(), QStringLiteral("While a tab plays"));
+    QObject *choice = find(QStringLiteral("quickActionChoice"));
+    QCOMPARE(choice->property("contentHeight"),
+             evaluate(page, QStringLiteral("Theme.itemSizeSmall")));
+    QCOMPARE(textIn(choice, QStringLiteral("quickActionLabel")), QStringLiteral("Action"));
+    QCOMPARE(findObjects(choice, QStringLiteral("quickActionValue")).first()->property("color"),
+             evaluate(page, QStringLiteral("Theme.highlightColor")));
+    click(choice);
+    QVERIFY(choice->property("menuOpen").toBool());
 }
 
 void tst_qmlload::cover()
@@ -3646,9 +3706,10 @@ void tst_qmlload::cover()
     QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
 
-    // The action is a search: the window raised, and the address bar opened for a new
-    // tab, which is made once something is chosen and counted from then on.
-    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")),
+    // The quick action is a search until another is chosen: the window raised, and the
+    // address bar opened for a new tab, which is made once something is chosen and
+    // counted from then on.
+    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction")),
                               "triggered");
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
     QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
@@ -3722,8 +3783,8 @@ void tst_qmlload::coverStyleIsConfigurable()
     QVERIFY(field->property("visible").toBool());
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
 
-    // The icon alone: no heading, no number, no pictures. The action stays whatever
-    // the style is -- it is what the cover is there to offer.
+    // The icon alone: no heading, no number, no pictures. The quick action stays
+    // whatever the style is -- it is what the cover is there to offer.
     m_core->settings()->setCoverStyle(Settings::CoverIconOnly);
     QVERIFY(!heading->property("visible").toBool());
     QVERIFY(!count->property("visible").toBool());
@@ -3731,10 +3792,423 @@ void tst_qmlload::coverStyleIsConfigurable()
     QVERIFY(icon->property("visible").toBool());
     QVERIFY(icon->property("source").toUrl().toString().endsWith(
         QStringLiteral("art/harbour-salama.png")));
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")) != nullptr);
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("quickCoverActions"))
+                ->property("enabled")
+                .toBool());
 
     m_core->settings()->setCoverStyle(Settings::CoverEveryTab);
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
+}
+
+namespace {
+
+// Whether a cover action's picture is the file named, drawn for the stub's small icon
+// size and dark ambience, and there to be read by the home screen.
+bool drawnFrom(const QUrl &picture, const QString &file)
+{
+    return picture.toString().endsWith(QStringLiteral("art/cover/") + file) &&
+           QFile::exists(picture.toLocalFile());
+}
+
+// The glyphs a picture of the cover draws its actions in, left to right; "" for the
+// dot of an action not chosen.
+QStringList previewGlyphs(QObject *preview)
+{
+    QList<QObject *> actions = findObjects(preview, QStringLiteral("previewAction"));
+    std::stable_sort(actions.begin(), actions.end(), [](QObject *one, QObject *other) {
+        return one->property("x").toReal() < other->property("x").toReal();
+    });
+    QStringList glyphs;
+    for (QObject *action : actions) {
+        glyphs.append(action->property("glyph").toString());
+    }
+    return glyphs;
+}
+
+} // namespace
+
+// The cover's quick action, done by the window from wherever the application was left:
+// the page on top popped, and what lay over the browsing page put away -- the sheet, the
+// address being edited, the grid -- before the action opens what it names
+// (docs/DECISIONS/0029-quick-action.md).
+void tst_qmlload::quickActions()
+{
+    ScriptErrors errors;
+    Settings *settings = m_core->settings();
+    TabModel *tabs = m_core->tabs();
+    const Forest forest = plantForest(m_core.data());
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    auto *action = coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction"));
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    const int open = tabs->count();
+    int taps = 0;
+    const auto tap = [action, &taps]() {
+        QMetaObject::invokeMethod(action, "triggered");
+        ++taps;
+    };
+
+    // Search: the address bar opened for a new tab over the page, from over the
+    // settings; nothing is made until something is chosen.
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    tap();
+    QCOMPARE(currentPage(), page);
+    QVERIFY(bar->property("editing").toBool());
+    QVERIFY(bar->property("forNewTab").toBool());
+    QCOMPARE(tabs->count(), open);
+
+    // The bookmarks, the downloads and the history: their pages, over the browsing page
+    // rather than over what was left on it. The address that was being edited is not,
+    // the sheet is put away, and the grid is closed.
+    settings->setQuickAction(Settings::QuickActionBookmarks);
+    tap();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarksPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 2);
+    QVERIFY(!bar->property("editing").toBool());
+    popPage();
+    settings->setQuickAction(Settings::QuickActionDownloads);
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    tap();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    QVERIFY(!menu->property("open").toBool());
+    popPage();
+    settings->setQuickAction(Settings::QuickActionHistory);
+    pullUpToTabs();
+    QVERIFY(page->property("tabsOpen").toBool());
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    tap();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("historyPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 2);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    popPage();
+
+    // One bookmark: the tab it is open in already, though that is in another group, is
+    // brought to the front, the grid closed over it; nothing new is made.
+    const QString work = QStringLiteral("https://forest.example/work");
+    settings->setQuickActionBookmark(m_core->bookmarks()->add(work, QStringLiteral("Work")), work,
+                                     QStringLiteral("Work"));
+    settings->setQuickAction(Settings::QuickActionBookmark);
+    pullUpToTabs();
+    tap();
+    QCOMPARE(tabs->activeTabId(), forest.away);
+    QCOMPARE(tabs->currentGroupId(), forest.work);
+    QCOMPARE(tabs->count(), open);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QCOMPARE(currentPage(), page);
+
+    // Open in no tab, it opens in a new one -- which is the tab found the next time.
+    const QString wiki = QStringLiteral("https://forest.example/wiki");
+    const int wikiId = m_core->bookmarks()->idForUrl(wiki);
+    settings->setQuickActionBookmark(wikiId, wiki, QStringLiteral("Forest wiki"));
+    tap();
+    QCOMPARE(tabs->count(), open + 1);
+    QCOMPARE(tabs->activeUrl(), wiki);
+    const int opened = tabs->activeTabId();
+    tabs->activateTabById(forest.front);
+    tap();
+    QCOMPARE(tabs->count(), open + 1);
+    QCOMPARE(tabs->activeTabId(), opened);
+
+    // A bookmark no longer found anywhere opens the bookmarks, where another is a tap
+    // away; the action is still the one chosen.
+    m_core->bookmarks()->removeByUrl(wiki);
+    tap();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarksPage"));
+    QCOMPARE(tabs->count(), open + 1);
+    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    QCOMPARE(settings->quickActionBookmark(), wikiId);
+
+    // Every tap raised the window.
+    QCOMPARE(m_window->property("activateCount").toInt(), taps);
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// What the home screen is offered: the quick action alone while nothing plays, in the
+// glyph of what it opens; with the tab in front's mute beside it while that plays or is
+// muted; the mute alone when there is no quick action; and nothing when neither is there.
+// Each list is one the home screen draws only while it is the one enabled.
+void tst_qmlload::quickActionLists()
+{
+    ScriptErrors errors;
+    Settings *settings = m_core->settings();
+    TabModel *tabs = m_core->tabs();
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    const auto enabled = [coverItem]() {
+        QStringList lists;
+        for (const QString &name :
+             {QStringLiteral("quickCoverActions"), QStringLiteral("mediaCoverActions"),
+              QStringLiteral("muteCoverActions")}) {
+            if (coverItem->findChild<QObject *>(name)->property("enabled").toBool()) {
+                lists.append(name);
+            }
+        }
+        return lists;
+    };
+    const auto picture = [coverItem](const QString &name) {
+        return coverItem->findChild<QObject *>(name)->property("iconSource").toUrl();
+    };
+    const QString quick = QStringLiteral("quickCoverAction");
+
+    QCOMPARE(enabled(), QStringList{QStringLiteral("quickCoverActions")});
+    QVERIFY(drawnFrom(picture(quick), QStringLiteral("search-32-white.png")));
+    const QList<QPair<Settings::QuickAction, QString>> glyphs{
+        {Settings::QuickActionBookmarks, QStringLiteral("bookmarks")},
+        {Settings::QuickActionDownloads, QStringLiteral("downloads")},
+        {Settings::QuickActionHistory, QStringLiteral("history")},
+        {Settings::QuickActionBookmark, QStringLiteral("globe")},
+    };
+    for (const auto &glyph : glyphs) {
+        settings->setQuickAction(glyph.first);
+        QVERIFY2(drawnFrom(picture(quick), glyph.second + QStringLiteral("-32-white.png")),
+                 qPrintable(picture(quick).toString()));
+    }
+    // A bookmark's action wears the glyph picked for it.
+    settings->setQuickActionIcon(QStringLiteral("music"));
+    QVERIFY(drawnFrom(picture(quick), QStringLiteral("music-32-white.png")));
+
+    // The tab in front muted: the action, and the mute beside it.
+    tabs->setMuted(tabs->activeTabId(), true);
+    QCOMPARE(enabled(), QStringList{QStringLiteral("mediaCoverActions")});
+    QCOMPARE(picture(QStringLiteral("mediaQuickCoverAction")), picture(quick));
+    QVERIFY(drawnFrom(picture(QStringLiteral("muteCoverAction")),
+                      QStringLiteral("speaker-mute-32-white.png")));
+
+    // No quick action: the mute alone, and it is the mute.
+    settings->setQuickAction(Settings::QuickActionNone);
+    QCOMPARE(enabled(), QStringList{QStringLiteral("muteCoverActions")});
+    QVERIFY(drawnFrom(picture(QStringLiteral("loneMuteCoverAction")),
+                      QStringLiteral("speaker-mute-32-white.png")));
+    QMetaObject::invokeMethod(
+        coverItem->findChild<QObject *>(QStringLiteral("loneMuteCoverAction")), "triggered");
+    QVERIFY(!tabs->isMuted(tabs->activeTabId()));
+
+    // Neither: nothing on the home screen.
+    QCOMPARE(enabled(), QStringList());
+    settings->setQuickAction(Settings::QuickActionSearch);
+    QCOMPARE(enabled(), QStringList{QStringLiteral("quickCoverActions")});
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// The choice of the quick action on the cover's settings page: each kind in the row's
+// menu writes it, the row says it, and the pictures of the cover draw it. "Open a
+// bookmark" asks which, and backing out has chosen nothing; under a bookmark's action are
+// the glyphs it can wear, drawn from the files the cover hands the home screen.
+void tst_qmlload::quickActionChoice()
+{
+    ScriptErrors errors;
+    Settings *settings = m_core->settings();
+    BookmarkModel *bookmarks = m_core->bookmarks();
+    const int wiki = bookmarks->add(QStringLiteral("https://forest.example/wiki"),
+                                    QStringLiteral("Forest wiki"));
+    const int sea = bookmarks->add(QStringLiteral("https://sea.example/"), QStringLiteral("Sea"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("coverSettingsEntry")));
+    QObject *page = currentPage();
+    QObject *value = find(QStringLiteral("quickActionValue"));
+    QObject *icons = find(QStringLiteral("quickActionIcons"));
+    QObject *quiet = find(QStringLiteral("quietCoverPreview"));
+    QObject *playing = find(QStringLiteral("playingCoverPreview"));
+    const QString speaker = QStringLiteral("speaker-on");
+
+    // A search until another is chosen: alone in the middle while nothing plays, on the
+    // left of the mute while a tab plays, drawn from the cover's own files.
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Search"));
+    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("search")});
+    QCOMPARE(previewGlyphs(playing), (QStringList{QStringLiteral("search"), speaker}));
+    QVERIFY(drawnFrom(
+        findObjects(quiet, QStringLiteral("previewAction")).first()->property("source").toUrl(),
+        QStringLiteral("search-32-white.png")));
+    QVERIFY(!icons->property("visible").toBool());
+
+    struct Choice
+    {
+        QString item;
+        Settings::QuickAction action;
+        QString value;
+        QString glyph;
+    };
+    const QList<Choice> choices{
+        {QStringLiteral("quickAction-none"), Settings::QuickActionNone, QStringLiteral("None"),
+         QString()},
+        {QStringLiteral("quickAction-bookmarks"), Settings::QuickActionBookmarks,
+         QStringLiteral("Bookmarks"), QStringLiteral("bookmarks")},
+        {QStringLiteral("quickAction-downloads"), Settings::QuickActionDownloads,
+         QStringLiteral("Downloads"), QStringLiteral("downloads")},
+        {QStringLiteral("quickAction-history"), Settings::QuickActionHistory,
+         QStringLiteral("History"), QStringLiteral("history")},
+        {QStringLiteral("quickAction-search"), Settings::QuickActionSearch,
+         QStringLiteral("Search"), QStringLiteral("search")},
+    };
+    for (const Choice &choice : choices) {
+        QObject *item = find(choice.item);
+        QCOMPARE(item->property("text").toString(), choice.value);
+        click(item);
+        QCOMPARE(settings->quickAction(), int(choice.action));
+        QCOMPARE(value->property("text").toString(), choice.value);
+        // No action is a dot in its place; while a tab plays, the mute is alone.
+        QCOMPARE(previewGlyphs(quiet), QStringList{choice.glyph});
+        QCOMPARE(previewGlyphs(playing), choice.glyph.isEmpty()
+                                             ? QStringList{speaker}
+                                             : (QStringList{choice.glyph, speaker}));
+        QVERIFY(!icons->property("visible").toBool());
+    }
+
+    // "Open a bookmark" asks which, and backing out leaves the action as it was.
+    QObject *bookmarkItem = find(QStringLiteral("quickAction-bookmark"));
+    QCOMPARE(bookmarkItem->property("text").toString(), QStringLiteral("Open a bookmark"));
+    click(bookmarkItem);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarkPickerPage"));
+    QCOMPARE(findAll(QStringLiteral("bookmarkPickerRow")).count(), 2);
+    popPage();
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(settings->quickAction(), int(Settings::QuickActionSearch));
+    QCOMPARE(settings->quickActionBookmark(), 0);
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Search"));
+
+    // The picker narrows to every word typed, says when nothing matches, and a tap
+    // picks: the action is that bookmark's, and the page goes back.
+    click(bookmarkItem);
+    QObject *search = find(QStringLiteral("bookmarkPickerSearch"));
+    search->setProperty("text", QStringLiteral("wiki forest"));
+    QList<QObject *> rows = findAll(QStringLiteral("bookmarkPickerRow"));
+    QCOMPARE(rows.count(), 1);
+    QCOMPARE(textIn(rows.first(), QStringLiteral("bookmarkPickerTitle")),
+             QStringLiteral("Forest wiki"));
+    search->setProperty("text", QStringLiteral("desert"));
+    QCOMPARE(findAll(QStringLiteral("bookmarkPickerRow")).count(), 0);
+    QObject *placeholder = find(QStringLiteral("bookmarkPickerPlaceholder"));
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No matches"));
+    search->setProperty("text", QStringLiteral("forest"));
+    click(findAll(QStringLiteral("bookmarkPickerRow")).first());
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    QCOMPARE(settings->quickActionBookmark(), wiki);
+    QCOMPARE(settings->quickActionBookmarkUrl(), QStringLiteral("https://forest.example/wiki"));
+    QCOMPARE(settings->quickActionBookmarkTitle(), QStringLiteral("Forest wiki"));
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Forest wiki"));
+
+    // Under it, every glyph it can wear, the one it wears lit; a tap on another writes
+    // it, and the pictures and the cover follow.
+    QVERIFY(icons->property("visible").toBool());
+    for (const QString &name : settings->quickActionIcons()) {
+        QObject *cell = find(QStringLiteral("quickActionIcon-") + name);
+        QVERIFY2(cell != nullptr, qPrintable(name));
+        QVERIFY(drawnFrom(findObjects(cell, QStringLiteral("quickActionIconImage"))
+                              .first()
+                              ->property("source")
+                              .toUrl(),
+                          name + QStringLiteral("-32-white.png")));
+        QCOMPARE(cell->property("highlighted").toBool(), name == QStringLiteral("globe"));
+    }
+    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("globe")});
+    click(find(QStringLiteral("quickActionIcon-heart")));
+    QCOMPARE(settings->quickActionIcon(), QStringLiteral("heart"));
+    QVERIFY(find(QStringLiteral("quickActionIcon-heart"))->property("highlighted").toBool());
+    QVERIFY(!find(QStringLiteral("quickActionIcon-globe"))->property("highlighted").toBool());
+    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("heart")});
+    QCOMPARE(previewGlyphs(playing), (QStringList{QStringLiteral("heart"), speaker}));
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(drawnFrom(coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction"))
+                          ->property("iconSource")
+                          .toUrl(),
+                      QStringLiteral("heart-32-white.png")));
+
+    // Chosen again, it picks again; the glyph stays.
+    click(bookmarkItem);
+    for (QObject *row : findAll(QStringLiteral("bookmarkPickerRow"))) {
+        if (textIn(row, QStringLiteral("bookmarkPickerTitle")) == QStringLiteral("Sea")) {
+            click(row);
+            break;
+        }
+    }
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(settings->quickActionBookmark(), sea);
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Sea"));
+    QCOMPARE(settings->quickActionIcon(), QStringLiteral("heart"));
+
+    // With no bookmarks at all, the picker says so.
+    bookmarks->clear();
+    click(bookmarkItem);
+    placeholder = find(QStringLiteral("bookmarkPickerPlaceholder"));
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No bookmarks"));
+    popPage();
+    QCOMPARE(settings->quickActionBookmark(), sea);
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// The action's bookmark is kept by its id and found again by its address: renamed, the
+// row calls it what it is called now; taken away and added back with the menu's
+// Bookmark, under a new id, it is still the one; gone for good, the row says so, and the
+// cover keeps the action, which opens the bookmarks then.
+void tst_qmlload::quickActionBookmarkFollows()
+{
+    ScriptErrors errors;
+    Settings *settings = m_core->settings();
+    BookmarkModel *bookmarks = m_core->bookmarks();
+    TabModel *tabs = m_core->tabs();
+    const QString url = QStringLiteral("https://bee.example/");
+    const int front = tabs->activeTabId();
+    const int beeTab = tabs->newTab(url);
+    const int first = bookmarks->add(url, QStringLiteral("Bee"));
+    settings->setQuickActionBookmark(first, url, QStringLiteral("Bee"));
+    settings->setQuickAction(Settings::QuickActionBookmark);
+    const auto openCoverSettings = [this]() {
+        openMenuItem(QStringLiteral("settingsMenuButton"));
+        click(find(QStringLiteral("coverSettingsEntry")));
+        return find(QStringLiteral("quickActionValue"));
+    };
+    const auto backToBrowser = [this]() {
+        popPage();
+        popPage();
+    };
+    QObject *value = openCoverSettings();
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Bee"));
+
+    // Renamed, while the page is open: read again, and what the setting keeps of it with it.
+    bookmarks->edit(bookmarks->count() - 1, url, QStringLiteral("Bee hive"));
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Bee hive"));
+    QCOMPARE(settings->quickActionBookmarkTitle(), QStringLiteral("Bee hive"));
+    backToBrowser();
+
+    // The menu's Bookmark, tapped off and on: the bookmark is back under a new id, and
+    // the action is pointed at it without a word.
+    openMenuItem(QStringLiteral("bookmarkMenuButton"));
+    QVERIFY(!bookmarks->contains(url));
+    QCOMPARE(settings->quickActionBookmark(), first);
+    openMenuItem(QStringLiteral("bookmarkMenuButton"));
+    const int second = bookmarks->idForUrl(url);
+    QVERIFY(second > 0 && second != first);
+    QCOMPARE(settings->quickActionBookmark(), second);
+    QCOMPARE(settings->quickActionBookmarkUrl(), url);
+    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    value = openCoverSettings();
+    QCOMPARE(value->property("text").toString(),
+             QStringLiteral("Bookmark: ") + bookmarks->titleOf(second));
+    backToBrowser();
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    auto *action = coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction"));
+    tabs->activateTabById(front);
+    QMetaObject::invokeMethod(action, "triggered");
+    QCOMPARE(tabs->activeTabId(), beeTab);
+
+    // Gone for good: the row says so, and the cover still offers the action, in the
+    // glyph picked for it, which opens the bookmarks now.
+    bookmarks->removeByUrl(url);
+    value = openCoverSettings();
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Deleted bookmark"));
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("quickCoverActions"))
+                ->property("enabled")
+                .toBool());
+    QVERIFY(
+        drawnFrom(action->property("iconSource").toUrl(), QStringLiteral("globe-32-white.png")));
+    QMetaObject::invokeMethod(action, "triggered");
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarksPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 2);
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
 }
 
 void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
@@ -3889,7 +4363,7 @@ void tst_qmlload::mediaControls()
     QObject *mute = find(QStringLiteral("muteButton"));
     QObject *host = find(QStringLiteral("addressLabel"));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    auto *searchActions = coverItem->findChild<QObject *>(QStringLiteral("searchCoverActions"));
+    auto *quickActions = coverItem->findChild<QObject *>(QStringLiteral("quickCoverActions"));
     auto *mediaActions = coverItem->findChild<QObject *>(QStringLiteral("mediaCoverActions"));
     auto *coverMute = coverItem->findChild<QObject *>(QStringLiteral("muteCoverAction"));
     const auto engineSays = [this, scope](const char *state) {
@@ -3922,7 +4396,7 @@ void tst_qmlload::mediaControls()
 
     // Nothing plays, and neither the bar nor the cover says anything of it.
     QVERIFY(!mute->property("visible").toBool());
-    QVERIFY(searchActions->property("enabled").toBool());
+    QVERIFY(quickActions->property("enabled").toBool());
     QVERIFY(!mediaActions->property("enabled").toBool());
     // Anchors put a centred item on a whole pixel: to within half of one.
     const auto centred = [bar, centreX](QObject *object) {
@@ -3946,9 +4420,9 @@ void tst_qmlload::mediaControls()
     // In the ambience's colour, and a step larger than the small icons.
     QCOMPARE(mute->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
     QCOMPARE(mute->property("width").toReal(), qreal(48));
-    // The cover offers it beside the search, in a picture of its own drawn for this
-    // size and ambience.
-    QVERIFY(!searchActions->property("enabled").toBool());
+    // The cover offers it beside the quick action, in a picture of its own drawn for
+    // this size and ambience.
+    QVERIFY(!quickActions->property("enabled").toBool());
     QVERIFY(mediaActions->property("enabled").toBool());
     QVERIFY(coverIcon().toString().endsWith(QLatin1String("art/cover/speaker-on-32-white.png")));
     QVERIFY2(QFile::exists(coverIcon().toLocalFile()), qPrintable(coverIcon().toString()));

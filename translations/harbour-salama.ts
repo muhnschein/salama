@@ -54,6 +54,26 @@
     </message>
 </context>
 <context>
+    <name>BookmarkPickerPage</name>
+    <message>
+        <source>Choose a bookmark</source>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>BookmarksPage</name>
     <message>
         <source>Bookmarks</source>
@@ -178,6 +198,71 @@
     </message>
     <message>
         <source>The tab count and the most recent tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <extracomment>The cover has no quick action</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a bookmark</source>
+        <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <extracomment>A quick action on the cover: the list of downloads</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <extracomment>A quick action on the cover: the history</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark: %1</source>
+        <extracomment>The cover&apos;s quick action opens this bookmark</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleted bookmark</source>
+        <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick action</source>
+        <extracomment>The one action offered on the cover on the home screen</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The cover on the home screen shows one quick action. The place beside it is kept for the media control, which appears there while the tab in front plays something.</source>
+        <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. Use the same word for &quot;quick action&quot; as the section over this.</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing playing</source>
+        <extracomment>Under a picture of the cover and its quick action while nothing plays</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>While a tab plays</source>
+        <extracomment>Under a picture of the cover while a tab plays: its quick action, and the tab&apos;s mute beside it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Action</source>
+        <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -609,6 +694,36 @@
     </message>
     <message>
         <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No quick action</source>
+        <extracomment>The cover has no quick action</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a bookmark</source>
+        <extracomment>A quick action on the cover: one bookmark&apos;s page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <extracomment>A quick action on the cover: the list of downloads</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <extracomment>A quick action on the cover: the history</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · %2</source>
+        <extracomment>The cover&apos;s settings in one line: what it shows, then its quick action, e.g. &quot;The icon alone · Search&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

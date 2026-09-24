@@ -36,6 +36,8 @@ QtObject {
     readonly property real opacityOverlay: 0.8
     readonly property real startDragDistance: 20
     readonly property real itemSizeExtraSmall: 60
+    // The size of a cover on the home screen, which the cover's settings draw theirs to.
+    readonly property size coverSizeLarge: Qt.size(234, 374)
     readonly property real pixelRatio: 2.0
     readonly property real _lineWidth: 2
     // Silica's names the pattern the ambience lays over its glass; the stub's names an

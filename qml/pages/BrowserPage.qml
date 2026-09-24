@@ -148,14 +148,21 @@ WebViewPage {
                                   EngineMessages.heapMinimizePayload)
     }
 
+    // Nothing over the page: the sheet away, the address not edited, the grid closed --
+    // where the cover's quick action starts (docs/DECISIONS/0029-quick-action.md).
+    function uncover() {
+        browserMenu.hide()
+        navigationBar.endEditing()
+        deck.settle(false)
+    }
+
     // The address bar with its pane up (docs/DECISIONS/0027-omnibar.md). For a new tab
     // -- the cover's search -- the field opens empty over the bookmarks, and no tab is
     // made until something is chosen. The sheet, and the find bar, which lies where
     // the field goes, are put away first.
     function openOmnibar(forNewTab) {
-        browserMenu.hide()
+        uncover()
         findBar.close()
-        deck.settle(false)
         navigationBar.beginEditing(forNewTab)
     }
 

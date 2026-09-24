@@ -3,6 +3,7 @@
 #include "settings/Settings.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QSettings>
 #include <QSignalSpy>
@@ -37,6 +38,7 @@ private slots:
     void coverIconPath_data();
     void coverIconPath();
     void coverIconPathNamesTheSpeakers();
+    void coverIconPathNamesEveryGlyph();
 };
 
 void tst_settings::defaults()
@@ -671,6 +673,39 @@ void tst_settings::coverIconPathNamesTheSpeakers()
                 const QString path = Settings::coverIconPath(name, size, onDark);
                 QVERIFY2(QFileInfo::exists(source.absoluteFilePath(path)), qPrintable(path));
             }
+        }
+    }
+}
+
+// Every glyph the quick action can wear -- each kind's own, and each a bookmark's action
+// can be given -- is where coverIconPath() says, at every size and in both inks, and
+// the black is not the white: icons/render.sh draws the black set by rewriting the one
+// colour the white is written in, and a glyph written in another spelling of white would
+// come out white twice (docs/DECISIONS/0029-quick-action.md).
+void tst_settings::coverIconPathNamesEveryGlyph()
+{
+    QTemporaryDir dir;
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    const QDir source(QStringLiteral(SALAMA_SOURCE_DIR));
+    const QStringList names = QStringList{QStringLiteral("search"), QStringLiteral("bookmarks"),
+                                          QStringLiteral("downloads"), QStringLiteral("history")} +
+                              settings.quickActionIcons();
+    QCOMPARE(names.count(), 12);
+    const auto contents = [&source](const QString &path) {
+        QFile file(source.absoluteFilePath(path));
+        return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+    };
+    for (const QString &name : names) {
+        for (int size = 32; size <= 64; size += 8) {
+            const QString white = Settings::coverIconPath(name, size, true);
+            const QString black = Settings::coverIconPath(name, size, false);
+            QVERIFY2(white.endsWith(QStringLiteral("-%1-white.png").arg(size)), qPrintable(white));
+            QVERIFY2(black.endsWith(QStringLiteral("-%1-black.png").arg(size)), qPrintable(black));
+            const QByteArray whiteFile = contents(white);
+            const QByteArray blackFile = contents(black);
+            QVERIFY2(!whiteFile.isEmpty(), qPrintable(white));
+            QVERIFY2(!blackFile.isEmpty(), qPrintable(black));
+            QVERIFY2(whiteFile != blackFile, qPrintable(black));
         }
     }
 }
