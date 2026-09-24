@@ -561,6 +561,10 @@ void tst_qmlload::omnibar()
     QVERIFY(layer.indexOf(paneItem) > layer.indexOf(qobject_cast<QQuickItem *>(bar)));
     QVERIFY(layer.indexOf(paneItem) >
             layer.indexOf(qobject_cast<QQuickItem *>(find(QStringLiteral("findBar")))));
+    // And opaque, the tint the grid's rows have: nothing of the page shows through.
+    const QColor tint = find(QStringLiteral("omnibarTint"))->property("color").value<QColor>();
+    QCOMPARE(tint.alphaF(), 1.0);
+    QCOMPARE(tint, find(QStringLiteral("gridHeadRow"))->property("color").value<QColor>());
 
     // The field opens with the page's address, which is nothing to look for: no pane,
     // and the field and the reach as they always were.

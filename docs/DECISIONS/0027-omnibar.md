@@ -31,8 +31,9 @@ page, and holds, from the bottom up:
   short one sits by the bar; it is not laid out bottom-up, so its sections read from the
   top as every list on the platform does. Its `currentIndex` is -1, as sailfish-browser's
   history list has it, so the model never takes the field's focus. Empty, it is absent.
-- **the ground**, a pane of the grid's glass (0010) that takes every press: nothing of the
-  page is reached through it, and a tap on the bare glass ends the edit.
+- **the ground**, a pane of the grid's glass (0010), opaque as its rows are, that takes
+  every press: nothing of the page is seen or reached through it, and a tap on the bare
+  glass ends the edit.
 
 A tab chosen comes to the front with its group; a bookmark or a page of the history opens
 in the tab in front; a finished download opens its file, and one still coming or failed

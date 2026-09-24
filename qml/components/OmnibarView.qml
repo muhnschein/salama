@@ -116,9 +116,12 @@ Item {
         anchors.fill: parent
         onClicked: pane.dismissed()
 
+        // Opaque, as the grid's rows and the bar are: the page showing through,
+        // however faintly, was one more thing to read past.
         Rectangle {
+            objectName: "omnibarTint"
             anchors.fill: parent
-            color: Theme.rgba(Theme.highlightDimmerColor, (1 + Theme.opacityOverlay) / 2)
+            color: Theme.highlightDimmerColor
         }
 
         GlassTexture {
