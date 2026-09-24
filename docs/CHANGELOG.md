@@ -39,7 +39,7 @@ Versions follow semantic versioning.
 - Search on page: a field over the navigation bar finds text in the page, highlighting the match and scrolling to it, with arrows to the previous and next match and the field in the error colour when there is none.
 - The desktop version of one page, from the menu, while the setting in Settings still decides the rest.
 - History with search, and bookmarks with edit and remove.
-- Downloads, listed in the browser from the menu: newest first, with their progress while they come and how they ended after; a tap opens a finished one. The list survives a restart; clearing it leaves the files.
+- Downloads, saved to Downloads/Salama without asking where, and listed in the browser from the menu: newest first, with their progress while they come and how they ended after; a tap opens a finished one. The list survives a restart; clearing it leaves the files.
 - Settings: home page, search engine (Qwant, Ecosia, Startpage), desktop site mode, keeping clear of the display's camera cutout (on by default), what the cover shows, clearing history, cookies and cache.
 - The slim navigation bar stays opaque while a page is scrolled, so the address stays readable over a light page; the page ends above it as it does above the whole bar.
 - Cover showing the number of open tabs over a monochrome field of their page previews, most recently used first, with a search action that opens a new tab with the address field already up. The preview of the tab in front is refreshed as the app is put away, so the cover shows the page as it was left. Settings chooses how much of that the cover shows: the icon alone, the tab count and the tab last read, or the count and the most recent tabs.

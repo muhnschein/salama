@@ -3,7 +3,7 @@
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
 // the menu, and left of the host the tab's mute while the page plays something
-// (docs/DECISIONS/0025-media-controls.md). Dragging it upwards pulls the tab grid up
+// (docs/DECISIONS/0026-media-controls.md). Dragging it upwards pulls the tab grid up
 // from underneath the page.
 //
 // While the address is being edited the bar belongs to the field: back and reload are

@@ -6,12 +6,14 @@
 #include "storage/Storage.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUrl>
 #include <QtDebug>
 #include <algorithm>
+#include <utility>
 
 namespace Salama {
 
@@ -30,10 +32,14 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-DownloadModel::DownloadModel(Storage &storage, QObject *parent)
+DownloadModel::DownloadModel(Storage &storage, QString directory, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
+    , m_directory(std::move(directory))
 {
+    if (!QDir().mkpath(m_directory)) {
+        qWarning() << "DownloadModel: cannot create download directory" << m_directory;
+    }
     load();
     dropOldest();
 }
@@ -99,6 +105,11 @@ int DownloadModel::count() const
 QString DownloadModel::topic() const
 {
     return Topic;
+}
+
+QString DownloadModel::directory() const
+{
+    return m_directory;
 }
 
 void DownloadModel::observe(const QString &topic, const QVariant &data)

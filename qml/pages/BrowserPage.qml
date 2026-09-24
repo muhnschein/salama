@@ -229,14 +229,10 @@ WebViewPage {
 
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
     // pixels across a 1080 wide screen -- the width a phone layout is written for --
-    // where the platform's own 1.5 gives 410. Two functions so the load tests can
-    // compare them: an expression evaluated from outside has no WebEngine import.
+    // where the platform's own 1.5 gives 410. A function, so the load tests can
+    // compare it with what the engine was given.
     function pageZoom() {
         return Math.round(Theme.pixelRatio * 1.75 / 0.5) * 0.5
-    }
-
-    function engineZoom() {
-        return WebEngineSettings.pixelRatio
     }
 
     // The engine's own anti-tracking, at the level Settings holds
@@ -289,6 +285,10 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
+        // Downloads go to a folder of this browser's own, without the engine asking
+        // where each time (docs/DECISIONS/0025-downloads-folder.md).
+        WebEngineSettings.downloadDir = DownloadModel.directory
+        WebEngineSettings.useDownloadDir = true
         applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
@@ -562,7 +562,7 @@ WebViewPage {
             // Whether the page reads as an article, and the article's own address while
             // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
             property ReaderMode reader: ReaderMode { view: webView }
-            // What the page plays, asked and told (docs/DECISIONS/0025-media-controls.md).
+            // What the page plays, asked and told (docs/DECISIONS/0026-media-controls.md).
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))

@@ -5,7 +5,7 @@
 // page, is run in it as a script, and the answer is handed back. The script also carries
 // out a command -- pause, play -- and mutes the page's media while its tab is muted. A
 // page that starts loading takes what it played with it
-// (docs/DECISIONS/0025-media-controls.md).
+// (docs/DECISIONS/0026-media-controls.md).
 //
 // Not an Item: it lives inside the engine's view, which draws what it has itself.
 import QtQuick 2.6

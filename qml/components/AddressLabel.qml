@@ -4,7 +4,7 @@
 // What the navigation bar shows while the address is not being edited: the host, a
 // warning beside it when the engine is unhappy with the connection
 // (docs/DECISIONS/0011-address-and-security.md), and left of both the tab's mute while
-// the page plays something (docs/DECISIONS/0025-media-controls.md). Safari puts its
+// the page plays something (docs/DECISIONS/0026-media-controls.md). Safari puts its
 // mute in the address field the same way.
 //
 // The host and the warning are the row the bar centres. The mute hangs off its left

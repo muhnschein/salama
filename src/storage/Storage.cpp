@@ -157,6 +157,12 @@ QString Storage::defaultCacheDirectory()
     return QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 }
 
+QString Storage::defaultDownloadDirectory()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) +
+           QStringLiteral("/Salama");
+}
+
 QString Storage::defaultConfigFilePath()
 {
     // Sandboxed apps must not use the default QSettings path; this is the layout
