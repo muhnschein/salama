@@ -174,6 +174,9 @@ public:
 
 signals:
     void countChanged();
+    // The tab in front is about to be another: told before anything else hears of it,
+    // while the page being left is still the one on the screen (PageMedia).
+    void activeTabLeaving(int tabId);
     void activeTabChanged();
     // The cover's list has changed: a tab opened or closed, one came to the front, or
     // a preview was captured.

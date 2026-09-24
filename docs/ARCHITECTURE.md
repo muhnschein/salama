@@ -42,7 +42,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `PageMedia` — which tab plays: on the engine's word that something started or
   stopped, every loaded page is asked with a script, and the answer and the tab's
   muted flag are `TabModel` roles the grid's previews, the bar and the cover draw
-  the tab's mute from; muting pauses too. While the tab in front plays, no other does
+  the tab's mute from; muting pauses too. What plays is the tab in front's: a tab
+  left while it plays is paused as it is left and played again when it is back, and
+  out of sight the page's videos are hidden so only the sound goes on
   (`DECISIONS/0026-media-controls.md`).
 - `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
   and compiled in, handed to the page to find its article, and the page the article is

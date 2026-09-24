@@ -166,14 +166,23 @@ void tst_tabmodel::activation()
     const int b = model.newTab(QStringLiteral("https://b.example/"));
     QSignalSpy activeSpy(&model, &TabModel::activeTabChanged);
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
+    QSignalSpy leavingSpy(&model, &TabModel::activeTabLeaving);
+    // The tab being left is named before any row says it is no longer in front.
+    int rowsWhenLeft = -1;
+    connect(&model, &TabModel::activeTabLeaving, this,
+            [&rowSpy, &rowsWhenLeft]() { rowsWhenLeft = rowSpy.count(); });
 
     model.activateTab(0);
     QCOMPARE(model.activeTabId(), a);
     QCOMPARE(activeSpy.count(), 1);
     QCOMPARE(rowSpy.count(), 2);
+    QCOMPARE(leavingSpy.count(), 1);
+    QCOMPARE(leavingSpy.first().at(0).toInt(), b);
+    QCOMPARE(rowsWhenLeft, 0);
 
     model.activateTab(0);
     QCOMPARE(activeSpy.count(), 1);
+    QCOMPARE(leavingSpy.count(), 1);
 
     model.activateTab(99);
     QCOMPARE(model.activeTabId(), b);

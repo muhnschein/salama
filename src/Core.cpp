@@ -34,6 +34,8 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     // The engine says something started or stopped playing, and not where; the pages
     // are asked (docs/DECISIONS/0026-media-controls.md).
     connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
+    connect(&m_pageActivity, &PageActivity::backgroundChanged, &m_pageMedia,
+            [this]() { m_pageMedia.setBackground(m_pageActivity.background()); });
 }
 
 Storage &Core::storage()

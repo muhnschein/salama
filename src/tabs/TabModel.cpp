@@ -908,6 +908,9 @@ void TabModel::setActiveTab(int tabId)
 
 void TabModel::applyActiveTab(int tabId)
 {
+    if (m_activeTabId != 0 && m_activeTabId != tabId) {
+        emit activeTabLeaving(m_activeTabId);
+    }
     const int oldIndex = indexOf(m_activeTabId);
     m_activeTabId = tabId;
     // Media shown as held behind the front, or no longer (shownMediaState()).

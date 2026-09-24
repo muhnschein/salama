@@ -42,14 +42,15 @@ CoverBackground {
     /// itself, from the file as it is, so it is one drawn at the size Silica's small
     /// icon takes on this phone, and in white for a dark ambience and black for a
     /// light one -- see icons/render.sh, which draws them from icons/cover/. The
-    /// speaker while the tab's sound is on, struck through while it is muted, as on
-    /// the bar. Drawn here rather than taken from the theme's icon-cover-mute, whose
+    /// speaker while the tab is heard, struck through while it is not, as on the
+    /// bar. Drawn here rather than taken from the theme's icon-cover-mute, whose
     /// glyph could not be checked against the bar's speaker.
     readonly property string muteIcon: {
         var size = Math.max(32, Math.min(64, Math.round(Theme.iconSizeSmall / 8) * 8))
         var ink = Theme.primaryColor
         var onDark = 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
-        return Qt.resolvedUrl("../../art/cover/speaker-" + (TabModel.activeMuted ? "mute" : "on")
+        var heard = TabModel.activeMediaState === TabModel.MediaPlaying && !TabModel.activeMuted
+        return Qt.resolvedUrl("../../art/cover/speaker-" + (heard ? "on" : "mute")
                               + "-" + size + "-" + (onDark ? "white" : "black") + ".png")
     }
 

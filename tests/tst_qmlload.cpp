@@ -120,6 +120,7 @@ private slots:
     void thumbnailCapturedOnLeavingTheApp();
     void pagesSleepOutOfSight();
     void mediaControls();
+    void muteOnTheGrid();
 
 private:
     bool loadWindow();
@@ -3076,7 +3077,6 @@ void tst_qmlload::mediaControls()
     FingerWindow fingers(root);
     QQuickWindow &window = *fingers.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
-    QObject *page = find(QStringLiteral("browserPage"));
     auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
     QObject *scope = find(QStringLiteral("viewArea"));
     QObject *mute = find(QStringLiteral("muteButton"));
@@ -3164,7 +3164,7 @@ void tst_qmlload::mediaControls()
     tapBar(QStringLiteral("mute"));
     QVERIFY(tabs->isMuted(second));
     QCOMPARE(asked(front).last(), QStringLiteral("pause"));
-    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = true;")));
+    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = true,")));
     QCOMPARE(tabs->mediaState(second), TabModel::MediaPaused);
     QVERIFY(icon(mute).endsWith(QLatin1String("icon-m-speaker-mute")));
     QVERIFY(coverIcon().toString().endsWith(QLatin1String("speaker-mute-32-white.png")));
@@ -3173,7 +3173,22 @@ void tst_qmlload::mediaControls()
     tapBar(QStringLiteral("mute"));
     QVERIFY(!tabs->isMuted(second));
     QCOMPARE(asked(front).last(), QStringLiteral("play"));
-    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = false;")));
+    QVERIFY(front->property("lastScript").toString().contains(QLatin1String("muted = false,")));
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
+
+    // Left for another tab while it plays, it is paused while its view is still the
+    // one in front -- before its page is told it is hidden -- and plays again when it
+    // is back in front.
+    QVERIFY(front->property("active").toBool());
+    front->setProperty("scriptResult", QStringLiteral("paused"));
+    tabs->activateTabById(first);
+    QCOMPARE(asked(front).last(), QStringLiteral("pause"));
+    QVERIFY(front->property("activeWhenRun").toList().last().toBool());
+    QVERIFY(!front->property("active").toBool());
+    QCOMPARE(tabs->mediaState(second), TabModel::MediaPaused);
+    front->setProperty("scriptResult", QStringLiteral("playing"));
+    tabs->activateTabById(second);
+    QCOMPARE(asked(front).last(), QStringLiteral("play"));
     QCOMPARE(tabs->mediaState(second), TabModel::MediaPlaying);
 
     // The tab behind starts too, and is paused: the one in front plays. Behind, a page
@@ -3199,16 +3214,54 @@ void tst_qmlload::mediaControls()
     front->setProperty("scriptResult", QString());
     front->setProperty("loading", false);
 
-    // The grid, under a finger: the mute over a preview takes its own taps, and the
-    // cell is not opened by them, nor brought to the front. While it is drawn, the
-    // picture under it fades out.
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+// The mute over a tab's preview in the grid.
+void tst_qmlload::muteOnTheGrid()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    Salama::PageMedia *media = m_core->pageMedia();
+    const int first = tabs->activeTabId();
+    QObject *behind = currentWebView();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow fingers(root);
+    QQuickWindow &window = *fingers.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    // The command in the last script the page was asked to run.
+    const auto asked = [](QObject *view) {
+        const QString script = view->property("lastScript").toString();
+        for (const QString &command : {QStringLiteral("play"), QStringLiteral("pause")}) {
+            if (script.contains(QStringLiteral("var command = '%1'").arg(command))) {
+                return command;
+            }
+        }
+        return QString();
+    };
+    const auto icon = [](QObject *item) { return item->property("source").toString(); };
+    // The tab behind says it plays, which there means held, and goes on saying so each
+    // time it is asked; the one in front plays nothing, and is muted.
+    behind->setProperty("scriptResult", QStringLiteral("playing"));
+    media->answer(first, Salama::PageMedia::Query, QStringLiteral("playing"));
+    tabs->setMuted(second, true);
+
+    // Under a finger. The tab behind is held by the engine and is not heard: its
+    // speaker is struck through. A tap on it brings it to the front to be played,
+    // with the grid staying open; heard, a tap silences it where it is. The cell is not
+    // opened by either. While the mute is drawn, the picture under it fades out.
     pullUpToTabs();
     QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+    QCOMPARE(tabs->shownMediaState(first), TabModel::MediaPaused);
     const QList<QObject *> cells = byRow(findAll(QStringLiteral("tabPreview")));
     QCOMPARE(cells.count(), 2);
     QObject *firstAction = findObjects(cells.at(0), QStringLiteral("previewMuteAction")).first();
     QObject *secondAction = findObjects(cells.at(1), QStringLiteral("previewMuteAction")).first();
+    QObject *firstIcon = findObjects(cells.at(0), QStringLiteral("previewMuteIcon")).first();
     QVERIFY(firstAction->property("visible").toBool());
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-mute")));
     // Nothing plays in the tab in front, but it is muted, and says so.
     QVERIFY(secondAction->property("visible").toBool());
     QVERIFY(icon(findObjects(cells.at(1), QStringLiteral("previewMuteIcon")).first())
@@ -3223,20 +3276,24 @@ void tst_qmlload::mediaControls()
     QCOMPARE(actionItem->y() + actionItem->height(), shotItem->height());
 
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(firstAction));
-    QVERIFY(tabs->isMuted(first));
-    QCOMPARE(asked(behind).last(), QStringLiteral("pause"));
-    QVERIFY(behind->property("lastScript").toString().contains(QLatin1String("muted = true;")));
-    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(tabs->activeTabId(), first);
+    QCOMPARE(asked(behind), QStringLiteral("play"));
+    QCOMPARE(tabs->shownMediaState(first), TabModel::MediaPlaying);
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-on")));
     QVERIFY(page->property("tabsOpen").toBool());
+    behind->setProperty("scriptResult", QStringLiteral("paused"));
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centreOf(firstAction));
-    QVERIFY(!tabs->isMuted(first));
-    QCOMPARE(asked(behind).last(), QStringLiteral("play"));
-    QCOMPARE(tabs->activeTabId(), second);
+    QVERIFY(tabs->isMuted(first));
+    QCOMPARE(asked(behind), QStringLiteral("pause"));
+    QVERIFY(behind->property("lastScript").toString().contains(QLatin1String("muted = true,")));
+    QCOMPARE(tabs->activeTabId(), first);
+    QVERIFY(icon(firstIcon).endsWith(QLatin1String("icon-m-speaker-mute")));
     QVERIFY(page->property("tabsOpen").toBool());
 
     // A page that plays nothing and is not muted has no mute, and its picture runs to
     // the foot.
     behind->setProperty("scriptResult", QString());
+    tabs->setMuted(first, false);
     media->forget(first);
     QVERIFY(!firstAction->property("visible").toBool());
     QVERIFY(!evaluate(firstPicture, QStringLiteral("layer.enabled")).toBool());

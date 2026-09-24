@@ -5,9 +5,9 @@
 // quick actions: the glyph alone, centred along the bottom edge, on the ground the
 // picture fades out to there rather than on a disc of its own (TabPreview.qml; piirit's
 // and vuo's covers make room for what they draw at their foot the same way). The
-// speaker while the tab's sound is on, struck through while it is muted, and muting
-// pauses it as well (docs/DECISIONS/0026-media-controls.md). Nothing is drawn for a
-// page that plays nothing, unless its tab is muted.
+// speaker while the tab is heard, struck through while it is not; a tap silences it or
+// plays it (docs/DECISIONS/0026-media-controls.md). Nothing is drawn for a page that
+// plays nothing, unless its tab is muted.
 //
 // It takes its own presses, above the handler the cell's gestures go through, so a
 // tap on it is never a tap on the cell.
@@ -18,9 +18,10 @@ import harbour.salama 1.0
 Item {
     id: action
 
-    // A TabModel.MediaState, and the tab's muted flag.
+    // A TabModel.MediaState, as shown, and the tab's muted flag.
     property int mediaState: TabModel.NoMedia
     property bool muted: false
+    readonly property bool heard: mediaState === TabModel.MediaPlaying && !muted
 
     // Its own tap signal: the handler's carries a mouse event, which a test cannot give
     // it.
@@ -44,7 +45,7 @@ Item {
     MediaIcon {
         objectName: "previewMuteIcon"
         anchors.centerIn: parent
-        muted: action.muted
+        heard: action.heard
         highlighted: tap.pressed
     }
 }

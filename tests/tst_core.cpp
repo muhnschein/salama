@@ -117,6 +117,17 @@ void tst_core::wiresPlaybackToPageMedia()
     QVERIFY(requested.wait(core.pageMedia()->queryDelay() * 10));
     QCOMPARE(requested.first().at(0).toInt(), 0);
     QCOMPARE(requested.first().at(1).toInt(), static_cast<int>(Salama::PageMedia::Query));
+
+    // Out of sight, the pages hear of it: what plays is hidden from them.
+    const int id = core.tabs()->activeTabId();
+    core.pageActivity()->setBackground(true);
+    QVERIFY(core.pageMedia()
+                ->script(id, Salama::PageMedia::Query)
+                .contains(QLatin1String("concealed = true;")));
+    core.pageActivity()->setBackground(false);
+    QVERIFY(core.pageMedia()
+                ->script(id, Salama::PageMedia::Query)
+                .contains(QLatin1String("concealed = false;")));
 }
 
 QTEST_GUILESS_MAIN(tst_core)

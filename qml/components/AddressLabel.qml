@@ -55,7 +55,7 @@ Item {
         }
         width: address.iconSize
         visible: address.mediaState !== TabModel.NoMedia || address.muted
-        muted: address.muted
+        heard: address.mediaState === TabModel.MediaPlaying && !address.muted
         color: Theme.highlightColor
         highlightColor: Theme.secondaryHighlightColor
         highlighted: address.mutePressed

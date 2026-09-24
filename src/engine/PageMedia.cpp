@@ -21,7 +21,11 @@ const QString Paused = QStringLiteral("paused");
 // What counts is what makes a sound: an element the page has muted or turned down to
 // nothing, or a video the engine says has no sound track (Gecko's mozHasAudio,
 // undefined on an <audio>, which has nothing else), plays nothing anyone hears.
-const char *const ScriptTemplate = R"( var command = '%1', muted = %2;
+// While the application is out of sight (concealed), a video that plays is hidden --
+// its own visibility, so the page's layout stays as it is -- and shown again once the
+// application is back (salamaConcealed keeps what the page had set): Gecko stops
+// decoding the pictures of a video nobody can see, and what plays on is its sound.
+const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed = %3;
  var media = [];
  var collect = function (doc) {
    var found = doc.querySelectorAll('audio, video');
@@ -36,6 +40,11 @@ const char *const ScriptTemplate = R"( var command = '%1', muted = %2;
  media.forEach(function (m) {
    if (muted && !m.muted) { m.muted = true; m.salamaMuted = true; }
    else if (!muted && m.salamaMuted) { m.muted = false; delete m.salamaMuted; }
+   if (concealed && m.localName === 'video' && !m.paused && !('salamaConcealed' in m)) {
+     m.salamaConcealed = m.style.visibility; m.style.visibility = 'hidden';
+   } else if (!concealed && 'salamaConcealed' in m) {
+     m.style.visibility = m.salamaConcealed; delete m.salamaConcealed;
+   }
    if (m.mozHasAudio === false || m.volume === 0 || (m.muted && !m.salamaMuted)) { return; }
    if (command === 'pause' && !m.paused) { m.pause(); m.salamaPaused = true; }
    else if (command === 'play' && m.salamaPaused) { var p = m.play(); if (p) { p.catch(function () {}); } }
@@ -70,12 +79,22 @@ PageMedia::PageMedia(TabModel *tabs, int queryDelay, QObject *parent)
     m_queryTimer.setSingleShot(true);
     m_queryTimer.setInterval(queryDelay);
     connect(&m_queryTimer, &QTimer::timeout, this, [this]() { emit requested(0, Query); });
-    // A page brought to the front plays again what the engine held while it was
-    // behind, and the one left may still say it plays: both are asked.
+    // A tab being left is paused while its page is still the one on the screen: told
+    // it is hidden, a page may pause itself where nothing here can play it again.
+    connect(m_tabs, &TabModel::activeTabLeaving, this, [this](int tabId) {
+        if (m_tabs->mediaState(tabId) == TabModel::MediaPlaying) {
+            m_held.insert(tabId);
+            emit requested(tabId, Pause);
+        }
+    });
+    // Back in front, it plays again what was held; and every page is asked.
     m_frontTabId = m_tabs->activeTabId();
     connect(m_tabs, &TabModel::activeTabChanged, this, [this]() {
         if (m_tabs->activeTabId() != m_frontTabId) {
             m_frontTabId = m_tabs->activeTabId();
+            if (m_held.remove(m_frontTabId)) {
+                emit requested(m_frontTabId, Play);
+            }
             refresh();
         }
     });
@@ -90,7 +109,8 @@ QString PageMedia::script(int tabId, int command) const
 {
     return QString::fromUtf8(ScriptTemplate)
         .arg(commandName(command),
-             m_tabs->isMuted(tabId) ? QStringLiteral("true") : QStringLiteral("false"));
+             m_tabs->isMuted(tabId) ? QStringLiteral("true") : QStringLiteral("false"),
+             m_background ? QStringLiteral("true") : QStringLiteral("false"));
 }
 
 void PageMedia::answer(int tabId, int command, const QVariant &answer)
@@ -124,6 +144,7 @@ void PageMedia::answer(int tabId, int command, const QVariant &answer)
 
 void PageMedia::forget(int tabId)
 {
+    m_held.remove(tabId);
     m_tabs->setMediaState(tabId, TabModel::NoMedia);
 }
 
@@ -132,9 +153,34 @@ void PageMedia::toggleMuted(int tabId)
     if (m_tabs->indexOf(tabId) < 0) {
         return;
     }
-    const bool muted = !m_tabs->isMuted(tabId);
-    m_tabs->setMuted(tabId, muted);
-    emit requested(tabId, muted ? Pause : Play);
+    if (isHeard(tabId)) {
+        m_tabs->setMuted(tabId, true);
+        emit requested(tabId, Pause);
+        return;
+    }
+    m_tabs->setMuted(tabId, false);
+    // Behind the front the engine holds whatever the page plays: it is played there.
+    if (tabId != m_tabs->activeTabId()) {
+        m_held.insert(tabId);
+        m_tabs->activateTabById(tabId);
+        return;
+    }
+    emit requested(tabId, Play);
+}
+
+bool PageMedia::isHeard(int tabId) const
+{
+    return m_tabs->shownMediaState(tabId) == TabModel::MediaPlaying && !m_tabs->isMuted(tabId);
+}
+
+void PageMedia::setBackground(bool background)
+{
+    // At once, not with the engine's words: on the way back, the pictures are wanted
+    // the moment the page is.
+    if (m_background != background) {
+        m_background = background;
+        emit requested(0, Query);
+    }
 }
 
 void PageMedia::refresh()
