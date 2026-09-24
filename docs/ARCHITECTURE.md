@@ -28,7 +28,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `BookmarkModel` — bookmarks and "is the active page bookmarked".
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
   notifications, because the platform's list of transfers is closed to a Harbour
-  application and would not hold a `Sailfish.WebView` application's downloads anyway.
+  application and would not hold a `Sailfish.WebView` application's downloads anyway;
+  and the folder the engine saves them to, `~/Downloads/Salama`
+  (`DECISIONS/0025-downloads-folder.md`).
 - `Settings` — home page, search engine, desktop mode, cover style, tracking protection
   level, the reader view's look, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine

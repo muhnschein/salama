@@ -26,7 +26,8 @@ class Core : public QObject
     Q_OBJECT
 
 public:
-    Core(const QString &dataDirectory, const QString &configFilePath, QObject *parent = nullptr);
+    Core(const QString &dataDirectory, const QString &configFilePath,
+         const QString &downloadDirectory, QObject *parent = nullptr);
 
     Storage &storage();
     TabModel *tabs();

@@ -44,6 +44,8 @@ class DownloadModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     // The observer topic to subscribe to, for WebEngine.addObserver().
     Q_PROPERTY(QString topic READ topic CONSTANT)
+    // The folder the engine is told to save into, for WebEngineSettings.downloadDir.
+    Q_PROPERTY(QString directory READ directory CONSTANT)
 
 public:
     enum Status
@@ -71,7 +73,10 @@ public:
     // The oldest go beyond this many, from the list and from the database.
     static const int Limit = 50;
 
-    explicit DownloadModel(Storage &storage, QObject *parent = nullptr);
+    // The directory is made here, parents and all, if it is missing: the engine saves
+    // into it only if it is already there, and into ~/Downloads otherwise
+    // (docs/DECISIONS/0025-downloads-folder.md).
+    DownloadModel(Storage &storage, QString directory, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -79,6 +84,7 @@ public:
 
     int count() const;
     QString topic() const;
+    QString directory() const;
 
     // What WebEngine.recvObserve() delivered: the data is the engine's JSON, already
     // read into a map (qtmozembed src/qmozcontext.cpp). Any other topic, a message it
@@ -128,6 +134,7 @@ private:
     void erase(int id);
 
     QSqlDatabase m_db;
+    QString m_directory;
     QList<Download> m_downloads;
     int m_nextId = 1;
 };

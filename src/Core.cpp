@@ -4,7 +4,8 @@
 
 namespace Salama {
 
-Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject *parent)
+Core::Core(const QString &dataDirectory, const QString &configFilePath,
+           const QString &downloadDirectory, QObject *parent)
     : QObject(parent)
     , m_storage(dataDirectory)
     , m_tabPersistence(m_storage)
@@ -12,7 +13,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath, QObject 
     , m_tabSearch(&m_tabs)
     , m_history(m_storage)
     , m_bookmarks(m_storage)
-    , m_downloads(m_storage)
+    , m_downloads(m_storage, downloadDirectory)
     , m_settings(configFilePath)
     , m_reader(m_settings)
 {

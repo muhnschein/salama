@@ -37,7 +37,7 @@ There is no cancelling or retrying from the list. The engine takes both
 (`tst_qmlstatic::webViewImportOnlyInBrowserPage` holds it there); it is a later change,
 not a refusal.
 
-The files land in `~/Downloads`, which the `Downloads` permission already opens
-(`docs/HARBOUR.md`). Whether `Qt.openUrlExternally` hands a file on from inside Sailjail is
-a device check (`docs/TESTING.md`); if it does not, a tap on a finished download is the
-thing to change.
+The files land in `~/Downloads/Salama` (0025), which the `Downloads` permission already
+opens (`docs/HARBOUR.md`). Whether `Qt.openUrlExternally` hands a file on from inside
+Sailjail is a device check (`docs/TESTING.md`); if it does not, a tap on a finished download
+is the thing to change.

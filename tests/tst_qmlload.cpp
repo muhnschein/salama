@@ -151,7 +151,8 @@ void tst_qmlload::initTestCase()
 void tst_qmlload::init()
 {
     m_dir.reset(new QTemporaryDir);
-    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf")));
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
     QVERIFY(loadWindow());
 }
 
@@ -361,8 +362,16 @@ void tst_qmlload::rootWindowLoads()
     QObject *page = find(QStringLiteral("browserPage"));
     const qreal zoom = evaluate(page, QStringLiteral("pageZoom()")).toReal();
     QVERIFY(zoom > 1.5 * evaluate(page, QStringLiteral("Theme.pixelRatio")).toReal() - 0.5);
-    QCOMPARE(evaluate(page, QStringLiteral("engineZoom()")).toReal(), zoom);
+    // What the engine was given is read through the view: BrowserPage.qml made it, so
+    // it carries that file's Sailfish.WebEngine import, which the page's own context
+    // does not.
+    QCOMPARE(evaluate(webView, QStringLiteral("WebEngineSettings.pixelRatio")).toReal(), zoom);
     QVERIFY(webView->property("downloadsEnabled").toBool());
+    // Downloads are saved to the application's own folder, without the engine asking
+    // where.
+    QCOMPARE(evaluate(webView, QStringLiteral("WebEngineSettings.downloadDir")).toString(),
+             m_core->downloads()->directory());
+    QVERIFY(evaluate(webView, QStringLiteral("WebEngineSettings.useDownloadDir")).toBool());
     QVERIFY(!webView->property("desktopMode").toBool());
 
     // The engine is given its tracking protection on start, at the level Settings
@@ -2063,7 +2072,8 @@ void tst_qmlload::restoredTabsLoadLazily()
 
     m_window.reset();
     m_engine.reset();
-    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf")));
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
     QVERIFY(loadWindow());
 
     QCOMPARE(m_core->tabs()->count(), 3);
