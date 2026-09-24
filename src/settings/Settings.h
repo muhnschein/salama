@@ -35,6 +35,12 @@ class Settings : public QObject
     // value (docs/DECISIONS/0023-tracking-protection.md).
     Q_PROPERTY(int trackingProtection READ trackingProtection WRITE setTrackingProtection NOTIFY
                    trackingProtectionChanged)
+    // How the reader view sets an article (docs/DECISIONS/0024-reader-view.md).
+    Q_PROPERTY(int readerColors READ readerColors WRITE setReaderColors NOTIFY readerColorsChanged)
+    Q_PROPERTY(
+        int readerTypeface READ readerTypeface WRITE setReaderTypeface NOTIFY readerTypefaceChanged)
+    Q_PROPERTY(
+        int readerTextSize READ readerTextSize WRITE setReaderTextSize NOTIFY readerTextSizeChanged)
 
 public:
     // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
@@ -64,6 +70,38 @@ public:
         TrackingProtectionStrict = 2
     };
     Q_ENUM(TrackingProtection)
+
+    // The reader view's colours: the ambience's own, light or dark as it is, or one of
+    // Firefox's reader themes whatever the ambience. Stored, like CoverStyle, and
+    // unscoped for the same reason.
+    enum ReaderColors
+    {
+        ReaderAmbience = 0,
+        ReaderLight = 1,
+        ReaderSepia = 2,
+        ReaderDark = 3
+    };
+    Q_ENUM(ReaderColors)
+
+    // The reader view's typeface, as Firefox offers it. Stored, and unscoped as
+    // CoverStyle is.
+    enum ReaderTypeface
+    {
+        ReaderSansSerif = 0,
+        ReaderSerif = 1
+    };
+    Q_ENUM(ReaderTypeface)
+
+    // The reader view's text size, in Firefox's reader.font_size steps: 1 to 9, 5 the
+    // default. An enum so the slider in Settings can read its ends from here, and
+    // unscoped as CoverStyle is, for the same reason.
+    enum ReaderTextSize
+    {
+        ReaderTextSizeMin = 1,
+        ReaderTextSizeDefault = 5,
+        ReaderTextSizeMax = 9
+    };
+    Q_ENUM(ReaderTextSize)
 
     explicit Settings(const QString &filePath, QObject *parent = nullptr);
 
@@ -101,6 +139,14 @@ public:
     int trackingProtection() const;
     void setTrackingProtection(int level);
 
+    // Out-of-range values read back as the defaults, as coverStyle's do.
+    int readerColors() const;
+    void setReaderColors(int colors);
+    int readerTypeface() const;
+    void setReaderTypeface(int typeface);
+    int readerTextSize() const;
+    void setReaderTextSize(int size);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
@@ -118,6 +164,9 @@ signals:
     void coverStyleChanged();
     void liveTabLimitChanged();
     void trackingProtectionChanged();
+    void readerColorsChanged();
+    void readerTypefaceChanged();
+    void readerTextSizeChanged();
 
 private:
     QSettings m_settings;

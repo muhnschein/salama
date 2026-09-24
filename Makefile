@@ -85,8 +85,12 @@ lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
 check: lint build test coverage tidy
 	@echo "check: all gates green"
 
+# The application's own sources only: left to itself lupdate follows src/reader/reader.qrc
+# into Mozilla's Readability, which has no strings of ours and syntax its parser rejects.
+LUPDATE_EXTENSIONS := cpp,h,qml
+
 translations:
-	lupdate -no-obsolete -locations none qml src -ts $(TS_FILES)
+	lupdate -no-obsolete -locations none -extensions $(LUPDATE_EXTENSIONS) qml src -ts $(TS_FILES)
 
 clean:
 	rm -rf $(BUILD)

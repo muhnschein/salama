@@ -3,7 +3,7 @@
 //
 // What the cover has to say while the app is minimised: how many tabs are open,
 // and what they are. While the tab in front plays something, its mute is a second
-// action beside the search (docs/DECISIONS/0024-media-controls.md).
+// action beside the search (docs/DECISIONS/0025-media-controls.md).
 //
 // The heading is laid out as the platform's own covers lay theirs out, and with
 // postivene's and vuo's measures exactly: the name top left with a line under it,

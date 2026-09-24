@@ -78,7 +78,7 @@ is a sheet rather than a page, and puts itself away as the new tab comes to the 
 (0021).
 
 While the tab in front plays something, or is muted, its mute is a second action beside
-the search, in a picture drawn for the cover (0024). The home screen draws whichever of
+the search, in a picture drawn for the cover (0025). The home screen draws whichever of
 the two action lists is enabled, so there is one for each.
 
 The app's name is held in a `brandName` property rather than written into the label:

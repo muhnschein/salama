@@ -1,0 +1,325 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * The reader view's style sheet: Firefox's toolkit/themes/shared/aboutReader.css
+ * (mozilla-firefox/firefox 08a61e1a51dbb4dbff0bb8e9ef97ad19c3afb156), with what is
+ * Firefox's own chrome taken out -- the toolbar and its popups, the high-contrast and
+ * custom themes, print rules -- and the design tokens it reads from chrome:// written
+ * in as values. The article rules are Firefox's as they stand. What changed, and why,
+ * is in docs/DECISIONS/0024-reader-view.md.
+ *
+ * Avoid adding ID selector rules in this style sheet, since they could
+ * inadvertently match elements in the article content. */
+
+:root {
+  --light-theme-background: #fff;
+  --light-theme-foreground: rgb(21, 20, 26);
+  --dark-theme-background: rgb(28, 27, 34);
+  --dark-theme-foreground: rgb(251, 251, 254);
+  /* A phone's width rather than a desktop window's: Firefox pads by 64px. */
+  --body-padding: 20px;
+  --font-size: 20px;
+  --content-width: 30em;
+  --line-height: 1.6em;
+  --font-family: sans-serif;
+  --border-radius-small: 4px;
+  --font-weight-bold: 600;
+}
+
+body {
+  --main-background: var(--light-theme-background);
+  --main-foreground: var(--light-theme-foreground);
+  --primary-color: rgb(0, 97, 224);
+  --selected-background: rgba(0, 97, 224, 0.3);
+  --text-selected-background: var(--selected-background);
+  --text-selected-foreground: inherit;
+  --link-foreground: var(--primary-color);
+  --link-selected-background: var(--selected-background);
+  --link-selected-foreground: #333;
+  --visited-link-foreground: #b5007f;
+  margin: 0;
+  padding: var(--body-padding);
+  background-color: var(--main-background);
+  color: var(--main-foreground);
+  font-family: var(--font-family);
+}
+
+body.light {
+  color-scheme: light;
+}
+
+body.sepia {
+  color-scheme: light;
+  --main-background: rgb(244, 236, 216);
+  --main-foreground: rgb(91, 70, 54);
+}
+
+body.dark {
+  color-scheme: dark;
+  --main-background: var(--dark-theme-background);
+  --main-foreground: var(--dark-theme-foreground);
+  --primary-color: rgb(0, 221, 255);
+  --link-selected-foreground: #fff;
+  --visited-link-foreground: #e675fd;
+  --selected-background: rgba(0, 221, 255, 0.3);
+}
+
+/* Firefox dims block images in its dark theme, by a class its page script sets on
+ * them; there is no page script here, so every picture in the article but an emoji. */
+body.dark .moz-reader-content img:not(.emoji):not(.wp-smiley) {
+  filter: brightness(0.8) contrast(1.2);
+}
+
+body.sans-serif {
+  --font-family: sans-serif;
+}
+
+body.serif {
+  --font-family: serif;
+}
+
+*::selection {
+  background-color: var(--text-selected-background);
+  color: var(--text-selected-foreground);
+}
+
+a::selection {
+  background-color: var(--link-selected-background);
+  color: var(--link-selected-foreground);
+}
+
+blockquote {
+  border-inline-start: 2px solid var(--main-foreground) !important;
+}
+
+/* Header */
+
+.header {
+  text-align: start;
+}
+
+.domain {
+  font-size: 0.9em;
+  line-height: 1.48em;
+  padding-bottom: 4px;
+  font-family: sans-serif;
+  text-decoration: underline var(--main-foreground) !important;
+  color: var(--link-foreground);
+}
+
+.header > h1 {
+  font-size: 1.6em;
+  line-height: 1.25em;
+  width: 100%;
+  margin: 30px 0;
+  padding: 0;
+}
+
+.header > .credits {
+  font-size: 0.9em;
+  line-height: 1.48em;
+  margin: 0 0 10px;
+  padding: 0;
+  font-style: italic;
+}
+
+.header > .credits:empty {
+  display: none;
+}
+
+.header > .meta-data {
+  font-size: 0.65em;
+  margin: 0 0 15px;
+}
+
+/* Article content */
+
+.container {
+  margin: 0 auto;
+  font-size: var(--font-size);
+  max-width: var(--content-width);
+  line-height: var(--line-height);
+}
+
+pre {
+  font-family: monospace;
+}
+
+.moz-reader-content {
+  font-size: 1em;
+}
+
+.moz-reader-content h1,
+.moz-reader-content h2,
+.moz-reader-content h3 {
+  font-weight: var(--font-weight-bold);
+}
+
+.moz-reader-content h1 {
+  font-size: 1.6em;
+  line-height: 1.25em;
+}
+
+.moz-reader-content h2 {
+  font-size: 1.2em;
+  line-height: 1.51em;
+}
+
+.moz-reader-content h3 {
+  font-size: 1em;
+  line-height: 1.66em;
+}
+
+.moz-reader-content a:link {
+  text-decoration: underline;
+  font-weight: normal;
+}
+
+.moz-reader-content a:link,
+.moz-reader-content a:link:hover,
+.moz-reader-content a:link:active {
+  color: var(--link-foreground);
+}
+
+.moz-reader-content a:visited {
+  color: var(--visited-link-foreground);
+}
+
+.moz-reader-content * {
+  max-width: 100%;
+  height: auto;
+}
+
+.moz-reader-content p,
+.moz-reader-content code,
+.moz-reader-content pre,
+.moz-reader-content blockquote,
+.moz-reader-content ul,
+.moz-reader-content ol,
+.moz-reader-content li,
+.moz-reader-content figure,
+.moz-reader-content .wp-caption {
+  margin: -10px -10px calc(8px + var(--line-height) * 0.4);
+  padding: 10px;
+  border-radius: var(--border-radius-small);
+}
+
+.moz-reader-content li {
+  margin-bottom: 0;
+}
+
+.moz-reader-content li > ul,
+.moz-reader-content li > ol {
+  margin-bottom: -10px;
+}
+
+/* Firefox centres a block image by measuring it from its page script; on a screen as
+ * narrow as a phone's every block image is centred. */
+.moz-reader-content p > img:only-child,
+.moz-reader-content p > a:only-child > img:only-child,
+.moz-reader-content .wp-caption img,
+.moz-reader-content figure img {
+  display: block;
+  margin-inline: auto;
+}
+
+.moz-reader-content .caption,
+.moz-reader-content .wp-caption-text,
+.moz-reader-content figcaption {
+  font-size: 0.9em;
+  line-height: 1.48em;
+  font-style: italic;
+}
+
+.moz-reader-content pre {
+  white-space: pre-wrap;
+}
+
+.moz-reader-content blockquote {
+  padding: 0;
+  padding-inline-start: 16px;
+}
+
+.moz-reader-content ul,
+.moz-reader-content ol {
+  padding: 0;
+}
+
+.moz-reader-content ul {
+  padding-inline-start: 30px;
+  list-style: disc;
+}
+
+.moz-reader-content ol {
+  padding-inline-start: 30px;
+}
+
+/* Firefox pads these blocks and pulls them out by as much, so that one lit up reads as
+ * a box around its text. A list pulls its end out without padding it back, and each
+ * list inside one pulls it out further: in a desktop's 64px margin that goes unseen, on
+ * a phone it runs a nested list off the screen. Here a list ends where the text does. */
+.moz-reader-content ul,
+.moz-reader-content ol,
+.moz-reader-content li {
+  margin-inline-end: 0;
+  padding-inline-end: 0;
+}
+
+table,
+th,
+td {
+  border: 1px solid currentColor;
+  border-collapse: collapse;
+  padding: 6px;
+  vertical-align: top;
+}
+
+table {
+  margin: 5px;
+}
+
+/* Firefox scrolls a table wider than the text sideways, by a class its page script
+ * sets on the ones it measures too wide. On a phone that is most of them. */
+.moz-reader-content table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* Visually hide (but don't display: none) screen reader elements */
+.moz-reader-content .visually-hidden,
+.moz-reader-content .visuallyhidden,
+.moz-reader-content .sr-only {
+  display: inline-block;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border-width: 0;
+}
+
+/* Hide elements with common "hidden" class names */
+.moz-reader-content .hidden,
+.moz-reader-content .invisible {
+  display: none;
+}
+
+/* Enforce wordpress and similar emoji/smileys aren't sized to be full-width,
+ * see bug 1399616 for context. */
+.moz-reader-content img.wp-smiley,
+.moz-reader-content img.emoji {
+  display: inline-block;
+  border-width: 0;
+  /* height: auto is implied from `.moz-reader-content *` rule. */
+  width: 1em;
+  margin: 0 0.07em;
+  padding: 0;
+}
+
+pre code {
+  background-color: var(--main-background);
+  border: 1px solid var(--main-foreground);
+  display: block;
+  overflow: auto;
+}

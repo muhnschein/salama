@@ -1,0 +1,10 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <!-- The reader view's page scripts and style sheet (src/reader/Reader.cpp).
+         Readability is Mozilla's, verbatim, from third_party/. -->
+    <qresource prefix="/reader">
+        <file alias="readability/Readability.js">../../third_party/readability/Readability.js</file>
+        <file alias="readability/Readability-readerable.js">../../third_party/readability/Readability-readerable.js</file>
+        <file>reader.css</file>
+    </qresource>
+</RCC>

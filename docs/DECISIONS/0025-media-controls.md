@@ -1,4 +1,4 @@
-# 0024 — A tab's mute on the preview, the bar and the cover; one tab plays at a time
+# 0025 — A tab's mute on the preview, the bar and the cover; one tab plays at a time
 
 ## Context
 A page playing something said so nowhere but on itself: the grid did not say which tab

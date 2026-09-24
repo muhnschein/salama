@@ -30,7 +30,7 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   notifications, because the platform's list of transfers is closed to a Harbour
   application and would not hold a `Sailfish.WebView` application's downloads anyway.
 - `Settings` — home page, search engine, desktop mode, cover style, tracking protection
-  level, address-bar heuristics.
+  level, the reader view's look, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
   preferences each tracking-protection level stands for, which `BrowserPage` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
@@ -41,14 +41,19 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   stopped, every loaded page is asked with a script, and the answer and the tab's
   muted flag are `TabModel` roles the grid's previews, the bar and the cover draw
   the tab's mute from; muting pauses too. While the tab in front plays, no other does
-  (`DECISIONS/0024-media-controls.md`).
+  (`DECISIONS/0025-media-controls.md`).
+- `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
+  and compiled in, handed to the page to find its article, and the page the article is
+  then shown on (`DECISIONS/0024-reader-view.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 
 ## Data flow
 
 1. The engine reports `url`, `title` and load state on a `WebView`.
-2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`, and
+2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon` -- for a
+   reader view, the address of the page it was made from, which `Reader.sourceUrl` reads
+   out of the view's own `data:` url -- and
    grabs a page preview into the path `TabModel.thumbnailPath()` hands out — on load
    completion, when the grid opens, and as the application leaves the screen — reporting
    it back through `updateThumbnail()`.

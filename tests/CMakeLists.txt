@@ -50,6 +50,7 @@ foreach(test
     tst_enginemessages
     tst_pageactivity
     tst_pagemedia
+    tst_reader
     tst_core
     tst_qmlload
     tst_qmlstatic

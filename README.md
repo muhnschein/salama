@@ -26,3 +26,6 @@ Scope and rules: [SCOPE.md](SCOPE.md). Everything else: [docs/](docs/).
 
 Licence: [MPL-2.0](LICENSE). Model and tab logic derives from
 [sailfish-browser](https://github.com/sailfishos/sailfish-browser) (Jolla Ltd., MPL-2.0).
+The reader view is Firefox's: [Readability](https://github.com/mozilla/readability)
+(Mozilla, Apache-2.0, [third_party/readability](third_party/readability)) and a style sheet
+adapted from Firefox's `aboutReader.css` (MPL-2.0).

@@ -26,6 +26,7 @@ using Salama::GroupTabModel;
 using Salama::HistoryModel;
 using Salama::PageActivity;
 using Salama::PageMedia;
+using Salama::Reader;
 using Salama::Settings;
 using Salama::Storage;
 using Salama::TabGroupModel;
@@ -201,11 +202,12 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
         {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
         {QStringLiteral("PageMedia"), metaMembers(&PageMedia::staticMetaObject)},
+        {QStringLiteral("Reader"), metaMembers(&Reader::staticMetaObject)},
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
                        "BookmarkModel|DownloadModel|Settings|EngineMessages|PageActivity|"
-                       "PageMedia)\\."
+                       "PageMedia|Reader)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;

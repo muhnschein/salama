@@ -6,7 +6,7 @@
 // picture fades out to there rather than on a disc of its own (TabPreview.qml; piirit's
 // and vuo's covers make room for what they draw at their foot the same way). The
 // speaker while the tab's sound is on, struck through while it is muted, and muting
-// pauses it as well (docs/DECISIONS/0024-media-controls.md). Nothing is drawn for a
+// pauses it as well (docs/DECISIONS/0025-media-controls.md). Nothing is drawn for a
 // page that plays nothing, unless its tab is muted.
 //
 // It takes its own presses, above the handler the cell's gestures go through, so a

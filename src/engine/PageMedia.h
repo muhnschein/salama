@@ -14,7 +14,7 @@ class TabModel;
 // What each page is playing, and the one control a tab has over it: muted, which
 // pauses it too, and unmuted, which plays again what that paused. Only one tab plays
 // at a time: while the tab in front plays, every other tab that plays is paused
-// (docs/DECISIONS/0024-media-controls.md).
+// (docs/DECISIONS/0025-media-controls.md).
 //
 // The engine says that something started or stopped playing, but not where: its
 // "media-decoder-info" notification, which PageActivity reads, names a decoder by its

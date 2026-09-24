@@ -6,7 +6,7 @@
 // it is muted. Theme ids that are in use elsewhere, none guessed: those of the Harbour
 // players that mute (Jupii, harbour-sailfishconnect). There is no small size of
 // either, so the medium ones are drawn smaller -- a step up from the small size, the
-// one between it and the bar's own controls (docs/DECISIONS/0024-media-controls.md).
+// one between it and the bar's own controls (docs/DECISIONS/0025-media-controls.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

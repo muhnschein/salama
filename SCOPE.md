@@ -23,7 +23,10 @@ No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulato
 - Content blocking beyond what `WebEngineSettings` exposes.
 - Registering as system default browser or `http(s)` scheme handler.
 - Multi-architecture or multi-device support.
-- Any language other than QML and C++.
+- Any language other than QML and C++. The scripts the engine runs in a page are the web
+  platform's, not the application's: the favicon and theme-colour lookups, and the reader
+  view's Readability, which is Mozilla's, verbatim, in `third_party/`
+  (`docs/DECISIONS/0024-reader-view.md`).
 
 ## 4. Constraints
 
@@ -44,6 +47,8 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   history/     HistoryModel (SQLite)
   bookmarks/   BookmarkModel (SQLite)
   settings/    Settings (QSettings)
+  reader/      Reader: the reader view, and Firefox's style sheet for it
+third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
                qml-lint.sh, harbour/ (validator allow-lists, waivers.conf)
@@ -54,6 +59,7 @@ docs/          See §8
 Reuse policy:
 - Platform, unmodified: WebView, text selection, JS/auth/permission dialogs, file pickers, download plumbing.
 - Ported from sailfish-browser: engine-independent C++ model and tab-container logic.
+- From Firefox: the reader view -- Readability as published, `aboutReader.css` adapted.
 - New: all UI.
 
 `Sailfish.WebView` is imported in the browsing page only, so a release without the engine package breaks browsing rather than the app.
@@ -67,6 +73,7 @@ Reuse policy:
 - History and bookmarks (SQLite) with management UI
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
+- Reader view, as Firefox's: Readability and its style sheet
 - Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows, tracking protection level
 - Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM

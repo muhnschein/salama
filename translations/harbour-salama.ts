@@ -119,6 +119,10 @@
         <source>Bookmark</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -226,6 +230,25 @@
     <message>
         <source>Nothing closed recently</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Salama::Reader</name>
+    <message numerus="yes">
+        <source>%1 hour(s)</source>
+        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
+        <translation type="unfinished">
+            <numerusform>%1 hour</numerusform>
+            <numerusform>%1 hours</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s)</source>
+        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
+        <translation type="unfinished">
+            <numerusform>%1 minute</numerusform>
+            <numerusform>%1 minutes</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -356,6 +379,50 @@
     </message>
     <message>
         <source>Strict</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Colours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Typeface</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 %</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

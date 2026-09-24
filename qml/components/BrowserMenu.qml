@@ -25,6 +25,8 @@ DockedPanel {
     // The page in front, which the second row acts on, or null while it is made.
     property Item view: null
     readonly property bool hasPage: TabModel.activeUrl.length > 0
+    // The page in front's reader view (docs/DECISIONS/0024-reader-view.md).
+    readonly property QtObject reader: view !== null && view.reader ? view.reader : null
     // How far a finger has the sheet pulled down past where it sits open, and how far
     // letting go puts it away rather than back: DockedPanel's own distance, a third of
     // the sheet up to about a large item's height. A flickable draws a pull past its
@@ -209,6 +211,22 @@ DockedPanel {
                     onClicked: {
                         menu.hide()
                         menu.view.desktopMode = !menu.view.desktopMode
+                    }
+                }
+
+                // The page's article alone, in Firefox's reader view. Offered when
+                // Readability finds the page reads as one, and on while it is shown,
+                // when a tap goes back to the page, as back does.
+                MenuButton {
+                    objectName: "readerMenuButton"
+                    width: menu.width / 4
+                    enabled: menu.reader !== null && (menu.reader.readerable || menu.reader.active)
+                    checked: menu.reader !== null && menu.reader.active
+                    iconSource: "image://theme/icon-m-file-formatted"
+                    text: qsTr("Reader view")
+                    onClicked: {
+                        menu.hide()
+                        menu.reader.toggle()
                     }
                 }
             }

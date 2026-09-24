@@ -3,7 +3,7 @@
 //
 // The bar along the bottom of the browsing page: back, the address, reload/stop and
 // the menu, and left of the host the tab's mute while the page plays something
-// (docs/DECISIONS/0024-media-controls.md). Dragging it upwards pulls the tab grid up
+// (docs/DECISIONS/0025-media-controls.md). Dragging it upwards pulls the tab grid up
 // from underneath the page.
 //
 // While the address is being edited the bar belongs to the field: back and reload are
@@ -25,18 +25,21 @@ Item {
 
     // The page in front, or null while it is made.
     property Item view: null
-    // The front tab's address, and below what its page plays; the bar reads both itself.
+    // The front tab's address, and below what its page plays; the bar reads both itself,
+    // and whether the page loads and can go back off the view.
     property string url: TabModel.activeUrl
-    property bool loading: false
-    property bool canGoBack: false
+    readonly property bool loading: view ? view.loading === true : false
+    readonly property bool canGoBack: view ? view.canGoBack === true : false
     readonly property int loadProgress: view ? view.loadProgress : 0
     // The page came over TLS and the engine is not satisfied with it: a bad
     // certificate, a broken chain, mixed content. Gecko's own verdict, if this engine
     // build hands one out: validState says it has one for this page, allGood weighs
     // certificate, protocol and mixed content. sailfish-browser reads the same two,
-    // and only for https.
+    // and only for https. Not for a reader view, whose address is the article's but
+    // whose document is one of this application's, and came over no connection at all
+    // (docs/DECISIONS/0024-reader-view.md).
     readonly property bool tlsBroken: {
-        if (!view || url.indexOf("https://") !== 0) {
+        if (!view || url.indexOf("https://") !== 0 || (view.reader && view.reader.active)) {
             return false
         }
         var security = view.security

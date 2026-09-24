@@ -17,7 +17,7 @@ topics and parses their payloads (`0020-pages-sleep-out-of-sight.md`), and
 (`0022-downloads-list.md`), so QML passes those on without knowing them either. How the
 numbers in those payloads are read is `src/engine/EngineData`'s, for both. The script
 that asks a page what it plays is `PageMedia`'s, beside the reading of its answer, which
-decides what is paused next (`0024-media-controls.md`).
+decides what is paused next (`0025-media-controls.md`).
 
 ## Consequences
 A change in the engine touches the class that reads what changed, and its unit test.
