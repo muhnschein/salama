@@ -2,6 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fi">
 <context>
+    <name>AddressField</name>
+    <message>
+        <source>Search or enter address</source>
+        <translation>Hae tai kirjoita osoite</translation>
+    </message>
+</context>
+<context>
     <name>AddressLabel</name>
     <message>
         <source>Search or enter address</source>
@@ -215,10 +222,75 @@
     </message>
 </context>
 <context>
-    <name>NavigationBar</name>
+    <name>OmnibarResultRow</name>
     <message>
-        <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <source>Downloading, %1%</source>
+        <translation>Ladataan, %1 %</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Epäonnistui</translation>
+    </message>
+    <message>
+        <source>Cancelled</source>
+        <translation>Peruttu</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 · %2</source>
+        <extracomment>Two parts of a line under a suggestion in the address bar: a tab&apos;s group and its site, or a download&apos;s site and how it is going</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OmnibarView</name>
+    <message>
+        <source>Tabs (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tabs (%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks (%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History (%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads (%1 of %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to %1</source>
+        <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search %1 for “%2”</source>
+        <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

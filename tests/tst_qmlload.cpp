@@ -17,6 +17,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPointer>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -86,6 +87,10 @@ private slots:
 
     void rootWindowLoads();
     void addressBarNavigates();
+    void omnibar();
+    void omnibarFollowsItsSources();
+    void omnibarChoices();
+    void omnibarForANewTab();
     void navigationBarDrivesWebView();
     void addressShowsHostAndSecurity();
     void barDoesNotCoverThePage();
@@ -426,6 +431,448 @@ void tst_qmlload::addressBarNavigates()
     typeAddress(QString());
     QCOMPARE(webView->property("url").toUrl(), searchUrl);
     QCOMPARE(m_core->tabs()->count(), 1);
+}
+
+namespace {
+
+QString textIn(QObject *item, const QString &name)
+{
+    return findObjects(item, name).first()->property("text").toString();
+}
+
+bool shownIn(QObject *item, const QString &name)
+{
+    return findObjects(item, name).first()->property("visible").toBool();
+}
+
+QList<QObject *> omnibarRows(QObject *root)
+{
+    return byRow(findObjects(root, QStringLiteral("omnibarResult")));
+}
+
+// The headings over the omnibar's sections, top to bottom. A list view keeps a few it
+// no longer shows, hidden, to use again.
+QStringList omnibarHeadings(QObject *root)
+{
+    QStringList texts;
+    for (QObject *heading : byRow(findObjects(root, QStringLiteral("omnibarSection")))) {
+        if (heading->property("visible").toBool()) {
+            texts.append(heading->property("text").toString());
+        }
+    }
+    return texts;
+}
+
+// Typed into the address bar, which is opened for it first if it is not, and the
+// debounce run out: what is typed is looked for at once.
+void typeIntoBar(QObject *root, const QString &text)
+{
+    QObject *bar = findObjects(root, QStringLiteral("navigationBar")).first();
+    if (!bar->property("editing").toBool()) {
+        QQmlExpression(qmlContext(bar), bar, QStringLiteral("activate('address')")).evaluate();
+    }
+    findObjects(root, QStringLiteral("addressField")).first()->setProperty("text", text);
+    QMetaObject::invokeMethod(findObjects(root, QStringLiteral("omnibarDebounce")).first(),
+                              "triggered");
+}
+
+void observeDownload(Core *core, const QVariantMap &message)
+{
+    core->downloads()->observe(core->downloads()->topic(), message);
+}
+
+// What the omnibar's tests look for: something of every kind with "forest" in it. The
+// tab in front has it, and is the one never listed; one tab is beside it in its group
+// and one in another group; a bookmark, a page of the history -- the only one: the
+// tabs' own visits are cleared -- and a download on its way.
+struct Forest
+{
+    int front = 0;
+    int near = 0;
+    int work = 0;
+    int away = 0;
+};
+
+Forest plantForest(Core *core)
+{
+    TabModel *tabs = core->tabs();
+    Forest forest;
+    forest.front = tabs->activeTabId();
+    tabs->updateTitle(forest.front, QStringLiteral("Forest front"));
+    forest.near = tabs->newTab(QStringLiteral("https://forest.example/near"));
+    tabs->updateTitle(forest.near, QStringLiteral("Forest near"));
+    forest.work = tabs->addGroup(QStringLiteral("Work"));
+    forest.away = tabs->newTab(QStringLiteral("https://forest.example/work"));
+    tabs->updateTitle(forest.away, QStringLiteral("Forest work"));
+    tabs->activateTabById(forest.front);
+    core->history()->clear();
+    core->bookmarks()->add(QStringLiteral("https://forest.example/wiki"),
+                           QStringLiteral("Forest wiki"));
+    core->history()->visit(QStringLiteral("https://forest.example/blog"),
+                           QStringLiteral("Forest blog"));
+    observeDownload(core, {{QStringLiteral("msg"), QStringLiteral("dl-start")},
+                           {QStringLiteral("id"), 1},
+                           {QStringLiteral("displayName"), QStringLiteral("forest-map.pdf")},
+                           {QStringLiteral("sourceUrl"),
+                            QStringLiteral("https://files.example/forest-map.pdf")},
+                           {QStringLiteral("targetPath"), QStringLiteral("/tmp/forest-map.pdf")},
+                           {QStringLiteral("mimeType"), QStringLiteral("application/pdf")},
+                           {QStringLiteral("size"), 2048}});
+    observeDownload(core, {{QStringLiteral("msg"), QStringLiteral("dl-progress")},
+                           {QStringLiteral("id"), 1},
+                           {QStringLiteral("percent"), 40}});
+    return forest;
+}
+
+} // namespace
+
+// The address bar is an omnibar (docs/DECISIONS/0027-omnibar.md): typed into, it brings
+// up a pane above itself with what the words find among the tabs of every group, the
+// bookmarks, the history and the downloads, and below them the rows that go to the
+// address or search for the words. What the model finds, and in what order, is
+// tst_omnibarmodel's; this is the pane and the bar under it.
+void tst_qmlload::omnibar()
+{
+    const Forest forest = plantForest(m_core.data());
+    QObject *root = m_window.data();
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *field = find(QStringLiteral("addressField"));
+    QObject *pane = find(QStringLiteral("omnibarView"));
+    QObject *gesture = find(QStringLiteral("navigationBarGesture"));
+    QObject *searchAction = find(QStringLiteral("omnibarSearchAction"));
+    const QString home = m_core->tabs()->activeUrl();
+    const int keepFocus = evaluate(bar, QStringLiteral("FocusBehavior.KeepFocus")).toInt();
+    const int clearFocus = evaluate(bar, QStringLiteral("FocusBehavior.ClearItemFocus")).toInt();
+    QVERIFY(keepFocus != clearFocus);
+
+    // Declared after both bars, so nothing of theirs is drawn over it.
+    auto *paneItem = qobject_cast<QQuickItem *>(pane);
+    const QList<QQuickItem *> layer = paneItem->parentItem()->childItems();
+    QVERIFY(layer.indexOf(paneItem) > layer.indexOf(qobject_cast<QQuickItem *>(bar)));
+    QVERIFY(layer.indexOf(paneItem) >
+            layer.indexOf(qobject_cast<QQuickItem *>(find(QStringLiteral("findBar")))));
+
+    // The field opens with the page's address, which is nothing to look for: no pane,
+    // and the field and the reach as they always were.
+    tapBar(QStringLiteral("address"));
+    QCOMPARE(bar->property("typedText").toString(), home);
+    QVERIFY(!bar->property("edited").toBool());
+    QVERIFY(!bar->property("paneUp").toBool());
+    QVERIFY(!pane->property("visible").toBool());
+    QCOMPARE(field->property("focusOutBehavior").toInt(), clearFocus);
+    QVERIFY(gesture->property("reach").toReal() > 0);
+
+    // Typed into, the pane is up: the field keeps its focus through presses on it, and
+    // the reach above the bar is the pane's. The rows that go and search follow the
+    // text at once -- words are nothing to go to -- and what is found waits for the
+    // debounce.
+    field->setProperty("text", QStringLiteral("forest"));
+    QVERIFY(bar->property("paneUp").toBool());
+    QVERIFY(pane->property("visible").toBool());
+    QCOMPARE(field->property("focusOutBehavior").toInt(), keepFocus);
+    QCOMPARE(gesture->property("reach").toReal(), qreal(0));
+    QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
+    QVERIFY(searchAction->property("visible").toBool());
+    const QString engine =
+        m_core->settings()->searchEngineNames().at(m_core->settings()->searchEngineIndex());
+    QCOMPARE(textIn(searchAction, QStringLiteral("omnibarActionTitle")),
+             QStringLiteral("Search %1 for “forest”").arg(engine));
+    QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
+    QCOMPARE(m_core->omnibar()->query(), QString());
+    QVERIFY(omnibarRows(root).isEmpty());
+    QObject *debounce = find(QStringLiteral("omnibarDebounce"));
+    QCOMPARE(debounce->property("interval").toInt(), 150);
+    QMetaObject::invokeMethod(debounce, "triggered");
+    QCOMPARE(m_core->omnibar()->query(), QStringLiteral("forest"));
+
+    // A section of each, in this order, each saying how many; the tab in front is not
+    // among them. A tab in another group says which, one in the group in front only
+    // where it is; a download, where it came from and how far along it is.
+    QCOMPARE(omnibarHeadings(root),
+             QStringList({QStringLiteral("Tabs (2)"), QStringLiteral("Bookmarks (1)"),
+                          QStringLiteral("History (1)"), QStringLiteral("Downloads (1)")}));
+    const QList<QObject *> rows = omnibarRows(root);
+    QCOMPARE(rows.count(), 5);
+    const QStringList titles{QStringLiteral("Forest work"), QStringLiteral("Forest near"),
+                             QStringLiteral("Forest wiki"), QStringLiteral("Forest blog"),
+                             QStringLiteral("forest-map.pdf")};
+    const QStringList details{QStringLiteral("Work · forest.example"),
+                              QStringLiteral("forest.example"),
+                              QStringLiteral("https://forest.example/wiki"),
+                              QStringLiteral("https://forest.example/blog"),
+                              QStringLiteral("files.example · Downloading, 40%")};
+    // Without a site's own icon, a glyph of the platform's; and a date for the kinds
+    // that have one.
+    const QStringList glyphs{QStringLiteral("icon-m-tabs"), QStringLiteral("icon-m-tabs"),
+                             QStringLiteral("icon-m-favorite"), QStringLiteral("icon-m-history"),
+                             QStringLiteral("icon-m-downloads")};
+    for (int i = 0; i < rows.count(); ++i) {
+        QVERIFY(evaluate(rows.at(i), QStringLiteral("model.tabId")).toInt() != forest.front);
+        QCOMPARE(textIn(rows.at(i), QStringLiteral("omnibarResultTitle")), titles.at(i));
+        QCOMPARE(textIn(rows.at(i), QStringLiteral("omnibarResultDetail")), details.at(i));
+        QObject *glyph = findObjects(rows.at(i), QStringLiteral("omnibarResultGlyph")).first();
+        QVERIFY(glyph->property("visible").toBool());
+        QCOMPARE(glyph->property("source").toUrl(),
+                 QUrl(QStringLiteral("image://theme/") + glyphs.at(i)));
+        QCOMPARE(shownIn(rows.at(i), QStringLiteral("omnibarResultDate")), i >= 3);
+        QCOMPARE(shownIn(rows.at(i), QStringLiteral("omnibarResultProgress")), i == 4);
+    }
+    QVERIFY(!textIn(rows.at(3), QStringLiteral("omnibarResultDate")).isEmpty());
+
+    // The list is as tall as what it holds and hangs from the rows that go and search,
+    // which sit on the bar; it never makes an item current, which would take the focus.
+    auto *results = qobject_cast<QQuickItem *>(find(QStringLiteral("omnibarResults")));
+    auto *actions = qobject_cast<QQuickItem *>(find(QStringLiteral("omnibarActions")));
+    QCOMPARE(results->property("currentIndex").toInt(), -1);
+    QCOMPARE(results->y() + results->height(), actions->y());
+    QCOMPARE(actions->y() + actions->height(), paneItem->height());
+    QVERIFY(results->height() < actions->y());
+
+    // Neither the keyboard closing nor the field's focus going ends the edit while the
+    // pane is up: the list is scrolled with the keyboard put away. The field lets its
+    // focus go with the keyboard, so that a tap on it brings the keyboard back.
+    QVERIFY(field->property("focus").toBool());
+    evaluate(bar, QStringLiteral("keyboardVisibilityChanged(false)"));
+    QVERIFY(!field->property("focus").toBool());
+    evaluate(bar, QStringLiteral("focusChanged(false)"));
+    QMetaObject::invokeMethod(results, "dragStarted");
+    QVERIFY(bar->property("editing").toBool());
+    QVERIFY(pane->property("visible").toBool());
+
+    // Typed back to the address it opened with, the pane goes, and the model is asked
+    // for nothing; the bar is as it was, and the keyboard closing ends the edit again.
+    field->setProperty("text", home);
+    QVERIFY(bar->property("editing").toBool());
+    QVERIFY(!pane->property("visible").toBool());
+    QCOMPARE(m_core->omnibar()->query(), QString());
+    QCOMPARE(m_core->omnibar()->count(), 0);
+    QCOMPARE(field->property("focusOutBehavior").toInt(), clearFocus);
+    QVERIFY(gesture->property("reach").toReal() > 0);
+    evaluate(bar, QStringLiteral("keyboardVisibilityChanged(false)"));
+    QVERIFY(!bar->property("editing").toBool());
+}
+
+// What the omnibar lists follows its sources while it is up: a row comes and goes as
+// they change, a download's progress and a tab's icon change a row in place rather
+// than making it again under the finger, and a section that found more than it shows
+// says so.
+void tst_qmlload::omnibarFollowsItsSources()
+{
+    const Forest forest = plantForest(m_core.data());
+    QObject *root = m_window.data();
+    typeIntoBar(root, QStringLiteral("forest"));
+    QCOMPARE(omnibarRows(root).count(), 5);
+
+    m_core->bookmarks()->add(QStringLiteral("https://forest.example/camp"),
+                             QStringLiteral("Forest camp"));
+    QTRY_COMPARE(omnibarHeadings(root).value(1), QStringLiteral("Bookmarks (2)"));
+    const QPointer<QObject> map = omnibarRows(root).last();
+    observeDownload(m_core.data(), {{QStringLiteral("msg"), QStringLiteral("dl-progress")},
+                                    {QStringLiteral("id"), 1},
+                                    {QStringLiteral("percent"), 60}});
+    QTRY_COMPARE(textIn(omnibarRows(root).last(), QStringLiteral("omnibarResultDetail")),
+                 QStringLiteral("files.example · Downloading, 60%"));
+    QVERIFY(!map.isNull());
+    QCOMPARE(omnibarRows(root).last(), map.data());
+
+    // A site's own icon once it has one that loads, and the glyph again when it fails.
+    TabModel *tabs = m_core->tabs();
+    const QPointer<QObject> near = omnibarRows(root).at(1);
+    tabs->updateFavicon(forest.near, QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR
+                                                                        "/art/harbour-salama.png"))
+                                         .toString());
+    QTRY_VERIFY(shownIn(omnibarRows(root).at(1), QStringLiteral("omnibarResultFavicon")));
+    QVERIFY(!shownIn(omnibarRows(root).at(1), QStringLiteral("omnibarResultGlyph")));
+    tabs->updateFavicon(
+        forest.near, QUrl::fromLocalFile(m_dir->path() + QStringLiteral("/none.png")).toString());
+    QTRY_VERIFY(shownIn(omnibarRows(root).at(1), QStringLiteral("omnibarResultGlyph")));
+    QVERIFY(!shownIn(omnibarRows(root).at(1), QStringLiteral("omnibarResultFavicon")));
+    QVERIFY(!near.isNull());
+    QCOMPARE(omnibarRows(root).at(1), near.data());
+    tabs->updateFavicon(forest.near, QString());
+
+    for (int i = 0; i < 11; ++i) {
+        m_core->history()->visit(QStringLiteral("https://forest.example/post/%1").arg(i),
+                                 QStringLiteral("Forest post %1").arg(i));
+    }
+    QTRY_COMPARE(omnibarHeadings(root).value(2), QStringLiteral("History (10 of 12)"));
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    QCOMPARE(m_core->omnibar()->query(), QString());
+    QCOMPARE(m_core->omnibar()->count(), 0);
+}
+
+// Each thing the omnibar lists does its own thing when chosen, and so does each row
+// above the bar; every one of them ends the edit.
+void tst_qmlload::omnibarChoices()
+{
+    const Forest forest = plantForest(m_core.data());
+    QObject *root = m_window.data();
+    TabModel *tabs = m_core->tabs();
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *webView = currentWebView();
+    const int open = tabs->count();
+
+    // A tab comes to the front, and its group with it.
+    typeIntoBar(root, QStringLiteral("forest work"));
+    QCOMPARE(omnibarRows(root).count(), 1);
+    click(omnibarRows(root).first());
+    QVERIFY(!bar->property("editing").toBool());
+    QVERIFY(!find(QStringLiteral("omnibarView"))->property("visible").toBool());
+    QCOMPARE(tabs->activeTabId(), forest.away);
+    QCOMPARE(tabs->currentGroupId(), forest.work);
+    QVERIFY(tabs->activateTabById(forest.front));
+    QCOMPARE(currentWebView(), webView);
+
+    // A bookmark and a page of the history open in the tab in front.
+    typeIntoBar(root, QStringLiteral("forest wiki"));
+    QCOMPARE(omnibarHeadings(root), QStringList{QStringLiteral("Bookmarks (1)")});
+    click(omnibarRows(root).first());
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/wiki")));
+    typeIntoBar(root, QStringLiteral("forest blog"));
+    QCOMPARE(omnibarHeadings(root), QStringList{QStringLiteral("History (1)")});
+    click(omnibarRows(root).first());
+    QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/blog")));
+    QCOMPARE(tabs->count(), open);
+    QCOMPARE(tabs->activeTabId(), forest.front);
+
+    // A download on its way is shown in the list of downloads; one that has arrived
+    // opens its file.
+    typeIntoBar(root, QStringLiteral("forest map"));
+    click(omnibarRows(root).first());
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    popPage();
+    observeDownload(m_core.data(),
+                    {{QStringLiteral("msg"), QStringLiteral("dl-done")},
+                     {QStringLiteral("id"), 1},
+                     {QStringLiteral("targetPath"), QStringLiteral("/tmp/forest-map.pdf")}});
+    const UrlCatcher files(QStringLiteral("file"));
+    typeIntoBar(root, QStringLiteral("forest map"));
+    QObject *arrived = omnibarRows(root).first();
+    QCOMPARE(textIn(arrived, QStringLiteral("omnibarResultDetail")),
+             QStringLiteral("files.example"));
+    QVERIFY(!shownIn(arrived, QStringLiteral("omnibarResultProgress")));
+    click(arrived);
+    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(QStringLiteral("/tmp/forest-map.pdf"))});
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+
+    // An address can be gone to, with the address it makes under it; and it can be
+    // searched for all the same.
+    QObject *goAction = find(QStringLiteral("omnibarGoAction"));
+    typeIntoBar(root, QStringLiteral("forest.example/path"));
+    QVERIFY(goAction->property("visible").toBool());
+    QCOMPARE(textIn(goAction, QStringLiteral("omnibarActionTitle")),
+             QStringLiteral("Go to forest.example/path"));
+    QCOMPARE(textIn(goAction, QStringLiteral("omnibarActionSubtitle")),
+             QStringLiteral("https://forest.example/path"));
+    click(goAction);
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/path")));
+    typeIntoBar(root, QStringLiteral("forest.example"));
+    QVERIFY(find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
+    click(find(QStringLiteral("omnibarSearchAction")));
+    QCOMPARE(webView->property("url").toUrl(),
+             QUrl(m_core->settings()->searchUrl(QStringLiteral("forest.example"))));
+    QCOMPARE(tabs->count(), open);
+}
+
+// Opened for a new tab -- the cover's search -- the field is empty and the pane is up at
+// once over the whole page, listing the bookmarks, as sailfish-browser's new-tab overlay
+// lists its favourites; no tab is made until something is chosen, and what is chosen
+// opens in one.
+void tst_qmlload::omnibarForANewTab()
+{
+    const Forest forest = plantForest(m_core.data());
+    QObject *root = m_window.data();
+    TabModel *tabs = m_core->tabs();
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *field = find(QStringLiteral("addressField"));
+    QObject *pane = find(QStringLiteral("omnibarView"));
+    auto *paneItem = qobject_cast<QQuickItem *>(pane);
+    const int open = tabs->count();
+
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    QVERIFY(bar->property("editing").toBool());
+    QVERIFY(bar->property("forNewTab").toBool());
+    QCOMPARE(field->property("text").toString(), QString());
+    QCOMPARE(field->property("placeholderText").toString(),
+             QStringLiteral("Search or enter address"));
+    QVERIFY(pane->property("visible").toBool());
+    QVERIFY(m_core->omnibar()->bookmarksWhenEmpty());
+    QCOMPARE(omnibarHeadings(root), QStringList{QStringLiteral("Bookmarks (1)")});
+    QCOMPARE(omnibarRows(root).count(), 1);
+    QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("omnibarSearchAction"))->property("visible").toBool());
+    QCOMPARE(paneItem->y(), find(QStringLiteral("viewArea"))->property("y").toReal());
+    QCOMPARE(paneItem->y() + paneItem->height(), bar->property("y").toReal());
+    QCOMPARE(find(QStringLiteral("navigationBarGesture"))->property("reach").toReal(), qreal(0));
+
+    // A tap on the bare glass, in a window where a press goes to whatever is drawn at
+    // the point, puts it away having made nothing.
+    {
+        auto *window = qobject_cast<QQuickItem *>(root);
+        QQuickWindow host;
+        host.resize(int(window->width()), int(window->height()));
+        window->setParentItem(host.contentItem());
+        host.show();
+        const bool exposed = QTest::qWaitForWindowExposed(&host);
+        const QPointF bare =
+            paneItem->mapToScene(QPointF(paneItem->width() / 2, paneItem->height() / 4));
+        QTest::mouseClick(&host, Qt::LeftButton, Qt::NoModifier, bare.toPoint());
+        window->setParentItem(nullptr);
+        QVERIFY(exposed);
+    }
+    QVERIFY(!bar->property("editing").toBool());
+    QVERIFY(!pane->property("visible").toBool());
+    QVERIFY(!m_core->omnibar()->bookmarksWhenEmpty());
+    QCOMPARE(tabs->count(), open);
+    QCOMPARE(tabs->activeTabId(), forest.front);
+
+    // What is chosen opens in a tab of its own, and the page behind it stays as it was;
+    // Enter does the same. A tab found is only brought to the front.
+    const QString behind = tabs->activeUrl();
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    click(omnibarRows(root).first());
+    QCOMPARE(tabs->count(), open + 1);
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://forest.example/wiki"));
+    tabs->activateTabById(forest.front);
+    QCOMPARE(tabs->activeUrl(), behind);
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    field->setProperty("text", QStringLiteral("example.org"));
+    enterKey(field);
+    QCOMPARE(tabs->count(), open + 2);
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    typeIntoBar(root, QStringLiteral("forest work"));
+    click(omnibarRows(root).first());
+    QCOMPARE(tabs->count(), open + 2);
+    QCOMPARE(tabs->activeTabId(), forest.away);
+
+    // The menu sheet, the find bar and the grid are put away for it; the menu opened,
+    // or the grid pulled up, ends it.
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QObject *findBar = find(QStringLiteral("findBar"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(pane->property("visible").toBool());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(!bar->property("editing").toBool());
+    click(find(QStringLiteral("findMenuButton")));
+    QVERIFY(findBar->property("active").toBool());
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    QVERIFY(!findBar->property("active").toBool());
+    QVERIFY(pane->property("visible").toBool());
+    pullUpToTabs();
+    QVERIFY(page->property("tabsOpen").toBool());
+    QVERIFY(!bar->property("editing").toBool());
+    QVERIFY(!pane->property("visible").toBool());
+    evaluate(page, QStringLiteral("openOmnibar(true)"));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QVERIFY(pane->property("visible").toBool());
 }
 
 void tst_qmlload::navigationBarDrivesWebView()
@@ -2844,13 +3291,18 @@ void tst_qmlload::cover()
     QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
 
-    // The action is a search: a new tab, the window raised, and the address field up
-    // with the whole url selected so the first key typed replaces it.
+    // The action is a search: the window raised, and the address bar opened for a new
+    // tab, which is made once something is chosen and counted from then on.
     QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")),
                               "triggered");
-    QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
     QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("forNewTab").toBool());
+    QCOMPARE(m_core->tabs()->count(), 1);
+    QObject *field = find(QStringLiteral("addressField"));
+    field->setProperty("text", QStringLiteral("example.org"));
+    enterKey(field);
+    QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
     QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 2);
 }

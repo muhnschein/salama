@@ -4,11 +4,10 @@
 // The only file that imports Sailfish.WebView (SCOPE.md §5): a missing engine package
 // breaks browsing, not the application.
 //
-// The page is the top half of a deck two screens tall: browsing above, the tab grid
-// below. Dragging the navigation bar upwards raises the deck and brings the grid up
-// from under the page; dragging the grid past its top lowers it again. Nothing is
-// pushed onto the page stack, so there is no sideways transition, and nothing to come
-// back from.
+// The page is the top half of a deck two screens tall, components/TabDeck.qml:
+// browsing above, the tab grid below. The deck owns where it is and the gestures that
+// move it; what it carries is declared here, in this file's context, which is the one
+// that has the engine.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
@@ -22,24 +21,12 @@ WebViewPage {
     // The WebView of the active tab, or null while it is being created.
     property Item currentView: null
 
-    // Where the deck is headed and where a finger is holding it: tabsOpen is the
-    // settled answer and changes the moment a gesture commits, tabsOffset is the
-    // picture and takes the spring below to get there.
-    property bool tabsOpen: false
-    property bool dragging: false
-    property real dragOffset: 0
-    property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
-
-    // The tallest this page has been. Silica shrinks a page while the keyboard is up,
-    // and resizing the engine's view mid-animation left the content stretched until it
-    // finished; the deck keeps its height and lets the keyboard cover it instead.
-    property real fullHeight: 0
-
-    onHeightChanged: {
-        if (height > fullHeight) {
-            fullHeight = height
-        }
-    }
+    // The deck's state, as the rest of this page and the tests read it.
+    property alias tabsOpen: deck.tabsOpen
+    property alias dragging: deck.dragging
+    property alias tabsOffset: deck.tabsOffset
+    property alias fullHeight: deck.fullHeight
+    property alias pullThreshold: deck.pullThreshold
 
     // The bar's height, which is height the engine's view does not get: the page ends
     // where the bar begins rather than running on behind it, in either of the two
@@ -73,24 +60,8 @@ WebViewPage {
         return currentView.chrome === false
     }
 
-    // How far the deck must be dragged for the gesture to commit when the finger lifts.
-    // Short, because the movement has already shown what letting go will do.
-    readonly property real pullThreshold: Theme.itemSizeLarge
-
     objectName: "browserPage"
     allowedOrientations: Orientation.Portrait
-
-    // Enabled and disabled from the functions below rather than by a binding: the drag
-    // ends by changing what tabsOffset is bound to, and two bindings on one property
-    // are not ordered against each other -- the spring has to be on before it moves.
-    Behavior on tabsOffset {
-        id: deckSpring
-
-        NumberAnimation {
-            duration: 250
-            easing.type: Easing.OutQuad
-        }
-    }
 
     function openUrl(url) {
         if (url.length === 0) {
@@ -177,35 +148,38 @@ WebViewPage {
                                   EngineMessages.heapMinimizePayload)
     }
 
-    // What the cover's search action ends at: a new tab, with the address field up and
-    // the whole url selected, so the first key typed replaces it.
-    function newTabForAddress() {
-        captureCurrent()
-        settle(false)
-        TabModel.newTab(Settings.homePage)
-        navigationBar.beginEditing()
+    // The address bar with its pane up (docs/DECISIONS/0027-omnibar.md). For a new tab
+    // -- the cover's search -- the field opens empty over the bookmarks, and no tab is
+    // made until something is chosen. The sheet, and the find bar, which lies where
+    // the field goes, are put away first.
+    function openOmnibar(forNewTab) {
+        browserMenu.hide()
+        findBar.close()
+        deck.settle(false)
+        navigationBar.beginEditing(forNewTab)
     }
 
-    // A finger takes the deck off whatever the spring was doing with it. Disabling the
-    // Behavior does not stop an animation already under way, but the next value
-    // written through it does -- the switch to dragOffset below. The animation cannot
-    // be stopped by hand: it belongs to the Behavior, and Qt logs a warning and
-    // ignores the call.
-    function beginDrag() {
-        deckSpring.enabled = false
-        dragOffset = tabsOffset
-        dragging = true
+    // What the omnibar opens: in the tab in front, or in a tab of its own when the bar
+    // was opened for one -- after a picture of the page being left, as for the grid.
+    function openChosen(url, inNewTab) {
+        navigationBar.endEditing()
+        if (inNewTab && url.length > 0) {
+            captureCurrent()
+            TabModel.newTab(url)
+        } else {
+            openUrl(url)
+        }
     }
 
-    function dragTo(offset) {
-        dragOffset = Math.max(0, Math.min(fullHeight, offset))
-    }
-
-    // A gesture that has ended: the deck goes all the way, one way or the other.
-    function settle(open) {
-        deckSpring.enabled = true
-        tabsOpen = open
-        dragging = false
+    // A download the omnibar found: one that has arrived opens its file, as the list of
+    // downloads opens it, and one still coming or failed is shown in that list.
+    function openDownload(downloadId, done) {
+        navigationBar.endEditing()
+        if (done) {
+            Qt.openUrlExternally(DownloadModel.fileUrl(DownloadModel.rowOf(downloadId)))
+        } else {
+            pageStack.push(Qt.resolvedUrl("DownloadsPage.qml"))
+        }
     }
 
     // A touch the reach above the bar took from the foot of the page and handed back,
@@ -304,133 +278,152 @@ WebViewPage {
         onCountChanged: browserPage.ensureTab()
     }
 
-    Item {
+    TabDeck {
         id: deck
 
+        objectName: "tabDeck"
         width: parent.width
-        height: browserPage.fullHeight * 2
-        y: -browserPage.tabsOffset
-
-        Item {
-            id: browserLayer
-
-            width: parent.width
-            height: browserPage.fullHeight
-
-            // The strip the cutout sits in, in the page's own theme colour when it
-            // declares one. sailfish-browser paints the same strip the same way, from
-            // a property its own web page item carries; this one asks the page
-            // (docs/DECISIONS/0013-screen-cutout.md).
-            Rectangle {
-                objectName: "cutoutBand"
-                width: parent.width
-                height: browserPage.cutoutInset
-                color: browserPage.currentView
-                       && browserPage.currentView.pageThemeColor.length > 0
-                       ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
+        pageHeight: browserPage.height
+        // The grid in front ends editing the address, which would be left under it.
+        onTabsOpenChanged: {
+            if (tabsOpen) {
+                navigationBar.endEditing()
             }
+        }
 
-            // The engine gets the page between the cutout and the bar, and no
-            // further. Letting it run on behind a bar that scrolled away was the
-            // other answer, and on device the foot of a page was still out of reach
-            // often enough to be a defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
-            Item {
-                id: viewArea
+        // The strip the cutout sits in, in the page's own theme colour when it
+        // declares one. sailfish-browser paints the same strip the same way, from
+        // a property its own web page item carries; this one asks the page
+        // (docs/DECISIONS/0013-screen-cutout.md).
+        Rectangle {
+            objectName: "cutoutBand"
+            width: parent.width
+            height: browserPage.cutoutInset
+            color: browserPage.currentView
+                   && browserPage.currentView.pageThemeColor.length > 0
+                   ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
+        }
 
-                objectName: "viewArea"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                }
-                y: browserPage.cutoutInset
-                height: browserPage.viewHeight - browserPage.cutoutInset
+        // The engine gets the page between the cutout and the bar, and no
+        // further. Letting it run on behind a bar that scrolled away was the
+        // other answer, and on device the foot of a page was still out of reach
+        // often enough to be a defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
+        Item {
+            id: viewArea
 
-                // One WebView per tab shown this session; restored tabs stay unloaded
-                // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
-                // and a tab not among the most recently read gives its view up until
-                // it is next in front, when it is loaded again from the page it was
-                // on (docs/DECISIONS/0016-five-live-pages.md).
-                Repeater {
-                    id: webViews
+            objectName: "viewArea"
+            anchors {
+                left: parent.left
+                right: parent.right
+            }
+            y: browserPage.cutoutInset
+            height: browserPage.viewHeight - browserPage.cutoutInset
 
-                    objectName: "webViews"
-                    model: TabModel
-                    delegate: Loader {
-                        readonly property int tabId: model.tabId
-                        readonly property bool isCurrent: model.activeTab
-                        readonly property bool liveTab: model.liveTab
-                        readonly property string initialUrl: model.url
-                        property bool shown: false
+            // One WebView per tab shown this session; restored tabs stay unloaded
+            // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
+            // and a tab not among the most recently read gives its view up until
+            // it is next in front, when it is loaded again from the page it was
+            // on (docs/DECISIONS/0016-five-live-pages.md).
+            Repeater {
+                id: webViews
 
-                        objectName: "webViewLoader"
-                        anchors.fill: parent
-                        active: shown && liveTab
-                        visible: isCurrent
-                        sourceComponent: webViewComponent
-                        onIsCurrentChanged: {
-                            if (isCurrent) {
-                                shown = true
-                            }
+                objectName: "webViews"
+                model: TabModel
+                delegate: Loader {
+                    readonly property int tabId: model.tabId
+                    readonly property bool isCurrent: model.activeTab
+                    readonly property bool liveTab: model.liveTab
+                    readonly property string initialUrl: model.url
+                    property bool shown: false
+
+                    objectName: "webViewLoader"
+                    anchors.fill: parent
+                    active: shown && liveTab
+                    visible: isCurrent
+                    sourceComponent: webViewComponent
+                    onIsCurrentChanged: {
+                        if (isCurrent) {
+                            shown = true
                         }
-                        onItemChanged: browserPage.updateCurrentView()
-                        Component.onCompleted: {
-                            if (isCurrent) {
-                                shown = true
-                            }
+                    }
+                    onItemChanged: browserPage.updateCurrentView()
+                    Component.onCompleted: {
+                        if (isCurrent) {
+                            shown = true
                         }
                     }
                 }
             }
-
-            NavigationBar {
-                id: navigationBar
-
-                objectName: "navigationBar"
-                width: parent.width
-                // The page's own height, not the layer's: Silica shrinks the page for
-                // the keyboard, and the field the bar carries has to come up with it.
-                y: browserPage.height - height
-
-                view: browserPage.currentView
-                compact: browserPage.barCompact
-                onAccepted: browserPage.openUrl(Settings.urlForInput(text))
-                onBack: browserPage.goBack()
-                onReloadOrStop: browserPage.reloadOrStop()
-                onShowMenu: browserMenu.show()
-                // The grid is about to show, so the picture of the tab being left is
-                // taken before the first pixel of it does.
-                onDragStarted: {
-                    browserPage.captureCurrent()
-                    browserPage.beginDrag()
-                }
-                onDragMoved: browserPage.dragTo(distance)
-                onDragFinished: browserPage.settle(distance > browserPage.pullThreshold)
-                onPageTouchStarted: browserPage.touchPage(position, "start")
-                onPageTouchMoved: browserPage.touchPage(position, "move")
-                onPageTouchEnded: browserPage.touchPage(position, "end")
-            }
-
-            FindBar {
-                id: findBar
-
-                anchors.fill: navigationBar
-                view: browserPage.currentView
-            }
         }
 
-        TabsView {
+        NavigationBar {
+            id: navigationBar
+
+            objectName: "navigationBar"
+            width: parent.width
+            // The page's own height, not the layer's: Silica shrinks the page for
+            // the keyboard, and the field the bar carries has to come up with it.
+            y: browserPage.height - height
+
+            view: browserPage.currentView
+            compact: browserPage.barCompact
+            onAccepted: browserPage.openChosen(Settings.urlForInput(text), inNewTab)
+            onBack: browserPage.goBack()
+            onReloadOrStop: browserPage.reloadOrStop()
+            onShowMenu: browserMenu.show()
+            // The grid is about to show, so the picture of the tab being left is
+            // taken before the first pixel of it does.
+            onDragStarted: {
+                browserPage.captureCurrent()
+                deck.beginDrag()
+            }
+            onDragMoved: deck.dragTo(distance)
+            onDragFinished: deck.settle(distance > deck.pullThreshold)
+            onPageTouchStarted: browserPage.touchPage(position, "start")
+            onPageTouchMoved: browserPage.touchPage(position, "move")
+            onPageTouchEnded: browserPage.touchPage(position, "end")
+        }
+
+        FindBar {
+            id: findBar
+
+            anchors.fill: navigationBar
+            view: browserPage.currentView
+        }
+
+        // The pane above the bar while the address is edited into something to look
+        // for, or opened for a new tab: from under the cutout to the bar, over the
+        // page. After both bars, so that nothing of theirs is drawn over it.
+        OmnibarView {
+            width: parent.width
+            y: browserPage.cutoutInset
+            height: navigationBar.y - y
+            active: navigationBar.paneUp
+            text: navigationBar.typedText
+            forNewTab: navigationBar.forNewTab
+            onGoRequested: browserPage.openChosen(url, forNewTab)
+            onSearchRequested: browserPage.openChosen(url, forNewTab)
+            onUrlChosen: browserPage.openChosen(url, forNewTab)
+            // A tab found in any group comes to the front, and its group with it.
+            onTabChosen: {
+                navigationBar.endEditing()
+                TabModel.activateTabById(tabId)
+            }
+            onDownloadChosen: browserPage.openDownload(downloadId, done)
+            onDismissed: navigationBar.endEditing()
+        }
+
+        grid: TabsView {
             id: tabsView
 
-            width: parent.width
-            height: browserPage.fullHeight
-            y: browserPage.fullHeight
+            anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
             // Nothing to draw while the page covers it: the engine has the screen.
-            visible: browserPage.tabsOffset > 0
-            onPullStarted: browserPage.beginDrag()
-            onPulled: browserPage.dragTo(browserPage.height - distance)
-            onPullFinished: browserPage.settle(distance <= browserPage.pullThreshold)
-            onTabActivated: browserPage.settle(false)
+            visible: deck.tabsOffset > 0
+            onPullStarted: deck.beginDrag()
+            onPulled: deck.dragTo(browserPage.height - distance)
+            onPullFinished: deck.settle(distance <= deck.pullThreshold)
+            onTabActivated: deck.settle(false)
         }
     }
 

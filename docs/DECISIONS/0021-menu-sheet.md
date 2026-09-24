@@ -93,10 +93,13 @@ What the menu page had and the sheet does not:
 
 ## Consequences
 The browsing page holds an instance of each component and nothing of their insides, and
-stays under the 600 lines 0010 allows it: 599 when the sheet came, 580 since the bar reads
+stays under the 600 lines 0010 allows it: 599 when the sheet came, 580 once the bar read
 its load progress and the connection's verdict from the view itself (0009) and the page's
-`showTab()` went with the search page (0015). The next thing it needs has to come out of
-it first, as 0010 says.
+`showTab()` went with the search page (0015), and 599 again by the time tracking
+protection, the reader view and the media controls had come. The deck's state and gestures
+then went to a component of their own, as 0010 said they would, and with the omnibar's
+pane in it (0027) the page is 592 lines. The next thing it needs has to come out of it
+first.
 
 `tests/tst_qmlload.cpp` drives the sheet, the find bar and their pages by `objectName`
 (`browserMenu`, `findBar`); the WebView stub records what is sent to the page and which

@@ -10,6 +10,12 @@
 // not drawn and the field takes their room, from the edge of the screen to the menu
 // (docs/DECISIONS/0009-navigation-bar-gesture.md).
 //
+// The field is an omnibar. Once what is typed is other than the address it opened with
+// -- or from the start, opened for a new tab -- the pane above the bar is up with what
+// the words find (docs/DECISIONS/0027-omnibar.md). While it is, presses on it leave the
+// field its focus, the keyboard can be put away to see the list without ending the edit,
+// and the reach above the bar is the pane's.
+//
 // One MouseArea owns every press and the icons are just icons: a handler behind the
 // controls is never reached, while one that lets presses through cannot see the
 // movement afterwards. So the press is taken by BarGesture and the region under it
@@ -50,12 +56,20 @@ Item {
     readonly property bool muted: TabModel.activeMuted
     // The address turns into a field in place while it is being edited.
     property bool editing: false
+    // What is typed, and what the field opened with: the page's url, or nothing for a
+    // new tab, where whatever is chosen opens.
+    readonly property string typedText: urlField.text
+    property string openedWith
+    readonly property bool edited: typedText !== openedWith
+    property bool forNewTab: false
+    readonly property bool paneUp: editing && (forNewTab
+                                               || (edited && typedText.trim().length > 0))
     // Slimmed down to the handle and the host, with the controls faded off it: what the
     // bar does instead of leaving when a page is scrolled (docs/DECISIONS/0009). A tap
     // on it brings the whole bar back, and only a tap on the whole bar edits.
     property bool compact: false
 
-    signal accepted(string text)
+    signal accepted(string text, bool inNewTab)
     signal back()
     signal reloadOrStop()
     signal showMenu()
@@ -110,11 +124,16 @@ Item {
         }
     }
 
-    function beginEditing() {
-        urlField.text = navigationBar.url
+    // On the page, the whole url, selected, so the first key typed replaces it.
+    function beginEditing(newTab) {
+        forNewTab = newTab === true
+        openedWith = forNewTab ? "" : navigationBar.url
+        urlField.text = openedWith
         editing = true
         urlField.forceActiveFocus()
-        urlField.selectAll()
+        if (!forNewTab) {
+            urlField.selectAll()
+        }
     }
 
     function endEditing() {
@@ -122,20 +141,26 @@ Item {
             return
         }
         editing = false
+        forNewTab = false
         urlField.focus = false
     }
 
     // The field losing focus, and the keyboard going away, both end editing: tapping
     // the page while the field was up used to leave the bar in edit mode with nothing
-    // to type into. Named functions, so the load tests can exercise both.
+    // to type into. Not while the pane is up, which is scrolled with the keyboard put
+    // away: the field lets its focus go with the keyboard, as it does when a finger
+    // closes it, so that a tap on it brings both back. Named functions, so the load
+    // tests can exercise both.
     function focusChanged(hasFocus) {
-        if (!hasFocus) {
+        if (!hasFocus && !paneUp) {
             endEditing()
         }
     }
 
     function keyboardVisibilityChanged(keyboardVisible) {
-        if (!keyboardVisible) {
+        if (!keyboardVisible && paneUp) {
+            urlField.focus = false
+        } else if (!keyboardVisible) {
             endEditing()
         }
     }
@@ -149,9 +174,10 @@ Item {
 
     function submit() {
         var text = urlField.text
+        var inNewTab = forNewTab
         endEditing()
         if (text.length > 0) {
-            navigationBar.accepted(text)
+            navigationBar.accepted(text, inNewTab)
         }
     }
 
@@ -317,10 +343,9 @@ Item {
                   + (Theme.iconSizeSmallPlus - Theme.iconSizeSmall) * navigationBar.expansion
     }
 
-    TextField {
+    AddressField {
         id: urlField
 
-        objectName: "addressField"
         x: navigationBar.fieldLeft
         width: navigationBar.fieldRight - navigationBar.fieldLeft
         anchors {
@@ -331,30 +356,9 @@ Item {
         // its own presses for the caret, and the rest of the bar stays live.
         z: 1
         visible: navigationBar.editing
-        placeholderText: qsTr("Search or enter address")
-        // The same size the host is drawn at, so the text does not jump when the
-        // label becomes a field.
-        font.pixelSize: Theme.fontSizeMedium
-        inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhUrlCharactersOnly
-        EnterKey.enabled: text.length > 0
-        EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+        keepsFocus: navigationBar.paneUp
         EnterKey.onClicked: navigationBar.submit()
         onActiveFocusChanged: navigationBar.focusChanged(activeFocus)
-    }
-
-    // Silica insets the text inside a field by a page margin at each end, which is a
-    // page's margin, not a bar's. Through Binding: a Silica without them should cost a
-    // line in the log rather than a bar that fails to load.
-    Binding {
-        target: urlField
-        property: "textLeftMargin"
-        value: Theme.paddingMedium
-    }
-
-    Binding {
-        target: urlField
-        property: "textRightMargin"
-        value: Theme.paddingMedium
     }
 
     // The input panel closing is the other end of editing: the field can keep focus
@@ -365,12 +369,14 @@ Item {
         onVisibleChanged: navigationBar.keyboardVisibilityChanged(Qt.inputMethod.visible)
     }
 
-    // Every press on the bar and just above it, so a drag is seen from the start.
+    // Every press on the bar and just above it, so a drag is seen from the start. Not
+    // above it while the pane lies there: that is the pane's.
     BarGesture {
         id: gestureArea
 
         objectName: "navigationBarGesture"
         bar: navigationBar
+        reaching: !navigationBar.paneUp
         anchors {
             left: parent.left
             right: parent.right

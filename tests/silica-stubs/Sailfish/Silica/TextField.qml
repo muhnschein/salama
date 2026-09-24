@@ -18,6 +18,9 @@ Text {
     property real textRightMargin: 24
     // Silica's TextBase draws the text and its underline in the error colour.
     property bool errorHighlight: false
+    // What a press outside the field does to its focus: FocusBehavior.ClearItemFocus,
+    // TextBase's own default, takes it away.
+    property int focusOutBehavior: 0
 
     function selectAll() {
         selectAllCount += 1
