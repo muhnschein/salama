@@ -88,6 +88,7 @@ void TabSearchModel::setSearchTerm(const QString &term)
         return;
     }
     m_searchTerm = trimmed;
+    m_words = SearchWords(trimmed);
     emit searchTermChanged();
     refine();
 }
@@ -99,12 +100,8 @@ int TabSearchModel::count() const
 
 bool TabSearchModel::matches(int tabIndex) const
 {
-    if (m_searchTerm.isEmpty()) {
-        return true;
-    }
     const Tab &tab = m_tabs->tabs().at(tabIndex);
-    return tab.title.contains(m_searchTerm, Qt::CaseInsensitive) ||
-           tab.url.contains(m_searchTerm, Qt::CaseInsensitive);
+    return m_words.matches({tab.title, tab.url});
 }
 
 QList<TabSearchModel::Row> TabSearchModel::rowsForTerm() const

@@ -112,6 +112,11 @@ QString DownloadModel::directory() const
     return m_directory;
 }
 
+const QList<DownloadModel::Download> &DownloadModel::downloads() const
+{
+    return m_downloads;
+}
+
 void DownloadModel::observe(const QString &topic, const QVariant &data)
 {
     if (topic != Topic) {
@@ -181,6 +186,16 @@ QString DownloadModel::fileUrl(int row) const
         return {};
     }
     return QUrl::fromLocalFile(m_downloads.at(row).path).toString();
+}
+
+int DownloadModel::rowOf(int downloadId) const
+{
+    for (int row = 0; row < m_downloads.count(); ++row) {
+        if (m_downloads.at(row).id == downloadId) {
+            return row;
+        }
+    }
+    return -1;
 }
 
 void DownloadModel::start(int engineId, const QVariantMap &message)

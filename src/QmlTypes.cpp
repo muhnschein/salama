@@ -69,6 +69,11 @@ QObject *settingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
     return keepOwnership(coreInstance->settings());
 }
 
+QObject *omnibarProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->omnibar());
+}
+
 QObject *engineMessagesProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(coreInstance->engineMessages());
@@ -111,6 +116,7 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<DownloadModel>(ModuleUri, 1, 0, "DownloadModel",
                                             &downloadModelProvider);
     qmlRegisterSingletonType<Settings>(ModuleUri, 1, 0, "Settings", &settingsProvider);
+    qmlRegisterSingletonType<OmnibarModel>(ModuleUri, 1, 0, "Omnibar", &omnibarProvider);
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);

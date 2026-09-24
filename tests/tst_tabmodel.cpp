@@ -54,6 +54,8 @@ private slots:
     void groupsSurviveARestart();
     void searchSpansTheGroups();
     void searchRefinesWithoutResetting();
+    void searchTakesEveryWord();
+    void tabIdForUrl();
     void closedTabsCanBeReopened();
     void livePagesAreCapped();
     void mediaFollowsThePage();
@@ -1100,6 +1102,60 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     model.closeTabById(d);
     QVERIFY(resetSpy.count() >= 1);
     QCOMPARE(search.count(), 3);
+}
+
+// The grid's search matches as the address bar's does: every word, in the title or the
+// address, whatever the case (docs/DECISIONS/0027-omnibar.md).
+void tst_tabmodel::searchTakesEveryWord()
+{
+    TabModel model(nullptr);
+    TabSearchModel search(&model);
+    const int news = model.newTab(QStringLiteral("https://yle.fi/uutiset"));
+    model.updateTitle(news, QStringLiteral("Helsinki news"));
+    const int weather = model.newTab(QStringLiteral("https://weather.example/helsinki"));
+    model.updateTitle(weather, QStringLiteral("Forecast"));
+    const int phones = model.newTab(QStringLiteral("https://shop.example/"));
+    model.updateTitle(phones, QStringLiteral("Älypuhelimet"));
+
+    // Two words, in the other order and a field each: the whole term as one string
+    // is found nowhere.
+    search.setSearchTerm(QStringLiteral("news  yle"));
+    QCOMPARE(search.count(), 1);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), news);
+    search.setSearchTerm(QStringLiteral("helsinki"));
+    QCOMPARE(search.count(), 2);
+    search.setSearchTerm(QStringLiteral("helsinki forecast"));
+    QCOMPARE(search.count(), 1);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), weather);
+    search.setSearchTerm(QStringLiteral("helsinki tampere"));
+    QCOMPARE(search.count(), 0);
+    search.setSearchTerm(QStringLiteral("ÄLY"));
+    QCOMPARE(search.count(), 1);
+    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), phones);
+}
+
+// The open tab for an address, in any group; the one in front most recently of
+// several; none for an address no tab shows.
+void tst_tabmodel::tabIdForUrl()
+{
+    TabModel model(nullptr);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), 0);
+    const int first = model.newTab(QStringLiteral("https://a.example/"));
+    const int other = model.newTab(QStringLiteral("https://b.example/"));
+    model.addGroup(QStringLiteral("Work"));
+    const int second = model.newTab(QStringLiteral("https://a.example/"));
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://b.example/")), other);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), second);
+    model.activateTabById(first);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), first);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://c.example/")), 0);
+    QCOMPARE(model.tabIdForUrl(QString()), 0);
+    // An address as the page says it now, not as the tab was opened.
+    model.updateUrl(first, QStringLiteral("https://a.example/next"));
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), second);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/next")), first);
+    model.closeTabById(second);
+    QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), 0);
 }
 
 void tst_tabmodel::closedTabsCanBeReopened()

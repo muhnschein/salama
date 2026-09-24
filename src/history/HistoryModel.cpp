@@ -91,6 +91,32 @@ void HistoryModel::setSearchTerm(const QString &term)
     reload();
 }
 
+QList<HistoryModel::Entry> HistoryModel::allEntries() const
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+                                 "FROM browser_history ORDER BY date DESC, id DESC"));
+    QList<Entry> entries;
+    if (!run(query)) {
+        return entries;
+    }
+    while (query.next()) {
+        entries.append(entryAt(query));
+    }
+    return entries;
+}
+
+HistoryModel::Entry HistoryModel::entryAt(const QSqlQuery &query)
+{
+    Entry entry;
+    entry.id = query.value(0).toInt();
+    entry.url = query.value(1).toString();
+    entry.title = query.value(2).toString();
+    entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
+    entry.visitCount = query.value(4).toInt();
+    return entry;
+}
+
 bool HistoryModel::isRecordable(const QString &url)
 {
     return !url.isEmpty() && !url.startsWith(QLatin1String("about:"));
@@ -216,13 +242,7 @@ void HistoryModel::reload()
 
     QList<Entry> entries;
     while (query.next()) {
-        Entry entry;
-        entry.id = query.value(0).toInt();
-        entry.url = query.value(1).toString();
-        entry.title = query.value(2).toString();
-        entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
-        entry.visitCount = query.value(4).toInt();
-        entries.append(entry);
+        entries.append(entryAt(query));
     }
 
     const int oldCount = m_entries.count();

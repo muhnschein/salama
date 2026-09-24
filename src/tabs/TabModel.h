@@ -116,6 +116,11 @@ public:
     Q_INVOKABLE void closeActiveTab();
     Q_INVOKABLE void closeAllTabs();
     Q_INVOKABLE int indexOf(int tabId) const;
+    // The open tab showing this address, in whichever group, 0 when there is none; of
+    // several, the one in front most recently. The cover's bookmark action brings that
+    // tab to the front rather than open the page again
+    // (docs/DECISIONS/0029-quick-action.md).
+    Q_INVOKABLE int tabIdForUrl(const QString &url) const;
 
     // Called by the view as the engine reports page state.
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);

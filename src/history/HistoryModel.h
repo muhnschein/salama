@@ -13,6 +13,8 @@
 #include <QSqlDatabase>
 #include <QString>
 
+class QSqlQuery;
+
 namespace Salama {
 
 class Storage;
@@ -35,6 +37,15 @@ public:
     static const int MaxEntries = 2000;
     static const int DisplayLimit = 500;
 
+    struct Entry
+    {
+        int id = 0;
+        QString url;
+        QString title;
+        QDateTime date;
+        int visitCount = 0;
+    };
+
     explicit HistoryModel(Storage &storage, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -44,6 +55,15 @@ public:
     int count() const;
     QString searchTerm() const;
     void setSearchTerm(const QString &term);
+
+    // Every row of the table, newest first, whatever the search term and past the
+    // DisplayLimit this model shows: the address bar's suggestions are matched from it
+    // in C++, with the words matched as every other source's are (SearchWords), so
+    // case folds by the same rules everywhere -- SQLite's LIKE folds ASCII alone
+    // (docs/DECISIONS/0027-omnibar.md). A whole table is affordable because it is
+    // bounded: pruned to MaxEntries each time the model is made, it holds no more than
+    // that and the pages of one session.
+    QList<Entry> allEntries() const;
 
     Q_INVOKABLE void visit(const QString &url, const QString &title = QString());
     Q_INVOKABLE void updateTitle(const QString &url, const QString &title);
@@ -55,15 +75,8 @@ signals:
     void searchTermChanged();
 
 private:
-    struct Entry
-    {
-        int id = 0;
-        QString url;
-        QString title;
-        QDateTime date;
-        int visitCount = 0;
-    };
-
+    // The row a query selecting id, url, title, date, visited_count is on.
+    static Entry entryAt(const QSqlQuery &query);
     static bool isRecordable(const QString &url);
     void prune();
     void reload();

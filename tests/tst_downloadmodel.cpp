@@ -36,6 +36,7 @@ private slots:
     void remove();
     void clear();
     void fileUrl();
+    void rowOf();
     void directory();
     void withoutDatabase();
 };
@@ -677,6 +678,44 @@ void tst_downloadmodel::fileUrl()
 
 // The engine saves into the folder only if it is already there, so the model makes it,
 // and the folders above it, before the engine is told of it.
+// A download found again by its own lasting id, after rows have come and gone around
+// it: what the address bar keeps to open it by (docs/DECISIONS/0027-omnibar.md). The
+// rows themselves, as kept, are what it searches.
+void tst_downloadmodel::rowOf()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QVERIFY(model.downloads().isEmpty());
+    QCOMPARE(model.rowOf(1), -1);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    const int a = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    const int b = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    QCOMPARE(model.rowOf(b), 0);
+    QCOMPARE(model.rowOf(a), 1);
+    QCOMPARE(model.rowOf(0), -1);
+    QCOMPARE(model.rowOf(b + 1), -1);
+
+    QCOMPARE(model.downloads().count(), 2);
+    QCOMPARE(model.downloads().at(0).id, b);
+    QCOMPARE(model.downloads().at(0).name, QStringLiteral("b.pdf"));
+    QCOMPARE(model.downloads().at(0).url, QStringLiteral("https://files.example/b.pdf"));
+    QCOMPARE(model.downloads().at(0).status, DownloadModel::Running);
+    QVERIFY(model.downloads().at(0).started > 0);
+
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    QCOMPARE(model.rowOf(a), 2);
+    model.remove(model.rowOf(b));
+    QCOMPARE(model.rowOf(b), -1);
+    QCOMPARE(model.rowOf(a), 1);
+    QCOMPARE(model.fileUrl(model.rowOf(a)),
+             QUrl::fromLocalFile(Downloads + QStringLiteral("a.pdf")).toString());
+    model.clear();
+    QCOMPARE(model.rowOf(a), -1);
+}
+
 void tst_downloadmodel::directory()
 {
     QTemporaryDir dir;

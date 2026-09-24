@@ -497,6 +497,22 @@ int TabModel::indexOf(int tabId) const
     return -1;
 }
 
+int TabModel::tabIdForUrl(const QString &url) const
+{
+    if (url.isEmpty()) {
+        return 0;
+    }
+    int found = 0;
+    qint64 latest = -1;
+    for (const Tab &tab : m_tabs) {
+        if (tab.url == url && tab.lastActive > latest) {
+            latest = tab.lastActive;
+            found = tab.id;
+        }
+    }
+    return found;
+}
+
 void TabModel::updateUrl(int tabId, const QString &url)
 {
     if (url.isEmpty() || isExternalUrl(url)) {

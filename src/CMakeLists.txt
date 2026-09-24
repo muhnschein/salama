@@ -18,9 +18,13 @@ add_library(salama-core STATIC
     engine/PageMedia.h
     history/HistoryModel.cpp
     history/HistoryModel.h
+    omnibar/OmnibarModel.cpp
+    omnibar/OmnibarModel.h
     reader/Reader.cpp
     reader/Reader.h
     reader/reader.qrc
+    search/SearchWords.cpp
+    search/SearchWords.h
     settings/Settings.cpp
     settings/Settings.h
     storage/Storage.cpp

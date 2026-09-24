@@ -8,6 +8,7 @@
 #include "engine/PageActivity.h"
 #include "engine/PageMedia.h"
 #include "history/HistoryModel.h"
+#include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
 #include "settings/Settings.h"
 #include "storage/Storage.h"
@@ -37,6 +38,7 @@ public:
     BookmarkModel *bookmarks();
     DownloadModel *downloads();
     Settings *settings();
+    OmnibarModel *omnibar();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
     PageMedia *pageMedia();
@@ -51,6 +53,8 @@ private:
     BookmarkModel m_bookmarks;
     DownloadModel m_downloads;
     Settings m_settings;
+    // After everything it searches, which it is made from.
+    OmnibarModel m_omnibar;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
     PageMedia m_pageMedia;

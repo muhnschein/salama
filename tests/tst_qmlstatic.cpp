@@ -24,6 +24,7 @@ using Salama::DownloadModel;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
 using Salama::HistoryModel;
+using Salama::OmnibarModel;
 using Salama::PageActivity;
 using Salama::PageMedia;
 using Salama::Reader;
@@ -117,7 +118,8 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
-                                    QStringLiteral("pages/SettingsPage.qml")};
+                                    QStringLiteral("pages/SettingsPage.qml"),
+                                    QStringLiteral("pages/PrivacySettingsPage.qml")};
 
     bool browserPageImportsWebView = false;
     for (const QString &file : qmlFiles()) {
@@ -144,6 +146,8 @@ void tst_qmlstatic::delegateRolesExist()
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
     DownloadModel downloads(storage, dir.path());
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &settings);
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
@@ -165,6 +169,8 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/BookmarkDelegate.qml"), roleSet(bookmarks)},
         {QStringLiteral("pages/DownloadsPage.qml"), roleSet(downloads)},
         {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloads)},
+        {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},
+        {QStringLiteral("components/OmnibarResultRow.qml"), roleSet(omnibar)},
     };
 
     const QRegularExpression reference(QStringLiteral("\\bmodel\\.([A-Za-z_][A-Za-z0-9_]*)"));
@@ -199,6 +205,7 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("DownloadModel"), metaMembers(&DownloadModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
+        {QStringLiteral("Omnibar"), metaMembers(&OmnibarModel::staticMetaObject)},
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
         {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
         {QStringLiteral("PageMedia"), metaMembers(&PageMedia::staticMetaObject)},
@@ -206,8 +213,8 @@ void tst_qmlstatic::singletonMembersExist()
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|DownloadModel|Settings|EngineMessages|PageActivity|"
-                       "PageMedia|Reader)\\."
+                       "BookmarkModel|DownloadModel|Settings|Omnibar|EngineMessages|"
+                       "PageActivity|PageMedia|Reader)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;

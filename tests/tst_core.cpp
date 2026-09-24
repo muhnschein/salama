@@ -22,6 +22,7 @@ private slots:
     void wiresFaviconsAndActiveUrlToBookmarks();
     void restoresState();
     void wiresPlaybackToPageMedia();
+    void omnibarSearchesTheModels();
 };
 
 void tst_core::wiresTabsToHistory()
@@ -128,6 +129,30 @@ void tst_core::wiresPlaybackToPageMedia()
     QVERIFY(core.pageMedia()
                 ->script(id, Salama::PageMedia::Query)
                 .contains(QLatin1String("concealed = false;")));
+}
+
+// The address bar's suggestions are drawn from the core's own models, and follow the
+// core's settings (docs/DECISIONS/0027-omnibar.md).
+void tst_core::omnibarSearchesTheModels()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    Salama::OmnibarModel *omnibar = core.omnibar();
+    QVERIFY(omnibar != nullptr);
+    const int id = core.tabs()->newTab(QStringLiteral("https://core.example/"));
+    core.tabs()->updateUrl(id, QStringLiteral("https://core.example/"));
+    core.tabs()->newTab(QStringLiteral("https://front.example/"));
+    core.bookmarks()->add(QStringLiteral("https://core.example/bookmark"), QStringLiteral("B"));
+
+    omnibar->setQuery(QStringLiteral("core"));
+    QCOMPARE(omnibar->tabCount(), 1);
+    QCOMPARE(omnibar->bookmarkCount(), 1);
+    // The tab's visit went to the history, and is listed as the tab it is.
+    QCOMPARE(core.history()->count(), 1);
+    QCOMPARE(omnibar->historyTotal(), 0);
+
+    core.settings()->setOmnibarBookmarks(false);
+    QTRY_COMPARE(omnibar->bookmarkCount(), 0);
 }
 
 QTEST_GUILESS_MAIN(tst_core)

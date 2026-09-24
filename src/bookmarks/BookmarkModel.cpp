@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "BookmarkModel.h"
 
+#include "search/SearchWords.h"
 #include "storage/Storage.h"
 
 #include <QDateTime>
@@ -52,7 +53,7 @@ QVariant BookmarkModel::data(const QModelIndex &index, int role) const
     case UrlRole:
         return bookmark.url;
     case TitleRole:
-        return bookmark.title.isEmpty() ? bookmark.url : bookmark.title;
+        return shownTitle(bookmark);
     case FaviconRole:
         return bookmark.favicon;
     default:
@@ -95,6 +96,57 @@ bool BookmarkModel::activeUrlBookmarked() const
     return contains(m_activeUrl);
 }
 
+int BookmarkModel::revision() const
+{
+    return m_revision;
+}
+
+const QList<BookmarkModel::Bookmark> &BookmarkModel::bookmarks() const
+{
+    return m_bookmarks;
+}
+
+bool BookmarkModel::hasBookmark(int id) const
+{
+    return indexOfId(id) >= 0;
+}
+
+QString BookmarkModel::urlOf(int id) const
+{
+    const int index = indexOfId(id);
+    return index >= 0 ? m_bookmarks.at(index).url : QString();
+}
+
+QString BookmarkModel::titleOf(int id) const
+{
+    const int index = indexOfId(id);
+    return index >= 0 ? shownTitle(m_bookmarks.at(index)) : QString();
+}
+
+int BookmarkModel::idForUrl(const QString &url) const
+{
+    const int index = indexOfUrl(url);
+    return index >= 0 ? m_bookmarks.at(index).id : 0;
+}
+
+QVariantList BookmarkModel::matching(const QString &query) const
+{
+    const SearchWords words(query);
+    QVariantList found;
+    for (const Bookmark &bookmark : m_bookmarks) {
+        if (!words.matches({bookmark.title, bookmark.url})) {
+            continue;
+        }
+        found.append(QVariantMap{
+            {QStringLiteral("bookmarkId"), bookmark.id},
+            {QStringLiteral("title"), shownTitle(bookmark)},
+            {QStringLiteral("url"), bookmark.url},
+            {QStringLiteral("favicon"), bookmark.favicon},
+        });
+    }
+    return found;
+}
+
 int BookmarkModel::add(const QString &url, const QString &title, const QString &favicon)
 {
     if (url.isEmpty()) {
@@ -129,6 +181,7 @@ int BookmarkModel::add(const QString &url, const QString &title, const QString &
     endInsertRows();
     emit countChanged();
     emit activeUrlBookmarkedChanged();
+    bump();
     return bookmark.id;
 }
 
@@ -148,6 +201,7 @@ void BookmarkModel::remove(int index)
     endRemoveRows();
     emit countChanged();
     emit activeUrlBookmarkedChanged();
+    bump();
 }
 
 bool BookmarkModel::removeByUrl(const QString &url)
@@ -188,6 +242,7 @@ void BookmarkModel::edit(int index, const QString &url, const QString &title)
     }
     notifyRow(index, roles);
     emit activeUrlBookmarkedChanged();
+    bump();
 }
 
 bool BookmarkModel::contains(const QString &url) const
@@ -210,6 +265,7 @@ void BookmarkModel::updateFavicon(const QString &url, const QString &favicon)
     }
     m_bookmarks[index].favicon = favicon;
     notifyRow(index, QVector<int>{FaviconRole});
+    bump();
 }
 
 void BookmarkModel::clear()
@@ -219,6 +275,21 @@ void BookmarkModel::clear()
     if (run(query)) {
         reload();
     }
+}
+
+QString BookmarkModel::shownTitle(const Bookmark &bookmark)
+{
+    return bookmark.title.isEmpty() ? bookmark.url : bookmark.title;
+}
+
+int BookmarkModel::indexOfId(int id) const
+{
+    for (int i = 0; i < m_bookmarks.count(); ++i) {
+        if (m_bookmarks.at(i).id == id) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 int BookmarkModel::indexOfUrl(const QString &url) const
@@ -262,6 +333,13 @@ void BookmarkModel::reload()
         emit countChanged();
     }
     emit activeUrlBookmarkedChanged();
+    bump();
+}
+
+void BookmarkModel::bump()
+{
+    ++m_revision;
+    emit revisionChanged();
 }
 
 } // namespace Salama

@@ -3,6 +3,7 @@
 #include "settings/Settings.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -27,6 +28,15 @@ private slots:
     void liveTabLimit();
     void trackingProtection();
     void readerStyle();
+    void isAddress_data();
+    void isAddress();
+    void omnibarSources();
+    void quickAction();
+    void quickActionBookmark();
+    void quickActionIcon();
+    void coverIconPath_data();
+    void coverIconPath();
+    void coverIconPathNamesTheSpeakers();
 };
 
 void tst_settings::defaults()
@@ -192,6 +202,11 @@ void tst_settings::urlForInput_data()
                                          "https://www.qwant.com/?q=what%20is%20example.org");
     QTest::newRow("question") << QStringLiteral("how? really")
                               << QStringLiteral("https://www.qwant.com/?q=how%3F%20really");
+    // Shaped like a host with a port, but no port can be that: not an address QUrl
+    // will take, so words to search for rather than nothing at all.
+    QTest::newRow("port out of range")
+        << QStringLiteral("example.org:99999")
+        << QStringLiteral("https://www.qwant.com/?q=example.org%3A99999");
 }
 
 void tst_settings::urlForInput()
@@ -377,6 +392,286 @@ void tst_settings::readerStyle()
         QCOMPARE(again.readerColors(), int(Settings::ReaderAmbience));
         QCOMPARE(again.readerTypeface(), int(Settings::ReaderSansSerif));
         QCOMPARE(again.readerTextSize(), int(Settings::ReaderTextSizeDefault));
+    }
+}
+
+void tst_settings::isAddress_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("expected");
+
+    QTest::newRow("host") << QStringLiteral("example.org") << true;
+    QTest::newRow("host path") << QStringLiteral("example.org/path?q=1") << true;
+    QTest::newRow("host port") << QStringLiteral("example.org:8443") << true;
+    QTest::newRow("localhost") << QStringLiteral("localhost") << true;
+    QTest::newRow("localhost port") << QStringLiteral("localhost:8080") << true;
+    QTest::newRow("ipv4") << QStringLiteral("192.168.1.1") << true;
+    QTest::newRow("https") << QStringLiteral("https://example.org/a?b=c#d") << true;
+    QTest::newRow("about") << QStringLiteral("about:blank") << true;
+    QTest::newRow("trimmed") << QStringLiteral("  example.org  ") << true;
+    QTest::newRow("word") << QStringLiteral("sailfish") << false;
+    QTest::newRow("words") << QStringLiteral("jolla phone 2026") << false;
+    QTest::newRow("dotted words") << QStringLiteral("what is example.org") << false;
+    QTest::newRow("unknown scheme") << QStringLiteral("gopher:hole") << false;
+    QTest::newRow("port out of range") << QStringLiteral("example.org:99999") << false;
+    QTest::newRow("empty") << QString() << false;
+    QTest::newRow("blank") << QStringLiteral("   ") << false;
+}
+
+// An address exactly when urlForInput() does not make a search of it: the omnibar's
+// "Go to" and Enter never disagree (docs/DECISIONS/0027-omnibar.md).
+void tst_settings::isAddress()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, expected);
+    QTemporaryDir dir;
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    QCOMPARE(settings.isAddress(input), expected);
+    const QString url = settings.urlForInput(input);
+    if (!input.trimmed().isEmpty()) {
+        QCOMPARE(url == settings.searchUrl(input), !expected);
+    }
+}
+
+// Every source of the address bar's suggestions is on until it is switched off, and
+// each is kept under its own name.
+void tst_settings::omnibarSources()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    {
+        Settings settings(path);
+        QVERIFY(settings.omnibarTabs());
+        QVERIFY(settings.omnibarBookmarks());
+        QVERIFY(settings.omnibarHistory());
+        QVERIFY(settings.omnibarDownloads());
+
+        QSignalSpy tabs(&settings, &Settings::omnibarTabsChanged);
+        QSignalSpy bookmarks(&settings, &Settings::omnibarBookmarksChanged);
+        QSignalSpy history(&settings, &Settings::omnibarHistoryChanged);
+        QSignalSpy downloads(&settings, &Settings::omnibarDownloadsChanged);
+
+        settings.setOmnibarTabs(true);
+        QCOMPARE(tabs.count(), 0);
+        settings.setOmnibarTabs(false);
+        settings.setOmnibarTabs(false);
+        QCOMPARE(tabs.count(), 1);
+        settings.setOmnibarHistory(false);
+        settings.setOmnibarHistory(false);
+        QCOMPARE(history.count(), 1);
+        settings.setOmnibarBookmarks(false);
+        settings.setOmnibarBookmarks(true);
+        QCOMPARE(bookmarks.count(), 2);
+        settings.setOmnibarDownloads(false);
+        QCOMPARE(downloads.count(), 1);
+        // Each signal is its own flag's.
+        QCOMPARE(tabs.count(), 1);
+        QCOMPARE(history.count(), 1);
+    }
+    {
+        Settings again(path);
+        QVERIFY(!again.omnibarTabs());
+        QVERIFY(again.omnibarBookmarks());
+        QVERIFY(!again.omnibarHistory());
+        QVERIFY(!again.omnibarDownloads());
+    }
+    QSettings raw(path, QSettings::IniFormat);
+    QCOMPARE(raw.value(QStringLiteral("omnibarTabs")).toBool(), false);
+    QCOMPARE(raw.value(QStringLiteral("omnibarBookmarks")).toBool(), true);
+    QCOMPARE(raw.value(QStringLiteral("omnibarHistory")).toBool(), false);
+    QCOMPARE(raw.value(QStringLiteral("omnibarDownloads")).toBool(), false);
+}
+
+// The cover's one quick action: Search unless changed, refused out of range and read
+// back as Search when the file says something out of range
+// (docs/DECISIONS/0029-quick-action.md).
+void tst_settings::quickAction()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::quickActionChanged);
+
+    QCOMPARE(settings.quickAction(), int(Settings::QuickActionSearch));
+    // Stored as numbers, so the numbers may not move.
+    QCOMPARE(int(Settings::QuickActionNone), 0);
+    QCOMPARE(int(Settings::QuickActionSearch), 1);
+    QCOMPARE(int(Settings::QuickActionBookmarks), 2);
+    QCOMPARE(int(Settings::QuickActionBookmark), 3);
+    QCOMPARE(int(Settings::QuickActionDownloads), 4);
+    QCOMPARE(int(Settings::QuickActionHistory), 5);
+
+    settings.setQuickAction(Settings::QuickActionHistory);
+    settings.setQuickAction(Settings::QuickActionHistory);
+    QCOMPARE(settings.quickAction(), int(Settings::QuickActionHistory));
+    QCOMPARE(spy.count(), 1);
+    settings.setQuickAction(Settings::QuickActionHistory + 1);
+    settings.setQuickAction(-1);
+    QCOMPARE(settings.quickAction(), int(Settings::QuickActionHistory));
+    QCOMPARE(spy.count(), 1);
+    settings.setQuickAction(Settings::QuickActionNone);
+    QCOMPARE(spy.count(), 2);
+    {
+        Settings again(path);
+        QCOMPARE(again.quickAction(), int(Settings::QuickActionNone));
+    }
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        QCOMPARE(raw.value(QStringLiteral("quickAction")).toInt(), 0);
+        raw.setValue(QStringLiteral("quickAction"), 12);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.quickAction(), int(Settings::QuickActionSearch));
+    }
+}
+
+// The bookmark is written whole, id, address and title in one go, with one signal.
+void tst_settings::quickActionBookmark()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    {
+        Settings settings(path);
+        QSignalSpy spy(&settings, &Settings::quickActionBookmarkChanged);
+        QCOMPARE(settings.quickActionBookmark(), 0);
+        QVERIFY(settings.quickActionBookmarkUrl().isEmpty());
+        QVERIFY(settings.quickActionBookmarkTitle().isEmpty());
+
+        settings.setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
+                                        QStringLiteral("A"));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(settings.quickActionBookmark(), 4);
+        QCOMPARE(settings.quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
+        QCOMPARE(settings.quickActionBookmarkTitle(), QStringLiteral("A"));
+        settings.setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
+                                        QStringLiteral("A"));
+        QCOMPARE(spy.count(), 1);
+        // A negative id is no bookmark's, and nothing is written.
+        settings.setQuickActionBookmark(-2, QStringLiteral("https://b.example/"),
+                                        QStringLiteral("B"));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(settings.quickActionBookmark(), 4);
+
+        // Found again under a new id: the same address, and one signal.
+        settings.setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
+                                        QStringLiteral("A"));
+        QCOMPARE(spy.count(), 2);
+        // Only the title changed is a change.
+        settings.setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
+                                        QStringLiteral("Alpha"));
+        QCOMPARE(spy.count(), 3);
+        // The action is left as it was.
+        QCOMPARE(settings.quickAction(), int(Settings::QuickActionSearch));
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.quickActionBookmark(), 9);
+        QCOMPARE(again.quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
+        QCOMPARE(again.quickActionBookmarkTitle(), QStringLiteral("Alpha"));
+
+        // No bookmark is no address and no title either.
+        QSignalSpy spy(&again, &Settings::quickActionBookmarkChanged);
+        again.setQuickActionBookmark(0, QStringLiteral("https://a.example/"),
+                                     QStringLiteral("Alpha"));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(again.quickActionBookmark(), 0);
+        QVERIFY(again.quickActionBookmarkUrl().isEmpty());
+        QVERIFY(again.quickActionBookmarkTitle().isEmpty());
+        again.setQuickActionBookmark(0, QString(), QString());
+        QCOMPARE(spy.count(), 1);
+    }
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("quickActionBookmark"), -5);
+    }
+    Settings again(path);
+    QCOMPARE(again.quickActionBookmark(), 0);
+}
+
+void tst_settings::quickActionIcon()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::quickActionIconChanged);
+
+    // The star last: it is the bookmarks overview's own glyph.
+    QCOMPARE(settings.quickActionIcons(),
+             (QStringList{QStringLiteral("globe"), QStringLiteral("heart"), QStringLiteral("home"),
+                          QStringLiteral("work"), QStringLiteral("news"), QStringLiteral("music"),
+                          QStringLiteral("shop"), QStringLiteral("star")}));
+    QCOMPARE(settings.quickActionIcon(), QStringLiteral("globe"));
+
+    settings.setQuickActionIcon(QStringLiteral("music"));
+    settings.setQuickActionIcon(QStringLiteral("music"));
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(settings.quickActionIcon(), QStringLiteral("music"));
+    settings.setQuickActionIcon(QStringLiteral("rocket"));
+    settings.setQuickActionIcon(QString());
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(settings.quickActionIcon(), QStringLiteral("music"));
+    {
+        Settings again(path);
+        QCOMPARE(again.quickActionIcon(), QStringLiteral("music"));
+    }
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("quickActionIcon"), QStringLiteral("Music"));
+    }
+    Settings again(path);
+    QCOMPARE(again.quickActionIcon(), QStringLiteral("globe"));
+}
+
+void tst_settings::coverIconPath_data()
+{
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<qreal>("size");
+    QTest::addColumn<bool>("onDark");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("exact") << QStringLiteral("search") << qreal(48) << true
+                           << QStringLiteral("art/cover/search-48-white.png");
+    QTest::newRow("black") << QStringLiteral("star") << qreal(40) << false
+                           << QStringLiteral("art/cover/star-40-black.png");
+    QTest::newRow("down") << QStringLiteral("globe") << qreal(51.9) << true
+                          << QStringLiteral("art/cover/globe-48-white.png");
+    QTest::newRow("up") << QStringLiteral("globe") << qreal(52.1) << true
+                        << QStringLiteral("art/cover/globe-56-white.png");
+    // Halfway rounds up, as Math.round() does.
+    QTest::newRow("halfway") << QStringLiteral("globe") << qreal(36) << false
+                             << QStringLiteral("art/cover/globe-40-black.png");
+    QTest::newRow("small") << QStringLiteral("history") << qreal(12) << true
+                           << QStringLiteral("art/cover/history-32-white.png");
+    QTest::newRow("large") << QStringLiteral("downloads") << qreal(200) << true
+                           << QStringLiteral("art/cover/downloads-64-white.png");
+    QTest::newRow("absurd") << QStringLiteral("home") << qreal(1e300) << false
+                            << QStringLiteral("art/cover/home-64-black.png");
+    QTest::newRow("negative") << QStringLiteral("home") << qreal(-8) << false
+                              << QStringLiteral("art/cover/home-32-black.png");
+}
+
+void tst_settings::coverIconPath()
+{
+    QFETCH(QString, name);
+    QFETCH(qreal, size);
+    QFETCH(bool, onDark);
+    QFETCH(QString, expected);
+    QCOMPARE(Settings::coverIconPath(name, size, onDark), expected);
+}
+
+// The mute the cover already draws is found where coverIconPath() says, at every size
+// and in both inks: the path is the one icons/render.sh writes.
+void tst_settings::coverIconPathNamesTheSpeakers()
+{
+    const QDir source(QStringLiteral(SALAMA_SOURCE_DIR));
+    for (const QString &name : {QStringLiteral("speaker-on"), QStringLiteral("speaker-mute")}) {
+        for (int size = 32; size <= 64; size += 8) {
+            for (const bool onDark : {true, false}) {
+                const QString path = Settings::coverIconPath(name, size, onDark);
+                QVERIFY2(QFileInfo::exists(source.absoluteFilePath(path)), qPrintable(path));
+            }
+        }
     }
 }
 

@@ -15,6 +15,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
     , m_settings(configFilePath)
+    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings)
     , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
 {
@@ -71,6 +72,11 @@ DownloadModel *Core::downloads()
 Settings *Core::settings()
 {
     return &m_settings;
+}
+
+OmnibarModel *Core::omnibar()
+{
+    return &m_omnibar;
 }
 
 EngineMessages *Core::engineMessages()

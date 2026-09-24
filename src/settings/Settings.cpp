@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <QUrl>
 #include <QVector>
+#include <algorithm>
 
 namespace Salama {
 
@@ -21,6 +22,28 @@ const char *const TrackingProtectionKey = "trackingProtection";
 const char *const ReaderColorsKey = "readerColors";
 const char *const ReaderTypefaceKey = "readerTypeface";
 const char *const ReaderTextSizeKey = "readerTextSize";
+const char *const OmnibarTabsKey = "omnibarTabs";
+const char *const OmnibarBookmarksKey = "omnibarBookmarks";
+const char *const OmnibarHistoryKey = "omnibarHistory";
+const char *const OmnibarDownloadsKey = "omnibarDownloads";
+const char *const QuickActionKey = "quickAction";
+const char *const QuickActionBookmarkKey = "quickActionBookmark";
+const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
+const char *const QuickActionBookmarkTitleKey = "quickActionBookmarkTitle";
+const char *const QuickActionIconKey = "quickActionIcon";
+
+// The pictures a bookmark's quick action can wear, drawn in icons/cover/. The star
+// last: the bookmarks overview's own glyph is a star, as the menu sheet's Bookmarks is,
+// and a bookmark that wore it by default would read as the overview.
+const QStringList &quickActionIconNames()
+{
+    static const QStringList names{
+        QStringLiteral("globe"), QStringLiteral("heart"), QStringLiteral("home"),
+        QStringLiteral("work"),  QStringLiteral("news"),  QStringLiteral("music"),
+        QStringLiteral("shop"),  QStringLiteral("star"),
+    };
+    return names;
+}
 
 // Jolla's browser keeps five pages live and reloads the rest on return; the same
 // five here, with a way to ask for fewer, more, or all of them.
@@ -297,6 +320,156 @@ void Settings::setReaderTextSize(int size)
     emit readerTextSizeChanged();
 }
 
+bool Settings::flag(const char *key) const
+{
+    return m_settings.value(QLatin1String(key), true).toBool();
+}
+
+// Whether the value changed, so the caller knows to say so.
+bool Settings::setFlag(const char *key, bool on)
+{
+    if (on == flag(key)) {
+        return false;
+    }
+    m_settings.setValue(QLatin1String(key), on);
+    return true;
+}
+
+bool Settings::omnibarTabs() const
+{
+    return flag(OmnibarTabsKey);
+}
+
+void Settings::setOmnibarTabs(bool on)
+{
+    if (setFlag(OmnibarTabsKey, on)) {
+        emit omnibarTabsChanged();
+    }
+}
+
+bool Settings::omnibarBookmarks() const
+{
+    return flag(OmnibarBookmarksKey);
+}
+
+void Settings::setOmnibarBookmarks(bool on)
+{
+    if (setFlag(OmnibarBookmarksKey, on)) {
+        emit omnibarBookmarksChanged();
+    }
+}
+
+bool Settings::omnibarHistory() const
+{
+    return flag(OmnibarHistoryKey);
+}
+
+void Settings::setOmnibarHistory(bool on)
+{
+    if (setFlag(OmnibarHistoryKey, on)) {
+        emit omnibarHistoryChanged();
+    }
+}
+
+bool Settings::omnibarDownloads() const
+{
+    return flag(OmnibarDownloadsKey);
+}
+
+void Settings::setOmnibarDownloads(bool on)
+{
+    if (setFlag(OmnibarDownloadsKey, on)) {
+        emit omnibarDownloadsChanged();
+    }
+}
+
+int Settings::quickAction() const
+{
+    const int stored = m_settings.value(QLatin1String(QuickActionKey), QuickActionSearch).toInt();
+    return stored < QuickActionNone || stored > QuickActionHistory ? int(QuickActionSearch)
+                                                                   : stored;
+}
+
+void Settings::setQuickAction(int action)
+{
+    if (action < QuickActionNone || action > QuickActionHistory || action == quickAction()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionKey), action);
+    emit quickActionChanged();
+}
+
+int Settings::quickActionBookmark() const
+{
+    const int stored = m_settings.value(QLatin1String(QuickActionBookmarkKey), 0).toInt();
+    return std::max(stored, 0);
+}
+
+QString Settings::quickActionBookmarkUrl() const
+{
+    return m_settings.value(QLatin1String(QuickActionBookmarkUrlKey)).toString();
+}
+
+QString Settings::quickActionBookmarkTitle() const
+{
+    return m_settings.value(QLatin1String(QuickActionBookmarkTitleKey)).toString();
+}
+
+void Settings::setQuickActionBookmark(int id, const QString &url, const QString &title)
+{
+    if (id < 0) {
+        return;
+    }
+    // No bookmark has no address and no title either: what is forgotten is forgotten
+    // whole, and nothing is left to find it again by.
+    const QString keptUrl = id == 0 ? QString() : url;
+    const QString keptTitle = id == 0 ? QString() : title;
+    if (id == quickActionBookmark() && keptUrl == quickActionBookmarkUrl() &&
+        keptTitle == quickActionBookmarkTitle()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionBookmarkKey), id);
+    m_settings.setValue(QLatin1String(QuickActionBookmarkUrlKey), keptUrl);
+    m_settings.setValue(QLatin1String(QuickActionBookmarkTitleKey), keptTitle);
+    emit quickActionBookmarkChanged();
+}
+
+QString Settings::quickActionIcon() const
+{
+    const QString stored = m_settings.value(QLatin1String(QuickActionIconKey)).toString();
+    return quickActionIconNames().contains(stored) ? stored : quickActionIconNames().first();
+}
+
+void Settings::setQuickActionIcon(const QString &name)
+{
+    if (!quickActionIconNames().contains(name) || name == quickActionIcon()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionIconKey), name);
+    emit quickActionIconChanged();
+}
+
+QStringList Settings::quickActionIcons() const
+{
+    return quickActionIconNames();
+}
+
+// The home screen draws a cover action's picture from its file as it is, unscaled, so
+// the picture has to be drawn at the size it is shown at: icons/render.sh draws each
+// glyph at every size from 32 to 64 pixels in steps of 8, which is where Silica's small
+// icon falls on the phones this is for, and the size asked for is snapped to the
+// nearest of those -- halfway rounds up, as Math.round() does in QML -- and kept
+// within them. Bounded before rounding, so no size, however wild, has no int to round
+// to.
+QString Settings::coverIconPath(const QString &name, qreal iconSize, bool onDark)
+{
+    const int size = qRound(qBound(qreal(32), iconSize, qreal(64)) / 8) * 8;
+    return QStringLiteral("art/cover/%1-%2-%3.png")
+        .arg(name)
+        .arg(size)
+        .arg(onDark ? QStringLiteral("white") : QStringLiteral("black"));
+}
+
 QString Settings::searchUrl(const QString &query) const
 {
     const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
@@ -327,13 +500,8 @@ QString Settings::displayAddress(const QString &url)
     return host;
 }
 
-QString Settings::urlForInput(const QString &input) const
+QString Settings::addressFor(const QString &text)
 {
-    const QString text = input.trimmed();
-    if (text.isEmpty()) {
-        return {};
-    }
-
     const QUrl typed(text, QUrl::TolerantMode);
     if (typed.isValid() && isNavigableScheme(typed.scheme())) {
         return typed.toString();
@@ -351,8 +519,25 @@ QString Settings::urlForInput(const QString &input) const
             return QUrl(scheme + text, QUrl::TolerantMode).toString();
         }
     }
+    return {};
+}
 
-    return searchUrl(text);
+QString Settings::urlForInput(const QString &input) const
+{
+    const QString text = input.trimmed();
+    if (text.isEmpty()) {
+        return {};
+    }
+    const QString address = addressFor(text);
+    return address.isEmpty() ? searchUrl(text) : address;
+}
+
+// Asked of the same rule urlForInput() follows, so the address bar never offers to go
+// to an address that Enter would have searched for, nor the other way round.
+bool Settings::isAddress(const QString &input) const
+{
+    const QString text = input.trimmed();
+    return !text.isEmpty() && !addressFor(text).isEmpty();
 }
 
 } // namespace Salama

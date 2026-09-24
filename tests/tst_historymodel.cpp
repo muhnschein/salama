@@ -22,6 +22,7 @@ private slots:
     void titles();
     void removeAndClear();
     void prunesAndLimits();
+    void wholeTable();
 };
 
 namespace {
@@ -187,6 +188,51 @@ void tst_historymodel::prunesAndLimits()
     // Newest first, oldest pruned.
     QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
              QStringLiteral("https://site%1.example/").arg(HistoryModel::MaxEntries + 24));
+}
+
+// The address bar searches every row, not the model's page of them: past the display
+// limit, and whatever the model's own search term.
+void tst_historymodel::wholeTable()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    {
+        QSqlQuery query(storage.database());
+        QVERIFY(query.exec(QStringLiteral("BEGIN")));
+        for (int i = 0; i < HistoryModel::DisplayLimit + 10; ++i) {
+            QSqlQuery insert(storage.database());
+            insert.prepare(QStringLiteral("INSERT INTO browser_history (url, title, date, "
+                                          "visited_count) VALUES (?, ?, ?, ?)"));
+            insert.addBindValue(QStringLiteral("https://site%1.example/").arg(i));
+            insert.addBindValue(QStringLiteral("Site %1").arg(i));
+            insert.addBindValue(1000 + i);
+            insert.addBindValue(i % 3 + 1);
+            QVERIFY(insert.exec());
+        }
+        QVERIFY(query.exec(QStringLiteral("COMMIT")));
+    }
+    HistoryModel model(storage);
+    model.setSearchTerm(QStringLiteral("site1"));
+    QVERIFY(model.count() < HistoryModel::DisplayLimit);
+
+    const QList<HistoryModel::Entry> entries = model.allEntries();
+    QCOMPARE(entries.count(), HistoryModel::DisplayLimit + 10);
+    // Newest first, every column.
+    const HistoryModel::Entry &newest = entries.first();
+    QCOMPARE(newest.url,
+             QStringLiteral("https://site%1.example/").arg(HistoryModel::DisplayLimit + 9));
+    QCOMPARE(newest.title, QStringLiteral("Site %1").arg(HistoryModel::DisplayLimit + 9));
+    QCOMPARE(newest.date.toMSecsSinceEpoch(), qint64(1000 + HistoryModel::DisplayLimit + 9));
+    QCOMPARE(newest.visitCount, (HistoryModel::DisplayLimit + 9) % 3 + 1);
+    QVERIFY(newest.id > 0);
+    QCOMPARE(entries.last().url, QStringLiteral("https://site0.example/"));
+
+    // A visit is there at once; a cleared table has nothing.
+    model.visit(QStringLiteral("https://new.example/"), QStringLiteral("New"));
+    QCOMPARE(model.allEntries().first().url, QStringLiteral("https://new.example/"));
+    QCOMPARE(model.allEntries().first().visitCount, 1);
+    model.clear();
+    QVERIFY(model.allEntries().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)
