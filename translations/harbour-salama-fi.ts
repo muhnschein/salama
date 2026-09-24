@@ -58,19 +58,19 @@
     <message>
         <source>Choose a bookmark</source>
         <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kirjanmerkki</translation>
     </message>
     <message>
         <source>Search bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae kirjanmerkeistä</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation type="unfinished">Ei osumia</translation>
+        <translation>Ei osumia</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation type="unfinished">Ei kirjanmerkkejä</translation>
+        <translation>Ei kirjanmerkkejä</translation>
     </message>
 </context>
 <context>
@@ -147,28 +147,28 @@
     <name>ClearDataDialog</name>
     <message>
         <source>Clear browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista selaustiedot</translation>
     </message>
     <message>
         <source>Clear</source>
         <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poista</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Avoimet välilehdet</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished">Historia</translation>
+        <translation>Historia</translation>
     </message>
     <message>
         <source>Cookies and site data</source>
-        <translation type="unfinished"></translation>
+        <translation>Evästeet ja sivustotiedot</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Välimuisti</translation>
     </message>
 </context>
 <context>
@@ -182,88 +182,88 @@
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>
-        <translation type="unfinished">Kansi</translation>
+        <translation>Kansi</translation>
     </message>
     <message>
         <source>Shows</source>
-        <translation type="unfinished">Näyttää</translation>
+        <translation>Näyttää</translation>
     </message>
     <message>
         <source>The icon alone</source>
-        <translation type="unfinished">Vain kuvakkeen</translation>
+        <translation>Vain kuvakkeen</translation>
     </message>
     <message>
         <source>The tab count and the last tab</source>
-        <translation type="unfinished">Välilehtien määrän ja viimeisimmän välilehden</translation>
+        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
     </message>
     <message>
         <source>The tab count and the most recent tabs</source>
-        <translation type="unfinished">Välilehtien määrän ja viimeisimmät välilehdet</translation>
+        <translation>Välilehtien määrän ja viimeisimmät välilehdet</translation>
     </message>
     <message>
         <source>None</source>
         <extracomment>The cover has no quick action</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ei mitään</translation>
     </message>
     <message>
         <source>Search</source>
         <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Haku</translation>
     </message>
     <message>
         <source>Bookmarks</source>
         <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation type="unfinished">Kirjanmerkit</translation>
+        <translation>Kirjanmerkit</translation>
     </message>
     <message>
         <source>Open a bookmark</source>
         <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Avaa kirjanmerkki</translation>
     </message>
     <message>
         <source>Downloads</source>
         <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation type="unfinished">Lataukset</translation>
+        <translation>Lataukset</translation>
     </message>
     <message>
         <source>History</source>
         <extracomment>A quick action on the cover: the history</extracomment>
-        <translation type="unfinished">Historia</translation>
+        <translation>Historia</translation>
     </message>
     <message>
         <source>Bookmark: %1</source>
         <extracomment>The cover&apos;s quick action opens this bookmark</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kirjanmerkki: %1</translation>
     </message>
     <message>
         <source>Deleted bookmark</source>
         <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poistettu kirjanmerkki</translation>
     </message>
     <message>
         <source>Quick action</source>
         <extracomment>The one action offered on the cover on the home screen</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Pikatoiminto</translation>
     </message>
     <message>
         <source>The cover on the home screen shows one quick action. The place beside it is kept for the media control, which appears there while the tab in front plays something.</source>
         <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. Use the same word for &quot;quick action&quot; as the section over this.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kotinäkymän kannessa näkyy yksi pikatoiminto. Sen vieressä oleva paikka on varattu mediasäätimelle, joka ilmestyy siihen, kun etualalla oleva välilehti toistaa jotakin.</translation>
     </message>
     <message>
         <source>Nothing playing</source>
         <extracomment>Under a picture of the cover and its quick action while nothing plays</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Mitään ei toisteta</translation>
     </message>
     <message>
         <source>While a tab plays</source>
         <extracomment>Under a picture of the cover while a tab plays: its quick action, and the tab&apos;s mute beside it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kun välilehti toistaa</translation>
     </message>
     <message>
         <source>Action</source>
         <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Toiminto</translation>
     </message>
 </context>
 <context>
@@ -373,142 +373,142 @@
     <message>
         <source>%1 · %2</source>
         <extracomment>Two parts of a line under a suggestion in the address bar: a tab&apos;s group and its site, or a download&apos;s site and how it is going</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2</translation>
     </message>
 </context>
 <context>
     <name>OmnibarView</name>
     <message>
         <source>Tabs (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Välilehdet (%1)</translation>
     </message>
     <message>
         <source>Tabs (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Välilehdet (%1/%2)</translation>
     </message>
     <message>
         <source>Bookmarks (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjanmerkit (%1)</translation>
     </message>
     <message>
         <source>Bookmarks (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjanmerkit (%1/%2)</translation>
     </message>
     <message>
         <source>History (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Historia (%1)</translation>
     </message>
     <message>
         <source>History (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Historia (%1/%2)</translation>
     </message>
     <message>
         <source>Downloads (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataukset (%1)</translation>
     </message>
     <message>
         <source>Downloads (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataukset (%1/%2)</translation>
     </message>
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Siirry osoitteeseen %1</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Hae ”%2” hakukoneella %1</translation>
     </message>
 </context>
 <context>
     <name>PrivacySettingsPage</name>
     <message>
         <source>Clearing browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>Poistetaan selaustiedot</translation>
     </message>
     <message>
         <source>Privacy</source>
-        <translation type="unfinished">Yksityisyys</translation>
+        <translation>Yksityisyys</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation type="unfinished">Seurannan esto</translation>
+        <translation>Seurannan esto</translation>
     </message>
     <message>
         <source>Sites can follow you from one to another</source>
-        <translation type="unfinished">Sivustot voivat seurata sinua sivustolta toiselle</translation>
+        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
     </message>
     <message>
         <source>Stops more tracking, and can break some sites</source>
-        <translation type="unfinished">Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
     </message>
     <message>
         <source>Stops sites following you with cookies</source>
-        <translation type="unfinished">Estää sivustoja seuraamasta sinua evästeillä</translation>
+        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished">Pois</translation>
+        <translation>Pois</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished">Tavallinen</translation>
+        <translation>Tavallinen</translation>
     </message>
     <message>
         <source>Strict</source>
-        <translation type="unfinished">Tiukka</translation>
+        <translation>Tiukka</translation>
     </message>
     <message>
         <source>Clear browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista selaustiedot</translation>
     </message>
 </context>
 <context>
     <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished">Lukunäkymä</translation>
+        <translation>Lukunäkymä</translation>
     </message>
     <message>
         <source>Colours</source>
-        <translation type="unfinished">Värit</translation>
+        <translation>Värit</translation>
     </message>
     <message>
         <source>Ambience</source>
-        <translation type="unfinished">Ambienssi</translation>
+        <translation>Ambienssi</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished">Vaalea</translation>
+        <translation>Vaalea</translation>
     </message>
     <message>
         <source>Sepia</source>
-        <translation type="unfinished">Seepia</translation>
+        <translation>Seepia</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished">Tumma</translation>
+        <translation>Tumma</translation>
     </message>
     <message>
         <source>Typeface</source>
-        <translation type="unfinished">Kirjasin</translation>
+        <translation>Kirjasin</translation>
     </message>
     <message>
         <source>Sans serif</source>
-        <translation type="unfinished">Pääteviivaton</translation>
+        <translation>Pääteviivaton</translation>
     </message>
     <message>
         <source>Serif</source>
-        <translation type="unfinished">Päätteellinen</translation>
+        <translation>Päätteellinen</translation>
     </message>
     <message>
         <source>Text size</source>
-        <translation type="unfinished">Tekstin koko</translation>
+        <translation>Tekstin koko</translation>
     </message>
     <message>
         <source>%1 %</source>
-        <translation type="unfinished">%1 %</translation>
+        <translation>%1 %</translation>
     </message>
 </context>
 <context>
@@ -545,31 +545,31 @@
     <name>SearchSettingsPage</name>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Haku</translation>
     </message>
     <message>
         <source>Search engine</source>
-        <translation type="unfinished">Hakukone</translation>
+        <translation>Hakukone</translation>
     </message>
     <message>
         <source>Address bar suggestions</source>
-        <translation type="unfinished"></translation>
+        <translation>Osoiterivin ehdotukset</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>Avoimet välilehdet</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished">Kirjanmerkit</translation>
+        <translation>Kirjanmerkit</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished">Historia</translation>
+        <translation>Historia</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished">Lataukset</translation>
+        <translation>Lataukset</translation>
     </message>
 </context>
 <context>
@@ -678,53 +678,53 @@
     <message>
         <source>%1 · %2 · %3</source>
         <extracomment>The reader view&apos;s look in one line: its colours, typeface and text size, e.g. &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>Tracking protection: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seurannan esto: %1</translation>
     </message>
     <message>
         <source>General</source>
-        <translation type="unfinished"></translation>
+        <translation>Yleiset</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Haku</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Ulkoasu</translation>
     </message>
     <message>
         <source>No quick action</source>
         <extracomment>The cover has no quick action</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ei pikatoimintoa</translation>
     </message>
     <message>
         <source>Bookmarks</source>
         <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation type="unfinished">Kirjanmerkit</translation>
+        <translation>Kirjanmerkit</translation>
     </message>
     <message>
         <source>Open a bookmark</source>
         <extracomment>A quick action on the cover: one bookmark&apos;s page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Avaa kirjanmerkki</translation>
     </message>
     <message>
         <source>Downloads</source>
         <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation type="unfinished">Lataukset</translation>
+        <translation>Lataukset</translation>
     </message>
     <message>
         <source>History</source>
         <extracomment>A quick action on the cover: the history</extracomment>
-        <translation type="unfinished">Historia</translation>
+        <translation>Historia</translation>
     </message>
     <message>
         <source>%1 · %2</source>
         <extracomment>The cover&apos;s settings in one line: what it shows, then its quick action, e.g. &quot;The icon alone · Search&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2</translation>
     </message>
 </context>
 <context>

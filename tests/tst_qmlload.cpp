@@ -2700,7 +2700,7 @@ void tst_qmlload::browserMenu()
     }
 
     // The sheet is about the page in front, and another page in front puts it away:
-    // the cover's new tab, say.
+    // a tab opened while it is up, say.
     tapBar(QStringLiteral("menu"));
     tabs->newTab(QStringLiteral("https://three.example/"));
     QVERIFY(!menu->property("open").toBool());

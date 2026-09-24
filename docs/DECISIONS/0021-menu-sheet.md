@@ -13,8 +13,8 @@ its desktop version); and the browser (bookmarks, history, downloads, settings).
 `components/BrowserMenu.qml` is a Silica `DockedPanel`, docked to the bottom and modal —
 the same kind of sheet as the closed tabs, so the two come and go alike: it slides up from
 under the navigation bar, where its button is, and a tap outside it puts it away, as does
-pulling it back down. Nothing is pushed for it, and `MenuPage.qml` is gone. It holds three
-rows under a section header each — *Tabs*, *This page*, *Browser* — of
+pulling it back down. Nothing is pushed for it, and `MenuPage.qml` is gone. It holds two
+rows under a section header each — *This page*, *Browser* — of
 `components/MenuButton.qml`, an icon with its name written under it, four to a row. An
 entry that is a switch (the page bookmarked, the page in its desktop version) is drawn in
 the highlight colour while it is on. Each entry does what it says and puts the sheet away;
@@ -42,7 +42,7 @@ flickable. Where `DockedPanel`'s own drag does take a pull, it moves the sheet a
 anyway, and closes it the same way.
 
 The icons are the theme's, by the names sailfish-browser gives the same entries in
-`apps/browser/qml/pages/components/PopUpMenuItem.qml`: `icon-m-tab-new`,
+`apps/browser/qml/pages/components/PopUpMenuItem.qml`:
 `icon-m-search-on-page`, `icon-m-share`, `icon-m-computer`, `icon-m-favorite-selected`
 (Bookmarks), `icon-m-history`, `icon-m-downloads`, `icon-m-setting`; and in
 `PopUpMenuFooter.qml` beside it, `icon-m-favorite` and `-selected` for bookmarking the
@@ -50,8 +50,8 @@ page. The host tests draw nothing, so a name that is not in the device's theme w
 them; names a Jolla application ships with are the best evidence available off the device.
 
 Opening the menu **ends editing the address**: the sheet comes up where the keyboard would
-be sitting over it. **Another page in front** — the cover's new tab, say — puts the sheet
-away, since what it offers is for the page in front.
+be sitting over it. **Another page in front** puts the sheet away, since what it offers is
+for the page in front; the cover's quick action puts it away before anything else (0029).
 
 **Search on page** is Gecko's own find, driven the way sailfish-browser drives it
 (`apps/browser/qml/pages/components/ToolBar.qml`, `apps/shared/WebView.qml`): the page's
@@ -84,6 +84,9 @@ unloaded, which is rare.
 
 What the menu page had and the sheet does not:
 
+* **New tab**, which the first sheet had alone in a row of its own, *Tabs*. The plus in
+  the grid's foot opens one (0010), and the cover's search opens the address bar for one
+  (0027, 0029): a row for one entry was a third of the sheet for what two places give.
 * **Tabs**, the way into the grid without the gesture (0009). The drag on the bar has
   worked on device since the build that needed the fallback, and the sheet holds what was
   asked for; if the gesture is ever the problem again, this is where the way back in goes.
@@ -97,9 +100,9 @@ stays under the 600 lines 0010 allows it: 599 when the sheet came, 580 once the 
 its load progress and the connection's verdict from the view itself (0009) and the page's
 `showTab()` went with the search page (0015), and 599 again by the time tracking
 protection, the reader view and the media controls had come. The deck's state and gestures
-then went to a component of their own, as 0010 said they would, and with the omnibar's
-pane in it (0027) the page is 592 lines. The next thing it needs has to come out of it
-first.
+then went to a component of their own, as 0010 said they would; with the omnibar's pane
+in it (0027) the page was 592 lines, and with what the cover's quick action asks of it
+(0029), 599. The next thing it needs has to come out of it first.
 
 `tests/tst_qmlload.cpp` drives the sheet, the find bar and their pages by `objectName`
 (`browserMenu`, `findBar`); the WebView stub records what is sent to the page and which

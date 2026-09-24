@@ -236,10 +236,12 @@ omnibar's pane and the grid are still **declared in the page**, so they keep its
 page keeps aliases to the deck's state (`tabsOpen`, `tabsOffset`, `fullHeight`,
 `dragging`, `pullThreshold`), which the rest of it and the tests read as before.
 
-Most of what that freed went to the omnibar's pane and its wiring: the page is 592 lines.
-What is left is the engine, the deck's contents and what the bars and the pane ask of the
-page in front. If it reaches 600 again, what goes next is that asking — the functions the
-bar, the find bar and the pane call — not the engine.
+Most of what that freed went to the omnibar's pane and its wiring, and the rest to
+`uncover()`, which puts away what lies over the page for the cover's quick action (0029):
+the page is 599 lines. What is left is the engine, the deck's contents and what the bars,
+the pane and the window ask of the page in front. Before the page takes anything more,
+that asking goes out of it — the functions the bar, the find bar, the pane and the window
+call — not the engine.
 
 ## Consequences
 The grid is instantiated with the page rather than on demand, so the delegates exist

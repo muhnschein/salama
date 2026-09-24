@@ -7,7 +7,8 @@
 // outside it puts it away alone, and so does pulling it back down. The same
 // DockedPanel the grid's list of closed tabs is, so the two sheets come and go alike
 // (docs/DECISIONS/0021-menu-sheet.md). A new tab is not asked for here: the plus at
-// the foot of the tab grid opens one, and so does the cover's search.
+// the foot of the tab grid opens one, and so does the cover's search quick action
+// (docs/DECISIONS/0029-quick-action.md).
 //
 // The pull is the sheet's own. On device DockedPanel's drag did not take a pull begun
 // on the icons, while the list of closed tabs -- rows in a Silica list -- goes down

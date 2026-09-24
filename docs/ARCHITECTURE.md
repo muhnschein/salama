@@ -23,28 +23,30 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   along the grid's foot shows and the group actions are reached through
   (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
   (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
-- `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
+- `TabSearchModel` (`TabSearch`) — the open tabs holding every word of a term, group by
+  group.
+- `OmnibarModel` (`Omnibar`) — what the address bar suggests: the tabs, bookmarks,
+  history and downloads holding every word typed, a ranked section of each
+  (`DECISIONS/0027-omnibar.md`). It and `TabSearchModel` match through the one
+  `SearchWords` (`src/search/`), so the browser's searches agree.
 - `HistoryModel` — visited pages, search, pruning.
-- `BookmarkModel` — bookmarks and "is the active page bookmarked".
+- `BookmarkModel` — bookmarks and "is the active page bookmarked"; one bookmark by id
+  or address for the cover's quick action (`DECISIONS/0029-quick-action.md`).
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
-  notifications, because the platform's list of transfers is closed to a Harbour
-  application and would not hold a `Sailfish.WebView` application's downloads anyway;
-  and the folder the engine saves them to, `~/Downloads/Salama`
-  (`DECISIONS/0025-downloads-folder.md`).
-- `Settings` — home page, search engine, desktop mode, cover style, tracking protection
-  level, the reader view's look, address-bar heuristics.
+  notifications (`DECISIONS/0022-downloads-list.md`), and the folder the engine saves
+  them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
+- `Settings` — home page, search engine and the sources the address bar suggests from,
+  desktop mode, the cover's style and quick action, tracking protection level, the reader
+  view's look, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
   preferences each tracking-protection level stands for, which `BrowserPage` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
-- `PageMedia` — which tab plays: on the engine's word that something started or
-  stopped, every loaded page is asked with a script, and the answer and the tab's
-  muted flag are `TabModel` roles the grid's previews, the bar and the cover draw
-  the tab's mute from; muting pauses too. What plays is the tab in front's: a tab
-  left while it plays is paused as it is left and played again when it is back, and
-  out of sight the page's videos are hidden so only the sound goes on
+- `PageMedia` — which tab plays, asked of every loaded page with a script, and the
+  tab's mute, which pauses too; the answers are `TabModel` roles the previews, the bar
+  and the cover draw from. What plays is the tab in front's
   (`DECISIONS/0026-media-controls.md`).
 - `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
   and compiled in, handed to the page to find its article, and the page the article is
@@ -69,7 +71,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
    `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
    how many tabs are open over a monochrome field of their previews, most recently in
    front first (`TabModel.recentThumbnails`, ordered by each tab's `last_active` stamp),
-   and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`).
+   and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`). Its quick action is
+   carried out by the root window, which has the page stack and the browsing page a
+   cover lacks (`DECISIONS/0029-quick-action.md`).
 
 Views: one `WebView` per tab that has been shown this session and is among the
 `Settings.liveTabLimit` most recently in front, created lazily by a `Loader` over
@@ -82,12 +86,13 @@ Harbour allows carries neither. Tab previews are scene-graph grabs written to th
 directory (`DECISIONS/0008-tab-previews.md`); a tab that has not been displayed this
 session has none, and shows a placeholder in the grid.
 
-The browsing page carries the address: a label until tapped, a field in place after.
-The navigation bar along the bottom is also the surface the tab grid is dragged from:
-the page and the grid are one deck two screens tall, the grid below the page, and the
-grid's own overscroll drops the page back onto it. Nothing is pushed onto the page
-stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
-`DECISIONS/0010-tab-grid-deck.md`).
+The browsing page carries the address: a label until tapped, a field in place after
+(`AddressField.qml`). The navigation bar along the bottom is also the surface the tab
+grid is dragged from: the page and the grid are one deck two screens tall, the grid below
+the page, and the grid's own overscroll drops the page back onto it. `TabDeck.qml` holds
+the deck's state and gestures; what it carries is declared in `BrowserPage.qml`, in the
+context that has the engine. Nothing is pushed onto the page stack for it
+(`DECISIONS/0009-navigation-bar-gesture.md`, `DECISIONS/0010-tab-grid-deck.md`).
 
 The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped,
 and draws a red open padlock when the engine reports a broken TLS connection for an
@@ -98,7 +103,13 @@ either way, and a tap on the slim bar brings the whole bar back
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
-anything else becomes a search with the selected engine.
+anything else becomes a search with the selected engine. Once what is typed differs from
+the url, or the bar is opened empty for a new tab, a pane above it (`OmnibarView.qml`)
+lists what `Omnibar` finds over a row to go to the address, when `Settings.isAddress`
+says it is one, and a row to search (`DECISIONS/0027-omnibar.md`).
+
+Settings is a main page leading to a page each for search, the reader view, the cover
+and privacy (`DECISIONS/0028-settings-pages.md`).
 
 ## Storage
 
