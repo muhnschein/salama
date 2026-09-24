@@ -75,7 +75,7 @@ public:
 
     // The directory is made here, parents and all, if it is missing: the engine saves
     // into it only if it is already there, and into ~/Downloads otherwise
-    // (docs/DECISIONS/0023-downloads-folder.md).
+    // (docs/DECISIONS/0025-downloads-folder.md).
     DownloadModel(Storage &storage, QString directory, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;

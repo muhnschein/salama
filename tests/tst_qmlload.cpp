@@ -5,6 +5,7 @@
 // The stubs imitate no layout: these tests prove structure and wiring, not appearance.
 #include "Core.h"
 #include "QmlTypes.h"
+#include "engine/EngineMessages.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/TabGroupModel.h"
 
@@ -12,6 +13,9 @@
 #include <QDesktopServices>
 #include <QFont>
 #include <QGuiApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -29,6 +33,7 @@
 
 using Salama::BookmarkModel;
 using Salama::Core;
+using Salama::EngineMessages;
 using Salama::Settings;
 using Salama::TabModel;
 
@@ -102,6 +107,7 @@ private slots:
     void browserMenu();
     void menuSheetUnderAFinger();
     void findInPage();
+    void readerView();
     void downloadsPage();
     void historyPage();
     void bookmarksPage();
@@ -356,15 +362,32 @@ void tst_qmlload::rootWindowLoads()
     QObject *page = find(QStringLiteral("browserPage"));
     const qreal zoom = evaluate(page, QStringLiteral("pageZoom()")).toReal();
     QVERIFY(zoom > 1.5 * evaluate(page, QStringLiteral("Theme.pixelRatio")).toReal() - 0.5);
-    QCOMPARE(evaluate(page, QStringLiteral("engineZoom()")).toReal(), zoom);
+    // What the engine was given is read through the view: BrowserPage.qml made it, so
+    // it carries that file's Sailfish.WebEngine import, which the page's own context
+    // does not.
+    QCOMPARE(evaluate(webView, QStringLiteral("WebEngineSettings.pixelRatio")).toReal(), zoom);
     QVERIFY(webView->property("downloadsEnabled").toBool());
     // Downloads are saved to the application's own folder, without the engine asking
-    // where. Read through the view, which BrowserPage.qml made and so carries its
-    // Sailfish.WebEngine import; the page's own context does not.
+    // where.
     QCOMPARE(evaluate(webView, QStringLiteral("WebEngineSettings.downloadDir")).toString(),
              m_core->downloads()->directory());
     QVERIFY(evaluate(webView, QStringLiteral("WebEngineSettings.useDownloadDir")).toBool());
     QVERIFY(!webView->property("desktopMode").toBool());
+
+    // The engine is given its tracking protection on start, at the level Settings
+    // holds: Standard, until it is changed.
+    const QVariantList given =
+        evaluate(find(QStringLiteral("viewArea")), QStringLiteral("WebEngineSettings.preferences"))
+            .toList();
+    const QVariantList standard =
+        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard);
+    QCOMPARE(given.count(), standard.count());
+    for (int i = 0; i < given.count(); ++i) {
+        QCOMPARE(given.at(i).toMap().value(QStringLiteral("key")),
+                 standard.at(i).toMap().value(QStringLiteral("name")));
+        QCOMPARE(given.at(i).toMap().value(QStringLiteral("value")),
+                 standard.at(i).toMap().value(QStringLiteral("value")));
+    }
 
     // The engine reporting the first url is the first visit.
     QCOMPARE(m_core->history()->count(), 1);
@@ -2103,6 +2126,7 @@ void tst_qmlload::browserMenu()
         {QStringLiteral("bookmarkMenuButton"), QStringLiteral("menuPageRow")},
         {QStringLiteral("shareMenuButton"), QStringLiteral("menuPageRow")},
         {QStringLiteral("desktopMenuButton"), QStringLiteral("menuPageRow")},
+        {QStringLiteral("readerMenuButton"), QStringLiteral("menuPageRow")},
         {QStringLiteral("bookmarksMenuButton"), QStringLiteral("menuBrowserRow")},
         {QStringLiteral("historyMenuButton"), QStringLiteral("menuBrowserRow")},
         {QStringLiteral("downloadsMenuButton"), QStringLiteral("menuBrowserRow")},
@@ -2112,6 +2136,13 @@ void tst_qmlload::browserMenu()
         QCOMPARE(qobject_cast<QQuickItem *>(find(it.key()))->parentItem()->objectName(),
                  it.value());
     }
+    // The reader view is offered only for a page that reads as an article, which a
+    // search engine's front page does not (readerView()).
+    QObject *reader = find(QStringLiteral("readerMenuButton"));
+    QVERIFY(reader != nullptr);
+    QVERIFY(!reader->property("enabled").toBool());
+    QVERIFY(!reader->property("iconSource").toString().isEmpty());
+    QCOMPARE(reader->property("text").toString(), QStringLiteral("Reader view"));
     // Searching the page and its desktop version need the page's view, and wait for it;
     // bookmarking and sharing need only its address.
     // Through something of BrowserPage.qml's own, whose scope names the page and the menu.
@@ -2119,6 +2150,7 @@ void tst_qmlload::browserMenu()
     evaluate(pageScope, QStringLiteral("browserMenu.view = null"));
     QVERIFY(!find(QStringLiteral("findMenuButton"))->property("enabled").toBool());
     QVERIFY(!find(QStringLiteral("desktopMenuButton"))->property("enabled").toBool());
+    QVERIFY(!reader->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("bookmarkMenuButton"))->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("shareMenuButton"))->property("enabled").toBool());
     evaluate(pageScope, QStringLiteral("browserMenu.view = Qt.binding(function () {"
@@ -2355,6 +2387,163 @@ void tst_qmlload::findInPage()
 
 // The list of downloads is the browser's own, fed by what the engine says of them on
 // the topic the browsing page subscribes to.
+// The reader view, as Firefox has it (docs/DECISIONS/0024-reader-view.md): offered for a
+// page Readability says reads as an article, opened as a page of its own in the view's
+// history, and left with back -- the tab, the bar and the history keeping the article's
+// own address throughout. The stub view answers each script as the page would.
+void tst_qmlload::readerView()
+{
+    TabModel *tabs = m_core->tabs();
+    const Salama::Reader *engine = m_core->reader();
+    QObject *webView = currentWebView();
+    auto *reader = webView->property("reader").value<QObject *>();
+    QVERIFY(reader != nullptr);
+    QObject *button = find(QStringLiteral("readerMenuButton"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    const QString story = QStringLiteral("https://example.com/2026/a-story");
+    const QString article = QString::fromUtf8(
+        QJsonDocument(QJsonObject{
+                          {QStringLiteral("title"), QStringLiteral("A story")},
+                          {QStringLiteral("byline"), QStringLiteral("A. Writer")},
+                          {QStringLiteral("lang"), QStringLiteral("en")},
+                          {QStringLiteral("content"), QStringLiteral("<p>Once upon a time.</p>")},
+                          {QStringLiteral("length"), 2000},
+                      })
+            .toJson(QJsonDocument::Compact));
+    // What the page answers Readability's quick look, and its parse: a JavaScript
+    // expression each, the article as a string literal.
+    const auto answer = [&](const QString &readerable, const QString &parsed) {
+        evaluate(webView, QStringLiteral("answer = function (script) {"
+                                         " if (script === Reader.readerableScript) { return %1 }"
+                                         " if (script === Reader.articleScript) { return %2 }"
+                                         " return '' }")
+                              .arg(readerable, parsed));
+    };
+    const QString articleLiteral =
+        QString::fromUtf8(QJsonDocument(QJsonArray{article}).toJson(QJsonDocument::Compact)) +
+        QStringLiteral("[0]");
+    const auto load = [webView]() {
+        webView->setProperty("loading", true);
+        webView->setProperty("loading", false);
+    };
+    const auto runs = [webView](const QString &script) {
+        return webView->property("scripts").toStringList().count(script);
+    };
+    const auto calls = [webView](const QString &call) {
+        return webView->property("calls").toStringList().count(call);
+    };
+
+    // A site's front page is not looked at at all.
+    answer(QStringLiteral("true"), articleLiteral);
+    load();
+    QCOMPARE(runs(engine->readerableScript()), 0);
+    QVERIFY(!reader->property("readerable").toBool());
+
+    // An article is, once it has loaded, and offered if Readability says so.
+    answer(QStringLiteral("false"), articleLiteral);
+    webView->setProperty("url", QUrl(story));
+    load();
+    QVERIFY(runs(engine->readerableScript()) > 0);
+    QVERIFY(!reader->property("readerable").toBool());
+    QVERIFY(!button->property("enabled").toBool());
+    answer(QStringLiteral("true"), articleLiteral);
+    load();
+    QVERIFY(reader->property("readerable").toBool());
+    QVERIFY(button->property("enabled").toBool());
+    QVERIFY(!button->property("checked").toBool());
+    QCOMPARE(tabs->activeUrl(), story);
+    const int visits = m_core->history()->count();
+
+    // Opened: Readability over the page, and the reader view loaded in its place.
+    tapBar(QStringLiteral("menu"));
+    click(button);
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(runs(engine->articleScript()), 1);
+    QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
+    const QString html = webView->property("lastHtml").toString();
+    QVERIFY(html.contains(QLatin1String("<h1 class=\"reader-title\">A story</h1>")));
+    QVERIFY(html.contains(QLatin1String("<p>Once upon a time.</p>")));
+    const QUrl readerUrl = webView->property("url").toUrl();
+    QCOMPARE(readerUrl.scheme(), QStringLiteral("data"));
+    QVERIFY(reader->property("active").toBool());
+    QCOMPARE(reader->property("source").toString(), story);
+    QVERIFY(button->property("enabled").toBool());
+    QVERIFY(button->property("checked").toBool());
+    // The tab, and so the bar and the history, keep the article's address.
+    QCOMPARE(tabs->activeUrl(), story);
+    QCOMPARE(m_core->history()->count(), visits);
+    // The engine calls the reader view's document insecure, which it is not: it came
+    // over no connection. The bar does not warn of a broken https connection for it.
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    evaluate(webView, QStringLiteral("security.allGood = false"));
+    QVERIFY(!bar->property("tlsBroken").toBool());
+    // Loaded, it is asked for its icon, which is the article site's; it is not asked
+    // whether it reads as an article.
+    const int checks = runs(engine->readerableScript());
+    load();
+    QCOMPARE(runs(engine->readerableScript()), checks);
+    QCOMPARE(tabs->activeFavicon(), QStringLiteral("https://example.com/favicon.ico"));
+
+    // The settings restyle it where it is, in the ambience's colours until others are
+    // chosen: the stub's ambience is a dark one.
+    QCOMPARE(runs(engine->styleScript(true)), 0);
+    m_core->settings()->setReaderColors(Settings::ReaderSepia);
+    QCOMPARE(runs(engine->styleScript(true)), 1);
+    QVERIFY(engine->styleScript(true).contains(QLatin1String("'sepia sans-serif'")));
+    QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
+
+    // Closed: back, as Firefox goes back to the page it was opened from.
+    webView->setProperty("canGoBack", true);
+    tapBar(QStringLiteral("menu"));
+    click(button);
+    QCOMPARE(calls(QStringLiteral("goBack")), 1);
+    webView->setProperty("url", QUrl(story));
+    QVERIFY(!reader->property("active").toBool());
+    QVERIFY(!button->property("checked").toBool());
+    // The page's own connection is the page's own verdict again.
+    QVERIFY(bar->property("tlsBroken").toBool());
+    evaluate(webView, QStringLiteral("security.allGood = true"));
+    QVERIFY(!bar->property("tlsBroken").toBool());
+    // A page gone back to from its bfcache is not loaded again, and is looked at anyway.
+    QVERIFY(reader->property("readerable").toBool());
+    QCOMPARE(tabs->activeUrl(), story);
+    // Nothing is restyled that is not a reader view.
+    m_core->settings()->setReaderColors(Settings::ReaderDark);
+    QCOMPARE(runs(engine->styleScript(true)), 0);
+
+    // A reader view come back to through the history is one too, whatever the tab was
+    // on in between: forward from a page the article linked to, say.
+    webView->setProperty("url", QUrl(QStringLiteral("https://example.com/linked")));
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.com/linked"));
+    webView->setProperty("url", readerUrl);
+    QVERIFY(reader->property("active").toBool());
+    QCOMPARE(tabs->activeUrl(), story);
+    // With nothing before it, closing loads the article's page.
+    webView->setProperty("canGoBack", false);
+    evaluate(reader, QStringLiteral("toggle()"));
+    QCOMPARE(webView->property("url").toUrl(), QUrl(story));
+    QVERIFY(!reader->property("active").toBool());
+
+    // A page Readability finds no article in stops being offered, and nothing loads.
+    answer(QStringLiteral("true"), QStringLiteral("''"));
+    load();
+    QVERIFY(button->property("enabled").toBool());
+    tapBar(QStringLiteral("menu"));
+    click(button);
+    QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
+    QVERIFY(!reader->property("readerable").toBool());
+    QVERIFY(!button->property("enabled").toBool());
+    // Nor one where the script fails.
+    answer(QStringLiteral("true"), articleLiteral);
+    load();
+    QVERIFY(reader->property("readerable").toBool());
+    webView->setProperty("scriptFails", true);
+    evaluate(reader, QStringLiteral("open()"));
+    QVERIFY(!reader->property("busy").toBool());
+    QVERIFY(!reader->property("readerable").toBool());
+    QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
+}
+
 void tst_qmlload::downloadsPage()
 {
     Salama::DownloadModel *downloads = m_core->downloads();
@@ -2550,6 +2739,27 @@ void tst_qmlload::settingsPage()
     cutoutSwitch->setProperty("checked", true);
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 
+    // How the reader view sets an article: each choice the stored value, Firefox's
+    // middle text size written as the whole of itself.
+    QObject *readerColors = find(QStringLiteral("readerColorsCombo"));
+    QCOMPARE(readerColors->property("currentIndex").toInt(), int(Settings::ReaderAmbience));
+    readerColors->setProperty("currentIndex", int(Settings::ReaderSepia));
+    QCOMPARE(m_core->settings()->readerColors(), int(Settings::ReaderSepia));
+    QObject *readerTypeface = find(QStringLiteral("readerTypefaceCombo"));
+    QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(Settings::ReaderSansSerif));
+    readerTypeface->setProperty("currentIndex", int(Settings::ReaderSerif));
+    QCOMPARE(m_core->settings()->readerTypeface(), int(Settings::ReaderSerif));
+    QObject *readerSize = find(QStringLiteral("readerTextSizeSlider"));
+    QCOMPARE(readerSize->property("minimumValue").toInt(), int(Settings::ReaderTextSizeMin));
+    QCOMPARE(readerSize->property("maximumValue").toInt(), int(Settings::ReaderTextSizeMax));
+    QCOMPARE(readerSize->property("value").toInt(), int(Settings::ReaderTextSizeDefault));
+    QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("100 %"));
+    readerSize->setProperty("value", 9);
+    QCOMPARE(m_core->settings()->readerTextSize(), 9);
+    QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("140 %"));
+    readerSize->setProperty("value", 1);
+    QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("60 %"));
+
     // The cover's style is the one choice here that another page has to answer.
     QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
     QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
@@ -2560,6 +2770,38 @@ void tst_qmlload::settingsPage()
                  ->property("visible")
                  .toBool());
     coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
+
+    // Tracking protection is Standard until it is changed here, and a change reaches
+    // the engine at once, every preference of the new level after the old ones.
+    QObject *trackingCombo = find(QStringLiteral("trackingProtectionCombo"));
+    QCOMPARE(trackingCombo->property("currentIndex").toInt(),
+             int(Settings::TrackingProtectionStandard));
+    const QString standardDescription = trackingCombo->property("description").toString();
+    const int given =
+        evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
+    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionStrict));
+    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionStrict));
+    const QVariantList strict =
+        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStrict);
+    const QVariantList preferences =
+        evaluate(page, QStringLiteral("WebEngineSettings.preferences")).toList();
+    QCOMPARE(preferences.count(), given + strict.count());
+    for (int i = 0; i < strict.count(); ++i) {
+        QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("key")),
+                 strict.at(i).toMap().value(QStringLiteral("name")));
+        QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("value")),
+                 strict.at(i).toMap().value(QStringLiteral("value")));
+    }
+    const QString strictDescription = trackingCombo->property("description").toString();
+    QVERIFY(!strictDescription.isEmpty());
+    QVERIFY(strictDescription != standardDescription);
+    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionOff));
+    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionOff));
+    QCOMPARE(evaluate(page, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
+             given + 2 * strict.count());
+    const QString offDescription = trackingCombo->property("description").toString();
+    QVERIFY(!offDescription.isEmpty());
+    QVERIFY(offDescription != standardDescription && offDescription != strictDescription);
 
     click(find(QStringLiteral("clearHistoryButton")));
     QCOMPARE(m_core->history()->count(), 0);

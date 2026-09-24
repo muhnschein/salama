@@ -56,7 +56,7 @@ None.
 | `Internet` | network access for the engine and favicon images |
 | `WebView` | Gecko embedding: `/usr/share/mozilla`, the transfer engine for downloads (required for any `Sailfish.WebView` user) |
 | `Audio` | sound from pages: Sailjail's `Base` profile shuts every application out of PulseAudio (`nosound`) unless it holds this, and `WebView` does not include it, so without it the engine plays video and audio in silence. It also admits the microphone at the PulseAudio level; nothing here records, and the `Microphone` permission, which recording is meant to need, is not asked for |
-| `Downloads` | the engine saves downloads to `~/Downloads/Salama`, a folder the application creates (`DECISIONS/0023-downloads-folder.md`) |
+| `Downloads` | the engine saves downloads to `~/Downloads/Salama`, a folder the application creates (`DECISIONS/0025-downloads-folder.md`) |
 | `Pictures` | uploading a photo through the platform picker in web forms |
 | `Documents` | uploading a document through the platform picker |
 

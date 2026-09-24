@@ -119,6 +119,10 @@
         <source>Bookmark</source>
         <translation>Kirjanmerkki</translation>
     </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -229,6 +233,25 @@
     </message>
 </context>
 <context>
+    <name>Salama::Reader</name>
+    <message numerus="yes">
+        <source>%1 hour(s)</source>
+        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 tunti</numerusform>
+            <numerusform>%1 tuntia</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s)</source>
+        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 minuutti</numerusform>
+            <numerusform>%1 minuuttia</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -325,6 +348,82 @@
     <message>
         <source>All</source>
         <translation>Kaikki</translation>
+    </message>
+    <message>
+        <source>Privacy</source>
+        <translation>Yksityisyys</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Seurannan esto</translation>
+    </message>
+    <message>
+        <source>Sites can follow you from one to another</source>
+        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
+    </message>
+    <message>
+        <source>Stops more tracking, and can break some sites</source>
+        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+    </message>
+    <message>
+        <source>Stops sites following you with cookies</source>
+        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Pois</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>Tavallinen</translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation>Tiukka</translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
+    <message>
+        <source>Colours</source>
+        <translation>Värit</translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <translation>Ambienssi</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Vaalea</translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation>Seepia</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Tumma</translation>
+    </message>
+    <message>
+        <source>Typeface</source>
+        <translation>Kirjasin</translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation>Pääteviivaton</translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation>Päätteellinen</translation>
+    </message>
+    <message>
+        <source>Text size</source>
+        <translation>Tekstin koko</translation>
+    </message>
+    <message>
+        <source>%1 %</source>
+        <translation>%1 %</translation>
     </message>
 </context>
 <context>

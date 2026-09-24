@@ -39,6 +39,10 @@ install(DIRECTORY qml DESTINATION share/${PROJECT_NAME})
 # files alone, and the cover's own icon has to be a file an Image can resolve.
 install(DIRECTORY art DESTINATION share/${PROJECT_NAME})
 install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications)
+# Readability is compiled into the application (src/reader/reader.qrc), so its licence and
+# notice travel with the package, as Apache-2.0 §4 asks.
+install(FILES third_party/readability/LICENSE.md third_party/readability/NOTICE
+        DESTINATION share/${PROJECT_NAME}/licenses/readability)
 foreach(size 86x86 108x108 128x128 172x172)
     install(FILES icons/${size}/${PROJECT_NAME}.png DESTINATION share/icons/hicolor/${size}/apps)
 endforeach()

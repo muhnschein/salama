@@ -1,0 +1,13 @@
+# Source of Readability.js, Readability-readerable.js, LICENSE.md and NOTICE in this
+# directory, copied verbatim: the library Firefox's reader view runs, vendored into
+# gecko-dev as toolkit/components/reader/readability/. They are compiled into the
+# application as Qt resources and handed to the engine to run in a page
+# (src/reader/Reader.cpp, docs/DECISIONS/0024-reader-view.md); nothing here is edited,
+# so a refresh is a copy of the same four files from a newer commit. Licence:
+# Apache-2.0, LICENSE.md; the NOTICE travels with the package, under
+# /usr/share/harbour-salama/licenses/readability/.
+repo=https://github.com/mozilla/readability
+branch=main
+commit=ab4027a8b37669745016869a37a504727992b2ba
+version=0.6.0
+files=Readability.js Readability-readerable.js LICENSE.md NOTICE

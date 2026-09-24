@@ -33,7 +33,7 @@ public:
     // Tab previews live here: losing them costs a placeholder, not data.
     static QString defaultCacheDirectory();
     // Where the engine saves downloads: a folder of this browser's own in ~/Downloads,
-    // which the Downloads permission opens (docs/DECISIONS/0023-downloads-folder.md).
+    // which the Downloads permission opens (docs/DECISIONS/0025-downloads-folder.md).
     static QString defaultDownloadDirectory();
 
     // Bind value for a TEXT NOT NULL column: a null QString would bind SQL NULL.

@@ -67,7 +67,9 @@ done
 if have lupdate; then
     tmp=$(mktemp -d)
     cp "$TS_SOURCE" "$tmp/current.ts"
-    (cd "$ROOT" && lupdate -silent -no-obsolete -locations none qml src -ts "$tmp/current.ts")
+    # As `make translations` runs it: the application's own sources, not the page scripts
+    # src/reader/reader.qrc compiles in.
+    (cd "$ROOT" && lupdate -silent -no-obsolete -locations none -extensions cpp,h,qml qml src -ts "$tmp/current.ts")
     diff -q <(sources_of "$TS_SOURCE") <(sources_of "$tmp/current.ts") >/dev/null || fail translations translations/harbour-salama.ts "catalog is stale; run 'make translations' and commit"
     rm -rf "$tmp"
 fi

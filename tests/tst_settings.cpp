@@ -25,6 +25,8 @@ private slots:
     void displayAddress();
     void coverStyle();
     void liveTabLimit();
+    void trackingProtection();
+    void readerStyle();
 };
 
 void tst_settings::defaults()
@@ -273,6 +275,108 @@ void tst_settings::liveTabLimit()
     {
         Settings again(path);
         QCOMPARE(again.liveTabLimit(), 5);
+    }
+}
+
+void tst_settings::trackingProtection()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    Settings settings(path);
+    QSignalSpy spy(&settings, &Settings::trackingProtectionChanged);
+
+    // Standard by default, as in Firefox (docs/DECISIONS/0023-tracking-protection.md).
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStandard));
+
+    settings.setTrackingProtection(Settings::TrackingProtectionStrict);
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStrict));
+    QCOMPARE(spy.count(), 1);
+    settings.setTrackingProtection(Settings::TrackingProtectionStrict);
+    QCOMPARE(spy.count(), 1);
+
+    // Refused rather than stored, as the cover's style is.
+    settings.setTrackingProtection(3);
+    settings.setTrackingProtection(-1);
+    QCOMPARE(settings.trackingProtection(), int(Settings::TrackingProtectionStrict));
+    QCOMPARE(spy.count(), 1);
+
+    settings.setTrackingProtection(Settings::TrackingProtectionOff);
+    QCOMPARE(spy.count(), 2);
+    {
+        Settings again(path);
+        QCOMPARE(again.trackingProtection(), int(Settings::TrackingProtectionOff));
+    }
+
+    // Written by hand, out of range: the default, not a level the engine has no
+    // preferences for.
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("trackingProtection"), 9);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.trackingProtection(), int(Settings::TrackingProtectionStandard));
+    }
+}
+
+// How the reader view sets an article: the ambience's colours, sans-serif and Firefox's
+// middle text size until they are changed, and each one refused out of range and read
+// back as the default when the file says something out of range.
+void tst_settings::readerStyle()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    {
+        Settings settings(path);
+        QCOMPARE(settings.readerColors(), int(Settings::ReaderAmbience));
+        QCOMPARE(settings.readerTypeface(), int(Settings::ReaderSansSerif));
+        QCOMPARE(settings.readerTextSize(), int(Settings::ReaderTextSizeDefault));
+        QCOMPARE(int(Settings::ReaderTextSizeDefault), 5);
+
+        QSignalSpy colors(&settings, &Settings::readerColorsChanged);
+        QSignalSpy typeface(&settings, &Settings::readerTypefaceChanged);
+        QSignalSpy size(&settings, &Settings::readerTextSizeChanged);
+
+        settings.setReaderColors(Settings::ReaderSepia);
+        settings.setReaderColors(Settings::ReaderSepia);
+        settings.setReaderColors(Settings::ReaderDark + 1);
+        settings.setReaderColors(-1);
+        QCOMPARE(settings.readerColors(), int(Settings::ReaderSepia));
+        QCOMPARE(colors.count(), 1);
+
+        settings.setReaderTypeface(Settings::ReaderSerif);
+        settings.setReaderTypeface(Settings::ReaderSerif);
+        settings.setReaderTypeface(2);
+        settings.setReaderTypeface(-1);
+        QCOMPARE(settings.readerTypeface(), int(Settings::ReaderSerif));
+        QCOMPARE(typeface.count(), 1);
+
+        settings.setReaderTextSize(Settings::ReaderTextSizeMax);
+        settings.setReaderTextSize(Settings::ReaderTextSizeMax);
+        settings.setReaderTextSize(Settings::ReaderTextSizeMax + 1);
+        settings.setReaderTextSize(Settings::ReaderTextSizeMin - 1);
+        QCOMPARE(settings.readerTextSize(), int(Settings::ReaderTextSizeMax));
+        QCOMPARE(size.count(), 1);
+        settings.setReaderTextSize(Settings::ReaderTextSizeMin);
+        QCOMPARE(size.count(), 2);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.readerColors(), int(Settings::ReaderSepia));
+        QCOMPARE(again.readerTypeface(), int(Settings::ReaderSerif));
+        QCOMPARE(again.readerTextSize(), int(Settings::ReaderTextSizeMin));
+    }
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("readerColors"), 9);
+        raw.setValue(QStringLiteral("readerTypeface"), 5);
+        raw.setValue(QStringLiteral("readerTextSize"), 40);
+    }
+    {
+        Settings again(path);
+        QCOMPARE(again.readerColors(), int(Settings::ReaderAmbience));
+        QCOMPARE(again.readerTypeface(), int(Settings::ReaderSansSerif));
+        QCOMPARE(again.readerTextSize(), int(Settings::ReaderTextSizeDefault));
     }
 }
 

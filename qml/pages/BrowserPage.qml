@@ -229,19 +229,30 @@ WebViewPage {
 
     // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
     // pixels across a 1080 wide screen -- the width a phone layout is written for --
-    // where the platform's own 1.5 gives 410. Two functions so the load tests can
-    // compare them: an expression evaluated from outside has no WebEngine import.
+    // where the platform's own 1.5 gives 410. A function, so the load tests can
+    // compare it with what the engine was given.
     function pageZoom() {
         return Math.round(Theme.pixelRatio * 1.75 / 0.5) * 0.5
     }
 
-    function engineZoom() {
-        return WebEngineSettings.pixelRatio
+    // The engine's own anti-tracking, at the level Settings holds
+    // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
+    // keeps until it is up, and again whenever the level changes.
+    function applyTrackingProtection() {
+        var preferences = EngineMessages.trackingProtectionPreferences(Settings.trackingProtection)
+        for (var i = 0; i < preferences.length; ++i) {
+            WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
+        }
     }
 
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
+    }
+
+    Connections {
+        target: Settings
+        onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 
     Connections {
@@ -275,9 +286,10 @@ WebViewPage {
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
         // Downloads go to a folder of this browser's own, without the engine asking
-        // where each time (docs/DECISIONS/0023-downloads-folder.md).
+        // where each time (docs/DECISIONS/0025-downloads-folder.md).
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
+        applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }
@@ -497,7 +509,7 @@ WebViewPage {
             }
 
             function fetchFavicon() {
-                var pageUrl = url
+                var pageUrl = reader.active ? reader.source : url
                 runJavaScript(EngineMessages.faviconScript, function (href) {
                     TabModel.updateFavicon(tabId, EngineMessages.resolveFavicon(pageUrl, href))
                 }, function () {
@@ -550,7 +562,11 @@ WebViewPage {
                 }, Qt.size(width / 2, height / 2))
             }
 
-            onUrlChanged: TabModel.updateUrl(tabId, url)
+            // Whether the page reads as an article, and the article's own address while
+            // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
+            property ReaderMode reader: ReaderMode { view: webView }
+
+            onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 // What sleeps is a document, and one that arrives while its view is

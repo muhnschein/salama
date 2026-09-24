@@ -30,19 +30,27 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   notifications, because the platform's list of transfers is closed to a Harbour
   application and would not hold a `Sailfish.WebView` application's downloads anyway;
   and the folder the engine saves them to, `~/Downloads/Salama`
-  (`DECISIONS/0023-downloads-folder.md`).
-- `Settings` — home page, search engine, desktop mode, cover style, address-bar heuristics.
-- `EngineMessages` — the engine-specific strings QML hands to the engine.
+  (`DECISIONS/0025-downloads-folder.md`).
+- `Settings` — home page, search engine, desktop mode, cover style, tracking protection
+  level, the reader view's look, address-bar heuristics.
+- `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
+  preferences each tracking-protection level stands for, which `BrowserPage` writes through
+  `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
+- `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
+  and compiled in, handed to the page to find its article, and the page the article is
+  then shown on (`DECISIONS/0024-reader-view.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 
 ## Data flow
 
 1. The engine reports `url`, `title` and load state on a `WebView`.
-2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon`, and
+2. `BrowserPage` forwards them to `TabModel.updateUrl/updateTitle/updateFavicon` -- for a
+   reader view, the address of the page it was made from, which `Reader.sourceUrl` reads
+   out of the view's own `data:` url -- and
    grabs a page preview into the path `TabModel.thumbnailPath()` hands out — on load
    completion, when the grid opens, and as the application leaves the screen — reporting
    it back through `updateThumbnail()`.

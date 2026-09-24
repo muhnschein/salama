@@ -1,4 +1,4 @@
-# 0023 — Downloads go to a folder of their own
+# 0025 — Downloads go to a folder of their own
 
 ## Context
 Where a download is saved is decided by embedlite-components'

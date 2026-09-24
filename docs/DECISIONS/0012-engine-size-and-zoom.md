@@ -15,10 +15,11 @@ a phone-shaped layout is usually written for, and larger text with it. Going fur
 2.0 — would take the layout below 320 css pixels, which is narrower than anything sites
 are built for.
 
-`pageZoom()` computes it and `engineZoom()` reads back what the engine has, so the load
-tests can compare the two. An expression evaluated against the page from outside cannot
-see the `Sailfish.WebEngine` import: the context a QML object hands out is the one it was
-*created* in, not its own.
+`pageZoom()` computes it, and the load tests compare that with the
+`WebEngineSettings.pixelRatio` the engine was given. They read it through the page's
+`WebView`, not the page itself. The context a QML object hands out is the one it was
+*created* in, not its own: the page's has no `Sailfish.WebEngine` import, and the view,
+created in `BrowserPage.qml`, has that file's.
 
 **Size.** The deck's layers are `fullHeight` tall — the tallest the page has ever been —
 rather than the page's current height. Silica shrinks a page while the keyboard is up, and
