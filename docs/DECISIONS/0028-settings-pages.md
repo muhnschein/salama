@@ -38,7 +38,7 @@ taken as it is, as Firefox's Home settings offer them, or the default again
 (`pages/HomePageSettingsPage.qml`, the bookmark picked as the cover's is, 0029). *Search*: the engine, and under *Address bar suggestions* a switch
 for each source the bar suggests from — open tabs, bookmarks, history, downloads (0027).
 *Reader view*: its colours, typeface and text size (0024). *Cover*: what the cover shows
-(0014) and its quick action (0029). *Privacy*: tracking protection (0023). *History*: whether
+(0014, 0031) and its quick action (0029). *Privacy*: tracking protection (0023). *History*: whether
 it is kept and cleared on closing, and the way to clear browsing data (0030). *Reader
 view* shows a few lines of an article under its controls, set as they set it (0024). The
 controls moved as they were, and each still writes its setting as

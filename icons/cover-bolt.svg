@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- The cover's bolt: the launcher icon's own (harbour-salama.svg), alone, in white, fading
+     from its tip to its foot. The cover tints it with the ambience's highlight colour and
+     stretches it over the box it gives it (qml/components/CoverLightning.qml), so the view
+     box is the bolt's own bounds and nothing keeps its aspect. Rendered to PNG by
+     icons/render.sh. -->
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="414"
+   height="1024"
+   viewBox="30 14 29.8 55"
+   preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.2" />
+    </linearGradient>
+  </defs>
+  <path
+     fill="url(#fade)"
+     d="m 56.241545,14.05016 c 0,0 -0.543392,0.377734 -1.162202,0.79027 -0.618808,0.412541 -10.478498,11.716118 -10.478498,11.716118 l -10.230973,12.541195 -4.04289,5.404264 c 0,0 -0.701311,1.567648 0.94884,1.361381 1.650158,-0.206269 10.437248,-0.783824 10.437248,-0.783824 0,0 0.536301,-0.08251 0.288777,0.453795 -0.247523,0.536296 -9.034612,23.390977 -9.034612,23.390977 L 57.34831,40.046581 59.493514,37.200062 c 0,0 0.701318,-1.031345 -0.412539,-1.361379 -1.113856,-0.330029 -10.80853,0.783823 -10.80853,0.783823 0,0 -0.618809,0.206274 -0.165016,-1.072598 0.453793,-1.278873 8.134116,-21.499748 8.134116,-21.499748 z" />
+</svg>

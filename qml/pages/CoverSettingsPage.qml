@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The cover: how much of itself it shows on the home screen
-// (docs/DECISIONS/0014-cover-is-the-tab-count.md, 0028-settings-pages.md), and the one
-// quick action it offers there (0029-quick-action.md).
+// The cover: what it shows on the home screen, the lightning or the last tab
+// (docs/DECISIONS/0031-cover-is-lightning.md, 0028-settings-pages.md), and the one quick
+// action it offers there (0029-quick-action.md).
 //
 // The action is one choice among six, made in a row drawn as Silica draws a ComboBox,
 // under a line saying why there is one and two pictures of the cover with it. Choosing a
@@ -117,9 +117,9 @@ Page {
                 title: qsTr("Cover")
             }
 
-            // The order is how much the cover says, least first, and the index is the
-            // stored value -- Settings.CoverIconOnly, CoverLatestTab, CoverEveryTab.
-            // A combo rather than three switches: these are one choice, not three.
+            // The default first, and the index is the stored value -- Settings.CoverLightning,
+            // CoverLatestTab (docs/DECISIONS/0031-cover-is-lightning.md). A combo rather
+            // than a switch: which of two covers it is, not something turned on or off.
             ComboBox {
                 objectName: "coverStyleCombo"
                 width: parent.width
@@ -127,21 +127,13 @@ Page {
                 currentIndex: Settings.coverStyle
                 menu: ContextMenu {
                     MenuItem {
-                        objectName: "coverIconOnlyItem"
-                        text: qsTr("The icon alone")
+                        objectName: "coverLightningItem"
+                        text: qsTr("Lightning")
                     }
 
                     MenuItem {
                         objectName: "coverLatestTabItem"
                         text: qsTr("The tab count and the last tab")
-                    }
-
-                    // "Most recent" rather than "every": the field draws six cells at
-                    // most, most recently read first, and the number above it is what
-                    // says how many there are (docs/DECISIONS/0014-cover-is-the-tab-count.md).
-                    MenuItem {
-                        objectName: "coverEveryTabItem"
-                        text: qsTr("The tab count and the most recent tabs")
                     }
                 }
                 onCurrentIndexChanged: Settings.coverStyle = currentIndex

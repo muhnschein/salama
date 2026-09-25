@@ -65,19 +65,21 @@ class Settings : public QObject
     Q_PROPERTY(QStringList quickActionIcons READ quickActionIcons CONSTANT)
 
 public:
-    // How much of itself the cover shows; see docs/DECISIONS/0014-cover-is-the-tab-count.md.
-    // The values are stored, so their numbers are part of the file format.
+    // What the cover shows; see docs/DECISIONS/0031-cover-is-lightning.md. The values
+    // are stored, so their numbers are part of the file format. 0 and 1 are the numbers
+    // the icon-only and last-tab covers had, so a reader who chose the one gets the
+    // lightning and a reader who chose the other keeps it; the every-tab cover's 2 is
+    // out of range now, and reads back as the lightning as any such value does.
     //
     // Unscoped on purpose, and not the oversight SonarQube reads it as (cpp:S3642):
-    // the cover reaches these as `Settings.CoverIconOnly`, and QML could not do that
+    // the cover reaches these as `Settings.CoverLatestTab`, and QML could not do that
     // with a scoped enum until Qt 5.8. This application is built against 5.6 (SCOPE.md
     // §4), so `enum class` here would compile on the host and leave the cover blank on
     // the phone. TabModel::Role is unscoped for the same reason.
     enum CoverStyle
     {
-        CoverIconOnly = 0,
-        CoverLatestTab = 1,
-        CoverEveryTab = 2
+        CoverLightning = 0,
+        CoverLatestTab = 1
     };
     Q_ENUM(CoverStyle)
 

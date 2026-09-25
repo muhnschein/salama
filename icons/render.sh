@@ -8,15 +8,11 @@ for size in 86 108 128 172; do
     rsvg-convert -w "$size" -h "$size" harbour-salama.svg -o "${size}x${size}/harbour-salama.png"
 done
 
-# And once more into art/, which is installed beside the QML: the cover draws the icon
-# itself in its icon-only style, and that needs a file an Image can resolve on the
-# device. Not inside qml/ -- ci/harbour-check.sh holds that directory to QML files
-# alone. Twice the largest launcher size, because a cover is half a screen wide and the
-# icon is drawn across a good part of it.
-mkdir -p ../art
-rsvg-convert -w 344 -h 344 harbour-salama.svg -o ../art/harbour-salama.png
-
-# And the cover's own quick-action icons, icons/cover/*.svg, into art/cover/, as
+# The cover's own pictures go into art/, which is installed beside the QML so that an
+# Image can resolve them on the device. Not inside qml/ -- ci/harbour-check.sh holds that
+# directory to QML files alone.
+#
+# First its quick-action icons, icons/cover/*.svg, into art/cover/, as
 # <name>-<size>-<ink>.png. The home screen draws a cover action's icon itself, from the
 # file, so the picture has to arrive at the size and in the colour it is shown in: one
 # per size Silica's small icon takes at the scales a phone runs at, 1.0 to 2.0, in white
@@ -36,4 +32,10 @@ for source in cover/*.svg; do
             -o "../art/cover/$name-$size-black.png"
     done
 done
+
+# Then the bolt the cover is drawn with, once, in white: the cover tints it with the
+# ambience's highlight colour itself (qml/components/CoverLightning.qml). Taller than a
+# cover is on any phone this runs on, so it is only ever drawn smaller, and at the
+# aspect the cover stretches it to, so it is not drawn out of shape on the way.
+rsvg-convert -w 414 -h 1024 cover-bolt.svg -o ../art/cover/bolt.png
 echo "icons rendered"

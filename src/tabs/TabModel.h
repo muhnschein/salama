@@ -36,9 +36,9 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(QString activeUrl READ activeUrl NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeFavicon READ activeFavicon NOTIFY activeTabDataChanged)
-    // The open tabs' previews, most recently in front first. What the cover draws its
-    // field from (docs/DECISIONS/0014-cover-is-the-tab-count.md); a tab with no picture
-    // is an empty string rather than a gap, so the list is always as long as count.
+    // The open tabs' previews, most recently in front first. The last-tab cover draws
+    // the first (docs/DECISIONS/0031-cover-is-lightning.md); a tab with no picture is an
+    // empty string rather than a gap, so the list is always as long as count.
     Q_PROPERTY(QStringList recentThumbnails READ recentThumbnails NOTIFY recentTabsChanged)
     // The group the grid shows and new tabs open in. It follows the active tab, and
     // choosing another group brings that group's most recent tab to the front.

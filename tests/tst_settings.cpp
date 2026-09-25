@@ -118,40 +118,53 @@ void tst_settings::coverStyle()
     Settings settings(path);
     QSignalSpy spy(&settings, &Settings::coverStyleChanged);
 
-    // Every tab by default: the cover a reader who has not been to Settings gets.
-    QCOMPARE(settings.coverStyle(), int(Settings::CoverEveryTab));
+    // The lightning by default: the cover a reader who has not been to Settings gets.
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverLightning));
 
-    settings.setCoverStyle(Settings::CoverIconOnly);
-    QCOMPARE(settings.coverStyle(), int(Settings::CoverIconOnly));
+    settings.setCoverStyle(Settings::CoverLatestTab);
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverLatestTab));
     QCOMPARE(spy.count(), 1);
 
     // Setting what is already set says nothing.
-    settings.setCoverStyle(Settings::CoverIconOnly);
+    settings.setCoverStyle(Settings::CoverLatestTab);
     QCOMPARE(spy.count(), 1);
 
     // A value from outside the range is refused rather than stored: this comes from a
-    // file a user can edit.
+    // file a user can edit. 2 among them, the number the every-tab cover had.
     settings.setCoverStyle(7);
+    settings.setCoverStyle(2);
     settings.setCoverStyle(-1);
-    QCOMPARE(settings.coverStyle(), int(Settings::CoverIconOnly));
+    QCOMPARE(settings.coverStyle(), int(Settings::CoverLatestTab));
     QCOMPARE(spy.count(), 1);
-
-    settings.setCoverStyle(Settings::CoverLatestTab);
-    QCOMPARE(spy.count(), 2);
     {
         Settings again(path);
         QCOMPARE(again.coverStyle(), int(Settings::CoverLatestTab));
     }
 
-    // One written by hand, out of range: read back as the default, not as a cover that
-    // draws nothing.
-    {
-        QSettings raw(path, QSettings::IniFormat);
-        raw.setValue(QStringLiteral("coverStyle"), 42);
-    }
+    settings.setCoverStyle(Settings::CoverLightning);
+    QCOMPARE(spy.count(), 2);
     {
         Settings again(path);
-        QCOMPARE(again.coverStyle(), int(Settings::CoverEveryTab));
+        QCOMPARE(again.coverStyle(), int(Settings::CoverLightning));
+    }
+
+    // What the covers before the lightning left in the file. The icon alone was 0 and
+    // the last tab 1, which the numbers still mean; every tab was 2, and reads back as
+    // the default, as any value out of range does rather than as a cover that draws
+    // nothing.
+    const QList<QPair<int, int>> stored{
+        {0, Settings::CoverLightning},
+        {1, Settings::CoverLatestTab},
+        {2, Settings::CoverLightning},
+        {42, Settings::CoverLightning},
+    };
+    for (const QPair<int, int> &entry : stored) {
+        {
+            QSettings raw(path, QSettings::IniFormat);
+            raw.setValue(QStringLiteral("coverStyle"), entry.first);
+        }
+        Settings again(path);
+        QCOMPARE(again.coverStyle(), entry.second);
     }
 }
 

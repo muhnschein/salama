@@ -41,6 +41,23 @@ public:
     Q_ENUM(Value)
 };
 
+// Where a cover is in coming into view on the home screen, as a page's status says
+// where it is on the stack.
+class Cover : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Status
+    {
+        Inactive = 0,
+        Activating = 1,
+        Active = 2,
+        Deactivating = 3
+    };
+    Q_ENUM(Status)
+};
+
 class Dock : public QObject
 {
     Q_OBJECT

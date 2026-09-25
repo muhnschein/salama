@@ -9,13 +9,13 @@
 // the mute is alone while a tab plays, and a dot keeps the action's place while nothing
 // does.
 //
-// What is behind the actions is the cover as it is set to show itself -- the app's mark
-// alone, or the heading over the tab last read or over the most recent tabs -- drawn as
-// where things go rather than as what they are: bars for the words, blank cells for the
-// pages. Every measure is the cover's own (cover/CoverPage.qml) scaled from a real cover's
-// size, so the pictures the actions wear are as large against it as they will be there,
-// and they are the very files the cover hands the home screen. Not a button: the picture
-// only follows the choices under it.
+// What is behind the actions is the cover as it is set to show itself. The lightning is
+// the cover's own, at rest (components/CoverLightning.qml); the heading over the tab last
+// read is drawn as where things go rather than as what they are: bars for the words, a
+// blank cell for the page. Every measure is the cover's own (cover/CoverPage.qml) scaled
+// from a real cover's size, so the pictures the actions wear are as large against it as
+// they will be there, and they are the very files the cover hands the home screen. Not a
+// button: the picture only follows the choices under it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -35,8 +35,7 @@ Item {
     // How much smaller than a real cover the picture is.
     readonly property real ratio: width / Theme.coverSizeLarge.width
     readonly property real iconSize: Theme.iconSizeSmall * ratio
-    readonly property bool iconOnly: Settings.coverStyle === Settings.CoverIconOnly
-    readonly property bool everyTab: Settings.coverStyle === Settings.CoverEveryTab
+    readonly property bool latestTab: Settings.coverStyle === Settings.CoverLatestTab
     // The actions along the foot, left to right: the one alone, or the action and the
     // mute beside it, or the mute alone, or none.
     readonly property var actions: {
@@ -63,15 +62,13 @@ Item {
         color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityHigh)
         clip: true
 
-        // The icon-only cover: the app's own mark, as large against the cover as there.
-        Image {
-            anchors.centerIn: parent
-            width: Math.round(parent.width * 0.45)
-            height: width
-            visible: preview.iconOnly
-            opacity: Theme.opacityHigh
-            smooth: true
-            source: Qt.resolvedUrl("../../art/harbour-salama.png")
+        // The lightning, as the cover draws it, and still: the flash is for the home
+        // screen, not for a page of settings.
+        CoverLightning {
+            objectName: "previewLightning"
+            anchors.fill: parent
+            visible: !preview.latestTab
+            onDark: preview.onDark
         }
 
         // The heading: the name and what the number counts, top left, and the number top
@@ -81,7 +78,7 @@ Item {
 
             x: Theme.paddingLarge * preview.ratio
             y: x
-            visible: !preview.iconOnly
+            visible: preview.latestTab
             spacing: Theme.paddingSmall * preview.ratio
 
             Rectangle {
@@ -106,7 +103,7 @@ Item {
                 topMargin: Theme.paddingMedium * preview.ratio
                 rightMargin: Theme.paddingLarge * preview.ratio
             }
-            visible: !preview.iconOnly
+            visible: preview.latestTab
             width: Theme.fontSizeHuge * preview.ratio / 2
             height: Theme.fontSizeHuge * preview.ratio * 0.7
             radius: Theme.paddingSmall * preview.ratio
@@ -115,33 +112,16 @@ Item {
             opacity: Theme.opacityHigh
         }
 
-        // The tabs, grey and half there: the one last read across the whole of the room,
-        // or the most recent in two columns.
-        Grid {
-            id: field
-
-            readonly property real gap: Theme.paddingSmall * preview.ratio
-            readonly property int rows: preview.everyTab ? 3 : 1
-
+        // The tab last read, grey and half there, across the whole of the room.
+        Rectangle {
             x: Theme.paddingMedium * preview.ratio
             y: heading.y + heading.height + Theme.paddingLarge * preview.ratio
             width: picture.width - 2 * x
             height: picture.height - y - x
-            visible: !preview.iconOnly
+            visible: preview.latestTab
             opacity: Theme.opacityLow
-            columns: preview.everyTab ? 2 : 1
-            spacing: gap
-
-            Repeater {
-                model: field.rows * field.columns
-
-                Rectangle {
-                    width: (field.width - (field.columns - 1) * field.gap) / field.columns
-                    height: (field.height - (field.rows - 1) * field.gap) / field.rows
-                    radius: field.gap
-                    color: Theme.secondaryColor
-                }
-            }
+            radius: Theme.paddingSmall * preview.ratio
+            color: Theme.secondaryColor
         }
 
         // Where the home screen draws the actions: across the strip along the foot, a

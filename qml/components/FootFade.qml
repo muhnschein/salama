@@ -8,7 +8,7 @@
 // straight ramp reads as a wash laid over the picture. Nothing is laid on top: the
 // picture gets out of the way.
 //
-// One gradient, as the cover's field fades under its heading (CoverTabField.qml),
+// One gradient, as the cover's picture fades under its heading (CoverTabPicture.qml),
 // stepped in quarters for the curve.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0

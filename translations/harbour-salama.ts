@@ -217,15 +217,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The icon alone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The tab count and the last tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the most recent tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -291,6 +283,10 @@
     <message>
         <source>Action</source>
         <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lightning</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -217,16 +217,8 @@
         <translation>Näyttää</translation>
     </message>
     <message>
-        <source>The icon alone</source>
-        <translation>Vain kuvakkeen</translation>
-    </message>
-    <message>
         <source>The tab count and the last tab</source>
         <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
-    </message>
-    <message>
-        <source>The tab count and the most recent tabs</source>
-        <translation>Välilehtien määrän ja viimeisimmät välilehdet</translation>
     </message>
     <message>
         <source>None</source>
@@ -292,6 +284,10 @@
         <source>Action</source>
         <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
         <translation>Toiminto</translation>
+    </message>
+    <message>
+        <source>Lightning</source>
+        <translation>Salaman</translation>
     </message>
 </context>
 <context>

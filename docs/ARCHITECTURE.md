@@ -68,12 +68,13 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 4. `Core` wires those signals to `HistoryModel` and `BookmarkModel`. There are no
    private tabs (`DECISIONS/0019-no-private-tabs.md`).
 5. `TabModel.activeTabDataChanged` feeds the address bar and
-   `BookmarkModel.activeUrl`. The cover reads `count` and the rows themselves: it says
-   how many tabs are open over a monochrome field of their previews, most recently in
-   front first (`TabModel.recentThumbnails`, ordered by each tab's `last_active` stamp),
-   and names no page (`DECISIONS/0014-cover-is-the-tab-count.md`). Its quick action is
-   carried out by the root window, which has the page stack and the browsing page a
-   cover lacks (`DECISIONS/0029-quick-action.md`).
+   `BookmarkModel.activeUrl`. The cover reads nothing by default: it is the bolt, with
+   a flash as it comes into view. Set to the last tab, it reads `count` and the first of
+   `TabModel.recentThumbnails` (ordered by each tab's `last_active` stamp), and says how
+   many tabs are open over a monochrome picture of the one last in front, naming no page
+   (`DECISIONS/0031-cover-is-lightning.md`). Its quick action is carried out by the root
+   window, which has the page stack and the browsing page a cover lacks
+   (`DECISIONS/0029-quick-action.md`).
 
 Views: one `WebView` per tab that has been shown this session and is among the
 `TabModel::LiveTabLimit` (five) most recently in front, created lazily by a `Loader` over

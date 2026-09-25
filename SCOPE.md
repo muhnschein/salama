@@ -75,7 +75,7 @@ Reuse policy:
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
 - Settings: a main page leading to a page each for the home page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
-- Cover: the tab count over a field of page previews, in one of three styles chosen in Settings, and one quick action chosen there beside the playing tab's mute
+- Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings, and one quick action chosen there beside the playing tab's mute
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2
