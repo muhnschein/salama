@@ -262,7 +262,7 @@ QString HistoryModel::inputKey(const QString &input)
     return input.trimmed().toLower();
 }
 
-void HistoryModel::recordInput(const QString &input, const QString &url)
+void HistoryModel::recordInput(const QString &input, const QString &url) const
 {
     const QString key = inputKey(input);
     if (key.isEmpty() || !isRecordable(url)) {

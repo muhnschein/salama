@@ -52,6 +52,147 @@ int matchOf(const SearchWords &words, const OmnibarRow &row)
     return words.prefixesAWordOf(row.title) || words.prefixesAWordOf(row.url) ? 1 : 2;
 }
 
+// What is typed, and what it is known to lead to (HistoryModel::inputRanks).
+struct Search
+{
+    const SearchWords &words;
+    QHash<QString, double> learnt;
+
+    // A candidate is listed when it holds every word, or when what is typed has led to
+    // it before.
+    bool wants(const QString &title, const QString &url) const
+    {
+        return learnt.contains(url) || words.matches({title, url});
+    }
+};
+
+// The pages gathered so far, and where each address is among them.
+struct Pages
+{
+    QList<Page> list;
+    QHash<QString, int> byUrl;
+
+    void add(const Page &page)
+    {
+        byUrl.insert(page.row.url, list.count());
+        list.append(page);
+    }
+};
+
+// Every group's tabs but the one in front, most recently in front first, so of two tabs
+// on one page the nearer to hand is it.
+void addTabs(Pages &pages, const TabModel &model, const Search &search)
+{
+    QList<const Tab *> tabs;
+    for (const Tab &tab : model.tabs()) {
+        if (tab.id != model.activeTabId() && search.wants(tab.title, tab.url)) {
+            tabs.append(&tab);
+        }
+    }
+    std::stable_sort(tabs.begin(), tabs.end(), [](const Tab *one, const Tab *other) {
+        return one->lastActive > other->lastActive;
+    });
+    for (const Tab *tab : tabs) {
+        if (pages.byUrl.contains(tab->url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::Tab;
+        page.row.id = tab->id;
+        page.row.title = orUrl(tab->title, tab->url);
+        page.row.url = tab->url;
+        page.row.favicon = tab->favicon;
+        page.row.groupId = tab->groupId;
+        const int group = model.groupIndexOf(tab->groupId);
+        page.row.groupName = group >= 0 ? model.groups().at(group).name : QString();
+        page.row.groupTabCount = model.tabCountInGroup(tab->groupId);
+        pages.add(page);
+    }
+}
+
+// In the bookmarks' own order, but for those open in a tab listed.
+void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search)
+{
+    for (const BookmarkModel::Bookmark &bookmark : model.bookmarks()) {
+        if (pages.byUrl.contains(bookmark.url) || !search.wants(bookmark.title, bookmark.url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::Bookmark;
+        page.row.id = bookmark.id;
+        page.row.title = orUrl(bookmark.title, bookmark.url);
+        page.row.url = bookmark.url;
+        page.row.favicon = bookmark.favicon;
+        page.lastUsed = bookmark.created;
+        pages.add(page);
+    }
+}
+
+// The visits of the pages already gathered, and -- when the history is a source -- the
+// pages of it that are not, newest first.
+void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search)
+{
+    for (const HistoryModel::Entry &entry : model.allEntries()) {
+        const auto known = pages.byUrl.constFind(entry.url);
+        if (known != pages.byUrl.cend()) {
+            Page &page = pages.list[known.value()];
+            page.visits = entry.visitCount;
+            page.lastUsed = std::max(page.lastUsed, entry.date.toMSecsSinceEpoch());
+            continue;
+        }
+        if (!listed || !search.wants(entry.title, entry.url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::History;
+        page.row.id = entry.id;
+        page.row.title = orUrl(entry.title, entry.url);
+        page.row.url = entry.url;
+        page.row.date = entry.date;
+        page.visits = entry.visitCount;
+        page.lastUsed = entry.date.toMSecsSinceEpoch();
+        pages.add(page);
+    }
+}
+
+// What a page is ranked by. A tab the history does not know is open now, which is a
+// visit now.
+void score(Page &page, const Search &search, bool bookmarked, qint64 now)
+{
+    page.row.host = Settings::displayAddress(page.row.url);
+    page.row.bookmarked = bookmarked;
+    page.match = matchOf(search.words, page.row);
+    page.learnt = search.learnt.value(page.row.url);
+    if (page.row.kind == OmnibarKind::Tab && page.visits == 0) {
+        page.lastUsed = now;
+    }
+    page.frecency = OmnibarModel::frecency(page.visits, bookmarked, page.lastUsed, now);
+}
+
+// The pages chosen before, the likeliest first, no more than OmnibarModel::MaxLearnt;
+// then the rest by how well they match and how often and how lately they were used.
+void rank(QList<Page> &pages)
+{
+    std::stable_sort(pages.begin(), pages.end(), [](const Page &one, const Page &other) {
+        if (one.learnt != other.learnt) {
+            return one.learnt > other.learnt;
+        }
+        return one.frecency > other.frecency;
+    });
+    int learntFirst = 0;
+    while (learntFirst < pages.count() && learntFirst < OmnibarModel::MaxLearnt &&
+           pages.at(learntFirst).learnt > 0) {
+        ++learntFirst;
+    }
+    std::stable_sort(pages.begin() + learntFirst, pages.end(),
+                     [](const Page &one, const Page &other) {
+                         if (one.match != other.match) {
+                             return one.match < other.match;
+                         }
+                         return one.frecency > other.frecency;
+                     });
+}
+
 QString kindName(OmnibarKind kind)
 {
     switch (kind) {
@@ -315,123 +456,28 @@ QList<OmnibarRow> OmnibarModel::emptyRows() const
 QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) const
 {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
-    const QHash<QString, double> learnt = m_history->inputRanks(m_query, now);
-    const auto wanted = [&words, &learnt](const QString &title, const QString &url) {
-        return learnt.contains(url) || words.matches({title, url});
-    };
+    const Search search{words, m_history->inputRanks(m_query, now)};
+    Pages pages;
+    if (m_settings->omnibarTabs()) {
+        addTabs(pages, *m_tabs, search);
+    }
+    if (m_settings->omnibarBookmarks()) {
+        addBookmarks(pages, *m_bookmarks, search);
+    }
+    addHistory(pages, *m_history, m_settings->omnibarHistory(), search);
+
     QSet<QString> bookmarked;
     for (const BookmarkModel::Bookmark &bookmark : m_bookmarks->bookmarks()) {
         bookmarked.insert(bookmark.url);
     }
-    QList<Page> pages;
-    QHash<QString, int> byUrl;
-
-    // Most recently in front first, so of two tabs on one page the nearer to hand is it.
-    if (m_settings->omnibarTabs()) {
-        QList<const Tab *> tabs;
-        for (const Tab &tab : m_tabs->tabs()) {
-            if (tab.id != m_tabs->activeTabId() && wanted(tab.title, tab.url)) {
-                tabs.append(&tab);
-            }
-        }
-        std::stable_sort(tabs.begin(), tabs.end(), [](const Tab *one, const Tab *other) {
-            return one->lastActive > other->lastActive;
-        });
-        for (const Tab *tab : tabs) {
-            if (byUrl.contains(tab->url)) {
-                continue;
-            }
-            Page page;
-            page.row.kind = OmnibarKind::Tab;
-            page.row.id = tab->id;
-            page.row.title = orUrl(tab->title, tab->url);
-            page.row.url = tab->url;
-            page.row.favicon = tab->favicon;
-            page.row.groupId = tab->groupId;
-            const int group = m_tabs->groupIndexOf(tab->groupId);
-            page.row.groupName = group >= 0 ? m_tabs->groups().at(group).name : QString();
-            page.row.groupTabCount = m_tabs->tabCountInGroup(tab->groupId);
-            byUrl.insert(tab->url, pages.count());
-            pages.append(page);
-        }
+    for (Page &page : pages.list) {
+        score(page, search, bookmarked.contains(page.row.url), now);
     }
-
-    if (m_settings->omnibarBookmarks()) {
-        for (const BookmarkModel::Bookmark &bookmark : m_bookmarks->bookmarks()) {
-            if (byUrl.contains(bookmark.url) || !wanted(bookmark.title, bookmark.url)) {
-                continue;
-            }
-            Page page;
-            page.row.kind = OmnibarKind::Bookmark;
-            page.row.id = bookmark.id;
-            page.row.title = orUrl(bookmark.title, bookmark.url);
-            page.row.url = bookmark.url;
-            page.row.favicon = bookmark.favicon;
-            page.lastUsed = bookmark.created;
-            byUrl.insert(bookmark.url, pages.count());
-            pages.append(page);
-        }
-    }
-
-    for (const HistoryModel::Entry &entry : m_history->allEntries()) {
-        const auto known = byUrl.constFind(entry.url);
-        if (known != byUrl.cend()) {
-            Page &page = pages[known.value()];
-            page.visits = entry.visitCount;
-            page.lastUsed = std::max(page.lastUsed, entry.date.toMSecsSinceEpoch());
-            continue;
-        }
-        if (!m_settings->omnibarHistory() || !wanted(entry.title, entry.url)) {
-            continue;
-        }
-        Page page;
-        page.row.kind = OmnibarKind::History;
-        page.row.id = entry.id;
-        page.row.title = orUrl(entry.title, entry.url);
-        page.row.url = entry.url;
-        page.row.date = entry.date;
-        page.visits = entry.visitCount;
-        page.lastUsed = entry.date.toMSecsSinceEpoch();
-        byUrl.insert(entry.url, pages.count());
-        pages.append(page);
-    }
-
-    for (Page &page : pages) {
-        page.row.host = Settings::displayAddress(page.row.url);
-        page.row.bookmarked = bookmarked.contains(page.row.url);
-        page.match = matchOf(words, page.row);
-        page.learnt = learnt.value(page.row.url);
-        // A tab the history does not know is open now, which is a visit now.
-        if (page.row.kind == OmnibarKind::Tab && page.visits == 0) {
-            page.lastUsed = now;
-        }
-        page.frecency = frecency(page.visits, page.row.bookmarked, page.lastUsed, now);
-    }
-
-    // The pages chosen before, the likeliest first; then the rest by how well they
-    // match and how often and how lately they were used.
-    std::stable_sort(pages.begin(), pages.end(), [](const Page &one, const Page &other) {
-        if (one.learnt != other.learnt) {
-            return one.learnt > other.learnt;
-        }
-        return one.frecency > other.frecency;
-    });
-    int learntFirst = 0;
-    while (learntFirst < pages.count() && learntFirst < MaxLearnt &&
-           pages.at(learntFirst).learnt > 0) {
-        ++learntFirst;
-    }
-    std::stable_sort(pages.begin() + learntFirst, pages.end(),
-                     [](const Page &one, const Page &other) {
-                         if (one.match != other.match) {
-                             return one.match < other.match;
-                         }
-                         return one.frecency > other.frecency;
-                     });
+    rank(pages.list);
 
     QList<OmnibarRow> rows;
-    for (int i = 0; i < pages.count() && i < room; ++i) {
-        rows.append(pages.at(i).row);
+    for (int i = 0; i < pages.list.count() && i < room; ++i) {
+        rows.append(pages.list.at(i).row);
     }
     return rows;
 }

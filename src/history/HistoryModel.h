@@ -105,7 +105,7 @@ public:
     // one over nine tenths of what was counted before, so a habit that changes is
     // followed (UrlbarUtils.addToInputHistory). Empty text or an address the history
     // would not keep is not learnt.
-    void recordInput(const QString &input, const QString &url);
+    void recordInput(const QString &input, const QString &url) const;
     // How strongly what is typed now leads to each page, by address: for every text
     // learnt that begins with it, its count, twice that when the text is the very one,
     // worn down by a fortieth for each day since it was last chosen, as Firefox wears
