@@ -204,6 +204,34 @@ void tst_reader::colors()
     QCOMPARE(m_reader->colorScheme(true), QStringLiteral("light"));
     m_settings->setReaderColors(Settings::ReaderDark);
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("dark"));
+
+    // Asked for a setting rather than the one set, as the settings' preview asks.
+    QCOMPARE(Reader::schemeFor(Settings::ReaderAmbience, true), QStringLiteral("dark"));
+    QCOMPARE(Reader::schemeFor(Settings::ReaderAmbience, false), QStringLiteral("light"));
+    QCOMPARE(Reader::schemeFor(Settings::ReaderSepia, true), QStringLiteral("sepia"));
+    QCOMPARE(Reader::schemeFor(99, false), QStringLiteral("light"));
+
+    // The style sheet's colours for each theme.
+    QCOMPARE(Reader::backgroundOf(QStringLiteral("light")), QColor(QStringLiteral("#ffffff")));
+    QCOMPARE(Reader::backgroundOf(QStringLiteral("sepia")), QColor(244, 236, 216));
+    QCOMPARE(Reader::backgroundOf(QStringLiteral("dark")), QColor(28, 27, 34));
+    QCOMPARE(Reader::textColorOf(QStringLiteral("light")), QColor(21, 20, 26));
+    QCOMPARE(Reader::textColorOf(QStringLiteral("sepia")), QColor(91, 70, 54));
+    QCOMPARE(Reader::textColorOf(QStringLiteral("dark")), QColor(251, 251, 254));
+    QCOMPARE(Reader::linkColorOf(QStringLiteral("light")), QColor(0, 97, 224));
+    QCOMPARE(Reader::linkColorOf(QStringLiteral("sepia")), QColor(0, 97, 224));
+    QCOMPARE(Reader::linkColorOf(QStringLiteral("dark")), QColor(0, 221, 255));
+    QFile sheet(QStringLiteral(SALAMA_SOURCE_DIR "/src/reader/reader.css"));
+    QVERIFY(sheet.open(QIODevice::ReadOnly | QIODevice::Text));
+    const QString css = QString::fromUtf8(sheet.readAll());
+    QVERIFY(css.contains(QStringLiteral("--dark-theme-background: rgb(28, 27, 34);")));
+    QVERIFY(css.contains(QStringLiteral("--main-foreground: rgb(91, 70, 54);")));
+    QVERIFY(css.contains(QStringLiteral("--primary-color: rgb(0, 221, 255);")));
+
+    // Firefox's text sizes: 10 and two more a step.
+    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeMin), 12);
+    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeDefault), 20);
+    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeMax), 28);
 }
 
 void tst_reader::refusesWhatIsNoArticle()

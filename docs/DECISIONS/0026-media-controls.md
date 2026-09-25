@@ -70,10 +70,13 @@ the one place it can play, with the grid left open.
   slim bar, where a tap brings the whole bar back, as any tap on it does (0009). What
   lies between back's region and the host is its to tap.
 - On the cover, while the tab in front plays or is muted, a second action beside the
-  search (0014). The home screen draws an action's picture from its file as it is, so
+  one quick action the reader chose (0014, 0029), and the only one when the reader chose
+  none; the quick action's place is the first, the mute's the second, and the cover's
+  settings say so. The home screen draws an action's picture from its file as it is, so
   the two speakers are drawn for it (`icons/cover/`, rendered by `icons/render.sh` into
   `art/cover/` at each size Silica's small icon takes, in white and in black), as piirit
-  draws its own; the theme's `icon-cover-mute` is not used, its glyph unchecked.
+  draws its own, and the quick action's glyphs are drawn beside them; the theme's
+  `icon-cover-mute` is not used, its glyph unchecked.
 - The glyphs are `icon-m-speaker-on` and `icon-m-speaker-mute`, those of the Harbour
   players that mute (Jupii, harbour-sailfishconnect). Neither has a small size, so they
   are drawn smaller.

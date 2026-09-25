@@ -10,8 +10,8 @@
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
 the engine package fails to open that page, not the application. `Sailfish.WebEngine`
-is imported there and in `SettingsPage.qml` (data clearing). `tests/tst_qmlstatic.cpp`
-enforces both.
+is imported there and in `HistorySettingsPage.qml`, which clears browsing data behind
+its dialog (`DECISIONS/0030-history-settings.md`). `tests/tst_qmlstatic.cpp` enforces both.
 
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
@@ -23,28 +23,30 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   along the grid's foot shows and the group actions are reached through
   (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
   (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).
-- `TabSearchModel` (`TabSearch`) — the open tabs matching a term, group by group.
+- `TabSearchModel` (`TabSearch`) — the open tabs holding every word of a term, group by
+  group.
+- `OmnibarModel` (`Omnibar`) — what the address bar suggests: the tabs, bookmarks,
+  history and downloads holding every word typed, a ranked section of each
+  (`DECISIONS/0027-omnibar.md`). It and `TabSearchModel` match through the one
+  `SearchWords` (`src/search/`), so the browser's searches agree.
 - `HistoryModel` — visited pages, search, pruning.
-- `BookmarkModel` — bookmarks and "is the active page bookmarked".
+- `BookmarkModel` — bookmarks and "is the active page bookmarked"; one bookmark by id
+  or address for the cover's quick action (`DECISIONS/0029-quick-action.md`).
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
-  notifications, because the platform's list of transfers is closed to a Harbour
-  application and would not hold a `Sailfish.WebView` application's downloads anyway;
-  and the folder the engine saves them to, `~/Downloads/Salama`
-  (`DECISIONS/0025-downloads-folder.md`).
-- `Settings` — home page, search engine, desktop mode, cover style, tracking protection
-  level, the reader view's look, address-bar heuristics.
+  notifications (`DECISIONS/0022-downloads-list.md`), and the folder the engine saves
+  them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
+- `Settings` — home page, search engine and the sources the address bar suggests from,
+  desktop mode, the cover's style and quick action, tracking protection level, the reader
+  view's look, address-bar heuristics.
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
   preferences each tracking-protection level stands for, which `BrowserPage` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
-- `PageMedia` — which tab plays: on the engine's word that something started or
-  stopped, every loaded page is asked with a script, and the answer and the tab's
-  muted flag are `TabModel` roles the grid's previews, the bar and the cover draw
-  the tab's mute from; muting pauses too. What plays is the tab in front's: a tab
-  left while it plays is paused as it is left and played again when it is back, and
-  out of sight the page's videos are hidden so only the sound goes on
+- `PageMedia` — which tab plays, asked of every loaded page with a script, and the
+  tab's mute, which pauses too; the answers are `TabModel` roles the previews, the bar
+  and the cover draw from. What plays is the tab in front's
   (`DECISIONS/0026-media-controls.md`).
 - `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
   and compiled in, handed to the page to find its article, and the page the article is
@@ -70,10 +72,12 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
    a flash as it comes into view. Set to the last tab, it reads `count` and the first of
    `TabModel.recentThumbnails` (ordered by each tab's `last_active` stamp), and says how
    many tabs are open over a monochrome picture of the one last in front, naming no page
-   (`DECISIONS/0027-cover-is-lightning.md`).
+   (`DECISIONS/0031-cover-is-lightning.md`). Its quick action is carried out by the root
+   window, which has the page stack and the browsing page a cover lacks
+   (`DECISIONS/0029-quick-action.md`).
 
 Views: one `WebView` per tab that has been shown this session and is among the
-`Settings.liveTabLimit` most recently in front, created lazily by a `Loader` over
+`TabModel::LiveTabLimit` (five) most recently in front, created lazily by a `Loader` over
 `TabModel` -- every group's tabs, so a tab changing group keeps its view (see
 `DECISIONS/0003-one-webview-per-tab.md`, `0016-five-live-pages.md`). Restored tabs
 cost nothing until activated; a tab beyond the limit reloads when it is next in front. Favicons come from a page script with `/favicon.ico` as fallback
@@ -83,12 +87,13 @@ Harbour allows carries neither. Tab previews are scene-graph grabs written to th
 directory (`DECISIONS/0008-tab-previews.md`); a tab that has not been displayed this
 session has none, and shows a placeholder in the grid.
 
-The browsing page carries the address: a label until tapped, a field in place after.
-The navigation bar along the bottom is also the surface the tab grid is dragged from:
-the page and the grid are one deck two screens tall, the grid below the page, and the
-grid's own overscroll drops the page back onto it. Nothing is pushed onto the page
-stack for it (`DECISIONS/0009-navigation-bar-gesture.md`,
-`DECISIONS/0010-tab-grid-deck.md`).
+The browsing page carries the address: a label until tapped, a field in place after
+(`AddressField.qml`). The navigation bar along the bottom is also the surface the tab
+grid is dragged from: the page and the grid are one deck two screens tall, the grid below
+the page, and the grid's own overscroll drops the page back onto it. `TabDeck.qml` holds
+the deck's state and gestures; what it carries is declared in `BrowserPage.qml`, in the
+context that has the engine. Nothing is pushed onto the page stack for it
+(`DECISIONS/0009-navigation-bar-gesture.md`, `DECISIONS/0010-tab-grid-deck.md`).
 
 The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped,
 and draws a red open padlock when the engine reports a broken TLS connection for an
@@ -99,7 +104,15 @@ either way, and a tap on the slim bar brings the whole bar back
 
 Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
-anything else becomes a search with the selected engine.
+anything else becomes a search with the selected engine. Once what is typed differs from
+the url, or the bar is opened empty for a new tab, a pane above it (`OmnibarView.qml`)
+lists what `Omnibar` finds, ranked as Firefox ranks it and learning from what is chosen,
+over a row to go to the address, when `Settings.isAddress` says it is one, and a row to
+search (`DECISIONS/0027-omnibar.md`).
+
+Settings is a main page leading to a page each for search, the reader view, the cover,
+privacy and the history (`DECISIONS/0028-settings-pages.md`,
+`DECISIONS/0030-history-settings.md`).
 
 ## Storage
 
@@ -107,7 +120,7 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-7); a newer database than the build refuses to open rather than corrupt. Migration asks
+9); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 any earlier schema converges on the same shape; a column that a later schema dropped
 takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
@@ -116,9 +129,10 @@ takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
 tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
 tab_group        group_id PK, name, position
 closed_tab       id PK, url, title, favicon, closed (ms since epoch)
-browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
+browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch), favicon
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 download         id PK, name, url, path, mime, size, status, started (ms since epoch)
+input_history    (input, url) PK, use_count, used (ms since epoch)  -- the omnibar's learning
 setting          name PK, value          -- activeTabId, currentGroupId
 ```
 

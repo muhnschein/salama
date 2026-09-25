@@ -2,6 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fi">
 <context>
+    <name>AddressField</name>
+    <message>
+        <source>Search or enter address</source>
+        <translation>Hae tai kirjoita osoite</translation>
+    </message>
+</context>
+<context>
     <name>AddressLabel</name>
     <message>
         <source>Search or enter address</source>
@@ -47,6 +54,26 @@
     </message>
 </context>
 <context>
+    <name>BookmarkPickerPage</name>
+    <message>
+        <source>Choose a bookmark</source>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens, or the home page</extracomment>
+        <translation>Valitse kirjanmerkki</translation>
+    </message>
+    <message>
+        <source>Search bookmarks</source>
+        <translation>Hae kirjanmerkeistä</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ei osumia</translation>
+    </message>
+    <message>
+        <source>No bookmarks</source>
+        <translation>Ei kirjanmerkkejä</translation>
+    </message>
+</context>
+<context>
     <name>BookmarksPage</name>
     <message>
         <source>Bookmarks</source>
@@ -67,14 +94,6 @@
 </context>
 <context>
     <name>BrowserMenu</name>
-    <message>
-        <source>Tabs</source>
-        <translation>Välilehdet</translation>
-    </message>
-    <message>
-        <source>New tab</source>
-        <translation>Uusi välilehti</translation>
-    </message>
     <message>
         <source>This page</source>
         <translation>Tämä sivu</translation>
@@ -125,10 +144,150 @@
     </message>
 </context>
 <context>
+    <name>ClearDataDialog</name>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Poista selaustiedot</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
+        <translation>Poista</translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation>Avoimet välilehdet</translation>
+    </message>
+    <message>
+        <source>Cookies and site data</source>
+        <translation>Evästeet ja sivustotiedot</translation>
+    </message>
+    <message>
+        <source>Cache</source>
+        <translation>Välimuisti</translation>
+    </message>
+    <message>
+        <source>Time range</source>
+        <translation>Aikaväli</translation>
+    </message>
+    <message>
+        <source>Open tabs, cookies, site data and the cache are cleared whole</source>
+        <translation>Avoimet välilehdet, evästeet, sivustotiedot ja välimuisti poistetaan kokonaan</translation>
+    </message>
+    <message>
+        <source>Last hour</source>
+        <translation>Viimeinen tunti</translation>
+    </message>
+    <message>
+        <source>Last two hours</source>
+        <translation>Viimeiset kaksi tuntia</translation>
+    </message>
+    <message>
+        <source>Last four hours</source>
+        <translation>Viimeiset neljä tuntia</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Tänään</translation>
+    </message>
+    <message>
+        <source>Everything</source>
+        <translation>Kaikki</translation>
+    </message>
+    <message>
+        <source>Browsing and download history</source>
+        <translation>Selaus- ja lataushistoria</translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Tabs</source>
         <translation>Välilehdet</translation>
+    </message>
+</context>
+<context>
+    <name>CoverSettingsPage</name>
+    <message>
+        <source>Cover</source>
+        <translation>Kansi</translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation>Näyttää</translation>
+    </message>
+    <message>
+        <source>The tab count and the last tab</source>
+        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <extracomment>The cover has no quick action</extracomment>
+        <translation>Ei mitään</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
+        <translation>Haku</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>Open a bookmark</source>
+        <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
+        <translation>Avaa kirjanmerkki</translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <extracomment>A quick action on the cover: the list of downloads</extracomment>
+        <translation>Lataukset</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <extracomment>A quick action on the cover: the history</extracomment>
+        <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Bookmark: %1</source>
+        <extracomment>The cover&apos;s quick action opens this bookmark</extracomment>
+        <translation>Kirjanmerkki: %1</translation>
+    </message>
+    <message>
+        <source>Deleted bookmark</source>
+        <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
+        <translation>Poistettu kirjanmerkki</translation>
+    </message>
+    <message>
+        <source>Quick action</source>
+        <extracomment>The one action offered on the cover on the home screen</extracomment>
+        <translation>Pikatoiminto</translation>
+    </message>
+    <message>
+        <source>The cover on the home screen shows one quick action. The place beside it is kept for the media control, which appears there while the tab in front plays something.</source>
+        <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. Use the same word for &quot;quick action&quot; as the section over this.</extracomment>
+        <translation>Kotinäkymän kannessa näkyy yksi pikatoiminto. Sen vieressä oleva paikka on varattu mediasäätimelle, joka ilmestyy siihen, kun etualalla oleva välilehti toistaa jotakin.</translation>
+    </message>
+    <message>
+        <source>Nothing playing</source>
+        <extracomment>Under a picture of the cover and its quick action while nothing plays</extracomment>
+        <translation>Mitään ei toisteta</translation>
+    </message>
+    <message>
+        <source>While a tab plays</source>
+        <extracomment>Under a picture of the cover while a tab plays: its quick action, and the tab&apos;s mute beside it</extracomment>
+        <translation>Kun välilehti toistaa</translation>
+    </message>
+    <message>
+        <source>Action</source>
+        <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
+        <translation>Toiminto</translation>
+    </message>
+    <message>
+        <source>Lightning</source>
+        <translation>Salaman</translation>
     </message>
 </context>
 <context>
@@ -215,132 +374,113 @@
     </message>
 </context>
 <context>
-    <name>NavigationBar</name>
+    <name>HistorySettingsPage</name>
     <message>
-        <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <source>Clearing browsing data</source>
+        <translation>Poistetaan selaustiedot</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Remember browsing history</source>
+        <translation>Muista selaushistoria</translation>
+    </message>
+    <message>
+        <source>Keep the pages you visit, to find them in the history and the address bar</source>
+        <translation>Säilytä vierailemasi sivut, jotta löydät ne historiasta ja osoitepalkista</translation>
+    </message>
+    <message>
+        <source>Clear history when closed</source>
+        <translation>Poista historia suljettaessa</translation>
+    </message>
+    <message>
+        <source>The history, the list of downloads and the recently closed tabs go each time the browser is closed</source>
+        <translation>Historia, latausluettelo ja viimeksi suljetut välilehdet poistetaan aina, kun selain suljetaan</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Poista selaustiedot</translation>
     </message>
 </context>
 <context>
-    <name>RecentlyClosedPanel</name>
-    <message>
-        <source>Recently closed</source>
-        <translation>Äskettäin suljetut</translation>
-    </message>
-    <message>
-        <source>Nothing closed recently</source>
-        <translation>Ei äskettäin suljettuja välilehtiä</translation>
-    </message>
-</context>
-<context>
-    <name>Salama::Reader</name>
-    <message numerus="yes">
-        <source>%1 hour(s)</source>
-        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
-        <translation>
-            <numerusform>%1 tunti</numerusform>
-            <numerusform>%1 tuntia</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%1 minute(s)</source>
-        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
-        <translation>
-            <numerusform>%1 minuutti</numerusform>
-            <numerusform>%1 minuuttia</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
-    <name>SettingsPage</name>
-    <message>
-        <source>Settings</source>
-        <translation>Asetukset</translation>
-    </message>
+    <name>HomePageSettingsPage</name>
     <message>
         <source>Home page</source>
         <translation>Kotisivu</translation>
     </message>
     <message>
-        <source>Search engine</source>
-        <translation>Hakukone</translation>
+        <source>Address</source>
+        <extracomment>The home page&apos;s address, typed</extracomment>
+        <translation>Osoite</translation>
     </message>
     <message>
-        <source>Request desktop sites</source>
-        <translation>Pyydä työpöytäsivustoja</translation>
+        <source>Use the page in front</source>
+        <extracomment>Makes the page in front the home page, as Firefox&apos;s Use Current Page</extracomment>
+        <translation>Käytä nykyistä sivua</translation>
     </message>
     <message>
-        <source>Identify as a desktop browser to web sites</source>
-        <translation>Esittäydy sivustoille työpöytäselaimena</translation>
+        <source>Use a bookmark</source>
+        <extracomment>Makes a bookmark, picked from the list, the home page</extracomment>
+        <translation>Käytä kirjanmerkkiä</translation>
     </message>
     <message>
-        <source>Clear data</source>
-        <translation>Tietojen poisto</translation>
+        <source>Restore the default</source>
+        <translation>Palauta oletus</translation>
+    </message>
+</context>
+<context>
+    <name>OmnibarResultRow</name>
+    <message>
+        <source>Downloading, %1%</source>
+        <translation>Ladataan, %1 %</translation>
     </message>
     <message>
-        <source>Clear history</source>
-        <translation>Tyhjennä historia</translation>
+        <source>Failed</source>
+        <translation>Epäonnistui</translation>
     </message>
     <message>
-        <source>Clearing history</source>
-        <translation>Tyhjennetään historia</translation>
+        <source>Cancelled</source>
+        <translation>Peruttu</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
     </message>
     <message>
-        <source>Clear cookies and site data</source>
-        <translation>Poista evästeet ja sivustotiedot</translation>
+        <source>%1 · %2</source>
+        <extracomment>Under a download the address bar found: its site, and how it is going</extracomment>
+        <translation>%1 · %2</translation>
     </message>
     <message>
-        <source>Clearing site data</source>
-        <translation>Poistetaan sivustotiedot</translation>
+        <source>Switch to tab</source>
+        <translation>Siirry välilehteen</translation>
     </message>
     <message>
-        <source>Clear cache</source>
-        <translation>Tyhjennä välimuisti</translation>
+        <source>Switch to tab in %1</source>
+        <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
+        <translation>Siirry välilehteen ryhmässä %1</translation>
+    </message>
+</context>
+<context>
+    <name>OmnibarView</name>
+    <message>
+        <source>Go to %1</source>
+        <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
+        <translation>Siirry osoitteeseen %1</translation>
     </message>
     <message>
-        <source>Clearing cache</source>
-        <translation>Tyhjennetään välimuisti</translation>
+        <source>Search %1 for “%2”</source>
+        <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
+        <translation>Hae ”%2” hakukoneella %1</translation>
     </message>
-    <message>
-        <source>Close all tabs</source>
-        <translation>Sulje kaikki välilehdet</translation>
-    </message>
-    <message>
-        <source>Closing all tabs</source>
-        <translation>Suljetaan kaikki välilehdet</translation>
-    </message>
-    <message>
-        <source>Avoid the screen cutout</source>
-        <translation>Vältä näytön lovea</translation>
-    </message>
-    <message>
-        <source>Keep pages and the tab grid out from under the camera cutout</source>
-        <translation>Pidä sivut ja välilehdet poissa kameraloven alta</translation>
-    </message>
-    <message>
-        <source>Cover</source>
-        <translation>Kansi</translation>
-    </message>
-    <message>
-        <source>Shows</source>
-        <translation>Näyttää</translation>
-    </message>
-    <message>
-        <source>The tab count and the last tab</source>
-        <translation>Välilehtien määrän ja viimeisimmän välilehden</translation>
-    </message>
-    <message>
-        <source>Pages kept loaded</source>
-        <translation>Ladattuina pidettävät sivut</translation>
-    </message>
-    <message>
-        <source>Tabs beyond this many reload their page when opened again</source>
-        <translation>Tätä useammat välilehdet lataavat sivunsa uudelleen, kun ne avataan</translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation>Kaikki</translation>
-    </message>
+</context>
+<context>
+    <name>PrivacySettingsPage</name>
     <message>
         <source>Privacy</source>
         <translation>Yksityisyys</translation>
@@ -373,6 +513,27 @@
         <source>Strict</source>
         <translation>Tiukka</translation>
     </message>
+</context>
+<context>
+    <name>ReaderPreview</name>
+    <message>
+        <source>example.com</source>
+        <extracomment>The made-up site a sample article in the reader view&apos;s preview is from</extracomment>
+        <translation>esimerkki.fi</translation>
+    </message>
+    <message>
+        <source>Just the article</source>
+        <extracomment>The heading of the sample article in the reader view&apos;s preview</extracomment>
+        <translation>Pelkkä artikkeli</translation>
+    </message>
+    <message>
+        <source>The reader view keeps a page&apos;s words and pictures and leaves out everything around them, set in the colours, the typeface and the size chosen above.</source>
+        <extracomment>The sample article in the reader view&apos;s preview</extracomment>
+        <translation>Lukunäkymä säilyttää sivun tekstin ja kuvat ja jättää pois kaiken niiden ympäriltä, ladottuna yllä valituilla väreillä, kirjasintyypillä ja koolla.</translation>
+    </message>
+</context>
+<context>
+    <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
         <translation>Lukunäkymä</translation>
@@ -417,9 +578,113 @@
         <source>%1 %</source>
         <translation>%1 %</translation>
     </message>
+</context>
+<context>
+    <name>RecentlyClosedPanel</name>
     <message>
-        <source>Lightning</source>
-        <translation>Salaman</translation>
+        <source>Recently closed</source>
+        <translation>Äskettäin suljetut</translation>
+    </message>
+    <message>
+        <source>Nothing closed recently</source>
+        <translation>Ei äskettäin suljettuja välilehtiä</translation>
+    </message>
+</context>
+<context>
+    <name>Salama::Reader</name>
+    <message numerus="yes">
+        <source>%1 hour(s)</source>
+        <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 tunti</numerusform>
+            <numerusform>%1 tuntia</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s)</source>
+        <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
+        <translation>
+            <numerusform>%1 minuutti</numerusform>
+            <numerusform>%1 minuuttia</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>SearchSettingsPage</name>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
+    </message>
+    <message>
+        <source>Search engine</source>
+        <translation>Hakukone</translation>
+    </message>
+    <message>
+        <source>Address bar suggestions</source>
+        <translation>Osoiterivin ehdotukset</translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation>Avoimet välilehdet</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation>Lataukset</translation>
+    </message>
+</context>
+<context>
+    <name>SettingsPage</name>
+    <message>
+        <source>Settings</source>
+        <translation>Asetukset</translation>
+    </message>
+    <message>
+        <source>Home page</source>
+        <translation>Kotisivu</translation>
+    </message>
+    <message>
+        <source>Avoid the screen cutout</source>
+        <translation>Vältä näytön lovea</translation>
+    </message>
+    <message>
+        <source>Keep pages and the tab grid out from under the camera cutout</source>
+        <translation>Pidä sivut ja välilehdet poissa kameraloven alta</translation>
+    </message>
+    <message>
+        <source>Cover</source>
+        <translation>Kansi</translation>
+    </message>
+    <message>
+        <source>Privacy</source>
+        <translation>Yksityisyys</translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation>Yleiset</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Ulkoasu</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Historia</translation>
     </message>
 </context>
 <context>

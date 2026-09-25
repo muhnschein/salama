@@ -37,7 +37,7 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeFavicon READ activeFavicon NOTIFY activeTabDataChanged)
     // The open tabs' previews, most recently in front first. The last-tab cover draws
-    // the first (docs/DECISIONS/0027-cover-is-lightning.md); a tab with no picture is an
+    // the first (docs/DECISIONS/0031-cover-is-lightning.md); a tab with no picture is an
     // empty string rather than a gap, so the list is always as long as count.
     Q_PROPERTY(QStringList recentThumbnails READ recentThumbnails NOTIFY recentTabsChanged)
     // The group the grid shows and new tabs open in. It follows the active tab, and
@@ -116,6 +116,11 @@ public:
     Q_INVOKABLE void closeActiveTab();
     Q_INVOKABLE void closeAllTabs();
     Q_INVOKABLE int indexOf(int tabId) const;
+    // The open tab showing this address, in whichever group, 0 when there is none; of
+    // several, the one in front most recently. The cover's bookmark action brings that
+    // tab to the front rather than open the page again
+    // (docs/DECISIONS/0029-quick-action.md).
+    Q_INVOKABLE int tabIdForUrl(const QString &url) const;
 
     // Called by the view as the engine reports page state.
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);
@@ -160,7 +165,9 @@ public:
     // behind it stays; its place in the group is after the tabs already there.
     bool moveTabToGroup(int tabId, int groupId);
 
-    // How many tabs keep their page loaded, 0 for all of them.
+    // How many tabs keep their page loaded, 0 for all of them. The browser keeps
+    // LiveTabLimit, as Jolla's does (docs/DECISIONS/0016-five-live-pages.md).
+    static const int LiveTabLimit = 5;
     int liveTabLimit() const;
     void setLiveTabLimit(int limit);
 

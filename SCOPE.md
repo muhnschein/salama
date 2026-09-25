@@ -68,14 +68,14 @@ Reuse policy:
 
 ### Phase 1 — Shippable
 - Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
-- Address bar (URL/search), configurable search engine
+- Address bar (URL/search), configurable search engine, with suggestions from the open tabs, bookmarks, history and downloads as it is typed into
 - Back, forward, reload, stop, share (`Sailfish.Share`)
 - History and bookmarks (SQLite) with management UI
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
-- Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows, tracking protection level
-- Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings
+- Settings: a main page leading to a page each for the home page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
+- Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings, and one quick action chosen there beside the playing tab's mute
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2

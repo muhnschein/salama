@@ -5,7 +5,7 @@
 // large, in the ambience's highlight colour, from above the top edge down to just short
 // of the actions, and each time the cover comes into view a flash of sheet lightning
 // behind it. It says nothing, and is not meant to: what the cover offers is its actions
-// (docs/DECISIONS/0027-cover-is-lightning.md).
+// (docs/DECISIONS/0031-cover-is-lightning.md).
 //
 // No name over it. The bolt is the icon's, and the icon is how the home screen already
 // tells one application from another.

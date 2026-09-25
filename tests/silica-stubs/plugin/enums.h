@@ -105,3 +105,21 @@ public:
     };
     Q_ENUM(Value)
 };
+
+// What a text field does with its focus when a press lands outside it: Silica's TextBase
+// clears the field's own focus, the page's, or keeps it. Silica's plugin source is not
+// among what Jolla publishes, so the values follow the order Silica documents them in;
+// QML reads them by name.
+class FocusBehavior : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Value
+    {
+        ClearItemFocus = 0,
+        ClearPageFocus = 1,
+        KeepFocus = 2
+    };
+    Q_ENUM(Value)
+};

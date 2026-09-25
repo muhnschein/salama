@@ -20,6 +20,10 @@ at first, which is why every page quietly fell back to `/favicon.ico`; the same 
 made the theme colour in `0013-screen-cutout.md` never arrive. Both are one form now, and
 the tests assert it.
 
+The URL a tab reports is kept with the tab, with a bookmark of the page, and with the
+page's row of the history (`browser_history.favicon`, schema 9), so the address bar can
+show a site's icon for a page no tab has open (`DECISIONS/0027-omnibar.md`).
+
 ## Consequences
 Icons are fetched by Qt, not by the engine, so a second request per page. Verified on
 the device as part of the smoke test.

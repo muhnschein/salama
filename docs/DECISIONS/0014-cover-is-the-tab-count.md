@@ -1,6 +1,6 @@
 # 0014 — The cover is the tab count over a field of page previews
 
-**Superseded by 0027.** The cover is lightning by default, and of the three styles
+**Superseded by 0031.** The cover is lightning by default, and of the three styles
 below only the last tab remains, as the one a reader can choose instead; this record is
 kept for the history and for the heading's measures, which that style still uses.
 
@@ -71,19 +71,19 @@ The stored values are 0, 1 and 2 and are therefore part of the config file's for
 value outside that range reads back as the default rather than as a cover that draws
 nothing: the file is one a user can edit.
 
-The one cover action is a **search**: `icon-cover-search`, opening a new tab with the
-address field up and the whole url selected, so the first key typed replaces it. That is
-what a browser is picked up for, and the cover is the one place where the choice of a
-single action has to be right. It goes through `requestNewTab()` on the root window
-rather than acting on `TabModel` itself: the address field belongs to the browsing page,
-which a cover has no way to reach, and whatever page is on top — Settings, a dialog — is
-popped first, or the new tab would arrive under a page that cannot type into it. The menu
-is a sheet rather than a page, and puts itself away as the new tab comes to the front
-(0021).
+The cover has one action, and unless Settings chooses another (0029) it is a **search**:
+what a browser is picked up for, and so what a reader who never opens Settings is given.
+It opens the address bar for a new tab — empty, the bookmarks listed over the page, and no
+tab made until something is chosen (0027) — and wears a magnifier drawn for the cover as
+its speakers are. It goes through `quickAction()` on the root window rather than acting on
+`TabModel` itself: the address field belongs to the browsing page, which a cover has no
+way to reach, and whatever page is on top — Settings, a dialog — is popped first, and what
+lies over the browsing page, the menu's sheet (0021), an edit of the address, the grid, is
+put away, or the field would come up under something that cannot be typed into.
 
 While the tab in front plays something, or is muted, its mute is a second action beside
-the search, in a picture drawn for the cover (0026). The home screen draws whichever of
-the two action lists is enabled, so there is one for each.
+the quick action, in a picture drawn for the cover (0026). The home screen draws whichever
+action list is enabled, so there is one for each (0029).
 
 The app's name is held in a `brandName` property rather than written into the label:
 a name is not a word to be translated, and `ci/qml-lint.sh` treats every bare string

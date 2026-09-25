@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <QUrl>
 #include <QVector>
+#include <algorithm>
 
 namespace Salama {
 
@@ -13,21 +14,35 @@ namespace {
 
 const char *const HomePageKey = "homePage";
 const char *const SearchEngineKey = "searchEngine";
-const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
-const char *const LiveTabLimitKey = "liveTabLimit";
 const char *const TrackingProtectionKey = "trackingProtection";
 const char *const ReaderColorsKey = "readerColors";
 const char *const ReaderTypefaceKey = "readerTypeface";
 const char *const ReaderTextSizeKey = "readerTextSize";
+const char *const OmnibarTabsKey = "omnibarTabs";
+const char *const OmnibarBookmarksKey = "omnibarBookmarks";
+const char *const OmnibarHistoryKey = "omnibarHistory";
+const char *const OmnibarDownloadsKey = "omnibarDownloads";
+const char *const RememberHistoryKey = "rememberHistory";
+const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
+const char *const QuickActionKey = "quickAction";
+const char *const QuickActionBookmarkKey = "quickActionBookmark";
+const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
+const char *const QuickActionBookmarkTitleKey = "quickActionBookmarkTitle";
+const char *const QuickActionIconKey = "quickActionIcon";
 
-// Jolla's browser keeps five pages live and reloads the rest on return; the same
-// five here, with a way to ask for fewer, more, or all of them.
-const QVector<int> &liveTabLimits()
+// The pictures a bookmark's quick action can wear, drawn in icons/cover/. The star
+// last: the bookmarks overview's own glyph is a star, as the menu sheet's Bookmarks is,
+// and a bookmark that wore it by default would read as the overview.
+const QStringList &quickActionIconNames()
 {
-    static const QVector<int> limits{3, 5, 10, 0};
-    return limits;
+    static const QStringList names{
+        QStringLiteral("globe"), QStringLiteral("heart"), QStringLiteral("home"),
+        QStringLiteral("work"),  QStringLiteral("news"),  QStringLiteral("music"),
+        QStringLiteral("shop"),  QStringLiteral("star"),
+    };
+    return names;
 }
 
 struct SearchEngine
@@ -149,20 +164,6 @@ QStringList Settings::searchEngineKeys() const
     return keys;
 }
 
-bool Settings::desktopMode() const
-{
-    return m_settings.value(QLatin1String(DesktopModeKey), false).toBool();
-}
-
-void Settings::setDesktopMode(bool desktopMode)
-{
-    if (desktopMode == this->desktopMode()) {
-        return;
-    }
-    m_settings.setValue(QLatin1String(DesktopModeKey), desktopMode);
-    emit desktopModeChanged();
-}
-
 bool Settings::cutoutGuard() const
 {
     return m_settings.value(QLatin1String(CutoutGuardKey), true).toBool();
@@ -193,41 +194,6 @@ void Settings::setCoverStyle(int style)
     }
     m_settings.setValue(QLatin1String(CoverStyleKey), style);
     emit coverStyleChanged();
-}
-
-int Settings::defaultLiveTabLimit()
-{
-    return 5;
-}
-
-int Settings::liveTabLimit() const
-{
-    const int stored =
-        m_settings.value(QLatin1String(LiveTabLimitKey), defaultLiveTabLimit()).toInt();
-    return liveTabLimits().contains(stored) ? stored : defaultLiveTabLimit();
-}
-
-int Settings::liveTabLimitIndex() const
-{
-    return liveTabLimits().indexOf(liveTabLimit());
-}
-
-void Settings::setLiveTabLimitIndex(int index)
-{
-    if (index < 0 || index >= liveTabLimits().count() || index == liveTabLimitIndex()) {
-        return;
-    }
-    m_settings.setValue(QLatin1String(LiveTabLimitKey), liveTabLimits().at(index));
-    emit liveTabLimitChanged();
-}
-
-QVariantList Settings::liveTabLimitChoices() const
-{
-    QVariantList choices;
-    for (int limit : liveTabLimits()) {
-        choices.append(limit);
-    }
-    return choices;
 }
 
 int Settings::trackingProtection() const
@@ -297,6 +263,185 @@ void Settings::setReaderTextSize(int size)
     emit readerTextSizeChanged();
 }
 
+bool Settings::flag(const char *key, bool initially) const
+{
+    return m_settings.value(QLatin1String(key), initially).toBool();
+}
+
+// Whether the value changed, so the caller knows to say so.
+bool Settings::setFlag(const char *key, bool on, bool initially)
+{
+    if (on == flag(key, initially)) {
+        return false;
+    }
+    m_settings.setValue(QLatin1String(key), on);
+    return true;
+}
+
+bool Settings::rememberHistory() const
+{
+    return flag(RememberHistoryKey);
+}
+
+void Settings::setRememberHistory(bool on)
+{
+    if (setFlag(RememberHistoryKey, on)) {
+        emit rememberHistoryChanged();
+    }
+}
+
+bool Settings::clearHistoryOnClose() const
+{
+    return flag(ClearHistoryOnCloseKey, false);
+}
+
+void Settings::setClearHistoryOnClose(bool on)
+{
+    if (setFlag(ClearHistoryOnCloseKey, on, false)) {
+        emit clearHistoryOnCloseChanged();
+    }
+}
+
+bool Settings::omnibarTabs() const
+{
+    return flag(OmnibarTabsKey);
+}
+
+void Settings::setOmnibarTabs(bool on)
+{
+    if (setFlag(OmnibarTabsKey, on)) {
+        emit omnibarTabsChanged();
+    }
+}
+
+bool Settings::omnibarBookmarks() const
+{
+    return flag(OmnibarBookmarksKey);
+}
+
+void Settings::setOmnibarBookmarks(bool on)
+{
+    if (setFlag(OmnibarBookmarksKey, on)) {
+        emit omnibarBookmarksChanged();
+    }
+}
+
+bool Settings::omnibarHistory() const
+{
+    return flag(OmnibarHistoryKey);
+}
+
+void Settings::setOmnibarHistory(bool on)
+{
+    if (setFlag(OmnibarHistoryKey, on)) {
+        emit omnibarHistoryChanged();
+    }
+}
+
+bool Settings::omnibarDownloads() const
+{
+    return flag(OmnibarDownloadsKey);
+}
+
+void Settings::setOmnibarDownloads(bool on)
+{
+    if (setFlag(OmnibarDownloadsKey, on)) {
+        emit omnibarDownloadsChanged();
+    }
+}
+
+int Settings::quickAction() const
+{
+    const int stored = m_settings.value(QLatin1String(QuickActionKey), QuickActionSearch).toInt();
+    return stored < QuickActionNone || stored > QuickActionHistory ? int(QuickActionSearch)
+                                                                   : stored;
+}
+
+void Settings::setQuickAction(int action)
+{
+    if (action < QuickActionNone || action > QuickActionHistory || action == quickAction()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionKey), action);
+    emit quickActionChanged();
+}
+
+int Settings::quickActionBookmark() const
+{
+    const int stored = m_settings.value(QLatin1String(QuickActionBookmarkKey), 0).toInt();
+    return std::max(stored, 0);
+}
+
+QString Settings::quickActionBookmarkUrl() const
+{
+    return m_settings.value(QLatin1String(QuickActionBookmarkUrlKey)).toString();
+}
+
+QString Settings::quickActionBookmarkTitle() const
+{
+    return m_settings.value(QLatin1String(QuickActionBookmarkTitleKey)).toString();
+}
+
+void Settings::setQuickActionBookmark(int id, const QString &url, const QString &title)
+{
+    if (id < 0) {
+        return;
+    }
+    // No bookmark has no address and no title either: what is forgotten is forgotten
+    // whole, and nothing is left to find it again by.
+    const QString keptUrl = id == 0 ? QString() : url;
+    const QString keptTitle = id == 0 ? QString() : title;
+    if (id == quickActionBookmark() && keptUrl == quickActionBookmarkUrl() &&
+        keptTitle == quickActionBookmarkTitle()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionBookmarkKey), id);
+    m_settings.setValue(QLatin1String(QuickActionBookmarkUrlKey), keptUrl);
+    m_settings.setValue(QLatin1String(QuickActionBookmarkTitleKey), keptTitle);
+    emit quickActionBookmarkChanged();
+}
+
+QString Settings::quickActionIcon() const
+{
+    const QString stored = m_settings.value(QLatin1String(QuickActionIconKey)).toString();
+    return quickActionIconNames().contains(stored) ? stored : quickActionIconNames().first();
+}
+
+void Settings::setQuickActionIcon(const QString &name)
+{
+    if (!quickActionIconNames().contains(name) || name == quickActionIcon()) {
+        return;
+    }
+    m_settings.setValue(QLatin1String(QuickActionIconKey), name);
+    emit quickActionIconChanged();
+}
+
+QStringList Settings::quickActionIcons() const
+{
+    return quickActionIconNames();
+}
+
+// The home screen draws a cover action's picture from its file as it is, unscaled, so
+// the picture has to be drawn at the size it is shown at: icons/render.sh draws each
+// glyph at every size from 32 to 64 pixels in steps of 8, which is where Silica's small
+// icon falls on the phones this is for, and the size asked for is snapped to the
+// nearest of those -- halfway rounds up, as Math.round() does in QML -- and kept
+// within them. Bounded before rounding, so no size, however wild, has no int to round
+// to.
+QString Settings::coverIconPath(const QString &name, qreal iconSize, bool onDark)
+{
+    const int size = qRound(qBound(qreal(32), iconSize, qreal(64)) / 8) * 8;
+    return QStringLiteral("art/cover/%1-%2-%3.png")
+        .arg(name)
+        .arg(size)
+        .arg(onDark ? QStringLiteral("white") : QStringLiteral("black"));
+}
+
+qreal Settings::pageZoom(qreal pixelRatio)
+{
+    return qRound(pixelRatio * 1.75 / 0.5) * 0.5;
+}
+
 QString Settings::searchUrl(const QString &query) const
 {
     const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
@@ -327,13 +472,8 @@ QString Settings::displayAddress(const QString &url)
     return host;
 }
 
-QString Settings::urlForInput(const QString &input) const
+QString Settings::addressFor(const QString &text)
 {
-    const QString text = input.trimmed();
-    if (text.isEmpty()) {
-        return {};
-    }
-
     const QUrl typed(text, QUrl::TolerantMode);
     if (typed.isValid() && isNavigableScheme(typed.scheme())) {
         return typed.toString();
@@ -351,8 +491,25 @@ QString Settings::urlForInput(const QString &input) const
             return QUrl(scheme + text, QUrl::TolerantMode).toString();
         }
     }
+    return {};
+}
 
-    return searchUrl(text);
+QString Settings::urlForInput(const QString &input) const
+{
+    const QString text = input.trimmed();
+    if (text.isEmpty()) {
+        return {};
+    }
+    const QString address = addressFor(text);
+    return address.isEmpty() ? searchUrl(text) : address;
+}
+
+// Asked of the same rule urlForInput() follows, so the address bar never offers to go
+// to an address that Enter would have searched for, nor the other way round.
+bool Settings::isAddress(const QString &input) const
+{
+    const QString text = input.trimmed();
+    return !text.isEmpty() && !addressFor(text).isEmpty();
 }
 
 } // namespace Salama

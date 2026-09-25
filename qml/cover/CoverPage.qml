@@ -3,12 +3,13 @@
 //
 // What the cover shows while the app is minimised. By default nothing to read: the
 // bolt, with a flash of sheet lightning each time it comes into view
-// (components/CoverLightning.qml, docs/DECISIONS/0027-cover-is-lightning.md). A reader
+// (components/CoverLightning.qml, docs/DECISIONS/0031-cover-is-lightning.md). A reader
 // who wants the cover to say something can have the last tab instead, from Settings:
 // how many tabs are open, over the one last in front.
 //
-// Either way the cover's actions are what it offers: a search, and while the tab in
-// front plays something its mute beside it (docs/DECISIONS/0026-media-controls.md).
+// Either way the cover's actions are what it offers: the one quick action chosen in
+// Settings (docs/DECISIONS/0029-quick-action.md), and while the tab in front plays
+// something its mute beside it (docs/DECISIONS/0026-media-controls.md).
 //
 // The last tab's heading is laid out as the platform's own covers lay theirs out, and
 // with postivene's and vuo's measures exactly: the name top left with a line under it,
@@ -34,30 +35,43 @@ CoverBackground {
     /// heading over the tab last read. Everything below turns on this.
     readonly property bool showsLatestTab: Settings.coverStyle === Settings.CoverLatestTab
 
-    /// Whether the ambience is a dark one: its text is light. What the lightning's
-    /// flash is lit with, and which ink the mute's picture is drawn in, turn on it.
-    readonly property bool onDarkAmbience: {
-        var ink = Theme.primaryColor
-        return 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
-    }
-
     /// The front tab plays something, or is muted: its mute is offered, as the bar
     /// offers it (components/AddressLabel.qml).
     readonly property bool showsMute: TabModel.activeMediaState !== TabModel.NoMedia
                                       || TabModel.activeMuted
-    /// The mute's picture, as a whole URL. The home screen draws an action's picture
+    /// A quick action is chosen, which it is unless the reader chose none.
+    readonly property bool showsQuickAction: Settings.quickAction !== Settings.QuickActionNone
+
+    /// Whether the ambience is a dark one -- its ink, the primary colour, is light --
+    /// which the actions' pictures are drawn in white for, and in black on a light one,
+    /// and which the lightning's flash is lit for.
+    readonly property bool onDark: {
+        var ink = Theme.primaryColor
+        return 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
+    }
+
+    /// An action's picture, as a whole URL. The home screen draws an action's picture
     /// itself, from the file as it is, so it is one drawn at the size Silica's small
-    /// icon takes on this phone, and in white for a dark ambience and black for a
-    /// light one -- see icons/render.sh, which draws them from icons/cover/. The
-    /// speaker while the tab is heard, struck through while it is not, as on the
-    /// bar. Drawn here rather than taken from the theme's icon-cover-mute, whose
-    /// glyph could not be checked against the bar's speaker.
+    /// icon takes on this phone, in the ambience's ink -- see icons/render.sh, which
+    /// draws them from icons/cover/, and Settings.coverIconPath, which names them. Drawn
+    /// here rather than taken from the theme's icon-cover-* glyphs, which could not be
+    /// checked against the bar's speaker, nor made for a bookmark of the reader's own.
+    function actionIcon(glyph) {
+        return Qt.resolvedUrl("../../" + Settings.coverIconPath(glyph, Theme.iconSizeSmall,
+                                                                 cover.onDark))
+    }
+
+    /// The quick action's picture: the glyph of what it opens, and for one bookmark the
+    /// glyph picked for it in Settings. None for no action, when no list offers it.
+    readonly property string quickActionIcon: {
+        var glyphs = ["", "search", "bookmarks", Settings.quickActionIcon, "downloads", "history"]
+        return cover.showsQuickAction ? cover.actionIcon(glyphs[Settings.quickAction]) : ""
+    }
+    /// The mute's picture: the speaker while the tab is heard, struck through while it is
+    /// not, as on the bar.
     readonly property string muteIcon: {
-        var size = Math.max(32, Math.min(64, Math.round(Theme.iconSizeSmall / 8) * 8))
         var heard = TabModel.activeMediaState === TabModel.MediaPlaying && !TabModel.activeMuted
-        return Qt.resolvedUrl("../../art/cover/speaker-" + (heard ? "on" : "mute")
-                              + "-" + size + "-" + (cover.onDarkAmbience ? "white" : "black")
-                              + ".png")
+        return cover.actionIcon(heard ? "speaker-on" : "speaker-mute")
     }
 
     objectName: "coverPage"
@@ -70,7 +84,7 @@ CoverBackground {
         // Not on visible: that is whether every item above this one is shown too, and
         // how the home screen holds a cover it draws is its own business.
         active: !cover.showsLatestTab && cover.status === Cover.Active
-        onDark: cover.onDarkAmbience
+        onDark: cover.onDark
     }
 
     // Under the words, and declared before them so that it is: the picture is the
@@ -157,34 +171,47 @@ CoverBackground {
         color: Theme.primaryColor
     }
 
-    // One action, and it is the one a browser is opened for: a new tab with the
-    // address field already up and the keyboard with it. The window does the work --
-    // the field belongs to the browsing page, which is not in a cover's scope.
+    // The quick action, alone while nothing plays. What it does is the window's
+    // (harbour-salama.qml): the bar, the page stack and the pages it opens belong to the
+    // browsing page and the window, which are not in a cover's scope.
     //
-    // While the tab in front plays, the same and its mute beside it. The home screen
+    // While the tab in front plays, the quick action and the tab's mute beside it; with
+    // no quick action, the mute alone; with neither, no action at all. The home screen
     // draws the one list that is enabled, so there is one for each.
     CoverActionList {
-        objectName: "searchCoverActions"
-        enabled: !cover.showsMute
+        objectName: "quickCoverActions"
+        enabled: cover.showsQuickAction && !cover.showsMute
 
         CoverAction {
-            objectName: "searchCoverAction"
-            iconSource: "image://theme/icon-cover-search"
-            onTriggered: window.requestNewTab()
+            objectName: "quickCoverAction"
+            iconSource: cover.quickActionIcon
+            onTriggered: window.quickAction()
         }
     }
 
     CoverActionList {
         objectName: "mediaCoverActions"
-        enabled: cover.showsMute
+        enabled: cover.showsQuickAction && cover.showsMute
 
         CoverAction {
-            iconSource: "image://theme/icon-cover-search"
-            onTriggered: window.requestNewTab()
+            objectName: "mediaQuickCoverAction"
+            iconSource: cover.quickActionIcon
+            onTriggered: window.quickAction()
         }
 
         CoverAction {
             objectName: "muteCoverAction"
+            iconSource: cover.muteIcon
+            onTriggered: PageMedia.toggleMuted(TabModel.activeTabId)
+        }
+    }
+
+    CoverActionList {
+        objectName: "muteCoverActions"
+        enabled: !cover.showsQuickAction && cover.showsMute
+
+        CoverAction {
+            objectName: "loneMuteCoverAction"
             iconSource: cover.muteIcon
             onTriggered: PageMedia.toggleMuted(TabModel.activeTabId)
         }

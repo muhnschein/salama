@@ -1,4 +1,4 @@
-# 0027 — The cover is lightning
+# 0031 — The cover is lightning
 
 ## Context
 0014 made the cover the tab count over a field of the open tabs' previews, with two
@@ -6,7 +6,8 @@ other styles in Settings: the icon alone, and the count over the tab last read. 
 the three was right in use. For most readers the count is not news, the field of grey
 screenshots read as a second, smaller browser inside the cover, and the icon alone was
 the launcher's icon again, shrunk and dimmed. What a cover has to *do* its actions
-already do: the search, and the mute while the tab in front plays (0026). What was
+already do: the quick action chosen in Settings (0029), and the mute while the tab in
+front plays (0026). What was
 missing was a cover that is good to look at and asks nothing of the reader.
 
 Three were sketched at cover size, in a dark ambience and a light one: a bolt generated
@@ -63,8 +64,11 @@ cover into view and watch the flash start, finish and be put out. What the flash
 like, and that the home screen sets the status it plays on, are device questions on the
 `docs/TESTING.md` checklist.
 
-`art/harbour-salama.png`, which only the icon-only cover drew, is no longer rendered or
-installed.
+The two small covers on the cover's settings page (0029) draw the lightning with the
+cover's own component, never brought into view, so still; the icon-only and every-tab
+pictures they had go with the styles. `art/harbour-salama.png`, which only the icon-only
+cover and its picture there drew, is no longer rendered or installed, and the omnibar's
+test that borrowed it as a site's icon takes the 86-pixel launcher icon instead.
 
 Supersedes 0014, which is kept for the history and for the heading's measures, which the
 last-tab cover still uses.

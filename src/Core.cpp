@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "Core.h"
 
+#include "tabs/ClosedTabModel.h"
+
 namespace Salama {
 
 Core::Core(const QString &dataDirectory, const QString &configFilePath,
@@ -15,27 +17,43 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
     , m_settings(configFilePath)
+    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings)
     , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
 {
-    connect(&m_tabs, &TabModel::visited, &m_history,
-            [this](const QString &url) { m_history.visit(url); });
+    // Unless the history is not to be kept.
+    connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
+        if (m_settings.rememberHistory()) {
+            m_history.visit(url);
+        }
+    });
     connect(&m_tabs, &TabModel::titleUpdated, &m_history, &HistoryModel::updateTitle);
     connect(&m_tabs, &TabModel::faviconUpdated, &m_bookmarks, &BookmarkModel::updateFavicon);
+    connect(&m_tabs, &TabModel::faviconUpdated, &m_history, &HistoryModel::updateFavicon);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
 
-    // How many pages stay loaded is a setting; the tab model applies it.
-    connect(&m_settings, &Settings::liveTabLimitChanged, &m_tabs,
-            [this]() { m_tabs.setLiveTabLimit(m_settings.liveTabLimit()); });
-    m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
+    // Five pages stay loaded, as in Jolla's browser.
+    m_tabs.setLiveTabLimit(TabModel::LiveTabLimit);
 
     // The engine says something started or stopped playing, and not where; the pages
     // are asked (docs/DECISIONS/0026-media-controls.md).
     connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
     connect(&m_pageActivity, &PageActivity::backgroundChanged, &m_pageMedia,
             [this]() { m_pageMedia.setBackground(m_pageActivity.background()); });
+
+    clearOnClose();
+}
+
+void Core::clearOnClose()
+{
+    if (!m_settings.clearHistoryOnClose()) {
+        return;
+    }
+    m_history.clear();
+    m_downloads.clear();
+    m_tabs.closedTabs()->clear();
 }
 
 Storage &Core::storage()
@@ -71,6 +89,11 @@ DownloadModel *Core::downloads()
 Settings *Core::settings()
 {
     return &m_settings;
+}
+
+OmnibarModel *Core::omnibar()
+{
+    return &m_omnibar;
 }
 
 EngineMessages *Core::engineMessages()

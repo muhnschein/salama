@@ -35,7 +35,12 @@ MouseArea {
     // Held too long to be a tap, and so not the page's.
     property bool heldDown: false
     property string pressedRegion: ""
-    readonly property real reach: Theme.itemSizeExtraSmall * 0.75
+    // Whether it reaches above the bar at all. Not while the omnibar's pane lies there
+    // (docs/DECISIONS/0027-omnibar.md): a press on the pane is the pane's, and handed on
+    // to the page from here it would reach a page the pane covers. The grid is still
+    // pulled up from the bar itself.
+    property bool reaching: true
+    readonly property real reach: reaching ? Theme.itemSizeExtraSmall * 0.75 : 0
     // The whole bar, whole or slim: the page ends above it, so nothing under it is
     // the page's to take.
     readonly property real strip: bar ? bar.height : 0
