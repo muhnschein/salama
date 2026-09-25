@@ -1,4 +1,6 @@
 module QtGraphicalEffects
+ColorOverlay 1.0 ColorOverlay.qml
 Desaturate 1.0 Desaturate.qml
 LinearGradient 1.0 LinearGradient.qml
 OpacityMask 1.0 OpacityMask.qml
+RadialGradient 1.0 RadialGradient.qml

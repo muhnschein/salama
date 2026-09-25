@@ -46,6 +46,7 @@ public:
                                              QStringLiteral("attached property"));
         qmlRegisterUncreatableType<Orientation>(uri, 1, 0, "Orientation", reason);
         qmlRegisterUncreatableType<PageStatus>(uri, 1, 0, "PageStatus", reason);
+        qmlRegisterUncreatableType<Cover>(uri, 1, 0, "Cover", reason);
         qmlRegisterUncreatableType<TruncationMode>(uri, 1, 0, "TruncationMode", reason);
         qmlRegisterUncreatableType<Dock>(uri, 1, 0, "Dock", reason);
         qmlRegisterUncreatableType<OpacityRamp>(uri, 1, 0, "OpacityRamp", reason);

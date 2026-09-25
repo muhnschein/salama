@@ -1,5 +1,9 @@
 # 0014 — The cover is the tab count over a field of page previews
 
+**Superseded by 0027.** The cover is lightning by default, and of the three styles
+below only the last tab remains, as the one a reader can choose instead; this record is
+kept for the history and for the heading's measures, which that style still uses.
+
 ## Context
 The first cover showed the active tab: its favicon, its title over three lines, and
 "*n* tabs" underneath in the small size. It read as a bookmark rather than as a

@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// What the cover has to say while the app is minimised: how many tabs are open,
-// and what they are. While the tab in front plays something, its mute is a second
-// action beside the search (docs/DECISIONS/0026-media-controls.md).
+// What the cover shows while the app is minimised. By default nothing to read: the
+// bolt, with a flash of sheet lightning each time it comes into view
+// (components/CoverLightning.qml, docs/DECISIONS/0027-cover-is-lightning.md). A reader
+// who wants the cover to say something can have the last tab instead, from Settings:
+// how many tabs are open, over the one last in front.
 //
-// The heading is laid out as the platform's own covers lay theirs out, and with
-// postivene's and vuo's measures exactly: the name top left with a line under it,
-// the two set closer than their line boxes would put them, and the number top
-// right, large. The rest of the cover is the tabs themselves, grey and half
-// there, fading in a large padding below the heading -- see
-// components/CoverTabField.qml and docs/DECISIONS/0014-cover-is-the-tab-count.md.
+// Either way the cover's actions are what it offers: a search, and while the tab in
+// front plays something its mute beside it (docs/DECISIONS/0026-media-controls.md).
 //
-// The number is the message. The field is what makes it a browser's number.
+// The last tab's heading is laid out as the platform's own covers lay theirs out, and
+// with postivene's and vuo's measures exactly: the name top left with a line under it,
+// the two set closer than their line boxes would put them, and the number top right,
+// large. Under it, the tab itself, grey and half there, fading in a large padding
+// below the heading -- see components/CoverTabPicture.qml.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -28,11 +30,16 @@ CoverBackground {
     /// string that is not.
     readonly property string brandName: "Salama"
 
-    /// What the cover is set to show (Settings.coverStyle): its own icon and nothing
-    /// else, the heading over the one tab last read, or the heading over all of them.
-    /// Everything below turns on these two.
-    readonly property bool showsHeading: Settings.coverStyle !== Settings.CoverIconOnly
-    readonly property bool showsEveryTab: Settings.coverStyle === Settings.CoverEveryTab
+    /// What the cover is set to show (Settings.coverStyle): the lightning, or the
+    /// heading over the tab last read. Everything below turns on this.
+    readonly property bool showsLatestTab: Settings.coverStyle === Settings.CoverLatestTab
+
+    /// Whether the ambience is a dark one: its text is light. What the lightning's
+    /// flash is lit with, and which ink the mute's picture is drawn in, turn on it.
+    readonly property bool onDarkAmbience: {
+        var ink = Theme.primaryColor
+        return 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
+    }
 
     /// The front tab plays something, or is muted: its mute is offered, as the bar
     /// offers it (components/AddressLabel.qml).
@@ -47,32 +54,28 @@ CoverBackground {
     /// glyph could not be checked against the bar's speaker.
     readonly property string muteIcon: {
         var size = Math.max(32, Math.min(64, Math.round(Theme.iconSizeSmall / 8) * 8))
-        var ink = Theme.primaryColor
-        var onDark = 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
         var heard = TabModel.activeMediaState === TabModel.MediaPlaying && !TabModel.activeMuted
         return Qt.resolvedUrl("../../art/cover/speaker-" + (heard ? "on" : "mute")
-                              + "-" + size + "-" + (onDark ? "white" : "black") + ".png")
+                              + "-" + size + "-" + (cover.onDarkAmbience ? "white" : "black")
+                              + ".png")
     }
 
     objectName: "coverPage"
 
-    // Under the words, and declared first so that it is: the field is the ground
-    // the heading and the number are read against.
-    // The icon-only cover: the app's own mark, quietly, and the one action. No count
-    // and no pictures -- for a reader who wants the switcher to stay a row of apps
-    // rather than a row of screens, and for whom a tab count is not news.
-    Image {
-        objectName: "coverIcon"
-        anchors.centerIn: parent
-        width: Math.round(cover.width * 0.45)
-        height: width
-        visible: !cover.showsHeading
-        opacity: Theme.opacityHigh
-        smooth: true
-        source: Qt.resolvedUrl("../../art/harbour-salama.png")
+    // The cover as it is unless Settings says otherwise. It flashes as the cover comes
+    // into view, and only while it is the cover being shown.
+    CoverLightning {
+        anchors.fill: parent
+        visible: !cover.showsLatestTab
+        // Not on visible: that is whether every item above this one is shown too, and
+        // how the home screen holds a cover it draws is its own business.
+        active: !cover.showsLatestTab && cover.status === Cover.Active
+        onDark: cover.onDarkAmbience
     }
 
-    CoverTabField {
+    // Under the words, and declared before them so that it is: the picture is the
+    // ground the heading and the number are read against.
+    CoverTabPicture {
         anchors {
             top: heading.bottom
             left: parent.left
@@ -82,15 +85,14 @@ CoverBackground {
         }
         // Texture, not a picture to be looked into. Grey at full strength reads as
         // a second screen inside the cover and pulls the eye off the number.
-        visible: cover.showsHeading
+        visible: cover.showsLatestTab
         opacity: Theme.opacityLow
         fadeHeight: cover.height * 0.14
-        // Most recently in front first, so what a glance lands on is where the reader
-        // has just been rather than whichever tab is oldest. Cut to one for the middle
-        // style, where the field becomes a single full-bleed picture of the tab just
-        // left -- the grid shapes itself to what it is given.
-        model: cover.showsEveryTab ? TabModel.recentThumbnails
-                                   : TabModel.recentThumbnails.slice(0, 1)
+        // The tab most recently in front, which is where the reader has just been.
+        source: {
+            var shots = TabModel.recentThumbnails
+            return shots.length > 0 ? shots[0] : ""
+        }
     }
 
     // The name and what the number counts, top left; the number top right, always
@@ -99,7 +101,7 @@ CoverBackground {
         id: heading
 
         objectName: "coverHeading"
-        visible: cover.showsHeading
+        visible: cover.showsLatestTab
         anchors {
             top: parent.top
             left: parent.left
@@ -136,7 +138,7 @@ CoverBackground {
         id: tabCount
 
         objectName: "coverTabCount"
-        visible: cover.showsHeading
+        visible: cover.showsLatestTab
         anchors {
             top: parent.top
             right: parent.right

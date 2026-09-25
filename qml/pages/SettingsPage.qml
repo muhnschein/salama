@@ -197,9 +197,9 @@ Page {
                 text: qsTr("Cover")
             }
 
-            // The order is how much the cover says, least first, and the index is the
-            // stored value -- Settings.CoverIconOnly, CoverLatestTab, CoverEveryTab.
-            // A combo rather than three switches: these are one choice, not three.
+            // The default first, and the index is the stored value -- Settings.CoverLightning,
+            // CoverLatestTab (docs/DECISIONS/0027-cover-is-lightning.md). A combo rather
+            // than a switch: which of two covers it is, not something turned on or off.
             ComboBox {
                 objectName: "coverStyleCombo"
                 width: parent.width
@@ -207,21 +207,13 @@ Page {
                 currentIndex: Settings.coverStyle
                 menu: ContextMenu {
                     MenuItem {
-                        objectName: "coverIconOnlyItem"
-                        text: qsTr("The icon alone")
+                        objectName: "coverLightningItem"
+                        text: qsTr("Lightning")
                     }
 
                     MenuItem {
                         objectName: "coverLatestTabItem"
                         text: qsTr("The tab count and the last tab")
-                    }
-
-                    // "Most recent" rather than "every": the field draws six cells at
-                    // most, most recently read first, and the number above it is what
-                    // says how many there are (docs/DECISIONS/0014-cover-is-the-tab-count.md).
-                    MenuItem {
-                        objectName: "coverEveryTabItem"
-                        text: qsTr("The tab count and the most recent tabs")
                     }
                 }
                 onCurrentIndexChanged: Settings.coverStyle = currentIndex

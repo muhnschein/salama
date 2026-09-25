@@ -179,16 +179,16 @@ void Settings::setCutoutGuard(bool cutoutGuard)
 
 int Settings::coverStyle() const
 {
-    const int stored = m_settings.value(QLatin1String(CoverStyleKey), CoverEveryTab).toInt();
-    if (stored < CoverIconOnly || stored > CoverEveryTab) {
-        return CoverEveryTab;
+    const int stored = m_settings.value(QLatin1String(CoverStyleKey), CoverLightning).toInt();
+    if (stored < CoverLightning || stored > CoverLatestTab) {
+        return CoverLightning;
     }
     return stored;
 }
 
 void Settings::setCoverStyle(int style)
 {
-    if (style < CoverIconOnly || style > CoverEveryTab || style == coverStyle()) {
+    if (style < CoverLightning || style > CoverLatestTab || style == coverStyle()) {
         return;
     }
     m_settings.setValue(QLatin1String(CoverStyleKey), style);

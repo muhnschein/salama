@@ -75,7 +75,7 @@ Reuse policy:
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
 - Settings: home page, search engine, clear data, mobile/desktop UA, what the cover shows, tracking protection level
-- Cover: the tab count over a field of page previews, in one of three styles chosen in Settings
+- Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2

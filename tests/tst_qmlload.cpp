@@ -116,7 +116,8 @@ private slots:
     void bookmarksPage();
     void settingsPage();
     void cover();
-    void coverFieldFollowsTheFront();
+    void coverFlashesAsItComesIntoView();
+    void coverPictureFollowsTheFront();
     void coverStyleIsConfigurable();
     void thumbnailCapturedOnLeavingTheApp();
     void pagesSleepOutOfSight();
@@ -2758,14 +2759,14 @@ void tst_qmlload::settingsPage()
 
     // The cover's style is the one choice here that another page has to answer.
     QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
-    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverEveryTab));
-    coverCombo->setProperty("currentIndex", int(Settings::CoverIconOnly));
-    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverIconOnly));
+    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverLightning));
+    coverCombo->setProperty("currentIndex", int(Settings::CoverLatestTab));
+    QCOMPARE(m_core->settings()->coverStyle(), int(Settings::CoverLatestTab));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
-                 ->property("visible")
-                 .toBool());
-    coverCombo->setProperty("currentIndex", int(Settings::CoverEveryTab));
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
+                ->property("visible")
+                .toBool());
+    coverCombo->setProperty("currentIndex", int(Settings::CoverLightning));
 
     // Tracking protection is Standard until it is changed here, and a change reaches
     // the engine at once, every preference of the new level after the old ones.
@@ -2821,20 +2822,25 @@ void tst_qmlload::cover()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    QCOMPARE(
-        coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
-        QStringLiteral("Salama"));
-    QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("Tabs"));
 
-    // The number is what the cover is for, and the field under it holds one cell
-    // per tab -- no cell stands in for a tab that is not there, and none is left
-    // out for a tab that has no picture yet.
-    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
-    QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
-    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
+    // The lightning, and nothing to read: no name, no number, no picture of a page.
+    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
+    QVERIFY(lightning->property("visible").toBool());
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
+                 ->property("visible")
+                 .toBool());
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"))
+                 ->property("visible")
+                 .toBool());
+    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"))
+                 ->property("visible")
+                 .toBool());
+
+    // The bolt is a picture the cover has on disk, installed beside the QML.
+    const QUrl bolt =
+        coverItem->findChild<QObject *>(QStringLiteral("coverBolt"))->property("source").toUrl();
+    QVERIFY(bolt.toString().endsWith(QLatin1String("art/cover/bolt.png")));
+    QVERIFY2(QFile::exists(bolt.toLocalFile()), qPrintable(bolt.toString()));
 
     // The action is a search: a new tab, the window raised, and the address field up
     // with the whole url selected so the first key typed replaces it.
@@ -2843,20 +2849,56 @@ void tst_qmlload::cover()
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
     QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
-    QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
-    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 2);
 }
 
-void tst_qmlload::coverFieldFollowsTheFront()
+void tst_qmlload::coverFlashesAsItComesIntoView()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
+    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
+    auto *strike = coverItem->findChild<QObject *>(QStringLiteral("coverStrike"));
+    QVERIFY(strike != nullptr);
+    const int inactive = 0;
+    const int active = 2;
+
+    // Nothing moves on a cover nobody is looking at.
+    QVERIFY(!lightning->property("active").toBool());
+    QVERIFY(!strike->property("running").toBool());
+    QCOMPARE(lightning->property("flash").toReal(), 0.0);
+
+    // In view: one flash, and then the cover is still again.
+    coverItem->setProperty("status", active);
+    QVERIFY(lightning->property("active").toBool());
+    QVERIFY(strike->property("running").toBool());
+    QTRY_VERIFY(lightning->property("flash").toReal() > 0.5);
+    QTRY_VERIFY_WITH_TIMEOUT(!strike->property("running").toBool(), 5000);
+    QCOMPARE(lightning->property("flash").toReal(), 0.0);
+
+    // Out of view mid-flash: put out at once, not left lit for the next time.
+    coverItem->setProperty("status", inactive);
+    coverItem->setProperty("status", active);
+    QTRY_VERIFY(lightning->property("flash").toReal() > 0.0);
+    coverItem->setProperty("status", inactive);
+    QVERIFY(!strike->property("running").toBool());
+    QCOMPARE(lightning->property("flash").toReal(), 0.0);
+
+    // The last tab's cover has no lightning to flash.
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    coverItem->setProperty("status", active);
+    QVERIFY(!lightning->property("active").toBool());
+    QVERIFY(!strike->property("running").toBool());
+}
+
+void tst_qmlload::coverPictureFollowsTheFront()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
     TabModel *tabs = m_core->tabs();
     const int first = tabs->activeTabId();
     const int second = tabs->newTab(QStringLiteral("https://second.example/"));
 
-    // A picture for each, so the order the cover draws them in can be read off the
-    // cells' own sources.
+    // A picture for each, so which one the cover draws can be read off its source.
     QObject *webView = currentWebView();
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
@@ -2870,56 +2912,60 @@ void tst_qmlload::coverFieldFollowsTheFront()
     QVERIFY(!firstShot.isEmpty());
     QVERIFY(firstShot != secondShot);
 
-    // The tab in front leads the field, whatever the grid's own order is.
-    QList<QObject *> cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
-    QCOMPARE(cells.count(), 2);
-    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), firstShot);
+    // The tab in front is the one drawn, whatever the grid's own order is.
+    auto *picture = coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"));
+    QCOMPARE(picture->property("source").toString(), firstShot);
+    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverTabShot"))
+                ->property("source")
+                .toUrl()
+                .toString()
+                .endsWith(firstShot));
 
     tabs->activateTabById(second);
-    cells = findObjects(coverItem, QStringLiteral("coverTabCell"));
-    QCOMPARE(evaluate(cells.first(), QStringLiteral("modelData")).toString(), secondShot);
+    QCOMPARE(picture->property("source").toString(), secondShot);
 }
 
 void tst_qmlload::coverStyleIsConfigurable()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    m_core->tabs()->newTab(QStringLiteral("https://second.example/"));
-    m_core->tabs()->newTab(QStringLiteral("https://third.example/"));
 
+    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
     auto *heading = coverItem->findChild<QObject *>(QStringLiteral("coverHeading"));
     auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
-    auto *field = coverItem->findChild<QObject *>(QStringLiteral("coverTabField"));
-    auto *icon = coverItem->findChild<QObject *>(QStringLiteral("coverIcon"));
+    auto *picture = coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"));
 
-    // Every tab, which is what a reader who has not been to Settings gets.
-    QVERIFY(heading->property("visible").toBool());
-    QVERIFY(count->property("visible").toBool());
-    QVERIFY(field->property("visible").toBool());
-    QVERIFY(!icon->property("visible").toBool());
-    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
-
-    // The middle one: the heading stays, and the field is cut to the tab last read --
-    // one cell, which the grid draws across the whole of the room it has.
-    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
-    QVERIFY(heading->property("visible").toBool());
-    QVERIFY(count->property("visible").toBool());
-    QVERIFY(field->property("visible").toBool());
-    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 1);
-
-    // The icon alone: no heading, no number, no pictures. The action stays whatever
-    // the style is -- it is what the cover is there to offer.
-    m_core->settings()->setCoverStyle(Settings::CoverIconOnly);
+    // The lightning, which is what a reader who has not been to Settings gets.
+    QVERIFY(lightning->property("visible").toBool());
     QVERIFY(!heading->property("visible").toBool());
     QVERIFY(!count->property("visible").toBool());
-    QVERIFY(!field->property("visible").toBool());
-    QVERIFY(icon->property("visible").toBool());
-    QVERIFY(icon->property("source").toUrl().toString().endsWith(
-        QStringLiteral("art/harbour-salama.png")));
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")) != nullptr);
+    QVERIFY(!picture->property("visible").toBool());
 
-    m_core->settings()->setCoverStyle(Settings::CoverEveryTab);
-    QCOMPARE(findObjects(coverItem, QStringLiteral("coverTabCell")).count(), 3);
+    // The last tab: the name, what the number counts and the number over the tab
+    // last read, and no lightning.
+    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    QVERIFY(!lightning->property("visible").toBool());
+    QVERIFY(heading->property("visible").toBool());
+    QVERIFY(count->property("visible").toBool());
+    QVERIFY(picture->property("visible").toBool());
+    QCOMPARE(
+        coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
+        QStringLiteral("Salama"));
+    QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Tabs"));
+
+    // The number follows the tabs, and the action stays whatever the style is -- it
+    // is what the cover is there to offer.
+    QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
+    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("searchCoverAction")),
+                              "triggered");
+    QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
+
+    m_core->settings()->setCoverStyle(Settings::CoverLightning);
+    QVERIFY(lightning->property("visible").toBool());
+    QVERIFY(!heading->property("visible").toBool());
 }
 
 void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
