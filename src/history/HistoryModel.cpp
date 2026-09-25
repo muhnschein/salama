@@ -9,10 +9,18 @@
 #include <QVariant>
 #include <QtDebug>
 #include <algorithm>
+#include <cmath>
 
 namespace Salama {
 
 namespace {
+
+const qint64 Hour = qint64(60) * 60 * 1000;
+const qint64 Day = 24 * Hour;
+// Firefox's: a choice counts over nine tenths of those before it, and every count
+// wears down by a fortieth a day (nsNavHistory::DecayFrecency).
+const double InputUseDecay = 0.9;
+const double InputDayDecay = 0.975;
 
 bool run(QSqlQuery &query)
 {
@@ -56,6 +64,8 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return entry.date;
     case VisitCountRole:
         return entry.visitCount;
+    case FaviconRole:
+        return entry.favicon;
     default:
         return {};
     }
@@ -68,6 +78,7 @@ QHash<int, QByteArray> HistoryModel::roleNames() const
         {TitleRole, QByteArrayLiteral("title")},
         {DateRole, QByteArrayLiteral("date")},
         {VisitCountRole, QByteArrayLiteral("visitCount")},
+        {FaviconRole, QByteArrayLiteral("favicon")},
     };
 }
 
@@ -89,6 +100,33 @@ void HistoryModel::setSearchTerm(const QString &term)
     m_searchTerm = term;
     emit searchTermChanged();
     reload();
+}
+
+QList<HistoryModel::Entry> HistoryModel::allEntries() const
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
+                                 "FROM browser_history ORDER BY date DESC, id DESC"));
+    QList<Entry> entries;
+    if (!run(query)) {
+        return entries;
+    }
+    while (query.next()) {
+        entries.append(entryAt(query));
+    }
+    return entries;
+}
+
+HistoryModel::Entry HistoryModel::entryAt(const QSqlQuery &query)
+{
+    Entry entry;
+    entry.id = query.value(0).toInt();
+    entry.url = query.value(1).toString();
+    entry.title = query.value(2).toString();
+    entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
+    entry.visitCount = query.value(4).toInt();
+    entry.favicon = query.value(5).toString();
+    return entry;
 }
 
 bool HistoryModel::isRecordable(const QString &url)
@@ -160,6 +198,27 @@ void HistoryModel::updateTitle(const QString &url, const QString &title)
     }
 }
 
+void HistoryModel::updateFavicon(const QString &url, const QString &favicon)
+{
+    if (!isRecordable(url)) {
+        return;
+    }
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("UPDATE browser_history SET favicon = ? WHERE url = ?"));
+    query.addBindValue(Storage::text(favicon));
+    query.addBindValue(url);
+    if (!run(query) || query.numRowsAffected() <= 0) {
+        return;
+    }
+    for (int i = 0; i < m_entries.count(); ++i) {
+        if (m_entries.at(i).url == url) {
+            m_entries[i].favicon = favicon;
+            const QModelIndex modelIndex = index(i, 0);
+            emit dataChanged(modelIndex, modelIndex, QVector<int>{FaviconRole});
+        }
+    }
+}
+
 void HistoryModel::remove(int index)
 {
     if (index < 0 || index >= m_entries.count()) {
@@ -171,6 +230,10 @@ void HistoryModel::remove(int index)
     if (!run(query)) {
         return;
     }
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE url = ?"));
+    inputs.addBindValue(m_entries.at(index).url);
+    run(inputs);
     beginRemoveRows(QModelIndex(), index, index);
     m_entries.removeAt(index);
     endRemoveRows();
@@ -179,11 +242,102 @@ void HistoryModel::remove(int index)
 
 void HistoryModel::clear()
 {
+    clearSince(0);
+}
+
+void HistoryModel::clearSince(double since)
+{
+    const qint64 from = since > 0 ? qint64(since) : 0;
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE used >= ?"));
+    inputs.addBindValue(from);
+    run(inputs);
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM browser_history"));
+    query.prepare(QStringLiteral("DELETE FROM browser_history WHERE date >= ?"));
+    query.addBindValue(from);
     if (run(query)) {
         reload();
     }
+}
+
+double HistoryModel::rangeStart(int range)
+{
+    return double(rangeStart(range, QDateTime::currentDateTime()));
+}
+
+qint64 HistoryModel::rangeStart(int range, const QDateTime &now)
+{
+    const qint64 at = now.toMSecsSinceEpoch();
+    switch (range) {
+    case ClearLastHour:
+        return at - Hour;
+    case ClearLastTwoHours:
+        return at - 2 * Hour;
+    case ClearLastFourHours:
+        return at - 4 * Hour;
+    case ClearToday:
+        return QDateTime(now.toLocalTime().date(), QTime(0, 0)).toMSecsSinceEpoch();
+    default:
+        return 0;
+    }
+}
+
+QString HistoryModel::inputKey(const QString &input)
+{
+    return input.trimmed().toLower();
+}
+
+void HistoryModel::recordInput(const QString &input, const QString &url) const
+{
+    const QString key = inputKey(input);
+    if (key.isEmpty() || !isRecordable(url)) {
+        return;
+    }
+    QSqlQuery known(m_db);
+    known.prepare(
+        QStringLiteral("SELECT use_count FROM input_history WHERE input = ? AND url = ?"));
+    known.addBindValue(key);
+    known.addBindValue(url);
+    if (!run(known)) {
+        return;
+    }
+    const double count = known.next() ? known.value(0).toDouble() : 0;
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("INSERT OR REPLACE INTO input_history (input, url, use_count, "
+                                 "used) VALUES (?, ?, ?, ?)"));
+    query.addBindValue(key);
+    query.addBindValue(url);
+    query.addBindValue(count * InputUseDecay + 1);
+    query.addBindValue(QDateTime::currentMSecsSinceEpoch());
+    run(query);
+}
+
+// The whole table, matched here rather than in SQL, as the history is (allEntries()):
+// it is pruned to MaxInputs.
+QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now) const
+{
+    QHash<QString, double> ranks;
+    const QString key = inputKey(typed);
+    if (key.isEmpty()) {
+        return ranks;
+    }
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT input, url, use_count, used FROM input_history"));
+    if (!run(query)) {
+        return ranks;
+    }
+    while (query.next()) {
+        const QString input = query.value(0).toString();
+        if (!input.startsWith(key)) {
+            continue;
+        }
+        const double days = double(std::max(qint64(0), now - query.value(3).toLongLong())) / Day;
+        const double rank =
+            query.value(2).toDouble() * std::pow(InputDayDecay, days) * (input == key ? 2 : 1);
+        const QString url = query.value(1).toString();
+        ranks.insert(url, std::max(rank, ranks.value(url)));
+    }
+    return ranks;
 }
 
 void HistoryModel::prune()
@@ -193,16 +347,21 @@ void HistoryModel::prune()
                                  "(SELECT id FROM browser_history ORDER BY date DESC LIMIT ?)"));
     query.addBindValue(MaxEntries);
     run(query);
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE rowid NOT IN "
+                                  "(SELECT rowid FROM input_history ORDER BY used DESC LIMIT ?)"));
+    inputs.addBindValue(MaxInputs);
+    run(inputs);
 }
 
 void HistoryModel::reload()
 {
     QSqlQuery query(m_db);
     if (m_searchTerm.isEmpty()) {
-        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
                                      "FROM browser_history ORDER BY date DESC, id DESC LIMIT ?"));
     } else {
-        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
                                      "FROM browser_history WHERE url LIKE ? OR title LIKE ? "
                                      "ORDER BY date DESC, id DESC LIMIT ?"));
         const QString pattern = QLatin1Char('%') + m_searchTerm + QLatin1Char('%');
@@ -216,13 +375,7 @@ void HistoryModel::reload()
 
     QList<Entry> entries;
     while (query.next()) {
-        Entry entry;
-        entry.id = query.value(0).toInt();
-        entry.url = query.value(1).toString();
-        entry.title = query.value(2).toString();
-        entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
-        entry.visitCount = query.value(4).toInt();
-        entries.append(entry);
+        entries.append(entryAt(query));
     }
 
     const int oldCount = m_entries.count();

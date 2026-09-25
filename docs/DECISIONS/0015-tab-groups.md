@@ -98,8 +98,9 @@ in a pulley, the way postivene offers another profile, because that is where a r
 has just read the list is looking. It was also a picker once, given a tab, for the menu's
 "Move tab to group"; carrying the tab onto the strip replaced both (0021).
 
-`TabSearchModel` (`TabSearch`) lists the tabs whose title or address contains the term,
-case-insensitively, group by group in the strip's order. When the **term** changes the
+`TabSearchModel` (`TabSearch`) lists the tabs whose title and address hold every word of
+the term, case-insensitively, group by group in the strip's order — matched as the
+address bar's suggestions are (0027). When the **term** changes the
 rows are refined one at a time — kept, removed or inserted, walking the old rows and
 the new together, both drawn from the same tabs in the same order — and never reset:
 a reset rebuilt the list under the reader's finger on every keystroke, and on device

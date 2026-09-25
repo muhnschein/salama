@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "search/SearchWords.h"
+
 #include <QAbstractListModel>
 #include <QList>
 #include <QString>
@@ -10,8 +12,10 @@ namespace Salama {
 
 class TabModel;
 
-// The open tabs whose title or address contains the search term, group by group in
-// the strip's order and within a group in the grid's. Every change to the tabs or the
+// The open tabs whose title and address hold every word of the search term, group by
+// group in the strip's order and within a group in the grid's. The words are matched as
+// the address bar's suggestions match them, by the one SearchWords, so the two searches
+// find the same tabs (docs/DECISIONS/0027-omnibar.md). Every change to the tabs or the
 // groups rebuilds the whole list: it is read on one page, and it is never long
 // (docs/DECISIONS/0015-tab-groups.md).
 class TabSearchModel : public QAbstractListModel
@@ -64,6 +68,7 @@ private:
 
     TabModel *m_tabs;
     QString m_searchTerm;
+    SearchWords m_words;
     QList<Row> m_rows;
 };
 

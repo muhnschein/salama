@@ -8,6 +8,7 @@
 #include "engine/PageActivity.h"
 #include "engine/PageMedia.h"
 #include "history/HistoryModel.h"
+#include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
 #include "settings/Settings.h"
 #include "storage/Storage.h"
@@ -37,10 +38,17 @@ public:
     BookmarkModel *bookmarks();
     DownloadModel *downloads();
     Settings *settings();
+    OmnibarModel *omnibar();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
     PageMedia *pageMedia();
     Reader *reader();
+
+    // What is set to go as the browser closes -- the history, the list of downloads and
+    // the recently closed tabs, with Settings::clearHistoryOnClose -- goes: main() calls
+    // it as the application quits, and the constructor on every start, for a browser
+    // stopped before it could (docs/DECISIONS/0030-history-settings.md).
+    void clearOnClose();
 
 private:
     Storage m_storage;
@@ -51,6 +59,8 @@ private:
     BookmarkModel m_bookmarks;
     DownloadModel m_downloads;
     Settings m_settings;
+    // After everything it searches, which it is made from.
+    OmnibarModel m_omnibar;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
     PageMedia m_pageMedia;

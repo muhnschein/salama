@@ -65,9 +65,20 @@ drawn over a reader view.
 **Its look is Settings', as Firefox's is its preferences'.** Colours — the ambience's,
 light or dark as it is, or Firefox's light, sepia or dark whatever the ambience —
 typeface, sans-serif or serif, and Firefox's nine text sizes (`10 + 2 × step` pixels, five
-the default), in a *Reader view* section of Settings. A reader view on the screen follows a
+the default), on a *Reader view* page of Settings (0028). A reader view on the screen follows a
 change at once: the view is handed a script that sets its classes and font size, as
 Firefox's page sets its own, rather than loaded again and scrolled back to the top.
+
+Under the choices, the page shows a few lines of an article as the reader view will set
+them (`components/ReaderPreview.qml`): the site's name in the colour of a link, a heading
+and a paragraph, in the theme's colours (`Reader.backgroundOf`, `textColorOf`,
+`linkColorOf`, from `reader.css`, whose values `tst_reader` checks they are), in its
+typeface, and with every measure the style sheet's — padding, sizes in em, line heights —
+in css pixels as large as the engine lays one out (`Settings.pageZoom`), so the text is
+the size it will be rather than a smaller picture of it. It is drawn by Qt, not by the
+engine: it follows the choices as they are made, and the serif and sans-serif it asks
+fontconfig for are the ones the engine's generic families are. It sits below the
+controls, so a text size growing it never moves the slider from under a finger.
 
 The entry's icon is `icon-m-file-formatted`, the one Jolla's Documents gives a text
 document (sailfish-office `plugin/TextDocumentPage.qml`), for the reason 0021 gives for

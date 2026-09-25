@@ -94,18 +94,11 @@ const ReadingSpeed &readingSpeed(const QString &language)
     return ReadingSpeeds.front();
 }
 
-// The background each reader theme paints, from the style sheet, for the document's
-// theme-color: the strip beside the display's cutout is painted in it
-// (docs/DECISIONS/0013-screen-cutout.md).
+// The background a reader theme paints, for the document's theme-color: the strip
+// beside the display's cutout is painted in it (docs/DECISIONS/0013-screen-cutout.md).
 QString themeBackground(const QString &scheme)
 {
-    if (scheme == QLatin1String("dark")) {
-        return QStringLiteral("#1c1b22");
-    }
-    if (scheme == QLatin1String("sepia")) {
-        return QStringLiteral("#f4ecd8");
-    }
-    return QStringLiteral("#ffffff");
+    return Reader::backgroundOf(scheme).name();
 }
 
 // What the document says in an attribute, escaped for one in double quotes.
@@ -272,7 +265,12 @@ bool Reader::isDarkAmbience(const QColor &primaryColor)
 
 QString Reader::colorScheme(bool darkAmbience) const
 {
-    switch (m_settings.readerColors()) {
+    return schemeFor(m_settings.readerColors(), darkAmbience);
+}
+
+QString Reader::schemeFor(int colors, bool darkAmbience)
+{
+    switch (colors) {
     case Settings::ReaderLight:
         return QStringLiteral("light");
     case Settings::ReaderSepia:
@@ -292,10 +290,38 @@ QString Reader::bodyClass(bool darkAmbience) const
     return colorScheme(darkAmbience) + QLatin1Char(' ') + typeface;
 }
 
-// AboutReader._setFontSize: 10 + 2 * the step, in css pixels.
-int Reader::fontSize() const
+// The style sheet's --main-background, --main-foreground and --link-foreground for
+// each body class; the ambience's own is one of light and dark by then.
+QColor Reader::backgroundOf(const QString &scheme)
 {
-    return 10 + 2 * m_settings.readerTextSize();
+    if (scheme == QLatin1String("dark")) {
+        return {28, 27, 34};
+    }
+    if (scheme == QLatin1String("sepia")) {
+        return {244, 236, 216};
+    }
+    return {255, 255, 255};
+}
+
+QColor Reader::textColorOf(const QString &scheme)
+{
+    if (scheme == QLatin1String("dark")) {
+        return {251, 251, 254};
+    }
+    if (scheme == QLatin1String("sepia")) {
+        return {91, 70, 54};
+    }
+    return {21, 20, 26};
+}
+
+QColor Reader::linkColorOf(const QString &scheme)
+{
+    return scheme == QLatin1String("dark") ? QColor(0, 221, 255) : QColor(0, 97, 224);
+}
+
+int Reader::fontSizeFor(int step)
+{
+    return 10 + 2 * step;
 }
 
 QString Reader::page(const QString &article, const QString &pageUrl, const QString &pageTitle,
@@ -354,7 +380,7 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
     html += QStringLiteral("<style>") + m_styleSheet + QStringLiteral("</style></head>");
     html += QStringLiteral("<body class=\"%1\" style=\"--font-size: %2px\">")
                 .arg(bodyClass(darkAmbience))
-                .arg(fontSize());
+                .arg(fontSizeFor(m_settings.readerTextSize()));
     html += QStringLiteral("<div class=\"container\"%1>").arg(textAttributes);
     html += QStringLiteral("<div class=\"header reader-header\"%1>").arg(textAttributes);
     html += QStringLiteral("<a class=\"domain reader-domain\" href=\"%1\">%2</a>")
@@ -405,7 +431,7 @@ QString Reader::styleScript(bool darkAmbience) const
                " if (color) { color.content = '%3'; }"
                " return '';")
         .arg(bodyClass(darkAmbience))
-        .arg(fontSize())
+        .arg(fontSizeFor(m_settings.readerTextSize()))
         .arg(themeBackground(colorScheme(darkAmbience)));
 }
 

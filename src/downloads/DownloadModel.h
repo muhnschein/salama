@@ -73,36 +73,6 @@ public:
     // The oldest go beyond this many, from the list and from the database.
     static const int Limit = 50;
 
-    // The directory is made here, parents and all, if it is missing: the engine saves
-    // into it only if it is already there, and into ~/Downloads otherwise
-    // (docs/DECISIONS/0025-downloads-folder.md).
-    DownloadModel(Storage &storage, QString directory, QObject *parent = nullptr);
-
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-    QHash<int, QByteArray> roleNames() const override;
-
-    int count() const;
-    QString topic() const;
-    QString directory() const;
-
-    // What WebEngine.recvObserve() delivered: the data is the engine's JSON, already
-    // read into a map (qtmozembed src/qmozcontext.cpp). Any other topic, a message it
-    // does not know, and an id it has not seen start are ignored, and so is an id or a
-    // percentage that is not a number as the engine sends one (engine/EngineData.h).
-    Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
-
-    // Forget rows. The files stay where they are.
-    Q_INVOKABLE void remove(int row);
-    Q_INVOKABLE void clear();
-
-    // The file as a URL to open it by, or empty when there is no such row or no file.
-    Q_INVOKABLE QString fileUrl(int row) const;
-
-signals:
-    void countChanged();
-
-private:
     struct Download
     {
         int id = 0;
@@ -120,6 +90,46 @@ private:
         qint64 started = 0;
     };
 
+    // The directory is made here, parents and all, if it is missing: the engine saves
+    // into it only if it is already there, and into ~/Downloads otherwise
+    // (docs/DECISIONS/0025-downloads-folder.md).
+    DownloadModel(Storage &storage, QString directory, QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    int count() const;
+    QString topic() const;
+    QString directory() const;
+    // The rows as the list shows them, newest first, for the address bar's suggestions
+    // (docs/DECISIONS/0027-omnibar.md).
+    const QList<Download> &downloads() const;
+
+    // What WebEngine.recvObserve() delivered: the data is the engine's JSON, already
+    // read into a map (qtmozembed src/qmozcontext.cpp). Any other topic, a message it
+    // does not know, and an id it has not seen start are ignored, and so is an id or a
+    // percentage that is not a number as the engine sends one (engine/EngineData.h).
+    Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
+
+    // Forget rows. The files stay where they are.
+    Q_INVOKABLE void remove(int row);
+    Q_INVOKABLE void clear();
+    // The rows of downloads started at or after a time, in milliseconds since the
+    // epoch, as HistoryModel::clearSince() takes it, but for any still coming: what
+    // clearing the history takes of the list of downloads.
+    Q_INVOKABLE void clearSince(double since);
+
+    // The file as a URL to open it by, or empty when there is no such row or no file.
+    Q_INVOKABLE QString fileUrl(int row) const;
+    // The row a download is on, by the id of its own that lasts, or -1 once it has
+    // gone: what a list other than this one keeps to find it again by.
+    Q_INVOKABLE int rowOf(int downloadId) const;
+
+signals:
+    void countChanged();
+
+private:
     void start(int engineId, const QVariantMap &message);
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);

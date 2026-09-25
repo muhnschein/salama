@@ -219,8 +219,8 @@ Item {
             }
             height: Theme.itemSizeLarge
 
-            // Every open tab whose title or address holds what is typed, group by
-            // group. Silica's own search field, with its words from the left edge.
+            // Every open tab that holds each word typed, in its title or address, group
+            // by group. Silica's own search field, with its words from the left edge.
             SearchField {
                 id: searchField
 

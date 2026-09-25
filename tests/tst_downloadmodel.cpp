@@ -35,7 +35,9 @@ private slots:
     void limit();
     void remove();
     void clear();
+    void clearSince();
     void fileUrl();
+    void rowOf();
     void directory();
     void withoutDatabase();
 };
@@ -650,6 +652,43 @@ void tst_downloadmodel::clear()
     QCOMPARE(reloaded.count(), 0);
 }
 
+// The rows of downloads started at a time or since, as clearing the history takes
+// them; none still coming.
+void tst_downloadmodel::clearSince()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    {
+        QSqlQuery insert(storage.database());
+        QVERIFY(insert.exec(QStringLiteral("INSERT INTO download (id, name, status, started) "
+                                           "VALUES (1, 'old.pdf', 1, 5)")));
+    }
+    DownloadModel model(storage, dir.path());
+    const qint64 before = QDateTime::currentMSecsSinceEpoch();
+    model.observe(Topic, startMessage(1, QStringLiteral("done.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    model.observe(Topic, startMessage(2, QStringLiteral("coming.pdf")));
+    QCOMPARE(model.count(), 3);
+    QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+
+    model.clearSince(double(before));
+    QCOMPARE(model.count(), 2);
+    QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(model.data(model.index(0, 0), DownloadModel::NameRole).toString(),
+             QStringLiteral("coming.pdf"));
+    QCOMPARE(model.data(model.index(1, 0), DownloadModel::NameRole).toString(),
+             QStringLiteral("old.pdf"));
+    QCOMPARE(rowsInDatabase(storage), 2);
+
+    // Nothing more to take: nothing said.
+    model.clearSince(double(before));
+    QCOMPARE(countSpy.count(), 1);
+    model.clearSince(0);
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(model.data(model.index(0, 0), DownloadModel::StatusRole).toInt(),
+             int(DownloadModel::Running));
+}
+
 void tst_downloadmodel::fileUrl()
 {
     QTemporaryDir dir;
@@ -677,6 +716,44 @@ void tst_downloadmodel::fileUrl()
 
 // The engine saves into the folder only if it is already there, so the model makes it,
 // and the folders above it, before the engine is told of it.
+// A download found again by its own lasting id, after rows have come and gone around
+// it: what the address bar keeps to open it by (docs/DECISIONS/0027-omnibar.md). The
+// rows themselves, as kept, are what it searches.
+void tst_downloadmodel::rowOf()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QVERIFY(model.downloads().isEmpty());
+    QCOMPARE(model.rowOf(1), -1);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    const int a = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    const int b = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    QCOMPARE(model.rowOf(b), 0);
+    QCOMPARE(model.rowOf(a), 1);
+    QCOMPARE(model.rowOf(0), -1);
+    QCOMPARE(model.rowOf(b + 1), -1);
+
+    QCOMPARE(model.downloads().count(), 2);
+    QCOMPARE(model.downloads().at(0).id, b);
+    QCOMPARE(model.downloads().at(0).name, QStringLiteral("b.pdf"));
+    QCOMPARE(model.downloads().at(0).url, QStringLiteral("https://files.example/b.pdf"));
+    QCOMPARE(model.downloads().at(0).status, DownloadModel::Running);
+    QVERIFY(model.downloads().at(0).started > 0);
+
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    QCOMPARE(model.rowOf(a), 2);
+    model.remove(model.rowOf(b));
+    QCOMPARE(model.rowOf(b), -1);
+    QCOMPARE(model.rowOf(a), 1);
+    QCOMPARE(model.fileUrl(model.rowOf(a)),
+             QUrl::fromLocalFile(Downloads + QStringLiteral("a.pdf")).toString());
+    model.clear();
+    QCOMPARE(model.rowOf(a), -1);
+}
+
 void tst_downloadmodel::directory()
 {
     QTemporaryDir dir;

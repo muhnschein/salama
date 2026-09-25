@@ -2,11 +2,13 @@
 // Copyright (c) 2026 salama contributors
 //
 // What the menu button on the navigation bar brings up: a sheet of icons that comes
-// up from under the bar, each with what it does written under it, in three rows -- the
-// tabs, the page in front, the browser. A tap on one does it and puts the sheet away;
-// a tap outside it puts it away alone, and so does pulling it back down. The same
+// up from under the bar, each with what it does written under it, in two rows -- the
+// page in front, the browser. A tap on one does it and puts the sheet away; a tap
+// outside it puts it away alone, and so does pulling it back down. The same
 // DockedPanel the grid's list of closed tabs is, so the two sheets come and go alike
-// (docs/DECISIONS/0021-menu-sheet.md).
+// (docs/DECISIONS/0021-menu-sheet.md). A new tab is not asked for here: the plus at
+// the foot of the tab grid opens one, and so does the cover's search quick action
+// (docs/DECISIONS/0029-quick-action.md).
 //
 // The pull is the sheet's own. On device DockedPanel's drag did not take a pull begun
 // on the icons, while the list of closed tabs -- rows in a Silica list -- goes down
@@ -22,7 +24,7 @@ import harbour.salama 1.0
 DockedPanel {
     id: menu
 
-    // The page in front, which the second row acts on, or null while it is made.
+    // The page in front, which the first row acts on, or null while it is made.
     property Item view: null
     readonly property bool hasPage: TabModel.activeUrl.length > 0
     // The page in front's reader view (docs/DECISIONS/0024-reader-view.md).
@@ -122,27 +124,6 @@ DockedPanel {
             }
 
             SectionHeader {
-                text: qsTr("Tabs")
-            }
-
-            Grid {
-                objectName: "menuTabsRow"
-                width: parent.width
-                columns: 4
-
-                MenuButton {
-                    objectName: "newTabMenuButton"
-                    width: menu.width / 4
-                    iconSource: "image://theme/icon-m-tab-new"
-                    text: qsTr("New tab")
-                    onClicked: {
-                        menu.hide()
-                        TabModel.newTab(Settings.homePage)
-                    }
-                }
-            }
-
-            SectionHeader {
                 text: qsTr("This page")
             }
 
@@ -194,13 +175,13 @@ DockedPanel {
                     }
                 }
 
-                // On while the page in front is in its desktop version, whichever way
-                // it got there: this switch, or the setting every page starts from.
-                // Set on the view, as sailfish-browser sets it on its own
+                // On while the page in front is in its desktop version. The only way to
+                // ask for one: every page starts in its phone version. Set on the view,
+                // as sailfish-browser sets it on its own
                 // (apps/browser/qml/pages/components/PopUpMenuItem.qml), and the
                 // engine loads the page again in the version asked for. The view keeps
                 // it for as long as it lives; one given up past the limit of loaded
-                // pages comes back as the setting says.
+                // pages comes back in its phone version.
                 MenuButton {
                     objectName: "desktopMenuButton"
                     width: menu.width / 4

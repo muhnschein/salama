@@ -49,6 +49,7 @@ public:
         qmlRegisterUncreatableType<TruncationMode>(uri, 1, 0, "TruncationMode", reason);
         qmlRegisterUncreatableType<Dock>(uri, 1, 0, "Dock", reason);
         qmlRegisterUncreatableType<OpacityRamp>(uri, 1, 0, "OpacityRamp", reason);
+        qmlRegisterUncreatableType<FocusBehavior>(uri, 1, 0, "FocusBehavior", reason);
     }
 
     void initializeEngine(QQmlEngine *engine, const char *uri) override

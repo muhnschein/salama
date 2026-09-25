@@ -2,8 +2,9 @@
 // Copyright (c) 2026 salama contributors
 //
 // What the cover has to say while the app is minimised: how many tabs are open,
-// and what they are. While the tab in front plays something, its mute is a second
-// action beside the search (docs/DECISIONS/0026-media-controls.md).
+// and what they are. Under them, the one quick action chosen in Settings
+// (docs/DECISIONS/0029-quick-action.md), and while the tab in front plays something,
+// its mute beside it (docs/DECISIONS/0026-media-controls.md).
 //
 // The heading is laid out as the platform's own covers lay theirs out, and with
 // postivene's and vuo's measures exactly: the name top left with a line under it,
@@ -38,27 +39,45 @@ CoverBackground {
     /// offers it (components/AddressLabel.qml).
     readonly property bool showsMute: TabModel.activeMediaState !== TabModel.NoMedia
                                       || TabModel.activeMuted
-    /// The mute's picture, as a whole URL. The home screen draws an action's picture
-    /// itself, from the file as it is, so it is one drawn at the size Silica's small
-    /// icon takes on this phone, and in white for a dark ambience and black for a
-    /// light one -- see icons/render.sh, which draws them from icons/cover/. The
-    /// speaker while the tab is heard, struck through while it is not, as on the
-    /// bar. Drawn here rather than taken from the theme's icon-cover-mute, whose
-    /// glyph could not be checked against the bar's speaker.
-    readonly property string muteIcon: {
-        var size = Math.max(32, Math.min(64, Math.round(Theme.iconSizeSmall / 8) * 8))
+    /// A quick action is chosen, which it is unless the reader chose none.
+    readonly property bool showsQuickAction: Settings.quickAction !== Settings.QuickActionNone
+
+    /// Whether the ambience is a dark one -- its ink, the primary colour, is light --
+    /// which the actions' pictures are drawn in white for, and in black on a light one.
+    readonly property bool onDark: {
         var ink = Theme.primaryColor
-        var onDark = 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
+        return 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
+    }
+
+    /// An action's picture, as a whole URL. The home screen draws an action's picture
+    /// itself, from the file as it is, so it is one drawn at the size Silica's small
+    /// icon takes on this phone, in the ambience's ink -- see icons/render.sh, which
+    /// draws them from icons/cover/, and Settings.coverIconPath, which names them. Drawn
+    /// here rather than taken from the theme's icon-cover-* glyphs, which could not be
+    /// checked against the bar's speaker, nor made for a bookmark of the reader's own.
+    function actionIcon(glyph) {
+        return Qt.resolvedUrl("../../" + Settings.coverIconPath(glyph, Theme.iconSizeSmall,
+                                                                 cover.onDark))
+    }
+
+    /// The quick action's picture: the glyph of what it opens, and for one bookmark the
+    /// glyph picked for it in Settings. None for no action, when no list offers it.
+    readonly property string quickActionIcon: {
+        var glyphs = ["", "search", "bookmarks", Settings.quickActionIcon, "downloads", "history"]
+        return cover.showsQuickAction ? cover.actionIcon(glyphs[Settings.quickAction]) : ""
+    }
+    /// The mute's picture: the speaker while the tab is heard, struck through while it is
+    /// not, as on the bar.
+    readonly property string muteIcon: {
         var heard = TabModel.activeMediaState === TabModel.MediaPlaying && !TabModel.activeMuted
-        return Qt.resolvedUrl("../../art/cover/speaker-" + (heard ? "on" : "mute")
-                              + "-" + size + "-" + (onDark ? "white" : "black") + ".png")
+        return cover.actionIcon(heard ? "speaker-on" : "speaker-mute")
     }
 
     objectName: "coverPage"
 
     // Under the words, and declared first so that it is: the field is the ground
     // the heading and the number are read against.
-    // The icon-only cover: the app's own mark, quietly, and the one action. No count
+    // The icon-only cover: the app's own mark, quietly, and the actions. No count
     // and no pictures -- for a reader who wants the switcher to stay a row of apps
     // rather than a row of screens, and for whom a tab count is not news.
     Image {
@@ -155,34 +174,47 @@ CoverBackground {
         color: Theme.primaryColor
     }
 
-    // One action, and it is the one a browser is opened for: a new tab with the
-    // address field already up and the keyboard with it. The window does the work --
-    // the field belongs to the browsing page, which is not in a cover's scope.
+    // The quick action, alone while nothing plays. What it does is the window's
+    // (harbour-salama.qml): the bar, the page stack and the pages it opens belong to the
+    // browsing page and the window, which are not in a cover's scope.
     //
-    // While the tab in front plays, the same and its mute beside it. The home screen
+    // While the tab in front plays, the quick action and the tab's mute beside it; with
+    // no quick action, the mute alone; with neither, no action at all. The home screen
     // draws the one list that is enabled, so there is one for each.
     CoverActionList {
-        objectName: "searchCoverActions"
-        enabled: !cover.showsMute
+        objectName: "quickCoverActions"
+        enabled: cover.showsQuickAction && !cover.showsMute
 
         CoverAction {
-            objectName: "searchCoverAction"
-            iconSource: "image://theme/icon-cover-search"
-            onTriggered: window.requestNewTab()
+            objectName: "quickCoverAction"
+            iconSource: cover.quickActionIcon
+            onTriggered: window.quickAction()
         }
     }
 
     CoverActionList {
         objectName: "mediaCoverActions"
-        enabled: cover.showsMute
+        enabled: cover.showsQuickAction && cover.showsMute
 
         CoverAction {
-            iconSource: "image://theme/icon-cover-search"
-            onTriggered: window.requestNewTab()
+            objectName: "mediaQuickCoverAction"
+            iconSource: cover.quickActionIcon
+            onTriggered: window.quickAction()
         }
 
         CoverAction {
             objectName: "muteCoverAction"
+            iconSource: cover.muteIcon
+            onTriggered: PageMedia.toggleMuted(TabModel.activeTabId)
+        }
+    }
+
+    CoverActionList {
+        objectName: "muteCoverActions"
+        enabled: !cover.showsQuickAction && cover.showsMute
+
+        CoverAction {
+            objectName: "loneMuteCoverAction"
             iconSource: cover.muteIcon
             onTriggered: PageMedia.toggleMuted(TabModel.activeTabId)
         }

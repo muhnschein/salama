@@ -47,6 +47,8 @@ foreach(test
     tst_bookmarkmodel
     tst_downloadmodel
     tst_settings
+    tst_searchwords
+    tst_omnibarmodel
     tst_enginemessages
     tst_pageactivity
     tst_pagemedia

@@ -228,20 +228,39 @@ padding, and on device the pictures stood too close together.
 
 ### The size of the browsing page
 `qml/pages/BrowserPage.qml` is over the 400 lines SCOPE.md §7 allows a QML file, and is
-waived here rather than split:
+waived here rather than split all the way down:
 
 qml-size-waiver: qml/pages/BrowserPage.qml
 
 The rule's other half is one responsibility per file, and the usual answer to a long file
-— take a responsibility out of it — is not available to this one. SCOPE.md §5 puts the
-`Sailfish.WebView` import in the browsing page **and nowhere else**, so that a release
-without the engine package breaks browsing rather than the application; the page is a
-`WebViewPage`, and the per-tab `WebView` component with its favicon, thumbnail and engine
-bindings is another eighty lines that cannot move out of it. What could be taken out has
-been: the bar, the address, the grid, the cell, the handle are all components of their
-own. What is left is the engine, the deck it sits in, and the state the two share, which
-is one subject. The lint's ceiling of 600 lines still applies, and if this page reaches
-it the split to make is the deck's state and gestures, not the engine.
+— take a responsibility out of it — is only partly available to this one. SCOPE.md §5
+puts the `Sailfish.WebView` import in the browsing page **and nowhere else**, so that a
+release without the engine package breaks browsing rather than the application; the page
+is a `WebViewPage`, and the per-tab `WebView` component with its favicon, thumbnail and
+engine bindings is another eighty lines that cannot move out of it. The bar, the address,
+the grid, the cell, the handle are all components of their own. The lint's ceiling of 600
+lines still applies, and this page reached it: 599 lines when the address bar was to
+become an omnibar (0027).
+
+So the split this section had named was made: the deck's state and gestures, not the
+engine. `components/TabDeck.qml` holds where the deck is and how it gets there —
+`tabsOpen`, `dragging`, the drag and deck offsets, `fullHeight` (from the page's height,
+which it is handed), `pullThreshold`, the spring, and `beginDrag()`, `dragTo()` and
+`settle()` — and nothing of what it carries. Its two layers are slots, `content` (its
+default property) for the browsing layer and `grid` for the one below, which the page
+fills: the cutout band, the view area with the pages, the bar, the find bar, the
+omnibar's pane and the grid are still **declared in the page**, so they keep its context
+— the one with the engine's imports, in which the load tests evaluate `WebEngine` and
+`WebEngineSettings` — and the deck needs no import of the engine and binds no model. The
+page keeps aliases to the deck's state (`tabsOpen`, `tabsOffset`, `fullHeight`,
+`dragging`, `pullThreshold`), which the rest of it and the tests read as before.
+
+Most of what that freed went to the omnibar's pane and its wiring, and the rest to
+`uncover()`, which puts away what lies over the page for the cover's quick action (0029):
+the page is 599 lines. What is left is the engine, the deck's contents and what the bars,
+the pane and the window ask of the page in front. Before the page takes anything more,
+that asking goes out of it — the functions the bar, the find bar, the pane and the window
+call — not the engine.
 
 ## Consequences
 The grid is instantiated with the page rather than on demand, so the delegates exist

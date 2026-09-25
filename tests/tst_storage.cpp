@@ -55,6 +55,7 @@ void tst_storage::createsSchema()
     QVERIFY(tables.contains(QStringLiteral("bookmark")));
     QVERIFY(tables.contains(QStringLiteral("setting")));
     QVERIFY(tables.contains(QStringLiteral("download")));
+    QVERIFY(tables.contains(QStringLiteral("input_history")));
 }
 
 void tst_storage::reopenKeepsData()
@@ -284,6 +285,23 @@ void tst_storage::addsDownloadsToSchemaSix()
     QVERIFY(storage.isOpen());
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
     QVERIFY(tableNames(storage).contains(QStringLiteral("download")));
+    // Schema 9's icon for each page of the history, empty for those from before it.
+    {
+        QSqlQuery icons(storage.database());
+        QVERIFY(icons.exec(QStringLiteral("SELECT favicon FROM browser_history")));
+        QVERIFY(icons.next());
+        QCOMPARE(icons.value(0).toString(), QString());
+        QVERIFY(!icons.value(0).isNull());
+    }
+    // And schema 8's, as a new database has it: a text and a page are one row.
+    QVERIFY(tableNames(storage).contains(QStringLiteral("input_history")));
+    {
+        QSqlQuery learnt(storage.database());
+        const QString insert = QStringLiteral("INSERT INTO input_history (input, url, use_count, "
+                                              "used) VALUES ('a', 'https://a.example/', 1, 1)");
+        QVERIFY(learnt.exec(insert));
+        QVERIFY(!learnt.exec(insert));
+    }
 
     QSqlQuery query(storage.database());
     QVERIFY(query.exec(QStringLiteral("SELECT url, title FROM tab")));
