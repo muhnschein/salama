@@ -26,7 +26,6 @@ private slots:
     void displayAddress_data();
     void displayAddress();
     void coverStyle();
-    void liveTabLimit();
     void trackingProtection();
     void readerStyle();
     void isAddress_data();
@@ -50,7 +49,6 @@ void tst_settings::defaults()
     QCOMPARE(settings.homePage(), Settings::defaultHomePage());
     QCOMPARE(settings.searchEngine(), Settings::defaultSearchEngine());
     QCOMPARE(settings.searchEngineIndex(), 0);
-    QVERIFY(!settings.desktopMode());
     // On unless it is turned off: a camera cutout over the first line of a page is
     // not a design decision (docs/DECISIONS/0013-screen-cutout.md).
     QVERIFY(settings.cutoutGuard());
@@ -72,17 +70,12 @@ void tst_settings::persistsValues()
     {
         Settings settings(path);
         QSignalSpy homeSpy(&settings, &Settings::homePageChanged);
-        QSignalSpy desktopSpy(&settings, &Settings::desktopModeChanged);
         QSignalSpy cutoutSpy(&settings, &Settings::cutoutGuardChanged);
 
         settings.setHomePage(QStringLiteral("  https://sailfishos.org/  "));
         settings.setHomePage(QStringLiteral("https://sailfishos.org/"));
         QCOMPARE(homeSpy.count(), 1);
         QCOMPARE(settings.homePage(), QStringLiteral("https://sailfishos.org/"));
-
-        settings.setDesktopMode(true);
-        settings.setDesktopMode(true);
-        QCOMPARE(desktopSpy.count(), 1);
 
         settings.setCutoutGuard(false);
         settings.setCutoutGuard(false);
@@ -91,7 +84,6 @@ void tst_settings::persistsValues()
     }
     Settings reloaded(path);
     QCOMPARE(reloaded.homePage(), QStringLiteral("https://sailfishos.org/"));
-    QVERIFY(reloaded.desktopMode());
     QVERIFY(!reloaded.cutoutGuard());
     QCOMPARE(reloaded.searchEngine(), QStringLiteral("startpage"));
 
@@ -256,45 +248,6 @@ void tst_settings::displayAddress()
     QFETCH(QString, url);
     QFETCH(QString, expected);
     QCOMPARE(Settings::displayAddress(url), expected);
-}
-
-void tst_settings::liveTabLimit()
-{
-    QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
-    Settings settings(path);
-    QSignalSpy spy(&settings, &Settings::liveTabLimitChanged);
-
-    // Five by default, as Jolla's browser keeps; the choices are what the combo
-    // offers, with 0 standing for all of them.
-    QCOMPARE(settings.liveTabLimit(), Settings::defaultLiveTabLimit());
-    QCOMPARE(settings.liveTabLimit(), 5);
-    QCOMPARE(settings.liveTabLimitChoices(), (QVariantList{3, 5, 10, 0}));
-    QCOMPARE(settings.liveTabLimitIndex(), 1);
-
-    settings.setLiveTabLimitIndex(3);
-    QCOMPARE(settings.liveTabLimit(), 0);
-    QCOMPARE(spy.count(), 1);
-    settings.setLiveTabLimitIndex(3);
-    settings.setLiveTabLimitIndex(4);
-    settings.setLiveTabLimitIndex(-1);
-    QCOMPARE(spy.count(), 1);
-    settings.setLiveTabLimitIndex(0);
-    QCOMPARE(settings.liveTabLimit(), 3);
-    {
-        Settings again(path);
-        QCOMPARE(again.liveTabLimit(), 3);
-    }
-
-    // A number written by hand that is not on offer reads back as the default.
-    {
-        QSettings raw(path, QSettings::IniFormat);
-        raw.setValue(QStringLiteral("liveTabLimit"), 7);
-    }
-    {
-        Settings again(path);
-        QCOMPARE(again.liveTabLimit(), 5);
-    }
 }
 
 void tst_settings::trackingProtection()

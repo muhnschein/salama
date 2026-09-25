@@ -14,7 +14,9 @@
 // first next time (Omnibar.learn).
 //
 // The list hangs from those rows and is as tall as what it holds, up to the room there
-// is, so a short one sits by the bar. Under both is a pane of the grid's glass
+// is, so a short one sits by the bar; it is laid out from the bottom up, the likeliest
+// next to the rows that go and search, where the thumb that typed and the eye on the
+// field are. Under both is a pane of the grid's glass
 // (docs/DECISIONS/0010-tab-grid-deck.md) that takes every press: nothing of the page it
 // covers is reached through it, and a tap where it is bare puts the pane away.
 import QtQuick 2.6
@@ -142,6 +144,7 @@ Item {
         // As sailfish-browser's history list has it: a current item would take the
         // focus from the field (apps/browser/qml/pages/components/HistoryList.qml).
         currentIndex: -1
+        verticalLayoutDirection: ListView.BottomToTop
         model: Omnibar
 
         delegate: OmnibarResultRow {

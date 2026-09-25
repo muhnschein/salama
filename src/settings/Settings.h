@@ -6,7 +6,6 @@
 #include <QSettings>
 #include <QString>
 #include <QStringList>
-#include <QVariantList>
 
 namespace Salama {
 
@@ -21,16 +20,8 @@ class Settings : public QObject
     Q_PROPERTY(int searchEngineIndex READ searchEngineIndex WRITE setSearchEngineIndex NOTIFY
                    searchEngineChanged)
     Q_PROPERTY(QStringList searchEngineNames READ searchEngineNames CONSTANT)
-    Q_PROPERTY(bool desktopMode READ desktopMode WRITE setDesktopMode NOTIFY desktopModeChanged)
     Q_PROPERTY(bool cutoutGuard READ cutoutGuard WRITE setCutoutGuard NOTIFY cutoutGuardChanged)
     Q_PROPERTY(int coverStyle READ coverStyle WRITE setCoverStyle NOTIFY coverStyleChanged)
-    // How many tabs keep their page loaded; 0 for all of them
-    // (docs/DECISIONS/0016-five-live-pages.md). The index is over liveTabLimitChoices,
-    // for a combo box.
-    Q_PROPERTY(int liveTabLimit READ liveTabLimit NOTIFY liveTabLimitChanged)
-    Q_PROPERTY(int liveTabLimitIndex READ liveTabLimitIndex WRITE setLiveTabLimitIndex NOTIFY
-                   liveTabLimitChanged)
-    Q_PROPERTY(QVariantList liveTabLimitChoices READ liveTabLimitChoices CONSTANT)
     // How much of the engine's own anti-tracking is switched on; a TrackingProtection
     // value (docs/DECISIONS/0023-tracking-protection.md).
     Q_PROPERTY(int trackingProtection READ trackingProtection WRITE setTrackingProtection NOTIFY
@@ -160,9 +151,6 @@ public:
     QStringList searchEngineNames() const;
     QStringList searchEngineKeys() const;
 
-    bool desktopMode() const;
-    void setDesktopMode(bool desktopMode);
-
     // Whether this application keeps out of the display's own cutout. On by default:
     // a camera notch over the first line of a page is not a design decision.
     bool cutoutGuard() const;
@@ -172,12 +160,6 @@ public:
     // nothing: this comes from a file a user can edit.
     int coverStyle() const;
     void setCoverStyle(int style);
-
-    int liveTabLimit() const;
-    int liveTabLimitIndex() const;
-    void setLiveTabLimitIndex(int index);
-    QVariantList liveTabLimitChoices() const;
-    static int defaultLiveTabLimit();
 
     // Standard unless changed, as in Firefox. Out of range reads back as the default,
     // like coverStyle.
@@ -244,16 +226,15 @@ public:
     // The other direction: the url as the bar shows it while it is not being edited.
     Q_INVOKABLE static QString displayAddress(const QString &url);
 
-    static QString defaultHomePage();
+    // What the home page is until it is changed, and again once it is set to nothing.
+    Q_INVOKABLE static QString defaultHomePage();
     static QString defaultSearchEngine();
 
 signals:
     void homePageChanged();
     void searchEngineChanged();
-    void desktopModeChanged();
     void cutoutGuardChanged();
     void coverStyleChanged();
-    void liveTabLimitChanged();
     void trackingProtectionChanged();
     void readerColorsChanged();
     void readerTypefaceChanged();

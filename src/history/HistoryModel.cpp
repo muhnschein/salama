@@ -64,6 +64,8 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return entry.date;
     case VisitCountRole:
         return entry.visitCount;
+    case FaviconRole:
+        return entry.favicon;
     default:
         return {};
     }
@@ -76,6 +78,7 @@ QHash<int, QByteArray> HistoryModel::roleNames() const
         {TitleRole, QByteArrayLiteral("title")},
         {DateRole, QByteArrayLiteral("date")},
         {VisitCountRole, QByteArrayLiteral("visitCount")},
+        {FaviconRole, QByteArrayLiteral("favicon")},
     };
 }
 
@@ -102,7 +105,7 @@ void HistoryModel::setSearchTerm(const QString &term)
 QList<HistoryModel::Entry> HistoryModel::allEntries() const
 {
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+    query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
                                  "FROM browser_history ORDER BY date DESC, id DESC"));
     QList<Entry> entries;
     if (!run(query)) {
@@ -122,6 +125,7 @@ HistoryModel::Entry HistoryModel::entryAt(const QSqlQuery &query)
     entry.title = query.value(2).toString();
     entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
     entry.visitCount = query.value(4).toInt();
+    entry.favicon = query.value(5).toString();
     return entry;
 }
 
@@ -190,6 +194,27 @@ void HistoryModel::updateTitle(const QString &url, const QString &title)
             m_entries[i].title = title;
             const QModelIndex modelIndex = index(i, 0);
             emit dataChanged(modelIndex, modelIndex, QVector<int>{TitleRole});
+        }
+    }
+}
+
+void HistoryModel::updateFavicon(const QString &url, const QString &favicon)
+{
+    if (!isRecordable(url)) {
+        return;
+    }
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("UPDATE browser_history SET favicon = ? WHERE url = ?"));
+    query.addBindValue(Storage::text(favicon));
+    query.addBindValue(url);
+    if (!run(query) || query.numRowsAffected() <= 0) {
+        return;
+    }
+    for (int i = 0; i < m_entries.count(); ++i) {
+        if (m_entries.at(i).url == url) {
+            m_entries[i].favicon = favicon;
+            const QModelIndex modelIndex = index(i, 0);
+            emit dataChanged(modelIndex, modelIndex, QVector<int>{FaviconRole});
         }
     }
 }
@@ -333,10 +358,10 @@ void HistoryModel::reload()
 {
     QSqlQuery query(m_db);
     if (m_searchTerm.isEmpty()) {
-        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
                                      "FROM browser_history ORDER BY date DESC, id DESC LIMIT ?"));
     } else {
-        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count "
+        query.prepare(QStringLiteral("SELECT id, url, title, date, visited_count, favicon "
                                      "FROM browser_history WHERE url LIKE ? OR title LIKE ? "
                                      "ORDER BY date DESC, id DESC LIMIT ?"));
         const QString pattern = QLatin1Char('%') + m_searchTerm + QLatin1Char('%');

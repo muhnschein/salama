@@ -57,7 +57,7 @@
     <name>BookmarkPickerPage</name>
     <message>
         <source>Choose a bookmark</source>
-        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens, or the home page</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -409,6 +409,32 @@
     </message>
 </context>
 <context>
+    <name>HomePageSettingsPage</name>
+    <message>
+        <source>Home page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <extracomment>The home page&apos;s address, typed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use the page in front</source>
+        <extracomment>Makes the page in front the home page, as Firefox&apos;s Use Current Page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a bookmark</source>
+        <extracomment>Makes a bookmark, picked from the list, the home page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore the default</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -629,14 +655,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Request desktop sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Identify as a desktop browser to web sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Avoid the screen cutout</source>
         <translation type="unfinished"></translation>
     </message>
@@ -649,85 +667,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The icon alone</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the last tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the most recent tabs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pages kept loaded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tabs beyond this many reload their page when opened again</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Privacy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Off</source>
-        <extracomment>A tracking protection level</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strict</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ambience</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Light</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sepia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sans serif</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Serif</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 %</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s look in one line: its colours, typeface and text size, e.g. &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tracking protection: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -743,47 +687,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No quick action</source>
-        <extracomment>The cover has no quick action</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open a bookmark</source>
-        <extracomment>A quick action on the cover: one bookmark&apos;s page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloads</source>
-        <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>History</source>
-        <extracomment>A quick action on the cover: the history</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 · %2</source>
-        <extracomment>The cover&apos;s settings in one line: what it shows, then its quick action, e.g. &quot;The icon alone · Search&quot;</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remembered until the browser closes</source>
-        <extracomment>The pages visited are kept in the history, until the browser closes or until they are cleared</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remembered</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

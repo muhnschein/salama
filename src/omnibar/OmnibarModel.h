@@ -37,6 +37,9 @@ struct OmnibarRow
     QString title;
     QString url;
     QString host;
+    // The title and the host as StyledText, the words typed in bold (SearchWords::marked).
+    QString markedTitle;
+    QString markedHost;
     QString favicon;
     int groupId = 0;
     QString groupName;
@@ -50,11 +53,12 @@ struct OmnibarRow
     friend bool operator==(const OmnibarRow &one, const OmnibarRow &other)
     {
         return one.kind == other.kind && one.id == other.id && one.title == other.title &&
-               one.url == other.url && one.host == other.host && one.favicon == other.favicon &&
-               one.groupId == other.groupId && one.groupName == other.groupName &&
-               one.groupTabCount == other.groupTabCount && one.bookmarked == other.bookmarked &&
-               one.downloadStatus == other.downloadStatus && one.progress == other.progress &&
-               one.date == other.date;
+               one.url == other.url && one.host == other.host &&
+               one.markedTitle == other.markedTitle && one.markedHost == other.markedHost &&
+               one.favicon == other.favicon && one.groupId == other.groupId &&
+               one.groupName == other.groupName && one.groupTabCount == other.groupTabCount &&
+               one.bookmarked == other.bookmarked && one.downloadStatus == other.downloadStatus &&
+               one.progress == other.progress && one.date == other.date;
     }
 
     friend bool operator!=(const OmnibarRow &one, const OmnibarRow &other)
@@ -115,6 +119,12 @@ public:
         UrlRole,
         // Settings::displayAddress() of the url: for a download, the host it came from.
         HostRole,
+        // The title and the host as StyledText, every word typed in bold and the rest
+        // escaped: what a page chose to be called can hold no markup of its own.
+        MarkedTitleRole,
+        MarkedHostRole,
+        // The page's icon, or when it has none of its own, one its site has shown in a
+        // tab, a bookmark or the history; empty for a download.
         FaviconRole,
         // The tab's id, and its group as the grid's search gives it; 0 and empty on
         // the other kinds.

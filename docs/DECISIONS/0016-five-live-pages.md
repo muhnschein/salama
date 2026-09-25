@@ -14,8 +14,10 @@ takes the whole process.
 
 ## Decision
 `TabModel` carries a `liveTab` role: true for the tab in front and the tabs most
-recently in front before it, up to `Settings.liveTabLimit`, which is **5 by default** —
-the platform browser's number — and 3, 10 or all in Settings ("Pages kept loaded").
+recently in front before it, up to `TabModel::LiveTabLimit`, which is **5** — the
+platform browser's number. Settings offered 3, 10 or all as well ("Pages kept loaded"); it
+was taken out as a setting nobody needs to think about, and a value stored for it is no
+longer read (0028).
 The order is the activation stamp the cover already uses (0014), so nothing new is
 counted. The browsing page's `Loader` is active only for a tab that is both shown and
 live: a tab beyond the limit gives its view up, and when it comes to the front again

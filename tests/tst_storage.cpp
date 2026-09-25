@@ -285,6 +285,14 @@ void tst_storage::addsDownloadsToSchemaSix()
     QVERIFY(storage.isOpen());
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
     QVERIFY(tableNames(storage).contains(QStringLiteral("download")));
+    // Schema 9's icon for each page of the history, empty for those from before it.
+    {
+        QSqlQuery icons(storage.database());
+        QVERIFY(icons.exec(QStringLiteral("SELECT favicon FROM browser_history")));
+        QVERIFY(icons.next());
+        QCOMPARE(icons.value(0).toString(), QString());
+        QVERIFY(!icons.value(0).isNull());
+    }
     // And schema 8's, as a new database has it: a text and a page are one row.
     QVERIFY(tableNames(storage).contains(QStringLiteral("input_history")));
     {

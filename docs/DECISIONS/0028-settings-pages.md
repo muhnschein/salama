@@ -16,19 +16,26 @@ page under the headings Privacy, Downloads and Appearance, and asks what to clea
 dialog of switches (`apps/browser/qml/pages/PrivacySettingsPage.qml`).
 
 ## Decision
-**The main page** (`pages/SettingsPage.qml`) keeps what takes a line, and leads to the rest.
-Under *General*, Search first — what the bar searches with and suggests from is what a
-browser is used for most, and Firefox puts it first too — then the home page, desktop
-sites, the cutout and the pages kept loaded, as they were. Under *Appearance*,
-sailfish-browser's heading for how the browser and its pages look: the reader view and the
-cover. Under *Privacy*, privacy and the history (0030). Each way in is a `components/SettingsEntry.qml`: a theme
-icon, the subject's name, and under it a line saying how the subject is set now — "Qwant",
-"Ambience · Sans serif · 100 %", "The tab count and the most recent tabs · Search",
-"Tracking protection: Standard", "Remembered" — in the words its page offers the choices in, and bound to
-the settings it names, so a change made on the subject's page is there when it is popped.
-The main page is where the settings are read, not only where they are reached.
+**The main page** (`pages/SettingsPage.qml`) leads to the subjects. Under *General*, the
+home page first, as sailfish-browser puts its own first, then Search — what the bar
+searches with and suggests from, which Firefox for Android puts first of its own. Under
+*Appearance*, sailfish-browser's heading for how the browser and its pages look: the
+reader view, the cover, and last the one setting that takes a line, the screen cutout's
+switch (0013). Under *Privacy*, privacy and the history (0030). Each way in is a
+`components/SettingsEntry.qml`: a theme icon and the subject's name, nothing under it. The
+cutout's switch keeps the line that says what it does; nothing else on the page has one.
 
-**The subjects' pages.** *Search*: the engine, and under *Address bar suggestions* a switch
+*Revised.* Each way in first had a line under its name saying how the subject was set —
+"Qwant", "Ambience · Sans serif · 100 %", "The tab count and the most recent tabs ·
+Search" — and the main page kept the home page's field, *Request desktop sites* and
+*Pages kept loaded*. On the phone the lines made a page of lists to read rather than a
+menu to pick from, so they went. The home page got a page of its own; the other two went
+from Settings altogether: a page's desktop version is the menu's switch (0021), which is
+where it is wanted, and how many pages stay loaded is the platform's five (0016).
+
+**The subjects' pages.** *Home page*: its address typed, the page in front or a bookmark
+taken as it is, as Firefox's Home settings offer them, or the default again
+(`pages/HomePageSettingsPage.qml`, the bookmark picked as the cover's is, 0029). *Search*: the engine, and under *Address bar suggestions* a switch
 for each source the bar suggests from — open tabs, bookmarks, history, downloads (0027).
 *Reader view*: its colours, typeface and text size (0024). *Cover*: what the cover shows
 (0014) and its quick action (0029). *Privacy*: tracking protection (0023). *History*: whether
@@ -38,7 +45,7 @@ controls moved as they were, and each still writes its setting as
 it changes; no page has a Save.
 
 The icons are those Jolla's applications give the same subjects, cited where they are
-used: `icon-m-search` and `icon-m-delete` from sailfish-browser's settings,
+used: `icon-m-home` from sailfish-browser's home page setting, `icon-m-search` and `icon-m-delete` from sailfish-browser's settings,
 `icon-m-device-lock` from its certificate view, the menu's `icon-m-file-formatted` for the
 reader view (0024) and `icon-m-history` for the history. For the cover, `icon-m-tabs`, which sailfish-browser's toolbar writes
 its tab count into — what the cover is here — and not `icon-m-display`, which
@@ -65,14 +72,13 @@ imports it instead — the history page, since 0030 — and `tests/tst_qmlstatic
 there and in `BrowserPage.qml` alone.
 
 ## Consequences
-A subject is a tap further away: the price of a main page that fits on a phone's screen,
-summaries and all. A subject that grows past a line gets a page and an entry, not a
-section.
+A subject is a tap further away, and how it is set is read there: the price of a main
+page that fits on a phone's screen and reads at a glance. A subject that grows past a
+line gets a page and an entry, not a section.
 
 The load tests reach each page by tapping its entry (`settingsPage`, `searchSettingsPage`,
-`readerSettingsPage`, `privacySettingsPage`, `historySettingsPage`, `coverSettingsPage`) and check each summary
-follows its setting; `clearDataDialog` drives the switches, the dimmed Clear, the remorse —
+`homePageSettingsPage`, `readerSettingsPage`, `privacySettingsPage`,
+`historySettingsPage`, `coverSettingsPage`); `clearDataDialog` drives the switches, the dimmed Clear, the remorse —
 the stub `Remorse` now records which page it was shown on — and what is cleared. Whether
-the icons are in the device's theme, whether a long summary fades rather than wraps, and
-whether the remorse shows on the history page as the dialog leaves are device checks
+the icons are in the device's theme and whether the remorse shows on the history page as the dialog leaves are device checks
 (`docs/TESTING.md`).

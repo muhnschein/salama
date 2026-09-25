@@ -457,7 +457,6 @@ WebViewPage {
             active: isCurrent && !PageActivity.asleep
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
-            desktopMode: Settings.desktopMode
             downloadsEnabled: true
 
             // The engine's chrome gesture is what tells the bar which way a page is

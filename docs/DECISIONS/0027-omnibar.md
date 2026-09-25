@@ -23,15 +23,26 @@ page, and holds, from the bottom up:
   not make a search of it — and *Search <engine> for “…”* whenever something is typed, a
   search even of an address. They follow the text at once. Enter means what it meant.
 - **the results**, a `SilicaListView` over the `Omnibar` model: one list, ranked, no
-  headings, eight rows at most. Every row is drawn alike (`OmnibarResultRow`): the site's
-  icon or a theme glyph, the title, and under it where a tap leads — "Switch to tab" for
-  an open tab, "Switch to tab in <group>" for one in another group, the host for any
-  other page, the host and how it is going for a download still coming. The list hangs
-  from the actions and is as tall as what it holds, so a short one sits by the bar; it is
-  not laid out bottom-up, so it reads from the top, the likeliest first, as Firefox for
-  Android's does with its toolbar at the foot. Its `currentIndex` is -1, as
-  sailfish-browser's history list has it, so the model never takes the field's focus.
-  Empty, it is absent.
+  headings, eight rows at most, laid out **from the bottom up** — the likeliest next to
+  the actions, where the thumb that typed and the eye on the field are. Every row is drawn
+  alike (`OmnibarResultRow`):
+  - **the site's icon**: the page's own, from its tab, its bookmark or the history, which
+    keeps the icon each page loaded with (`HistoryModel::updateFavicon`); without one, an
+    icon its site has shown in any of them; without that, a tile with the site's
+    initial, as Firefox for Android draws a site it has no icon for. A file has the
+    downloads' glyph. No tab or history glyphs: an icon says which site, not which kind.
+  - **the title**, the words typed in bold, as Firefox makes them stand out
+    (`SearchWords::marked`): StyledText made in C++, where the title — the page's own
+    text — is escaped whole first, so nothing in it can be taken for markup.
+  - **under it, where a tap leads**, quieter than the secondary colour alone: the host,
+    the words typed in bold too, or for a download still coming the host and how it is
+    going. An open tab says "Switch to tab" — "Switch to tab in <group>" for one in
+    another group — in the ambience's colour instead: a tap on it does something other
+    than load a page.
+
+  The list hangs from the actions and is as tall as what it holds, so a short one sits
+  by the bar. Its `currentIndex` is -1, as sailfish-browser's history list has it, so the
+  model never takes the field's focus. Empty, it is absent.
 - **the ground**, a pane of the grid's glass (0010), opaque as its rows are, that takes
   every press: nothing of the page is seen or reached through it, and a tap on the bare
   glass ends the edit.
@@ -101,6 +112,10 @@ as strongly. A search is not learnt, and nothing is while the history is not kep
 removing a page of the history forgets what led there, clearing it forgets what was
 learnt in that time, and the table keeps the 500 most recently used.
 
+*Revised again,* after the phone: the list is bottom-up rather than top-down, as Firefox
+for Android keeps its own; icons stand for sites, not kinds; the words typed are in bold;
+and a tab's line stands out while every other line recedes.
+
 *Revised.* The pane first listed a section of each kind under a heading that counted it,
 up to ten rows a section, as piirit lists what its search finds, and ranked the history
 by Firefox's old frecency buckets. On the phone that read as busy: four headings, thirty
@@ -131,8 +146,7 @@ the row under a finger.
 where everything the pane shows now stays on the phone. Nor Firefox's autofill, which
 completes the host in the field as it is typed: the host ranking first stands in for it,
 and a completion selected under Sailfish's keyboard, with its own predictions, is a
-question for the device. Nor highlighting the words typed in the rows: titles are the
-pages' own text, and would have to be escaped into rich text to do it.
+question for the device.
 
 ## Consequences
 `urlForInput()` and `isAddress()` share one rule, which moved one edge: a host with an
@@ -143,8 +157,9 @@ nothing; it is a search now.
 `components/TabDeck.qml` first (0010), and the field went from `NavigationBar.qml` to
 `AddressField.qml` to keep the bar under 400 lines.
 
-Learning added `input_history` to the database, schema 8 (`docs/ARCHITECTURE.md`), and
-the bookmarks' `created`, which was stored and never read, is read now.
+Learning added `input_history` to the database, schema 8, and the history's icons its
+`favicon` column, schema 9 (`docs/ARCHITECTURE.md`); the bookmarks' `created`, which was
+stored and never read, is read now.
 
 `tst_searchwords` and `tst_omnibarmodel` test the matcher and the model; `omnibar`,
 `omnibarFollowsItsSources`, `omnibarChoices` and `omnibarForANewTab` in `tst_qmlload`

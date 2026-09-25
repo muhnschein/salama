@@ -57,7 +57,7 @@
     <name>BookmarkPickerPage</name>
     <message>
         <source>Choose a bookmark</source>
-        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens, or the home page</extracomment>
         <translation>Valitse kirjanmerkki</translation>
     </message>
     <message>
@@ -409,6 +409,32 @@
     </message>
 </context>
 <context>
+    <name>HomePageSettingsPage</name>
+    <message>
+        <source>Home page</source>
+        <translation>Kotisivu</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <extracomment>The home page&apos;s address, typed</extracomment>
+        <translation>Osoite</translation>
+    </message>
+    <message>
+        <source>Use the page in front</source>
+        <extracomment>Makes the page in front the home page, as Firefox&apos;s Use Current Page</extracomment>
+        <translation>Käytä nykyistä sivua</translation>
+    </message>
+    <message>
+        <source>Use a bookmark</source>
+        <extracomment>Makes a bookmark, picked from the list, the home page</extracomment>
+        <translation>Käytä kirjanmerkkiä</translation>
+    </message>
+    <message>
+        <source>Restore the default</source>
+        <translation>Palauta oletus</translation>
+    </message>
+</context>
+<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -629,14 +655,6 @@
         <translation>Kotisivu</translation>
     </message>
     <message>
-        <source>Request desktop sites</source>
-        <translation>Pyydä työpöytäsivustoja</translation>
-    </message>
-    <message>
-        <source>Identify as a desktop browser to web sites</source>
-        <translation>Esittäydy sivustoille työpöytäselaimena</translation>
-    </message>
-    <message>
         <source>Avoid the screen cutout</source>
         <translation>Vältä näytön lovea</translation>
     </message>
@@ -649,86 +667,12 @@
         <translation>Kansi</translation>
     </message>
     <message>
-        <source>The icon alone</source>
-        <translation>Vain kuvake</translation>
-    </message>
-    <message>
-        <source>The tab count and the last tab</source>
-        <translation>Välilehtien määrä ja viimeisin välilehti</translation>
-    </message>
-    <message>
-        <source>The tab count and the most recent tabs</source>
-        <translation>Välilehtien määrä ja viimeisimmät välilehdet</translation>
-    </message>
-    <message>
-        <source>Pages kept loaded</source>
-        <translation>Ladattuina pidettävät sivut</translation>
-    </message>
-    <message>
-        <source>Tabs beyond this many reload their page when opened again</source>
-        <translation>Tätä useammat välilehdet lataavat sivunsa uudelleen, kun ne avataan</translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation>Kaikki</translation>
-    </message>
-    <message>
         <source>Privacy</source>
         <translation>Yksityisyys</translation>
     </message>
     <message>
-        <source>Off</source>
-        <extracomment>A tracking protection level</extracomment>
-        <translation>Pois</translation>
-    </message>
-    <message>
-        <source>Standard</source>
-        <translation>Tavallinen</translation>
-    </message>
-    <message>
-        <source>Strict</source>
-        <translation>Tiukka</translation>
-    </message>
-    <message>
         <source>Reader view</source>
         <translation>Lukunäkymä</translation>
-    </message>
-    <message>
-        <source>Ambience</source>
-        <translation>Ambienssi</translation>
-    </message>
-    <message>
-        <source>Light</source>
-        <translation>Vaalea</translation>
-    </message>
-    <message>
-        <source>Sepia</source>
-        <translation>Seepia</translation>
-    </message>
-    <message>
-        <source>Dark</source>
-        <translation>Tumma</translation>
-    </message>
-    <message>
-        <source>Sans serif</source>
-        <translation>Pääteviivaton</translation>
-    </message>
-    <message>
-        <source>Serif</source>
-        <translation>Päätteellinen</translation>
-    </message>
-    <message>
-        <source>%1 %</source>
-        <translation>%1 %</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s look in one line: its colours, typeface and text size, e.g. &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
-    </message>
-    <message>
-        <source>Tracking protection: %1</source>
-        <translation>Seurannan esto: %1</translation>
     </message>
     <message>
         <source>General</source>
@@ -743,48 +687,8 @@
         <translation>Ulkoasu</translation>
     </message>
     <message>
-        <source>No quick action</source>
-        <extracomment>The cover has no quick action</extracomment>
-        <translation>Ei pikatoimintoa</translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation>Kirjanmerkit</translation>
-    </message>
-    <message>
-        <source>Open a bookmark</source>
-        <extracomment>A quick action on the cover: one bookmark&apos;s page</extracomment>
-        <translation>Avaa kirjanmerkki</translation>
-    </message>
-    <message>
-        <source>Downloads</source>
-        <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation>Lataukset</translation>
-    </message>
-    <message>
         <source>History</source>
-        <extracomment>A quick action on the cover: the history</extracomment>
         <translation>Historia</translation>
-    </message>
-    <message>
-        <source>%1 · %2</source>
-        <extracomment>The cover&apos;s settings in one line: what it shows, then its quick action, e.g. &quot;The icon alone · Search&quot;</extracomment>
-        <translation>%1 · %2</translation>
-    </message>
-    <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Ei muisteta</translation>
-    </message>
-    <message>
-        <source>Remembered until the browser closes</source>
-        <extracomment>The pages visited are kept in the history, until the browser closes or until they are cleared</extracomment>
-        <translation>Muistetaan, kunnes selain suljetaan</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>Muistetaan</translation>
     </message>
 </context>
 <context>

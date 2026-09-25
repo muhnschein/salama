@@ -29,14 +29,13 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     });
     connect(&m_tabs, &TabModel::titleUpdated, &m_history, &HistoryModel::updateTitle);
     connect(&m_tabs, &TabModel::faviconUpdated, &m_bookmarks, &BookmarkModel::updateFavicon);
+    connect(&m_tabs, &TabModel::faviconUpdated, &m_history, &HistoryModel::updateFavicon);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
 
-    // How many pages stay loaded is a setting; the tab model applies it.
-    connect(&m_settings, &Settings::liveTabLimitChanged, &m_tabs,
-            [this]() { m_tabs.setLiveTabLimit(m_settings.liveTabLimit()); });
-    m_tabs.setLiveTabLimit(m_settings.liveTabLimit());
+    // Five pages stay loaded, as in Jolla's browser.
+    m_tabs.setLiveTabLimit(TabModel::LiveTabLimit);
 
     // The engine says something started or stopped playing, and not where; the pages
     // are asked (docs/DECISIONS/0026-media-controls.md).

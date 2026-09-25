@@ -59,7 +59,8 @@ const QStringList &schemaStatements()
                        "url TEXT NOT NULL UNIQUE, "
                        "title TEXT NOT NULL DEFAULT '', "
                        "visited_count INTEGER NOT NULL DEFAULT 1, "
-                       "date INTEGER NOT NULL)"),
+                       "date INTEGER NOT NULL, "
+                       "favicon TEXT NOT NULL DEFAULT '')"),
         QStringLiteral("CREATE INDEX IF NOT EXISTS browser_history_date ON browser_history(date)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS bookmark ("
                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -222,12 +223,12 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews, schema 2 the cover's order of tabs and schema 3
-    // tab groups. CREATE TABLE IF NOT EXISTS above leaves an existing table alone, so
-    // the columns are added here; asking the table rather than the version number
-    // makes this correct whichever way the database was created. Every tab from
-    // before schema 4 lands in group 1, which TabModel creates when no group row
-    // claims the id.
+    // Schema 1 predates tab previews, schema 2 the cover's order of tabs, schema 3
+    // tab groups and schema 9 the history's icons. CREATE TABLE IF NOT EXISTS above
+    // leaves an existing table alone, so the columns are added here; asking the table
+    // rather than the version number makes this correct whichever way the database was
+    // created. Every tab from before schema 4 lands in group 1, which TabModel creates
+    // when no group row claims the id.
     struct Column
     {
         const char *table;
@@ -238,6 +239,8 @@ bool Storage::applySchema() const
         {"tab", "thumbnail", "TEXT NOT NULL DEFAULT ''"},
         {"tab", "last_active", "INTEGER NOT NULL DEFAULT 0"},
         {"tab", "group_id", "INTEGER NOT NULL DEFAULT 1"},
+        // Schema 9: the icon a page of the history loaded with, for the address bar.
+        {"browser_history", "favicon", "TEXT NOT NULL DEFAULT ''"},
     };
     for (const Column &column : columns) {
         if (hasColumn(QLatin1String(column.table), QLatin1String(column.name))) {

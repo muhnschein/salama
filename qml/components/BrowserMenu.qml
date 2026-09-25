@@ -175,13 +175,13 @@ DockedPanel {
                     }
                 }
 
-                // On while the page in front is in its desktop version, whichever way
-                // it got there: this switch, or the setting every page starts from.
-                // Set on the view, as sailfish-browser sets it on its own
+                // On while the page in front is in its desktop version. The only way to
+                // ask for one: every page starts in its phone version. Set on the view,
+                // as sailfish-browser sets it on its own
                 // (apps/browser/qml/pages/components/PopUpMenuItem.qml), and the
                 // engine loads the page again in the version asked for. The view keeps
                 // it for as long as it lives; one given up past the limit of loaded
-                // pages comes back as the setting says.
+                // pages comes back in its phone version.
                 MenuButton {
                     objectName: "desktopMenuButton"
                     width: menu.width / 4

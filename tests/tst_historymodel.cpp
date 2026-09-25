@@ -30,6 +30,7 @@ private slots:
     void learnsWhatWasTyped();
     void learningWearsDown();
     void learningGoesWithThePage();
+    void favicons();
 };
 
 namespace {
@@ -393,6 +394,33 @@ void tst_historymodel::learningGoesWithThePage()
     QCOMPARE(ranks.keys(), QList<QString>{QStringLiteral("https://a.example/")});
     model.clear();
     QCOMPARE(inputsInDatabase(storage), 0);
+}
+
+// The icon a page loaded with is kept with it, for a page the history holds; the row
+// says so as it changes, and it is read back with the page.
+void tst_historymodel::favicons()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const QString url = QStringLiteral("https://a.example/");
+    {
+        HistoryModel model(storage);
+        QCOMPARE(model.roleNames().value(HistoryModel::FaviconRole), QByteArrayLiteral("favicon"));
+        model.visit(url);
+        QVERIFY(role(model, 0, HistoryModel::FaviconRole).toString().isEmpty());
+        QSignalSpy changed(&model, &HistoryModel::dataChanged);
+        model.updateFavicon(url, QStringLiteral("https://a.example/icon.png"));
+        QCOMPARE(changed.count(), 1);
+        QCOMPARE(role(model, 0, HistoryModel::FaviconRole).toString(),
+                 QStringLiteral("https://a.example/icon.png"));
+        // Nothing for a page the history does not hold, or would not keep.
+        model.updateFavicon(QStringLiteral("https://b.example/"), QStringLiteral("b.png"));
+        model.updateFavicon(QStringLiteral("about:blank"), QStringLiteral("c.png"));
+        QCOMPARE(changed.count(), 1);
+        QCOMPARE(model.count(), 1);
+    }
+    HistoryModel reopened(storage);
+    QCOMPARE(reopened.allEntries().first().favicon, QStringLiteral("https://a.example/icon.png"));
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)

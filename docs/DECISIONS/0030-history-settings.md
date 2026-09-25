@@ -14,8 +14,7 @@ their own.
 ## Decision
 **A History page** (`pages/HistorySettingsPage.qml`), reached from the main settings'
 *Privacy* heading, after the privacy page, by `icon-m-history`, the menu's own for the
-history. Its summary says whether the history is kept, and for how long: "Remembered",
-"Remembered until the browser closes", "Not remembered". On it, Firefox's three:
+history. On it, Firefox's three:
 
 - **Remember browsing history** (`Settings.rememberHistory`, on until switched off). Off,
   a page visited is not written to the history (`Core` asks before it passes a visit on),

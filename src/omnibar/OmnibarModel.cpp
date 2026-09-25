@@ -128,16 +128,35 @@ void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search
     }
 }
 
+// A site's icon, as any page of it has shown one, by host: the first given is kept.
+using SiteIcons = QHash<QString, QString>;
+
+void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
+{
+    if (!favicon.isEmpty()) {
+        const QString host = Settings::displayAddress(url);
+        if (!icons.contains(host)) {
+            icons.insert(host, favicon);
+        }
+    }
+}
+
 // The visits of the pages already gathered, and -- when the history is a source -- the
-// pages of it that are not, newest first.
-void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search)
+// pages of it that are not, newest first. The icons the history kept go to the pages
+// that have none, and to their sites.
+void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search,
+                SiteIcons &icons)
 {
     for (const HistoryModel::Entry &entry : model.allEntries()) {
+        addSiteIcon(icons, entry.url, entry.favicon);
         const auto known = pages.byUrl.constFind(entry.url);
         if (known != pages.byUrl.cend()) {
             Page &page = pages.list[known.value()];
             page.visits = entry.visitCount;
             page.lastUsed = std::max(page.lastUsed, entry.date.toMSecsSinceEpoch());
+            if (page.row.favicon.isEmpty()) {
+                page.row.favicon = entry.favicon;
+            }
             continue;
         }
         if (!listed || !search.wants(entry.title, entry.url)) {
@@ -148,6 +167,7 @@ void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Sear
         page.row.id = entry.id;
         page.row.title = orUrl(entry.title, entry.url);
         page.row.url = entry.url;
+        page.row.favicon = entry.favicon;
         page.row.date = entry.date;
         page.visits = entry.visitCount;
         page.lastUsed = entry.date.toMSecsSinceEpoch();
@@ -155,11 +175,16 @@ void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Sear
     }
 }
 
-// What a page is ranked by. A tab the history does not know is open now, which is a
-// visit now.
-void score(Page &page, const Search &search, bool bookmarked, qint64 now)
+// What a page shows and is ranked by. Without an icon of its own, its site's. A tab the
+// history does not know is open now, which is a visit now.
+void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &icons, qint64 now)
 {
     page.row.host = Settings::displayAddress(page.row.url);
+    page.row.markedTitle = search.words.marked(page.row.title);
+    page.row.markedHost = search.words.marked(page.row.host);
+    if (page.row.favicon.isEmpty()) {
+        page.row.favicon = icons.value(page.row.host);
+    }
     page.row.bookmarked = bookmarked;
     page.match = matchOf(search.words, page.row);
     page.learnt = search.learnt.value(page.row.url);
@@ -270,6 +295,10 @@ QVariant OmnibarModel::data(const QModelIndex &index, int role) const
         return row.url;
     case HostRole:
         return row.host;
+    case MarkedTitleRole:
+        return row.markedTitle;
+    case MarkedHostRole:
+        return row.markedHost;
     case FaviconRole:
         return row.favicon;
     case TabIdRole:
@@ -302,6 +331,8 @@ QHash<int, QByteArray> OmnibarModel::roleNames() const
         {TitleRole, QByteArrayLiteral("title")},
         {UrlRole, QByteArrayLiteral("url")},
         {HostRole, QByteArrayLiteral("host")},
+        {MarkedTitleRole, QByteArrayLiteral("markedTitle")},
+        {MarkedHostRole, QByteArrayLiteral("markedHost")},
         {FaviconRole, QByteArrayLiteral("favicon")},
         {TabIdRole, QByteArrayLiteral("tabId")},
         {GroupIdRole, QByteArrayLiteral("groupId")},
@@ -442,6 +473,8 @@ QList<OmnibarRow> OmnibarModel::emptyRows() const
         row.title = orUrl(bookmark.title, bookmark.url);
         row.url = bookmark.url;
         row.host = Settings::displayAddress(bookmark.url);
+        row.markedTitle = row.title.toHtmlEscaped();
+        row.markedHost = row.host.toHtmlEscaped();
         row.favicon = bookmark.favicon;
         row.bookmarked = true;
         rows.append(row);
@@ -464,14 +497,20 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
     if (m_settings->omnibarBookmarks()) {
         addBookmarks(pages, *m_bookmarks, search);
     }
-    addHistory(pages, *m_history, m_settings->omnibarHistory(), search);
-
+    // The icons of the sites open in tabs, then bookmarked, then in the history.
+    SiteIcons icons;
+    for (const Tab &tab : m_tabs->tabs()) {
+        addSiteIcon(icons, tab.url, tab.favicon);
+    }
     QSet<QString> bookmarked;
     for (const BookmarkModel::Bookmark &bookmark : m_bookmarks->bookmarks()) {
         bookmarked.insert(bookmark.url);
+        addSiteIcon(icons, bookmark.url, bookmark.favicon);
     }
+    addHistory(pages, *m_history, m_settings->omnibarHistory(), search, icons);
+
     for (Page &page : pages.list) {
-        score(page, search, bookmarked.contains(page.row.url), now);
+        score(page, search, bookmarked.contains(page.row.url), icons, now);
     }
     rank(pages.list);
 
@@ -502,6 +541,8 @@ QList<OmnibarRow> OmnibarModel::downloadRows(const SearchWords &words) const
         row.title = orUrl(download.name, download.url);
         row.url = download.url;
         row.host = Settings::displayAddress(download.url);
+        row.markedTitle = words.marked(row.title);
+        row.markedHost = words.marked(row.host);
         row.downloadStatus = static_cast<int>(download.status);
         row.progress = download.progress;
         row.date = QDateTime::fromMSecsSinceEpoch(download.started);

@@ -18,6 +18,8 @@ private slots:
     void prefixes();
     void prefixesAWord_data();
     void prefixesAWord();
+    void marked_data();
+    void marked();
 };
 
 void tst_searchwords::splitsOnWhitespace_data()
@@ -125,6 +127,43 @@ void tst_searchwords::prefixesAWord()
     QFETCH(QString, text);
     QFETCH(bool, expected);
     QCOMPARE(SearchWords(query).prefixesAWordOf(text), expected);
+}
+
+// Every place a word typed appears, in bold, whatever its case; places that touch or
+// overlap are one; everything else is escaped, a page's markup included.
+void tst_searchwords::marked_data()
+{
+    QTest::addColumn<QString>("typed");
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<QString>("styled");
+
+    QTest::newRow("nothing typed")
+        << QString() << QStringLiteral("A & B") << QStringLiteral("A &amp; B");
+    QTest::newRow("no match") << QStringLiteral("x") << QStringLiteral("Forest")
+                              << QStringLiteral("Forest");
+    QTest::newRow("case") << QStringLiteral("FOR") << QStringLiteral("Forest for all")
+                          << QStringLiteral("<b>For</b>est <b>for</b> all");
+    QTest::newRow("two words") << QStringLiteral("news helsinki") << QStringLiteral("Helsinki news")
+                               << QStringLiteral("<b>Helsinki</b> <b>news</b>");
+    QTest::newRow("overlapping") << QStringLiteral("ab bc") << QStringLiteral("xabcx")
+                                 << QStringLiteral("x<b>abc</b>x");
+    QTest::newRow("touching") << QStringLiteral("ab cd") << QStringLiteral("abcd")
+                              << QStringLiteral("<b>abcd</b>");
+    QTest::newRow("unicode") << QStringLiteral("äly") << QStringLiteral("ÄLYKELLO")
+                             << QStringLiteral("<b>ÄLY</b>KELLO");
+    QTest::newRow("markup") << QStringLiteral("b") << QStringLiteral("<b>x</b> & \"b\"")
+                            << QStringLiteral(
+                                   "&lt;<b>b</b>&gt;x&lt;/<b>b</b>&gt; &amp; &quot;<b>b</b>&quot;");
+    QTest::newRow("markup typed") << QStringLiteral("<img") << QStringLiteral("a <img src=x>")
+                                  << QStringLiteral("a <b>&lt;img</b> src=x&gt;");
+}
+
+void tst_searchwords::marked()
+{
+    QFETCH(QString, typed);
+    QFETCH(QString, text);
+    QFETCH(QString, styled);
+    QCOMPARE(SearchWords(typed).marked(text), styled);
 }
 
 QTEST_GUILESS_MAIN(tst_searchwords)

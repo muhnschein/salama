@@ -38,6 +38,12 @@ public:
     bool prefixes(const QString &text) const;
     bool prefixesAWordOf(const QString &text) const;
 
+    // The text as Qt's StyledText, every place a word typed appears in it in bold, as
+    // Firefox's address bar makes the words typed stand out in what it found. The text
+    // is a page's own, so all of it is escaped: nothing in it can be taken for markup.
+    // Case folds as it does in matches(); places that overlap are one.
+    QString marked(const QString &text) const;
+
 private:
     QStringList m_words;
 };

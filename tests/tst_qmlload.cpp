@@ -122,6 +122,7 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void homePageSettingsPage();
     void searchSettingsPage();
     void readerSettingsPage();
     void privacySettingsPage();
@@ -458,16 +459,28 @@ bool shownIn(QObject *item, const QString &name)
     return findObjects(item, name).first()->property("visible").toBool();
 }
 
+// The omnibar's rows in the model's order: the list is laid out from the bottom up, so
+// the first is the lowest.
 QList<QObject *> omnibarRows(QObject *root)
 {
-    return byRow(findObjects(root, QStringLiteral("omnibarResult")));
+    QList<QObject *> rows = byRow(findObjects(root, QStringLiteral("omnibarResult")));
+    std::reverse(rows.begin(), rows.end());
+    return rows;
+}
+
+// A row's title as it reads, without the bold of the words typed.
+QString titleOf(QObject *row)
+{
+    return textIn(row, QStringLiteral("omnibarResultTitle"))
+        .remove(QStringLiteral("<b>"))
+        .remove(QStringLiteral("</b>"));
 }
 
 // The row the omnibar lists under this title.
 QObject *omnibarRowTitled(QObject *root, const QString &title)
 {
     for (QObject *row : omnibarRows(root)) {
-        if (textIn(row, QStringLiteral("omnibarResultTitle")) == title) {
+        if (titleOf(row) == title) {
             return row;
         }
     }
@@ -608,32 +621,49 @@ void tst_qmlload::omnibar()
 
     // One list, no headings, ranked: the bookmark, weighing most, then the rest by how
     // lately they were used and in the order they were found -- the tabs, the one in
-    // front last first, and the history -- and the download last. The tab in front is
-    // not among them. A tab says it is one, and in which group when it is in another;
-    // a page, its host; a download, where it came from and how far along it is.
+    // front last first, and the history -- and the download last; laid out from the
+    // bottom up, the first next to the rows that go and search. The tab in front is not
+    // among them. The words typed are in bold. A tab says it is one, in the ambience's
+    // colour, and in which group when it is in another; a page, its host; a download,
+    // where it came from and how far along it is -- each quieter than a tab's.
     const QList<QObject *> rows = omnibarRows(root);
     QCOMPARE(rows.count(), 5);
-    const QStringList titles{QStringLiteral("Forest wiki"), QStringLiteral("Forest work"),
-                             QStringLiteral("Forest near"), QStringLiteral("Forest blog"),
-                             QStringLiteral("forest-map.pdf")};
-    const QStringList details{QStringLiteral("forest.example"),
-                              QStringLiteral("Switch to tab in Work"),
-                              QStringLiteral("Switch to tab"), QStringLiteral("forest.example"),
-                              QStringLiteral("files.example · Downloading, 40%")};
-    // Without a site's own icon, a glyph of the platform's.
-    const QStringList glyphs{QStringLiteral("icon-m-favorite"), QStringLiteral("icon-m-tabs"),
-                             QStringLiteral("icon-m-tabs"), QStringLiteral("icon-m-history"),
-                             QStringLiteral("icon-m-downloads")};
+    for (int i = 1; i < rows.count(); ++i) {
+        QVERIFY(rows.at(i)->property("y").toReal() < rows.at(i - 1)->property("y").toReal());
+    }
+    const QStringList titles{
+        QStringLiteral("<b>Forest</b> wiki"), QStringLiteral("<b>Forest</b> work"),
+        QStringLiteral("<b>Forest</b> near"), QStringLiteral("<b>Forest</b> blog"),
+        QStringLiteral("<b>forest</b>-map.pdf")};
+    const QStringList details{
+        QStringLiteral("<b>forest</b>.example"), QStringLiteral("Switch to tab in Work"),
+        QStringLiteral("Switch to tab"), QStringLiteral("<b>forest</b>.example"),
+        QStringLiteral("files.example · Downloading, 40%")};
+    const QColor highlight = evaluate(pane, QStringLiteral("Theme.highlightColor")).value<QColor>();
     for (int i = 0; i < rows.count(); ++i) {
         QVERIFY(evaluate(rows.at(i), QStringLiteral("model.tabId")).toInt() != forest.front);
-        QCOMPARE(textIn(rows.at(i), QStringLiteral("omnibarResultTitle")), titles.at(i));
-        QCOMPARE(textIn(rows.at(i), QStringLiteral("omnibarResultDetail")), details.at(i));
+        QObject *title = findObjects(rows.at(i), QStringLiteral("omnibarResultTitle")).first();
+        QCOMPARE(title->property("text").toString(), titles.at(i));
+        QCOMPARE(title->property("textFormat"), evaluate(title, QStringLiteral("Text.StyledText")));
+        QObject *detail = findObjects(rows.at(i), QStringLiteral("omnibarResultDetail")).first();
+        QCOMPARE(detail->property("text").toString(), details.at(i));
+        const bool tab = i == 1 || i == 2;
+        QCOMPARE(detail->property("color").value<QColor>() == highlight, tab);
+        QCOMPARE(detail->property("opacity").toReal() < 1, !tab);
+        // No site's icon to be had: a tile with its initial for a page, the downloads'
+        // glyph for a file.
         QObject *glyph = findObjects(rows.at(i), QStringLiteral("omnibarResultGlyph")).first();
-        QVERIFY(glyph->property("visible").toBool());
-        QCOMPARE(glyph->property("source").toUrl(),
-                 QUrl(QStringLiteral("image://theme/") + glyphs.at(i)));
+        QObject *letter = findObjects(rows.at(i), QStringLiteral("omnibarResultLetter")).first();
+        QCOMPARE(glyph->property("visible").toBool(), i == 4);
+        QCOMPARE(letter->property("visible").toBool(), i != 4);
         QCOMPARE(shownIn(rows.at(i), QStringLiteral("omnibarResultProgress")), i == 4);
     }
+    QCOMPARE(evaluate(rows.first(), QStringLiteral("initial")).toString(), QStringLiteral("F"));
+    QCOMPARE(findObjects(rows.last(), QStringLiteral("omnibarResultGlyph"))
+                 .first()
+                 ->property("source")
+                 .toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-downloads")));
     QVERIFY(findObjects(root, QStringLiteral("omnibarSection")).isEmpty());
 
     // The list is as tall as what it holds and hangs from the rows that go and search,
@@ -682,8 +712,7 @@ void tst_qmlload::omnibarFollowsItsSources()
     m_core->bookmarks()->add(QStringLiteral("https://forest.example/camp"),
                              QStringLiteral("Forest camp"));
     QTRY_COMPARE(omnibarRows(root).count(), 6);
-    QCOMPARE(textIn(omnibarRows(root).at(1), QStringLiteral("omnibarResultTitle")),
-             QStringLiteral("Forest camp"));
+    QCOMPARE(titleOf(omnibarRows(root).at(1)), QStringLiteral("Forest camp"));
     const QPointer<QObject> map = omnibarRows(root).last();
     observeDownload(m_core.data(), {{QStringLiteral("msg"), QStringLiteral("dl-progress")},
                                     {QStringLiteral("id"), 1},
@@ -702,10 +731,10 @@ void tst_qmlload::omnibarFollowsItsSources()
                                                                         "/art/harbour-salama.png"))
                                          .toString());
     QTRY_VERIFY(shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultFavicon")));
-    QVERIFY(!shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultGlyph")));
+    QVERIFY(!shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultLetter")));
     tabs->updateFavicon(
         forest.near, QUrl::fromLocalFile(m_dir->path() + QStringLiteral("/none.png")).toString());
-    QTRY_VERIFY(shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultGlyph")));
+    QTRY_VERIFY(shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultLetter")));
     QVERIFY(!shownIn(omnibarRowTitled(root, nearTitle), QStringLiteral("omnibarResultFavicon")));
     QVERIFY(!near.isNull());
     QCOMPARE(omnibarRowTitled(root, nearTitle), near.data());
@@ -716,8 +745,7 @@ void tst_qmlload::omnibarFollowsItsSources()
                                  QStringLiteral("Forest post %1").arg(i));
     }
     QTRY_COMPARE(omnibarRows(root).count(), int(Salama::OmnibarModel::MaxRows));
-    QCOMPARE(textIn(omnibarRows(root).last(), QStringLiteral("omnibarResultTitle")),
-             QStringLiteral("forest-map.pdf"));
+    QCOMPARE(titleOf(omnibarRows(root).last()), QStringLiteral("forest-map.pdf"));
     evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
     QCOMPARE(m_core->omnibar()->query(), QString());
     QCOMPARE(m_core->omnibar()->count(), 0);
@@ -835,8 +863,7 @@ void tst_qmlload::omnibarForANewTab()
     QVERIFY(pane->property("visible").toBool());
     QVERIFY(m_core->omnibar()->bookmarksWhenEmpty());
     QCOMPARE(omnibarRows(root).count(), 1);
-    QCOMPARE(textIn(omnibarRows(root).first(), QStringLiteral("omnibarResultTitle")),
-             QStringLiteral("Forest wiki"));
+    QCOMPARE(titleOf(omnibarRows(root).first()), QStringLiteral("Forest wiki"));
     QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("omnibarSearchAction"))->property("visible").toBool());
     QCOMPARE(paneItem->y(), find(QStringLiteral("viewArea"))->property("y").toReal());
@@ -2499,15 +2526,10 @@ void tst_qmlload::recentlyClosedTabs()
 void tst_qmlload::pagesBeyondTheLimitUnload()
 {
     TabModel *tabs = m_core->tabs();
-    // Five by default, and the main page of Settings offers the choice.
+    // Five, as in Jolla's browser; three here, so that four tabs are past it.
+    QCOMPARE(tabs->liveTabLimit(), int(TabModel::LiveTabLimit));
     QCOMPARE(tabs->liveTabLimit(), 5);
-    QCOMPARE(openMenuItem(QStringLiteral("settingsMenuButton"))->objectName(),
-             QStringLiteral("settingsPage"));
-    QObject *combo = find(QStringLiteral("liveTabLimitCombo"));
-    QCOMPARE(combo->property("currentIndex").toInt(), 1);
-    combo->setProperty("currentIndex", 0);
-    QCOMPARE(m_core->settings()->liveTabLimit(), 3);
-    QCOMPARE(tabs->liveTabLimit(), 3);
+    tabs->setLiveTabLimit(3);
 
     // Ten minutes in the background, and the engine is asked to trim its heap with
     // the words sailfish-browser uses. Read through something of BrowserPage.qml's
@@ -2523,7 +2545,6 @@ void tst_qmlload::pagesBeyondTheLimitUnload()
              QStringLiteral("memory-pressure"));
     QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngine.notifications[0].value")).toString(),
              QStringLiteral("heap-minimize"));
-    popPage();
 
     const int first = tabs->activeTabId();
     tabs->newTab(QStringLiteral("https://two.example/"));
@@ -3219,27 +3240,24 @@ QStringList columnOf(QObject *item)
 
 } // namespace
 
-// Settings is a main page of what is set in a line, and a way each to a page of its own
-// for search, the reader view, the cover and privacy, under the headings General,
-// Appearance and Privacy (docs/DECISIONS/0028-settings-pages.md). Each way in is a
-// theme icon, a name and a line saying how its subject is set, and pushes its page
-// over the main one.
+// Settings is a main page with a way each to a page of its own for the home page,
+// search, the reader view, the cover, privacy and the history, under the headings
+// General, Appearance and Privacy, and the one setting that takes a line, the cutout,
+// last under Appearance (docs/DECISIONS/0028-settings-pages.md). Each way in is a theme
+// icon and a name, nothing under it, and pushes its page over the main one.
 void tst_qmlload::settingsPage()
 {
     QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
     QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
 
-    // In the order asked for: Search first, ahead of what stayed on the main page.
     const QStringList expected{
         QStringLiteral("#General"),
+        QStringLiteral("homePageSettingsEntry"),
         QStringLiteral("searchSettingsEntry"),
-        QStringLiteral("homePageField"),
-        QStringLiteral("desktopModeSwitch"),
-        QStringLiteral("cutoutGuardSwitch"),
-        QStringLiteral("liveTabLimitCombo"),
         QStringLiteral("#Appearance"),
         QStringLiteral("readerSettingsEntry"),
         QStringLiteral("coverSettingsEntry"),
+        QStringLiteral("cutoutGuardSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("privacySettingsEntry"),
         QStringLiteral("historySettingsEntry"),
@@ -3256,6 +3274,8 @@ void tst_qmlload::settingsPage()
         QString page;
     };
     const QList<Entry> entries{
+        {QStringLiteral("homePageSettingsEntry"), QStringLiteral("icon-m-home"),
+         QStringLiteral("homePageSettingsPage")},
         {QStringLiteral("searchSettingsEntry"), QStringLiteral("icon-m-search"),
          QStringLiteral("searchSettingsPage")},
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
@@ -3275,15 +3295,12 @@ void tst_qmlload::settingsPage()
         QCOMPARE(item->property("iconSource").toString(),
                  QStringLiteral("image://theme/") + entry.icon);
         QVERIFY2(!item->property("text").toString().isEmpty(), qPrintable(entry.name));
-        QVERIFY2(!item->property("summary").toString().isEmpty(), qPrintable(entry.name));
+        QVERIFY2(item->property("summary").isNull(), qPrintable(entry.name));
         QCOMPARE(item->property("height").toReal(), itemSize);
         QObject *icon = findObjects(item, QStringLiteral("settingsEntryIcon")).first();
         QCOMPARE(icon->property("width").toReal(), iconSize);
         QCOMPARE(findObjects(item, QStringLiteral("settingsEntryName")).first()->property("text"),
                  item->property("text"));
-        QObject *summary = findObjects(item, QStringLiteral("settingsEntrySummary")).first();
-        QCOMPARE(summary->property("text"), item->property("summary"));
-        QVERIFY(summary->property("visible").toBool());
         click(item);
         QCOMPARE(currentPage()->objectName(), entry.page);
         QCOMPARE(pageStack()->property("depth").toInt(), 3);
@@ -3303,19 +3320,10 @@ void tst_qmlload::settingsPage()
     QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.highlightColor")));
     search->setProperty("down", false);
 
-    // What stayed on the main page is set here as it was.
-    QObject *home = find(QStringLiteral("homePageField"));
-    QCOMPARE(home->property("text").toString(), Settings::defaultHomePage());
-    home->setProperty("text", QStringLiteral("sailfishos.org"));
-    enterKey(home);
-    QCOMPARE(m_core->settings()->homePage(), QStringLiteral("https://sailfishos.org"));
-
-    find(QStringLiteral("desktopModeSwitch"))->setProperty("checked", true);
-    QVERIFY(m_core->settings()->desktopMode());
-    QVERIFY(currentWebView()->property("desktopMode").toBool());
-
-    // The cutout guard is on until it is turned off here, and the page answers.
+    // The cutout guard is on until it is turned off here, and the page answers. It is
+    // the one line that says what it does.
     QObject *cutoutSwitch = find(QStringLiteral("cutoutGuardSwitch"));
+    QVERIFY(!cutoutSwitch->property("description").toString().isEmpty());
     QVERIFY(cutoutSwitch->property("checked").toBool());
     cutoutSwitch->setProperty("checked", false);
     QVERIFY(!m_core->settings()->cutoutGuard());
@@ -3323,6 +3331,61 @@ void tst_qmlload::settingsPage()
     QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), qreal(0));
     cutoutSwitch->setProperty("checked", true);
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
+}
+
+// Home page: its address typed, or the page in front or a bookmark taken as it is, or
+// the default again; a way with nothing to take is dimmed.
+void tst_qmlload::homePageSettingsPage()
+{
+    Settings *settings = m_core->settings();
+    TabModel *tabs = m_core->tabs();
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("homePageSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("homePageSettingsPage"));
+    QObject *field = find(QStringLiteral("homePageField"));
+    QObject *current = find(QStringLiteral("homePageCurrentEntry"));
+    QObject *bookmark = find(QStringLiteral("homePageBookmarkEntry"));
+    QObject *reset = find(QStringLiteral("homePageDefaultEntry"));
+    QCOMPARE(columnOf(field),
+             (QStringList{QStringLiteral("homePageField"), QStringLiteral("homePageCurrentEntry"),
+                          QStringLiteral("homePageBookmarkEntry"),
+                          QStringLiteral("homePageDefaultEntry")}));
+
+    // The default, typed over; the field holds what was written.
+    QCOMPARE(field->property("text").toString(), Settings::defaultHomePage());
+    QVERIFY(!reset->property("enabled").toBool());
+    QVERIFY(reset->property("opacity").toReal() < 1);
+    field->setProperty("text", QStringLiteral("sailfishos.org"));
+    enterKey(field);
+    QCOMPARE(settings->homePage(), QStringLiteral("https://sailfishos.org"));
+    QVERIFY(reset->property("enabled").toBool());
+    QCOMPARE(reset->property("opacity").toReal(), 1.0);
+
+    // Back to the default, and the field follows.
+    click(reset);
+    QCOMPARE(settings->homePage(), Settings::defaultHomePage());
+    QCOMPARE(field->property("text").toString(), Settings::defaultHomePage());
+
+    // The page in front.
+    tabs->updateUrl(tabs->activeTabId(), QStringLiteral("https://front.example/page"));
+    QVERIFY(current->property("enabled").toBool());
+    click(current);
+    QCOMPARE(settings->homePage(), QStringLiteral("https://front.example/page"));
+    QCOMPARE(field->property("text").toString(), QStringLiteral("https://front.example/page"));
+    tabs->updateUrl(tabs->activeTabId(), QStringLiteral("about:blank"));
+    QVERIFY(!current->property("enabled").toBool());
+
+    // A bookmark, picked from the list; none to pick, and the way is dimmed.
+    QVERIFY(!bookmark->property("enabled").toBool());
+    m_core->bookmarks()->add(QStringLiteral("https://mark.example/"), QStringLiteral("Mark"));
+    QVERIFY(bookmark->property("enabled").toBool());
+    click(bookmark);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarkPickerPage"));
+    click(findAll(QStringLiteral("bookmarkPickerRow")).first());
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(settings->homePage(), QStringLiteral("https://mark.example/"));
+    QCOMPARE(field->property("text").toString(), QStringLiteral("https://mark.example/"));
 }
 
 // Search: the engine the address bar searches with, and the sources its suggestions
@@ -3334,7 +3397,6 @@ void tst_qmlload::searchSettingsPage()
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("searchSettingsEntry"));
     const QStringList engines = settings->searchEngineNames();
-    QCOMPARE(entry->property("summary").toString(), engines.at(settings->searchEngineIndex()));
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
 
@@ -3343,7 +3405,6 @@ void tst_qmlload::searchSettingsPage()
     const int other = settings->searchEngineIndex() == 1 ? 0 : 1;
     combo->setProperty("currentIndex", other);
     QCOMPARE(settings->searchEngineIndex(), other);
-    QCOMPARE(entry->property("summary").toString(), engines.at(other));
 
     // A switch for each source, in the order the address bar lists them, each writing
     // its own setting and no other.
@@ -3383,8 +3444,6 @@ void tst_qmlload::readerSettingsPage()
 {
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("readerSettingsEntry"));
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("Ambience · Sans serif · 100 %"));
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("readerSettingsPage"));
 
@@ -3411,7 +3470,6 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(readerColors->property("currentIndex").toInt(), int(Settings::ReaderAmbience));
     readerColors->setProperty("currentIndex", int(Settings::ReaderSepia));
     QCOMPARE(m_core->settings()->readerColors(), int(Settings::ReaderSepia));
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Sans serif · 100 %"));
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("sepia")));
     QCOMPARE(text->property("color").value<QColor>(), Reader::textColorOf(QStringLiteral("sepia")));
@@ -3421,7 +3479,6 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(Settings::ReaderSansSerif));
     readerTypeface->setProperty("currentIndex", int(Settings::ReaderSerif));
     QCOMPARE(m_core->settings()->readerTypeface(), int(Settings::ReaderSerif));
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 100 %"));
     // The article in the typeface chosen, the site's name in the sans-serif still.
     QCOMPARE(fontOf(text).family(), QStringLiteral("serif"));
     QCOMPARE(fontOf(domain).family(), QStringLiteral("sans-serif"));
@@ -3434,10 +3491,8 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(m_core->settings()->readerTextSize(), 9);
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("140 %"));
     QVERIFY(sizedFor(text, 9));
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 140 %"));
     readerSize->setProperty("value", 1);
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("60 %"));
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Sepia · Serif · 60 %"));
     QVERIFY(sizedFor(text, 1));
 
     // The line follows the setting wherever it is written from, and so does the
@@ -3446,7 +3501,6 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("light")));
     m_core->settings()->setReaderColors(Settings::ReaderDark);
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Dark · Serif · 60 %"));
     QCOMPARE(domain->property("color").value<QColor>(),
              Reader::linkColorOf(QStringLiteral("dark")));
 }
@@ -3457,8 +3511,6 @@ void tst_qmlload::privacySettingsPage()
 {
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("privacySettingsEntry"));
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("Tracking protection: Standard"));
     click(entry);
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("privacySettingsPage"));
@@ -3490,7 +3542,6 @@ void tst_qmlload::privacySettingsPage()
     const QString strictDescription = trackingCombo->property("description").toString();
     QVERIFY(!strictDescription.isEmpty());
     QVERIFY(strictDescription != standardDescription);
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Tracking protection: Strict"));
     trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionOff));
     QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionOff));
     QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
@@ -3498,7 +3549,6 @@ void tst_qmlload::privacySettingsPage()
     const QString offDescription = trackingCombo->property("description").toString();
     QVERIFY(!offDescription.isEmpty());
     QVERIFY(offDescription != standardDescription && offDescription != strictDescription);
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Tracking protection: Off"));
 
     // Tracking protection is all there is here: clearing has a page of its own.
     QCOMPARE(columnOf(trackingCombo), QStringList{QStringLiteral("trackingProtectionCombo")});
@@ -3513,7 +3563,6 @@ void tst_qmlload::historySettingsPage()
     TabModel *tabs = m_core->tabs();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("historySettingsEntry"));
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Remembered"));
     click(entry);
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("historySettingsPage"));
@@ -3530,7 +3579,6 @@ void tst_qmlload::historySettingsPage()
     QVERIFY(visits > 0);
     remember->setProperty("checked", false);
     QVERIFY(!settings->rememberHistory());
-    QCOMPARE(entry->property("summary").toString(), QStringLiteral("Not remembered"));
     tabs->newTab(QStringLiteral("https://unkept.example/"));
     QCOMPARE(m_core->history()->count(), visits);
     remember->setProperty("checked", true);
@@ -3542,8 +3590,6 @@ void tst_qmlload::historySettingsPage()
     QCOMPARE(m_core->history()->count(), visits);
     onClose->setProperty("checked", true);
     QVERIFY(settings->clearHistoryOnClose());
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("Remembered until the browser closes"));
     m_core->clearOnClose();
     QCOMPARE(m_core->history()->count(), 0);
     onClose->setProperty("checked", false);
@@ -3746,8 +3792,6 @@ void tst_qmlload::coverSettingsPage()
     Settings *settings = m_core->settings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("coverSettingsEntry"));
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the most recent tabs \u00b7 Search"));
     click(entry);
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
@@ -3775,19 +3819,10 @@ void tst_qmlload::coverSettingsPage()
     for (const auto &style : styles) {
         coverCombo->setProperty("currentIndex", int(style.first));
         QCOMPARE(settings->coverStyle(), int(style.first));
-        QCOMPARE(entry->property("summary").toString(),
-                 find(style.second)->property("text").toString() +
-                     QStringLiteral(" \u00b7 Search"));
     }
     settings->setCoverStyle(Settings::CoverLatestTab);
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the last tab \u00b7 Search"));
     settings->setQuickAction(Settings::QuickActionNone);
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the last tab \u00b7 No quick action"));
     settings->setQuickAction(Settings::QuickActionBookmark);
-    QCOMPARE(entry->property("summary").toString(),
-             QStringLiteral("The tab count and the last tab \u00b7 Open a bookmark"));
 
     // Why there is one action, in the voice of a hint rather than a control: small, in
     // the secondary highlight, and the words of a sentence rather than rich text.

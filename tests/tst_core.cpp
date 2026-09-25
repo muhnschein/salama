@@ -12,7 +12,6 @@ using Salama::BookmarkModel;
 using Salama::Core;
 using Salama::DownloadModel;
 using Salama::HistoryModel;
-using Salama::Settings;
 
 class tst_core : public QObject
 {
@@ -81,7 +80,6 @@ void tst_core::restoresState()
     {
         Core core(dir.path(), config, dir.path());
         core.tabs()->newTab(QStringLiteral("https://a.example/"));
-        core.settings()->setDesktopMode(true);
         core.downloads()->observe(
             core.downloads()->topic(),
             QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-start")},
@@ -96,12 +94,8 @@ void tst_core::restoresState()
         core.downloads()->data(core.downloads()->index(0, 0), DownloadModel::StatusRole).toInt(),
         static_cast<int>(DownloadModel::Failed));
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
-    QVERIFY(core.settings()->desktopMode());
-    // The tab model takes its live-page limit from Settings, and follows it.
-    QCOMPARE(core.tabs()->liveTabLimit(), Settings::defaultLiveTabLimit());
-    core.settings()->setLiveTabLimitIndex(0);
-    QCOMPARE(core.tabs()->liveTabLimit(), core.settings()->liveTabLimit());
-    QCOMPARE(core.tabs()->liveTabLimit(), 3);
+    // Five pages stay loaded, as in Jolla's browser.
+    QCOMPARE(core.tabs()->liveTabLimit(), 5);
 }
 
 // The engine's word that something plays, which PageActivity hears, has every loaded

@@ -14,10 +14,8 @@ namespace {
 
 const char *const HomePageKey = "homePage";
 const char *const SearchEngineKey = "searchEngine";
-const char *const DesktopModeKey = "desktopMode";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
-const char *const LiveTabLimitKey = "liveTabLimit";
 const char *const TrackingProtectionKey = "trackingProtection";
 const char *const ReaderColorsKey = "readerColors";
 const char *const ReaderTypefaceKey = "readerTypeface";
@@ -45,14 +43,6 @@ const QStringList &quickActionIconNames()
         QStringLiteral("shop"),  QStringLiteral("star"),
     };
     return names;
-}
-
-// Jolla's browser keeps five pages live and reloads the rest on return; the same
-// five here, with a way to ask for fewer, more, or all of them.
-const QVector<int> &liveTabLimits()
-{
-    static const QVector<int> limits{3, 5, 10, 0};
-    return limits;
 }
 
 struct SearchEngine
@@ -174,20 +164,6 @@ QStringList Settings::searchEngineKeys() const
     return keys;
 }
 
-bool Settings::desktopMode() const
-{
-    return m_settings.value(QLatin1String(DesktopModeKey), false).toBool();
-}
-
-void Settings::setDesktopMode(bool desktopMode)
-{
-    if (desktopMode == this->desktopMode()) {
-        return;
-    }
-    m_settings.setValue(QLatin1String(DesktopModeKey), desktopMode);
-    emit desktopModeChanged();
-}
-
 bool Settings::cutoutGuard() const
 {
     return m_settings.value(QLatin1String(CutoutGuardKey), true).toBool();
@@ -218,41 +194,6 @@ void Settings::setCoverStyle(int style)
     }
     m_settings.setValue(QLatin1String(CoverStyleKey), style);
     emit coverStyleChanged();
-}
-
-int Settings::defaultLiveTabLimit()
-{
-    return 5;
-}
-
-int Settings::liveTabLimit() const
-{
-    const int stored =
-        m_settings.value(QLatin1String(LiveTabLimitKey), defaultLiveTabLimit()).toInt();
-    return liveTabLimits().contains(stored) ? stored : defaultLiveTabLimit();
-}
-
-int Settings::liveTabLimitIndex() const
-{
-    return liveTabLimits().indexOf(liveTabLimit());
-}
-
-void Settings::setLiveTabLimitIndex(int index)
-{
-    if (index < 0 || index >= liveTabLimits().count() || index == liveTabLimitIndex()) {
-        return;
-    }
-    m_settings.setValue(QLatin1String(LiveTabLimitKey), liveTabLimits().at(index));
-    emit liveTabLimitChanged();
-}
-
-QVariantList Settings::liveTabLimitChoices() const
-{
-    QVariantList choices;
-    for (int limit : liveTabLimits()) {
-        choices.append(limit);
-    }
-    return choices;
 }
 
 int Settings::trackingProtection() const

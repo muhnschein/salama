@@ -71,10 +71,11 @@ whichever is in front by then.
 
 **Desktop version** is set on the view, `desktopMode`, as sailfish-browser sets it on its
 own; qtmozembed hands it to the engine, which loads the page again as a desktop browser
-would be sent it. The switch is on while the page in front is in its desktop version,
-whether it got there by the switch or by the setting every page starts from, and the choice
-is that view's alone. The view keeps it for as long as it lives: one given up past the limit
-of loaded pages (0016) comes back as Settings says. sailfish-browser keeps it on its tab in
+would be sent it. The switch is on while the page in front is in its desktop version, and
+the choice is that view's alone: it is the only way to ask for one, Settings' *Request
+desktop sites* for every page having been taken out (0028). The view keeps it for as long
+as it lives: one given up past the limit of loaded pages (0016) comes back in its phone
+version. sailfish-browser keeps it on its tab in
 memory (`Tab::m_desktopMode`, `apps/storage/tab.h`) and hands it to the page it makes again
 (`apps/qtmozembed/declarativewebpage.cpp`); here that would be a role on the tab model and
 the browsing page handing it back, for a page asked for its desktop version and then

@@ -165,7 +165,9 @@ public:
     // behind it stays; its place in the group is after the tabs already there.
     bool moveTabToGroup(int tabId, int groupId);
 
-    // How many tabs keep their page loaded, 0 for all of them.
+    // How many tabs keep their page loaded, 0 for all of them. The browser keeps
+    // LiveTabLimit, as Jolla's does (docs/DECISIONS/0016-five-live-pages.md).
+    static const int LiveTabLimit = 5;
     int liveTabLimit() const;
     void setLiveTabLimit(int limit);
 

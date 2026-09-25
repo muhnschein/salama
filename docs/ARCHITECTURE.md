@@ -76,7 +76,7 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
    cover lacks (`DECISIONS/0029-quick-action.md`).
 
 Views: one `WebView` per tab that has been shown this session and is among the
-`Settings.liveTabLimit` most recently in front, created lazily by a `Loader` over
+`TabModel::LiveTabLimit` (five) most recently in front, created lazily by a `Loader` over
 `TabModel` -- every group's tabs, so a tab changing group keeps its view (see
 `DECISIONS/0003-one-webview-per-tab.md`, `0016-five-live-pages.md`). Restored tabs
 cost nothing until activated; a tab beyond the limit reloads when it is next in front. Favicons come from a page script with `/favicon.ico` as fallback
@@ -119,7 +119,7 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-8); a newer database than the build refuses to open rather than corrupt. Migration asks
+9); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 any earlier schema converges on the same shape; a column that a later schema dropped
 takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
@@ -128,7 +128,7 @@ takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
 tab              tab_id PK, position, url, title, favicon, thumbnail, last_active, group_id
 tab_group        group_id PK, name, position
 closed_tab       id PK, url, title, favicon, closed (ms since epoch)
-browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
+browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch), favicon
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 download         id PK, name, url, path, mime, size, status, started (ms since epoch)
 input_history    (input, url) PK, use_count, used (ms since epoch)  -- the omnibar's learning

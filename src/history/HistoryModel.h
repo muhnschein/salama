@@ -36,7 +36,8 @@ public:
         UrlRole = Qt::UserRole + 1,
         TitleRole,
         DateRole,
-        VisitCountRole
+        VisitCountRole,
+        FaviconRole
     };
 
     // How far back clearing reaches: the choices Firefox's Clear browsing data dialog
@@ -63,6 +64,8 @@ public:
         QString title;
         QDateTime date;
         int visitCount = 0;
+        // The page's icon as it last loaded, which the address bar shows beside it.
+        QString favicon;
     };
 
     explicit HistoryModel(Storage &storage, QObject *parent = nullptr);
@@ -86,6 +89,8 @@ public:
 
     Q_INVOKABLE void visit(const QString &url, const QString &title = QString());
     Q_INVOKABLE void updateTitle(const QString &url, const QString &title);
+    // The icon a page loaded with, kept for a page the history holds.
+    Q_INVOKABLE void updateFavicon(const QString &url, const QString &favicon);
     // One page, and what the address bar learnt leads to it.
     Q_INVOKABLE void remove(int index);
     // Every page, and all the address bar has learnt.
@@ -118,7 +123,7 @@ signals:
     void searchTermChanged();
 
 private:
-    // The row a query selecting id, url, title, date, visited_count is on.
+    // The row a query selecting id, url, title, date, visited_count, favicon is on.
     static Entry entryAt(const QSqlQuery &query);
     static bool isRecordable(const QString &url);
     // What input_history holds for text as recordInput() keeps it.

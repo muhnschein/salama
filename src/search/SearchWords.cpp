@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "SearchWords.h"
 
+#include <QPair>
+#include <QVector>
 #include <algorithm>
 
 namespace Salama {
@@ -53,6 +55,36 @@ bool SearchWords::prefixesAWordOf(const QString &text) const
         }
     }
     return false;
+}
+
+QString SearchWords::marked(const QString &text) const
+{
+    // Where each word appears, as [start, end), in order of where they start.
+    QVector<QPair<int, int>> spans;
+    for (const QString &word : m_words) {
+        for (int at = text.indexOf(word, 0, Qt::CaseInsensitive); at >= 0;
+             at = text.indexOf(word, at + word.length(), Qt::CaseInsensitive)) {
+            spans.append(qMakePair(at, at + word.length()));
+        }
+    }
+    std::sort(spans.begin(), spans.end());
+
+    QString styled;
+    int written = 0;
+    int next = 0;
+    while (next < spans.count()) {
+        const int start = spans.at(next).first;
+        int end = spans.at(next).second;
+        // The places after it that begin before it ends are part of it.
+        for (++next; next < spans.count() && spans.at(next).first <= end; ++next) {
+            end = std::max(end, spans.at(next).second);
+        }
+        styled += text.mid(written, start - written).toHtmlEscaped();
+        styled += QLatin1String("<b>") + text.mid(start, end - start).toHtmlEscaped() +
+                  QLatin1String("</b>");
+        written = end;
+    }
+    return styled + text.mid(written).toHtmlEscaped();
 }
 
 } // namespace Salama

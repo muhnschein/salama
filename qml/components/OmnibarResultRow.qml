@@ -2,12 +2,18 @@
 // Copyright (c) 2026 salama contributors
 //
 // One thing the omnibar found -- an open tab, a bookmark, a page of the history, a
-// download -- as one row whatever its kind, so that the list reads as one: a picture,
-// the title, and under it where it leads, no more (docs/DECISIONS/0027-omnibar.md). An
-// open tab says it is one, "Switch to tab", as Firefox's address bar says it, since a
-// tap brings it to the front rather than loading the page again; every other page says
-// its host. Titles and addresses are what pages and files chose to be called, so every
-// line is plain text.
+// download -- as one row whatever its kind, so that the list reads as one: the site's
+// icon, the title, and under it where a tap leads, no more
+// (docs/DECISIONS/0027-omnibar.md). A page shows its site's icon wherever one is known
+// (Omnibar's favicon), and without one a tile with the site's initial, as Firefox for
+// Android draws a site it has no icon for; a file shows the downloads' glyph. The words
+// typed are in bold in the title and the host (Omnibar's markedTitle, markedHost), as
+// Firefox's address bar makes them stand out. The line under the title is quieter than
+// the title, but for an open tab's "Switch to tab", which is in the ambience's colour:
+// a tap on it brings the tab to the front rather than loading the page again.
+//
+// Titles and addresses are what pages and files chose to be called: the marked ones are
+// escaped by the model, and everything else here is plain text.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -15,21 +21,13 @@ import harbour.salama 1.0
 ListItem {
     id: row
 
-    // A page shows the site's own icon once there is one that loads. The rest, and
-    // those without, show a glyph of the platform's: the tabs' own in sailfish-browser's
-    // toolbar (apps/browser/qml/pages/components/ToolBar.qml), and the ones the menu
-    // gives the bookmarks, the history and the downloads.
-    readonly property bool showsFavicon: model.favicon.length > 0
+    readonly property bool isFile: model.kind === "download"
+    readonly property bool switches: model.kind === "tab"
+    readonly property bool showsFavicon: !isFile && model.favicon.length > 0
                                          && siteIcon.status !== Image.Error
-    readonly property string glyph: {
-        if (model.kind === "tab") {
-            return "image://theme/icon-m-tabs"
-        }
-        if (model.kind === "download") {
-            return "image://theme/icon-m-downloads"
-        }
-        return model.bookmarked ? "image://theme/icon-m-favorite" : "image://theme/icon-m-history"
-    }
+    // The site's initial, for the tile in place of an icon.
+    readonly property string initial: (model.host.length > 0 ? model.host : model.title)
+                                      .charAt(0).toUpperCase()
     // What a download not yet there is doing, as the list of downloads says it.
     readonly property string downloadState: {
         if (model.kind !== "download") {
@@ -45,9 +43,10 @@ ListItem {
     }
     // The second line: where a tap leads. A tab in another group than the grid's says
     // which, by the name the strip gives the group; a download, the site it came from
-    // and how it is going; any other page, its host.
+    // and how it is going; any other page, its host. As StyledText but for a tab's, whose
+    // group has the name someone gave it.
     readonly property string detail: {
-        if (model.kind === "tab") {
+        if (switches) {
             if (model.groupId === TabModel.currentGroupId) {
                 return qsTr("Switch to tab")
             }
@@ -57,11 +56,11 @@ ListItem {
                                                    ? model.groupName
                                                    : qsTr("%n tab(s)", "", model.groupTabCount))
         }
-        if (model.kind === "download" && downloadState.length > 0) {
+        if (isFile && downloadState.length > 0) {
             //: Under a download the address bar found: its site, and how it is going
-            return qsTr("%1 · %2").arg(model.host).arg(downloadState)
+            return qsTr("%1 · %2").arg(model.markedHost).arg(downloadState)
         }
-        return model.host
+        return model.markedHost
     }
 
     objectName: "omnibarResult"
@@ -90,14 +89,33 @@ ListItem {
             height: width
             fillMode: Image.PreserveAspectFit
             visible: row.showsFavicon
-            source: model.favicon
+            source: row.isFile ? "" : model.favicon
+        }
+
+        Rectangle {
+            objectName: "omnibarResultLetter"
+            anchors.centerIn: parent
+            width: Theme.iconSizeSmall
+            height: width
+            radius: Theme.paddingSmall
+            visible: !row.isFile && !row.showsFavicon
+            color: Theme.rgba(row.highlighted ? Theme.highlightColor : Theme.primaryColor,
+                              Theme.opacityFaint)
+
+            Label {
+                anchors.centerIn: parent
+                text: row.initial
+                textFormat: Text.PlainText
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: row.highlighted ? Theme.highlightColor : Theme.secondaryColor
+            }
         }
 
         Icon {
             objectName: "omnibarResultGlyph"
             anchors.fill: parent
-            visible: !row.showsFavicon
-            source: row.glyph
+            visible: row.isFile
+            source: "image://theme/icon-m-downloads"
             highlighted: row.highlighted
         }
     }
@@ -114,8 +132,8 @@ ListItem {
         Label {
             objectName: "omnibarResultTitle"
             width: parent.width
-            text: model.title
-            textFormat: Text.PlainText
+            text: model.markedTitle
+            textFormat: Text.StyledText
             truncationMode: TruncationMode.Fade
             color: row.highlighted ? Theme.highlightColor : Theme.primaryColor
         }
@@ -124,10 +142,14 @@ ListItem {
             objectName: "omnibarResultDetail"
             width: parent.width
             text: row.detail
-            textFormat: Text.PlainText
+            textFormat: row.switches ? Text.PlainText : Text.StyledText
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeExtraSmall
-            color: row.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+            // Quieter than the secondary colour alone, but for "Switch to tab".
+            opacity: row.switches ? 1.0 : Theme.opacityOverlay
+            color: row.switches ? Theme.highlightColor
+                                : row.highlighted ? Theme.secondaryHighlightColor
+                                                  : Theme.secondaryColor
         }
     }
 

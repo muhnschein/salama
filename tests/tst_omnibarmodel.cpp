@@ -41,6 +41,8 @@ private slots:
     void onePageOneRow();
     void learntFirst();
     void learningFollowsTheHistory();
+    void favicons();
+    void markedWords();
     void sourcesSwitchedOff();
     void bookmarksWhenEmpty();
     void rebuildsOnSourceChange();
@@ -149,9 +151,9 @@ void tst_omnibarmodel::roles()
     const QHash<int, QByteArray> names = sources.omnibar.roleNames();
     // QML binds these by name: none may move.
     const QList<QByteArray> expected{
-        "kind",       "title",          "url",       "host",          "favicon",
-        "tabId",      "groupId",        "groupName", "groupTabCount", "bookmarked",
-        "downloadId", "downloadStatus", "progress",  "date",
+        "kind",       "title",          "url",      "host",      "markedTitle",   "markedHost",
+        "favicon",    "tabId",          "groupId",  "groupName", "groupTabCount", "bookmarked",
+        "downloadId", "downloadStatus", "progress", "date",
     };
     QCOMPARE(names.count(), expected.count());
     for (const QByteArray &name : expected) {
@@ -314,13 +316,15 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::DownloadIdRole).toInt(), 0);
     QVERIFY(!role(omnibar, bookmarkRow, OmnibarModel::DateRole).toDateTime().isValid());
 
-    // A page of the history with no title shows its address, and when it was visited.
+    // A page of the history with no title shows its address, and when it was visited;
+    // with no icon of its own, its site's, which the tab shows.
     const int historyRow = rowOfKind(omnibar, QStringLiteral("history"));
     QCOMPARE(role(omnibar, historyRow, OmnibarModel::TitleRole).toString(),
              QStringLiteral("https://row.example/history"));
     QCOMPARE(role(omnibar, historyRow, OmnibarModel::HostRole).toString(),
              QStringLiteral("row.example"));
-    QVERIFY(role(omnibar, historyRow, OmnibarModel::FaviconRole).toString().isEmpty());
+    QCOMPARE(role(omnibar, historyRow, OmnibarModel::FaviconRole).toString(),
+             QStringLiteral("https://row.example/tab.ico"));
     QVERIFY(!role(omnibar, historyRow, OmnibarModel::BookmarkedRole).toBool());
     const QDateTime visited = role(omnibar, historyRow, OmnibarModel::DateRole).toDateTime();
     QVERIFY(visited.isValid());
@@ -340,6 +344,9 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     QCOMPARE(role(omnibar, 3, OmnibarModel::ProgressRole).toInt(), 40);
     QCOMPARE(role(omnibar, 3, OmnibarModel::TabIdRole).toInt(), 0);
     QVERIFY(role(omnibar, 3, OmnibarModel::DateRole).toDateTime().isValid());
+    QVERIFY(role(omnibar, 3, OmnibarModel::FaviconRole).toString().isEmpty());
+    QCOMPARE(role(omnibar, 3, OmnibarModel::MarkedTitleRole).toString(),
+             QStringLiteral("<b>row</b>.pdf"));
 
     // A download with no name at all is called by its address.
     startDownload(sources.downloads, 8, QString(), QStringLiteral("https://row.example/x"));
@@ -651,6 +658,88 @@ void tst_omnibarmodel::learningFollowsTheHistory()
     sources.history.visit(QStringLiteral("https://kept.example/"), QStringLiteral("Kept"));
     omnibar.setQuery(QStringLiteral("qq"));
     QCOMPARE(omnibar.count(), 0);
+}
+
+// A page's own icon first, from wherever it is known -- its tab, its bookmark, its
+// history -- and without one, its site's: a tab's before a bookmark's before the
+// history's newest. A file has none.
+void tst_omnibarmodel::favicons()
+{
+    Sources sources;
+    OmnibarModel &omnibar = sources.omnibar;
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://kept.example/a"),
+                       QStringLiteral("Icon a"), 1, Day));
+    sources.history.updateFavicon(QStringLiteral("https://kept.example/a"),
+                                  QStringLiteral("a.ico"));
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://kept.example/b"),
+                       QStringLiteral("Icon b"), 1, Day));
+    const int tab = sources.tabs.newTab(QStringLiteral("https://kept.example/b"));
+    sources.tabs.newTab(QStringLiteral("https://front.example/"));
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://www.kept.example/c"),
+                       QStringLiteral("Icon c"), 1, Day));
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://bare.example/"),
+                       QStringLiteral("Icon d"), 1, Day));
+    startDownload(sources.downloads, 1, QStringLiteral("icon.pdf"),
+                  QStringLiteral("https://kept.example/icon.pdf"));
+
+    const auto iconOf = [&omnibar](const QString &title) {
+        for (int row = 0; row < omnibar.rowCount(); ++row) {
+            if (role(omnibar, row, OmnibarModel::TitleRole).toString() == title) {
+                return role(omnibar, row, OmnibarModel::FaviconRole).toString();
+            }
+        }
+        return QStringLiteral("(not listed)");
+    };
+    omnibar.setQuery(QStringLiteral("icon"));
+    // The history's own; its site's from the history; none to be had; a file's none.
+    QCOMPARE(iconOf(QStringLiteral("Icon a")), QStringLiteral("a.ico"));
+    QCOMPARE(iconOf(QStringLiteral("Icon c")), QStringLiteral("a.ico"));
+    QVERIFY(iconOf(QStringLiteral("Icon d")).isEmpty());
+    QVERIFY(iconOf(QStringLiteral("icon.pdf")).isEmpty());
+
+    // A tab's icon is its page's, and its site's before the history's.
+    sources.tabs.updateTitle(tab, QStringLiteral("Icon b"));
+    sources.tabs.updateFavicon(tab, QStringLiteral("b.ico"));
+    omnibar.setQuery(QString());
+    omnibar.setQuery(QStringLiteral("icon"));
+    QCOMPARE(iconOf(QStringLiteral("Icon b")), QStringLiteral("b.ico"));
+    QCOMPARE(iconOf(QStringLiteral("Icon c")), QStringLiteral("b.ico"));
+    QCOMPARE(iconOf(QStringLiteral("Icon a")), QStringLiteral("a.ico"));
+    // A tab without one takes the history's for its page.
+    sources.tabs.updateFavicon(tab, QString());
+    sources.history.updateFavicon(QStringLiteral("https://kept.example/b"),
+                                  QStringLiteral("b-kept.ico"));
+    omnibar.setQuery(QString());
+    omnibar.setQuery(QStringLiteral("icon"));
+    QCOMPARE(iconOf(QStringLiteral("Icon b")), QStringLiteral("b-kept.ico"));
+}
+
+// The title and the host with every word typed in bold, and escaped; the rows follow
+// what is typed even when it finds the same rows.
+void tst_omnibarmodel::markedWords()
+{
+    Sources sources;
+    OmnibarModel &omnibar = sources.omnibar;
+    sources.bookmarks.add(QStringLiteral("https://forest.example/"),
+                          QStringLiteral("Forest <walks> & more"));
+    omnibar.setQuery(QStringLiteral("for walk"));
+    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+             QStringLiteral("<b>For</b>est &lt;<b>walk</b>s&gt; &amp; more"));
+    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedHostRole).toString(),
+             QStringLiteral("<b>for</b>est.example"));
+    QSignalSpy changed(&omnibar, &OmnibarModel::dataChanged);
+    omnibar.setQuery(QStringLiteral("forest"));
+    QCOMPARE(changed.count(), 1);
+    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+             QStringLiteral("<b>Forest</b> &lt;walks&gt; &amp; more"));
+
+    // With nothing typed, the new tab's bookmarks, escaped and nothing more.
+    omnibar.setQuery(QString());
+    omnibar.setBookmarksWhenEmpty(true);
+    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+             QStringLiteral("Forest &lt;walks&gt; &amp; more"));
+    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedHostRole).toString(),
+             QStringLiteral("forest.example"));
 }
 
 // A source switched off in Settings lists nothing.
