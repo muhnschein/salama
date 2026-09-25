@@ -83,6 +83,14 @@ const QStringList &schemaStatements()
                        "size INTEGER NOT NULL DEFAULT 0, "
                        "status INTEGER NOT NULL, "
                        "started INTEGER NOT NULL)"),
+        // Schema 8: what was typed into the address bar before a page was chosen from
+        // what it found, and how often (src/history/HistoryModel.h). A new table again.
+        QStringLiteral("CREATE TABLE IF NOT EXISTS input_history ("
+                       "input TEXT NOT NULL, "
+                       "url TEXT NOT NULL, "
+                       "use_count REAL NOT NULL, "
+                       "used INTEGER NOT NULL, "
+                       "PRIMARY KEY (input, url))"),
     };
     return statements;
 }

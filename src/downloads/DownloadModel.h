@@ -115,6 +115,10 @@ public:
     // Forget rows. The files stay where they are.
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void clear();
+    // The rows of downloads started at or after a time, in milliseconds since the
+    // epoch, as HistoryModel::clearSince() takes it, but for any still coming: what
+    // clearing the history takes of the list of downloads.
+    Q_INVOKABLE void clearSince(double since);
 
     // The file as a URL to open it by, or empty when there is no such row or no file.
     Q_INVOKABLE QString fileUrl(int row) const;

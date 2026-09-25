@@ -208,12 +208,10 @@ WebViewPage {
         }
     }
 
-    // How large the engine lays a page out: 1.75 * Theme.pixelRatio is about 360 css
-    // pixels across a 1080 wide screen -- the width a phone layout is written for --
-    // where the platform's own 1.5 gives 410. A function, so the load tests can
-    // compare it with what the engine was given.
+    // How large the engine lays a page out (Settings.pageZoom). A function, so the
+    // load tests can compare it with what the engine was given.
     function pageZoom() {
-        return Math.round(Theme.pixelRatio * 1.75 / 0.5) * 0.5
+        return Settings.pageZoom(Theme.pixelRatio)
     }
 
     // The engine's own anti-tracking, at the level Settings holds
@@ -374,7 +372,7 @@ WebViewPage {
 
             view: browserPage.currentView
             compact: browserPage.barCompact
-            onAccepted: browserPage.openChosen(Settings.urlForInput(text), inNewTab)
+            onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()
             onReloadOrStop: browserPage.reloadOrStop()
             onShowMenu: browserMenu.show()
@@ -402,6 +400,8 @@ WebViewPage {
         // for, or opened for a new tab: from under the cutout to the bar, over the
         // page. After both bars, so that nothing of theirs is drawn over it.
         OmnibarView {
+            id: omnibar
+
             width: parent.width
             y: browserPage.cutoutInset
             height: navigationBar.y - y

@@ -32,6 +32,8 @@ private slots:
     void isAddress_data();
     void isAddress();
     void omnibarSources();
+    void historySwitches();
+    void pageZoom();
     void quickAction();
     void quickActionBookmark();
     void quickActionIcon();
@@ -482,6 +484,47 @@ void tst_settings::omnibarSources()
     QCOMPARE(raw.value(QStringLiteral("omnibarBookmarks")).toBool(), true);
     QCOMPARE(raw.value(QStringLiteral("omnibarHistory")).toBool(), false);
     QCOMPARE(raw.value(QStringLiteral("omnibarDownloads")).toBool(), false);
+}
+
+// The history is kept unless switched off, and cleared on closing only once switched on
+// (docs/DECISIONS/0030-history-settings.md).
+void tst_settings::historySwitches()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    {
+        Settings settings(path);
+        QVERIFY(settings.rememberHistory());
+        QVERIFY(!settings.clearHistoryOnClose());
+        QSignalSpy remember(&settings, &Settings::rememberHistoryChanged);
+        QSignalSpy clear(&settings, &Settings::clearHistoryOnCloseChanged);
+
+        settings.setRememberHistory(true);
+        settings.setClearHistoryOnClose(false);
+        QCOMPARE(remember.count(), 0);
+        QCOMPARE(clear.count(), 0);
+        settings.setRememberHistory(false);
+        settings.setRememberHistory(false);
+        settings.setClearHistoryOnClose(true);
+        settings.setClearHistoryOnClose(true);
+        QCOMPARE(remember.count(), 1);
+        QCOMPARE(clear.count(), 1);
+    }
+    Settings again(path);
+    QVERIFY(!again.rememberHistory());
+    QVERIFY(again.clearHistoryOnClose());
+    QSettings raw(path, QSettings::IniFormat);
+    QCOMPARE(raw.value(QStringLiteral("rememberHistory")).toBool(), false);
+    QCOMPARE(raw.value(QStringLiteral("clearHistoryOnClose")).toBool(), true);
+}
+
+// 1.75 of the screen's pixel ratio, in steps of a half.
+void tst_settings::pageZoom()
+{
+    QCOMPARE(Settings::pageZoom(1.0), 2.0);
+    QCOMPARE(Settings::pageZoom(1.5), 2.5);
+    QCOMPARE(Settings::pageZoom(2.0), 3.5);
+    QCOMPARE(Settings::pageZoom(2.25), 4.0);
 }
 
 // The cover's one quick action: Search unless changed, refused out of range and read

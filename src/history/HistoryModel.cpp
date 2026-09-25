@@ -9,10 +9,18 @@
 #include <QVariant>
 #include <QtDebug>
 #include <algorithm>
+#include <cmath>
 
 namespace Salama {
 
 namespace {
+
+const qint64 Hour = qint64(60) * 60 * 1000;
+const qint64 Day = 24 * Hour;
+// Firefox's: a choice counts over nine tenths of those before it, and every count
+// wears down by a fortieth a day (nsNavHistory::DecayFrecency).
+const double InputUseDecay = 0.9;
+const double InputDayDecay = 0.975;
 
 bool run(QSqlQuery &query)
 {
@@ -197,6 +205,10 @@ void HistoryModel::remove(int index)
     if (!run(query)) {
         return;
     }
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE url = ?"));
+    inputs.addBindValue(m_entries.at(index).url);
+    run(inputs);
     beginRemoveRows(QModelIndex(), index, index);
     m_entries.removeAt(index);
     endRemoveRows();
@@ -205,11 +217,102 @@ void HistoryModel::remove(int index)
 
 void HistoryModel::clear()
 {
+    clearSince(0);
+}
+
+void HistoryModel::clearSince(double since)
+{
+    const qint64 from = since > 0 ? qint64(since) : 0;
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE used >= ?"));
+    inputs.addBindValue(from);
+    run(inputs);
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM browser_history"));
+    query.prepare(QStringLiteral("DELETE FROM browser_history WHERE date >= ?"));
+    query.addBindValue(from);
     if (run(query)) {
         reload();
     }
+}
+
+double HistoryModel::rangeStart(int range)
+{
+    return double(rangeStart(range, QDateTime::currentDateTime()));
+}
+
+qint64 HistoryModel::rangeStart(int range, const QDateTime &now)
+{
+    const qint64 at = now.toMSecsSinceEpoch();
+    switch (range) {
+    case ClearLastHour:
+        return at - Hour;
+    case ClearLastTwoHours:
+        return at - 2 * Hour;
+    case ClearLastFourHours:
+        return at - 4 * Hour;
+    case ClearToday:
+        return QDateTime(now.toLocalTime().date(), QTime(0, 0)).toMSecsSinceEpoch();
+    default:
+        return 0;
+    }
+}
+
+QString HistoryModel::inputKey(const QString &input)
+{
+    return input.trimmed().toLower();
+}
+
+void HistoryModel::recordInput(const QString &input, const QString &url)
+{
+    const QString key = inputKey(input);
+    if (key.isEmpty() || !isRecordable(url)) {
+        return;
+    }
+    QSqlQuery known(m_db);
+    known.prepare(
+        QStringLiteral("SELECT use_count FROM input_history WHERE input = ? AND url = ?"));
+    known.addBindValue(key);
+    known.addBindValue(url);
+    if (!run(known)) {
+        return;
+    }
+    const double count = known.next() ? known.value(0).toDouble() : 0;
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("INSERT OR REPLACE INTO input_history (input, url, use_count, "
+                                 "used) VALUES (?, ?, ?, ?)"));
+    query.addBindValue(key);
+    query.addBindValue(url);
+    query.addBindValue(count * InputUseDecay + 1);
+    query.addBindValue(QDateTime::currentMSecsSinceEpoch());
+    run(query);
+}
+
+// The whole table, matched here rather than in SQL, as the history is (allEntries()):
+// it is pruned to MaxInputs.
+QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now) const
+{
+    QHash<QString, double> ranks;
+    const QString key = inputKey(typed);
+    if (key.isEmpty()) {
+        return ranks;
+    }
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT input, url, use_count, used FROM input_history"));
+    if (!run(query)) {
+        return ranks;
+    }
+    while (query.next()) {
+        const QString input = query.value(0).toString();
+        if (!input.startsWith(key)) {
+            continue;
+        }
+        const double days = double(std::max(qint64(0), now - query.value(3).toLongLong())) / Day;
+        const double rank =
+            query.value(2).toDouble() * std::pow(InputDayDecay, days) * (input == key ? 2 : 1);
+        const QString url = query.value(1).toString();
+        ranks.insert(url, std::max(rank, ranks.value(url)));
+    }
+    return ranks;
 }
 
 void HistoryModel::prune()
@@ -219,6 +322,11 @@ void HistoryModel::prune()
                                  "(SELECT id FROM browser_history ORDER BY date DESC LIMIT ?)"));
     query.addBindValue(MaxEntries);
     run(query);
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE rowid NOT IN "
+                                  "(SELECT rowid FROM input_history ORDER BY used DESC LIMIT ?)"));
+    inputs.addBindValue(MaxInputs);
+    run(inputs);
 }
 
 void HistoryModel::reload()

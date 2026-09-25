@@ -2,9 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // Settings: the few that take a line each, and a way to each subject that takes more --
-// search, the reader view, the cover, privacy -- on a page of its own, in headed
-// groups, as Firefox for Android arranges its settings and Jolla's own browser reaches
-// its privacy settings (docs/DECISIONS/0028-settings-pages.md). Under each way in, a
+// search, the reader view, the cover, privacy, the history -- on a page of its own, in
+// headed groups, as Firefox for Android arranges its settings and Jolla's own browser
+// reaches its privacy settings (docs/DECISIONS/0028-settings-pages.md,
+// 0030-history-settings.md). Under each way in, a
 // line says how that subject is set now, so this page is also where to read it.
 //
 // Every control writes its setting as it changes; nothing waits on a Save.
@@ -41,6 +42,17 @@ Page {
         //: A tracking protection level
         var levelNames = [qsTr("Off"), qsTr("Standard"), qsTr("Strict")]
         return qsTr("Tracking protection: %1").arg(levelNames[level])
+    }
+
+    // Whether the history is kept, and for how long.
+    function historySummary(remember, clearOnClose) {
+        if (!remember) {
+            //: The pages visited are not kept in the history
+            return qsTr("Not remembered")
+        }
+        //: The pages visited are kept in the history, until the browser closes or
+        //: until they are cleared
+        return clearOnClose ? qsTr("Remembered until the browser closes") : qsTr("Remembered")
     }
 
     // What the cover shows, then its quick action (docs/DECISIONS/0029-quick-action.md).
@@ -188,6 +200,16 @@ Page {
                 text: qsTr("Privacy")
                 summary: settingsPage.privacySummary(Settings.trackingProtection)
                 onClicked: settingsPage.open("PrivacySettingsPage.qml")
+            }
+
+            SettingsEntry {
+                objectName: "historySettingsEntry"
+                // The menu's own for the history.
+                iconSource: "image://theme/icon-m-history"
+                text: qsTr("History")
+                summary: settingsPage.historySummary(Settings.rememberHistory,
+                                                     Settings.clearHistoryOnClose)
+                onClicked: settingsPage.open("HistorySettingsPage.qml")
             }
         }
 

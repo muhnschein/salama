@@ -50,6 +50,14 @@ class Settings : public QObject
                    omnibarHistoryChanged)
     Q_PROPERTY(bool omnibarDownloads READ omnibarDownloads WRITE setOmnibarDownloads NOTIFY
                    omnibarDownloadsChanged)
+    // Whether the pages visited are kept in the history, on unless switched off, and
+    // whether the history is cleared as the browser closes, off unless switched on:
+    // Firefox's Remember browsing and download history and Clear history when Firefox
+    // closes (docs/DECISIONS/0030-history-settings.md).
+    Q_PROPERTY(bool rememberHistory READ rememberHistory WRITE setRememberHistory NOTIFY
+                   rememberHistoryChanged)
+    Q_PROPERTY(bool clearHistoryOnClose READ clearHistoryOnClose WRITE setClearHistoryOnClose NOTIFY
+                   clearHistoryOnCloseChanged)
     // The cover's one quick action, a QuickAction value, and for QuickActionBookmark the
     // bookmark it opens and the picture it wears (docs/DECISIONS/0029-quick-action.md).
     // The bookmark is kept as its id, and its address and title beside it: the id for
@@ -193,6 +201,11 @@ public:
     bool omnibarDownloads() const;
     void setOmnibarDownloads(bool on);
 
+    bool rememberHistory() const;
+    void setRememberHistory(bool on);
+    bool clearHistoryOnClose() const;
+    void setClearHistoryOnClose(bool on);
+
     // Search unless changed: what the cover offered before there was a choice. Out of
     // range reads back as the default, like coverStyle.
     int quickAction() const;
@@ -215,6 +228,12 @@ public:
     // icon size asked for, white for a dark ambience and black for a light one
     // (icons/render.sh draws them).
     Q_INVOKABLE static QString coverIconPath(const QString &name, qreal iconSize, bool onDark);
+    // How many screen pixels the engine lays a css pixel out on, for a screen of this
+    // Theme.pixelRatio: 1.75 of it in steps of a half, which is about 360 css pixels
+    // across a 1080 wide screen -- the width a phone layout is written for -- where the
+    // platform's own 1.5 gives 410. The browsing page hands it the engine; the reader
+    // settings' preview sets its text by it, as large as the reader view will.
+    Q_INVOKABLE static qreal pageZoom(qreal pixelRatio);
 
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
@@ -243,6 +262,8 @@ signals:
     void omnibarBookmarksChanged();
     void omnibarHistoryChanged();
     void omnibarDownloadsChanged();
+    void rememberHistoryChanged();
+    void clearHistoryOnCloseChanged();
     void quickActionChanged();
     void quickActionBookmarkChanged();
     void quickActionIconChanged();
@@ -250,8 +271,9 @@ signals:
 private:
     // Trimmed text as an address, or empty when it is words to search for.
     static QString addressFor(const QString &text);
-    bool flag(const char *key) const;
-    bool setFlag(const char *key, bool on);
+    // A switch as stored, what it is before it is first switched given.
+    bool flag(const char *key, bool initially = true) const;
+    bool setFlag(const char *key, bool on, bool initially = true);
 
     QSettings m_settings;
 };

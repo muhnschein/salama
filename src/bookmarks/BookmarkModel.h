@@ -44,6 +44,9 @@ public:
         QString url;
         QString title;
         QString favicon;
+        // When it was added, in milliseconds since the epoch: how old a bookmark never
+        // visited is, to the address bar's ranking (OmnibarModel::frecency).
+        qint64 created = 0;
     };
 
     explicit BookmarkModel(Storage &storage, QObject *parent = nullptr);

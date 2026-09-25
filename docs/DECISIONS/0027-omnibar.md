@@ -22,15 +22,16 @@ page, and holds, from the bottom up:
   `Settings.isAddress()` says the text is one — true exactly when `urlForInput()` would
   not make a search of it — and *Search <engine> for “…”* whenever something is typed, a
   search even of an address. They follow the text at once. Enter means what it meant.
-- **the results**, a `SilicaListView` over the `Omnibar` model sectioned by kind — Tabs,
-  Bookmarks, History, Downloads — under headings that count them, "(10 of 34)" when a
-  section shows fewer than it found. Every row is drawn alike (`OmnibarResultRow`): the
-  site's icon or a theme glyph, the title, under it the host — for a tab in another group,
-  that group's name first; for a download, how it is going — and on the right a date for
-  the history and downloads. The list hangs from the actions and is as tall as what it holds, so a
-  short one sits by the bar; it is not laid out bottom-up, so its sections read from the
-  top as every list on the platform does. Its `currentIndex` is -1, as sailfish-browser's
-  history list has it, so the model never takes the field's focus. Empty, it is absent.
+- **the results**, a `SilicaListView` over the `Omnibar` model: one list, ranked, no
+  headings, eight rows at most. Every row is drawn alike (`OmnibarResultRow`): the site's
+  icon or a theme glyph, the title, and under it where a tap leads — "Switch to tab" for
+  an open tab, "Switch to tab in <group>" for one in another group, the host for any
+  other page, the host and how it is going for a download still coming. The list hangs
+  from the actions and is as tall as what it holds, so a short one sits by the bar; it is
+  not laid out bottom-up, so it reads from the top, the likeliest first, as Firefox for
+  Android's does with its toolbar at the foot. Its `currentIndex` is -1, as
+  sailfish-browser's history list has it, so the model never takes the field's focus.
+  Empty, it is absent.
 - **the ground**, a pane of the grid's glass (0010), opaque as its rows are, that takes
   every press: nothing of the page is seen or reached through it, and a tap on the bare
   glass ends the edit.
@@ -59,19 +60,54 @@ to the page and take a drag up for the grid (0009). The pane lies there, so whil
 the reach is none (`BarGesture.reaching`), and the pane is declared after the bar and the
 find bar, so nothing of theirs is drawn over it. The grid is still pulled from the bar.
 
-**The model** (`src/omnibar/OmnibarModel`, the `Omnibar` singleton) lists the open tabs of
-every group but the one in front — the page the bar is over — and the bookmarks, the
-history and the downloads that hold every word typed. Within a section the rank is stable
-over the source's own order: a host that begins with the first word, then a title with a
-word that does, then the rest. The source's order is the tabs most recently in front
-first, the bookmarks' own, the downloads newest first, and the history by frecency —
-visits weighted by the age of the last, 100 within four days down to 10 past three months,
-as Firefox weighs visits by age without keeping each visit to weigh. A bookmark open in a
-listed tab is left out, and a page of the history listed as either: one row a page, the
-nearest to hand. Ten rows a section, five downloads, is more than the pane shows unscrolled
-— a first row behind three sections of fifty is no suggestion — and the heading says how
-many more there were. Each source can be switched off in Settings > Search (0028), as
-Firefox's can; the new-tab bookmarks follow that switch.
+**The model** (`src/omnibar/OmnibarModel`, the `Omnibar` singleton) finds the open tabs
+of every group but the one in front — the page the bar is over — and the bookmarks, the
+history and the downloads that hold every word typed, and ranks them as Firefox's address
+bar does (`UrlbarMuxerStandard`, `UrlbarProviderInputHistory`, `nsNavHistory`):
+
+- **One row a page.** A page open in a tab, bookmarked and in the history is one row,
+  and what a tap on it does is the nearest to hand: switch to the tab, else open the
+  page. Its visits count, and its being bookmarked, whichever row it is — as Firefox
+  offers "Switch to tab" on the page its history found.
+- **What was chosen before, first.** Up to three pages chosen after typing what is typed
+  now, or text it begins, lead the list, even when the words are not in them — "gh"
+  leads to github.com once it has — the likeliest first (see *Learning* below).
+- **Then by how well the words match**: an address whose host begins with the first word,
+  then a title or an address with a word that does, then the rest; the host first stands
+  in for Firefox's autofill, which completes a host typed. Within that, by **frecency**,
+  Firefox's own (`nsNavHistory::CalculateFrecency`): each visit weighs 50, a bookmarked
+  page's 100, the weight halving every 30 days since the last visit — a bookmark never
+  visited, since it was added; an open tab the history has not seen, as visited now —
+  written as the day that score would have worn down to 1, so pages as used on the same
+  day tie and keep the order found: the tabs most recently in front, the bookmarks' own,
+  the history newest first.
+- **The downloads last**, newest first, two at most. Firefox does not look for files in
+  its address bar; here they were asked for, and they take the end of the list, where a
+  page is least likely to be wanted, as Firefox gives each group of its list a share.
+
+Eight rows in all — about what the pane shows above the keyboard, where Firefox shows ten
+on a desktop's screen: the pane offers what is likeliest, not everything that matched.
+Each source can be switched off in Settings > Search (0028), as Firefox's can; the
+new-tab bookmarks — every bookmark, in the bookmarks' order — follow that switch.
+
+**Learning.** What was typed when a page was chosen from the list, or an address entered
+or gone to, is kept with the history (`input_history`, `HistoryModel::recordInput`): the
+text, trimmed and in lower case, the page, a count and when it was last used. As in
+Firefox's input history, each choice again counts one over nine tenths of the count
+before, so a habit that changes is followed, and every count wears down by a fortieth a
+day since its text was last chosen, which Firefox does once a day and this does as it
+reads. Text learnt that begins with what is typed leads to its page, the text itself twice
+as strongly. A search is not learnt, and nothing is while the history is not kept (0030);
+removing a page of the history forgets what led there, clearing it forgets what was
+learnt in that time, and the table keeps the 500 most recently used.
+
+*Revised.* The pane first listed a section of each kind under a heading that counted it,
+up to ten rows a section, as piirit lists what its search finds, and ranked the history
+by Firefox's old frecency buckets. On the phone that read as busy: four headings, thirty
+rows and a date on half of them to look through for one page. Firefox and Chrome search
+the same sources and show a short list with no structure but its order, and that is
+quicker to take in, because the order carries the ranking and the first row is usually
+the one. The sections, their counts and the dates went, and the ranking above came in.
 
 The history is matched in C++ over its whole table, not the model's page of 500 and not
 by SQLite's `LIKE`, whose case folding is ASCII's: the table is pruned to 2000 rows, so a
@@ -92,7 +128,11 @@ changes them in place, so a download's progress or a tab's icon arriving never t
 the row under a finger.
 
 **Not done:** suggestions from the search engine. They would send every key typed to it,
-where everything the pane shows now stays on the phone.
+where everything the pane shows now stays on the phone. Nor Firefox's autofill, which
+completes the host in the field as it is typed: the host ranking first stands in for it,
+and a completion selected under Sailfish's keyboard, with its own predictions, is a
+question for the device. Nor highlighting the words typed in the rows: titles are the
+pages' own text, and would have to be escaped into rich text to do it.
 
 ## Consequences
 `urlForInput()` and `isAddress()` share one rule, which moved one edge: a host with an
@@ -102,6 +142,9 @@ nothing; it is a search now.
 `BrowserPage.qml` had no room for the pane, so the deck's state and gestures went to
 `components/TabDeck.qml` first (0010), and the field went from `NavigationBar.qml` to
 `AddressField.qml` to keep the bar under 400 lines.
+
+Learning added `input_history` to the database, schema 8 (`docs/ARCHITECTURE.md`), and
+the bookmarks' `created`, which was stored and never read, is read now.
 
 `tst_searchwords` and `tst_omnibarmodel` test the matcher and the model; `omnibar`,
 `omnibarFollowsItsSources`, `omnibarChoices` and `omnibarForANewTab` in `tst_qmlload`

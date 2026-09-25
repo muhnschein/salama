@@ -28,6 +28,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
                       Salama::Storage::defaultConfigFilePath(),
                       Salama::Storage::defaultDownloadDirectory());
     Salama::registerQmlTypes(&core);
+    QObject::connect(app.data(), &QGuiApplication::aboutToQuit, &core, &Salama::Core::clearOnClose);
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->setSource(SailfishApp::pathToMainQml());

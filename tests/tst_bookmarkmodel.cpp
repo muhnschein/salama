@@ -3,6 +3,7 @@
 #include "bookmarks/BookmarkModel.h"
 #include "storage/Storage.h"
 
+#include <QDateTime>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -320,6 +321,14 @@ void tst_bookmarkmodel::rowsInMemory()
     QCOMPARE(model.bookmarks().at(0).favicon, QStringLiteral("a.png"));
     QCOMPARE(model.bookmarks().at(1).id, b);
     QVERIFY(model.bookmarks().at(1).title.isEmpty());
+
+    // When each was added, to the second, in milliseconds: as added, and as read back.
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const qint64 created = model.bookmarks().at(0).created;
+    QCOMPARE(created % 1000, qint64(0));
+    QVERIFY(created <= now && now - created < qint64(60) * 1000);
+    BookmarkModel reloaded(storage);
+    QCOMPARE(reloaded.bookmarks().at(0).created, created);
 }
 
 QTEST_GUILESS_MAIN(tst_bookmarkmodel)

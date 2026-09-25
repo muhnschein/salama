@@ -18,7 +18,8 @@ media control, which appears while the tab in front plays. Two small pictures of
 (`components/QuickActionPreview.qml`) show where the action goes with nothing playing —
 alone, in the middle — and while a tab plays — left, the speaker right — at two thirds of a
 real cover's width, drawn as the cover is set to show itself and with the files the cover
-hands the home screen. With no action, a dot keeps its place.
+hands the home screen. With no action the strip is bare while nothing plays, as the
+home screen leaves it: a mark in its place would draw a cover that never appears.
 
 **A row, not a ComboBox.** The choice is a `ListItem` drawn as Silica draws a ComboBox,
 whose menu opens under it with the six. A ComboBox's value is the words of the item last

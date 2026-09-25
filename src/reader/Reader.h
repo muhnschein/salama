@@ -59,6 +59,19 @@ public:
     // The reader theme the settings ask for -- "light", "sepia" or "dark" -- with the
     // ambience's own being light or dark as the ambience is.
     Q_INVOKABLE QString colorScheme(bool darkAmbience) const;
+    // The same for a colours setting given, a Settings::ReaderColors: what the reader
+    // settings' preview follows, as a binding on the setting.
+    Q_INVOKABLE static QString schemeFor(int colors, bool darkAmbience);
+
+    // What a reader theme paints its page, its text and its links in, from the style
+    // sheet (reader.css): the colours the reader settings' preview is drawn in.
+    Q_INVOKABLE static QColor backgroundOf(const QString &scheme);
+    Q_INVOKABLE static QColor textColorOf(const QString &scheme);
+    Q_INVOKABLE static QColor linkColorOf(const QString &scheme);
+
+    // The article's text size for a Settings::readerTextSize step, in css pixels:
+    // AboutReader._setFontSize's 10 + 2 * the step.
+    Q_INVOKABLE static int fontSizeFor(int step);
 
     // The reader view of an article: articleScript's answer, set in Firefox's
     // about:reader markup and style sheet as the settings ask, headed by the site it
@@ -96,7 +109,6 @@ signals:
 
 private:
     QString bodyClass(bool darkAmbience) const;
-    int fontSize() const;
 
     const Settings &m_settings;
     QString m_readerableScript;

@@ -3,11 +3,15 @@
 //
 // How the reader view sets an article, as Firefox's reader view offers it: its
 // colours, typeface and text size, each index or value the stored one
-// (docs/DECISIONS/0024-reader-view.md, 0028-settings-pages.md). A reader view on the
-// screen follows them at once.
+// (docs/DECISIONS/0024-reader-view.md, 0028-settings-pages.md). Under them, a few lines
+// of an article as the reader view will set them follow each choice as it is made; a
+// reader view on the screen follows them at once too. The picture is below the choices
+// rather than above, so a text size growing it never moves the slider from under the
+// finger dragging it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
+import "../components"
 
 Page {
     id: readerSettingsPage
@@ -83,6 +87,11 @@ Page {
                 valueText: qsTr("%1 %").arg(Math.round(100 * (10 + 2 * value)
                                                        / (10 + 2 * Settings.ReaderTextSizeDefault)))
                 onValueChanged: Settings.readerTextSize = Math.round(value)
+            }
+
+            ReaderPreview {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
             }
         }
 

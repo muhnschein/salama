@@ -10,8 +10,8 @@
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
 the engine package fails to open that page, not the application. `Sailfish.WebEngine`
-is imported there and in `PrivacySettingsPage.qml`, which clears browsing data behind
-its dialog (`DECISIONS/0028-settings-pages.md`). `tests/tst_qmlstatic.cpp` enforces both.
+is imported there and in `HistorySettingsPage.qml`, which clears browsing data behind
+its dialog (`DECISIONS/0030-history-settings.md`). `tests/tst_qmlstatic.cpp` enforces both.
 
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
@@ -105,11 +105,13 @@ Typed text goes through `Settings.urlForInput`: a URL with a known scheme is use
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
 anything else becomes a search with the selected engine. Once what is typed differs from
 the url, or the bar is opened empty for a new tab, a pane above it (`OmnibarView.qml`)
-lists what `Omnibar` finds over a row to go to the address, when `Settings.isAddress`
-says it is one, and a row to search (`DECISIONS/0027-omnibar.md`).
+lists what `Omnibar` finds, ranked as Firefox ranks it and learning from what is chosen,
+over a row to go to the address, when `Settings.isAddress` says it is one, and a row to
+search (`DECISIONS/0027-omnibar.md`).
 
-Settings is a main page leading to a page each for search, the reader view, the cover
-and privacy (`DECISIONS/0028-settings-pages.md`).
+Settings is a main page leading to a page each for search, the reader view, the cover,
+privacy and the history (`DECISIONS/0028-settings-pages.md`,
+`DECISIONS/0030-history-settings.md`).
 
 ## Storage
 
@@ -117,7 +119,7 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
-7); a newer database than the build refuses to open rather than corrupt. Migration asks
+8); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
 any earlier schema converges on the same shape; a column that a later schema dropped
 takes its table through a rebuild (`DECISIONS/0019-no-private-tabs.md`).
@@ -129,6 +131,7 @@ closed_tab       id PK, url, title, favicon, closed (ms since epoch)
 browser_history  id PK, url UNIQUE, title, visited_count, date (ms since epoch)
 bookmark         id PK, url, title, favicon, position, created (s since epoch)
 download         id PK, name, url, path, mime, size, status, started (ms since epoch)
+input_history    (input, url) PK, use_count, used (ms since epoch)  -- the omnibar's learning
 setting          name PK, value          -- activeTabId, currentGroupId
 ```
 

@@ -166,6 +166,25 @@ void DownloadModel::remove(int row)
     emit countChanged();
 }
 
+void DownloadModel::clearSince(double since)
+{
+    const int before = m_downloads.count();
+    for (int row = m_downloads.count() - 1; row >= 0; --row) {
+        const Download &download = m_downloads.at(row);
+        if (download.status == Running || double(download.started) < since) {
+            continue;
+        }
+        const int id = download.id;
+        beginRemoveRows(QModelIndex(), row, row);
+        m_downloads.removeAt(row);
+        endRemoveRows();
+        erase(id);
+    }
+    if (m_downloads.count() != before) {
+        emit countChanged();
+    }
+}
+
 void DownloadModel::clear()
 {
     if (m_downloads.isEmpty()) {

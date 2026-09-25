@@ -193,7 +193,8 @@ int BookmarkModel::add(const QString &url, const QString &title, const QString &
     query.addBindValue(url);
     query.addBindValue(Storage::text(title));
     query.addBindValue(Storage::text(favicon));
-    query.addBindValue(QDateTime::currentDateTimeUtc().toMSecsSinceEpoch() / 1000);
+    const qint64 created = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch() / 1000;
+    query.addBindValue(created);
     if (!run(query)) {
         return 0;
     }
@@ -203,6 +204,7 @@ int BookmarkModel::add(const QString &url, const QString &title, const QString &
     bookmark.url = url;
     bookmark.title = title;
     bookmark.favicon = favicon;
+    bookmark.created = created * 1000;
 
     const int index = m_bookmarks.count();
     beginInsertRows(QModelIndex(), index, index);
@@ -315,8 +317,8 @@ void BookmarkModel::notifyRow(int index, const QVector<int> &roles)
 void BookmarkModel::reload()
 {
     QSqlQuery query(m_db);
-    query.prepare(
-        QStringLiteral("SELECT id, url, title, favicon FROM bookmark ORDER BY position ASC"));
+    query.prepare(QStringLiteral("SELECT id, url, title, favicon, created FROM bookmark "
+                                 "ORDER BY position ASC"));
     if (!run(query)) {
         return;
     }
@@ -327,6 +329,7 @@ void BookmarkModel::reload()
         bookmark.url = query.value(1).toString();
         bookmark.title = query.value(2).toString();
         bookmark.favicon = query.value(3).toString();
+        bookmark.created = query.value(4).toLongLong() * 1000;
         bookmarks.append(bookmark);
     }
     const int oldCount = m_bookmarks.count();

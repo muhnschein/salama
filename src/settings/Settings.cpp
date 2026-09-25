@@ -26,6 +26,8 @@ const char *const OmnibarTabsKey = "omnibarTabs";
 const char *const OmnibarBookmarksKey = "omnibarBookmarks";
 const char *const OmnibarHistoryKey = "omnibarHistory";
 const char *const OmnibarDownloadsKey = "omnibarDownloads";
+const char *const RememberHistoryKey = "rememberHistory";
+const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
 const char *const QuickActionKey = "quickAction";
 const char *const QuickActionBookmarkKey = "quickActionBookmark";
 const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
@@ -320,19 +322,43 @@ void Settings::setReaderTextSize(int size)
     emit readerTextSizeChanged();
 }
 
-bool Settings::flag(const char *key) const
+bool Settings::flag(const char *key, bool initially) const
 {
-    return m_settings.value(QLatin1String(key), true).toBool();
+    return m_settings.value(QLatin1String(key), initially).toBool();
 }
 
 // Whether the value changed, so the caller knows to say so.
-bool Settings::setFlag(const char *key, bool on)
+bool Settings::setFlag(const char *key, bool on, bool initially)
 {
-    if (on == flag(key)) {
+    if (on == flag(key, initially)) {
         return false;
     }
     m_settings.setValue(QLatin1String(key), on);
     return true;
+}
+
+bool Settings::rememberHistory() const
+{
+    return flag(RememberHistoryKey);
+}
+
+void Settings::setRememberHistory(bool on)
+{
+    if (setFlag(RememberHistoryKey, on)) {
+        emit rememberHistoryChanged();
+    }
+}
+
+bool Settings::clearHistoryOnClose() const
+{
+    return flag(ClearHistoryOnCloseKey, false);
+}
+
+void Settings::setClearHistoryOnClose(bool on)
+{
+    if (setFlag(ClearHistoryOnCloseKey, on, false)) {
+        emit clearHistoryOnCloseChanged();
+    }
 }
 
 bool Settings::omnibarTabs() const
@@ -468,6 +494,11 @@ QString Settings::coverIconPath(const QString &name, qreal iconSize, bool onDark
         .arg(name)
         .arg(size)
         .arg(onDark ? QStringLiteral("white") : QStringLiteral("black"));
+}
+
+qreal Settings::pageZoom(qreal pixelRatio)
+{
+    return qRound(pixelRatio * 1.75 / 0.5) * 0.5;
 }
 
 QString Settings::searchUrl(const QString &query) const

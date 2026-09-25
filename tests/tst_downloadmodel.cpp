@@ -35,6 +35,7 @@ private slots:
     void limit();
     void remove();
     void clear();
+    void clearSince();
     void fileUrl();
     void rowOf();
     void directory();
@@ -649,6 +650,43 @@ void tst_downloadmodel::clear()
 
     DownloadModel reloaded(storage, dir.path());
     QCOMPARE(reloaded.count(), 0);
+}
+
+// The rows of downloads started at a time or since, as clearing the history takes
+// them; none still coming.
+void tst_downloadmodel::clearSince()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    {
+        QSqlQuery insert(storage.database());
+        QVERIFY(insert.exec(QStringLiteral("INSERT INTO download (id, name, status, started) "
+                                           "VALUES (1, 'old.pdf', 1, 5)")));
+    }
+    DownloadModel model(storage, dir.path());
+    const qint64 before = QDateTime::currentMSecsSinceEpoch();
+    model.observe(Topic, startMessage(1, QStringLiteral("done.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    model.observe(Topic, startMessage(2, QStringLiteral("coming.pdf")));
+    QCOMPARE(model.count(), 3);
+    QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+
+    model.clearSince(double(before));
+    QCOMPARE(model.count(), 2);
+    QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(model.data(model.index(0, 0), DownloadModel::NameRole).toString(),
+             QStringLiteral("coming.pdf"));
+    QCOMPARE(model.data(model.index(1, 0), DownloadModel::NameRole).toString(),
+             QStringLiteral("old.pdf"));
+    QCOMPARE(rowsInDatabase(storage), 2);
+
+    // Nothing more to take: nothing said.
+    model.clearSince(double(before));
+    QCOMPARE(countSpy.count(), 1);
+    model.clearSince(0);
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(model.data(model.index(0, 0), DownloadModel::StatusRole).toInt(),
+             int(DownloadModel::Running));
 }
 
 void tst_downloadmodel::fileUrl()

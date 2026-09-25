@@ -44,6 +44,12 @@ public:
     PageMedia *pageMedia();
     Reader *reader();
 
+    // What is set to go as the browser closes -- the history, the list of downloads and
+    // the recently closed tabs, with Settings::clearHistoryOnClose -- goes: main() calls
+    // it as the application quits, and the constructor on every start, for a browser
+    // stopped before it could (docs/DECISIONS/0030-history-settings.md).
+    void clearOnClose();
+
 private:
     Storage m_storage;
     TabPersistence m_tabPersistence;

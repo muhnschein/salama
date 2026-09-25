@@ -3,12 +3,15 @@
 //
 // The pane the address bar brings up above itself while it is typed into: what the
 // words find among the open tabs of every group, the bookmarks, the history and the
-// downloads, a section of each under a heading that says how many -- one list sectioned
-// by kind, as piirit lists what its search finds -- and below them, directly above the
-// bar and in reach of the thumb that typed, the rows that go to what was typed as an
-// address or search the web for it (docs/DECISIONS/0027-omnibar.md). Opened for a new
-// tab with nothing typed yet, it lists the bookmarks, as sailfish-browser's new-tab
+// downloads, as one short list ranked the way Firefox's address bar ranks what it finds
+// -- no headings, the likeliest first, eight at most (Omnibar) -- and below it, directly
+// above the bar and in reach of the thumb that typed, the rows that go to what was typed
+// as an address or search the web for it (docs/DECISIONS/0027-omnibar.md). Opened for a
+// new tab with nothing typed yet, it lists the bookmarks, as sailfish-browser's new-tab
 // overlay lists its favourites.
+//
+// What is chosen, and an address gone to as typed, is learnt: the same text leads there
+// first next time (Omnibar.learn).
 //
 // The list hangs from those rows and is as tall as what it holds, up to the room there
 // is, so a short one sits by the bar. Under both is a pane of the grid's glass
@@ -54,37 +57,31 @@ Item {
         }
     }
 
-    // A section's heading, with how many of how many when the section shows fewer
-    // than it found.
-    function heading(kind) {
-        if (kind === "tab") {
-            return counted(qsTr("Tabs (%1)"), qsTr("Tabs (%1 of %2)"),
-                           Omnibar.tabCount, Omnibar.tabTotal)
-        }
-        if (kind === "bookmark") {
-            return counted(qsTr("Bookmarks (%1)"), qsTr("Bookmarks (%1 of %2)"),
-                           Omnibar.bookmarkCount, Omnibar.bookmarkTotal)
-        }
-        if (kind === "history") {
-            return counted(qsTr("History (%1)"), qsTr("History (%1 of %2)"),
-                           Omnibar.historyCount, Omnibar.historyTotal)
-        }
-        return counted(qsTr("Downloads (%1)"), qsTr("Downloads (%1 of %2)"),
-                       Omnibar.downloadCount, Omnibar.downloadTotal)
-    }
-
-    function counted(all, some, shown, total) {
-        return total > shown ? some.arg(shown).arg(total) : all.arg(shown)
-    }
-
     function choose(kind, tabId, url, downloadId, downloadStatus) {
+        if (kind === "download") {
+            downloadChosen(downloadId, downloadStatus === DownloadModel.Done)
+            return
+        }
+        Omnibar.learn(typed, url)
         if (kind === "tab") {
             tabChosen(tabId)
-        } else if (kind === "download") {
-            downloadChosen(downloadId, downloadStatus === DownloadModel.Done)
         } else {
             urlChosen(url)
         }
+    }
+
+    // Where Enter takes what is typed (Settings.urlForInput), learnt when it is an
+    // address, as a row chosen is; a search is not.
+    function enter(text) {
+        var url = Settings.urlForInput(text)
+        if (Settings.isAddress(text)) {
+            Omnibar.learn(text, url)
+        }
+        return url
+    }
+
+    function go() {
+        goRequested(enter(typed))
     }
 
     onActiveChanged: sync()
@@ -146,11 +143,6 @@ Item {
         // focus from the field (apps/browser/qml/pages/components/HistoryList.qml).
         currentIndex: -1
         model: Omnibar
-        section.property: "kind"
-        section.delegate: SectionHeader {
-            objectName: "omnibarSection"
-            text: pane.heading(section)
-        }
 
         delegate: OmnibarResultRow {
             onClicked: pane.choose(model.kind, model.tabId, model.url, model.downloadId,
@@ -182,7 +174,7 @@ Item {
             //: The row above the address bar that opens what was typed as an address
             title: qsTr("Go to %1").arg(pane.typed)
             subtitle: pane.address
-            onClicked: pane.goRequested(pane.address)
+            onClicked: pane.go()
         }
 
         // A search even when what is typed reads as an address.

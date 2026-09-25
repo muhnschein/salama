@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "Core.h"
 
+#include "tabs/ClosedTabModel.h"
+
 namespace Salama {
 
 Core::Core(const QString &dataDirectory, const QString &configFilePath,
@@ -19,8 +21,12 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
 {
-    connect(&m_tabs, &TabModel::visited, &m_history,
-            [this](const QString &url) { m_history.visit(url); });
+    // Unless the history is not to be kept.
+    connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
+        if (m_settings.rememberHistory()) {
+            m_history.visit(url);
+        }
+    });
     connect(&m_tabs, &TabModel::titleUpdated, &m_history, &HistoryModel::updateTitle);
     connect(&m_tabs, &TabModel::faviconUpdated, &m_bookmarks, &BookmarkModel::updateFavicon);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
@@ -37,6 +43,18 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     connect(&m_pageActivity, &PageActivity::playStateChanged, &m_pageMedia, &PageMedia::refresh);
     connect(&m_pageActivity, &PageActivity::backgroundChanged, &m_pageMedia,
             [this]() { m_pageMedia.setBackground(m_pageActivity.background()); });
+
+    clearOnClose();
+}
+
+void Core::clearOnClose()
+{
+    if (!m_settings.clearHistoryOnClose()) {
+        return;
+    }
+    m_history.clear();
+    m_downloads.clear();
+    m_tabs.closedTabs()->clear();
 }
 
 Storage &Core::storage()

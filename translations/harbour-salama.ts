@@ -159,15 +159,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>History</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Cookies and site data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Time range</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open tabs, cookies, site data and the cache are cleared whole</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last hour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last two hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last four hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Everything</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browsing and download history</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -350,6 +378,37 @@
     </message>
 </context>
 <context>
+    <name>HistorySettingsPage</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remember browsing history</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep the pages you visit, to find them in the history and the address bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear history when closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The history, the list of downloads and the recently closed tabs go each time the browser is closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -372,44 +431,21 @@
     </message>
     <message>
         <source>%1 · %2</source>
-        <extracomment>Two parts of a line under a suggestion in the address bar: a tab&apos;s group and its site, or a download&apos;s site and how it is going</extracomment>
+        <extracomment>Under a download the address bar found: its site, and how it is going</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to tab in %1</source>
+        <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>OmnibarView</name>
-    <message>
-        <source>Tabs (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tabs (%1 of %2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks (%1 of %2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>History (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>History (%1 of %2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloads (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloads (%1 of %2)</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
@@ -423,10 +459,6 @@
 </context>
 <context>
     <name>PrivacySettingsPage</name>
-    <message>
-        <source>Clearing browsing data</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Privacy</source>
         <translation type="unfinished"></translation>
@@ -459,8 +491,22 @@
         <source>Strict</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>ReaderPreview</name>
     <message>
-        <source>Clear browsing data</source>
+        <source>example.com</source>
+        <extracomment>The made-up site a sample article in the reader view&apos;s preview is from</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Just the article</source>
+        <extracomment>The heading of the sample article in the reader view&apos;s preview</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The reader view keeps a page&apos;s words and pictures and leaves out everything around them, set in the colours, the typeface and the size chosen above.</source>
+        <extracomment>The sample article in the reader view&apos;s preview</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -724,6 +770,20 @@
     <message>
         <source>%1 · %2</source>
         <extracomment>The cover&apos;s settings in one line: what it shows, then its quick action, e.g. &quot;The icon alone · Search&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not remembered</source>
+        <extracomment>The pages visited are not kept in the history</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remembered until the browser closes</source>
+        <extracomment>The pages visited are kept in the history, until the browser closes or until they are cleared</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remembered</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

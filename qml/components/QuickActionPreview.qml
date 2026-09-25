@@ -38,16 +38,15 @@ Item {
     readonly property bool iconOnly: Settings.coverStyle === Settings.CoverIconOnly
     readonly property bool everyTab: Settings.coverStyle === Settings.CoverEveryTab
     // The actions along the foot, left to right: the one alone, or the action and the
-    // mute beside it, or the mute alone. "" is the place of an action not chosen.
-    readonly property var actions: !playing ? [glyph] : (glyph === "" ? ["speaker-on"]
-                                                                      : [glyph, "speaker-on"])
+    // mute beside it, or the mute alone, or none.
+    readonly property var actions: {
+        var drawn = glyph === "" ? [] : [glyph]
+        return playing ? drawn.concat(["speaker-on"]) : drawn
+    }
 
     // A file of the cover's own, as a whole URL, resolved from here as the cover
-    // resolves it; nothing for no glyph.
+    // resolves it.
     function iconSource(name) {
-        if (name === "") {
-            return ""
-        }
         return Qt.resolvedUrl("../../" + Settings.coverIconPath(name, preview.iconSize,
                                                                  preview.onDark))
     }
@@ -150,33 +149,18 @@ Item {
         Repeater {
             model: preview.actions
 
-            Item {
-                // The glyph drawn here, and the file it is drawn from; "" for the dot.
+            Image {
+                // The glyph drawn here; the file it is drawn from is the source.
                 readonly property string glyph: modelData
-                readonly property string source: preview.iconSource(modelData)
 
                 objectName: "previewAction"
                 x: picture.width * (2 * index + 1) / (2 * preview.actions.length) - width / 2
                 y: picture.height - (Theme.itemSizeSmall * preview.ratio + height) / 2
                 width: preview.iconSize
                 height: width
-
-                Image {
-                    anchors.fill: parent
-                    visible: parent.source !== ""
-                    source: parent.source
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                }
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    visible: parent.source === ""
-                    width: Math.round(parent.width * 0.4)
-                    height: width
-                    radius: width / 2
-                    color: Theme.secondaryColor
-                }
+                source: preview.iconSource(modelData)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
             }
         }
     }
