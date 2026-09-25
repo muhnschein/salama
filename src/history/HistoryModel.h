@@ -93,6 +93,8 @@ public:
     Q_INVOKABLE void updateFavicon(const QString &url, const QString &favicon);
     // One page, and what the address bar learnt leads to it.
     Q_INVOKABLE void remove(int index);
+    // The same by address, for the start page, whose rows are not this model's.
+    Q_INVOKABLE void removeUrl(const QString &url);
     // Every page, and all the address bar has learnt.
     Q_INVOKABLE void clear();
     // The pages last visited at or after a time, in milliseconds since the epoch, and

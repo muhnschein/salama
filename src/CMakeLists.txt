@@ -27,6 +27,10 @@ add_library(salama-core STATIC
     search/SearchWords.h
     settings/Settings.cpp
     settings/Settings.h
+    startpage/SiteListModel.cpp
+    startpage/SiteListModel.h
+    startpage/StartPage.cpp
+    startpage/StartPage.h
     storage/Storage.cpp
     storage/Storage.h
     tabs/ClosedTabModel.cpp

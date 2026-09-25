@@ -33,9 +33,9 @@ menu to pick from, so they went. The home page got a page of its own; the other 
 from Settings altogether: a page's desktop version is the menu's switch (0021), which is
 where it is wanted, and how many pages stay loaded is the platform's five (0016).
 
-**The subjects' pages.** *Home page*: its address typed, the page in front or a bookmark
-taken as it is, as Firefox's Home settings offer them, or the default again
-(`pages/HomePageSettingsPage.qml`, the bookmark picked as the cover's is, 0029). *Search*: the engine, and under *Address bar suggestions* a switch
+**The subjects' pages.** *Start page*: a blank page, or the start page's sections, each
+switched on or off, as Firefox's Home settings offer them (`pages/StartPageSettingsPage.qml`,
+0032, which took the place of a home page's address). *Search*: the engine, and under *Address bar suggestions* a switch
 for each source the bar suggests from — open tabs, bookmarks, history, downloads (0027).
 *Reader view*: its colours, typeface and text size (0024). *Cover*: what the cover shows
 (0014, 0031) and its quick action (0029). *Privacy*: tracking protection (0023). *History*: whether
@@ -77,7 +77,7 @@ page that fits on a phone's screen and reads at a glance. A subject that grows p
 line gets a page and an entry, not a section.
 
 The load tests reach each page by tapping its entry (`settingsPage`, `searchSettingsPage`,
-`homePageSettingsPage`, `readerSettingsPage`, `privacySettingsPage`,
+`startPageSettingsPage`, `readerSettingsPage`, `privacySettingsPage`,
 `historySettingsPage`, `coverSettingsPage`); `clearDataDialog` drives the switches, the dimmed Clear, the remorse —
 the stub `Remorse` now records which page it was shown on — and what is cleared. Whether
 the icons are in the device's theme and whether the remorse shows on the history page as the dialog leaves are device checks

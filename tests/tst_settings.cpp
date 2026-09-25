@@ -40,13 +40,16 @@ private slots:
     void coverIconPath();
     void coverIconPathNamesTheSpeakers();
     void coverIconPathNamesEveryGlyph();
+    void startPage();
+    void retiresTheHomePage();
+    void isSearchUrl_data();
+    void isSearchUrl();
 };
 
 void tst_settings::defaults()
 {
     QTemporaryDir dir;
     Settings settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.homePage(), Settings::defaultHomePage());
     QCOMPARE(settings.searchEngine(), Settings::defaultSearchEngine());
     QCOMPARE(settings.searchEngineIndex(), 0);
     // On unless it is turned off: a camera cutout over the first line of a page is
@@ -69,13 +72,7 @@ void tst_settings::persistsValues()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Settings settings(path);
-        QSignalSpy homeSpy(&settings, &Settings::homePageChanged);
         QSignalSpy cutoutSpy(&settings, &Settings::cutoutGuardChanged);
-
-        settings.setHomePage(QStringLiteral("  https://sailfishos.org/  "));
-        settings.setHomePage(QStringLiteral("https://sailfishos.org/"));
-        QCOMPARE(homeSpy.count(), 1);
-        QCOMPARE(settings.homePage(), QStringLiteral("https://sailfishos.org/"));
 
         settings.setCutoutGuard(false);
         settings.setCutoutGuard(false);
@@ -83,12 +80,8 @@ void tst_settings::persistsValues()
         settings.setSearchEngine(QStringLiteral("startpage"));
     }
     Settings reloaded(path);
-    QCOMPARE(reloaded.homePage(), QStringLiteral("https://sailfishos.org/"));
     QVERIFY(!reloaded.cutoutGuard());
     QCOMPARE(reloaded.searchEngine(), QStringLiteral("startpage"));
-
-    reloaded.setHomePage(QStringLiteral("   "));
-    QCOMPARE(reloaded.homePage(), Settings::defaultHomePage());
 }
 
 void tst_settings::searchEngineSelection()
@@ -717,6 +710,94 @@ void tst_settings::coverIconPathNamesEveryGlyph()
             QVERIFY2(whiteFile != blackFile, qPrintable(black));
         }
     }
+}
+
+// The start page is Firefox's home: every section on, and not blank, until changed; a
+// section keeps its switch while the page is blank (docs/DECISIONS/0032-start-page.md).
+void tst_settings::startPage()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Settings settings(path);
+        QVERIFY(!settings.startPageBlank());
+        QVERIFY(settings.startPageTopSites());
+        QVERIFY(settings.startPageBookmarks());
+        QVERIFY(settings.startPageRecent());
+
+        QSignalSpy spy(&settings, &Settings::startPageChanged);
+        settings.setStartPageTopSites(true);
+        settings.setStartPageBlank(false);
+        QCOMPARE(spy.count(), 0);
+        settings.setStartPageBlank(true);
+        settings.setStartPageBlank(true);
+        QCOMPARE(spy.count(), 1);
+        settings.setStartPageTopSites(false);
+        settings.setStartPageBookmarks(false);
+        settings.setStartPageRecent(false);
+        QCOMPARE(spy.count(), 4);
+        settings.setStartPageRecent(true);
+        QCOMPARE(spy.count(), 5);
+    }
+    Settings reloaded(path);
+    QVERIFY(reloaded.startPageBlank());
+    QVERIFY(!reloaded.startPageTopSites());
+    QVERIFY(!reloaded.startPageBookmarks());
+    QVERIFY(reloaded.startPageRecent());
+}
+
+// The home page an earlier release kept is taken out of the file: the start page took
+// its place, and a key nothing reads is only a question for whoever opens the file.
+void tst_settings::retiresTheHomePage()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        QSettings old(path, QSettings::IniFormat);
+        old.setValue(QStringLiteral("homePage"), QStringLiteral("https://sailfishos.org/"));
+        old.setValue(QStringLiteral("cutoutGuard"), false);
+    }
+    {
+        Settings settings(path);
+        QVERIFY(!settings.cutoutGuard());
+    }
+    QSettings file(path, QSettings::IniFormat);
+    QVERIFY(!file.contains(QStringLiteral("homePage")));
+    QVERIFY(file.contains(QStringLiteral("cutoutGuard")));
+}
+
+void tst_settings::isSearchUrl_data()
+{
+    QTest::addColumn<QString>("url");
+    QTest::addColumn<bool>("search");
+
+    QTemporaryDir dir;
+    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    for (int i = 0; i < settings.searchEngineKeys().count(); ++i) {
+        settings.setSearchEngineIndex(i);
+        const QString results = settings.searchUrl(QStringLiteral("sailfish os"));
+        QTest::newRow(qPrintable(settings.searchEngineKeys().at(i))) << results << true;
+    }
+    // As the engines themselves hand the results on: with parameters of their own ahead
+    // of the words, and with or without "www.".
+    QTest::newRow("qwant, redirected")
+        << QStringLiteral("https://qwant.com/?t=web&q=sailfish") << true;
+    QTest::newRow("ecosia, redirected")
+        << QStringLiteral("https://www.ecosia.org/search?method=index&q=sailfish") << true;
+    QTest::newRow("qwant, front page") << QStringLiteral("https://www.qwant.com/") << false;
+    QTest::newRow("ecosia, elsewhere")
+        << QStringLiteral("https://www.ecosia.org/trees?q=sailfish") << false;
+    QTest::newRow("another site's q")
+        << QStringLiteral("https://example.org/search?q=sailfish") << false;
+    QTest::newRow("no host") << QStringLiteral("about:blank") << false;
+    QTest::newRow("empty") << QString() << false;
+}
+
+void tst_settings::isSearchUrl()
+{
+    QFETCH(QString, url);
+    QFETCH(bool, search);
+    QCOMPARE(Settings::isSearchUrl(url), search);
 }
 
 QTEST_GUILESS_MAIN(tst_settings)

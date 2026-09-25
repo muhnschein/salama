@@ -31,6 +31,7 @@ private slots:
     void learningWearsDown();
     void learningGoesWithThePage();
     void favicons();
+    void removeByUrl();
 };
 
 namespace {
@@ -421,6 +422,35 @@ void tst_historymodel::favicons()
     }
     HistoryModel reopened(storage);
     QCOMPARE(reopened.allEntries().first().favicon, QStringLiteral("https://a.example/icon.png"));
+}
+
+// The same as remove(), by address, for the start page's rows: found whether the model
+// shows it or not, and what was learnt leads there goes with it.
+void tst_historymodel::removeByUrl()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://a.example/"));
+    model.visit(QStringLiteral("https://b.example/"));
+    model.recordInput(QStringLiteral("x"), QStringLiteral("https://a.example/"));
+    model.recordInput(QStringLiteral("x"), QStringLiteral("https://b.example/"));
+    model.setSearchTerm(QStringLiteral("b.example"));
+    QCOMPARE(model.count(), 1);
+
+    QSignalSpy resetSpy(&model, &HistoryModel::modelReset);
+    model.removeUrl(QStringLiteral("https://a.example/"));
+    QCOMPARE(resetSpy.count(), 1);
+    QCOMPARE(rowsInDatabase(storage), 1);
+    QCOMPARE(model.inputRanks(QStringLiteral("x"), QDateTime::currentMSecsSinceEpoch()).keys(),
+             QList<QString>{QStringLiteral("https://b.example/")});
+    // An address the history does not hold is nothing to remove.
+    model.removeUrl(QStringLiteral("https://nowhere.example/"));
+    QCOMPARE(resetSpy.count(), 1);
+    model.removeUrl(QStringLiteral("https://b.example/"));
+    QCOMPARE(model.count(), 0);
+    QCOMPARE(rowsInDatabase(storage), 0);
+    QCOMPARE(inputsInDatabase(storage), 0);
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)

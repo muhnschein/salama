@@ -2,7 +2,8 @@
 // Copyright (c) 2026 salama contributors
 //
 // One tab as a row of a list: its icon, its title and its address. What the search
-// results and the recently closed tabs are both made of.
+// results and the recently closed tabs are made of, and the start page's pages read
+// last.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

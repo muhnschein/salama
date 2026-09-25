@@ -4,6 +4,8 @@
 
 #include "tabs/ClosedTabModel.h"
 
+#include <initializer_list>
+
 namespace Salama {
 
 Core::Core(const QString &dataDirectory, const QString &configFilePath,
@@ -20,6 +22,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings)
     , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
+    , m_startPage(m_storage)
 {
     // Unless the history is not to be kept.
     connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
@@ -30,6 +33,16 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     connect(&m_tabs, &TabModel::titleUpdated, &m_history, &HistoryModel::updateTitle);
     connect(&m_tabs, &TabModel::faviconUpdated, &m_bookmarks, &BookmarkModel::updateFavicon);
     connect(&m_tabs, &TabModel::faviconUpdated, &m_history, &HistoryModel::updateFavicon);
+    // The start page is read from the history and the bookmarks, and again when either
+    // changes, icons included (docs/DECISIONS/0032-start-page.md).
+    const std::initializer_list<const QAbstractItemModel *> startPageSources{&m_history,
+                                                                             &m_bookmarks};
+    for (const QAbstractItemModel *source : startPageSources) {
+        connect(source, &QAbstractItemModel::modelReset, &m_startPage, &StartPage::refresh);
+        connect(source, &QAbstractItemModel::rowsInserted, &m_startPage, &StartPage::refresh);
+        connect(source, &QAbstractItemModel::rowsRemoved, &m_startPage, &StartPage::refresh);
+        connect(source, &QAbstractItemModel::dataChanged, &m_startPage, &StartPage::refresh);
+    }
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
@@ -114,6 +127,11 @@ PageMedia *Core::pageMedia()
 Reader *Core::reader()
 {
     return &m_reader;
+}
+
+StartPage *Core::startPage()
+{
+    return &m_startPage;
 }
 
 } // namespace Salama

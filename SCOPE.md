@@ -47,6 +47,7 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   history/     HistoryModel (SQLite)
   bookmarks/   BookmarkModel (SQLite)
   settings/    Settings (QSettings)
+  startpage/   StartPage: what a tab with no address shows
   reader/      Reader: the reader view, and Firefox's style sheet for it
 third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
@@ -74,7 +75,7 @@ Reuse policy:
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
-- Settings: a main page leading to a page each for the home page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
+- Settings: a main page leading to a page each for the start page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
 - Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings, and one quick action chosen there beside the playing tab's mute
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 

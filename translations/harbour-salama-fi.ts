@@ -57,7 +57,7 @@
     <name>BookmarkPickerPage</name>
     <message>
         <source>Choose a bookmark</source>
-        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens, or the home page</extracomment>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
         <translation>Valitse kirjanmerkki</translation>
     </message>
     <message>
@@ -405,32 +405,6 @@
     </message>
 </context>
 <context>
-    <name>HomePageSettingsPage</name>
-    <message>
-        <source>Home page</source>
-        <translation>Kotisivu</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <extracomment>The home page&apos;s address, typed</extracomment>
-        <translation>Osoite</translation>
-    </message>
-    <message>
-        <source>Use the page in front</source>
-        <extracomment>Makes the page in front the home page, as Firefox&apos;s Use Current Page</extracomment>
-        <translation>Käytä nykyistä sivua</translation>
-    </message>
-    <message>
-        <source>Use a bookmark</source>
-        <extracomment>Makes a bookmark, picked from the list, the home page</extracomment>
-        <translation>Käytä kirjanmerkkiä</translation>
-    </message>
-    <message>
-        <source>Restore the default</source>
-        <translation>Palauta oletus</translation>
-    </message>
-</context>
-<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -647,10 +621,6 @@
         <translation>Asetukset</translation>
     </message>
     <message>
-        <source>Home page</source>
-        <translation>Kotisivu</translation>
-    </message>
-    <message>
         <source>Avoid the screen cutout</source>
         <translation>Vältä näytön lovea</translation>
     </message>
@@ -685,6 +655,84 @@
     <message>
         <source>History</source>
         <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Start page</source>
+        <translation>Aloitussivu</translation>
+    </message>
+</context>
+<context>
+    <name>StartPageSettingsPage</name>
+    <message>
+        <source>Start page</source>
+        <translation>Aloitussivu</translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation>Näyttää</translation>
+    </message>
+    <message>
+        <source>Your sites</source>
+        <translation>Sivustosi</translation>
+    </message>
+    <message>
+        <source>A blank page</source>
+        <translation>Tyhjä sivu</translation>
+    </message>
+    <message>
+        <source>Frequently visited</source>
+        <translation>Usein vieraillut</translation>
+    </message>
+    <message>
+        <source>Tiles for the sites you visit most</source>
+        <translation>Ruudut sivustoille, joilla käyt eniten</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>Tiles for your first bookmarks</source>
+        <translation>Ruudut ensimmäisille kirjanmerkeillesi</translation>
+    </message>
+    <message>
+        <source>Recently visited</source>
+        <translation>Viimeksi vieraillut</translation>
+    </message>
+    <message>
+        <source>The pages you read last</source>
+        <translation>Viimeksi lukemasi sivut</translation>
+    </message>
+</context>
+<context>
+    <name>StartPageView</name>
+    <message>
+        <source>Frequently visited</source>
+        <translation>Usein vieraillut</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>Recently visited</source>
+        <translation>Viimeksi vieraillut</translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation>Avaa uudessa välilehdessä</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Poista</translation>
+    </message>
+    <message>
+        <source>Nothing here yet</source>
+        <translation>Täällä ei ole vielä mitään</translation>
+    </message>
+    <message>
+        <source>The sites you visit and bookmark show up here</source>
+        <translation>Sivustot, joilla käyt ja joita lisäät kirjanmerkkeihin, näkyvät tässä</translation>
     </message>
 </context>
 <context>
@@ -754,6 +802,10 @@
     <message>
         <source>No preview</source>
         <translation>Ei esikatselua</translation>
+    </message>
+    <message>
+        <source>Start page</source>
+        <translation>Aloitussivu</translation>
     </message>
 </context>
 <context>

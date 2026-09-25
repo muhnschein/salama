@@ -18,8 +18,10 @@ import "../components"
 WebViewPage {
     id: browserPage
 
-    // The WebView of the active tab, or null while it is being created.
+    // The WebView of the active tab, or null while it is being created or while the tab
+    // is on the start page (docs/DECISIONS/0032-start-page.md); and its TabViewLoader.
     property Item currentView: null
+    property Item currentLoader: null
 
     // The deck's state, as the rest of this page and the tests read it.
     property alias tabsOpen: deck.tabsOpen
@@ -69,6 +71,8 @@ WebViewPage {
         }
         if (currentView) {
             currentView.url = url
+        } else if (startPageLayer.active && currentLoader) {
+            currentLoader.openFromStartPage(url)
         } else {
             TabModel.newTab(url)
         }
@@ -76,22 +80,28 @@ WebViewPage {
 
     function updateCurrentView() {
         var loader = webViews.itemAt(TabModel.activeTabIndex)
+        currentLoader = loader ? loader : null
         currentView = loader && loader.item ? loader.item : null
     }
 
     function ensureTab() {
         if (TabModel.count === 0) {
-            TabModel.newTab(Settings.homePage)
+            TabModel.newTab("")
         }
     }
 
-    // What the bar asks of the current page.
-    readonly property bool canGoBack: currentView ? currentView.canGoBack === true : false
+    // What the bar asks of the current page. Back from the first page opened from the
+    // start page goes back to it.
+    readonly property bool canGoBack: currentView ? currentView.canGoBack === true
+                                                    || currentLoader !== null
+                                                    && currentLoader.startPageBehind : false
     readonly property bool loading: currentView ? currentView.loading === true : false
 
     function goBack() {
-        if (canGoBack) {
+        if (currentView && currentView.canGoBack) {
             currentView.goBack()
+        } else if (canGoBack) {
+            currentLoader.backToStartPage()
         }
     }
 
@@ -110,6 +120,8 @@ WebViewPage {
     function captureCurrent() {
         if (currentView) {
             currentView.captureThumbnail()
+        } else {
+            startPageLayer.capture()
         }
     }
 
@@ -334,30 +346,17 @@ WebViewPage {
 
                 objectName: "webViews"
                 model: TabModel
-                delegate: Loader {
-                    readonly property int tabId: model.tabId
-                    readonly property bool isCurrent: model.activeTab
-                    readonly property bool liveTab: model.liveTab
-                    readonly property string initialUrl: model.url
-                    property bool shown: false
-
-                    objectName: "webViewLoader"
-                    anchors.fill: parent
-                    active: shown && liveTab
-                    visible: isCurrent
+                delegate: TabViewLoader {
                     sourceComponent: webViewComponent
-                    onIsCurrentChanged: {
-                        if (isCurrent) {
-                            shown = true
-                        }
-                    }
                     onItemChanged: browserPage.updateCurrentView()
-                    Component.onCompleted: {
-                        if (isCurrent) {
-                            shown = true
-                        }
-                    }
                 }
+            }
+
+            StartPageLayer {
+                id: startPageLayer
+
+                anchors.fill: parent
+                onOpenRequested: browserPage.openUrl(url)
             }
         }
 
@@ -371,6 +370,7 @@ WebViewPage {
             y: browserPage.height - height
 
             view: browserPage.currentView
+            canGoBack: browserPage.canGoBack
             compact: browserPage.barCompact
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()

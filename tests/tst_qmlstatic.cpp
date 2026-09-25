@@ -29,6 +29,8 @@ using Salama::PageActivity;
 using Salama::PageMedia;
 using Salama::Reader;
 using Salama::Settings;
+using Salama::SiteListModel;
+using Salama::StartPage;
 using Salama::Storage;
 using Salama::TabGroupModel;
 using Salama::TabModel;
@@ -149,12 +151,14 @@ void tst_qmlstatic::delegateRolesExist()
     DownloadModel downloads(storage, dir.path());
     Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &settings);
+    SiteListModel sites;
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
     // what its search finds.
     const QHash<QString, QSet<QString>> expected{
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
+        {QStringLiteral("components/TabViewLoader.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabsView.qml"), roleSet(*tabs.groupTabs()) + roleSet(search)},
         {QStringLiteral("components/TabPreview.qml"), roleSet(*tabs.groupTabs())},
         {QStringLiteral("components/TabGroupStrip.qml"), roleSet(*tabs.groupModel())},
@@ -171,6 +175,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloads)},
         {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},
         {QStringLiteral("components/OmnibarResultRow.qml"), roleSet(omnibar)},
+        {QStringLiteral("components/StartPageView.qml"), roleSet(sites)},
     };
 
     const QRegularExpression reference(QStringLiteral("\\bmodel\\.([A-Za-z_][A-Za-z0-9_]*)"));
@@ -210,11 +215,12 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
         {QStringLiteral("PageMedia"), metaMembers(&PageMedia::staticMetaObject)},
         {QStringLiteral("Reader"), metaMembers(&Reader::staticMetaObject)},
+        {QStringLiteral("StartPage"), metaMembers(&StartPage::staticMetaObject)},
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
                        "BookmarkModel|DownloadModel|Settings|Omnibar|EngineMessages|"
-                       "PageActivity|PageMedia|Reader)\\."
+                       "PageActivity|PageMedia|Reader|StartPage)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;

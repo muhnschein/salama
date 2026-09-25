@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// A bookmark to be taken for something -- the page the cover's quick action opens, the
-// home page: every bookmark, narrowed to those that hold each word typed over them as
-// every search in the browser narrows, and a tap picks one. The page says which and goes
-// back; what the choice means is the page that asked's to decide
-// (pages/CoverSettingsPage.qml, pages/HomePageSettingsPage.qml,
+// A bookmark to be taken for something -- the page the cover's quick action opens: every
+// bookmark, narrowed to those that hold each word typed over them as every search in the
+// browser narrows, and a tap picks one. The page says which and goes back; what the
+// choice means is the page that asked's to decide (pages/CoverSettingsPage.qml,
 // docs/DECISIONS/0029-quick-action.md), and backing out of it has picked nothing.
 //
 // The rows are the list of bookmarks' own, without its menu: choosing is all there is to
@@ -40,7 +39,7 @@ Page {
 
             PageHeader {
                 //: Over the list of bookmarks, when picking the one the cover's quick
-                //: action opens, or the home page
+                //: action opens
                 title: qsTr("Choose a bookmark")
             }
 

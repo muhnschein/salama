@@ -3,8 +3,10 @@
 #include "Settings.h"
 
 #include <QHostAddress>
+#include <QPair>
 #include <QRegularExpression>
 #include <QUrl>
+#include <QUrlQuery>
 #include <QVector>
 #include <algorithm>
 
@@ -12,7 +14,6 @@ namespace Salama {
 
 namespace {
 
-const char *const HomePageKey = "homePage";
 const char *const SearchEngineKey = "searchEngine";
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const CoverStyleKey = "coverStyle";
@@ -31,6 +32,16 @@ const char *const QuickActionBookmarkKey = "quickActionBookmark";
 const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
 const char *const QuickActionBookmarkTitleKey = "quickActionBookmarkTitle";
 const char *const QuickActionIconKey = "quickActionIcon";
+const char *const StartPageBlankKey = "startPageBlank";
+const char *const StartPageTopSitesKey = "startPageTopSites";
+const char *const StartPageBookmarksKey = "startPageBookmarks";
+const char *const StartPageRecentKey = "startPageRecent";
+// Where an earlier release kept the address of its home page. The start page took the
+// home page's place (docs/DECISIONS/0032-start-page.md), and nothing reads it now.
+const char *const RetiredHomePageKey = "homePage";
+// What stands in for the words searched for when a search engine's address template
+// is read as an address.
+const char *const SearchTermsMarker = "searchTerms";
 
 // The pictures a bookmark's quick action can wear, drawn in icons/cover/. The star
 // last: the bookmarks overview's own glyph is a star, as the menu sheet's Bookmarks is,
@@ -62,6 +73,39 @@ const QVector<SearchEngine> &searchEngines()
     return engines;
 }
 
+QString withoutWww(const QString &host)
+{
+    return host.startsWith(QLatin1String("www.")) ? host.mid(4) : host;
+}
+
+// Where each engine's results are: its host without "www.", its path, and the parameter
+// that carries the words searched for.
+struct SearchResults
+{
+    QString host;
+    QString path;
+    QString parameter;
+};
+
+const QVector<SearchResults> &searchResults()
+{
+    static const QVector<SearchResults> pages = [] {
+        QVector<SearchResults> read;
+        for (const SearchEngine &engine : searchEngines()) {
+            const QUrl results(QString::fromLatin1(engine.urlTemplate)
+                                   .arg(QString::fromLatin1(SearchTermsMarker)));
+            for (const QPair<QString, QString> &item : QUrlQuery(results).queryItems()) {
+                if (item.second == QLatin1String(SearchTermsMarker)) {
+                    read.append(
+                        SearchResults{withoutWww(results.host()), results.path(), item.first});
+                }
+            }
+        }
+        return read;
+    }();
+    return pages;
+}
+
 int engineIndex(const QString &key)
 {
     const QVector<SearchEngine> &engines = searchEngines();
@@ -91,31 +135,14 @@ Settings::Settings(const QString &filePath, QObject *parent)
     : QObject(parent)
     , m_settings(filePath, QSettings::IniFormat)
 {
-}
-
-QString Settings::defaultHomePage()
-{
-    return QStringLiteral("https://www.qwant.com/");
+    if (m_settings.contains(QLatin1String(RetiredHomePageKey))) {
+        m_settings.remove(QLatin1String(RetiredHomePageKey));
+    }
 }
 
 QString Settings::defaultSearchEngine()
 {
     return QLatin1String(searchEngines().first().key);
-}
-
-QString Settings::homePage() const
-{
-    return m_settings.value(QLatin1String(HomePageKey), defaultHomePage()).toString();
-}
-
-void Settings::setHomePage(const QString &url)
-{
-    const QString value = url.trimmed().isEmpty() ? defaultHomePage() : url.trimmed();
-    if (value == homePage()) {
-        return;
-    }
-    m_settings.setValue(QLatin1String(HomePageKey), value);
-    emit homePageChanged();
 }
 
 QString Settings::searchEngine() const
@@ -442,10 +469,73 @@ qreal Settings::pageZoom(qreal pixelRatio)
     return qRound(pixelRatio * 1.75 / 0.5) * 0.5;
 }
 
+bool Settings::startPageBlank() const
+{
+    return flag(StartPageBlankKey, false);
+}
+
+void Settings::setStartPageBlank(bool blank)
+{
+    if (setFlag(StartPageBlankKey, blank, false)) {
+        emit startPageChanged();
+    }
+}
+
+bool Settings::startPageTopSites() const
+{
+    return flag(StartPageTopSitesKey);
+}
+
+void Settings::setStartPageTopSites(bool shown)
+{
+    if (setFlag(StartPageTopSitesKey, shown)) {
+        emit startPageChanged();
+    }
+}
+
+bool Settings::startPageBookmarks() const
+{
+    return flag(StartPageBookmarksKey);
+}
+
+void Settings::setStartPageBookmarks(bool shown)
+{
+    if (setFlag(StartPageBookmarksKey, shown)) {
+        emit startPageChanged();
+    }
+}
+
+bool Settings::startPageRecent() const
+{
+    return flag(StartPageRecentKey);
+}
+
+void Settings::setStartPageRecent(bool shown)
+{
+    if (setFlag(StartPageRecentKey, shown)) {
+        emit startPageChanged();
+    }
+}
+
 QString Settings::searchUrl(const QString &query) const
 {
     const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
     return QString::fromLatin1(searchEngines().at(searchEngineIndex()).urlTemplate).arg(encoded);
+}
+
+// The engine's host and path, and its words in the parameter the template puts them in.
+// Not the template's text up to the words: an engine is free to add parameters of its
+// own ahead of them as it redirects, and to drop "www.". The start page asks this of
+// every page in the history, so the templates are read once.
+bool Settings::isSearchUrl(const QString &url)
+{
+    const QUrl page(url, QUrl::TolerantMode);
+    const QString host = withoutWww(page.host());
+    const QVector<SearchResults> &pages = searchResults();
+    return std::any_of(pages.cbegin(), pages.cend(), [&](const SearchResults &results) {
+        return host == results.host && page.path() == results.path &&
+               QUrlQuery(page).hasQueryItem(results.parameter);
+    });
 }
 
 // What the bar shows when the address is not being edited: the host, without the
@@ -462,14 +552,8 @@ QString Settings::searchUrl(const QString &query) const
 QString Settings::displayAddress(const QString &url)
 {
     const QUrl parsed(url, QUrl::TolerantMode);
-    QString host = parsed.host();
-    if (host.isEmpty()) {
-        return url;
-    }
-    if (host.startsWith(QLatin1String("www."))) {
-        host = host.mid(4);
-    }
-    return host;
+    const QString host = parsed.host();
+    return host.isEmpty() ? url : withoutWww(host);
 }
 
 QString Settings::addressFor(const QString &text)

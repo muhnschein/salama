@@ -240,6 +240,21 @@ void HistoryModel::remove(int index)
     emit countChanged();
 }
 
+void HistoryModel::removeUrl(const QString &url)
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("DELETE FROM browser_history WHERE url = ?"));
+    query.addBindValue(url);
+    if (!run(query) || query.numRowsAffected() <= 0) {
+        return;
+    }
+    QSqlQuery inputs(m_db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE url = ?"));
+    inputs.addBindValue(url);
+    run(inputs);
+    reload();
+}
+
 void HistoryModel::clear()
 {
     clearSince(0);

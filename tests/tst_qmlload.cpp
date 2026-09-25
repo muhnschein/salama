@@ -44,6 +44,8 @@ using Salama::TabModel;
 namespace {
 
 const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
+// The page the tests start on, open in the one tab.
+const char *const FirstPage = "https://www.qwant.com/";
 
 } // namespace
 
@@ -88,6 +90,8 @@ private slots:
     void cleanup();
 
     void rootWindowLoads();
+    void firstStartShowsTheStartPage();
+    void startPage();
     void addressBarNavigates();
     void omnibar();
     void omnibarFollowsItsSources();
@@ -122,7 +126,7 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
-    void homePageSettingsPage();
+    void startPageSettingsPage();
     void searchSettingsPage();
     void readerSettingsPage();
     void privacySettingsPage();
@@ -144,6 +148,7 @@ private slots:
 
 private:
     bool loadWindow();
+    bool startWithoutTabs();
     QObject *find(const QString &name) const;
     QList<QObject *> findAll(const QString &name) const;
     QObject *pageStack() const;
@@ -177,6 +182,10 @@ void tst_qmlload::init()
     m_dir.reset(new QTemporaryDir);
     m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
                           m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    // Most of these tests are about a page, and start with one open, as a session
+    // restored with one tab does. A first start opens the start page instead
+    // (firstStartShowsTheStartPage()).
+    m_core->tabs()->newTab(QLatin1String(FirstPage));
     QVERIFY(loadWindow());
 }
 
@@ -200,6 +209,16 @@ bool tst_qmlload::loadWindow()
     }
     m_window.reset(component.create());
     return !m_window.isNull() && find(QStringLiteral("browserPage")) != nullptr;
+}
+
+// A first start: a new data directory, and no tab to restore.
+bool tst_qmlload::startWithoutTabs()
+{
+    cleanup();
+    m_dir.reset(new QTemporaryDir);
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    return loadWindow();
 }
 
 namespace {
@@ -374,12 +393,13 @@ void tst_qmlload::rootWindowLoads()
 {
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QCOMPARE(m_core->tabs()->count(), 1);
-    QCOMPARE(m_core->tabs()->activeUrl(), Settings::defaultHomePage());
+    QCOMPARE(m_core->tabs()->activeUrl(), QLatin1String(FirstPage));
+    QVERIFY(!find(QStringLiteral("startPageLayer"))->property("active").toBool());
 
     QObject *webView = find(QStringLiteral("webView"));
     QVERIFY(webView != nullptr);
     QCOMPARE(currentWebView(), webView);
-    QCOMPARE(webView->property("url").toUrl().toString(), Settings::defaultHomePage());
+    QCOMPARE(webView->property("url").toUrl().toString(), QLatin1String(FirstPage));
     // The engine is told to lay pages out larger than the platform's own default.
     // The engine is told to lay pages out larger than the platform's own default of
     // 1.5 * Theme.pixelRatio.
@@ -419,6 +439,164 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("qwant.com"));
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
+}
+
+// A first start opens one tab, on the start page: no view, no visit, and a bar that
+// asks for an address (docs/DECISIONS/0032-start-page.md).
+void tst_qmlload::firstStartShowsTheStartPage()
+{
+    QVERIFY(startWithoutTabs());
+    TabModel *tabs = m_core->tabs();
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(tabs->activeUrl().isEmpty());
+    QVERIFY(find(QStringLiteral("startPageLayer"))->property("active").toBool());
+    QVERIFY(find(QStringLiteral("startPage")) != nullptr);
+    QVERIFY(currentWebView() == nullptr);
+    QVERIFY(find(QStringLiteral("webView")) == nullptr);
+    QCOMPARE(m_core->history()->count(), 0);
+
+    // Nothing visited and nothing bookmarked yet: the page says what will be there.
+    QVERIFY(find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
+    QVERIFY(!find(QStringLiteral("topSitesSection"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("recentPagesSection"))->property("visible").toBool());
+
+    // Back and reload have no page to act on, and are dimmed.
+    QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
+             QStringLiteral("Search or enter address"));
+    QVERIFY(!find(QStringLiteral("navigationBar"))->property("canGoBack").toBool());
+    QVERIFY(find(QStringLiteral("backButton"))->property("opacity").toReal() < 1);
+    QVERIFY(find(QStringLiteral("reloadButton"))->property("opacity").toReal() < 1);
+    tapBar(QStringLiteral("back"));
+    tapBar(QStringLiteral("reload"));
+    QVERIFY(tabs->activeUrl().isEmpty());
+
+    // Tapped, the address is a field with nothing in it.
+    tapBar(QStringLiteral("address"));
+    QVERIFY(find(QStringLiteral("addressField"))->property("text").toString().isEmpty());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+
+    // Closing it leaves a new one on the start page, and nothing to open again.
+    tabs->closeActiveTab();
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(tabs->activeUrl().isEmpty());
+    QCOMPARE(tabs->closedTabs()->count(), 0);
+}
+
+// What is opened from the start page opens in its tab, and back from the first page of
+// it is the start page again. What it shows is what was visited and bookmarked, as
+// Settings > Start page chooses (docs/DECISIONS/0032-start-page.md).
+void tst_qmlload::startPage()
+{
+    QVERIFY(startWithoutTabs());
+    TabModel *tabs = m_core->tabs();
+    QObject *layer = find(QStringLiteral("startPageLayer"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+
+    typeAddress(QStringLiteral("example.org"));
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
+    QVERIFY(!layer->property("active").toBool());
+    QObject *view = currentWebView();
+    QVERIFY(view != nullptr);
+    QCOMPARE(view->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
+    QCOMPARE(m_core->history()->count(), 1);
+    QVERIFY(bar->property("canGoBack").toBool());
+    QVERIFY(find(QStringLiteral("reloadButton"))->property("opacity").toReal() == 1);
+
+    // Further on in the page, back is the page's; from its first page, the start page.
+    view->setProperty("canGoBack", true);
+    tapBar(QStringLiteral("back"));
+    QCOMPARE(view->property("calls").toStringList(), QStringList{QStringLiteral("goBack")});
+    QVERIFY(!tabs->activeUrl().isEmpty());
+    view->setProperty("canGoBack", false);
+    QVERIFY(bar->property("canGoBack").toBool());
+    tapBar(QStringLiteral("back"));
+    QVERIFY(tabs->activeUrl().isEmpty());
+    QVERIFY(layer->property("active").toBool());
+    QVERIFY(currentWebView() == nullptr);
+    QVERIFY(find(QStringLiteral("webView")) == nullptr);
+    QVERIFY(!bar->property("canGoBack").toBool());
+    QCOMPARE(m_core->history()->count(), 1);
+
+    // The page just read is on it: a tile for its site, lettered while it has no icon,
+    // and a row for the page.
+    QVERIFY(!find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
+    QVERIFY(find(QStringLiteral("topSitesSection"))->property("visible").toBool());
+    QList<QObject *> tiles = findAll(QStringLiteral("topSiteTile"));
+    QCOMPARE(tiles.count(), 1);
+    QCOMPARE(findObjects(tiles.first(), QStringLiteral("siteTileName")).first()->property("text"),
+             QVariant(QStringLiteral("example.org")));
+    QCOMPARE(findObjects(tiles.first(), QStringLiteral("siteTileLetter")).first()->property("text"),
+             QVariant(QStringLiteral("E")));
+    QList<QObject *> rows = findAll(QStringLiteral("recentPageRow"));
+    QCOMPARE(rows.count(), 1);
+    QCOMPARE(rows.first()->property("subtitle").toString(), QStringLiteral("https://example.org"));
+
+    // A tile opens its site in the tab, and back returns from it too.
+    click(tiles.first());
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
+    QVERIFY(currentWebView() != nullptr);
+    QVERIFY(bar->property("canGoBack").toBool());
+    tapBar(QStringLiteral("back"));
+    QVERIFY(tabs->activeUrl().isEmpty());
+
+    // The grid names the start page's cell until its picture is taken.
+    pullUpToTabs();
+    QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 1);
+    QCOMPARE(findObjects(previews.first(), QStringLiteral("tabPreviewPlaceholder"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Start page"));
+    pullDownToBrowser();
+
+    // Bookmarks are tiles as well, under their own titles.
+    m_core->bookmarks()->add(QStringLiteral("https://sailfishos.org/"),
+                             QStringLiteral("Sailfish OS"));
+    QVERIFY(find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+    QList<QObject *> marks = findAll(QStringLiteral("bookmarkTile"));
+    QCOMPARE(marks.count(), 1);
+    QCOMPARE(findObjects(marks.first(), QStringLiteral("siteTileName")).first()->property("text"),
+             QVariant(QStringLiteral("Sailfish OS")));
+
+    // A row's menu opens the page in a new tab, or takes it out of the history.
+    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageNewTabMenu"))
+              .first());
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
+    tabs->activateTab(0);
+    QVERIFY(layer->property("active").toBool());
+    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageRemoveMenu"))
+              .first());
+    QCOMPARE(m_core->history()->count(), 0);
+    QVERIFY(!find(QStringLiteral("topSitesSection"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("recentPagesSection"))->property("visible").toBool());
+    QVERIFY(find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+
+    // Settings choose the sections, and a blank start page shows nothing at all.
+    Settings *settings = m_core->settings();
+    settings->setStartPageBookmarks(false);
+    QVERIFY(!find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+    QVERIFY(find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
+    settings->setStartPageBookmarks(true);
+    settings->setStartPageBlank(true);
+    QVERIFY(!find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
+    settings->setStartPageBlank(false);
+    QVERIFY(find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
+
+    // A page opened from elsewhere -- the bookmarks, here -- goes into the tab too.
+    QObject *bookmarksPage = openMenuItem(QStringLiteral("bookmarksMenuButton"));
+    QCOMPARE(bookmarksPage->objectName(), QStringLiteral("bookmarksPage"));
+    click(findAll(QStringLiteral("bookmarkDelegate")).first());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://sailfishos.org/"));
+    QVERIFY(currentWebView() != nullptr);
 }
 
 void tst_qmlload::addressBarNavigates()
@@ -1431,7 +1609,7 @@ void tst_qmlload::tabGrid()
     QMetaObject::invokeMethod(previews.at(0), "tapped");
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
     QVERIFY(!page->property("tabsOpen").toBool());
-    QCOMPARE(currentWebView()->property("url").toUrl().toString(), Settings::defaultHomePage());
+    QCOMPARE(currentWebView()->property("url").toUrl().toString(), QLatin1String(FirstPage));
 
     // Leaving for the grid refreshes the preview of the tab being left.
     QObject *homeView = currentWebView();
@@ -1497,11 +1675,12 @@ void tst_qmlload::tabGrid()
              QStringLiteral("https://three.example/"));
     m_core->tabs()->closeTab(1);
 
-    // That control opens a tab and hands the page back with it.
+    // That control opens a tab and hands the page back with it: the start page.
     click(find(QStringLiteral("newTabButton")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QVERIFY(!page->property("tabsOpen").toBool());
-    QCOMPARE(m_core->tabs()->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(m_core->tabs()->activeUrl().isEmpty());
+    QVERIFY(find(QStringLiteral("startPageLayer"))->property("active").toBool());
 }
 
 void tst_qmlload::tabGroups()
@@ -1579,6 +1758,10 @@ void tst_qmlload::tabGroups()
     QVERIFY(second != first);
     QCOMPARE(tabs->tabCountInGroup(work), 1);
     QVERIFY(!page->property("tabsOpen").toBool());
+    // It is on the start page, which needs no view; a page opened there has one.
+    QVERIFY(currentWebView() == nullptr);
+    typeAddress(QStringLiteral("work.example"));
+    QCOMPARE(tabs->activeTabId(), second);
     pullUpToTabs();
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
     QCOMPARE(findAll(QStringLiteral("webView")).count(), 2);
@@ -2566,7 +2749,7 @@ void tst_qmlload::pagesBeyondTheLimitUnload()
     QCOMPARE(findAll(QStringLiteral("webView")).count(), 3);
     QVERIFY(loaders.at(0)->property("active").toBool());
     QVERIFY(!loaders.at(1)->property("active").toBool());
-    QCOMPARE(currentWebView()->property("url").toUrl().toString(), Settings::defaultHomePage());
+    QCOMPARE(currentWebView()->property("url").toUrl().toString(), QLatin1String(FirstPage));
 }
 
 void tst_qmlload::restoredTabsLoadLazily()
@@ -2667,14 +2850,27 @@ void tst_qmlload::browserMenu()
     QVERIFY(find(QStringLiteral("tabsItem")) == nullptr);
     QVERIFY(find(QStringLiteral("moveToGroupItem")) == nullptr);
 
-    // A new tab is the plus at the grid's foot, which still opens the home page in one.
+    // A new tab is the plus at the grid's foot, which opens it on the start page, where
+    // there is no page for the menu's page row to act on.
     QMetaObject::invokeMethod(menu, "hide");
     pullUpToTabs();
     click(find(QStringLiteral("newTabButton")));
     QCOMPARE(tabs->count(), 2);
-    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(tabs->activeUrl().isEmpty());
+    QVERIFY(find(QStringLiteral("startPageLayer"))->property("active").toBool());
     QVERIFY(!find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
     QVERIFY(!menu->property("open").toBool());
+    tapBar(QStringLiteral("menu"));
+    for (const QString &entry :
+         {QStringLiteral("findMenuButton"), QStringLiteral("bookmarkMenuButton"),
+          QStringLiteral("shareMenuButton"), QStringLiteral("desktopMenuButton"),
+          QStringLiteral("readerMenuButton")}) {
+        QVERIFY2(!find(entry)->property("enabled").toBool(), qPrintable(entry));
+    }
+    QVERIFY(find(QStringLiteral("settingsMenuButton"))->property("enabled").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    typeAddress(QStringLiteral("two.example"));
+    QCOMPARE(tabs->activeUrl(), QStringLiteral("https://two.example"));
 
     // Bookmarking is a switch, which says which way it goes.
     tapBar(QStringLiteral("menu"));
@@ -3242,7 +3438,7 @@ QStringList columnOf(QObject *item)
 
 } // namespace
 
-// Settings is a main page with a way each to a page of its own for the home page,
+// Settings is a main page with a way each to a page of its own for the start page,
 // search, the reader view, the cover, privacy and the history, under the headings
 // General, Appearance and Privacy, and the one setting that takes a line, the cutout,
 // last under Appearance (docs/DECISIONS/0028-settings-pages.md). Each way in is a theme
@@ -3254,7 +3450,7 @@ void tst_qmlload::settingsPage()
 
     const QStringList expected{
         QStringLiteral("#General"),
-        QStringLiteral("homePageSettingsEntry"),
+        QStringLiteral("startPageSettingsEntry"),
         QStringLiteral("searchSettingsEntry"),
         QStringLiteral("#Appearance"),
         QStringLiteral("readerSettingsEntry"),
@@ -3276,8 +3472,8 @@ void tst_qmlload::settingsPage()
         QString page;
     };
     const QList<Entry> entries{
-        {QStringLiteral("homePageSettingsEntry"), QStringLiteral("icon-m-home"),
-         QStringLiteral("homePageSettingsPage")},
+        {QStringLiteral("startPageSettingsEntry"), QStringLiteral("icon-m-home"),
+         QStringLiteral("startPageSettingsPage")},
         {QStringLiteral("searchSettingsEntry"), QStringLiteral("icon-m-search"),
          QStringLiteral("searchSettingsPage")},
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
@@ -3335,59 +3531,45 @@ void tst_qmlload::settingsPage()
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 }
 
-// Home page: its address typed, or the page in front or a bookmark taken as it is, or
-// the default again; a way with nothing to take is dimmed.
-void tst_qmlload::homePageSettingsPage()
+// Start page: what it shows, blank or the sections, each a switch that is on until it is
+// turned off and dimmed while the page is blank. There is no home page to set: the start
+// page is the home page (docs/DECISIONS/0032-start-page.md).
+void tst_qmlload::startPageSettingsPage()
 {
     Settings *settings = m_core->settings();
-    TabModel *tabs = m_core->tabs();
     openMenuItem(QStringLiteral("settingsMenuButton"));
-    click(find(QStringLiteral("homePageSettingsEntry")));
-    QObject *page = currentPage();
-    QCOMPARE(page->objectName(), QStringLiteral("homePageSettingsPage"));
-    QObject *field = find(QStringLiteral("homePageField"));
-    QObject *current = find(QStringLiteral("homePageCurrentEntry"));
-    QObject *bookmark = find(QStringLiteral("homePageBookmarkEntry"));
-    QObject *reset = find(QStringLiteral("homePageDefaultEntry"));
-    QCOMPARE(columnOf(field),
-             (QStringList{QStringLiteral("homePageField"), QStringLiteral("homePageCurrentEntry"),
-                          QStringLiteral("homePageBookmarkEntry"),
-                          QStringLiteral("homePageDefaultEntry")}));
+    click(find(QStringLiteral("startPageSettingsEntry")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("startPageSettingsPage"));
+    QVERIFY(find(QStringLiteral("homePageField")) == nullptr);
+    QObject *combo = find(QStringLiteral("startPageCombo"));
+    const QStringList sections{QStringLiteral("startPageTopSitesSwitch"),
+                               QStringLiteral("startPageBookmarksSwitch"),
+                               QStringLiteral("startPageRecentSwitch")};
+    QCOMPARE(columnOf(combo), QStringList{QStringLiteral("startPageCombo")} + sections);
 
-    // The default, typed over; the field holds what was written.
-    QCOMPARE(field->property("text").toString(), Settings::defaultHomePage());
-    QVERIFY(!reset->property("enabled").toBool());
-    QVERIFY(reset->property("opacity").toReal() < 1);
-    field->setProperty("text", QStringLiteral("sailfishos.org"));
-    enterKey(field);
-    QCOMPARE(settings->homePage(), QStringLiteral("https://sailfishos.org"));
-    QVERIFY(reset->property("enabled").toBool());
-    QCOMPARE(reset->property("opacity").toReal(), 1.0);
+    QCOMPARE(combo->property("currentIndex").toInt(), 0);
+    for (const QString &name : sections) {
+        QVERIFY2(find(name)->property("checked").toBool(), qPrintable(name));
+        QVERIFY2(find(name)->property("enabled").toBool(), qPrintable(name));
+    }
+    find(QStringLiteral("startPageTopSitesSwitch"))->setProperty("checked", false);
+    QVERIFY(!settings->startPageTopSites());
+    find(QStringLiteral("startPageBookmarksSwitch"))->setProperty("checked", false);
+    QVERIFY(!settings->startPageBookmarks());
+    find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", false);
+    QVERIFY(!settings->startPageRecent());
+    find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", true);
+    QVERIFY(settings->startPageRecent());
 
-    // Back to the default, and the field follows.
-    click(reset);
-    QCOMPARE(settings->homePage(), Settings::defaultHomePage());
-    QCOMPARE(field->property("text").toString(), Settings::defaultHomePage());
-
-    // The page in front.
-    tabs->updateUrl(tabs->activeTabId(), QStringLiteral("https://front.example/page"));
-    QVERIFY(current->property("enabled").toBool());
-    click(current);
-    QCOMPARE(settings->homePage(), QStringLiteral("https://front.example/page"));
-    QCOMPARE(field->property("text").toString(), QStringLiteral("https://front.example/page"));
-    tabs->updateUrl(tabs->activeTabId(), QStringLiteral("about:blank"));
-    QVERIFY(!current->property("enabled").toBool());
-
-    // A bookmark, picked from the list; none to pick, and the way is dimmed.
-    QVERIFY(!bookmark->property("enabled").toBool());
-    m_core->bookmarks()->add(QStringLiteral("https://mark.example/"), QStringLiteral("Mark"));
-    QVERIFY(bookmark->property("enabled").toBool());
-    click(bookmark);
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarkPickerPage"));
-    click(findAll(QStringLiteral("bookmarkPickerRow")).first());
-    QCOMPARE(currentPage(), page);
-    QCOMPARE(settings->homePage(), QStringLiteral("https://mark.example/"));
-    QCOMPARE(field->property("text").toString(), QStringLiteral("https://mark.example/"));
+    // Blank: the sections are dimmed, and keep their switches for when it is not.
+    combo->setProperty("currentIndex", 1);
+    QVERIFY(settings->startPageBlank());
+    for (const QString &name : sections) {
+        QVERIFY2(!find(name)->property("enabled").toBool(), qPrintable(name));
+    }
+    QVERIFY(find(QStringLiteral("startPageRecentSwitch"))->property("checked").toBool());
+    combo->setProperty("currentIndex", 0);
+    QVERIFY(!settings->startPageBlank());
 }
 
 // Search: the engine the address bar searches with, and the sources its suggestions
@@ -3731,12 +3913,12 @@ void tst_qmlload::clearDataDialog()
     QCOMPARE(m_core->history()->count(), visits);
     QCOMPARE(tabs->count(), 3);
 
-    // The open tabs alone: every one closed, and the browsing page opens its home page
+    // The open tabs alone: every one closed, and the browsing page opens the start page
     // in their place.
     clear({true, false, false, false});
     QCOMPARE(remorses(), 4);
     QCOMPARE(tabs->count(), 1);
-    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(tabs->activeUrl().isEmpty());
     QVERIFY(m_core->history()->count() >= visits);
     QCOMPARE(sent(), 2);
     QCOMPARE(currentPage(), privacy);
@@ -3778,7 +3960,7 @@ void tst_qmlload::clearDataDialog()
     clear({true, true, true, true});
     QCOMPARE(remorses(), 6);
     QCOMPARE(tabs->count(), 1);
-    QCOMPARE(tabs->activeUrl(), Settings::defaultHomePage());
+    QVERIFY(tabs->activeUrl().isEmpty());
     QCOMPARE(m_core->history()->count(), 0);
     QCOMPARE(tabs->closedTabs()->count(), 0);
     QCOMPARE(sent(), 4);
