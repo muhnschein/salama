@@ -355,7 +355,7 @@ int OmnibarModel::count() const
     return m_rows.count();
 }
 
-void OmnibarModel::learn(const QString &typed, const QString &url)
+void OmnibarModel::learn(const QString &typed, const QString &url) const
 {
     if (m_settings->rememberHistory()) {
         m_history->recordInput(typed, url);

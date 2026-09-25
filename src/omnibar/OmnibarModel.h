@@ -157,7 +157,7 @@ public:
     // That what was typed led to the page chosen from the list, or gone to as typed,
     // for the address bar to put it first next time (HistoryModel::recordInput) --
     // unless the history is not to be kept (Settings::rememberHistory).
-    Q_INVOKABLE void learn(const QString &typed, const QString &url);
+    Q_INVOKABLE void learn(const QString &typed, const QString &url) const;
 
     // How a page is ranked among those that match as well: Firefox's frecency
     // (nsNavHistory::CalculateFrecency), from what is known of the page -- how many
