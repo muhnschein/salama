@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Settings: a way to each subject -- the home page, search, the reader view, the cover,
+// Settings: a way to each subject -- the start page, search, the reader view, the cover,
 // privacy, the history -- on a page of its own, in headed groups, as Firefox for
 // Android arranges its settings and Jolla's own browser reaches its privacy settings
 // (docs/DECISIONS/0028-settings-pages.md, 0030-history-settings.md). Each way in is its
@@ -43,14 +43,15 @@ Page {
                 text: qsTr("General")
             }
 
-            // First, as sailfish-browser puts its own first.
+            // First, as sailfish-browser puts its home page first: the start page is
+            // this browser's home page (docs/DECISIONS/0032-start-page.md).
             SettingsEntry {
-                objectName: "homePageSettingsEntry"
+                objectName: "startPageSettingsEntry"
                 // sailfish-browser's for its home page
                 // (apps/browser/qml/pages/SettingsPage.qml:75).
                 iconSource: "image://theme/icon-m-home"
-                text: qsTr("Home page")
-                onClicked: settingsPage.open("HomePageSettingsPage.qml")
+                text: qsTr("Start page")
+                onClicked: settingsPage.open("StartPageSettingsPage.qml")
             }
 
             // What the address bar searches with and suggests from is what a browser is

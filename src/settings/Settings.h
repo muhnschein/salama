@@ -14,7 +14,6 @@ namespace Salama {
 class Settings : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString homePage READ homePage WRITE setHomePage NOTIFY homePageChanged)
     Q_PROPERTY(
         QString searchEngine READ searchEngine WRITE setSearchEngine NOTIFY searchEngineChanged)
     Q_PROPERTY(int searchEngineIndex READ searchEngineIndex WRITE setSearchEngineIndex NOTIFY
@@ -63,6 +62,16 @@ class Settings : public QObject
     Q_PROPERTY(QString quickActionIcon READ quickActionIcon WRITE setQuickActionIcon NOTIFY
                    quickActionIconChanged)
     Q_PROPERTY(QStringList quickActionIcons READ quickActionIcons CONSTANT)
+    // What the start page shows: nothing at all, or the sections switched on below it
+    // (docs/DECISIONS/0032-start-page.md).
+    Q_PROPERTY(
+        bool startPageBlank READ startPageBlank WRITE setStartPageBlank NOTIFY startPageChanged)
+    Q_PROPERTY(bool startPageTopSites READ startPageTopSites WRITE setStartPageTopSites NOTIFY
+                   startPageChanged)
+    Q_PROPERTY(bool startPageBookmarks READ startPageBookmarks WRITE setStartPageBookmarks NOTIFY
+                   startPageChanged)
+    Q_PROPERTY(
+        bool startPageRecent READ startPageRecent WRITE setStartPageRecent NOTIFY startPageChanged)
 
 public:
     // What the cover shows; see docs/DECISIONS/0031-cover-is-lightning.md. The values
@@ -143,9 +152,6 @@ public:
 
     explicit Settings(const QString &filePath, QObject *parent = nullptr);
 
-    QString homePage() const;
-    void setHomePage(const QString &url);
-
     QString searchEngine() const;
     void setSearchEngine(const QString &key);
     int searchEngineIndex() const;
@@ -219,7 +225,21 @@ public:
     // settings' preview sets its text by it, as large as the reader view will.
     Q_INVOKABLE static qreal pageZoom(qreal pixelRatio);
 
+    // The start page: blank, or its sections, each on until it is switched off. The
+    // sections keep their switches while the page is blank, for when it is not.
+    bool startPageBlank() const;
+    void setStartPageBlank(bool blank);
+    bool startPageTopSites() const;
+    void setStartPageTopSites(bool shown);
+    bool startPageBookmarks() const;
+    void setStartPageBookmarks(bool shown);
+    bool startPageRecent() const;
+    void setStartPageRecent(bool shown);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
+    // Whether the url is a page of results from one of the search engines on offer:
+    // a search is something done, not a site visited (src/startpage/StartPage.h).
+    static bool isSearchUrl(const QString &url);
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
     // Whether typed text is an address rather than words: true exactly when
@@ -228,12 +248,9 @@ public:
     // The other direction: the url as the bar shows it while it is not being edited.
     Q_INVOKABLE static QString displayAddress(const QString &url);
 
-    // What the home page is until it is changed, and again once it is set to nothing.
-    Q_INVOKABLE static QString defaultHomePage();
     static QString defaultSearchEngine();
 
 signals:
-    void homePageChanged();
     void searchEngineChanged();
     void cutoutGuardChanged();
     void coverStyleChanged();
@@ -250,6 +267,8 @@ signals:
     void quickActionChanged();
     void quickActionBookmarkChanged();
     void quickActionIconChanged();
+
+    void startPageChanged();
 
 private:
     // Trimmed text as an address, or empty when it is words to search for.

@@ -53,6 +53,7 @@ foreach(test
     tst_pageactivity
     tst_pagemedia
     tst_reader
+    tst_startpage
     tst_core
     tst_qmlload
     tst_qmlstatic

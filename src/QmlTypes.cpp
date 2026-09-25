@@ -94,6 +94,11 @@ QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
     return keepOwnership(coreInstance->reader());
 }
 
+QObject *startPageProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->startPage());
+}
+
 } // namespace
 
 void registerQmlTypes(Core *core)
@@ -122,6 +127,10 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);
     qmlRegisterSingletonType<PageMedia>(ModuleUri, 1, 0, "PageMedia", &pageMediaProvider);
     qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
+    qmlRegisterSingletonType<StartPage>(ModuleUri, 1, 0, "StartPage", &startPageProvider);
+    // The start page's lists, reached as its properties and never made in QML.
+    qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
+                                              QStringLiteral("A list of the start page's"));
 }
 
 } // namespace Salama

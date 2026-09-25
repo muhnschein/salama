@@ -11,6 +11,7 @@
 #include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
 #include "settings/Settings.h"
+#include "startpage/StartPage.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
@@ -43,6 +44,7 @@ public:
     PageActivity *pageActivity();
     PageMedia *pageMedia();
     Reader *reader();
+    StartPage *startPage();
 
     // What is set to go as the browser closes -- the history, the list of downloads and
     // the recently closed tabs, with Settings::clearHistoryOnClose -- goes: main() calls
@@ -65,6 +67,7 @@ private:
     PageActivity m_pageActivity;
     PageMedia m_pageMedia;
     Reader m_reader;
+    StartPage m_startPage;
 };
 
 } // namespace Salama

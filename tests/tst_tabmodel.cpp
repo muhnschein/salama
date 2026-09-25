@@ -59,6 +59,7 @@ private slots:
     void closedTabsCanBeReopened();
     void livePagesAreCapped();
     void mediaFollowsThePage();
+    void startPageTabs();
 };
 
 namespace {
@@ -1370,6 +1371,79 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
     QVERIFY(!model.isMuted(behind));
     QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::NoMedia));
+}
+
+// A tab with no address is on the start page: it has no page, takes no page's place
+// among the ones kept loaded, is neither a visit nor a tab to reopen, and is taken back
+// to the start page from the page opened in it (docs/DECISIONS/0032-start-page.md).
+void tst_tabmodel::startPageTabs()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    const QString previews = dir.path() + QStringLiteral("/previews");
+    TabModel model(&persistence, previews);
+    QSignalSpy visited(&model, &TabModel::visited);
+    const int page = model.newTab(QStringLiteral("https://a.example/"));
+    const int start = model.newTab(QString());
+    QCOMPARE(model.count(), 2);
+    QCOMPARE(model.activeTabId(), start);
+    QVERIFY(model.activeUrl().isEmpty());
+    QCOMPARE(visited.count(), 0);
+
+    // One page kept loaded, and it is the other tab's; the start page's view, which it
+    // has none of, can be made at any time.
+    model.setLiveTabLimit(1);
+    QVERIFY(role(model, model.indexOf(page), TabModel::LiveRole).toBool());
+    QVERIFY(role(model, model.indexOf(start), TabModel::LiveRole).toBool());
+
+    // A page opened from it is a visit, and takes that place.
+    model.updateUrl(start, QStringLiteral("https://b.example/"));
+    QCOMPARE(visited.count(), 1);
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
+    QVERIFY(role(model, model.indexOf(start), TabModel::LiveRole).toBool());
+    QVERIFY(!role(model, model.indexOf(page), TabModel::LiveRole).toBool());
+    model.updateTitle(start, QStringLiteral("B"));
+    model.updateFavicon(start, QStringLiteral("https://b.example/icon.png"));
+    const QString preview = model.thumbnailPath(start);
+    QVERIFY(writeFile(preview));
+    model.updateThumbnail(start, preview);
+    model.setMediaState(start, TabModel::MediaPlaying);
+
+    // Back to the start page, nothing of the page stays, and the other tab's page has
+    // its place back.
+    QSignalSpy activeData(&model, &TabModel::activeTabDataChanged);
+    QSignalSpy recent(&model, &TabModel::recentTabsChanged);
+    model.showStartPage(start);
+    QVERIFY(model.activeUrl().isEmpty());
+    QVERIFY(model.activeTitle().isEmpty());
+    QVERIFY(model.activeFavicon().isEmpty());
+    QVERIFY(role(model, model.indexOf(start), TabModel::ThumbnailRole).toString().isEmpty());
+    QVERIFY(!QFile::exists(preview));
+    QCOMPARE(model.mediaState(start), TabModel::NoMedia);
+    QVERIFY(role(model, model.indexOf(page), TabModel::LiveRole).toBool());
+    QCOMPARE(activeData.count(), 1);
+    QCOMPARE(recent.count(), 1);
+    QCOMPARE(visited.count(), 1);
+    // Once there it stays there, and a tab that is not there is not taken anywhere.
+    model.showStartPage(start);
+    model.showStartPage(start + 10);
+    QCOMPARE(activeData.count(), 1);
+
+    // It is kept as it is across a restart.
+    {
+        TabModel restored(&persistence, previews);
+        QCOMPARE(restored.count(), 2);
+        QCOMPARE(restored.activeTabId(), start);
+        QVERIFY(restored.activeUrl().isEmpty());
+        QVERIFY(restored.activeTitle().isEmpty());
+    }
+
+    // Closed, it is not among the tabs to open again: there was nothing in it.
+    model.closeTabById(start);
+    QCOMPARE(model.closedTabs()->count(), 0);
+    model.closeTabById(page);
+    QCOMPARE(model.closedTabs()->count(), 1);
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

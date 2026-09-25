@@ -35,9 +35,12 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
   notifications (`DECISIONS/0022-downloads-list.md`), and the folder the engine saves
   them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
-- `Settings` — home page, search engine and the sources the address bar suggests from,
-  desktop mode, the cover's style and quick action, tracking protection level, the reader
-  view's look, address-bar heuristics.
+- `Settings` — what the start page shows, search engine and the sources the address bar
+  suggests from, desktop mode, the cover's style and quick action, tracking protection
+  level, the reader view's look, address-bar heuristics.
+- `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
+  first bookmarks and the pages read last, read again whenever the history or the
+  bookmarks change (`DECISIONS/0032-start-page.md`).
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
   preferences each tracking-protection level stands for, which `BrowserPage` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
@@ -80,7 +83,10 @@ Views: one `WebView` per tab that has been shown this session and is among the
 `TabModel::LiveTabLimit` (five) most recently in front, created lazily by a `Loader` over
 `TabModel` -- every group's tabs, so a tab changing group keeps its view (see
 `DECISIONS/0003-one-webview-per-tab.md`, `0016-five-live-pages.md`). Restored tabs
-cost nothing until activated; a tab beyond the limit reloads when it is next in front. Favicons come from a page script with `/favicon.ico` as fallback
+cost nothing until activated; a tab beyond the limit reloads when it is next in front. A tab
+with no address is on the start page, which is Silica drawn where the view would be
+(`StartPageLayer`), and has no view until a page is opened in it
+(`DECISIONS/0032-start-page.md`). Favicons come from a page script with `/favicon.ico` as fallback
 (`DECISIONS/0005-favicons.md`), and a page's `theme-color` from another one
 (`DECISIONS/0013-screen-cutout.md`); both are asked of the page because the `WebView`
 Harbour allows carries neither. Tab previews are scene-graph grabs written to the cache

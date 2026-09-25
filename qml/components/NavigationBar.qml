@@ -32,10 +32,10 @@ Item {
     // The page in front, or null while it is made.
     property Item view: null
     // The front tab's address, and below what its page plays; the bar reads both itself,
-    // and whether the page loads and can go back off the view.
+    // and whether the page loads and can go back off the view, or the start page's.
     property string url: TabModel.activeUrl
     readonly property bool loading: view ? view.loading === true : false
-    readonly property bool canGoBack: view ? view.canGoBack === true : false
+    property bool canGoBack: view ? view.canGoBack === true : false
     readonly property int loadProgress: view ? view.loadProgress : 0
     // The page came over TLS and the engine is not satisfied with it: a bad
     // certificate, a broken chain, mixed content. Gecko's own verdict, if this engine
@@ -306,7 +306,7 @@ Item {
         }
         width: Theme.iconSizeMedium
         height: width
-        opacity: navigationBar.expansion
+        opacity: navigationBar.expansion * (navigationBar.view ? 1.0 : Theme.opacityLow)
         visible: !navigationBar.editing && opacity > 0
         source: navigationBar.loading ? "image://theme/icon-m-clear"
                                       : "image://theme/icon-m-refresh"

@@ -105,7 +105,8 @@ public:
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
-    // The tab opens in the current group.
+    // The tab opens in the current group. A tab with no url is on the start page, and
+    // has no page until one is opened in it (docs/DECISIONS/0032-start-page.md).
     Q_INVOKABLE int newTab(const QString &url);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
@@ -126,6 +127,9 @@ public:
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);
     Q_INVOKABLE void updateTitle(int tabId, const QString &title);
     Q_INVOKABLE void updateFavicon(int tabId, const QString &favicon);
+    // Back to the start page, as back from the first page opened from it goes: the tab
+    // gives up its url, title, icon and preview, and its page with them.
+    Q_INVOKABLE void showStartPage(int tabId);
 
     // Where the view should write this tab's next page preview. Each call returns a
     // fresh name so the grabbed image is never hidden behind a cached one, and the

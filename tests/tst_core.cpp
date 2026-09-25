@@ -25,6 +25,7 @@ private slots:
     void omnibarSearchesTheModels();
     void historyNotRemembered();
     void clearsOnClose();
+    void wiresHistoryAndBookmarksToTheStartPage();
 };
 
 void tst_core::wiresTabsToHistory()
@@ -229,6 +230,38 @@ void tst_core::clearsOnClose()
     Core again(dir.path(), config, dir.path());
     QCOMPARE(again.history()->count(), 0);
     QCOMPARE(again.bookmarks()->count(), 1);
+}
+
+// The start page follows the history and the bookmarks as they change, icons included
+// (docs/DECISIONS/0032-start-page.md).
+void tst_core::wiresHistoryAndBookmarksToTheStartPage()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    Salama::StartPage *start = core.startPage();
+    QVERIFY(start != nullptr);
+    QCOMPARE(start->topSites()->count(), 0);
+
+    const int id = core.tabs()->newTab(QString());
+    core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
+    QCOMPARE(start->topSites()->count(), 1);
+    QCOMPARE(start->recentPages()->count(), 1);
+    core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
+    QCOMPARE(start->recentPages()->sites().first().title, QStringLiteral("Alpha"));
+    core.tabs()->updateFavicon(id, QStringLiteral("https://a.example/icon.png"));
+    QCOMPARE(start->topSites()->sites().first().favicon,
+             QStringLiteral("https://a.example/icon.png"));
+
+    core.bookmarks()->add(QStringLiteral("https://a.example/"), QStringLiteral("A"));
+    QCOMPARE(start->bookmarks()->count(), 1);
+    core.bookmarks()->edit(0, QStringLiteral("https://a.example/"), QStringLiteral("Mark"));
+    QCOMPARE(start->bookmarks()->sites().first().title, QStringLiteral("Mark"));
+    core.bookmarks()->remove(0);
+    QCOMPARE(start->bookmarks()->count(), 0);
+
+    core.history()->removeUrl(QStringLiteral("https://a.example/"));
+    QCOMPARE(start->topSites()->count(), 0);
+    QCOMPARE(start->recentPages()->count(), 0);
 }
 
 QTEST_GUILESS_MAIN(tst_core)

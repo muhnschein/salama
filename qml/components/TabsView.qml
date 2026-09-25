@@ -298,7 +298,7 @@ Item {
 
             anchors.fill: parent
             onNewTabRequested: {
-                TabModel.newTab(Settings.homePage)
+                TabModel.newTab("")
                 tabsView.tabActivated()
             }
             onClosedTabsRequested: closedPanel.show()

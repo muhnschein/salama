@@ -57,7 +57,7 @@
     <name>BookmarkPickerPage</name>
     <message>
         <source>Choose a bookmark</source>
-        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens, or the home page</extracomment>
+        <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -405,32 +405,6 @@
     </message>
 </context>
 <context>
-    <name>HomePageSettingsPage</name>
-    <message>
-        <source>Home page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <extracomment>The home page&apos;s address, typed</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use the page in front</source>
-        <extracomment>Makes the page in front the home page, as Firefox&apos;s Use Current Page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use a bookmark</source>
-        <extracomment>Makes a bookmark, picked from the list, the home page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore the default</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -647,10 +621,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Home page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Avoid the screen cutout</source>
         <translation type="unfinished"></translation>
     </message>
@@ -684,6 +654,84 @@
     </message>
     <message>
         <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start page</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>StartPageSettingsPage</name>
+    <message>
+        <source>Start page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A blank page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frequently visited</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tiles for the sites you visit most</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tiles for your first bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recently visited</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The pages you read last</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>StartPageView</name>
+    <message>
+        <source>Frequently visited</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recently visited</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open in new tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing here yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The sites you visit and bookmark show up here</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -753,6 +801,10 @@
     <name>TabPreview</name>
     <message>
         <source>No preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start page</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

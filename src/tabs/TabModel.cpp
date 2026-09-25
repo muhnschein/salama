@@ -527,11 +527,16 @@ void TabModel::updateUrl(int tabId, const QString &url)
     if (!firstReport && tab.url == url) {
         return;
     }
+    const bool leavesStartPage = tab.url.isEmpty();
     tab.url = url;
     notifyRow(index, UrlRole);
     persist(tab);
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
+    }
+    // A page where the start page was takes a place among the pages kept loaded.
+    if (leavesStartPage) {
+        refreshLive();
     }
     emit visited(url);
 }
@@ -566,6 +571,32 @@ void TabModel::updateFavicon(int tabId, const QString &favicon)
         emit activeTabDataChanged();
     }
     emit faviconUpdated(tab.url, favicon);
+}
+
+void TabModel::showStartPage(int tabId)
+{
+    const int index = indexOf(tabId);
+    if (index < 0 || m_tabs.at(index).url.isEmpty()) {
+        return;
+    }
+    Tab &tab = m_tabs[index];
+    tab.url.clear();
+    tab.title.clear();
+    tab.favicon.clear();
+    discardThumbnail(tab.thumbnail);
+    tab.thumbnail.clear();
+    for (const Role role : {UrlRole, TitleRole, FaviconRole, ThumbnailRole}) {
+        notifyRow(index, role);
+    }
+    persist(tab);
+    if (tab.id == m_activeTabId) {
+        emit activeTabDataChanged();
+    }
+    // Its page goes, and whatever it was playing with it; and the place it took among
+    // the pages kept loaded is another's.
+    setMediaState(tabId, NoMedia);
+    refreshLive();
+    emit recentTabsChanged();
 }
 
 QString TabModel::thumbnailPath(int tabId)
@@ -863,11 +894,20 @@ QSet<int> TabModel::liveSet() const
     std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
         return one->lastActive > other->lastActive;
     });
+    // A tab on the start page has no page to keep, and takes no page's place: it is
+    // live, so its view can be made the moment a page is opened in it, but it is not
+    // counted.
     QSet<int> live;
-    for (int i = 0; i < ordered.count(); ++i) {
-        if (m_liveLimit == 0 || i < m_liveLimit || ordered.at(i)->id == m_activeTabId) {
-            live.insert(ordered.at(i)->id);
+    int pages = 0;
+    for (const Tab *tab : ordered) {
+        if (tab->url.isEmpty()) {
+            live.insert(tab->id);
+            continue;
         }
+        if (m_liveLimit == 0 || pages < m_liveLimit || tab->id == m_activeTabId) {
+            live.insert(tab->id);
+        }
+        ++pages;
     }
     return live;
 }

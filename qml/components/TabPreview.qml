@@ -307,12 +307,13 @@ Item {
                 }
             }
 
-            // Shown until the tab has been displayed at least once.
+            // Shown until the tab has been displayed at least once, and for a tab on
+            // the start page until its picture is taken.
             Label {
                 objectName: "tabPreviewPlaceholder"
                 anchors.centerIn: parent
                 visible: model.thumbnail.length === 0
-                text: qsTr("No preview")
+                text: model.url.length === 0 ? qsTr("Start page") : qsTr("No preview")
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
             }
