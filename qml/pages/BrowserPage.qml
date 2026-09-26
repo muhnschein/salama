@@ -22,6 +22,7 @@ WebViewPage {
     // is on the start page (docs/DECISIONS/0032-start-page.md); and its TabViewLoader.
     property Item currentView: null
     property Item currentLoader: null
+    property NotificationCenter notifications: NotificationCenter { page: browserPage }
 
     // The deck's state, as the rest of this page and the tests read it.
     property alias tabsOpen: deck.tabsOpen
@@ -140,12 +141,12 @@ WebViewPage {
     }
 
     // Every page that is loaded, the one in front and the ones behind it, stops its
-    // timers, workers and scripts until its view is next on the screen
-    // (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+    // timers, workers and scripts until its view is next on the screen, but for one
+    // allowed to send notifications (docs/DECISIONS/0020-pages-sleep-out-of-sight.md, 0033).
     function suspendPages() {
         for (var i = 0; i < webViews.count; ++i) {
             var loader = webViews.itemAt(i)
-            if (loader && loader.item) {
+            if (loader && loader.item && !NotificationPermissions.isAllowed(String(loader.item.url))) {
                 loader.item.suspend()
             }
         }
@@ -561,8 +562,9 @@ WebViewPage {
             // Whether the page reads as an article, and the article's own address while
             // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
             property ReaderMode reader: ReaderMode { view: webView }
-            // What the page plays, asked and told (docs/DECISIONS/0026-media-controls.md).
+            // What the page plays, and its notifications (docs/DECISIONS/0026-media-controls.md, 0033).
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
+            property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

@@ -62,7 +62,11 @@ None.
 
 `OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
 data, cache and config directories; apart from downloads, nothing is stored anywhere
-else. Sharing needs no permission (part of the `Base` set). Whether the pickers need more
+else. Sharing needs no permission (part of the `Base` set), and neither do notifications:
+`Base` includes `Notifications.permission`, which lets an application talk to
+`org.freedesktop.Notifications` (`DECISIONS/0033-web-notifications.md`). They are shown
+through `Nemo.Notifications 1.0`, on the validator's list of QML imports, and the package
+requires `nemo-qml-plugin-notifications-qt5`, on its list of dependencies. Whether the pickers need more
 than `Pictures` and `Documents` is SCOPE.md §9 item 5 and is verified on the device smoke
 test.
 

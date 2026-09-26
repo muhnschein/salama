@@ -24,6 +24,7 @@ using Salama::DownloadModel;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
 using Salama::HistoryModel;
+using Salama::NotificationPermissions;
 using Salama::OmnibarModel;
 using Salama::PageActivity;
 using Salama::PageMedia;
@@ -35,6 +36,7 @@ using Salama::Storage;
 using Salama::TabGroupModel;
 using Salama::TabModel;
 using Salama::TabSearchModel;
+using Salama::WebNotifications;
 
 namespace {
 
@@ -119,10 +121,12 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
                                      QRegularExpression::MultilineOption);
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
-    // The browsing page, which drives the engine, and the history settings, which tell
-    // it to clear its data (docs/ARCHITECTURE.md).
+    // The browsing page, which drives the engine; the history settings, which tell it
+    // to clear its data; and the notifications' part of the browsing page, which keeps
+    // the sites' permissions in it (docs/ARCHITECTURE.md).
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
-                                    QStringLiteral("pages/HistorySettingsPage.qml")};
+                                    QStringLiteral("pages/HistorySettingsPage.qml"),
+                                    QStringLiteral("components/NotificationCenter.qml")};
 
     bool browserPageImportsWebView = false;
     for (const QString &file : qmlFiles()) {
@@ -152,6 +156,7 @@ void tst_qmlstatic::delegateRolesExist()
     Settings settings(dir.path() + QStringLiteral("/salama.conf"));
     OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &settings);
     SiteListModel sites;
+    NotificationPermissions notificationSites;
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
@@ -176,6 +181,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},
         {QStringLiteral("components/OmnibarResultRow.qml"), roleSet(omnibar)},
         {QStringLiteral("components/StartPageView.qml"), roleSet(sites)},
+        {QStringLiteral("pages/NotificationSettingsPage.qml"), roleSet(notificationSites)},
     };
 
     const QRegularExpression reference(QStringLiteral("\\bmodel\\.([A-Za-z_][A-Za-z0-9_]*)"));
@@ -216,11 +222,15 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("PageMedia"), metaMembers(&PageMedia::staticMetaObject)},
         {QStringLiteral("Reader"), metaMembers(&Reader::staticMetaObject)},
         {QStringLiteral("StartPage"), metaMembers(&StartPage::staticMetaObject)},
+        {QStringLiteral("NotificationPermissions"),
+         metaMembers(&NotificationPermissions::staticMetaObject)},
+        {QStringLiteral("WebNotifications"), metaMembers(&WebNotifications::staticMetaObject)},
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
                        "BookmarkModel|DownloadModel|Settings|Omnibar|EngineMessages|"
-                       "PageActivity|PageMedia|Reader|StartPage)\\."
+                       "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
+                       "WebNotifications)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;

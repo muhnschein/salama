@@ -10,8 +10,11 @@
 
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
 the engine package fails to open that page, not the application. `Sailfish.WebEngine`
-is imported there and in `HistorySettingsPage.qml`, which clears browsing data behind
-its dialog (`DECISIONS/0030-history-settings.md`). `tests/tst_qmlstatic.cpp` enforces both.
+is imported there, in `HistorySettingsPage.qml`, which clears browsing data behind
+its dialog (`DECISIONS/0030-history-settings.md`), and in `components/NotificationCenter.qml`,
+which the browsing page alone makes and which keeps the sites' notification permissions
+in the engine (`DECISIONS/0033-web-notifications.md`). `tests/tst_qmlstatic.cpp` enforces
+both.
 
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
@@ -54,6 +57,13 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `Reader` — the reader view: Mozilla's Readability, verbatim in `third_party/readability/`
   and compiled in, handed to the page to find its article, and the page the article is
   then shown on (`DECISIONS/0024-reader-view.md`).
+- `NotificationPermissions` — the sites allowed and blocked from sending notifications,
+  as the engine's permission manager keeps them, which Settings > Notifications lists.
+- `WebNotifications` — the Notifications API for the pages: the script that puts the
+  browser's Notification in each page, the frame script that hands on what it says with
+  the page's origin, the question a page asks, and what each page shows, which
+  `NotificationCenter.qml` makes a platform notification of
+  (`DECISIONS/0033-web-notifications.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
 
@@ -117,14 +127,16 @@ over a row to go to the address, when `Settings.isAddress` says it is one, and a
 search (`DECISIONS/0027-omnibar.md`).
 
 Settings is a main page leading to a page each for search, the reader view, the cover,
-privacy and the history (`DECISIONS/0028-settings-pages.md`,
-`DECISIONS/0030-history-settings.md`).
+privacy, notifications and the history (`DECISIONS/0028-settings-pages.md`,
+`DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`).
 
 ## Storage
 
 Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<app>`),
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
-PNG files in `CacheLocation`, named per capture and removed with the tab. Nothing else
+PNG files in `CacheLocation`, named per capture and removed with the tab, and so are
+the icons of the notifications shown, in its `notifications` folder, removed as each
+closes. The sites' notification permissions are the engine's, in its profile. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
 9); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from

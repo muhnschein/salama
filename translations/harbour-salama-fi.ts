@@ -405,6 +405,81 @@
     </message>
 </context>
 <context>
+    <name>NotificationPermissionDialog</name>
+    <message>
+        <source>Allow</source>
+        <extracomment>Lets the site send notifications from now on</extracomment>
+        <translation>Salli</translation>
+    </message>
+    <message>
+        <source>Not now</source>
+        <extracomment>Refuses the site this time; it may ask again when the page is next loaded</extracomment>
+        <translation>Ei nyt</translation>
+    </message>
+    <message>
+        <source>Allow %1 to send notifications?</source>
+        <extracomment>%1 is the site asking, its host alone</extracomment>
+        <translation>Sallitaanko sivuston %1 lähettää ilmoituksia?</translation>
+    </message>
+    <message>
+        <source>They show up with the phone&apos;s other notifications while the site is open in a tab</source>
+        <translation>Ne näkyvät puhelimen muiden ilmoitusten joukossa, kun sivusto on auki välilehdessä</translation>
+    </message>
+    <message>
+        <source>Always block</source>
+        <extracomment>Refuses the site for good: it cannot ask again</extracomment>
+        <translation>Estä aina</translation>
+    </message>
+</context>
+<context>
+    <name>NotificationSettingsPage</name>
+    <message>
+        <source>Notifications</source>
+        <translation>Ilmoitukset</translation>
+    </message>
+    <message>
+        <source>Block new requests</source>
+        <translation>Estä uudet pyynnöt</translation>
+    </message>
+    <message>
+        <source>Sites not listed here cannot ask to send notifications</source>
+        <translation>Sivustot, joita ei ole lueteltu tässä, eivät voi pyytää lupaa lähettää ilmoituksia</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <translation>Sivustot</translation>
+    </message>
+    <message>
+        <source>Block</source>
+        <translation>Estä</translation>
+    </message>
+    <message>
+        <source>Allow</source>
+        <translation>Salli</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
+        <translation>Poista</translation>
+    </message>
+    <message>
+        <source>Allowed</source>
+        <translation>Sallittu</translation>
+    </message>
+    <message>
+        <source>Blocked</source>
+        <translation>Estetty</translation>
+    </message>
+    <message>
+        <source>No sites</source>
+        <translation>Ei sivustoja</translation>
+    </message>
+    <message>
+        <source>Sites you allow to send notifications, or block, are listed here</source>
+        <translation>Sivustot, joiden ilmoitukset sallit tai estät, näkyvät tässä</translation>
+    </message>
+</context>
+<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -659,6 +734,10 @@
     <message>
         <source>Start page</source>
         <translation>Aloitussivu</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Ilmoitukset</translation>
     </message>
 </context>
 <context>

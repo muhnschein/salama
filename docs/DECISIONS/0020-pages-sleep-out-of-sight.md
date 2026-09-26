@@ -89,6 +89,9 @@ stop that, and the Harbour `WebView` does not.
 `Nemo.Policy`, which sailfish-browser takes its audio resource through, is not on
 Harbour's import list.
 
+A page of a site allowed to send notifications is not put to sleep: it could send
+nothing asleep (0033).
+
 The ten-minute `heap-minimize` of 0016 is unchanged; it asks the engine for memory,
 this stops the pages using the processor. `tst_pageactivity` covers the timing and the
 messages, `tst_qmlload::pagesSleepOutOfSight` what the page does with them; how much the

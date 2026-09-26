@@ -4,12 +4,13 @@ find_package(Qt5 5.6 REQUIRED COMPONENTS Test Gui Quick)
 # --- Stub QML modules ---------------------------------------------------------------
 # The QML stubs are copied into the build tree so they sit next to the compiled plugin
 # that provides the attached property and enum holders pure QML cannot express. The
-# Sailfish modules are stubbed because they are the device's; QtGraphicalEffects is
-# stubbed because it is not installed on the host, and the tests draw nothing.
+# Sailfish and Nemo modules are stubbed because they are the device's; QtGraphicalEffects
+# is stubbed because it is not installed on the host, and the tests draw nothing.
 set(STUBS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/silica-stubs)
 set(STUBS_DIR ${CMAKE_BINARY_DIR}/silica-stubs)
 file(GLOB_RECURSE STUB_FILES RELATIVE ${STUBS_SOURCE_DIR}
      ${STUBS_SOURCE_DIR}/Sailfish/*
+     ${STUBS_SOURCE_DIR}/Nemo/*
      ${STUBS_SOURCE_DIR}/QtGraphicalEffects/*)
 foreach(stub ${STUB_FILES})
     configure_file(${STUBS_SOURCE_DIR}/${stub} ${STUBS_DIR}/${stub} COPYONLY)
@@ -52,6 +53,7 @@ foreach(test
     tst_enginemessages
     tst_pageactivity
     tst_pagemedia
+    tst_webnotifications
     tst_reader
     tst_startpage
     tst_core

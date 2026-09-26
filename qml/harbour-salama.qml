@@ -80,6 +80,27 @@ ApplicationWindow {
         return id
     }
 
+    // A notification a page showed was tapped: its tab comes to the front, in its group,
+    // over whatever was left open, and the browser with it -- where Firefox for Android
+    // opens on the tab. The page hears of the tap itself
+    // (docs/DECISIONS/0033-web-notifications.md).
+    function showNotifiedTab(tabId) {
+        var page = pageStack.find(function (candidate) {
+            return candidate.objectName === "browserPage"
+        })
+        if (page) {
+            pageStack.pop(page)
+            page.uncover()
+        }
+        TabModel.activateTabById(tabId)
+        activate()
+    }
+
+    Connections {
+        target: WebNotifications
+        onTabRequested: window.showNotifiedTab(tabId)
+    }
+
     // As the bookmarks change, and not only when the action is taken: an address edited
     // after the bookmark came back under a new id is one the old id's address would no
     // longer find.

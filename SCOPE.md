@@ -24,9 +24,10 @@ No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulato
 - Registering as system default browser or `http(s)` scheme handler.
 - Multi-architecture or multi-device support.
 - Any language other than QML and C++. The scripts the engine runs in a page are the web
-  platform's, not the application's: the favicon and theme-colour lookups, and the reader
+  platform's, not the application's: the favicon and theme-colour lookups, the reader
   view's Readability, which is Mozilla's, verbatim, in `third_party/`
-  (`docs/DECISIONS/0024-reader-view.md`).
+  (`docs/DECISIONS/0024-reader-view.md`), and the page's Notification with the frame
+  script that hands on what it says (`docs/DECISIONS/0033-web-notifications.md`).
 
 ## 4. Constraints
 
@@ -49,6 +50,8 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   settings/    Settings (QSettings)
   startpage/   StartPage: what a tab with no address shows
   reader/      Reader: the reader view, and Firefox's style sheet for it
+  notifications/
+               NotificationPermissions, WebNotifications: the pages' notifications
 third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
@@ -60,7 +63,7 @@ docs/          See §8
 Reuse policy:
 - Platform, unmodified: WebView, text selection, JS/auth/permission dialogs, file pickers, download plumbing.
 - Ported from sailfish-browser: engine-independent C++ model and tab-container logic.
-- From Firefox: the reader view -- Readability as published, `aboutReader.css` adapted.
+- From Firefox: the reader view -- Readability as published, `aboutReader.css` adapted; web notifications -- Firefox's question and answers, kept in the engine's permissions.
 - New: all UI.
 
 `Sailfish.WebView` is imported in the browsing page only, so a release without the engine package breaks browsing rather than the app.
@@ -75,7 +78,8 @@ Reuse policy:
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
-- Settings: a main page leading to a page each for the start page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
+- Web notifications, as Firefox's: a site asks, the answer is kept in the engine's permissions, and what it shows is the platform's notification
+- Settings: a main page leading to a page each for the start page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level), notifications (the sites allowed and blocked, blocking new requests) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
 - Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings, and one quick action chosen there beside the playing tab's mute
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 

@@ -24,6 +24,7 @@
 #include <QQmlExpression>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QRegularExpression>
 #include <QSGRendererInterface>
 #include <QScopedPointer>
 #include <QSet>
@@ -37,13 +38,17 @@
 using Salama::BookmarkModel;
 using Salama::Core;
 using Salama::EngineMessages;
+using Salama::NotificationPermissions;
 using Salama::Reader;
 using Salama::Settings;
 using Salama::TabModel;
+using Salama::WebNotifications;
 
 namespace {
 
 const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
+// A site that shows notifications, as the frame script names a page's.
+const char *const ChatSite = "https://chat.example";
 // The page the tests start on, open in the one tab.
 const char *const FirstPage = "https://www.qwant.com/";
 
@@ -145,9 +150,13 @@ private slots:
     void pagesSleepOutOfSight();
     void mediaControls();
     void muteOnTheGrid();
+    void webNotifications();
+    void notificationPermissions();
+    void notificationSettingsPage();
 
 private:
     bool loadWindow();
+    void forgetStartupMessages();
     bool startWithoutTabs();
     QObject *find(const QString &name) const;
     QList<QObject *> findAll(const QString &name) const;
@@ -187,6 +196,15 @@ void tst_qmlload::init()
     // (firstStartShowsTheStartPage()).
     m_core->tabs()->newTab(QLatin1String(FirstPage));
     QVERIFY(loadWindow());
+    forgetStartupMessages();
+}
+
+// What the browser tells the engine as it starts -- it asks for the sites allowed to
+// send notifications (docs/DECISIONS/0033-web-notifications.md) -- is
+// notificationsStart()'s to check; the others count what they send from nothing.
+void tst_qmlload::forgetStartupMessages()
+{
+    evaluate(find(QStringLiteral("viewArea")), QStringLiteral("WebEngine.notifications = []"));
 }
 
 void tst_qmlload::cleanup()
@@ -419,10 +437,21 @@ void tst_qmlload::rootWindowLoads()
     QVERIFY(!webView->property("desktopMode").toBool());
 
     // The engine is given its tracking protection on start, at the level Settings
-    // holds: Standard, until it is changed.
-    const QVariantList given =
+    // holds: Standard, until it is changed; and whether sites may ask to send
+    // notifications, which they may until that is changed.
+    QVariantList given =
         evaluate(find(QStringLiteral("viewArea")), QStringLiteral("WebEngineSettings.preferences"))
             .toList();
+    const QVariantMap notificationDefault = NotificationPermissions::defaultPreference(false);
+    const auto notificationPreference =
+        std::find_if(given.cbegin(), given.cend(), [&notificationDefault](const QVariant &one) {
+            return one.toMap().value(QStringLiteral("key")) ==
+                   notificationDefault.value(QStringLiteral("name"));
+        });
+    QVERIFY(notificationPreference != given.cend());
+    QCOMPARE(notificationPreference->toMap().value(QStringLiteral("value")),
+             notificationDefault.value(QStringLiteral("value")));
+    given.removeAt(notificationPreference - given.cbegin());
     const QVariantList standard =
         EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard);
     QCOMPARE(given.count(), standard.count());
@@ -3458,6 +3487,7 @@ void tst_qmlload::settingsPage()
         QStringLiteral("cutoutGuardSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("privacySettingsEntry"),
+        QStringLiteral("notificationSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
     };
     QCOMPARE(columnOf(find(QStringLiteral("searchSettingsEntry"))), expected);
@@ -3482,6 +3512,8 @@ void tst_qmlload::settingsPage()
          QStringLiteral("coverSettingsPage")},
         {QStringLiteral("privacySettingsEntry"), QStringLiteral("icon-m-device-lock"),
          QStringLiteral("privacySettingsPage")},
+        {QStringLiteral("notificationSettingsEntry"), QStringLiteral("icon-m-notifications"),
+         QStringLiteral("notificationSettingsPage")},
         {QStringLiteral("historySettingsEntry"), QStringLiteral("icon-m-history"),
          QStringLiteral("historySettingsPage")},
     };
@@ -4673,9 +4705,12 @@ void tst_qmlload::pagesSleepOutOfSight()
     };
 
     // The engine is asked for what says a page is playing, and after that for what it
-    // says of downloads.
-    QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.observers")).toStringList(),
-             activity->topics() + QStringList{m_core->downloads()->topic()});
+    // says of downloads; and, by the notifications' part of the page, for the sites'
+    // permissions.
+    const QStringList topics =
+        activity->topics() +
+        QStringList{m_core->downloads()->topic(), m_core->notificationPermissions()->topic()};
+    QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.observers")).toStringList(), topics);
 
     // Not the moment the application is left, but a moment after: every page, the one
     // behind the one in front as well. Until then the one in front stays active --
@@ -5029,6 +5064,398 @@ void tst_qmlload::muteOnTheGrid()
     QVERIFY(!firstAction->property("visible").toBool());
     QVERIFY(!evaluate(firstPicture, QStringLiteral("layer.enabled")).toBool());
     QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+}
+
+namespace {
+
+// What the frame script hands the view from its page: the page's message, with the
+// origin and the permission Gecko holds.
+void relay(QObject *view, const QVariantMap &message,
+           const QString &origin = QLatin1String(ChatSite),
+           const QString &permission = QStringLiteral("default"))
+{
+    QVariantMap detail = message;
+    detail.insert(QStringLiteral("page"), QStringLiteral("p1"));
+    const QVariantMap data{
+        {QStringLiteral("origin"), origin},
+        {QStringLiteral("permission"), permission},
+        {QStringLiteral("detail"),
+         QString::fromUtf8(QJsonDocument::fromVariant(detail).toJson(QJsonDocument::Compact))},
+    };
+    QMetaObject::invokeMethod(view, "recvAsyncMessage",
+                              Q_ARG(QString, QStringLiteral("salama:notification")),
+                              Q_ARG(QVariant, data));
+}
+
+QVariantMap message(const QString &type, int id, const QString &title = QString(),
+                    const QString &tag = QString())
+{
+    QVariantMap message{{QStringLiteral("type"), type}, {QStringLiteral("id"), id}};
+    if (!title.isEmpty()) {
+        message.insert(QStringLiteral("title"), title);
+        message.insert(QStringLiteral("body"), title + QStringLiteral(" and more"));
+        message.insert(QStringLiteral("tag"), tag);
+    }
+    return message;
+}
+
+// What the replies run in a view told its page, as "type:id" or "permission:id:state".
+QStringList repliesIn(QObject *view)
+{
+    static const QRegularExpression reply(
+        QStringLiteral("^window\\.dispatchEvent\\(new CustomEvent\\('salama-notification-reply', "
+                       "\\{ detail: (\".*\") \\}\\)\\); return true;$"));
+    QStringList list;
+    for (const QString &script : view->property("scripts").toStringList()) {
+        const QRegularExpressionMatch match = reply.match(script);
+        if (!match.hasMatch()) {
+            continue;
+        }
+        const QString json = QJsonDocument::fromJson(
+                                 (QLatin1Char('[') + match.captured(1) + QLatin1Char(']')).toUtf8())
+                                 .array()
+                                 .at(0)
+                                 .toString();
+        const QVariantMap said = QJsonDocument::fromJson(json.toUtf8()).toVariant().toMap();
+        QString line = said.value(QStringLiteral("type")).toString() + QLatin1Char(':') +
+                       QString::number(said.value(QStringLiteral("id")).toInt());
+        if (said.contains(QStringLiteral("permission"))) {
+            line += QLatin1Char(':') + said.value(QStringLiteral("permission")).toString();
+        }
+        list.append(line);
+    }
+    return list;
+}
+
+} // namespace
+
+// A page's notifications (docs/DECISIONS/0033-web-notifications.md): the frame script
+// and the page's Notification put in each view, what the page shows made a platform
+// notification, and a tap, a swipe and the page going.
+void tst_qmlload::webNotifications()
+{
+    WebNotifications *notifications = m_core->webNotifications();
+    QObject *view = currentWebView();
+    const int tab = m_core->tabs()->activeTabId();
+
+    // Heard once asked for, and the frame script loaded, both as the view is made.
+    QVERIFY(
+        view->property("messageListeners").toStringList().contains(notifications->messageName()));
+    QCOMPARE(view->property("frameScripts").toStringList(),
+             QStringList{notifications->relayScriptUrl()});
+    // The page's Notification, as a document arrives and again once it has loaded -- once
+    // the engine has made the view, which runs no script before.
+    const auto installs = [view, notifications]() {
+        return view->property("scripts").toStringList().count(notifications->pageScript());
+    };
+    QCOMPARE(installs(), 0);
+    QMetaObject::invokeMethod(view, "viewInitialized");
+    view->setProperty("loading", true);
+    QCOMPARE(installs(), 0);
+    view->setProperty("loading", false);
+    const int installed = installs();
+    QCOMPARE(installed, 1);
+    view->setProperty("loading", true);
+    view->setProperty("loading", false);
+    QCOMPARE(installs(), installed + 1);
+    view->setProperty("url", QStringLiteral("https://www.qwant.com/?q=chat"));
+    QCOMPARE(installs(), installed + 2);
+
+    // Shown: a platform notification, the page's title and text, the site under them.
+    relay(view, message(QStringLiteral("show"), 1, QStringLiteral("Hello"), QStringLiteral("room")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QList<QObject *> shown = findAll(QStringLiteral("webNotification"));
+    QCOMPARE(shown.count(), 1);
+    QPointer<QObject> hello = shown.first();
+    QCOMPARE(hello->property("summary").toString(), QStringLiteral("Hello"));
+    QCOMPARE(hello->property("body").toString(), QStringLiteral("Hello and more"));
+    QCOMPARE(hello->property("previewSummary").toString(), QStringLiteral("Hello"));
+    QCOMPARE(hello->property("previewBody").toString(), QStringLiteral("Hello and more"));
+    QCOMPARE(hello->property("subText").toString(), QStringLiteral("chat.example"));
+    QCOMPARE(hello->property("icon").toString(), QString());
+    QCOMPARE(hello->property("appName").toString(), QStringLiteral("Salama"));
+    QVERIFY(hello->property("appIcon").toString().endsWith(
+        QLatin1String("/icons/hicolor/172x172/apps/harbour-salama.png")));
+    const QVariantList actions = hello->property("remoteActions").toList();
+    QCOMPARE(actions.count(), 1);
+    QCOMPARE(actions.first().toMap().value(QStringLiteral("name")).toString(),
+             QStringLiteral("default"));
+    QCOMPARE(hello->property("publishCount").toInt(), 1);
+    QCOMPARE(repliesIn(view), QStringList{QStringLiteral("show:1")});
+
+    // One with the same tag in its place.
+    relay(view, message(QStringLiteral("show"), 2, QStringLiteral("Again"), QStringLiteral("room")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QCOMPARE(findAll(QStringLiteral("webNotification")), QList<QObject *>{hello.data()});
+    QCOMPARE(hello->property("summary").toString(), QStringLiteral("Again"));
+    QCOMPARE(hello->property("publishCount").toInt(), 2);
+
+    // Tapped with another tab in front: that tab to the front, the browser with it, and
+    // the page told, before the notification closes.
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QVERIFY(currentWebView() != view);
+    const int activations = m_window->property("activateCount").toInt();
+    QMetaObject::invokeMethod(hello, "clicked");
+    // Closed, and gone with the next turn of the event loop.
+    QVERIFY(hello->property("isClosed").toBool());
+    QCOMPARE(m_core->tabs()->activeTabId(), tab);
+    QCOMPARE(currentWebView(), view);
+    QCOMPARE(m_window->property("activateCount").toInt(), activations + 1);
+    QCOMPARE(repliesIn(view).mid(2),
+             (QStringList{QStringLiteral("click:2"), QStringLiteral("close:2")}));
+    settle();
+    QVERIFY(hello.isNull());
+    QVERIFY(notifications->keys().isEmpty());
+
+    // Tapped over Settings: back on the page.
+    relay(view, message(QStringLiteral("show"), 3, QStringLiteral("Over")), QLatin1String(ChatSite),
+          QStringLiteral("granted"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("settingsPage"));
+    QMetaObject::invokeMethod(findAll(QStringLiteral("webNotification")).first(), "clicked");
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+
+    // Swiped away: the page told, and nothing left of it.
+    relay(view, message(QStringLiteral("show"), 4, QStringLiteral("Swiped")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QPointer<QObject> swiped = findAll(QStringLiteral("webNotification")).first();
+    QMetaObject::invokeMethod(swiped, "closed", Q_ARG(int, 1));
+    QCOMPARE(repliesIn(view).last(), QStringLiteral("close:4"));
+    settle();
+    QVERIFY(swiped.isNull());
+
+    // Closed by the page: closed on the platform too.
+    relay(view, message(QStringLiteral("show"), 5, QStringLiteral("Closed")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QPointer<QObject> closed = findAll(QStringLiteral("webNotification")).first();
+    relay(view, message(QStringLiteral("close"), 5));
+    QVERIFY(closed->property("isClosed").toBool());
+    settle();
+    QVERIFY(closed.isNull());
+
+    // Not allowed: nothing shown, the page told.
+    relay(view, message(QStringLiteral("show"), 6, QStringLiteral("No")));
+    QVERIFY(findAll(QStringLiteral("webNotification")).isEmpty());
+    QCOMPARE(repliesIn(view).last(), QStringLiteral("error:6"));
+
+    // The page going, and the tab: what they showed goes with them.
+    relay(view, message(QStringLiteral("show"), 7, QStringLiteral("Unload")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QPointer<QObject> unloaded = findAll(QStringLiteral("webNotification")).first();
+    relay(view, {{QStringLiteral("type"), QStringLiteral("unload")}});
+    QVERIFY(unloaded->property("isClosed").toBool());
+    relay(view, message(QStringLiteral("show"), 8, QStringLiteral("Tab")), QLatin1String(ChatSite),
+          QStringLiteral("granted"));
+    QPointer<QObject> ofTheTab = findAll(QStringLiteral("webNotification")).first();
+    m_core->tabs()->closeTabById(tab);
+    settle();
+    QVERIFY(ofTheTab.isNull() || ofTheTab->property("isClosed").toBool());
+    QVERIFY(notifications->keys().isEmpty());
+}
+
+// A page asks, and is asked about as Firefox asks: allow, always block, not now; only
+// while it is the page on the screen; and the platform's own refusal taken back.
+void tst_qmlload::notificationPermissions()
+{
+    NotificationPermissions *permissions = m_core->notificationPermissions();
+    QObject *view = currentWebView();
+    QMetaObject::invokeMethod(view, "viewInitialized");
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap() : sent.last().toMap();
+    };
+    const auto question = [this]() {
+        QObject *dialog = currentPage();
+        return dialog->objectName() == QLatin1String("notificationPermissionDialog")
+                   ? find(QStringLiteral("notificationPermissionQuestion"))
+                         ->property("text")
+                         .toString()
+                   : QString();
+    };
+
+    // Allowed: for good, in the engine's keeping, and the page told -- every request
+    // it made meanwhile.
+    relay(view, message(QStringLiteral("request"), 1));
+    QCOMPARE(question(), QStringLiteral("Allow chat.example to send notifications?"));
+    QObject *dialog = currentPage();
+    relay(view, message(QStringLiteral("request"), 2));
+    QCOMPARE(currentPage(), dialog);
+    QCOMPARE(pageStack()->property("depth").toInt(), 2);
+    QMetaObject::invokeMethod(dialog, "accept");
+    QVERIFY(permissions->isAllowed(QLatin1String(ChatSite)));
+    QCOMPARE(lastToEngine().value(QStringLiteral("topic")).toString(),
+             QStringLiteral("embedui:perms"));
+    const QVariantMap added = lastToEngine().value(QStringLiteral("value")).toMap();
+    QCOMPARE(added.value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+    QCOMPARE(added.value(QStringLiteral("uri")).toString(), QLatin1String(ChatSite));
+    QCOMPARE(added.value(QStringLiteral("permission")).toInt(), 1);
+    QCOMPARE(repliesIn(view), (QStringList{QStringLiteral("permission:1:granted"),
+                                           QStringLiteral("permission:2:granted")}));
+    popPage();
+
+    // Always block: for good.
+    relay(view, message(QStringLiteral("request"), 3), QStringLiteral("https://news.example"));
+    QCOMPARE(question(), QStringLiteral("Allow news.example to send notifications?"));
+    click(find(QStringLiteral("blockNotificationsButton")));
+    QVERIFY(permissions->isBlocked(QStringLiteral("https://news.example")));
+    QCOMPARE(repliesIn(view).last(), QStringLiteral("permission:3:denied"));
+    popPage();
+
+    // Not now: refused, and nothing kept.
+    relay(view, message(QStringLiteral("request"), 4), QStringLiteral("https://shop.example"));
+    QMetaObject::invokeMethod(currentPage(), "reject");
+    QCOMPARE(repliesIn(view).last(), QStringLiteral("permission:4:denied"));
+    QCOMPARE(permissions->rowCount(), 2);
+    popPage();
+
+    // A page that goes while it asks takes its question with it.
+    relay(view, message(QStringLiteral("request"), 5), QStringLiteral("https://gone.example"));
+    QVERIFY(!question().isEmpty());
+    relay(view, {{QStringLiteral("type"), QStringLiteral("unload")}});
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(repliesIn(view).count(), 4);
+
+    // Not asked for a page behind the one in front, nor over the grid or another page,
+    // nor with the application out of sight: refused this time.
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QObject *front = currentWebView();
+    QMetaObject::invokeMethod(front, "viewInitialized");
+    relay(view, message(QStringLiteral("request"), 6), QStringLiteral("https://behind.example"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(repliesIn(view).last(), QStringLiteral("permission:6:denied"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    relay(front, message(QStringLiteral("request"), 7), QStringLiteral("https://over.example"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("settingsPage"));
+    QCOMPARE(repliesIn(front).last(), QStringLiteral("permission:7:denied"));
+    popPage();
+    pullUpToTabs();
+    relay(front, message(QStringLiteral("request"), 8), QStringLiteral("https://grid.example"));
+    QCOMPARE(repliesIn(front).last(), QStringLiteral("permission:8:denied"));
+    pullDownToBrowser();
+    QCOMPARE(permissions->rowCount(), 2);
+
+    // The platform's refusal of a page that asked the engine itself, taken back once it
+    // has been sent -- for the page's own site, when it is not one decided on.
+    const int sent = evaluate(scope, QStringLiteral("WebEngine.notifications.length")).toInt();
+    const QVariantMap refused{
+        {QStringLiteral("title"), QStringLiteral("desktopNotification")},
+        {QStringLiteral("host"), QStringLiteral("two.example")},
+        {QStringLiteral("id"), QStringLiteral("two.example desktop-notification")}};
+    QMetaObject::invokeMethod(front, "aboutToOpenPopup",
+                              Q_ARG(QVariant, QStringLiteral("embed:permissions")),
+                              Q_ARG(QVariant, refused));
+    QTRY_COMPARE(evaluate(scope, QStringLiteral("WebEngine.notifications.length")).toInt(),
+                 sent + 1);
+    QCOMPARE(lastToEngine()
+                 .value(QStringLiteral("value"))
+                 .toMap()
+                 .value(QStringLiteral("msg"))
+                 .toString(),
+             QStringLiteral("remove"));
+    QCOMPARE(lastToEngine()
+                 .value(QStringLiteral("value"))
+                 .toMap()
+                 .value(QStringLiteral("uri"))
+                 .toString(),
+             QStringLiteral("https://two.example"));
+
+    // A page of a site allowed to notify is not put to sleep out of sight; the rest are.
+    QObject *page = find(QStringLiteral("browserPage"));
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    QTRY_VERIFY(m_core->pageActivity()->asleep());
+    QCOMPARE(front->property("calls").toStringList().count(QStringLiteral("suspendView")), 1);
+    QCOMPARE(view->property("calls").toStringList().count(QStringLiteral("suspendView")), 1);
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationActive));
+    permissions->setAllowed(QStringLiteral("https://two.example"), true);
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    QTRY_VERIFY(m_core->pageActivity()->asleep());
+    QCOMPARE(front->property("calls").toStringList().count(QStringLiteral("suspendView")), 1);
+    QCOMPARE(view->property("calls").toStringList().count(QStringLiteral("suspendView")), 2);
+    // Asked while out of sight: refused this time.
+    relay(front, message(QStringLiteral("request"), 9), QStringLiteral("https://asleep.example"));
+    QCOMPARE(repliesIn(front).last(), QStringLiteral("permission:9:denied"));
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationActive));
+}
+
+// Settings > Notifications: whether sites may ask, and the sites the engine keeps, each
+// with a way to change it or remove it.
+void tst_qmlload::notificationSettingsPage()
+{
+    NotificationPermissions *permissions = m_core->notificationPermissions();
+    Settings *settings = m_core->settings();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("notificationSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("notificationSettingsPage"));
+    // Opened, it asks the engine for what it keeps.
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("get-all"));
+    QVERIFY(findAll(QStringLiteral("notificationSite")).isEmpty());
+
+    evaluate(
+        scope,
+        QStringLiteral(
+            "WebEngine.recvObserve('embed:perms:all', ["
+            " {type: 'desktop-notification', uri: 'https://news.example', capability: 2, "
+            "expireType: 0},"
+            " {type: 'geolocation', uri: 'https://maps.example', capability: 1, expireType: 0},"
+            " {type: 'desktop-notification', uri: 'https://chat.example', capability: 1, "
+            "expireType: 0}])"));
+    QCOMPARE(permissions->rowCount(), 2);
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("notificationSite")));
+    QCOMPARE(rows.count(), 2);
+    const auto text = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first()->property("text").toString();
+    };
+    QCOMPARE(text(rows.at(0), "notificationSiteHost"), QStringLiteral("chat.example"));
+    QCOMPARE(text(rows.at(0), "notificationSiteStatus"), QStringLiteral("Allowed"));
+    QCOMPARE(text(rows.at(1), "notificationSiteHost"), QStringLiteral("news.example"));
+    QCOMPARE(text(rows.at(1), "notificationSiteStatus"), QStringLiteral("Blocked"));
+    QCOMPARE(text(rows.at(0), "notificationSiteToggle"), QStringLiteral("Block"));
+    QCOMPARE(text(rows.at(1), "notificationSiteToggle"), QStringLiteral("Allow"));
+
+    // From the menu: blocked, then removed, and the engine told each time.
+    click(findObjects(rows.at(0), QStringLiteral("notificationSiteToggle")).first());
+    QVERIFY(permissions->isBlocked(QLatin1String(ChatSite)));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 2);
+    click(findObjects(byRow(findAll(QStringLiteral("notificationSite"))).at(1),
+                      QStringLiteral("notificationSiteRemove"))
+              .first());
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("uri")).toString(),
+             QStringLiteral("https://news.example"));
+    QCOMPARE(findAll(QStringLiteral("notificationSite")).count(), 1);
+
+    // Whether others may ask: the engine's default for the permission.
+    QObject *block = find(QStringLiteral("blockNotificationRequestsSwitch"));
+    QVERIFY(!block->property("checked").toBool());
+    block->setProperty("checked", true);
+    QVERIFY(settings->blockNotificationRequests());
+    const QVariantMap given =
+        evaluate(scope, QStringLiteral("WebEngineSettings.preferences")).toList().last().toMap();
+    QCOMPARE(given.value(QStringLiteral("key")).toString(),
+             QStringLiteral("permissions.default.desktop-notification"));
+    QCOMPARE(given.value(QStringLiteral("value")).toInt(), 2);
+    block->setProperty("checked", false);
+    QVERIFY(!settings->blockNotificationRequests());
+
+    // Nothing left: the page says what it will list.
+    permissions->remove(QLatin1String(ChatSite));
+    QVERIFY(findAll(QStringLiteral("notificationSite")).isEmpty());
 }
 
 QTEST_MAIN(tst_qmlload)
