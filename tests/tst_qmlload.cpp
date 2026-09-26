@@ -116,6 +116,7 @@ private slots:
     void tabsDropOntoGroups();
     void previewGestures();
     void gridGesturesUnderAFinger();
+    void gridHeadPullUnderAFinger();
     void carryToGroupUnderAFinger();
     void carryOverTheStripUnderAFinger();
     void tabGroupStripFades();
@@ -2292,6 +2293,108 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QTRY_VERIFY(!grid->property("moving").toBool());
     QVERIFY(grid->property("contentY").toReal() < scrolled);
     QVERIFY(page->property("tabsOpen").toBool());
+}
+
+// A drag down the grid's head row brings the page back from wherever the grid is
+// scrolled to: from anywhere else, a grid longer than the screen scrolls back to its
+// top first. The row lies over the search field, so it has to hand the field the taps
+// it takes, and a press on the field's clear button, and a drag up to the grid.
+void tst_qmlload::gridHeadPullUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    for (int i = 0; i < 11; ++i) {
+        tabs->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    QObject *gesture = find(QStringLiteral("gridHeadPull"));
+    auto *field = qobject_cast<QQuickItem *>(find(QStringLiteral("tabSearchField")));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const ScriptErrors errors;
+    const auto openGrid = [&]() {
+        pullUpToTabs();
+        QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+        QTRY_VERIFY(!grid->property("moving").toBool());
+    };
+    const qreal threshold = page->property("pullThreshold").toReal();
+
+    // Well down a long group, a pull down the row is the page's at once, and the grid
+    // is where it was when it comes up again.
+    openGrid();
+    const QPoint head = centreOf(find(QStringLiteral("gridHeadControls")));
+    const qreal scrolled =
+        grid->property("contentY").toReal() + grid->property("cellHeight").toReal();
+    grid->setProperty("contentY", scrolled);
+    drag(&window, head, head + QPoint(0, 3 * int(threshold)));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
+    QCOMPARE(grid->property("contentY").toReal(), scrolled);
+
+    // Halfway down, the row of cells cut by the grid's top edge reaches up over the
+    // page and its bar, and the view clips it there rather than drawing it on them.
+    openGrid();
+    auto *view = qobject_cast<QQuickItem *>(find(QStringLiteral("tabsView")));
+    const QPoint pulledTo = head + QPoint(0, 3 * int(threshold));
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, head);
+    for (int step = 1; step <= 24; ++step) {
+        QTest::mouseMove(&window, head + (pulledTo - head) * step / 24);
+    }
+    const qreal viewTop = view->mapToScene(QPointF(0, 0)).y();
+    QVERIFY(viewTop > 0);
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QVERIFY(std::any_of(previews.begin(), previews.end(), [viewTop](QObject *cell) {
+        auto *item = qobject_cast<QQuickItem *>(cell);
+        return item->isVisible() && item->mapToScene(QPointF(0, 0)).y() < viewTop;
+    }));
+    QVERIFY(view->clip());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, pulledTo);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
+
+    // Short of the threshold the grid settles back, still scrolled.
+    openGrid();
+    QCOMPARE(grid->property("contentY").toReal(), scrolled);
+    drag(&window, head, head + QPoint(0, int(threshold) / 2));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(grid->property("contentY").toReal(), scrolled);
+    QVERIFY(!field->hasFocus());
+
+    // Up is still the grid's, to scroll further down the group.
+    drag(&window, head, head - QPoint(0, head.y() * 3 / 4));
+    QTRY_VERIFY(!grid->property("moving").toBool());
+    QVERIFY(grid->property("contentY").toReal() > scrolled);
+    QVERIFY(page->property("tabsOpen").toBool());
+    QVERIFY(!field->hasFocus());
+
+    // A press on the clear button is left to the button, and a tap anywhere else on
+    // the row is the field's. The stub field has no button of its own; this one counts
+    // its taps.
+    QQmlComponent button(m_engine.data());
+    button.setData("import QtQuick 2.6\n"
+                   "MouseArea { property int taps: 0; onClicked: taps += 1 }",
+                   QUrl());
+    QScopedPointer<QQuickItem> clear(qobject_cast<QQuickItem *>(button.create()));
+    QVERIFY2(clear, qPrintable(button.errorString()));
+    clear->setParentItem(field);
+    clear->setSize(QSizeF(field->height(), field->height()));
+    clear->setX(field->width() - clear->width());
+    field->setProperty("rightItem", QVariant::fromValue(clear.data()));
+    field->setProperty("text", QStringLiteral("more"));
+    const QPoint onClear = centreOf(clear.data());
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onClear);
+    QVERIFY(!gesture->property("pressed").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onClear);
+    QCOMPARE(clear->property("taps").toInt(), 1);
+    QVERIFY(!field->hasFocus());
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, head);
+    QCOMPARE(clear->property("taps").toInt(), 1);
+    QVERIFY(field->hasFocus());
+    QVERIFY(page->property("tabsOpen").toBool());
+    field->setProperty("rightItem", QVariant::fromValue<QQuickItem *>(nullptr));
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
 }
 
 // A cell held until it comes up and carried down onto a name in the strip of groups
