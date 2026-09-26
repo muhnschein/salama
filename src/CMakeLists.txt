@@ -42,6 +42,8 @@ add_library(salama-core STATIC
     settings/Settings.h
     settings/SettingsSection.cpp
     settings/SettingsSection.h
+    settings/SettingsSections.cpp
+    settings/SettingsSections.h
     settings/StartPageSettings.cpp
     settings/StartPageSettings.h
     startpage/SiteListModel.cpp

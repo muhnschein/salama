@@ -12,12 +12,7 @@
 #include "notifications/WebNotifications.h"
 #include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
-#include "settings/CoverSettings.h"
-#include "settings/PrivacySettings.h"
-#include "settings/ReaderSettings.h"
-#include "settings/SearchSettings.h"
-#include "settings/Settings.h"
-#include "settings/StartPageSettings.h"
+#include "settings/SettingsSections.h"
 #include "startpage/StartPage.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
@@ -25,7 +20,6 @@
 #include "tabs/TabSearchModel.h"
 
 #include <QObject>
-#include <QSettings>
 #include <QString>
 
 namespace Salama {
@@ -75,14 +69,7 @@ private:
     HistoryModel m_history;
     BookmarkModel m_bookmarks;
     DownloadModel m_downloads;
-    // The one file every settings section keeps its part of the preferences in.
-    QSettings m_settingsFile;
-    Settings m_settings;
-    SearchSettings m_searchSettings;
-    ReaderSettings m_readerSettings;
-    CoverSettings m_coverSettings;
-    PrivacySettings m_privacySettings;
-    StartPageSettings m_startPageSettings;
+    SettingsSections m_settings;
     // After everything it searches, which it is made from.
     OmnibarModel m_omnibar;
     EngineMessages m_engineMessages;

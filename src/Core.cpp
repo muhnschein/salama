@@ -18,24 +18,18 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_history(m_storage)
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
-    , m_settingsFile(configFilePath, QSettings::IniFormat)
-    , m_settings(m_settingsFile)
-    , m_searchSettings(m_settingsFile)
-    , m_readerSettings(m_settingsFile)
-    , m_coverSettings(m_settingsFile)
-    , m_privacySettings(m_settingsFile)
-    , m_startPageSettings(m_settingsFile)
-    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_searchSettings,
-                &m_privacySettings)
+    , m_settings(configFilePath)
+    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings.search,
+                &m_settings.privacy)
     , m_pageMedia(&m_tabs)
-    , m_reader(m_readerSettings)
+    , m_reader(m_settings.reader)
     , m_startPage(m_storage)
     , m_webNotifications(&m_notificationPermissions,
                          Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
     // Unless the history is not to be kept.
     connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
-        if (m_privacySettings.rememberHistory()) {
+        if (m_settings.privacy.rememberHistory()) {
             m_history.visit(url);
         }
     });
@@ -70,7 +64,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
 
 void Core::clearOnClose()
 {
-    if (!m_privacySettings.clearHistoryOnClose()) {
+    if (!m_settings.privacy.clearHistoryOnClose()) {
         return;
     }
     m_history.clear();
@@ -110,32 +104,32 @@ DownloadModel *Core::downloads()
 
 Settings *Core::settings()
 {
-    return &m_settings;
+    return &m_settings.general;
 }
 
 SearchSettings *Core::searchSettings()
 {
-    return &m_searchSettings;
+    return &m_settings.search;
 }
 
 ReaderSettings *Core::readerSettings()
 {
-    return &m_readerSettings;
+    return &m_settings.reader;
 }
 
 CoverSettings *Core::coverSettings()
 {
-    return &m_coverSettings;
+    return &m_settings.cover;
 }
 
 PrivacySettings *Core::privacySettings()
 {
-    return &m_privacySettings;
+    return &m_settings.privacy;
 }
 
 StartPageSettings *Core::startPageSettings()
 {
-    return &m_startPageSettings;
+    return &m_settings.startPage;
 }
 
 OmnibarModel *Core::omnibar()

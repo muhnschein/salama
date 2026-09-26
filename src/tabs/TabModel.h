@@ -232,7 +232,7 @@ private:
     // Marks the tab in front as the most recent one, and tells the cover.
     void stampActive();
     void notifyRow(int index, Role role);
-    void persist(const Tab &tab);
+    void persist(const Tab &tab) const;
     void discardThumbnail(const QString &path) const;
 
     TabPersistence *m_persistence;

@@ -5,6 +5,7 @@
 #include "settings/ReaderSettings.h"
 #include "settings/SearchSettings.h"
 #include "settings/Settings.h"
+#include "settings/SettingsSections.h"
 #include "settings/StartPageSettings.h"
 
 #include <QDir>
@@ -21,27 +22,7 @@ using Salama::ReaderSettings;
 using Salama::SearchSettings;
 using Salama::Settings;
 using Salama::StartPageSettings;
-
-namespace {
-
-// The settings file and every section over it, as Core keeps them.
-struct Sections
-{
-    explicit Sections(const QString &path)
-        : file(path, QSettings::IniFormat)
-    {
-    }
-
-    QSettings file;
-    Settings general{file};
-    SearchSettings search{file};
-    ReaderSettings reader{file};
-    CoverSettings cover{file};
-    PrivacySettings privacy{file};
-    StartPageSettings startPage{file};
-};
-
-} // namespace
+using Sections = Salama::SettingsSections;
 
 class tst_settings : public QObject
 {

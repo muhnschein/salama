@@ -994,7 +994,7 @@ void TabModel::notifyRow(int index, Role role)
     m_groupTabs->changed(m_tabs.at(index).id, roleId(role));
 }
 
-void TabModel::persist(const Tab &tab)
+void TabModel::persist(const Tab &tab) const
 {
     if (m_persistence != nullptr) {
         m_persistence->updateTab(tab);
