@@ -131,7 +131,7 @@ SonarQube Cloud on every pull request. A **report, not a gate**: `make check` de
 - `main` always releasable. Feature branches, squash merge, linear history.
 - PR requires: green CI, one review, changelog entry.
 - Commit subject imperative, ≤ 72 chars; body says why.
-- Semantic versioning. Signed tags. Release stamped onto the RPM by CI.
+- Semantic versioning. The version is the spec's; CI builds, validates and publishes each release from a `v` tag on `main`.
 - Dependencies: Harbour allowed list only. Any addition updates `docs/HARBOUR.md` in the same PR.
 
 ## 8. Documentation

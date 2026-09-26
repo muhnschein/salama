@@ -89,10 +89,11 @@ build runs parallel make on the runner's cores. Nothing is cached on purpose: th
 large input is the SDK image, and restoring it from the Actions cache is no faster than
 pulling it; the build itself takes seconds.
 
-Run it from the Actions tab (`sfos_version` is the input), push a `v*` tag for a
-release, or a `build-*` tag to build a branch before the workflow reaches the default
-branch. The spec keeps `Version: 0.0.0` and `Release: 1`; the workflow stamps the
-tag's version and `1.<run number>` so each build installs over the previous one.
+Run it from the Actions tab (`sfos_version` is the input), cut a release with it
+(`RELEASING.md`), or push a `build-*` tag to build a branch before the workflow reaches
+the default branch. The spec carries the version and `Release: 1`. A release builds
+exactly that and publishes it; any other build is stamped `1.<run number>` so each
+installs over the previous one.
 The RPM is uploaded as `harbour-salama-aarch64-sfos<release>-<sha>` (30 days), and
 Jolla's validator then runs on it; a rejection fails the job after the upload.
 
