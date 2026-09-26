@@ -6,10 +6,12 @@
 # Harbour rejects that dependency, so it is carried by the SDK target used to build
 # (the __libc_start_main version check) and by the package versions below.
 #
-# Version is stamped from the release tag by CI (docs/RELEASING.md); keep 0.0.0 here.
+# Version is the release's, and a release is cut from it (docs/RELEASING.md): CI refuses
+# a release tag that says otherwise. Release stays 1 here; CI stamps 1.<run number> on
+# every build that is not a release.
 Name:       harbour-salama
 Summary:    Web browser
-Version:    0.0.0
+Version:    0.8.0
 Release:    1
 License:    MPL-2.0
 URL:        https://github.com/muhnschein/salama

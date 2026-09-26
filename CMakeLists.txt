@@ -4,7 +4,7 @@
 #   * device RPM (rpm/harbour-salama.spec): SALAMA_BUILD_TESTS=OFF, sailfishapp required.
 #   * host `make check`: tests on, sailfishapp replaced by tests/stubs/sailfishapp.
 cmake_minimum_required(VERSION 3.13)
-project(harbour-salama VERSION 0.1.0 LANGUAGES CXX)
+project(harbour-salama VERSION 0.8.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

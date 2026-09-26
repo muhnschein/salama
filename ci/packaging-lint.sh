@@ -7,6 +7,7 @@
 #  * translations compile and are current (lrelease, lupdate)
 #  * every docs/*.md a comment points at exists
 #  * the changelog has an Unreleased section; Sailjail permissions are documented
+#  * one version: CMake's is the spec's, and the changelog has its section
 #
 # A missing tool is SKIP locally and a failure with PACKAGING_LINT_STRICT=1 (CI).
 set -uo pipefail
@@ -92,6 +93,14 @@ permissions=$(sed -n 's/^Permissions=//p' "$DESKTOP" | tr ';' ' ')
 for permission in $permissions; do
     grep -q "\b$permission\b" "$ROOT/docs/HARBOUR.md" 2>/dev/null || fail permissions docs/HARBOUR.md "Sailjail permission '$permission' is not documented"
 done
+
+# 7. One version. The spec's is the one a release is cut from (docs/RELEASING.md); the
+#    host build's CMake project says the same, and the changelog has the section that
+#    becomes the release's text, so a version bumped without its notes stops here.
+spec_version=$(sed -n 's/^Version:[[:space:]]*//p' "$SPEC")
+cmake_version=$(sed -n 's/^project(harbour-salama VERSION \([0-9.]*\).*/\1/p' "$ROOT/CMakeLists.txt")
+[[ $cmake_version == "$spec_version" ]] || fail version CMakeLists.txt "project VERSION '$cmake_version' is not the spec's Version '$spec_version'"
+"$ROOT/ci/release-notes.sh" "$spec_version" >/dev/null || fail changelog docs/CHANGELOG.md "no '## [$spec_version]' section for the spec's Version"
 
 if [[ $FAILED -eq 0 ]]; then
     echo "packaging-lint: clean"

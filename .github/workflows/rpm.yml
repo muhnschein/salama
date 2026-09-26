@@ -1,11 +1,13 @@
 # Device RPM: cross-compiles harbour-salama for aarch64 inside the Sailfish platform
 # SDK image and runs Jolla's validator on the result. Step for step the same as
-# postivene's rpm.yml, minus its Rust plumbing.
+# postivene's rpm.yml, minus its Rust plumbing; a release is cut the way piirit's and
+# vuo's are, by this workflow publishing the package it built (docs/RELEASING.md).
 #
 # Not part of ci.yml: the image is multi-gigabyte and the build is minutes of runner
-# time nobody wants on every push. Run it from the Actions tab, push a `v*` tag for a
-# release, or a `build-*` tag to build a branch before this file reaches the default
-# branch (workflow_dispatch only sees workflows that are there).
+# time nobody wants on every push. Run it from the Actions tab, dispatch it on main with
+# `release` or push a `v*` tag for a release, or a `build-*` tag to build a branch
+# before this file reaches the default branch (workflow_dispatch only sees workflows
+# that are there).
 #
 # Every action is pinned to a commit: a tag can be repointed.
 name: rpm
@@ -20,9 +22,20 @@ on:
           __libc_start_main@GLIBC_2.34 that only a 5.x SDK links.
         type: string
         default: "5.2.0.15"
+      release:
+        description: >
+          Cut a release: the version to publish, which has to be what
+          rpm/harbour-salama.spec says, run on main. The commit is tagged
+          v<version> and a GitHub release goes up with the package and
+          docs/CHANGELOG.md's section for it. Leave empty for an ordinary
+          build. See docs/RELEASING.md.
+        type: string
+        default: ""
   push:
     tags: ["v*", "build-*"]
 
+# Reading the tree is all the build needs; the release job says what more it holds, so
+# the build never holds it.
 permissions:
   contents: read
 
@@ -34,8 +47,48 @@ jobs:
     env:
       ARCH: aarch64
       SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
+      # Free text from the dispatch form: read through the environment, never spliced
+      # into a script, and held to the spec's Version before anything uses it.
+      RELEASE: ${{ inputs.release || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The version is the spec's. A release is a `v*` tag, or a dispatch on main with
+      # the version in `release`; either has to say what the spec says, or the package
+      # would carry one version and the release page another, and a dispatch is held to
+      # main because the release job tags the commit it runs on. First, so a mistake
+      # costs seconds rather than an SDK pull.
+      #
+      # A release builds the spec as committed, Release: 1, the file Harbour is given.
+      # Any other build is 1.<run number>, so each is an upgrade of the one before:
+      # rpm -U and pkcon do nothing for a package whose NEVRA they already have. Digits
+      # and periods only, which is all Harbour accepts in either field.
+      - name: Stamp the release
+        run: |
+          version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-salama.spec)
+          [[ $version =~ ^[0-9.]+$ ]] || {
+            echo "::error::version '$version' must be digits and periods"; exit 1; }
+          wanted=""
+          case "$GITHUB_REF" in refs/tags/v*) wanted=${GITHUB_REF#refs/tags/v} ;; esac
+          if [ -n "$RELEASE" ]; then
+            [ "$GITHUB_REF" = "refs/heads/main" ] || {
+              echo "::error::a release is cut on main, not on $GITHUB_REF"; exit 1; }
+            wanted=$RELEASE
+          fi
+          if [ -n "$wanted" ]; then
+            [ "$wanted" = "$version" ] || {
+              echo "::error::release $wanted, but rpm/harbour-salama.spec says Version: $version"
+              exit 1; }
+            ci/release-notes.sh "$version" >/dev/null || {
+              echo "::error::docs/CHANGELOG.md has no '## [$version]' section to release"
+              exit 1; }
+            release=1
+          else
+            release="1.${GITHUB_RUN_NUMBER}"
+          fi
+          sed -i "s/^Release:.*/Release:    $release/" rpm/harbour-salama.spec
+          grep -E '^(Version|Release):' rpm/harbour-salama.spec
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       # By digest, not tag: the image is a third party's and runs privileged with the
       # checkout mounted read-write. To add a release, pull its tag once, read
@@ -67,22 +120,6 @@ jobs:
           fi
           echo "Building against $target"
           echo "TARGET=$target" >> "$GITHUB_ENV"
-
-      # Version comes from a v* tag, otherwise the spec's placeholder stays. Release is
-      # 1.<run number> so every build is an upgrade of the previous one: rpm -U and
-      # pkcon do nothing for a package whose NEVRA they already have. Digits and
-      # periods only, which is all Harbour accepts in either field.
-      - name: Stamp version and release
-        run: |
-          version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-salama.spec)
-          case "$GITHUB_REF" in refs/tags/v*) version=${GITHUB_REF#refs/tags/v} ;; esac
-          [[ $version =~ ^[0-9.]+$ ]] || {
-            echo "::error::version '$version' must be digits and periods"; exit 1; }
-          release="1.${GITHUB_RUN_NUMBER}"
-          sed -i "s/^Version:.*/Version:    $version/; s/^Release:.*/Release:    $release/" \
-            rpm/harbour-salama.spec
-          grep -E '^(Version|Release):' rpm/harbour-salama.spec
-          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       # sdk-manage refuses to run as root, so the build runs as the image's own user and
       # the checkout must belong to it. The tree is mounted inside that user's home:
@@ -144,3 +181,65 @@ jobs:
           [ -n "$rpm" ] || { echo "::error::no RPM to validate"; exit 1; }
           echo "Validating $rpm"
           ci/harbour-validate-rpm.sh "$rpm"
+
+  # A release: the package the job above built goes on a GitHub release named
+  # v<version>, with that version's section of docs/CHANGELOG.md as its text. Its own
+  # job so that `contents: write` is held only here, by a few commands, and never by
+  # the build running a third party's SDK image with `--privileged`. It needs the
+  # build, and the build ends with Jolla's validator, so a package Harbour would
+  # reject never gets a release page.
+  #
+  # From a `v*` tag the tag is there already and `--verify-tag` refuses to invent one;
+  # from a dispatch the release is what makes the tag, on the commit this run checked
+  # out, so the tag, the release and the RPM are one commit by construction. A release
+  # that is already there is added to rather than refused, so re-running this job
+  # after a transient failure finishes it. `gh` is the runner's own, so there is no
+  # third-party tag to repoint; the token is the job's.
+  release:
+    name: GitHub release
+    needs: rpm
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE: ${{ inputs.release || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Fetch the package this run built
+        run: gh run download "$GITHUB_RUN_ID" --dir rpms
+
+      # The device package and its checksum, and nothing else: the debug and source
+      # RPMs are for a developer with the tree, not a phone.
+      - name: Gather the assets
+        run: |
+          mkdir -p assets
+          find rpms -name 'harbour-salama-*.rpm' ! -name '*debug*' \
+               ! -name '*.src.rpm' -exec cp {} assets/ \;
+          [ -n "$(ls assets)" ] || { echo "::error::no device RPM to release"; exit 1; }
+          (cd assets && sha256sum -- * > SHA256SUMS)
+          cat assets/SHA256SUMS
+
+      - name: Publish the release
+        run: |
+          if [ -n "$RELEASE" ]; then
+            version=$RELEASE
+            where=(--target "$GITHUB_SHA")
+          else
+            version=${GITHUB_REF_NAME#v}
+            where=(--verify-tag)
+          fi
+          ci/release-notes.sh "$version" > notes.md
+          if gh release view "v$version" >/dev/null 2>&1; then
+            gh release upload "v$version" assets/* --clobber
+          else
+            gh release create "v$version" "${where[@]}" \
+              --title "salama $version" \
+              --notes-file notes.md \
+              assets/*
+          fi

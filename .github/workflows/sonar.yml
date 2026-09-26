@@ -61,12 +61,25 @@ jobs:
       - name: make sonar-reports
         run: make sonar-reports
 
+      # One version, the spec's (sonar-project.properties says why it is not there).
+      - name: Read the version
+        id: version
+        run: |
+          version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-salama.spec)
+          [[ $version =~ ^[0-9.]+$ ]] || {
+            echo "::error::version '$version' must be digits and periods"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "analysing version $version"
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         # SONAR_HOST_URL is not set: unset means SonarQube Cloud, and a self-hosted
         # Server is what needs it.
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ steps.version.outputs.version }}
 
       # The scan uploads a report and exits. The server processes it afterwards, so
       # without this the run finishes knowing nothing about its own result -- the

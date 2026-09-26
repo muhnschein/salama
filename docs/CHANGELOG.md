@@ -1,9 +1,13 @@
 # Changelog
 
 All notable, user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versions follow semantic versioning.
+Versions follow semantic versioning. A version's section is the text of its GitHub release,
+which `ci/release-notes.sh` cuts out of this file when the release is made
+(`.github/workflows/rpm.yml`; docs/RELEASING.md).
 
 ## [Unreleased]
+
+## [0.8.0] - 2026-09-26
 
 ### Fixed
 - Uploading a file lists the phone's images, videos, music and documents in the picker, rather than empty pages that left File system the only way to a file. The application now holds Sailjail's `MediaIndexing` permission, which the picker's lists are searched through, and `Videos` and `Music`, the folders those two list.
