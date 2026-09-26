@@ -11,6 +11,7 @@ Versions follow semantic versioning.
 - The grid can be pulled back to the page from anywhere on it again, a preview or the head row included, and a grid longer than the screen scrolls from a drag begun on a preview. A preview being held is let go when the finger moves up or down, as a held list item is.
 
 ### Changed
+- In a long tab group, a drag down the grid's head row, where "Search tabs" is, brings the page back at once from wherever the grid is scrolled to, rather than only once the grid is back at its top; the grid is where it was when it next comes up. A tap there still opens the search.
 - The cover's search opens the address bar for a new tab, empty and listing the bookmarks, rather than a new tab loading the home page with its address selected; no tab is made until something is chosen.
 - Settings is a main page with a way each, an icon and a name, to a page for the start page, search, the reader view, the cover, privacy and the history, and the screen cutout's switch under Appearance. Request desktop sites and Pages kept loaded are gone from Settings: the menu's Desktop version switches a page, and five pages stay loaded as in Jolla's browser. The four buttons that cleared history, cookies and site data, the cache and the open tabs are one Clear browsing data dialog on the history page, with a switch for each, how far back to clear, and one remorse.
 - The menu sheet has two rows, This page and Browser: New tab has gone from it, a new tab being the plus in the grid's foot or the cover's search.

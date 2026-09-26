@@ -173,7 +173,24 @@ distance, the cell keeps the touch: from then on it is a hold or a slide and nev
 grid's. The distance is Qt's style hint, `Qt.styleHints.startDragDistance`, since that
 is the one the flickable measures by, rather than Silica's `Theme` value.
 
-The gestures are tested under a real finger (`tst_qmlload::gridGesturesUnderAFinger`):
+Down the **head row** is the page's, wherever the grid is scrolled. Anywhere else, a drag
+down on a grid longer than the screen scrolls it back towards its top, and only past the
+top does it overscroll and bring the page back: in a long group that was the whole group
+to scroll through first. So the head row claims a drag down the way a cell claims a
+slide -- three quarters of the grid's drag distance down, and more down than across --
+and from then on drives the pull itself, with the same signals as the grid's overscroll
+(`components/GridHeadGesture.qml`). It is not the handler laid over the grid that the
+decision above rules out: that one had to choose at press time, and this one chooses by
+the direction the finger takes, short of the grid's threshold. The grid does not move
+under it, so it is where it was when it next
+comes up. A drag up is left to the grid, to scroll. The gesture lies over the search
+field, so it takes the field's taps too and hands each one on (`forceActiveFocus()`);
+while the field has the keyboard the gesture is off, so that a press places the cursor,
+and a press on the field's clear button -- Silica's `rightItem` -- is refused, and
+reaches the button.
+
+The gestures are tested under a real finger (`tst_qmlload::gridGesturesUnderAFinger`,
+and `gridHeadPullUnderAFinger` for the head row's):
 the application is put in a window and pressed on, because whether a drag begun on a
 cell reaches the grid is decided inside Qt's event delivery, which raising the gesture's
 signals from a test skips entirely.
@@ -278,8 +295,13 @@ has settled rather than before it moves — at the cost of a preview that is one
 out of date while the grid comes up.
 
 The deck's two layers sit outside the window when the deck is at either end, and the
-window is what clips them; nothing is set to `clip`, which the engine's own composited
-surface would not have honoured anyway.
+window is what clips them; the deck sets no `clip`, which the engine's own composited
+surface would not have honoured anyway. The grid's layer is the exception, and clips
+itself (`TabsView.clip`): a grid scrolled down has a row of cells cut by its top edge
+and the rest of the row above it, off the screen while the grid is up, and pulled down
+from the head row that rest came down over the page and its bar. Pulled from its own
+overscroll the grid is at its top, with nothing above it, which is why it was not seen
+before the head row's pull.
 
 While the grid is open the browsing page is still the page on the stack. Anything that
 reads `pageStack.currentPage` sees `browserPage` either way.
