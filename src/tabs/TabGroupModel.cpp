@@ -27,16 +27,16 @@ QVariant TabGroupModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const TabGroup &group = groups.at(index.row());
-    switch (role) {
-    case GroupIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::GroupId:
         return group.id;
-    case NameRole:
+    case Role::Name:
         return group.name;
-    case TabCountRole:
+    case Role::TabCount:
         return m_tabs->tabCountInGroup(group.id);
-    case CurrentRole:
+    case Role::Current:
         return group.id == m_tabs->currentGroupId();
-    case DefaultRole:
+    case Role::Default:
         return group.id == m_tabs->defaultGroupId();
     default:
         return {};
@@ -46,11 +46,11 @@ QVariant TabGroupModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> TabGroupModel::roleNames() const
 {
     return {
-        {GroupIdRole, QByteArrayLiteral("groupId")},
-        {NameRole, QByteArrayLiteral("name")},
-        {TabCountRole, QByteArrayLiteral("tabCount")},
-        {CurrentRole, QByteArrayLiteral("currentGroup")},
-        {DefaultRole, QByteArrayLiteral("defaultGroup")},
+        {roleId(Role::GroupId), QByteArrayLiteral("groupId")},
+        {roleId(Role::Name), QByteArrayLiteral("name")},
+        {roleId(Role::TabCount), QByteArrayLiteral("tabCount")},
+        {roleId(Role::Current), QByteArrayLiteral("currentGroup")},
+        {roleId(Role::Default), QByteArrayLiteral("defaultGroup")},
     };
 }
 
@@ -108,22 +108,22 @@ void TabGroupModel::removed(int row)
     emit countChanged();
 }
 
-void TabGroupModel::changed(int row, int role)
+void TabGroupModel::changed(int row, Role role)
 {
     if (row < 0 || row >= m_tabs->groups().count()) {
         return;
     }
     const QModelIndex modelIndex = index(row, 0);
-    emit dataChanged(modelIndex, modelIndex, QVector<int>{role});
+    emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(role)});
 }
 
-void TabGroupModel::changedAll(int role)
+void TabGroupModel::changedAll(Role role)
 {
     const int last = m_tabs->groups().count() - 1;
     if (last < 0) {
         return;
     }
-    emit dataChanged(index(0, 0), index(last, 0), QVector<int>{role});
+    emit dataChanged(index(0, 0), index(last, 0), QVector<int>{roleId(role)});
 }
 
 } // namespace Salama

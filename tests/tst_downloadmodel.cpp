@@ -113,15 +113,15 @@ void tst_downloadmodel::topicRolesAndStatuses()
     QCOMPARE(model.count(), 0);
 
     const QHash<int, QByteArray> roles = model.roleNames();
-    QCOMPARE(roles.value(DownloadModel::DownloadIdRole), QByteArray("downloadId"));
-    QCOMPARE(roles.value(DownloadModel::NameRole), QByteArray("name"));
-    QCOMPARE(roles.value(DownloadModel::UrlRole), QByteArray("url"));
-    QCOMPARE(roles.value(DownloadModel::PathRole), QByteArray("path"));
-    QCOMPARE(roles.value(DownloadModel::MimeTypeRole), QByteArray("mimeType"));
-    QCOMPARE(roles.value(DownloadModel::SizeRole), QByteArray("size"));
-    QCOMPARE(roles.value(DownloadModel::ProgressRole), QByteArray("progress"));
-    QCOMPARE(roles.value(DownloadModel::StatusRole), QByteArray("status"));
-    QCOMPARE(roles.value(DownloadModel::StartedRole), QByteArray("started"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::DownloadId)), QByteArray("downloadId"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Name)), QByteArray("name"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Url)), QByteArray("url"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Path)), QByteArray("path"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::MimeType)), QByteArray("mimeType"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Size)), QByteArray("size"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Progress)), QByteArray("progress"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Status)), QByteArray("status"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Started)), QByteArray("started"));
     QCOMPARE(roles.count(), 9);
 
     // QML compares a row's status with these by name, and the database keeps them as
@@ -135,8 +135,8 @@ void tst_downloadmodel::topicRolesAndStatuses()
 
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     QCOMPARE(model.rowCount(model.index(0, 0)), 0);
-    QVERIFY(!role(model, 1, DownloadModel::NameRole).isValid());
-    QVERIFY(!role(model, -1, DownloadModel::NameRole).isValid());
+    QVERIFY(!role(model, 1, roleId(DownloadModel::Role::Name)).isValid());
+    QVERIFY(!role(model, -1, roleId(DownloadModel::Role::Name)).isValid());
     QVERIFY(!role(model, 0, Qt::DisplayRole).isValid());
 }
 
@@ -157,19 +157,19 @@ void tst_downloadmodel::startsAtTheTop()
     QCOMPARE(insertSpy.count(), 1);
     QCOMPARE(insertSpy.last().at(1).toInt(), 0);
 
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("a.pdf"));
-    QCOMPARE(role(model, 0, DownloadModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 1);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Url)).toString(),
              QStringLiteral("https://files.example/a.pdf"));
-    QCOMPARE(role(model, 0, DownloadModel::PathRole).toString(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("a.pdf"));
-    QCOMPARE(role(model, 0, DownloadModel::MimeTypeRole).toString(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::MimeType)).toString(),
              QStringLiteral("application/pdf"));
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 2048LL);
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 0);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 2048LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 0);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Running));
-    const qint64 started = role(model, 0, DownloadModel::StartedRole).toLongLong();
+    const qint64 started = role(model, 0, roleId(DownloadModel::Role::Started)).toLongLong();
     QVERIFY(started >= before && started <= after);
     QCOMPARE(rowsInDatabase(storage), 1);
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Running));
@@ -179,24 +179,24 @@ void tst_downloadmodel::startsAtTheTop()
     QCOMPARE(model.count(), 2);
     QCOMPARE(countSpy.count(), 2);
     QCOMPARE(insertSpy.last().at(1).toInt(), 0);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("b.zip"));
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 2);
-    QCOMPARE(role(model, 1, DownloadModel::NameRole).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.zip"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 2);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("a.pdf"));
 
     // A size the engine does not know yet is 0; one that makes no sense is too.
     QVariantMap unsized = startMessage(3, QStringLiteral("c.bin"));
     unsized.insert(QStringLiteral("size"), 0.0);
     model.observe(Topic, unsized);
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 0LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 0LL);
     QVariantMap negative = startMessage(4, QStringLiteral("d.bin"));
     negative.insert(QStringLiteral("size"), -5.0);
     model.observe(Topic, negative);
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 0LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 0LL);
     // Nor is a size that is not a number, though QVariant would read one out of it.
     QVariantMap spelled = startMessage(5, QStringLiteral("e.bin"));
     spelled.insert(QStringLiteral("size"), QStringLiteral("2048"));
     model.observe(Topic, spelled);
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 0LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 0LL);
 }
 
 void tst_downloadmodel::nameFallsBackToTheFile()
@@ -208,12 +208,14 @@ void tst_downloadmodel::nameFallsBackToTheFile()
     QVariantMap nameless = startMessage(1, QStringLiteral("report.pdf"));
     nameless.remove(QStringLiteral("displayName"));
     model.observe(Topic, nameless);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("report.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(),
+             QStringLiteral("report.pdf"));
 
     QVariantMap blank = startMessage(2, QStringLiteral("notes.txt"));
     blank.insert(QStringLiteral("displayName"), QString());
     model.observe(Topic, blank);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("notes.txt"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(),
+             QStringLiteral("notes.txt"));
 }
 
 void tst_downloadmodel::progress()
@@ -227,11 +229,11 @@ void tst_downloadmodel::progress()
 
     // Engine id 1 is the older download, in the second row.
     model.observe(Topic, progressMessage(1, 42.0));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 42);
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 0);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 42);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 0);
     QCOMPARE(changeSpy.count(), 1);
     QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{DownloadModel::ProgressRole});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Progress)});
 
     // The same figure again changes nothing.
     model.observe(Topic, progressMessage(1, 42.0));
@@ -239,13 +241,13 @@ void tst_downloadmodel::progress()
 
     // Held to a percentage whatever the message says.
     model.observe(Topic, progressMessage(1, 250.0));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 100);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 100);
     model.observe(Topic, progressMessage(1, -3.0));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 0);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 0);
     model.observe(Topic, progressMessage(1, 1e30));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 100);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 100);
     model.observe(Topic, progressMessage(1, 66.6));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 67);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 67);
     QCOMPARE(changeSpy.count(), 5);
 
     // A message with no figure in it says nothing; nor does one whose figure is not a
@@ -255,7 +257,7 @@ void tst_downloadmodel::progress()
     model.observe(Topic, message(QStringLiteral("dl-progress"), 1));
     model.observe(Topic, progressMessage(1, QStringLiteral("42")));
     model.observe(Topic, progressMessage(1, true));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 67);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 67);
     QCOMPARE(changeSpy.count(), 5);
 }
 
@@ -272,11 +274,11 @@ void tst_downloadmodel::wholeNumbers()
     start.insert(QStringLiteral("size"), QVariant(5000000000LL));
     model.observe(Topic, start);
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 5000000000LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 5000000000LL);
     QVariantMap progress = progressMessage(1, QVariant(40LL));
     progress.insert(QStringLiteral("id"), QVariant(1LL));
     model.observe(Topic, progress);
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 40);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 40);
 
     const QVariantMap fromQml{
         {QStringLiteral("msg"), QStringLiteral("dl-start")},
@@ -286,16 +288,16 @@ void tst_downloadmodel::wholeNumbers()
     };
     model.observe(Topic, fromQml);
     QCOMPARE(model.count(), 2);
-    QCOMPARE(role(model, 0, DownloadModel::SizeRole).toLongLong(), 10LL);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Size)).toLongLong(), 10LL);
     model.observe(Topic, QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-progress")},
                                      {QStringLiteral("id"), 2},
                                      {QStringLiteral("percent"), 55}});
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 55);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 55);
     model.observe(Topic, QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-done")},
                                      {QStringLiteral("id"), 2}});
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Done));
-    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Running));
 }
 
@@ -312,15 +314,15 @@ void tst_downloadmodel::done()
     QVariantMap done = message(QStringLiteral("dl-done"), 1);
     done.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("a(1).pdf"));
     model.observe(Topic, done);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Done));
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 100);
-    QCOMPARE(role(model, 0, DownloadModel::PathRole).toString(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 100);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("a(1).pdf"));
     QCOMPARE(changeSpy.count(), 1);
-    QCOMPARE(changedRoles(changeSpy),
-             QVector<int>({DownloadModel::StatusRole, DownloadModel::ProgressRole,
-                           DownloadModel::PathRole}));
+    QCOMPARE(changedRoles(changeSpy), QVector<int>({roleId(DownloadModel::Role::Status),
+                                                    roleId(DownloadModel::Role::Progress),
+                                                    roleId(DownloadModel::Role::Path)}));
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Done));
 
     // Said twice, it changes nothing the second time.
@@ -331,9 +333,9 @@ void tst_downloadmodel::done()
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
     model.observe(Topic, progressMessage(2, 100.0));
     model.observe(Topic, message(QStringLiteral("dl-done"), 2));
-    QCOMPARE(role(model, 0, DownloadModel::PathRole).toString(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("b.pdf"));
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{DownloadModel::StatusRole});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Done));
 }
 
@@ -347,19 +349,19 @@ void tst_downloadmodel::failAndCancel()
     QSignalSpy changeSpy(&model, &DownloadModel::dataChanged);
 
     model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
-    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Failed));
     QCOMPARE(changeSpy.count(), 1);
     QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{DownloadModel::StatusRole});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Failed));
 
     model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Canceled));
     QCOMPARE(changeSpy.count(), 2);
     QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 0);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{DownloadModel::StatusRole});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Canceled));
 
     model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
@@ -383,13 +385,13 @@ void tst_downloadmodel::restart()
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     QCOMPARE(model.count(), 1);
     QCOMPARE(countSpy.count(), 0);
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 1);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Running));
     // Resumed from where it stopped; the engine says so if it starts over.
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 30);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 30);
     QCOMPARE(changeSpy.count(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{DownloadModel::StatusRole});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Running));
 
     // Running already, a repeated start changes nothing.
@@ -400,7 +402,7 @@ void tst_downloadmodel::restart()
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, message(QStringLiteral("dl-done"), 1));
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Done));
 }
 
@@ -455,7 +457,7 @@ void tst_downloadmodel::ignoresWhatItDoesNotKnow()
     }
     QCOMPARE(model.count(), 1);
     QCOMPARE(changeSpy.count(), 0);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Running));
 }
 
@@ -473,43 +475,43 @@ void tst_downloadmodel::persists()
         model.observe(Topic, startMessage(2, QStringLiteral("b.zip")));
         model.observe(Topic, progressMessage(2, 55.0));
         model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
-        started = role(model, 1, DownloadModel::StartedRole).toLongLong();
+        started = role(model, 1, roleId(DownloadModel::Role::Started)).toLongLong();
     }
 
     Storage storage(dir.path());
     DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), 2);
     // Newest first, as they were.
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 2);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("b.zip"));
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 2);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.zip"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Canceled));
     // How far a download got is not kept.
-    QCOMPARE(role(model, 0, DownloadModel::ProgressRole).toInt(), 0);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 0);
 
-    QCOMPARE(role(model, 1, DownloadModel::DownloadIdRole).toInt(), 1);
-    QCOMPARE(role(model, 1, DownloadModel::NameRole).toString(), QStringLiteral("a.pdf"));
-    QCOMPARE(role(model, 1, DownloadModel::UrlRole).toString(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::DownloadId)).toInt(), 1);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Url)).toString(),
              QStringLiteral("https://files.example/a.pdf"));
-    QCOMPARE(role(model, 1, DownloadModel::PathRole).toString(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("a(1).pdf"));
-    QCOMPARE(role(model, 1, DownloadModel::MimeTypeRole).toString(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::MimeType)).toString(),
              QStringLiteral("application/pdf"));
-    QCOMPARE(role(model, 1, DownloadModel::SizeRole).toLongLong(), 2048LL);
-    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Size)).toLongLong(), 2048LL);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Done));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 100);
-    QCOMPARE(role(model, 1, DownloadModel::StartedRole).toLongLong(), started);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 100);
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Started)).toLongLong(), started);
 
     // The engine's ids do not outlive it: its next download is its id 1 again, and is
     // not the row that was id 1 before.
     model.observe(Topic, startMessage(1, QStringLiteral("c.txt")));
     QCOMPARE(model.count(), 3);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("c.txt"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("c.txt"));
     // And the rows' own ids carry on from where they were.
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 3);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 3);
     model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
-    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Canceled));
 }
 
@@ -534,14 +536,14 @@ void tst_downloadmodel::runningFailsOnReload()
     Storage storage(dir.path());
     DownloadModel model(storage, dir.path());
     QCOMPARE(model.count(), 3);
-    QCOMPARE(role(model, 1, DownloadModel::NameRole).toString(), QStringLiteral("a.pdf"));
-    QCOMPARE(role(model, 1, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Failed));
-    QCOMPARE(role(model, 1, DownloadModel::ProgressRole).toInt(), 0);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 0);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Done));
-    QCOMPARE(role(model, 2, DownloadModel::NameRole).toString(), QStringLiteral("odd"));
-    QCOMPARE(role(model, 2, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 2, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("odd"));
+    QCOMPARE(role(model, 2, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Failed));
 
     // Written back, so the database says what the list does.
@@ -566,10 +568,11 @@ void tst_downloadmodel::limit()
         QCOMPARE(countSpy.count(), DownloadModel::Limit);
         QCOMPARE(removeSpy.count(), 5);
         QCOMPARE(removeSpy.last().at(1).toInt(), DownloadModel::Limit);
-        QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(),
+        QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(),
                  QStringLiteral("f%1.bin").arg(DownloadModel::Limit + 5));
-        QCOMPARE(role(model, DownloadModel::Limit - 1, DownloadModel::NameRole).toString(),
-                 QStringLiteral("f6.bin"));
+        QCOMPARE(
+            role(model, DownloadModel::Limit - 1, roleId(DownloadModel::Role::Name)).toString(),
+            QStringLiteral("f6.bin"));
         QCOMPARE(rowsInDatabase(storage), DownloadModel::Limit);
         // The oldest are gone from the database too, not only from the list.
         QCOMPARE(storedStatus(storage, 5), -1);
@@ -596,7 +599,7 @@ void tst_downloadmodel::limit()
     QCOMPARE(model.count(), DownloadModel::Limit);
     QCOMPARE(rowsInDatabase(storage), DownloadModel::Limit);
     QCOMPARE(storedStatus(storage, 1000), -1);
-    QCOMPARE(role(model, DownloadModel::Limit - 1, DownloadModel::NameRole).toString(),
+    QCOMPARE(role(model, DownloadModel::Limit - 1, roleId(DownloadModel::Role::Name)).toString(),
              QStringLiteral("f6.bin"));
 }
 
@@ -617,7 +620,7 @@ void tst_downloadmodel::remove()
     model.remove(1);
     QCOMPARE(model.count(), 1);
     QCOMPARE(countSpy.count(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::NameRole).toString(), QStringLiteral("b.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.pdf"));
     QCOMPARE(rowsInDatabase(storage), 1);
     QCOMPARE(storedStatus(storage, 1), -1);
 
@@ -628,7 +631,7 @@ void tst_downloadmodel::remove()
     QCOMPARE(changeSpy.count(), 0);
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     QCOMPARE(model.count(), 2);
-    QCOMPARE(role(model, 0, DownloadModel::DownloadIdRole).toInt(), 3);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt(), 3);
 }
 
 void tst_downloadmodel::clear()
@@ -674,9 +677,9 @@ void tst_downloadmodel::clearSince()
     model.clearSince(double(before));
     QCOMPARE(model.count(), 2);
     QCOMPARE(countSpy.count(), 1);
-    QCOMPARE(model.data(model.index(0, 0), DownloadModel::NameRole).toString(),
+    QCOMPARE(model.data(model.index(0, 0), roleId(DownloadModel::Role::Name)).toString(),
              QStringLiteral("coming.pdf"));
-    QCOMPARE(model.data(model.index(1, 0), DownloadModel::NameRole).toString(),
+    QCOMPARE(model.data(model.index(1, 0), roleId(DownloadModel::Role::Name)).toString(),
              QStringLiteral("old.pdf"));
     QCOMPARE(rowsInDatabase(storage), 2);
 
@@ -685,7 +688,7 @@ void tst_downloadmodel::clearSince()
     QCOMPARE(countSpy.count(), 1);
     model.clearSince(0);
     QCOMPARE(model.count(), 1);
-    QCOMPARE(model.data(model.index(0, 0), DownloadModel::StatusRole).toInt(),
+    QCOMPARE(model.data(model.index(0, 0), roleId(DownloadModel::Role::Status)).toInt(),
              int(DownloadModel::Running));
 }
 
@@ -728,9 +731,9 @@ void tst_downloadmodel::rowOf()
     QCOMPARE(model.rowOf(1), -1);
 
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
-    const int a = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    const int a = role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt();
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
-    const int b = role(model, 0, DownloadModel::DownloadIdRole).toInt();
+    const int b = role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt();
     QCOMPARE(model.rowOf(b), 0);
     QCOMPARE(model.rowOf(a), 1);
     QCOMPARE(model.rowOf(0), -1);
@@ -786,7 +789,7 @@ void tst_downloadmodel::withoutDatabase()
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, DownloadModel::StatusRole).toInt(),
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
              static_cast<int>(DownloadModel::Failed));
     model.remove(0);
     QCOMPARE(model.count(), 0);

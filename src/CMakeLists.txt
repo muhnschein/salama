@@ -2,6 +2,7 @@
 add_library(salama-core STATIC
     Core.cpp
     Core.h
+    ModelRoles.h
     QmlTypes.cpp
     QmlTypes.h
     bookmarks/BookmarkModel.cpp

@@ -1462,14 +1462,18 @@ void tst_qmlload::thumbnailCapturedOnLoad()
     // gesture, and the grid never draws the picture wider than half the screen.
     QCOMPARE(webView->property("lastGrabSize").toSize().width(),
              int(webView->property("width").toReal() / 2));
-    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+    QCOMPARE(m_core->tabs()
+                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
+                 .toString(),
              captured);
 
     // A failed save leaves the previous preview in place.
     webView->setProperty("grabSaveFails", true);
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+    QCOMPARE(m_core->tabs()
+                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
+                 .toString(),
              captured);
 
     Q_UNUSED(tabId)
@@ -1631,7 +1635,7 @@ void tst_qmlload::tabGrid()
     // Opening the grid captured the tab being left, so that cell has a preview while
     // the one never displayed still shows its placeholder.
     QVERIFY(!m_core->tabs()
-                 ->data(m_core->tabs()->index(1, 0), TabModel::ThumbnailRole)
+                 ->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::Thumbnail))
                  .toString()
                  .isEmpty());
     QVERIFY(!findObjects(previews.at(1), QStringLiteral("tabPreviewPlaceholder"))
@@ -2257,7 +2261,7 @@ void tst_qmlload::gridGesturesUnderAFinger()
     openGrid();
     QObject *first = cells().first();
     const QPoint grab = centreOf(first);
-    const int firstId = tabs->data(tabs->index(0, 0), TabModel::TabIdRole).toInt();
+    const int firstId = tabs->data(tabs->index(0, 0), roleId(TabModel::Role::TabId)).toInt();
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
     QTest::mouseMove(&window, grab + QPoint(first->property("holdTolerance").toInt() / 2, 2));
     QTRY_VERIFY(first->property("held").toBool());
@@ -2265,7 +2269,7 @@ void tst_qmlload::gridGesturesUnderAFinger()
     QTest::mouseMove(&window, (grab + target) / 2);
     QTest::mouseMove(&window, target);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, target);
-    QCOMPARE(tabs->data(tabs->index(1, 0), TabModel::TabIdRole).toInt(), firstId);
+    QCOMPARE(tabs->data(tabs->index(1, 0), roleId(TabModel::Role::TabId)).toInt(), firstId);
     QVERIFY(page->property("tabsOpen").toBool());
 
     // Slid to the left, a cell closes its tab -- slanting as a thumb does, too: the
@@ -2472,7 +2476,7 @@ void tst_qmlload::carryToGroupUnderAFinger()
     const auto tabOrder = [tabs]() {
         QList<int> ids;
         for (int row = 0; row < tabs->count(); ++row) {
-            ids.append(tabs->data(tabs->index(row, 0), TabModel::TabIdRole).toInt());
+            ids.append(tabs->data(tabs->index(row, 0), roleId(TabModel::Role::TabId)).toInt());
         }
         return ids;
     };
@@ -2566,7 +2570,7 @@ void tst_qmlload::carryOverTheStripUnderAFinger()
     const auto tabOrder = [tabs]() {
         QList<int> ids;
         for (int row = 0; row < tabs->count(); ++row) {
-            ids.append(tabs->data(tabs->index(row, 0), TabModel::TabIdRole).toInt());
+            ids.append(tabs->data(tabs->index(row, 0), roleId(TabModel::Role::TabId)).toInt());
         }
         return ids;
     };
@@ -3529,11 +3533,11 @@ void tst_qmlload::bookmarksPage()
     find(QStringLiteral("bookmarkTitleField"))->setProperty("text", QStringLiteral("B2x"));
     QMetaObject::invokeMethod(dialog, "accept");
     QCOMPARE(m_core->bookmarks()
-                 ->data(m_core->bookmarks()->index(1, 0), BookmarkModel::UrlRole)
+                 ->data(m_core->bookmarks()->index(1, 0), roleId(BookmarkModel::Role::Url))
                  .toString(),
              QStringLiteral("https://b2.example/x"));
     QCOMPARE(m_core->bookmarks()
-                 ->data(m_core->bookmarks()->index(1, 0), BookmarkModel::TitleRole)
+                 ->data(m_core->bookmarks()->index(1, 0), roleId(BookmarkModel::Role::Title))
                  .toString(),
              QStringLiteral("B2x"));
     popPage();
@@ -4095,10 +4099,11 @@ void tst_qmlload::clearDataDialog()
     popPage();
     QCOMPARE(remorses(), 5);
     QCOMPARE(m_core->history()->count(), 1);
-    QCOMPARE(m_core->history()
-                 ->data(m_core->history()->index(0, 0), Salama::HistoryModel::UrlRole)
-                 .toString(),
-             QStringLiteral("https://old.example/"));
+    QCOMPARE(
+        m_core->history()
+            ->data(m_core->history()->index(0, 0), Salama::roleId(Salama::HistoryModel::Role::Url))
+            .toString(),
+        QStringLiteral("https://old.example/"));
     QCOMPARE(tabs->closedTabs()->count(), closedBefore);
 
     // All four together are still one remorse. The tabs go first, so the history
@@ -4792,7 +4797,9 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
     const QString onLeaving = webView->property("lastGrabPath").toString();
     QVERIFY(!onLeaving.isEmpty());
     QVERIFY(onLeaving != onLoad);
-    QCOMPARE(m_core->tabs()->data(m_core->tabs()->index(0, 0), TabModel::ThumbnailRole).toString(),
+    QCOMPARE(m_core->tabs()
+                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
+                 .toString(),
              onLeaving);
 }
 
@@ -4871,7 +4878,7 @@ void tst_qmlload::pagesSleepOutOfSight()
     front->setProperty("loading", false);
     QCOMPARE(calls(front, "suspendView"), 3);
     m_core->tabs()->activateTabById(
-        m_core->tabs()->data(m_core->tabs()->index(1, 0), TabModel::TabIdRole).toInt());
+        m_core->tabs()->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::TabId)).toInt());
     QCOMPARE(currentWebView(), front);
 
     // Something with sound playing keeps every page awake out of sight.
@@ -5126,7 +5133,7 @@ void tst_qmlload::muteOnTheGrid()
     // The tab behind says it plays, which there means held, and goes on saying so each
     // time it is asked; the one in front plays nothing, and is muted.
     behind->setProperty("scriptResult", QStringLiteral("playing"));
-    media->answer(first, Salama::PageMedia::Query, QStringLiteral("playing"));
+    media->answer(first, Salama::PageMedia::Command::Query, QStringLiteral("playing"));
     tabs->setMuted(second, true);
 
     // Under a finger. The tab behind is held by the engine and is not heard: its

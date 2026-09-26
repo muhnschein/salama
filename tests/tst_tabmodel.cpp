@@ -110,8 +110,9 @@ void tst_tabmodel::emptyModel()
     QVERIFY(model.activeUrl().isEmpty());
     QVERIFY(model.activeTitle().isEmpty());
     QVERIFY(model.activeFavicon().isEmpty());
-    QVERIFY(!model.data(model.index(0, 0), TabModel::UrlRole).isValid());
-    QCOMPARE(model.roleNames().value(TabModel::ActiveRole), QByteArrayLiteral("activeTab"));
+    QVERIFY(!model.data(model.index(0, 0), roleId(TabModel::Role::Url)).isValid());
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Active)),
+             QByteArrayLiteral("activeTab"));
     model.activateTab(0);
     model.closeActiveTab();
     model.closeAllTabs();
@@ -140,12 +141,13 @@ void tst_tabmodel::newTabAppendsAndActivates()
     QCOMPARE(model.activeTabIndex(), 1);
     QCOMPARE(model.activeTabId(), second);
     QCOMPARE(model.activeUrl(), QStringLiteral("https://two.example/"));
-    QCOMPARE(role(model, 0, TabModel::TabIdRole).toInt(), first);
-    QCOMPARE(role(model, 0, TabModel::UrlRole).toString(), QStringLiteral("https://one.example/"));
-    QCOMPARE(role(model, 0, TabModel::ActiveRole).toBool(), false);
-    QCOMPARE(role(model, 1, TabModel::ActiveRole).toBool(), true);
-    QVERIFY(role(model, 1, TabModel::TitleRole).toString().isEmpty());
-    QVERIFY(role(model, 1, TabModel::FaviconRole).toString().isEmpty());
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::TabId)).toInt(), first);
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Url)).toString(),
+             QStringLiteral("https://one.example/"));
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Active)).toBool(), false);
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::Active)).toBool(), true);
+    QVERIFY(role(model, 1, roleId(TabModel::Role::Title)).toString().isEmpty());
+    QVERIFY(role(model, 1, roleId(TabModel::Role::Favicon)).toString().isEmpty());
     QVERIFY(!role(model, 1, Qt::DisplayRole).isValid());
     QCOMPARE(model.tabs().count(), 2);
 }
@@ -217,18 +219,18 @@ void tst_tabmodel::moveTabReorders()
     // Carried to the end: the rest close up behind it.
     model.moveTab(0, 2);
     QCOMPARE(movedSpy.count(), 1);
-    QCOMPARE(role(model, 0, TabModel::TabIdRole).toInt(), second);
-    QCOMPARE(role(model, 1, TabModel::TabIdRole).toInt(), third);
-    QCOMPARE(role(model, 2, TabModel::TabIdRole).toInt(), first);
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::TabId)).toInt(), second);
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::TabId)).toInt(), third);
+    QCOMPARE(role(model, 2, roleId(TabModel::Role::TabId)).toInt(), first);
     // The tab that moved is the same tab, and still the active one.
     QCOMPARE(model.activeTabId(), first);
     QCOMPARE(model.activeTabIndex(), 2);
     QCOMPARE(activeSpy.count(), 1);
-    QVERIFY(role(model, 2, TabModel::ActiveRole).toBool());
+    QVERIFY(role(model, 2, roleId(TabModel::Role::Active)).toBool());
 
     // And back towards the front.
     model.moveTab(2, 1);
-    QCOMPARE(role(model, 1, TabModel::TabIdRole).toInt(), first);
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::TabId)).toInt(), first);
     QCOMPARE(model.activeTabIndex(), 1);
 
     // Nothing to do, nothing reported.
@@ -323,7 +325,7 @@ void tst_tabmodel::urlUpdatesAndVisits()
     model.updateUrl(a, QStringLiteral("https://a.example/next"));
     QCOMPARE(visitedSpy.count(), 2);
     QCOMPARE(visitedSpy.last().first().toString(), QStringLiteral("https://a.example/next"));
-    QCOMPARE(role(model, 0, TabModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/next"));
     QCOMPARE(dataSpy.count(), 0);
 
@@ -356,10 +358,11 @@ void tst_tabmodel::titleAndFavicon()
     QCOMPARE(titleSpy.count(), 1);
     QCOMPARE(titleSpy.last().at(0).toString(), QStringLiteral("https://a.example/"));
     QCOMPARE(titleSpy.last().at(1).toString(), QStringLiteral("A"));
-    QCOMPARE(role(model, 0, TabModel::TitleRole).toString(), QStringLiteral("A"));
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Title)).toString(), QStringLiteral("A"));
     QCOMPARE(dataSpy.count(), 0);
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::TitleRole});
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(),
+             QVector<int>{roleId(TabModel::Role::Title)});
 
     model.updateTitle(b, QStringLiteral("B"));
     QCOMPARE(model.activeTitle(), QStringLiteral("B"));
@@ -369,7 +372,7 @@ void tst_tabmodel::titleAndFavicon()
     model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));
     model.updateFavicon(999, QStringLiteral("x"));
     QCOMPARE(faviconSpy.count(), 1);
-    QCOMPARE(role(model, 0, TabModel::FaviconRole).toString(),
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/favicon.ico"));
     model.updateFavicon(b, QStringLiteral("https://b.example/icon.png"));
     QCOMPARE(model.activeFavicon(), QStringLiteral("https://b.example/icon.png"));
@@ -474,9 +477,9 @@ void tst_tabmodel::persistenceRoundTrip()
         QCOMPARE(model.activeTabId(), publicId);
         QCOMPARE(model.activeTitle(), QStringLiteral("Public"));
         QCOMPARE(model.activeFavicon(), QStringLiteral("https://public.example/favicon.ico"));
-        QCOMPARE(role(model, 2, TabModel::UrlRole).toString(),
+        QCOMPARE(role(model, 2, roleId(TabModel::Role::Url)).toString(),
                  QStringLiteral("https://other.example/moved"));
-        QCOMPARE(role(model, 1, TabModel::GroupRole).toInt(), model.defaultGroupId());
+        QCOMPARE(role(model, 1, roleId(TabModel::Role::Group)).toInt(), model.defaultGroupId());
 
         // Restored tabs are not "visited" again when the engine reports their url.
         QSignalSpy visitedSpy(&model, &TabModel::visited);
@@ -525,10 +528,12 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
 
     QVERIFY(writeFile(first));
     model.updateThumbnail(a, first);
-    QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(), first);
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString(), first);
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::ThumbnailRole});
-    QCOMPARE(model.roleNames().value(TabModel::ThumbnailRole), QByteArrayLiteral("thumbnail"));
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(),
+             QVector<int>{roleId(TabModel::Role::Thumbnail)});
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Thumbnail)),
+             QByteArrayLiteral("thumbnail"));
 
     // Replacing a preview removes the file it replaces.
     const QString second = model.thumbnailPath(a);
@@ -578,7 +583,7 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
         // Previews survive a restart.
         TabModel model(&persistence, previews);
         QCOMPARE(model.count(), 1);
-        QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(), kept);
+        QCOMPARE(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString(), kept);
 
         model.closeAllTabs();
         QVERIFY(!QFile::exists(kept));
@@ -595,7 +600,7 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
     }
     TabModel model(&persistence, previews);
     QCOMPARE(model.count(), 1);
-    QVERIFY(role(model, 0, TabModel::ThumbnailRole).toString().isEmpty());
+    QVERIFY(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
 }
 
 void tst_tabmodel::thumbnailsAreOptional()
@@ -605,7 +610,7 @@ void tst_tabmodel::thumbnailsAreOptional()
     const int a = model.newTab(QStringLiteral("https://a.example/"));
     QVERIFY(model.thumbnailPath(a).isEmpty());
     model.updateThumbnail(a, QStringLiteral("/tmp/nowhere.png"));
-    QCOMPARE(role(model, 0, TabModel::ThumbnailRole).toString(),
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString(),
              QStringLiteral("/tmp/nowhere.png"));
     model.closeAllTabs();
 }
@@ -624,16 +629,16 @@ void tst_tabmodel::thereIsAlwaysAGroup()
     QCOMPARE(model.groupModel()->rowCount(model.groupModel()->index(0, 0)), 0);
     QCOMPARE(model.groupModel()->groupIdAt(0), groupId);
     QCOMPARE(model.groupModel()->groupIdAt(1), 0);
-    QVERIFY(role(*model.groupModel(), 0, TabGroupModel::NameRole).toString().isEmpty());
-    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 0);
-    QVERIFY(role(*model.groupModel(), 0, TabGroupModel::CurrentRole).toBool());
-    QVERIFY(role(*model.groupModel(), 0, TabGroupModel::DefaultRole).toBool());
-    QVERIFY(!role(*model.groupModel(), 1, TabGroupModel::CurrentRole).isValid());
-    QCOMPARE(model.groupModel()->roleNames().value(TabGroupModel::TabCountRole),
+    QVERIFY(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::Name)).toString().isEmpty());
+    QCOMPARE(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::TabCount)).toInt(), 0);
+    QVERIFY(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::Current)).toBool());
+    QVERIFY(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::Default)).toBool());
+    QVERIFY(!role(*model.groupModel(), 1, roleId(TabGroupModel::Role::Current)).isValid());
+    QCOMPARE(model.groupModel()->roleNames().value(roleId(TabGroupModel::Role::TabCount)),
              QByteArrayLiteral("tabCount"));
-    QCOMPARE(model.groupModel()->roleNames().value(TabGroupModel::DefaultRole),
+    QCOMPARE(model.groupModel()->roleNames().value(roleId(TabGroupModel::Role::Default)),
              QByteArrayLiteral("defaultGroup"));
-    QCOMPARE(model.roleNames().value(TabModel::GroupRole), QByteArrayLiteral("groupId"));
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Group)), QByteArrayLiteral("groupId"));
 
     // The default group can neither go nor be renamed, and nothing else names a
     // group that is not there.
@@ -650,16 +655,16 @@ void tst_tabmodel::thereIsAlwaysAGroup()
 
     // A new tab lands in the group there is, and the grid's model shows it.
     const int a = model.newTab(QStringLiteral("https://a.example/"));
-    QCOMPARE(role(model, 0, TabModel::GroupRole).toInt(), groupId);
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Group)).toInt(), groupId);
     QCOMPARE(model.groupTabs()->count(), 1);
-    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 1);
+    QCOMPARE(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::TabCount)).toInt(), 1);
     QCOMPARE(model.groupTabs()->rowCount(model.groupTabs()->index(0, 0)), 0);
     QCOMPARE(model.groupTabs()->tabIdAt(0), a);
     QCOMPARE(model.groupTabs()->rowOf(a), 0);
     QCOMPARE(model.groupTabs()->rowOf(4242), -1);
-    QCOMPARE(role(*model.groupTabs(), 0, TabModel::UrlRole).toString(),
+    QCOMPARE(role(*model.groupTabs(), 0, roleId(TabModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/"));
-    QVERIFY(!role(*model.groupTabs(), 1, TabModel::UrlRole).isValid());
+    QVERIFY(!role(*model.groupTabs(), 1, roleId(TabModel::Role::Url)).isValid());
     QCOMPARE(model.groupTabs()->roleNames(), model.roleNames());
 }
 
@@ -689,17 +694,17 @@ void tst_tabmodel::groupsHoldTheirOwnTabs()
     QCOMPARE(resetSpy.count(), 1);
     QCOMPARE(model.groupTabs()->count(), 0);
     QCOMPARE(model.activeTabId(), b);
-    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::NameRole).toString(),
+    QCOMPARE(role(*model.groupModel(), 1, roleId(TabGroupModel::Role::Name)).toString(),
              QStringLiteral("Work"));
-    QVERIFY(role(*model.groupModel(), 1, TabGroupModel::CurrentRole).toBool());
-    QVERIFY(!role(*model.groupModel(), 1, TabGroupModel::DefaultRole).toBool());
-    QVERIFY(!role(*model.groupModel(), 0, TabGroupModel::CurrentRole).toBool());
+    QVERIFY(role(*model.groupModel(), 1, roleId(TabGroupModel::Role::Current)).toBool());
+    QVERIFY(!role(*model.groupModel(), 1, roleId(TabGroupModel::Role::Default)).toBool());
+    QVERIFY(!role(*model.groupModel(), 0, roleId(TabGroupModel::Role::Current)).toBool());
 
     const int c = model.newTab(QStringLiteral("https://c.example/"));
-    QCOMPARE(role(model, 2, TabModel::GroupRole).toInt(), work);
+    QCOMPARE(role(model, 2, roleId(TabModel::Role::Group)).toInt(), work);
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c});
-    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::TabCountRole).toInt(), 1);
-    QCOMPARE(role(*model.groupModel(), 0, TabGroupModel::TabCountRole).toInt(), 2);
+    QCOMPARE(role(*model.groupModel(), 1, roleId(TabGroupModel::Role::TabCount)).toInt(), 1);
+    QCOMPARE(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::TabCount)).toInt(), 2);
     QCOMPARE(model.count(), 3);
 
     // Going back to the default group brings back the tab that was in front there.
@@ -810,7 +815,7 @@ void tst_tabmodel::closingStaysInTheGroup()
     QCOMPARE(model.activeTabId(), b1);
     QCOMPARE(model.groupTabs()->count(), 0);
     const int a4 = model.newTab(QStringLiteral("https://a4.example/"));
-    QCOMPARE(role(model, model.indexOf(a4), TabModel::GroupRole).toInt(), home);
+    QCOMPARE(role(model, model.indexOf(a4), roleId(TabModel::Role::Group)).toInt(), home);
     QCOMPARE(model.activeTabId(), a4);
 
     // Closing a tab that is not in front changes neither the front nor the group.
@@ -824,7 +829,7 @@ void tst_tabmodel::closingStaysInTheGroup()
     model.closeAllTabs();
     QCOMPARE(model.groups().count(), 2);
     QCOMPARE(model.groupTabs()->count(), 0);
-    QCOMPARE(role(*model.groupModel(), 1, TabGroupModel::TabCountRole).toInt(), 0);
+    QCOMPARE(role(*model.groupModel(), 1, roleId(TabGroupModel::Role::TabCount)).toInt(), 0);
 }
 
 void tst_tabmodel::removingAGroupClosesItsTabs()
@@ -884,11 +889,12 @@ void tst_tabmodel::movingATabToAnotherGroup()
     // of the group it was in, and the front goes with it.
     QVERIFY(model.moveTabToGroup(a2, work));
     QCOMPARE(model.indexOf(a2), 1);
-    QCOMPARE(role(model, 1, TabModel::GroupRole).toInt(), work);
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::Group)).toInt(), work);
     QCOMPARE(moveSpy.count(), 0);
     QCOMPARE(removeSpy.count(), 0);
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::GroupRole});
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(),
+             QVector<int>{roleId(TabModel::Role::Group)});
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(model.activeTabId(), a2);
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a2});
@@ -935,7 +941,7 @@ void tst_tabmodel::groupsSurviveARestart()
         QCOMPARE(model.activeTabId(), b1);
         QCOMPARE(model.currentGroupId(), work);
         QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{b1});
-        QCOMPARE(role(model, 0, TabModel::GroupRole).toInt(), home);
+        QCOMPARE(role(model, 0, roleId(TabModel::Role::Group)).toInt(), home);
         const int play = model.addGroup(QStringLiteral("Play"));
         QVERIFY(play > work);
         QVERIFY(model.removeGroup(work));
@@ -995,22 +1001,24 @@ void tst_tabmodel::searchSpansTheGroups()
     // With nothing typed, every tab, group by group and each group's first marked:
     // the two in the default group, then the one in Work.
     QCOMPARE(search.count(), 3);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a1);
-    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
-    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), b1);
-    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
-    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
-    QVERIFY(role(search, 2, TabSearchModel::GroupStartRole).toBool());
-    QCOMPARE(role(search, 2, TabSearchModel::GroupIdRole).toInt(), work);
-    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Work"));
-    QVERIFY(role(search, 1, TabSearchModel::GroupNameRole).toString().isEmpty());
-    QCOMPARE(role(search, 1, TabSearchModel::GroupTabCountRole).toInt(), 2);
-    QCOMPARE(role(search, 2, TabSearchModel::UrlRole).toString(),
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), a1);
+    QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), a2);
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::TabId)).toInt(), b1);
+    QVERIFY(role(search, 0, roleId(TabSearchModel::Role::GroupStart)).toBool());
+    QVERIFY(!role(search, 1, roleId(TabSearchModel::Role::GroupStart)).toBool());
+    QVERIFY(role(search, 2, roleId(TabSearchModel::Role::GroupStart)).toBool());
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::GroupId)).toInt(), work);
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::GroupName)).toString(),
+             QStringLiteral("Work"));
+    QVERIFY(role(search, 1, roleId(TabSearchModel::Role::GroupName)).toString().isEmpty());
+    QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::GroupTabCount)).toInt(), 2);
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::Url)).toString(),
              QStringLiteral("https://mail.example/"));
-    QCOMPARE(role(search, 2, TabSearchModel::TitleRole).toString(), QStringLiteral("Inbox"));
-    QVERIFY(role(search, 2, TabSearchModel::FaviconRole).toString().isEmpty());
-    QVERIFY(!role(search, 3, TabSearchModel::TabIdRole).isValid());
-    QCOMPARE(search.roleNames().value(TabSearchModel::GroupStartRole),
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::Title)).toString(),
+             QStringLiteral("Inbox"));
+    QVERIFY(role(search, 2, roleId(TabSearchModel::Role::Favicon)).toString().isEmpty());
+    QVERIFY(!role(search, 3, roleId(TabSearchModel::Role::TabId)).isValid());
+    QCOMPARE(search.roleNames().value(roleId(TabSearchModel::Role::GroupStart)),
              QByteArrayLiteral("groupStart"));
 
     // Title or address, whatever the case, and the term is trimmed.
@@ -1018,15 +1026,15 @@ void tst_tabmodel::searchSpansTheGroups()
     QCOMPARE(search.searchTerm(), QStringLiteral("NEWS"));
     QCOMPARE(termSpy.count(), 1);
     QCOMPARE(search.count(), 2);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a1);
-    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), a2);
-    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), a1);
+    QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), a2);
+    QVERIFY(!role(search, 1, roleId(TabSearchModel::Role::GroupStart)).toBool());
     search.setSearchTerm(QStringLiteral("NEWS"));
     QCOMPARE(termSpy.count(), 1);
     search.setSearchTerm(QStringLiteral("mail.ex"));
     QCOMPARE(search.count(), 1);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), b1);
-    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), b1);
+    QVERIFY(role(search, 0, roleId(TabSearchModel::Role::GroupStart)).toBool());
     search.setSearchTerm(QStringLiteral("nothing"));
     QCOMPARE(search.count(), 0);
 
@@ -1034,11 +1042,13 @@ void tst_tabmodel::searchSpansTheGroups()
     search.setSearchTerm(QString());
     QCOMPARE(search.count(), 3);
     model.renameGroup(work, QStringLiteral("Office"));
-    QCOMPARE(role(search, 2, TabSearchModel::GroupNameRole).toString(), QStringLiteral("Office"));
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::GroupName)).toString(),
+             QStringLiteral("Office"));
     model.closeTabById(b1);
     QCOMPARE(search.count(), 2);
     model.updateTitle(a1, QStringLiteral("Evening news"));
-    QCOMPARE(role(search, 0, TabSearchModel::TitleRole).toString(), QStringLiteral("Evening news"));
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::Title)).toString(),
+             QStringLiteral("Evening news"));
     QVERIFY(countSpy.count() >= 3);
 }
 
@@ -1065,9 +1075,9 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(removeSpy.count(), 2);
     QCOMPARE(insertSpy.count(), 0);
     QCOMPARE(search.count(), 2);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a);
-    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), c);
-    QVERIFY(role(search, 1, TabSearchModel::GroupStartRole).toBool());
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), a);
+    QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), c);
+    QVERIFY(role(search, 1, roleId(TabSearchModel::Role::GroupStart)).toBool());
 
     // Narrowing further removes the last row of a group, and the next group's first
     // row keeps its heading.
@@ -1075,8 +1085,8 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(removeSpy.count(), 3);
     QCOMPARE(search.count(), 1);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), c);
-    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), c);
+    QVERIFY(role(search, 0, roleId(TabSearchModel::Role::GroupStart)).toBool());
 
     // Widening puts rows back where they belong -- "a" is in every address -- and a
     // row that stops being the first of its group is told so.
@@ -1084,19 +1094,19 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(insertSpy.count(), 3);
     QCOMPARE(search.count(), 4);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), a);
-    QCOMPARE(role(search, 1, TabSearchModel::TabIdRole).toInt(), b);
-    QCOMPARE(role(search, 2, TabSearchModel::TabIdRole).toInt(), c);
-    QCOMPARE(role(search, 3, TabSearchModel::TabIdRole).toInt(), d);
-    QVERIFY(!role(search, 1, TabSearchModel::GroupStartRole).toBool());
-    QVERIFY(!role(search, 3, TabSearchModel::GroupStartRole).toBool());
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), a);
+    QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), b);
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::TabId)).toInt(), c);
+    QCOMPARE(role(search, 3, roleId(TabSearchModel::Role::TabId)).toInt(), d);
+    QVERIFY(!role(search, 1, roleId(TabSearchModel::Role::GroupStart)).toBool());
+    QVERIFY(!role(search, 3, roleId(TabSearchModel::Role::GroupStart)).toBool());
     search.setSearchTerm(QStringLiteral("banana"));
     QCOMPARE(search.count(), 1);
-    QVERIFY(role(search, 0, TabSearchModel::GroupStartRole).toBool());
+    QVERIFY(role(search, 0, roleId(TabSearchModel::Role::GroupStart)).toBool());
     QVERIFY(changeSpy.count() >= 1);
     search.setSearchTerm(QString());
     QCOMPARE(search.count(), 4);
-    QCOMPARE(role(search, 3, TabSearchModel::TabIdRole).toInt(), d);
+    QCOMPARE(role(search, 3, roleId(TabSearchModel::Role::TabId)).toInt(), d);
     QCOMPARE(resetSpy.count(), 0);
 
     // The tabs changing is another matter: then the list is built again.
@@ -1122,17 +1132,17 @@ void tst_tabmodel::searchTakesEveryWord()
     // is found nowhere.
     search.setSearchTerm(QStringLiteral("news  yle"));
     QCOMPARE(search.count(), 1);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), news);
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), news);
     search.setSearchTerm(QStringLiteral("helsinki"));
     QCOMPARE(search.count(), 2);
     search.setSearchTerm(QStringLiteral("helsinki forecast"));
     QCOMPARE(search.count(), 1);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), weather);
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), weather);
     search.setSearchTerm(QStringLiteral("helsinki tampere"));
     QCOMPARE(search.count(), 0);
     search.setSearchTerm(QStringLiteral("ÄLY"));
     QCOMPARE(search.count(), 1);
-    QCOMPARE(role(search, 0, TabSearchModel::TabIdRole).toInt(), phones);
+    QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), phones);
 }
 
 // The open tab for an address, in any group; the one in front most recently of
@@ -1183,16 +1193,17 @@ void tst_tabmodel::closedTabsCanBeReopened()
         model.closeTabById(b);
         QCOMPARE(closed->count(), 2);
         QCOMPARE(countSpy.count(), 2);
-        QCOMPARE(role(*closed, 0, ClosedTabModel::UrlRole).toString(),
+        QCOMPARE(role(*closed, 0, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://b.example/"));
-        QCOMPARE(role(*closed, 1, ClosedTabModel::UrlRole).toString(),
+        QCOMPARE(role(*closed, 1, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://a.example/"));
-        QCOMPARE(role(*closed, 1, ClosedTabModel::TitleRole).toString(), QStringLiteral("Alpha"));
-        QCOMPARE(role(*closed, 1, ClosedTabModel::FaviconRole).toString(),
+        QCOMPARE(role(*closed, 1, roleId(ClosedTabModel::Role::Title)).toString(),
+                 QStringLiteral("Alpha"));
+        QCOMPARE(role(*closed, 1, roleId(ClosedTabModel::Role::Favicon)).toString(),
                  QStringLiteral("https://a.example/favicon.ico"));
-        QVERIFY(role(*closed, 1, ClosedTabModel::ClosedIdRole).toInt() > 0);
-        QVERIFY(!role(*closed, 2, ClosedTabModel::UrlRole).isValid());
-        QCOMPARE(closed->roleNames().value(ClosedTabModel::ClosedIdRole),
+        QVERIFY(role(*closed, 1, roleId(ClosedTabModel::Role::ClosedId)).toInt() > 0);
+        QVERIFY(!role(*closed, 2, roleId(ClosedTabModel::Role::Url)).isValid());
+        QCOMPARE(closed->roleNames().value(roleId(ClosedTabModel::Role::ClosedId)),
                  QByteArrayLiteral("closedId"));
 
         // Opening one again brings it back with what it was and takes it off the
@@ -1209,7 +1220,7 @@ void tst_tabmodel::closedTabsCanBeReopened()
         // Closing every tab records every one.
         model.closeAllTabs();
         QCOMPARE(closed->count(), 3);
-        QCOMPARE(role(*closed, 0, ClosedTabModel::UrlRole).toString(),
+        QCOMPARE(role(*closed, 0, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://a.example/"));
     }
     {
@@ -1217,7 +1228,7 @@ void tst_tabmodel::closedTabsCanBeReopened()
         TabModel model(&persistence);
         ClosedTabModel *closed = model.closedTabs();
         QCOMPARE(closed->count(), 3);
-        QCOMPARE(role(*closed, 2, ClosedTabModel::UrlRole).toString(),
+        QCOMPARE(role(*closed, 2, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://b.example/"));
         closed->clear();
         closed->clear();
@@ -1231,7 +1242,7 @@ void tst_tabmodel::closedTabsCanBeReopened()
             model.closeTabById(model.newTab(QStringLiteral("https://n%1.example/").arg(i)));
         }
         QCOMPARE(model.closedTabs()->count(), ClosedTabModel::Limit);
-        QCOMPARE(role(*model.closedTabs(), 0, ClosedTabModel::UrlRole).toString(),
+        QCOMPARE(role(*model.closedTabs(), 0, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://n%1.example/").arg(ClosedTabModel::Limit + 4));
         TabModel again(&persistence);
         QCOMPARE(again.closedTabs()->count(), ClosedTabModel::Limit);
@@ -1242,14 +1253,14 @@ void tst_tabmodel::livePagesAreCapped()
 {
     TabModel model(nullptr);
     QCOMPARE(model.liveTabLimit(), 0);
-    QCOMPARE(model.roleNames().value(TabModel::LiveRole), QByteArrayLiteral("liveTab"));
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Live)), QByteArrayLiteral("liveTab"));
     QList<int> ids;
     for (int i = 0; i < 6; ++i) {
         ids.append(model.newTab(QStringLiteral("https://t%1.example/").arg(i)));
     }
     // No limit: every page keeps its view.
     for (int i = 0; i < 6; ++i) {
-        QVERIFY(role(model, i, TabModel::LiveRole).toBool());
+        QVERIFY(role(model, i, roleId(TabModel::Role::Live)).toBool());
     }
 
     // With a limit, the tab in front and the ones read most recently before it.
@@ -1257,9 +1268,9 @@ void tst_tabmodel::livePagesAreCapped()
     model.setLiveTabLimit(3);
     QCOMPARE(model.liveTabLimit(), 3);
     QCOMPARE(rowSpy.count(), 3);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::LiveRole});
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{roleId(TabModel::Role::Live)});
     for (int i = 0; i < 6; ++i) {
-        QCOMPARE(role(model, i, TabModel::LiveRole).toBool(), i >= 3);
+        QCOMPARE(role(model, i, roleId(TabModel::Role::Live)).toBool(), i >= 3);
     }
     model.setLiveTabLimit(3);
     model.setLiveTabLimit(-1);
@@ -1268,14 +1279,14 @@ void tst_tabmodel::livePagesAreCapped()
 
     // Bringing an old tab to the front keeps it, and lets the least recent go.
     model.activateTabById(ids.at(0));
-    QVERIFY(role(model, 0, TabModel::LiveRole).toBool());
-    QVERIFY(!role(model, 3, TabModel::LiveRole).toBool());
-    QVERIFY(role(model, 4, TabModel::LiveRole).toBool());
-    QVERIFY(role(model, 5, TabModel::LiveRole).toBool());
+    QVERIFY(role(model, 0, roleId(TabModel::Role::Live)).toBool());
+    QVERIFY(!role(model, 3, roleId(TabModel::Role::Live)).toBool());
+    QVERIFY(role(model, 4, roleId(TabModel::Role::Live)).toBool());
+    QVERIFY(role(model, 5, roleId(TabModel::Role::Live)).toBool());
 
     // A tab closed makes room for the next most recent.
     model.closeTabById(ids.at(5));
-    QVERIFY(role(model, model.indexOf(ids.at(3)), TabModel::LiveRole).toBool());
+    QVERIFY(role(model, model.indexOf(ids.at(3)), roleId(TabModel::Role::Live)).toBool());
     model.closeAllTabs();
 }
 
@@ -1284,13 +1295,15 @@ void tst_tabmodel::livePagesAreCapped()
 void tst_tabmodel::mediaFollowsThePage()
 {
     TabModel model(nullptr);
-    QCOMPARE(model.roleNames().value(TabModel::MediaRole), QByteArrayLiteral("mediaState"));
-    QCOMPARE(model.roleNames().value(TabModel::MutedRole), QByteArrayLiteral("muted"));
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Media)),
+             QByteArrayLiteral("mediaState"));
+    QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Muted)), QByteArrayLiteral("muted"));
     QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::NoMedia));
     QVERIFY(!model.activeMuted());
     const int behind = model.newTab(QStringLiteral("https://a.example/"));
     const int front = model.newTab(QStringLiteral("https://b.example/"));
-    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::NoMedia));
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::Media)).toInt(),
+             static_cast<int>(TabModel::NoMedia));
 
     // The tab in front plays: its row says so, and so does the model's front.
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
@@ -1298,11 +1311,13 @@ void tst_tabmodel::mediaFollowsThePage()
     QSignalSpy activeSpy(&model, &TabModel::activeMediaChanged);
     model.setMediaState(front, TabModel::MediaPlaying);
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{TabModel::MediaRole});
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(),
+             QVector<int>{roleId(TabModel::Role::Media)});
     QCOMPARE(groupRowSpy.count(), 1);
     QCOMPARE(activeSpy.count(), 1);
     QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::MediaPlaying));
-    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPlaying));
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::Media)).toInt(),
+             static_cast<int>(TabModel::MediaPlaying));
     // Said twice, it is said once.
     model.setMediaState(front, TabModel::MediaPlaying);
     QCOMPARE(rowSpy.count(), 1);
@@ -1313,14 +1328,17 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(activeSpy.count(), 1);
     QCOMPARE(model.mediaState(behind), TabModel::MediaPlaying);
     QCOMPARE(model.shownMediaState(behind), TabModel::MediaPaused);
-    QCOMPARE(role(model, 0, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPaused));
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Media)).toInt(),
+             static_cast<int>(TabModel::MediaPaused));
     rowSpy.clear();
     model.activateTabById(behind);
-    QCOMPARE(role(model, 0, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPlaying));
-    QCOMPARE(role(model, 1, TabModel::MediaRole).toInt(), static_cast<int>(TabModel::MediaPaused));
+    QCOMPARE(role(model, 0, roleId(TabModel::Role::Media)).toInt(),
+             static_cast<int>(TabModel::MediaPlaying));
+    QCOMPARE(role(model, 1, roleId(TabModel::Role::Media)).toInt(),
+             static_cast<int>(TabModel::MediaPaused));
     int mediaRows = 0;
     for (const QList<QVariant> &change : rowSpy) {
-        if (change.at(2).value<QVector<int>>().contains(TabModel::MediaRole)) {
+        if (change.at(2).value<QVector<int>>().contains(roleId(TabModel::Role::Media))) {
             ++mediaRows;
         }
     }
@@ -1333,7 +1351,7 @@ void tst_tabmodel::mediaFollowsThePage()
     model.setMuted(front, true);
     QVERIFY(model.isMuted(front));
     QVERIFY(model.activeMuted());
-    QVERIFY(role(model, 1, TabModel::MutedRole).toBool());
+    QVERIFY(role(model, 1, roleId(TabModel::Role::Muted)).toBool());
     QCOMPARE(activeSpy.count(), 1);
     model.setMuted(front, true);
     QCOMPARE(activeSpy.count(), 1);
@@ -1394,15 +1412,15 @@ void tst_tabmodel::startPageTabs()
     // One page kept loaded, and it is the other tab's; the start page's view, which it
     // has none of, can be made at any time.
     model.setLiveTabLimit(1);
-    QVERIFY(role(model, model.indexOf(page), TabModel::LiveRole).toBool());
-    QVERIFY(role(model, model.indexOf(start), TabModel::LiveRole).toBool());
+    QVERIFY(role(model, model.indexOf(page), roleId(TabModel::Role::Live)).toBool());
+    QVERIFY(role(model, model.indexOf(start), roleId(TabModel::Role::Live)).toBool());
 
     // A page opened from it is a visit, and takes that place.
     model.updateUrl(start, QStringLiteral("https://b.example/"));
     QCOMPARE(visited.count(), 1);
     QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
-    QVERIFY(role(model, model.indexOf(start), TabModel::LiveRole).toBool());
-    QVERIFY(!role(model, model.indexOf(page), TabModel::LiveRole).toBool());
+    QVERIFY(role(model, model.indexOf(start), roleId(TabModel::Role::Live)).toBool());
+    QVERIFY(!role(model, model.indexOf(page), roleId(TabModel::Role::Live)).toBool());
     model.updateTitle(start, QStringLiteral("B"));
     model.updateFavicon(start, QStringLiteral("https://b.example/icon.png"));
     const QString preview = model.thumbnailPath(start);
@@ -1418,10 +1436,11 @@ void tst_tabmodel::startPageTabs()
     QVERIFY(model.activeUrl().isEmpty());
     QVERIFY(model.activeTitle().isEmpty());
     QVERIFY(model.activeFavicon().isEmpty());
-    QVERIFY(role(model, model.indexOf(start), TabModel::ThumbnailRole).toString().isEmpty());
+    QVERIFY(
+        role(model, model.indexOf(start), roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
     QVERIFY(!QFile::exists(preview));
     QCOMPARE(model.mediaState(start), TabModel::NoMedia);
-    QVERIFY(role(model, model.indexOf(page), TabModel::LiveRole).toBool());
+    QVERIFY(role(model, model.indexOf(page), roleId(TabModel::Role::Live)).toBool());
     QCOMPARE(activeData.count(), 1);
     QCOMPARE(recent.count(), 1);
     QCOMPARE(visited.count(), 1);

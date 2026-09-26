@@ -23,12 +23,12 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Site &site = m_sites.at(index.row());
-    switch (role) {
-    case UrlRole:
+    switch (static_cast<Role>(role)) {
+    case Role::Url:
         return site.url;
-    case TitleRole:
+    case Role::Title:
         return site.title;
-    case FaviconRole:
+    case Role::Favicon:
         return site.favicon;
     default:
         return {};
@@ -38,9 +38,9 @@ QVariant SiteListModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> SiteListModel::roleNames() const
 {
     return {
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
     };
 }
 

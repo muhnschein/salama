@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include "search/SearchWords.h"
 
 #include <QAbstractListModel>
@@ -25,17 +27,17 @@ class TabSearchModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        TabIdRole = Qt::UserRole + 1,
-        UrlRole,
-        TitleRole,
-        FaviconRole,
-        GroupIdRole,
-        GroupNameRole,
-        GroupTabCountRole,
+        TabId = Qt::UserRole + 1,
+        Url,
+        Title,
+        Favicon,
+        GroupId,
+        GroupName,
+        GroupTabCount,
         // True on the first row of each group, where the page draws the group's heading.
-        GroupStartRole
+        GroupStart
     };
 
     explicit TabSearchModel(TabModel *tabs, QObject *parent = nullptr);

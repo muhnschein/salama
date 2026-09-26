@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QDateTime>
 #include <QList>
@@ -110,37 +112,37 @@ class OmnibarModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY resultsChanged)
 
 public:
-    enum Role
+    enum class Role
     {
         // "tab", "bookmark", "history" or "download": what a tap on the row does.
-        KindRole = Qt::UserRole + 1,
+        Kind = Qt::UserRole + 1,
         // The page's or the file's name, the address when it has none.
-        TitleRole,
-        UrlRole,
+        Title,
+        Url,
         // Settings::displayAddress() of the url: for a download, the host it came from.
-        HostRole,
+        Host,
         // The title and the host as StyledText, every word typed in bold and the rest
         // escaped: what a page chose to be called can hold no markup of its own.
-        MarkedTitleRole,
-        MarkedHostRole,
+        MarkedTitle,
+        MarkedHost,
         // The page's icon, or when it has none of its own, one its site has shown in a
         // tab, a bookmark or the history; empty for a download.
-        FaviconRole,
+        Favicon,
         // The tab's id, and its group as the grid's search gives it; 0 and empty on
         // the other kinds.
-        TabIdRole,
-        GroupIdRole,
-        GroupNameRole,
-        GroupTabCountRole,
+        TabId,
+        GroupId,
+        GroupName,
+        GroupTabCount,
         // Whether a tab or a page of the history is bookmarked too; a bookmark is.
-        BookmarkedRole,
+        Bookmarked,
         // The download's own lasting id (DownloadModel::rowOf), its DownloadModel::Status
         // and its progress; 0 on the other kinds.
-        DownloadIdRole,
-        DownloadStatusRole,
-        ProgressRole,
+        DownloadId,
+        DownloadStatus,
+        Progress,
         // A page of the history's last visit, a download's start; invalid otherwise.
-        DateRole
+        Date
     };
 
     // How many rows there are at most, how many of them a download may take, and how

@@ -58,24 +58,24 @@ QVariant DownloadModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Download &download = m_downloads.at(index.row());
-    switch (role) {
-    case DownloadIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::DownloadId:
         return download.id;
-    case NameRole:
+    case Role::Name:
         return download.name;
-    case UrlRole:
+    case Role::Url:
         return download.url;
-    case PathRole:
+    case Role::Path:
         return download.path;
-    case MimeTypeRole:
+    case Role::MimeType:
         return download.mimeType;
-    case SizeRole:
+    case Role::Size:
         return download.size;
-    case ProgressRole:
+    case Role::Progress:
         return download.progress;
-    case StatusRole:
+    case Role::Status:
         return static_cast<int>(download.status);
-    case StartedRole:
+    case Role::Started:
         return download.started;
     default:
         return {};
@@ -85,15 +85,15 @@ QVariant DownloadModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> DownloadModel::roleNames() const
 {
     return {
-        {DownloadIdRole, QByteArrayLiteral("downloadId")},
-        {NameRole, QByteArrayLiteral("name")},
-        {UrlRole, QByteArrayLiteral("url")},
-        {PathRole, QByteArrayLiteral("path")},
-        {MimeTypeRole, QByteArrayLiteral("mimeType")},
-        {SizeRole, QByteArrayLiteral("size")},
-        {ProgressRole, QByteArrayLiteral("progress")},
-        {StatusRole, QByteArrayLiteral("status")},
-        {StartedRole, QByteArrayLiteral("started")},
+        {roleId(Role::DownloadId), QByteArrayLiteral("downloadId")},
+        {roleId(Role::Name), QByteArrayLiteral("name")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Path), QByteArrayLiteral("path")},
+        {roleId(Role::MimeType), QByteArrayLiteral("mimeType")},
+        {roleId(Role::Size), QByteArrayLiteral("size")},
+        {roleId(Role::Progress), QByteArrayLiteral("progress")},
+        {roleId(Role::Status), QByteArrayLiteral("status")},
+        {roleId(Role::Started), QByteArrayLiteral("started")},
     };
 }
 
@@ -262,7 +262,7 @@ void DownloadModel::setProgress(int row, const QVariant &percent)
     // Not written: it would be worth nothing after a restart, when a download read
     // back has either finished or never will (load()).
     download.progress = progress;
-    changed(row, {ProgressRole});
+    changed(row, {roleId(Role::Progress)});
 }
 
 void DownloadModel::finish(int row, const QString &path)
@@ -271,15 +271,15 @@ void DownloadModel::finish(int row, const QString &path)
     QVector<int> roles;
     if (download.status != Done) {
         download.status = Done;
-        roles.append(StatusRole);
+        roles.append(roleId(Role::Status));
     }
     if (download.progress != 100) {
         download.progress = 100;
-        roles.append(ProgressRole);
+        roles.append(roleId(Role::Progress));
     }
     if (!path.isEmpty() && download.path != path) {
         download.path = path;
-        roles.append(PathRole);
+        roles.append(roleId(Role::Path));
     }
     if (roles.isEmpty()) {
         return;
@@ -296,7 +296,7 @@ void DownloadModel::setStatus(int row, Status status)
     }
     download.status = status;
     store(download);
-    changed(row, {StatusRole});
+    changed(row, {roleId(Role::Status)});
 }
 
 void DownloadModel::changed(int row, const QVector<int> &roles)

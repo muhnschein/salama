@@ -38,24 +38,24 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Tab &tab = m_tabs->tabs().at(tabIndex);
-    switch (role) {
-    case TabIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::TabId:
         return tab.id;
-    case UrlRole:
+    case Role::Url:
         return tab.url;
-    case TitleRole:
+    case Role::Title:
         return tab.title;
-    case FaviconRole:
+    case Role::Favicon:
         return tab.favicon;
-    case GroupIdRole:
+    case Role::GroupId:
         return row.groupId;
-    case GroupNameRole: {
+    case Role::GroupName: {
         const int groupIndex = m_tabs->groupIndexOf(row.groupId);
         return groupIndex >= 0 ? m_tabs->groups().at(groupIndex).name : QString();
     }
-    case GroupTabCountRole:
+    case Role::GroupTabCount:
         return m_tabs->tabCountInGroup(row.groupId);
-    case GroupStartRole:
+    case Role::GroupStart:
         return row.groupStart;
     default:
         return {};
@@ -65,14 +65,14 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> TabSearchModel::roleNames() const
 {
     return {
-        {TabIdRole, QByteArrayLiteral("tabId")},
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
-        {GroupIdRole, QByteArrayLiteral("groupId")},
-        {GroupNameRole, QByteArrayLiteral("groupName")},
-        {GroupTabCountRole, QByteArrayLiteral("groupTabCount")},
-        {GroupStartRole, QByteArrayLiteral("groupStart")},
+        {roleId(Role::TabId), QByteArrayLiteral("tabId")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
+        {roleId(Role::GroupId), QByteArrayLiteral("groupId")},
+        {roleId(Role::GroupName), QByteArrayLiteral("groupName")},
+        {roleId(Role::GroupTabCount), QByteArrayLiteral("groupTabCount")},
+        {roleId(Role::GroupStart), QByteArrayLiteral("groupStart")},
     };
 }
 
@@ -162,7 +162,7 @@ void TabSearchModel::refine()
             if (m_rows.at(have).groupStart != wanted.at(want).groupStart) {
                 m_rows[have].groupStart = wanted.at(want).groupStart;
                 const QModelIndex changed = index(have, 0);
-                emit dataChanged(changed, changed, QVector<int>{GroupStartRole});
+                emit dataChanged(changed, changed, QVector<int>{roleId(Role::GroupStart)});
             }
             ++have;
             continue;

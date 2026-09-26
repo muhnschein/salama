@@ -47,14 +47,15 @@ class PageMedia : public QObject
     Q_PROPERTY(int queryDelay READ queryDelay CONSTANT)
 
 public:
-    enum Command
+    // What a page is asked to do. QML never names one: it hands back the int requested()
+    // gave it, to script() and answer().
+    enum class Command
     {
         // What does the page play? Also what applies the tab's muted flag to it.
         Query,
         Pause,
         Play
     };
-    Q_ENUM(Command)
 
     static constexpr int DefaultQueryDelay = 200;
 
@@ -66,11 +67,13 @@ public:
     // Script for WebView.runJavaScript(): the body of a function, as EngineMessages'
     // are. It carries the command and whether the tab is muted, and answers what the
     // page plays after carrying them out.
+    QString script(int tabId, Command command) const;
     Q_INVOKABLE QString script(int tabId, int command) const;
 
     // What the script answered for this tab, to this command. What a page answers to
     // being paused is taken as it comes and asks nothing more: a page that will not
     // pause would otherwise be asked again, and again.
+    void answer(int tabId, Command command, const QVariant &answer);
     Q_INVOKABLE void answer(int tabId, int command, const QVariant &answer);
     // The tab's page is going, and what it played with it: a new one is loading.
     Q_INVOKABLE void forget(int tabId);
@@ -97,6 +100,8 @@ signals:
     void requested(int tab, int command);
 
 private:
+    void request(int tabId, Command command);
+
     TabModel *m_tabs;
     QTimer m_queryTimer;
     // The tab in front when last looked: the tab model says the front changed when

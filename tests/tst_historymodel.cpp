@@ -81,28 +81,29 @@ void tst_historymodel::visitsAndCounts()
     QCOMPARE(model.count(), 2);
     QCOMPARE(model.rowCount(), 2);
     QCOMPARE(countSpy.count(), 2);
-    QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://b.example/"));
-    QCOMPARE(role(model, 0, HistoryModel::TitleRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
              QStringLiteral("https://b.example/"));
-    QCOMPARE(role(model, 1, HistoryModel::TitleRole).toString(), QStringLiteral("A"));
-    QCOMPARE(role(model, 1, HistoryModel::VisitCountRole).toInt(), 1);
-    QVERIFY(role(model, 1, HistoryModel::DateRole).toDateTime().isValid());
+    QCOMPARE(role(model, 1, roleId(HistoryModel::Role::Title)).toString(), QStringLiteral("A"));
+    QCOMPARE(role(model, 1, roleId(HistoryModel::Role::VisitCount)).toInt(), 1);
+    QVERIFY(role(model, 1, roleId(HistoryModel::Role::Date)).toDateTime().isValid());
     QVERIFY(!role(model, 1, Qt::DisplayRole).isValid());
-    QVERIFY(!role(model, 5, HistoryModel::UrlRole).isValid());
-    QCOMPARE(model.roleNames().value(HistoryModel::VisitCountRole),
+    QVERIFY(!role(model, 5, roleId(HistoryModel::Role::Url)).isValid());
+    QCOMPARE(model.roleNames().value(roleId(HistoryModel::Role::VisitCount)),
              QByteArrayLiteral("visitCount"));
 
     model.visit(QStringLiteral("https://a.example/"));
     QCOMPARE(model.count(), 2);
-    QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/"));
-    QCOMPARE(role(model, 0, HistoryModel::VisitCountRole).toInt(), 2);
-    QCOMPARE(role(model, 0, HistoryModel::TitleRole).toString(), QStringLiteral("A"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::VisitCount)).toInt(), 2);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(), QStringLiteral("A"));
 
     model.visit(QStringLiteral("https://a.example/"), QStringLiteral("A again"));
-    QCOMPARE(role(model, 0, HistoryModel::TitleRole).toString(), QStringLiteral("A again"));
-    QCOMPARE(role(model, 0, HistoryModel::VisitCountRole).toInt(), 3);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("A again"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::VisitCount)).toInt(), 3);
 }
 
 void tst_historymodel::ignoresUnrecordableUrls()
@@ -135,7 +136,8 @@ void tst_historymodel::search()
 
     model.setSearchTerm(QStringLiteral("EXAMPLE"));
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, HistoryModel::TitleRole).toString(), QStringLiteral("Example"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("Example"));
 
     model.visit(QStringLiteral("https://another.example/"));
     QCOMPARE(model.count(), 2);
@@ -155,14 +157,15 @@ void tst_historymodel::titles()
 
     model.updateTitle(QStringLiteral("https://a.example/"), QStringLiteral("Alpha"));
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(role(model, 1, HistoryModel::TitleRole).toString(), QStringLiteral("Alpha"));
+    QCOMPARE(role(model, 1, roleId(HistoryModel::Role::Title)).toString(), QStringLiteral("Alpha"));
     model.updateTitle(QStringLiteral("https://a.example/"), QStringLiteral("Alpha"));
     model.updateTitle(QStringLiteral("https://a.example/"), QString());
     model.updateTitle(QStringLiteral("https://missing.example/"), QStringLiteral("Nope"));
     QCOMPARE(rowSpy.count(), 1);
 
     HistoryModel reloaded(storage);
-    QCOMPARE(role(reloaded, 1, HistoryModel::TitleRole).toString(), QStringLiteral("Alpha"));
+    QCOMPARE(role(reloaded, 1, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("Alpha"));
 }
 
 void tst_historymodel::removeAndClear()
@@ -178,7 +181,7 @@ void tst_historymodel::removeAndClear()
     model.remove(1);
     QCOMPARE(model.count(), 2);
     QCOMPARE(countSpy.count(), 1);
-    QCOMPARE(role(model, 1, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 1, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/"));
     QCOMPARE(rowsInDatabase(storage), 2);
 
@@ -212,7 +215,7 @@ void tst_historymodel::prunesAndLimits()
     QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
     QCOMPARE(model.count(), HistoryModel::DisplayLimit);
     // Newest first, oldest pruned.
-    QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://site%1.example/").arg(HistoryModel::MaxEntries + 24));
 }
 
@@ -278,7 +281,7 @@ void tst_historymodel::clearSince()
 
     model.clearSince(double(now - 60 * minute));
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://old.example/"));
     QCOMPARE(inputsInDatabase(storage), 0);
 
@@ -387,7 +390,7 @@ void tst_historymodel::learningGoesWithThePage()
     model.visit(QStringLiteral("https://b.example/"));
     model.recordInput(QStringLiteral("x"), QStringLiteral("https://a.example/"));
     model.recordInput(QStringLiteral("x"), QStringLiteral("https://b.example/"));
-    QCOMPARE(role(model, 0, HistoryModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://b.example/"));
     model.remove(0);
     const QHash<QString, double> ranks =
@@ -406,13 +409,14 @@ void tst_historymodel::favicons()
     const QString url = QStringLiteral("https://a.example/");
     {
         HistoryModel model(storage);
-        QCOMPARE(model.roleNames().value(HistoryModel::FaviconRole), QByteArrayLiteral("favicon"));
+        QCOMPARE(model.roleNames().value(roleId(HistoryModel::Role::Favicon)),
+                 QByteArrayLiteral("favicon"));
         model.visit(url);
-        QVERIFY(role(model, 0, HistoryModel::FaviconRole).toString().isEmpty());
+        QVERIFY(role(model, 0, roleId(HistoryModel::Role::Favicon)).toString().isEmpty());
         QSignalSpy changed(&model, &HistoryModel::dataChanged);
         model.updateFavicon(url, QStringLiteral("https://a.example/icon.png"));
         QCOMPARE(changed.count(), 1);
-        QCOMPARE(role(model, 0, HistoryModel::FaviconRole).toString(),
+        QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Favicon)).toString(),
                  QStringLiteral("https://a.example/icon.png"));
         // Nothing for a page the history does not hold, or would not keep.
         model.updateFavicon(QStringLiteral("https://b.example/"), QStringLiteral("b.png"));

@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QList>
 #include <QSqlDatabase>
@@ -48,7 +50,8 @@ class DownloadModel : public QAbstractListModel
     Q_PROPERTY(QString directory READ directory CONSTANT)
 
 public:
-    enum Status
+    // Unscoped, as TabModel::MediaState is: QML reads `DownloadModel.Running`.
+    enum Status // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         Running,
         Done,
@@ -57,17 +60,17 @@ public:
     };
     Q_ENUM(Status)
 
-    enum Role
+    enum class Role
     {
-        DownloadIdRole = Qt::UserRole + 1,
-        NameRole,
-        UrlRole,
-        PathRole,
-        MimeTypeRole,
-        SizeRole,
-        ProgressRole,
-        StatusRole,
-        StartedRole
+        DownloadId = Qt::UserRole + 1,
+        Name,
+        Url,
+        Path,
+        MimeType,
+        Size,
+        Progress,
+        Status,
+        Started
     };
 
     // The oldest go beyond this many, from the list and from the database.

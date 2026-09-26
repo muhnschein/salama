@@ -94,7 +94,7 @@ public:
     // the cover reaches these as `Settings.CoverLatestTab`, and QML could not do that
     // with a scoped enum until Qt 5.8. This application is built against 5.6 (SCOPE.md
     // §4), so `enum class` here would compile on the host and leave the cover blank on
-    // the phone. TabModel::Role is unscoped for the same reason.
+    // the phone. TabModel::MediaState is unscoped for the same reason.
     enum CoverStyle
     {
         CoverLightning = 0,

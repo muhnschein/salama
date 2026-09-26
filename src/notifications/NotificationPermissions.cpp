@@ -54,12 +54,12 @@ QVariant NotificationPermissions::data(const QModelIndex &index, int role) const
         return {};
     }
     const Site &site = m_sites.at(index.row());
-    switch (role) {
-    case OriginRole:
+    switch (static_cast<Role>(role)) {
+    case Role::Origin:
         return site.origin;
-    case HostRole:
+    case Role::Host:
         return hostOf(site.origin);
-    case AllowedRole:
+    case Role::Allowed:
         return site.allowed;
     default:
         return {};
@@ -69,9 +69,9 @@ QVariant NotificationPermissions::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> NotificationPermissions::roleNames() const
 {
     return {
-        {OriginRole, "origin"},
-        {HostRole, "host"},
-        {AllowedRole, "allowed"},
+        {roleId(Role::Origin), "origin"},
+        {roleId(Role::Host), "host"},
+        {roleId(Role::Allowed), "allowed"},
     };
 }
 
@@ -234,7 +234,7 @@ void NotificationPermissions::put(const QString &origin, bool allowed)
         if (m_sites.at(row).allowed != allowed) {
             m_sites[row].allowed = allowed;
             const QModelIndex changed = index(row);
-            emit dataChanged(changed, changed, {AllowedRole});
+            emit dataChanged(changed, changed, {roleId(Role::Allowed)});
         }
         return;
     }
