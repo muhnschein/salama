@@ -29,7 +29,12 @@ class TabPersistence;
 // view per row of this model, so a tab changing group must not be a row removed and
 // inserted. The grid shows one group at a time through groupTabs(), and the strip
 // above it lists the groups through groups() (docs/DECISIONS/0015-tab-groups.md).
-class TabModel : public QAbstractListModel
+//
+// More methods than SonarQube allows a class (cpp:S1448), and kept whole on purpose:
+// the tab in front, the groups, what each page plays and which pages stay loaded are
+// all read from and written to the one list of rows, and each change to one of them
+// has to be told as a change to those rows, in order, from here.
+class TabModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list of rows, told from here
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
