@@ -15,13 +15,15 @@
 namespace Salama {
 
 // The settings file and a section per settings page over it: what Core keeps, and what
-// the tests build over a file of their own. The file is made first and outlives the
-// sections that borrow it.
-struct SettingsSections
+// the tests build over a file of their own.
+class SettingsSections
 {
+    // First, so that it is made before the sections that borrow it and goes after them.
+    QSettings m_file;
+
+public:
     explicit SettingsSections(const QString &filePath);
 
-    QSettings file;
     Settings general;
     SearchSettings search;
     ReaderSettings reader;
