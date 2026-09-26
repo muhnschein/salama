@@ -2325,12 +2325,34 @@ void tst_qmlload::gridHeadPullUnderAFinger()
     // is where it was when it comes up again.
     openGrid();
     const QPoint head = centreOf(find(QStringLiteral("gridHeadControls")));
-    const qreal scrolled = grid->property("contentY").toReal() + 2 * threshold;
+    const qreal scrolled =
+        grid->property("contentY").toReal() + grid->property("cellHeight").toReal();
     grid->setProperty("contentY", scrolled);
     drag(&window, head, head + QPoint(0, 3 * int(threshold)));
     QVERIFY(!page->property("tabsOpen").toBool());
     QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
     QCOMPARE(grid->property("contentY").toReal(), scrolled);
+
+    // Halfway down, the row of cells cut by the grid's top edge reaches up over the
+    // page and its bar, and the view clips it there rather than drawing it on them.
+    openGrid();
+    auto *view = qobject_cast<QQuickItem *>(find(QStringLiteral("tabsView")));
+    const QPoint pulledTo = head + QPoint(0, 3 * int(threshold));
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, head);
+    for (int step = 1; step <= 24; ++step) {
+        QTest::mouseMove(&window, head + (pulledTo - head) * step / 24);
+    }
+    const qreal viewTop = view->mapToScene(QPointF(0, 0)).y();
+    QVERIFY(viewTop > 0);
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QVERIFY(std::any_of(previews.begin(), previews.end(), [viewTop](QObject *cell) {
+        auto *item = qobject_cast<QQuickItem *>(cell);
+        return item->isVisible() && item->mapToScene(QPointF(0, 0)).y() < viewTop;
+    }));
+    QVERIFY(view->clip());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, pulledTo);
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
 
     // Short of the threshold the grid settles back, still scrolled.
     openGrid();

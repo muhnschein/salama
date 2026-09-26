@@ -295,8 +295,13 @@ has settled rather than before it moves — at the cost of a preview that is one
 out of date while the grid comes up.
 
 The deck's two layers sit outside the window when the deck is at either end, and the
-window is what clips them; nothing is set to `clip`, which the engine's own composited
-surface would not have honoured anyway.
+window is what clips them; the deck sets no `clip`, which the engine's own composited
+surface would not have honoured anyway. The grid's layer is the exception, and clips
+itself (`TabsView.clip`): a grid scrolled down has a row of cells cut by its top edge
+and the rest of the row above it, off the screen while the grid is up, and pulled down
+from the head row that rest came down over the page and its bar. Pulled from its own
+overscroll the grid is at its top, with nothing above it, which is why it was not seen
+before the head row's pull.
 
 While the grid is open the browsing page is still the page on the stack. Anything that
 reads `pageStack.currentPage` sees `browserPage` either way.

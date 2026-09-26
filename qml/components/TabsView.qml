@@ -49,6 +49,10 @@ Item {
                                       && TabSearch.searchTerm.length > 0
 
     objectName: "tabsView"
+    // Nothing of the grid is drawn over the page. A grid scrolled down has a row of
+    // cells cut by its top edge, the rest of it above; while the page is pulled back
+    // down from the head row, that rest came down over the page and its bar.
+    clip: true
 
     // A tab found by the search comes to the front, and the page with it.
     function openFound(tabId) {
