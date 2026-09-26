@@ -15,6 +15,11 @@
 // every press on them too -- though a pull begun on the foot row has too little
 // screen below it to bring the page back.
 //
+// The head row is the one place a drag down is not the grid's to scroll. A grid
+// longer than the screen, dragged down from the middle, scrolls back towards its top
+// before it can overscroll; from the head row the page comes back at once, from
+// wherever the grid is scrolled to.
+//
 // The head row holds the search for a tab, and what it finds is listed over the cells
 // while there is anything typed. The foot row holds the way to a new tab and the
 // groups, within reach of the thumb that carries a cell down to one of them to change
@@ -236,6 +241,16 @@ Item {
                 EnterKey.onClicked: focus = false
                 onTextChanged: searchDebounce.restart()
             }
+        }
+
+        // A drag down the row is the page's, however far the grid is scrolled.
+        GridHeadGesture {
+            objectName: "gridHeadPull"
+            anchors.fill: parent
+            field: searchField
+            onPullStarted: tabsView.pullStarted()
+            onPulled: tabsView.pulled(distance)
+            onPullFinished: tabsView.pullFinished(distance)
         }
     }
 

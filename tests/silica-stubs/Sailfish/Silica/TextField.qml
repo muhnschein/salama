@@ -21,6 +21,10 @@ Text {
     // What a press outside the field does to its focus: FocusBehavior.ClearItemFocus,
     // TextBase's own default, takes it away.
     property int focusOutBehavior: 0
+    // The items Silica puts beside the text; SearchField's right one is its clear
+    // button.
+    property Item leftItem
+    property Item rightItem
 
     function selectAll() {
         selectAllCount += 1
