@@ -36,6 +36,10 @@ class NotificationPermissions : public QAbstractListModel
     Q_PROPERTY(QString topic READ topic CONSTANT)
 
 public:
+    // Unscoped, as every other model's roles are, and not the oversight SonarQube reads
+    // it as (cpp:S3642): a role is an int wherever Qt handles one -- data()'s argument,
+    // roleNames()' keys, Qt::UserRole it starts from -- and a scoped enum would need a
+    // cast at each of them.
     enum Role
     {
         OriginRole = Qt::UserRole + 1,

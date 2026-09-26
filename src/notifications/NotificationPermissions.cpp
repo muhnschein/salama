@@ -238,7 +238,7 @@ void NotificationPermissions::put(const QString &origin, bool allowed)
         }
         return;
     }
-    const int position = static_cast<int>(
+    const auto position = static_cast<int>(
         std::find_if(m_sites.cbegin(), m_sites.cend(),
                      [&origin](const Site &site) { return byHost(origin, site.origin); }) -
         m_sites.cbegin());
