@@ -34,7 +34,7 @@ Page {
                 objectName: "startPageCombo"
                 width: parent.width
                 label: qsTr("Shows")
-                currentIndex: Settings.startPageBlank ? 1 : 0
+                currentIndex: StartPageSettings.blank ? 1 : 0
                 menu: ContextMenu {
                     MenuItem {
                         text: qsTr("Your sites")
@@ -44,34 +44,34 @@ Page {
                         text: qsTr("A blank page")
                     }
                 }
-                onCurrentIndexChanged: Settings.startPageBlank = currentIndex === 1
+                onCurrentIndexChanged: StartPageSettings.blank = currentIndex === 1
             }
 
             TextSwitch {
                 objectName: "startPageTopSitesSwitch"
-                enabled: !Settings.startPageBlank
+                enabled: !StartPageSettings.blank
                 text: qsTr("Frequently visited")
                 description: qsTr("Tiles for the sites you visit most")
-                checked: Settings.startPageTopSites
-                onCheckedChanged: Settings.startPageTopSites = checked
+                checked: StartPageSettings.topSites
+                onCheckedChanged: StartPageSettings.topSites = checked
             }
 
             TextSwitch {
                 objectName: "startPageBookmarksSwitch"
-                enabled: !Settings.startPageBlank
+                enabled: !StartPageSettings.blank
                 text: qsTr("Bookmarks")
                 description: qsTr("Tiles for your first bookmarks")
-                checked: Settings.startPageBookmarks
-                onCheckedChanged: Settings.startPageBookmarks = checked
+                checked: StartPageSettings.bookmarks
+                onCheckedChanged: StartPageSettings.bookmarks = checked
             }
 
             TextSwitch {
                 objectName: "startPageRecentSwitch"
-                enabled: !Settings.startPageBlank
+                enabled: !StartPageSettings.blank
                 text: qsTr("Recently visited")
                 description: qsTr("The pages you read last")
-                checked: Settings.startPageRecent
-                onCheckedChanged: Settings.startPageRecent = checked
+                checked: StartPageSettings.recent
+                onCheckedChanged: StartPageSettings.recent = checked
             }
         }
 

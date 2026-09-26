@@ -37,7 +37,7 @@ Page {
                 objectName: "readerColorsCombo"
                 width: parent.width
                 label: qsTr("Colours")
-                currentIndex: Settings.readerColors
+                currentIndex: ReaderSettings.colors
                 menu: ContextMenu {
                     MenuItem {
                         text: qsTr("Ambience")
@@ -55,14 +55,14 @@ Page {
                         text: qsTr("Dark")
                     }
                 }
-                onCurrentIndexChanged: Settings.readerColors = currentIndex
+                onCurrentIndexChanged: ReaderSettings.colors = currentIndex
             }
 
             ComboBox {
                 objectName: "readerTypefaceCombo"
                 width: parent.width
                 label: qsTr("Typeface")
-                currentIndex: Settings.readerTypeface
+                currentIndex: ReaderSettings.typeface
                 menu: ContextMenu {
                     MenuItem {
                         text: qsTr("Sans serif")
@@ -72,7 +72,7 @@ Page {
                         text: qsTr("Serif")
                     }
                 }
-                onCurrentIndexChanged: Settings.readerTypeface = currentIndex
+                onCurrentIndexChanged: ReaderSettings.typeface = currentIndex
             }
 
             // Firefox's nine steps, the middle one its default, written as a share of it.
@@ -80,13 +80,13 @@ Page {
                 objectName: "readerTextSizeSlider"
                 width: parent.width
                 label: qsTr("Text size")
-                minimumValue: Settings.ReaderTextSizeMin
-                maximumValue: Settings.ReaderTextSizeMax
+                minimumValue: ReaderSettings.TextSizeMin
+                maximumValue: ReaderSettings.TextSizeMax
                 stepSize: 1
-                value: Settings.readerTextSize
+                value: ReaderSettings.textSize
                 valueText: qsTr("%1 %").arg(Math.round(100 * (10 + 2 * value)
-                                                       / (10 + 2 * Settings.ReaderTextSizeDefault)))
-                onValueChanged: Settings.readerTextSize = Math.round(value)
+                                                       / (10 + 2 * ReaderSettings.TextSizeDefault)))
+                onValueChanged: ReaderSettings.textSize = Math.round(value)
             }
 
             ReaderPreview {

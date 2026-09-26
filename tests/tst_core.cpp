@@ -162,7 +162,7 @@ void tst_core::omnibarSearchesTheModels()
     };
     QCOMPARE(kinds(), (QStringList{QStringLiteral("bookmark"), QStringLiteral("tab")}));
 
-    core.settings()->setOmnibarBookmarks(false);
+    core.searchSettings()->setOmnibarBookmarks(false);
     QTRY_COMPARE(kinds(), QStringList{QStringLiteral("tab")});
 }
 
@@ -177,10 +177,10 @@ void tst_core::historyNotRemembered()
     };
     load(QStringLiteral("https://kept.example/"));
     QCOMPARE(core.history()->count(), 1);
-    core.settings()->setRememberHistory(false);
+    core.privacySettings()->setRememberHistory(false);
     load(QStringLiteral("https://unkept.example/"));
     QCOMPARE(core.history()->count(), 1);
-    core.settings()->setRememberHistory(true);
+    core.privacySettings()->setRememberHistory(true);
     load(QStringLiteral("https://kept-again.example/"));
     QCOMPARE(core.history()->count(), 2);
 }
@@ -215,12 +215,12 @@ void tst_core::clearsOnClose()
         QCOMPARE(core.tabs()->closedTabs()->count(), 1);
 
         // Off unless switched on: closing leaves everything.
-        QVERIFY(!core.settings()->clearHistoryOnClose());
+        QVERIFY(!core.privacySettings()->clearHistoryOnClose());
         core.clearOnClose();
         QCOMPARE(core.history()->count(), 2);
         QCOMPARE(core.downloads()->count(), 1);
 
-        core.settings()->setClearHistoryOnClose(true);
+        core.privacySettings()->setClearHistoryOnClose(true);
         core.clearOnClose();
         QCOMPARE(core.history()->count(), 0);
         QCOMPARE(core.downloads()->count(), 0);

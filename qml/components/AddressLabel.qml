@@ -88,9 +88,9 @@ Item {
             width: Math.min(implicitWidth, address.maximumWidth
                             - (securityIcon.visible ? securityIcon.width + address.spacing : 0)
                             - (muteIcon.visible ? 2 * (muteIcon.width + address.muteGap) : 0))
-            // The host, not the whole url (Settings.displayAddress). Tapping the bar
+            // The host, not the whole url (SearchSettings.displayAddress). Tapping the bar
             // brings the field up with every character of it back.
-            text: address.url.length > 0 ? Settings.displayAddress(address.url)
+            text: address.url.length > 0 ? SearchSettings.displayAddress(address.url)
                                          : qsTr("Search or enter address")
             truncationMode: TruncationMode.Fade
             color: address.pressed ? Theme.highlightColor : Theme.primaryColor

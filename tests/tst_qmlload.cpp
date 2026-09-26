@@ -37,10 +37,15 @@
 
 using Salama::BookmarkModel;
 using Salama::Core;
+using Salama::CoverSettings;
 using Salama::EngineMessages;
 using Salama::NotificationPermissions;
+using Salama::PrivacySettings;
 using Salama::Reader;
+using Salama::ReaderSettings;
+using Salama::SearchSettings;
 using Salama::Settings;
+using Salama::StartPageSettings;
 using Salama::TabModel;
 using Salama::WebNotifications;
 
@@ -462,7 +467,7 @@ void tst_qmlload::rootWindowLoads()
              notificationDefault.value(QStringLiteral("value")));
     given.removeAt(notificationPreference - given.cbegin());
     const QVariantList standard =
-        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard);
+        EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(given.count(), standard.count());
     for (int i = 0; i < given.count(); ++i) {
         QCOMPARE(given.at(i).toMap().value(QStringLiteral("key")),
@@ -616,15 +621,15 @@ void tst_qmlload::startPage()
     QVERIFY(find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
 
     // Settings choose the sections, and a blank start page shows nothing at all.
-    Settings *settings = m_core->settings();
-    settings->setStartPageBookmarks(false);
+    StartPageSettings *settings = m_core->startPageSettings();
+    settings->setBookmarks(false);
     QVERIFY(!find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
     QVERIFY(find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
-    settings->setStartPageBookmarks(true);
-    settings->setStartPageBlank(true);
+    settings->setBookmarks(true);
+    settings->setBlank(true);
     QVERIFY(!find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("startPagePlaceholder"))->property("enabled").toBool());
-    settings->setStartPageBlank(false);
+    settings->setBlank(false);
     QVERIFY(find(QStringLiteral("bookmarksSection"))->property("visible").toBool());
 
     // A page opened from elsewhere -- the bookmarks, here -- goes into the tab too.
@@ -825,7 +830,7 @@ void tst_qmlload::omnibar()
     QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
     QVERIFY(searchAction->property("visible").toBool());
     const QString engine =
-        m_core->settings()->searchEngineNames().at(m_core->settings()->searchEngineIndex());
+        m_core->searchSettings()->engineNames().at(m_core->searchSettings()->engineIndex());
     QCOMPARE(textIn(searchAction, QStringLiteral("omnibarActionTitle")),
              QStringLiteral("Search %1 for “forest”").arg(engine));
     QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
@@ -1049,7 +1054,7 @@ void tst_qmlload::omnibarChoices()
     typeIntoBar(root, QStringLiteral("forest.example"));
     QVERIFY(find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
     click(find(QStringLiteral("omnibarSearchAction")));
-    const QString searched = m_core->settings()->searchUrl(QStringLiteral("forest.example"));
+    const QString searched = m_core->searchSettings()->searchUrl(QStringLiteral("forest.example"));
     QCOMPARE(webView->property("url").toUrl(), QUrl(searched));
     QCOMPARE(tabs->count(), open);
     // A search is not learnt.
@@ -3336,7 +3341,7 @@ void tst_qmlload::readerView()
     // The settings restyle it where it is, in the ambience's colours until others are
     // chosen: the stub's ambience is a dark one.
     QCOMPARE(runs(engine->styleScript(true)), 0);
-    m_core->settings()->setReaderColors(Settings::ReaderSepia);
+    m_core->readerSettings()->setColors(ReaderSettings::Sepia);
     QCOMPARE(runs(engine->styleScript(true)), 1);
     QVERIFY(engine->styleScript(true).contains(QLatin1String("'sepia sans-serif'")));
     QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
@@ -3357,7 +3362,7 @@ void tst_qmlload::readerView()
     QVERIFY(reader->property("readerable").toBool());
     QCOMPARE(tabs->activeUrl(), story);
     // Nothing is restyled that is not a reader view.
-    m_core->settings()->setReaderColors(Settings::ReaderDark);
+    m_core->readerSettings()->setColors(ReaderSettings::Dark);
     QCOMPARE(runs(engine->styleScript(true)), 0);
 
     // A reader view come back to through the history is one too, whatever the tab was
@@ -3687,7 +3692,7 @@ void tst_qmlload::settingsPage()
 // page is the home page (docs/DECISIONS/0032-start-page.md).
 void tst_qmlload::startPageSettingsPage()
 {
-    Settings *settings = m_core->settings();
+    StartPageSettings *settings = m_core->startPageSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     click(find(QStringLiteral("startPageSettingsEntry")));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("startPageSettingsPage"));
@@ -3704,23 +3709,23 @@ void tst_qmlload::startPageSettingsPage()
         QVERIFY2(find(name)->property("enabled").toBool(), qPrintable(name));
     }
     find(QStringLiteral("startPageTopSitesSwitch"))->setProperty("checked", false);
-    QVERIFY(!settings->startPageTopSites());
+    QVERIFY(!settings->topSites());
     find(QStringLiteral("startPageBookmarksSwitch"))->setProperty("checked", false);
-    QVERIFY(!settings->startPageBookmarks());
+    QVERIFY(!settings->bookmarks());
     find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", false);
-    QVERIFY(!settings->startPageRecent());
+    QVERIFY(!settings->recent());
     find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", true);
-    QVERIFY(settings->startPageRecent());
+    QVERIFY(settings->recent());
 
     // Blank: the sections are dimmed, and keep their switches for when it is not.
     combo->setProperty("currentIndex", 1);
-    QVERIFY(settings->startPageBlank());
+    QVERIFY(settings->blank());
     for (const QString &name : sections) {
         QVERIFY2(!find(name)->property("enabled").toBool(), qPrintable(name));
     }
     QVERIFY(find(QStringLiteral("startPageRecentSwitch"))->property("checked").toBool());
     combo->setProperty("currentIndex", 0);
-    QVERIFY(!settings->startPageBlank());
+    QVERIFY(!settings->blank());
 }
 
 // Search: the engine the address bar searches with, and the sources its suggestions
@@ -3728,27 +3733,27 @@ void tst_qmlload::startPageSettingsPage()
 // the engine.
 void tst_qmlload::searchSettingsPage()
 {
-    Settings *settings = m_core->settings();
+    SearchSettings *settings = m_core->searchSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("searchSettingsEntry"));
-    const QStringList engines = settings->searchEngineNames();
+    const QStringList engines = settings->engineNames();
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
 
     QObject *combo = find(QStringLiteral("searchEngineCombo"));
-    QCOMPARE(combo->property("currentIndex").toInt(), settings->searchEngineIndex());
-    const int other = settings->searchEngineIndex() == 1 ? 0 : 1;
+    QCOMPARE(combo->property("currentIndex").toInt(), settings->engineIndex());
+    const int other = settings->engineIndex() == 1 ? 0 : 1;
     combo->setProperty("currentIndex", other);
-    QCOMPARE(settings->searchEngineIndex(), other);
+    QCOMPARE(settings->engineIndex(), other);
 
     // A switch for each source, in the order the address bar lists them, each writing
     // its own setting and no other.
-    using Flag = bool (Settings::*)() const;
+    using Flag = bool (SearchSettings::*)() const;
     const QList<QPair<QString, Flag>> sources{
-        {QStringLiteral("omnibarTabsSwitch"), &Settings::omnibarTabs},
-        {QStringLiteral("omnibarBookmarksSwitch"), &Settings::omnibarBookmarks},
-        {QStringLiteral("omnibarHistorySwitch"), &Settings::omnibarHistory},
-        {QStringLiteral("omnibarDownloadsSwitch"), &Settings::omnibarDownloads},
+        {QStringLiteral("omnibarTabsSwitch"), &SearchSettings::omnibarTabs},
+        {QStringLiteral("omnibarBookmarksSwitch"), &SearchSettings::omnibarBookmarks},
+        {QStringLiteral("omnibarHistorySwitch"), &SearchSettings::omnibarHistory},
+        {QStringLiteral("omnibarDownloadsSwitch"), &SearchSettings::omnibarDownloads},
     };
     const QStringList layout{
         QStringLiteral("searchEngineCombo"),    QStringLiteral("#Address bar suggestions"),
@@ -3799,31 +3804,31 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("dark")));
     QCOMPARE(fontOf(text).family(), QStringLiteral("sans-serif"));
-    QVERIFY(sizedFor(text, Settings::ReaderTextSizeDefault));
+    QVERIFY(sizedFor(text, ReaderSettings::TextSizeDefault));
 
     QObject *readerColors = find(QStringLiteral("readerColorsCombo"));
-    QCOMPARE(readerColors->property("currentIndex").toInt(), int(Settings::ReaderAmbience));
-    readerColors->setProperty("currentIndex", int(Settings::ReaderSepia));
-    QCOMPARE(m_core->settings()->readerColors(), int(Settings::ReaderSepia));
+    QCOMPARE(readerColors->property("currentIndex").toInt(), int(ReaderSettings::Ambience));
+    readerColors->setProperty("currentIndex", int(ReaderSettings::Sepia));
+    QCOMPARE(m_core->readerSettings()->colors(), int(ReaderSettings::Sepia));
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("sepia")));
     QCOMPARE(text->property("color").value<QColor>(), Reader::textColorOf(QStringLiteral("sepia")));
     QCOMPARE(domain->property("color").value<QColor>(),
              Reader::linkColorOf(QStringLiteral("sepia")));
     QObject *readerTypeface = find(QStringLiteral("readerTypefaceCombo"));
-    QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(Settings::ReaderSansSerif));
-    readerTypeface->setProperty("currentIndex", int(Settings::ReaderSerif));
-    QCOMPARE(m_core->settings()->readerTypeface(), int(Settings::ReaderSerif));
+    QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(ReaderSettings::SansSerif));
+    readerTypeface->setProperty("currentIndex", int(ReaderSettings::Serif));
+    QCOMPARE(m_core->readerSettings()->typeface(), int(ReaderSettings::Serif));
     // The article in the typeface chosen, the site's name in the sans-serif still.
     QCOMPARE(fontOf(text).family(), QStringLiteral("serif"));
     QCOMPARE(fontOf(domain).family(), QStringLiteral("sans-serif"));
     QObject *readerSize = find(QStringLiteral("readerTextSizeSlider"));
-    QCOMPARE(readerSize->property("minimumValue").toInt(), int(Settings::ReaderTextSizeMin));
-    QCOMPARE(readerSize->property("maximumValue").toInt(), int(Settings::ReaderTextSizeMax));
-    QCOMPARE(readerSize->property("value").toInt(), int(Settings::ReaderTextSizeDefault));
+    QCOMPARE(readerSize->property("minimumValue").toInt(), int(ReaderSettings::TextSizeMin));
+    QCOMPARE(readerSize->property("maximumValue").toInt(), int(ReaderSettings::TextSizeMax));
+    QCOMPARE(readerSize->property("value").toInt(), int(ReaderSettings::TextSizeDefault));
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("100 %"));
     readerSize->setProperty("value", 9);
-    QCOMPARE(m_core->settings()->readerTextSize(), 9);
+    QCOMPARE(m_core->readerSettings()->textSize(), 9);
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("140 %"));
     QVERIFY(sizedFor(text, 9));
     readerSize->setProperty("value", 1);
@@ -3832,10 +3837,10 @@ void tst_qmlload::readerSettingsPage()
 
     // The line follows the setting wherever it is written from, and so does the
     // picture.
-    m_core->settings()->setReaderColors(Settings::ReaderLight);
+    m_core->readerSettings()->setColors(ReaderSettings::Light);
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("light")));
-    m_core->settings()->setReaderColors(Settings::ReaderDark);
+    m_core->readerSettings()->setColors(ReaderSettings::Dark);
     QCOMPARE(domain->property("color").value<QColor>(),
              Reader::linkColorOf(QStringLiteral("dark")));
 }
@@ -3857,14 +3862,15 @@ void tst_qmlload::privacySettingsPage()
     QObject *pageScope = find(QStringLiteral("viewArea"));
     QObject *trackingCombo = find(QStringLiteral("trackingProtectionCombo"));
     QCOMPARE(trackingCombo->property("currentIndex").toInt(),
-             int(Settings::TrackingProtectionStandard));
+             int(PrivacySettings::TrackingProtectionStandard));
     const QString standardDescription = trackingCombo->property("description").toString();
     const int given =
         evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
-    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionStrict));
-    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionStrict));
+    trackingCombo->setProperty("currentIndex", int(PrivacySettings::TrackingProtectionStrict));
+    QCOMPARE(m_core->privacySettings()->trackingProtection(),
+             int(PrivacySettings::TrackingProtectionStrict));
     const QVariantList strict =
-        EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStrict);
+        EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStrict);
     const QVariantList preferences =
         evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
     QCOMPARE(preferences.count(), given + strict.count());
@@ -3877,8 +3883,9 @@ void tst_qmlload::privacySettingsPage()
     const QString strictDescription = trackingCombo->property("description").toString();
     QVERIFY(!strictDescription.isEmpty());
     QVERIFY(strictDescription != standardDescription);
-    trackingCombo->setProperty("currentIndex", int(Settings::TrackingProtectionOff));
-    QCOMPARE(m_core->settings()->trackingProtection(), int(Settings::TrackingProtectionOff));
+    trackingCombo->setProperty("currentIndex", int(PrivacySettings::TrackingProtectionOff));
+    QCOMPARE(m_core->privacySettings()->trackingProtection(),
+             int(PrivacySettings::TrackingProtectionOff));
     QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
              given + 2 * strict.count());
     const QString offDescription = trackingCombo->property("description").toString();
@@ -3894,7 +3901,7 @@ void tst_qmlload::privacySettingsPage()
 // way in says whether and for how long the history is kept.
 void tst_qmlload::historySettingsPage()
 {
-    Settings *settings = m_core->settings();
+    PrivacySettings *settings = m_core->privacySettings();
     TabModel *tabs = m_core->tabs();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("historySettingsEntry"));
@@ -4125,7 +4132,7 @@ void tst_qmlload::clearDataDialog()
 // and what its action is, in the words the choices are offered in.
 void tst_qmlload::coverSettingsPage()
 {
-    Settings *settings = m_core->settings();
+    CoverSettings *settings = m_core->coverSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("coverSettingsEntry"));
     click(entry);
@@ -4139,25 +4146,25 @@ void tst_qmlload::coverSettingsPage()
         QStringLiteral("quickActionChoice"),    QStringLiteral("quickActionIcons"),
     };
     QCOMPARE(columnOf(coverCombo), layout);
-    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(Settings::CoverLightning));
-    coverCombo->setProperty("currentIndex", int(Settings::CoverLatestTab));
-    QCOMPARE(settings->coverStyle(), int(Settings::CoverLatestTab));
+    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(CoverSettings::Lightning));
+    coverCombo->setProperty("currentIndex", int(CoverSettings::LatestTab));
+    QCOMPARE(settings->style(), int(CoverSettings::LatestTab));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
                 ->property("visible")
                 .toBool());
 
-    const QList<QPair<Settings::CoverStyle, QString>> styles{
-        {Settings::CoverLightning, QStringLiteral("coverLightningItem")},
-        {Settings::CoverLatestTab, QStringLiteral("coverLatestTabItem")},
+    const QList<QPair<CoverSettings::Style, QString>> styles{
+        {CoverSettings::Lightning, QStringLiteral("coverLightningItem")},
+        {CoverSettings::LatestTab, QStringLiteral("coverLatestTabItem")},
     };
     for (const auto &style : styles) {
         coverCombo->setProperty("currentIndex", int(style.first));
-        QCOMPARE(settings->coverStyle(), int(style.first));
+        QCOMPARE(settings->style(), int(style.first));
     }
-    settings->setCoverStyle(Settings::CoverLatestTab);
-    settings->setQuickAction(Settings::QuickActionNone);
-    settings->setQuickAction(Settings::QuickActionBookmark);
+    settings->setStyle(CoverSettings::LatestTab);
+    settings->setQuickAction(CoverSettings::QuickActionNone);
+    settings->setQuickAction(CoverSettings::QuickActionBookmark);
 
     // Why there is one action, in the voice of a hint rather than a control: small, in
     // the secondary highlight, and the words of a sentence rather than rich text.
@@ -4192,10 +4199,10 @@ void tst_qmlload::coverSettingsPage()
     // tab last read, or the lightning -- the cover's own, and still.
     QObject *previewLightning = findObjects(quiet, QStringLiteral("previewLightning")).first();
     QVERIFY(!previewLightning->property("visible").toBool());
-    settings->setCoverStyle(Settings::CoverLightning);
+    settings->setStyle(CoverSettings::Lightning);
     QVERIFY(previewLightning->property("visible").toBool());
     QVERIFY(!previewLightning->property("active").toBool());
-    settings->setCoverStyle(Settings::CoverLatestTab);
+    settings->setStyle(CoverSettings::LatestTab);
     QCOMPARE(quiet->property("text").toString(), QStringLiteral("Nothing playing"));
     QCOMPARE(playing->property("text").toString(), QStringLiteral("While a tab plays"));
     QObject *choice = find(QStringLiteral("quickActionChoice"));
@@ -4279,7 +4286,7 @@ void tst_qmlload::coverFlashesAsItComesIntoView()
     QCOMPARE(lightning->property("flash").toReal(), 0.0);
 
     // The last tab's cover has no lightning to flash.
-    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
     coverItem->setProperty("status", active);
     QVERIFY(!lightning->property("active").toBool());
     QVERIFY(!strike->property("running").toBool());
@@ -4289,7 +4296,7 @@ void tst_qmlload::coverPictureFollowsTheFront()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
     TabModel *tabs = m_core->tabs();
     const int first = tabs->activeTabId();
     const int second = tabs->newTab(QStringLiteral("https://second.example/"));
@@ -4339,7 +4346,7 @@ void tst_qmlload::coverStyleIsConfigurable()
 
     // The last tab: the name, what the number counts and the number over the tab
     // last read, and no lightning.
-    m_core->settings()->setCoverStyle(Settings::CoverLatestTab);
+    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
     QVERIFY(!lightning->property("visible").toBool());
     QVERIFY(heading->property("visible").toBool());
     QVERIFY(count->property("visible").toBool());
@@ -4360,7 +4367,7 @@ void tst_qmlload::coverStyleIsConfigurable()
     QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
     QVERIFY(quickActions->property("enabled").toBool());
 
-    m_core->settings()->setCoverStyle(Settings::CoverLightning);
+    m_core->coverSettings()->setStyle(CoverSettings::Lightning);
     QVERIFY(lightning->property("visible").toBool());
     QVERIFY(!heading->property("visible").toBool());
     QVERIFY(quickActions->property("enabled").toBool());
@@ -4399,7 +4406,7 @@ QStringList previewGlyphs(QObject *preview)
 void tst_qmlload::quickActions()
 {
     ScriptErrors errors;
-    Settings *settings = m_core->settings();
+    CoverSettings *settings = m_core->coverSettings();
     TabModel *tabs = m_core->tabs();
     const Forest forest = plantForest(m_core.data());
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
@@ -4426,20 +4433,20 @@ void tst_qmlload::quickActions()
     // The bookmarks, the downloads and the history: their pages, over the browsing page
     // rather than over what was left on it. The address that was being edited is not,
     // the sheet is put away, and the grid is closed.
-    settings->setQuickAction(Settings::QuickActionBookmarks);
+    settings->setQuickAction(CoverSettings::QuickActionBookmarks);
     tap();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarksPage"));
     QCOMPARE(pageStack()->property("depth").toInt(), 2);
     QVERIFY(!bar->property("editing").toBool());
     popPage();
-    settings->setQuickAction(Settings::QuickActionDownloads);
+    settings->setQuickAction(CoverSettings::QuickActionDownloads);
     tapBar(QStringLiteral("menu"));
     QVERIFY(menu->property("open").toBool());
     tap();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
     QVERIFY(!menu->property("open").toBool());
     popPage();
-    settings->setQuickAction(Settings::QuickActionHistory);
+    settings->setQuickAction(CoverSettings::QuickActionHistory);
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     openMenuItem(QStringLiteral("settingsMenuButton"));
@@ -4454,7 +4461,7 @@ void tst_qmlload::quickActions()
     const QString work = QStringLiteral("https://forest.example/work");
     settings->setQuickActionBookmark(m_core->bookmarks()->add(work, QStringLiteral("Work")), work,
                                      QStringLiteral("Work"));
-    settings->setQuickAction(Settings::QuickActionBookmark);
+    settings->setQuickAction(CoverSettings::QuickActionBookmark);
     pullUpToTabs();
     tap();
     QCOMPARE(tabs->activeTabId(), forest.away);
@@ -4482,7 +4489,7 @@ void tst_qmlload::quickActions()
     tap();
     QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarksPage"));
     QCOMPARE(tabs->count(), open + 1);
-    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionBookmark));
     QCOMPARE(settings->quickActionBookmark(), wikiId);
 
     // Every tap raised the window.
@@ -4497,7 +4504,7 @@ void tst_qmlload::quickActions()
 void tst_qmlload::quickActionLists()
 {
     ScriptErrors errors;
-    Settings *settings = m_core->settings();
+    CoverSettings *settings = m_core->coverSettings();
     TabModel *tabs = m_core->tabs();
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     const auto enabled = [coverItem]() {
@@ -4518,11 +4525,11 @@ void tst_qmlload::quickActionLists()
 
     QCOMPARE(enabled(), QStringList{QStringLiteral("quickCoverActions")});
     QVERIFY(drawnFrom(picture(quick), QStringLiteral("search-32-white.png")));
-    const QList<QPair<Settings::QuickAction, QString>> glyphs{
-        {Settings::QuickActionBookmarks, QStringLiteral("bookmarks")},
-        {Settings::QuickActionDownloads, QStringLiteral("downloads")},
-        {Settings::QuickActionHistory, QStringLiteral("history")},
-        {Settings::QuickActionBookmark, QStringLiteral("globe")},
+    const QList<QPair<CoverSettings::QuickAction, QString>> glyphs{
+        {CoverSettings::QuickActionBookmarks, QStringLiteral("bookmarks")},
+        {CoverSettings::QuickActionDownloads, QStringLiteral("downloads")},
+        {CoverSettings::QuickActionHistory, QStringLiteral("history")},
+        {CoverSettings::QuickActionBookmark, QStringLiteral("globe")},
     };
     for (const auto &glyph : glyphs) {
         settings->setQuickAction(glyph.first);
@@ -4541,7 +4548,7 @@ void tst_qmlload::quickActionLists()
                       QStringLiteral("speaker-mute-32-white.png")));
 
     // No quick action: the mute alone, and it is the mute.
-    settings->setQuickAction(Settings::QuickActionNone);
+    settings->setQuickAction(CoverSettings::QuickActionNone);
     QCOMPARE(enabled(), QStringList{QStringLiteral("muteCoverActions")});
     QVERIFY(drawnFrom(picture(QStringLiteral("loneMuteCoverAction")),
                       QStringLiteral("speaker-mute-32-white.png")));
@@ -4551,7 +4558,7 @@ void tst_qmlload::quickActionLists()
 
     // Neither: nothing on the home screen.
     QCOMPARE(enabled(), QStringList());
-    settings->setQuickAction(Settings::QuickActionSearch);
+    settings->setQuickAction(CoverSettings::QuickActionSearch);
     QCOMPARE(enabled(), QStringList{QStringLiteral("quickCoverActions")});
     QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
 }
@@ -4563,7 +4570,7 @@ void tst_qmlload::quickActionLists()
 void tst_qmlload::quickActionChoice()
 {
     ScriptErrors errors;
-    Settings *settings = m_core->settings();
+    CoverSettings *settings = m_core->coverSettings();
     BookmarkModel *bookmarks = m_core->bookmarks();
     const int wiki = bookmarks->add(QStringLiteral("https://forest.example/wiki"),
                                     QStringLiteral("Forest wiki"));
@@ -4590,20 +4597,20 @@ void tst_qmlload::quickActionChoice()
     struct Choice
     {
         QString item;
-        Settings::QuickAction action;
+        CoverSettings::QuickAction action;
         QString value;
         QString glyph;
     };
     const QList<Choice> choices{
-        {QStringLiteral("quickAction-none"), Settings::QuickActionNone, QStringLiteral("None"),
+        {QStringLiteral("quickAction-none"), CoverSettings::QuickActionNone, QStringLiteral("None"),
          QString()},
-        {QStringLiteral("quickAction-bookmarks"), Settings::QuickActionBookmarks,
+        {QStringLiteral("quickAction-bookmarks"), CoverSettings::QuickActionBookmarks,
          QStringLiteral("Bookmarks"), QStringLiteral("bookmarks")},
-        {QStringLiteral("quickAction-downloads"), Settings::QuickActionDownloads,
+        {QStringLiteral("quickAction-downloads"), CoverSettings::QuickActionDownloads,
          QStringLiteral("Downloads"), QStringLiteral("downloads")},
-        {QStringLiteral("quickAction-history"), Settings::QuickActionHistory,
+        {QStringLiteral("quickAction-history"), CoverSettings::QuickActionHistory,
          QStringLiteral("History"), QStringLiteral("history")},
-        {QStringLiteral("quickAction-search"), Settings::QuickActionSearch,
+        {QStringLiteral("quickAction-search"), CoverSettings::QuickActionSearch,
          QStringLiteral("Search"), QStringLiteral("search")},
     };
     for (const Choice &choice : choices) {
@@ -4629,7 +4636,7 @@ void tst_qmlload::quickActionChoice()
     QCOMPARE(findAll(QStringLiteral("bookmarkPickerRow")).count(), 2);
     popPage();
     QCOMPARE(currentPage(), page);
-    QCOMPARE(settings->quickAction(), int(Settings::QuickActionSearch));
+    QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionSearch));
     QCOMPARE(settings->quickActionBookmark(), 0);
     QCOMPARE(value->property("text").toString(), QStringLiteral("Search"));
 
@@ -4650,7 +4657,7 @@ void tst_qmlload::quickActionChoice()
     search->setProperty("text", QStringLiteral("forest"));
     click(findAll(QStringLiteral("bookmarkPickerRow")).first());
     QCOMPARE(currentPage(), page);
-    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionBookmark));
     QCOMPARE(settings->quickActionBookmark(), wiki);
     QCOMPARE(settings->quickActionBookmarkUrl(), QStringLiteral("https://forest.example/wiki"));
     QCOMPARE(settings->quickActionBookmarkTitle(), QStringLiteral("Forest wiki"));
@@ -4713,7 +4720,7 @@ void tst_qmlload::quickActionChoice()
 void tst_qmlload::quickActionBookmarkFollows()
 {
     ScriptErrors errors;
-    Settings *settings = m_core->settings();
+    CoverSettings *settings = m_core->coverSettings();
     BookmarkModel *bookmarks = m_core->bookmarks();
     TabModel *tabs = m_core->tabs();
     const QString url = QStringLiteral("https://bee.example/");
@@ -4721,7 +4728,7 @@ void tst_qmlload::quickActionBookmarkFollows()
     const int beeTab = tabs->newTab(url);
     const int first = bookmarks->add(url, QStringLiteral("Bee"));
     settings->setQuickActionBookmark(first, url, QStringLiteral("Bee"));
-    settings->setQuickAction(Settings::QuickActionBookmark);
+    settings->setQuickAction(CoverSettings::QuickActionBookmark);
     const auto openCoverSettings = [this]() {
         openMenuItem(QStringLiteral("settingsMenuButton"));
         click(find(QStringLiteral("coverSettingsEntry")));
@@ -4750,7 +4757,7 @@ void tst_qmlload::quickActionBookmarkFollows()
     QVERIFY(second > 0 && second != first);
     QCOMPARE(settings->quickActionBookmark(), second);
     QCOMPARE(settings->quickActionBookmarkUrl(), url);
-    QCOMPARE(settings->quickAction(), int(Settings::QuickActionBookmark));
+    QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionBookmark));
     value = openCoverSettings();
     QCOMPARE(value->property("text").toString(),
              QStringLiteral("Bookmark: ") + bookmarks->titleOf(second));
@@ -5510,7 +5517,7 @@ void tst_qmlload::notificationPermissions()
 void tst_qmlload::notificationSettingsPage()
 {
     NotificationPermissions *permissions = m_core->notificationPermissions();
-    Settings *settings = m_core->settings();
+    PrivacySettings *settings = m_core->privacySettings();
     QObject *scope = find(QStringLiteral("viewArea"));
     const auto lastToEngine = [this, scope]() {
         const QVariantList sent =
@@ -5727,7 +5734,7 @@ void tst_qmlload::tutorial()
         find(QStringLiteral("tutorialSearchAction"))->property("title").toString();
     QVERIFY(go.contains(typed));
     QVERIFY(search.contains(typed));
-    QVERIFY(search.contains(m_core->settings()->searchEngineNames().first()));
+    QVERIFY(search.contains(m_core->searchSettings()->engineNames().first()));
     QVERIFY(!tapping());
     QVERIFY(!moving());
     QVERIFY(page->property("saying").toBool());

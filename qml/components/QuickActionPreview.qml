@@ -23,7 +23,7 @@ import harbour.salama 1.0
 Item {
     id: preview
 
-    // The glyph the action wears, by the name Settings.coverIconPath takes; "" for none.
+    // The glyph the action wears, by the name CoverSettings.iconPath takes; "" for none.
     property string glyph
     // Drawn as it is while a tab plays: with the mute.
     property bool playing: false
@@ -35,7 +35,7 @@ Item {
     // How much smaller than a real cover the picture is.
     readonly property real ratio: width / Theme.coverSizeLarge.width
     readonly property real iconSize: Theme.iconSizeSmall * ratio
-    readonly property bool latestTab: Settings.coverStyle === Settings.CoverLatestTab
+    readonly property bool latestTab: CoverSettings.style === CoverSettings.LatestTab
     // The actions along the foot, left to right: the one alone, or the action and the
     // mute beside it, or the mute alone, or none.
     readonly property var actions: {
@@ -46,7 +46,7 @@ Item {
     // A file of the cover's own, as a whole URL, resolved from here as the cover
     // resolves it.
     function iconSource(name) {
-        return Qt.resolvedUrl("../../" + Settings.coverIconPath(name, preview.iconSize,
+        return Qt.resolvedUrl("../../" + CoverSettings.iconPath(name, preview.iconSize,
                                                                  preview.onDark))
     }
 

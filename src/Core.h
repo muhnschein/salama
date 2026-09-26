@@ -12,7 +12,12 @@
 #include "notifications/WebNotifications.h"
 #include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
+#include "settings/CoverSettings.h"
+#include "settings/PrivacySettings.h"
+#include "settings/ReaderSettings.h"
+#include "settings/SearchSettings.h"
 #include "settings/Settings.h"
+#include "settings/StartPageSettings.h"
 #include "startpage/StartPage.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
@@ -20,6 +25,7 @@
 #include "tabs/TabSearchModel.h"
 
 #include <QObject>
+#include <QSettings>
 #include <QString>
 
 namespace Salama {
@@ -41,6 +47,11 @@ public:
     BookmarkModel *bookmarks();
     DownloadModel *downloads();
     Settings *settings();
+    SearchSettings *searchSettings();
+    ReaderSettings *readerSettings();
+    CoverSettings *coverSettings();
+    PrivacySettings *privacySettings();
+    StartPageSettings *startPageSettings();
     OmnibarModel *omnibar();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
@@ -51,7 +62,7 @@ public:
     WebNotifications *webNotifications();
 
     // What is set to go as the browser closes -- the history, the list of downloads and
-    // the recently closed tabs, with Settings::clearHistoryOnClose -- goes: main() calls
+    // the recently closed tabs, with PrivacySettings::clearHistoryOnClose -- goes: main() calls
     // it as the application quits, and the constructor on every start, for a browser
     // stopped before it could (docs/DECISIONS/0030-history-settings.md).
     void clearOnClose();
@@ -64,7 +75,14 @@ private:
     HistoryModel m_history;
     BookmarkModel m_bookmarks;
     DownloadModel m_downloads;
+    // The one file every settings section keeps its part of the preferences in.
+    QSettings m_settingsFile;
     Settings m_settings;
+    SearchSettings m_searchSettings;
+    ReaderSettings m_readerSettings;
+    CoverSettings m_coverSettings;
+    PrivacySettings m_privacySettings;
+    StartPageSettings m_startPageSettings;
     // After everything it searches, which it is made from.
     OmnibarModel m_omnibar;
     EngineMessages m_engineMessages;

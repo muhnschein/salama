@@ -16,12 +16,12 @@ their own.
 *Privacy* heading, after the privacy page, by `icon-m-history`, the menu's own for the
 history. On it, Firefox's three:
 
-- **Remember browsing history** (`Settings.rememberHistory`, on until switched off). Off,
+- **Remember browsing history** (`PrivacySettings.rememberHistory`, on until switched off). Off,
   a page visited is not written to the history (`Core` asks before it passes a visit on),
   and nothing is learnt for the address bar (0027); what was kept stays until it is
   cleared, as in Firefox. The downloads list is not part of it: it lists files the phone
   now holds, which the switch would not unmake.
-- **Clear history when closed** (`Settings.clearHistoryOnClose`, off until switched on):
+- **Clear history when closed** (`PrivacySettings.clearHistoryOnClose`, off until switched on):
   the history, with what the address bar learnt, the list of downloads and the recently
   closed tabs go as the application quits (`Core::clearOnClose`, from `main()` on
   `aboutToQuit`) — and as it starts, for an application stopped before it could close,

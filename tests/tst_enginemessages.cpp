@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "engine/EngineMessages.h"
-#include "settings/Settings.h"
+#include "settings/PrivacySettings.h"
 
 #include <QtTest>
 
 using Salama::EngineMessages;
-using Salama::Settings;
+using Salama::PrivacySettings;
 
 namespace {
 
@@ -244,19 +244,19 @@ void tst_enginemessages::resolveFavicon()
 // value's type, and the engine refuses a value of the wrong one.
 void tst_enginemessages::trackingProtectionNamesTheSamePreferences()
 {
-    QStringList names = trackingNames(Settings::TrackingProtectionStandard);
+    QStringList names = trackingNames(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(names.count(), 12);
     QCOMPARE(names.removeDuplicates(), 0);
-    QCOMPARE(trackingNames(Settings::TrackingProtectionOff), names);
-    QCOMPARE(trackingNames(Settings::TrackingProtectionStrict), names);
+    QCOMPARE(trackingNames(PrivacySettings::TrackingProtectionOff), names);
+    QCOMPARE(trackingNames(PrivacySettings::TrackingProtectionStrict), names);
 
-    for (const QVariant &entry :
-         EngineMessages::trackingProtectionPreferences(Settings::TrackingProtectionStandard)) {
+    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(
+             PrivacySettings::TrackingProtectionStandard)) {
         QCOMPARE(entry.toMap().count(), 2);
     }
-    const QVariantMap off = trackingValues(Settings::TrackingProtectionOff);
-    const QVariantMap standard = trackingValues(Settings::TrackingProtectionStandard);
-    const QVariantMap strict = trackingValues(Settings::TrackingProtectionStrict);
+    const QVariantMap off = trackingValues(PrivacySettings::TrackingProtectionOff);
+    const QVariantMap standard = trackingValues(PrivacySettings::TrackingProtectionStandard);
+    const QVariantMap strict = trackingValues(PrivacySettings::TrackingProtectionStrict);
     for (const QString &name : names) {
         QCOMPARE(off.value(name).userType(), standard.value(name).userType());
         QCOMPARE(strict.value(name).userType(), standard.value(name).userType());
@@ -289,7 +289,7 @@ void tst_enginemessages::trackingProtectionLevels()
 
     // Off is the engine as it comes: every cookie accepted, nothing classified,
     // bounce tracking watched and never acted on.
-    const QVariantMap off = trackingValues(Settings::TrackingProtectionOff);
+    const QVariantMap off = trackingValues(PrivacySettings::TrackingProtectionOff);
     QCOMPARE(off.value(cookies), QVariant(0));
     QCOMPARE(off.value(blocking), QVariant(false));
     QCOMPARE(off.value(annotation), QVariant(false));
@@ -303,7 +303,7 @@ void tst_enginemessages::trackingProtectionLevels()
 
     // Standard is Firefox's: Total Cookie Protection, and fingerprinters and
     // cryptominers blocked.
-    const QVariantMap standard = trackingValues(Settings::TrackingProtectionStandard);
+    const QVariantMap standard = trackingValues(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(standard.value(cookies), QVariant(5));
     QCOMPARE(standard.value(blocking), QVariant(true));
     QCOMPARE(standard.value(annotation), QVariant(true));
@@ -317,7 +317,7 @@ void tst_enginemessages::trackingProtectionLevels()
     QCOMPARE(standard.value(convenience), QVariant(true));
 
     // Strict blocks every tracker list, and switches on what Standard leaves off.
-    const QVariantMap strict = trackingValues(Settings::TrackingProtectionStrict);
+    const QVariantMap strict = trackingValues(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(strict.value(cookies), QVariant(5));
     QCOMPARE(strict.value(bounceTracking), QVariant(1));
     for (const QString &name : strictOnly) {
@@ -353,8 +353,8 @@ void tst_enginemessages::trackingProtectionFeatures()
     const QStringList exceptions{QStringLiteral("minor-exceptions"),
                                  QStringLiteral("major-exceptions")};
 
-    for (int level :
-         {int(Settings::TrackingProtectionStandard), int(Settings::TrackingProtectionStrict)}) {
+    for (int level : {int(PrivacySettings::TrackingProtectionStandard),
+                      int(PrivacySettings::TrackingProtectionStrict)}) {
         const QVariantMap values = trackingValues(level);
         const QStringList blocking = features(values.value(QLatin1String(ContentBlocking)));
         bool inExceptions = false;
@@ -376,7 +376,7 @@ void tst_enginemessages::trackingProtectionFeatures()
             QVERIFY2(engine.contains(feature), qPrintable(feature));
         }
         QCOMPARE(annotation.contains(QStringLiteral("trackers-content")),
-                 level == Settings::TrackingProtectionStrict);
+                 level == PrivacySettings::TrackingProtectionStrict);
     }
 }
 

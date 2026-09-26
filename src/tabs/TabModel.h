@@ -76,7 +76,7 @@ public:
 
     // Something with sound is playing on the page; or this browser paused it, and it
     // can be played again from here; or neither. Unscoped on purpose, as
-    // Settings::CoverStyle is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
+    // CoverSettings::Style is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
     // cannot do for a scoped enum (cpp:S3642).
     enum MediaState // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {

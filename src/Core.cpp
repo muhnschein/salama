@@ -18,17 +18,24 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_history(m_storage)
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
-    , m_settings(configFilePath)
-    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings)
+    , m_settingsFile(configFilePath, QSettings::IniFormat)
+    , m_settings(m_settingsFile)
+    , m_searchSettings(m_settingsFile)
+    , m_readerSettings(m_settingsFile)
+    , m_coverSettings(m_settingsFile)
+    , m_privacySettings(m_settingsFile)
+    , m_startPageSettings(m_settingsFile)
+    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_searchSettings,
+                &m_privacySettings)
     , m_pageMedia(&m_tabs)
-    , m_reader(m_settings)
+    , m_reader(m_readerSettings)
     , m_startPage(m_storage)
     , m_webNotifications(&m_notificationPermissions,
                          Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
     // Unless the history is not to be kept.
     connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
-        if (m_settings.rememberHistory()) {
+        if (m_privacySettings.rememberHistory()) {
             m_history.visit(url);
         }
     });
@@ -63,7 +70,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
 
 void Core::clearOnClose()
 {
-    if (!m_settings.clearHistoryOnClose()) {
+    if (!m_privacySettings.clearHistoryOnClose()) {
         return;
     }
     m_history.clear();
@@ -104,6 +111,31 @@ DownloadModel *Core::downloads()
 Settings *Core::settings()
 {
     return &m_settings;
+}
+
+SearchSettings *Core::searchSettings()
+{
+    return &m_searchSettings;
+}
+
+ReaderSettings *Core::readerSettings()
+{
+    return &m_readerSettings;
+}
+
+CoverSettings *Core::coverSettings()
+{
+    return &m_coverSettings;
+}
+
+PrivacySettings *Core::privacySettings()
+{
+    return &m_privacySettings;
+}
+
+StartPageSettings *Core::startPageSettings()
+{
+    return &m_startPageSettings;
 }
 
 OmnibarModel *Core::omnibar()

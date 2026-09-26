@@ -6,7 +6,8 @@
 #include "downloads/DownloadModel.h"
 #include "history/HistoryModel.h"
 #include "search/SearchWords.h"
-#include "settings/Settings.h"
+#include "settings/PrivacySettings.h"
+#include "settings/SearchSettings.h"
 #include "tabs/TabModel.h"
 
 #include <QHash>
@@ -134,7 +135,7 @@ using SiteIcons = QHash<QString, QString>;
 void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
 {
     if (!favicon.isEmpty()) {
-        const QString host = Settings::displayAddress(url);
+        const QString host = SearchSettings::displayAddress(url);
         if (!icons.contains(host)) {
             icons.insert(host, favicon);
         }
@@ -179,7 +180,7 @@ void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Sear
 // history does not know is open now, which is a visit now.
 void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &icons, qint64 now)
 {
-    page.row.host = Settings::displayAddress(page.row.url);
+    page.row.host = SearchSettings::displayAddress(page.row.url);
     page.row.markedTitle = search.words.marked(page.row.title);
     page.row.markedHost = search.words.marked(page.row.host);
     if (page.row.favicon.isEmpty()) {
@@ -236,13 +237,15 @@ QString kindName(OmnibarKind kind)
 } // namespace
 
 OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryModel *history,
-                           DownloadModel *downloads, Settings *settings, QObject *parent)
+                           DownloadModel *downloads, SearchSettings *search,
+                           PrivacySettings *privacy, QObject *parent)
     : QAbstractListModel(parent)
     , m_tabs(tabs)
     , m_bookmarks(bookmarks)
     , m_history(history)
     , m_downloads(downloads)
-    , m_settings(settings)
+    , m_search(search)
+    , m_privacy(privacy)
 {
     m_refresh.setSingleShot(true);
     m_refresh.setInterval(0);
@@ -266,10 +269,10 @@ OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryMode
     connect(m_history, &HistoryModel::modelReset, this, &OmnibarModel::sourceChanged);
     connect(m_history, &HistoryModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
     connect(m_history, &HistoryModel::dataChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_settings, &Settings::omnibarTabsChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_settings, &Settings::omnibarBookmarksChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_settings, &Settings::omnibarHistoryChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_settings, &Settings::omnibarDownloadsChanged, this, &OmnibarModel::sourceChanged);
+    connect(m_search, &SearchSettings::omnibarTabsChanged, this, &OmnibarModel::sourceChanged);
+    connect(m_search, &SearchSettings::omnibarBookmarksChanged, this, &OmnibarModel::sourceChanged);
+    connect(m_search, &SearchSettings::omnibarHistoryChanged, this, &OmnibarModel::sourceChanged);
+    connect(m_search, &SearchSettings::omnibarDownloadsChanged, this, &OmnibarModel::sourceChanged);
 }
 
 int OmnibarModel::rowCount(const QModelIndex &parent) const
@@ -388,7 +391,7 @@ int OmnibarModel::count() const
 
 void OmnibarModel::learn(const QString &typed, const QString &url) const
 {
-    if (m_settings->rememberHistory()) {
+    if (m_privacy->rememberHistory()) {
         m_history->recordInput(typed, url);
     }
 }
@@ -463,7 +466,7 @@ QList<OmnibarRow> OmnibarModel::collect() const
 QList<OmnibarRow> OmnibarModel::emptyRows() const
 {
     QList<OmnibarRow> rows;
-    if (!m_settings->omnibarBookmarks()) {
+    if (!m_search->omnibarBookmarks()) {
         return rows;
     }
     for (const BookmarkModel::Bookmark &bookmark : m_bookmarks->bookmarks()) {
@@ -472,7 +475,7 @@ QList<OmnibarRow> OmnibarModel::emptyRows() const
         row.id = bookmark.id;
         row.title = orUrl(bookmark.title, bookmark.url);
         row.url = bookmark.url;
-        row.host = Settings::displayAddress(bookmark.url);
+        row.host = SearchSettings::displayAddress(bookmark.url);
         row.markedTitle = row.title.toHtmlEscaped();
         row.markedHost = row.host.toHtmlEscaped();
         row.favicon = bookmark.favicon;
@@ -491,10 +494,10 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     const Search search{words, m_history->inputRanks(m_query, now)};
     Pages pages;
-    if (m_settings->omnibarTabs()) {
+    if (m_search->omnibarTabs()) {
         addTabs(pages, *m_tabs, search);
     }
-    if (m_settings->omnibarBookmarks()) {
+    if (m_search->omnibarBookmarks()) {
         addBookmarks(pages, *m_bookmarks, search);
     }
     // The icons of the sites open in tabs, then bookmarked, then in the history.
@@ -507,7 +510,7 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
         bookmarked.insert(bookmark.url);
         addSiteIcon(icons, bookmark.url, bookmark.favicon);
     }
-    addHistory(pages, *m_history, m_settings->omnibarHistory(), search, icons);
+    addHistory(pages, *m_history, m_search->omnibarHistory(), search, icons);
 
     for (Page &page : pages.list) {
         score(page, search, bookmarked.contains(page.row.url), icons, now);
@@ -525,7 +528,7 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
 QList<OmnibarRow> OmnibarModel::downloadRows(const SearchWords &words) const
 {
     QList<OmnibarRow> rows;
-    if (!m_settings->omnibarDownloads()) {
+    if (!m_search->omnibarDownloads()) {
         return rows;
     }
     for (const DownloadModel::Download &download : m_downloads->downloads()) {
@@ -540,7 +543,7 @@ QList<OmnibarRow> OmnibarModel::downloadRows(const SearchWords &words) const
         row.id = download.id;
         row.title = orUrl(download.name, download.url);
         row.url = download.url;
-        row.host = Settings::displayAddress(download.url);
+        row.host = SearchSettings::displayAddress(download.url);
         row.markedTitle = words.marked(row.title);
         row.markedHost = words.marked(row.host);
         row.downloadStatus = static_cast<int>(download.status);

@@ -47,7 +47,7 @@ public:
     // The reader's answer to a site asking to send notifications, as Firefox offers
     // it: allowed for good, blocked for good, or not now -- refused, and the page not
     // asked about again until it is loaded again. Unscoped for the reason
-    // Settings::CoverStyle is.
+    // CoverSettings::Style is.
     enum Decision // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         Allow = 0,

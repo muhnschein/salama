@@ -38,10 +38,13 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
   notifications (`DECISIONS/0022-downloads-list.md`), and the folder the engine saves
   them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
-- `Settings` — what the start page shows, search engine and the sources the address bar
-  suggests from, desktop mode, the cover's style and quick action, tracking protection
-  level, the reader view's look, whether the tutorial has been shown, address-bar
-  heuristics.
+- The settings, one section per settings page, each a QML singleton over the one
+  settings file (`DECISIONS/0028-settings-pages.md`): `SearchSettings` -- the search
+  engine, the sources the address bar suggests from, and the address-bar heuristics;
+  `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
+  quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
+  notification requests; `StartPageSettings` -- what the start page shows; and
+  `Settings` -- the screen cutout and whether the tutorial has been shown.
 - `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
@@ -112,19 +115,19 @@ the deck's state and gestures; what it carries is declared in `BrowserPage.qml`,
 context that has the engine. Nothing is pushed onto the page stack for it
 (`DECISIONS/0009-navigation-bar-gesture.md`, `DECISIONS/0010-tab-grid-deck.md`).
 
-The bar shows `Settings.displayAddress(url)` -- the host alone -- until it is tapped,
+The bar shows `SearchSettings.displayAddress(url)` -- the host alone -- until it is tapped,
 and draws a red open padlock when the engine reports a broken TLS connection for an
 https page (`DECISIONS/0011-address-and-security.md`). The bar slims to the host on the
 engine's own chrome gesture while a page is scrolled down, the page ending above it
 either way, and a tap on the slim bar brings the whole bar back
 (`DECISIONS/0009-navigation-bar-gesture.md`).
 
-Typed text goes through `Settings.urlForInput`: a URL with a known scheme is used as
+Typed text goes through `SearchSettings.urlForInput`: a URL with a known scheme is used as
 is, a host-like token gets `https://` (`http://` for localhost and IP addresses),
 anything else becomes a search with the selected engine. Once what is typed differs from
 the url, or the bar is opened empty for a new tab, a pane above it (`OmnibarView.qml`)
 lists what `Omnibar` finds, ranked as Firefox ranks it and learning from what is chosen,
-over a row to go to the address, when `Settings.isAddress` says it is one, and a row to
+over a row to go to the address, when `SearchSettings.isAddress` says it is one, and a row to
 search (`DECISIONS/0027-omnibar.md`).
 
 Settings is a main page leading to a page each for search, the reader view, the cover,

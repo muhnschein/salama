@@ -50,7 +50,7 @@ The cover says **how many tabs are open**, and shows them.
   at every count — one tab left a stamp in the corner of an empty cover and two left
   a row with a hole under it — and a field that only sometimes fills is not texture.
 
-How much of this a cover shows is **`Settings.coverStyle`**, a choice of three, because
+How much of this a cover shows is **`CoverSettings.style`**, a choice of three, because
 a cover is the one surface where taste is the whole argument and there is no reading of
 it that is right for everyone:
 

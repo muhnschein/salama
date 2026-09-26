@@ -79,16 +79,16 @@ Page {
                 objectName: "rememberHistorySwitch"
                 text: qsTr("Remember browsing history")
                 description: qsTr("Keep the pages you visit, to find them in the history and the address bar")
-                checked: Settings.rememberHistory
-                onCheckedChanged: Settings.rememberHistory = checked
+                checked: PrivacySettings.rememberHistory
+                onCheckedChanged: PrivacySettings.rememberHistory = checked
             }
 
             TextSwitch {
                 objectName: "clearHistoryOnCloseSwitch"
                 text: qsTr("Clear history when closed")
                 description: qsTr("The history, the list of downloads and the recently closed tabs go each time the browser is closed")
-                checked: Settings.clearHistoryOnClose
-                onCheckedChanged: Settings.clearHistoryOnClose = checked
+                checked: PrivacySettings.clearHistoryOnClose
+                onCheckedChanged: PrivacySettings.clearHistoryOnClose = checked
             }
 
             SettingsEntry {

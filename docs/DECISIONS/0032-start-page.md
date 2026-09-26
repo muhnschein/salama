@@ -22,7 +22,7 @@ once, and is drawn in the ambience's colours. `src/startpage/StartPage` reads it
 the database whenever the history or the bookmarks change: the sites visited most, one tile
 per site (the host without "www.", as the bar shows it), the page of each read most; the
 first eight bookmarks in their order; the five pages read last. A page of results from one
-of the search engines on offer is in neither history list (`Settings::isSearchUrl`), or every
+of the search engines on offer is in neither history list (`SearchSettings::isSearchUrl`), or every
 search would make its engine the site visited most. The tiles carry the page's icon, which
 the history keeps for the address bar (schema 9), or the first letter of the host.
 

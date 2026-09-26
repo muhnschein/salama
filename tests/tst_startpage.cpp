@@ -2,18 +2,19 @@
 // Copyright (c) 2026 salama contributors
 #include "bookmarks/BookmarkModel.h"
 #include "history/HistoryModel.h"
-#include "settings/Settings.h"
+#include "settings/SearchSettings.h"
 #include "startpage/SiteListModel.h"
 #include "startpage/StartPage.h"
 #include "storage/Storage.h"
 
+#include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
 
 using Salama::BookmarkModel;
 using Salama::HistoryModel;
-using Salama::Settings;
+using Salama::SearchSettings;
 using Salama::Site;
 using Salama::SiteListModel;
 using Salama::StartPage;
@@ -160,7 +161,8 @@ void tst_startpage::searchesAreNotVisits()
     QTemporaryDir dir;
     Storage storage(dir.path());
     HistoryModel history(storage);
-    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
+    SearchSettings settings(file);
     for (int i = 0; i < 5; ++i) {
         history.visit(settings.searchUrl(QStringLiteral("search %1").arg(i)));
     }

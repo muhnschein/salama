@@ -31,16 +31,16 @@ CoverBackground {
     /// string that is not.
     readonly property string brandName: "Salama"
 
-    /// What the cover is set to show (Settings.coverStyle): the lightning, or the
+    /// What the cover is set to show (CoverSettings.style): the lightning, or the
     /// heading over the tab last read. Everything below turns on this.
-    readonly property bool showsLatestTab: Settings.coverStyle === Settings.CoverLatestTab
+    readonly property bool showsLatestTab: CoverSettings.style === CoverSettings.LatestTab
 
     /// The front tab plays something, or is muted: its mute is offered, as the bar
     /// offers it (components/AddressLabel.qml).
     readonly property bool showsMute: TabModel.activeMediaState !== TabModel.NoMedia
                                       || TabModel.activeMuted
     /// A quick action is chosen, which it is unless the reader chose none.
-    readonly property bool showsQuickAction: Settings.quickAction !== Settings.QuickActionNone
+    readonly property bool showsQuickAction: CoverSettings.quickAction !== CoverSettings.QuickActionNone
 
     /// Whether the ambience is a dark one -- its ink, the primary colour, is light --
     /// which the actions' pictures are drawn in white for, and in black on a light one,
@@ -53,19 +53,19 @@ CoverBackground {
     /// An action's picture, as a whole URL. The home screen draws an action's picture
     /// itself, from the file as it is, so it is one drawn at the size Silica's small
     /// icon takes on this phone, in the ambience's ink -- see icons/render.sh, which
-    /// draws them from icons/cover/, and Settings.coverIconPath, which names them. Drawn
+    /// draws them from icons/cover/, and CoverSettings.iconPath, which names them. Drawn
     /// here rather than taken from the theme's icon-cover-* glyphs, which could not be
     /// checked against the bar's speaker, nor made for a bookmark of the reader's own.
     function actionIcon(glyph) {
-        return Qt.resolvedUrl("../../" + Settings.coverIconPath(glyph, Theme.iconSizeSmall,
+        return Qt.resolvedUrl("../../" + CoverSettings.iconPath(glyph, Theme.iconSizeSmall,
                                                                  cover.onDark))
     }
 
     /// The quick action's picture: the glyph of what it opens, and for one bookmark the
     /// glyph picked for it in Settings. None for no action, when no list offers it.
     readonly property string quickActionIcon: {
-        var glyphs = ["", "search", "bookmarks", Settings.quickActionIcon, "downloads", "history"]
-        return cover.showsQuickAction ? cover.actionIcon(glyphs[Settings.quickAction]) : ""
+        var glyphs = ["", "search", "bookmarks", CoverSettings.quickActionIcon, "downloads", "history"]
+        return cover.showsQuickAction ? cover.actionIcon(glyphs[CoverSettings.quickAction]) : ""
     }
     /// The mute's picture: the speaker while the tab is heard, struck through while it is
     /// not, as on the bar.

@@ -75,6 +75,31 @@ QObject *settingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
     return keepOwnership(registeredCore()->settings());
 }
 
+QObject *searchSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->searchSettings());
+}
+
+QObject *readerSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->readerSettings());
+}
+
+QObject *coverSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->coverSettings());
+}
+
+QObject *privacySettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->privacySettings());
+}
+
+QObject *startPageSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->startPageSettings());
+}
+
 QObject *omnibarProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->omnibar());
@@ -137,6 +162,16 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<DownloadModel>(ModuleUri, 1, 0, "DownloadModel",
                                             &downloadModelProvider);
     qmlRegisterSingletonType<Settings>(ModuleUri, 1, 0, "Settings", &settingsProvider);
+    qmlRegisterSingletonType<SearchSettings>(ModuleUri, 1, 0, "SearchSettings",
+                                             &searchSettingsProvider);
+    qmlRegisterSingletonType<ReaderSettings>(ModuleUri, 1, 0, "ReaderSettings",
+                                             &readerSettingsProvider);
+    qmlRegisterSingletonType<CoverSettings>(ModuleUri, 1, 0, "CoverSettings",
+                                            &coverSettingsProvider);
+    qmlRegisterSingletonType<PrivacySettings>(ModuleUri, 1, 0, "PrivacySettings",
+                                              &privacySettingsProvider);
+    qmlRegisterSingletonType<StartPageSettings>(ModuleUri, 1, 0, "StartPageSettings",
+                                                &startPageSettingsProvider);
     qmlRegisterSingletonType<OmnibarModel>(ModuleUri, 1, 0, "Omnibar", &omnibarProvider);
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);

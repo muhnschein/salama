@@ -113,7 +113,7 @@ QtObject {
 
     // Whether sites may ask: the engine's default for the permission.
     function applyRequests() {
-        var preference = NotificationPermissions.defaultPreference(Settings.blockNotificationRequests)
+        var preference = NotificationPermissions.defaultPreference(PrivacySettings.blockNotificationRequests)
         WebEngineSettings.setPreference(preference.name, preference.value)
     }
 
@@ -131,7 +131,7 @@ QtObject {
     }
 
     property Connections settings: Connections {
-        target: Settings
+        target: PrivacySettings
         onBlockNotificationRequestsChanged: center.applyRequests()
     }
 

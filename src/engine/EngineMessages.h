@@ -93,7 +93,7 @@ public:
     // An answer that carries no number says nothing was found.
     Q_INVOKABLE static bool findFound(const QVariant &data);
 
-    // What the engine is told for a level of Settings::TrackingProtection: a list of
+    // What the engine is told for a level of PrivacySettings::TrackingProtection: a list of
     // {name, value}, each for WebEngineSettings.setPreference(). Every level names the
     // same preferences in the same order, so a move between levels leaves nothing of
     // the last one in the profile. Standard and Strict are Firefox's own categories

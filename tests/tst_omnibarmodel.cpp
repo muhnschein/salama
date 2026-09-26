@@ -4,11 +4,13 @@
 #include "downloads/DownloadModel.h"
 #include "history/HistoryModel.h"
 #include "omnibar/OmnibarModel.h"
-#include "settings/Settings.h"
+#include "settings/PrivacySettings.h"
+#include "settings/SearchSettings.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 
 #include <QDateTime>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -18,7 +20,8 @@ using Salama::BookmarkModel;
 using Salama::DownloadModel;
 using Salama::HistoryModel;
 using Salama::OmnibarModel;
-using Salama::Settings;
+using Salama::PrivacySettings;
+using Salama::SearchSettings;
 using Salama::Storage;
 using Salama::TabModel;
 
@@ -64,8 +67,10 @@ struct Sources
     BookmarkModel bookmarks{storage};
     HistoryModel history{storage};
     DownloadModel downloads{storage, dir.path()};
-    Settings settings{dir.path() + QStringLiteral("/salama.conf")};
-    OmnibarModel omnibar{&tabs, &bookmarks, &history, &downloads, &settings};
+    QSettings file{dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat};
+    SearchSettings search{file};
+    PrivacySettings privacy{file};
+    OmnibarModel omnibar{&tabs, &bookmarks, &history, &downloads, &search, &privacy};
 };
 
 QVariant role(const OmnibarModel &model, int row, int role)
@@ -577,12 +582,12 @@ void tst_omnibarmodel::onePageOneRow()
     QVERIFY(!role(omnibar, 3, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 
     // With the tabs switched off the shared page is its bookmark.
-    sources.settings.setOmnibarTabs(false);
+    sources.search.setOmnibarTabs(false);
     QTRY_COMPARE(rows(omnibar).first(), QStringLiteral("bookmark: Shared"));
     QCOMPARE(omnibar.count(), 4);
     // And with the bookmarks off too, the history, the bookmarked pages still weighing
     // more.
-    sources.settings.setOmnibarBookmarks(false);
+    sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("history")), 4);
     QCOMPARE(rows(omnibar).last(), QStringLiteral("history: Old page"));
     QVERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
@@ -648,12 +653,12 @@ void tst_omnibarmodel::learningFollowsTheHistory()
     Sources sources;
     OmnibarModel &omnibar = sources.omnibar;
     sources.history.visit(QStringLiteral("https://kept.example/"), QStringLiteral("Kept"));
-    sources.settings.setRememberHistory(false);
+    sources.privacy.setRememberHistory(false);
     omnibar.learn(QStringLiteral("qq"), QStringLiteral("https://kept.example/"));
     omnibar.setQuery(QStringLiteral("qq"));
     QCOMPARE(omnibar.count(), 0);
 
-    sources.settings.setRememberHistory(true);
+    sources.privacy.setRememberHistory(true);
     omnibar.learn(QStringLiteral("qq"), QStringLiteral("https://kept.example/"));
     omnibar.setQuery(QString());
     omnibar.setQuery(QStringLiteral("qq"));
@@ -760,27 +765,27 @@ void tst_omnibarmodel::sourcesSwitchedOff()
                   QStringLiteral("https://files.example/off.pdf"));
 
     OmnibarModel &omnibar = sources.omnibar;
-    Settings &settings = sources.settings;
+    SearchSettings &search = sources.search;
     omnibar.setQuery(QStringLiteral("off"));
     QCOMPARE(omnibar.count(), 4);
 
-    settings.setOmnibarTabs(false);
+    search.setOmnibarTabs(false);
     QTRY_COMPARE(omnibar.count(), 3);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("tab")), 0);
 
-    settings.setOmnibarBookmarks(false);
+    search.setOmnibarBookmarks(false);
     QTRY_COMPARE(omnibar.count(), 2);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("bookmark")), 0);
 
-    settings.setOmnibarHistory(false);
+    search.setOmnibarHistory(false);
     QTRY_COMPARE(omnibar.count(), 1);
     QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Kind)).toString(),
              QStringLiteral("download"));
 
-    settings.setOmnibarDownloads(false);
+    search.setOmnibarDownloads(false);
     QTRY_COMPARE(omnibar.count(), 0);
 
-    settings.setOmnibarHistory(true);
+    search.setOmnibarHistory(true);
     QTRY_COMPARE(omnibar.count(), 1);
     QCOMPARE(rows(omnibar), QStringList{QStringLiteral("history: https://off-history.example/")});
 }
@@ -825,9 +830,9 @@ void tst_omnibarmodel::bookmarksWhenEmpty()
     QCOMPARE(omnibar.count(), 11);
 
     // The bookmarks switched off in Settings are off here too.
-    sources.settings.setOmnibarBookmarks(false);
+    sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(omnibar.count(), 0);
-    sources.settings.setOmnibarBookmarks(true);
+    sources.search.setOmnibarBookmarks(true);
     QTRY_COMPARE(omnibar.count(), 11);
 
     omnibar.setBookmarksWhenEmpty(false);
@@ -903,7 +908,7 @@ void tst_omnibarmodel::quietWhileNothingIsAsked()
     sources.tabs.newTab(QStringLiteral("https://front.example/"));
     sources.bookmarks.add(QStringLiteral("https://quiet.example/"), QStringLiteral("Q"));
     sources.history.visit(QStringLiteral("https://quiet.example/history"));
-    sources.settings.setOmnibarTabs(false);
+    sources.search.setOmnibarTabs(false);
     settle();
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.count(), 0);
