@@ -49,7 +49,9 @@ void tst_core::wiresTabsToHistory()
     QCOMPARE(core.history()->count(), 1);
     QCOMPARE(core.tabSearch()->count(), 1);
     core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
-    QCOMPARE(core.history()->data(core.history()->index(0, 0), HistoryModel::TitleRole).toString(),
+    QCOMPARE(core.history()
+                 ->data(core.history()->index(0, 0), roleId(HistoryModel::Role::Title))
+                 .toString(),
              QStringLiteral("Alpha"));
 }
 
@@ -66,7 +68,7 @@ void tst_core::wiresFaviconsAndActiveUrlToBookmarks()
 
     core.tabs()->updateFavicon(id, QStringLiteral("https://a.example/icon.png"));
     QCOMPARE(core.bookmarks()
-                 ->data(core.bookmarks()->index(0, 0), BookmarkModel::FaviconRole)
+                 ->data(core.bookmarks()->index(0, 0), roleId(BookmarkModel::Role::Favicon))
                  .toString(),
              QStringLiteral("https://a.example/icon.png"));
 
@@ -91,9 +93,10 @@ void tst_core::restoresState()
     QCOMPARE(core.tabs()->count(), 1);
     // The downloads are kept in the same database; one that was running did not finish.
     QCOMPARE(core.downloads()->count(), 1);
-    QCOMPARE(
-        core.downloads()->data(core.downloads()->index(0, 0), DownloadModel::StatusRole).toInt(),
-        static_cast<int>(DownloadModel::Failed));
+    QCOMPARE(core.downloads()
+                 ->data(core.downloads()->index(0, 0), roleId(DownloadModel::Role::Status))
+                 .toInt(),
+             static_cast<int>(DownloadModel::Failed));
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
     // Five pages stay loaded, as in Jolla's browser.
     QCOMPARE(core.tabs()->liveTabLimit(), 5);
@@ -115,17 +118,17 @@ void tst_core::wiresPlaybackToPageMedia()
                                              {QStringLiteral("state"), QStringLiteral("play")}});
     QVERIFY(requested.wait(core.pageMedia()->queryDelay() * 10));
     QCOMPARE(requested.first().at(0).toInt(), 0);
-    QCOMPARE(requested.first().at(1).toInt(), static_cast<int>(Salama::PageMedia::Query));
+    QCOMPARE(requested.first().at(1).toInt(), static_cast<int>(Salama::PageMedia::Command::Query));
 
     // Out of sight, the pages hear of it: what plays is hidden from them.
     const int id = core.tabs()->activeTabId();
     core.pageActivity()->setBackground(true);
     QVERIFY(core.pageMedia()
-                ->script(id, Salama::PageMedia::Query)
+                ->script(id, Salama::PageMedia::Command::Query)
                 .contains(QLatin1String("concealed = true;")));
     core.pageActivity()->setBackground(false);
     QVERIFY(core.pageMedia()
-                ->script(id, Salama::PageMedia::Query)
+                ->script(id, Salama::PageMedia::Command::Query)
                 .contains(QLatin1String("concealed = false;")));
 }
 
@@ -150,14 +153,16 @@ void tst_core::omnibarSearchesTheModels()
         QStringList kinds;
         for (int row = 0; row < omnibar->rowCount(); ++row) {
             kinds.append(
-                omnibar->data(omnibar->index(row, 0), Salama::OmnibarModel::KindRole).toString());
+                omnibar
+                    ->data(omnibar->index(row, 0), Salama::roleId(Salama::OmnibarModel::Role::Kind))
+                    .toString());
         }
         kinds.sort();
         return kinds;
     };
     QCOMPARE(kinds(), (QStringList{QStringLiteral("bookmark"), QStringLiteral("tab")}));
 
-    core.settings()->setOmnibarBookmarks(false);
+    core.searchSettings()->setOmnibarBookmarks(false);
     QTRY_COMPARE(kinds(), QStringList{QStringLiteral("tab")});
 }
 
@@ -172,10 +177,10 @@ void tst_core::historyNotRemembered()
     };
     load(QStringLiteral("https://kept.example/"));
     QCOMPARE(core.history()->count(), 1);
-    core.settings()->setRememberHistory(false);
+    core.privacySettings()->setRememberHistory(false);
     load(QStringLiteral("https://unkept.example/"));
     QCOMPARE(core.history()->count(), 1);
-    core.settings()->setRememberHistory(true);
+    core.privacySettings()->setRememberHistory(true);
     load(QStringLiteral("https://kept-again.example/"));
     QCOMPARE(core.history()->count(), 2);
 }
@@ -210,12 +215,12 @@ void tst_core::clearsOnClose()
         QCOMPARE(core.tabs()->closedTabs()->count(), 1);
 
         // Off unless switched on: closing leaves everything.
-        QVERIFY(!core.settings()->clearHistoryOnClose());
+        QVERIFY(!core.privacySettings()->clearHistoryOnClose());
         core.clearOnClose();
         QCOMPARE(core.history()->count(), 2);
         QCOMPARE(core.downloads()->count(), 1);
 
-        core.settings()->setClearHistoryOnClose(true);
+        core.privacySettings()->setClearHistoryOnClose(true);
         core.clearOnClose();
         QCOMPARE(core.history()->count(), 0);
         QCOMPARE(core.downloads()->count(), 0);

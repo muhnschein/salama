@@ -34,8 +34,8 @@ Item {
     property bool forNewTab: false
     readonly property string typed: text.trim()
     // Where Enter would go, when what is typed is an address rather than words.
-    readonly property string address: Settings.isAddress(typed) ? Settings.urlForInput(typed) : ""
-    readonly property string engineName: Settings.searchEngineNames[Settings.searchEngineIndex]
+    readonly property string address: SearchSettings.isAddress(typed) ? SearchSettings.urlForInput(typed) : ""
+    readonly property string engineName: SearchSettings.engineNames[SearchSettings.engineIndex]
 
     signal goRequested(string url)
     signal searchRequested(string url)
@@ -72,11 +72,11 @@ Item {
         }
     }
 
-    // Where Enter takes what is typed (Settings.urlForInput), learnt when it is an
+    // Where Enter takes what is typed (SearchSettings.urlForInput), learnt when it is an
     // address, as a row chosen is; a search is not.
     function enter(text) {
-        var url = Settings.urlForInput(text)
-        if (Settings.isAddress(text)) {
+        var url = SearchSettings.urlForInput(text)
+        if (SearchSettings.isAddress(text)) {
             Omnibar.learn(text, url)
         }
         return url
@@ -189,7 +189,7 @@ Item {
             //: The row above the address bar that searches the web: %1 is the search
             //: engine's name, %2 what was typed
             title: qsTr("Search %1 for “%2”").arg(pane.engineName).arg(pane.typed)
-            onClicked: pane.searchRequested(Settings.searchUrl(pane.typed))
+            onClicked: pane.searchRequested(SearchSettings.searchUrl(pane.typed))
         }
     }
 }

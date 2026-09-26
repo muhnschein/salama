@@ -47,7 +47,7 @@ void writeSetting(const QSqlDatabase &db, const char *name, int value)
 
 } // namespace
 
-TabPersistence::TabPersistence(Storage &storage)
+TabPersistence::TabPersistence(const Storage &storage)
     : m_storage(storage)
 {
 }
@@ -80,7 +80,7 @@ int TabPersistence::loadActiveTabId() const
     return readSetting(m_storage.database(), ActiveTabSetting);
 }
 
-void TabPersistence::insertTab(const Tab &tab)
+void TabPersistence::insertTab(const Tab &tab) const
 {
     if (!tab.isValid()) {
         return;
@@ -101,7 +101,7 @@ void TabPersistence::insertTab(const Tab &tab)
     run(query);
 }
 
-void TabPersistence::updateTab(const Tab &tab)
+void TabPersistence::updateTab(const Tab &tab) const
 {
     if (!tab.isValid()) {
         return;
@@ -120,7 +120,7 @@ void TabPersistence::updateTab(const Tab &tab)
     run(query);
 }
 
-void TabPersistence::saveOrder(const QList<Tab> &tabs)
+void TabPersistence::saveOrder(const QList<Tab> &tabs) const
 {
     // Numbered from 1 so that insertTab's MAX(position) + 1 still lands last.
     int position = 0;
@@ -137,7 +137,7 @@ void TabPersistence::saveOrder(const QList<Tab> &tabs)
     }
 }
 
-void TabPersistence::removeTab(int tabId)
+void TabPersistence::removeTab(int tabId) const
 {
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("DELETE FROM tab WHERE tab_id = ?"));
@@ -145,14 +145,14 @@ void TabPersistence::removeTab(int tabId)
     run(query);
 }
 
-void TabPersistence::removeAllTabs()
+void TabPersistence::removeAllTabs() const
 {
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("DELETE FROM tab"));
     run(query);
 }
 
-void TabPersistence::setActiveTabId(int tabId)
+void TabPersistence::setActiveTabId(int tabId) const
 {
     writeSetting(m_storage.database(), ActiveTabSetting, tabId);
 }
@@ -179,7 +179,7 @@ int TabPersistence::loadCurrentGroupId() const
     return readSetting(m_storage.database(), CurrentGroupSetting);
 }
 
-void TabPersistence::insertGroup(const TabGroup &group)
+void TabPersistence::insertGroup(const TabGroup &group) const
 {
     if (!group.isValid()) {
         return;
@@ -193,7 +193,7 @@ void TabPersistence::insertGroup(const TabGroup &group)
     run(query);
 }
 
-void TabPersistence::updateGroup(const TabGroup &group)
+void TabPersistence::updateGroup(const TabGroup &group) const
 {
     if (!group.isValid()) {
         return;
@@ -205,7 +205,7 @@ void TabPersistence::updateGroup(const TabGroup &group)
     run(query);
 }
 
-void TabPersistence::removeGroup(int groupId)
+void TabPersistence::removeGroup(int groupId) const
 {
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("DELETE FROM tab_group WHERE group_id = ?"));
@@ -213,7 +213,7 @@ void TabPersistence::removeGroup(int groupId)
     run(query);
 }
 
-void TabPersistence::saveGroupOrder(const QList<TabGroup> &groups)
+void TabPersistence::saveGroupOrder(const QList<TabGroup> &groups) const
 {
     int position = 0;
     for (const TabGroup &group : groups) {
@@ -229,7 +229,7 @@ void TabPersistence::saveGroupOrder(const QList<TabGroup> &groups)
     }
 }
 
-void TabPersistence::setCurrentGroupId(int groupId)
+void TabPersistence::setCurrentGroupId(int groupId) const
 {
     writeSetting(m_storage.database(), CurrentGroupSetting, groupId);
 }
@@ -255,7 +255,7 @@ QList<ClosedTab> TabPersistence::loadClosedTabs() const
     return closedTabs;
 }
 
-void TabPersistence::insertClosedTab(const ClosedTab &closed)
+void TabPersistence::insertClosedTab(const ClosedTab &closed) const
 {
     if (closed.id <= 0) {
         return;
@@ -271,7 +271,7 @@ void TabPersistence::insertClosedTab(const ClosedTab &closed)
     run(query);
 }
 
-void TabPersistence::removeClosedTab(int closedId)
+void TabPersistence::removeClosedTab(int closedId) const
 {
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("DELETE FROM closed_tab WHERE id = ?"));
@@ -279,7 +279,7 @@ void TabPersistence::removeClosedTab(int closedId)
     run(query);
 }
 
-void TabPersistence::removeAllClosedTabs()
+void TabPersistence::removeAllClosedTabs() const
 {
     QSqlQuery query(m_storage.database());
     query.prepare(QStringLiteral("DELETE FROM closed_tab"));

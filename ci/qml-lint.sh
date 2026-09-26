@@ -14,20 +14,28 @@ STRICT=${PACKAGING_LINT_STRICT:-0}
 FAILED=0
 
 fail() { # check-id location message
-    printf 'ERROR [%s] [%s] %s\n' "$1" "$2" "$3"
+    local id=$1 location=$2 message=$3
+    printf 'ERROR [%s] [%s] %s\n' "$id" "$location" "$message"
     FAILED=1
+    return 0
 }
 
 skip() { # tool
+    local tool=$1
     if [[ $STRICT == 1 ]]; then
-        fail tool-missing "$1" "required in CI (PACKAGING_LINT_STRICT=1)"
+        fail tool-missing "$tool" "required in CI (PACKAGING_LINT_STRICT=1)"
     else
-        echo "SKIP  [$1] not installed"
+        echo "SKIP  [$tool] not installed"
     fi
+    return 0
 }
 
 mapfile -t FILES < <(find "$ROOT/qml" -name '*.qml' | sort)
-rel() { echo "${1#"$ROOT"/}"; }
+rel() { # path
+    local path=$1
+    echo "${path#"$ROOT"/}"
+    return 0
+}
 
 # 1. qmllint
 if command -v qmllint >/dev/null 2>&1; then
@@ -66,6 +74,9 @@ while read -r hit; do
             ;;
         QtQuick.Controls* | QtQuick.Templates* | Qt.labs.*)
             fail qt56-import "$file" "$module is not available on the device"
+            ;;
+        *)
+            # Other modules' versions are ci/harbour-check.sh's to check.
             ;;
     esac
 done < <(grep -nE '^\s*import\s+Qt' "${FILES[@]}" | sed "s|^$ROOT/||")

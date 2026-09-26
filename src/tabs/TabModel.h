@@ -7,6 +7,8 @@
 // signals instead of writing history.
 #pragma once
 
+#include "ModelRoles.h"
+
 #include "Tab.h"
 
 #include <QAbstractListModel>
@@ -27,7 +29,12 @@ class TabPersistence;
 // view per row of this model, so a tab changing group must not be a row removed and
 // inserted. The grid shows one group at a time through groupTabs(), and the strip
 // above it lists the groups through groups() (docs/DECISIONS/0015-tab-groups.md).
-class TabModel : public QAbstractListModel
+//
+// More methods than SonarQube allows a class (cpp:S1448), and kept whole on purpose:
+// the tab in front, the groups, what each page plays and which pages stay loaded are
+// all read from and written to the one list of rows, and each change to one of them
+// has to be told as a change to those rows, in order, from here.
+class TabModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list of rows, told from here
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
@@ -51,32 +58,32 @@ class TabModel : public QAbstractListModel
     Q_PROPERTY(bool activeMuted READ activeMuted NOTIFY activeMediaChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        TabIdRole = Qt::UserRole + 1,
-        UrlRole,
-        TitleRole,
-        FaviconRole,
-        ThumbnailRole,
-        ActiveRole,
-        GroupRole,
+        TabId = Qt::UserRole + 1,
+        Url,
+        Title,
+        Favicon,
+        Thumbnail,
+        Active,
+        Group,
         // Whether the page keeps its view: the tab in front and the ones read most
         // recently, up to the limit (docs/DECISIONS/0016-five-live-pages.md).
-        LiveRole,
+        Live,
         // What the page is playing, a MediaState, as the tab's controls show it -- a
         // page behind the one in front that says it plays shows as paused, below -- and
         // whether the tab is muted. Neither is persisted: the one is the page's own, and
         // goes with it; the other is kept for as long as the tab is open
         // (docs/DECISIONS/0026-media-controls.md).
-        MediaRole,
-        MutedRole
+        Media,
+        Muted
     };
 
     // Something with sound is playing on the page; or this browser paused it, and it
     // can be played again from here; or neither. Unscoped on purpose, as
-    // Settings::CoverStyle is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
+    // CoverSettings::Style is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
     // cannot do for a scoped enum (cpp:S3642).
-    enum MediaState
+    enum MediaState // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         NoMedia,
         MediaPlaying,
@@ -225,7 +232,7 @@ private:
     // Marks the tab in front as the most recent one, and tells the cover.
     void stampActive();
     void notifyRow(int index, Role role);
-    void persist(const Tab &tab);
+    void persist(const Tab &tab) const;
     void discardThumbnail(const QString &path) const;
 
     TabPersistence *m_persistence;

@@ -58,17 +58,17 @@ void tst_bookmarkmodel::addAndRoles()
     QCOMPARE(model.add(QString(), QStringLiteral("Empty")), 0);
     QCOMPARE(model.count(), 2);
 
-    QCOMPARE(role(model, 0, BookmarkModel::BookmarkIdRole).toInt(), first);
-    QCOMPARE(role(model, 0, BookmarkModel::UrlRole).toString(),
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::BookmarkId)).toInt(), first);
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/"));
-    QCOMPARE(role(model, 0, BookmarkModel::TitleRole).toString(), QStringLiteral("A"));
-    QCOMPARE(role(model, 0, BookmarkModel::FaviconRole).toString(),
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::Title)).toString(), QStringLiteral("A"));
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/favicon.ico"));
-    QCOMPARE(role(model, 1, BookmarkModel::TitleRole).toString(),
+    QCOMPARE(role(model, 1, roleId(BookmarkModel::Role::Title)).toString(),
              QStringLiteral("https://b.example/"));
     QVERIFY(!role(model, 1, Qt::DisplayRole).isValid());
-    QVERIFY(!role(model, 9, BookmarkModel::UrlRole).isValid());
-    QCOMPARE(model.roleNames().value(BookmarkModel::BookmarkIdRole),
+    QVERIFY(!role(model, 9, roleId(BookmarkModel::Role::Url)).isValid());
+    QCOMPARE(model.roleNames().value(roleId(BookmarkModel::Role::BookmarkId)),
              QByteArrayLiteral("bookmarkId"));
     QVERIFY(model.contains(QStringLiteral("https://b.example/")));
     QVERIFY(!model.contains(QStringLiteral("https://c.example/")));
@@ -85,7 +85,7 @@ void tst_bookmarkmodel::removeVariants()
 
     model.remove(1);
     QCOMPARE(model.count(), 2);
-    QCOMPARE(role(model, 1, BookmarkModel::TitleRole).toString(), QStringLiteral("C"));
+    QCOMPARE(role(model, 1, roleId(BookmarkModel::Role::Title)).toString(), QStringLiteral("C"));
     model.remove(-1);
     model.remove(2);
     QCOMPARE(model.count(), 2);
@@ -113,7 +113,8 @@ void tst_bookmarkmodel::edit()
 
     model.edit(0, QStringLiteral("https://a.example/"), QStringLiteral("Alpha"));
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(), QVector<int>{BookmarkModel::TitleRole});
+    QCOMPARE(rowSpy.last().at(2).value<QVector<int>>(),
+             QVector<int>{roleId(BookmarkModel::Role::Title)});
 
     model.edit(0, QStringLiteral("https://alpha.example/"), QStringLiteral("Alpha!"));
     QCOMPARE(rowSpy.count(), 2);
@@ -122,7 +123,8 @@ void tst_bookmarkmodel::edit()
     QVERIFY(!model.contains(QStringLiteral("https://a.example/")));
 
     BookmarkModel reloaded(storage);
-    QCOMPARE(role(reloaded, 0, BookmarkModel::TitleRole).toString(), QStringLiteral("Alpha!"));
+    QCOMPARE(role(reloaded, 0, roleId(BookmarkModel::Role::Title)).toString(),
+             QStringLiteral("Alpha!"));
 }
 
 void tst_bookmarkmodel::favicons()
@@ -136,7 +138,7 @@ void tst_bookmarkmodel::favicons()
     model.updateFavicon(QStringLiteral("https://a.example/"),
                         QStringLiteral("https://a.example/i.png"));
     QCOMPARE(rowSpy.count(), 1);
-    QCOMPARE(role(model, 0, BookmarkModel::FaviconRole).toString(),
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/i.png"));
     model.updateFavicon(QStringLiteral("https://a.example/"),
                         QStringLiteral("https://a.example/i.png"));
@@ -144,7 +146,7 @@ void tst_bookmarkmodel::favicons()
     QCOMPARE(rowSpy.count(), 1);
 
     BookmarkModel reloaded(storage);
-    QCOMPARE(role(reloaded, 0, BookmarkModel::FaviconRole).toString(),
+    QCOMPARE(role(reloaded, 0, roleId(BookmarkModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/i.png"));
 }
 
@@ -182,8 +184,8 @@ void tst_bookmarkmodel::persistence()
     }
     BookmarkModel model(storage);
     QCOMPARE(model.count(), 2);
-    QCOMPARE(role(model, 0, BookmarkModel::TitleRole).toString(), QStringLiteral("Z"));
-    QCOMPARE(role(model, 1, BookmarkModel::TitleRole).toString(), QStringLiteral("Y"));
+    QCOMPARE(role(model, 0, roleId(BookmarkModel::Role::Title)).toString(), QStringLiteral("Z"));
+    QCOMPARE(role(model, 1, roleId(BookmarkModel::Role::Title)).toString(), QStringLiteral("Y"));
 }
 
 // Every change to the bookmarks moves the revision on, so a QML binding that reads it

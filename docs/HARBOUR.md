@@ -58,7 +58,10 @@ None.
 | `Audio` | sound from pages: Sailjail's `Base` profile shuts every application out of PulseAudio (`nosound`) unless it holds this, and `WebView` does not include it, so without it the engine plays video and audio in silence. It also admits the microphone at the PulseAudio level; nothing here records, and the `Microphone` permission, which recording is meant to need, is not asked for |
 | `Downloads` | the engine saves downloads to `~/Downloads/Salama`, a folder the application creates (`DECISIONS/0025-downloads-folder.md`) |
 | `Pictures` | uploading a photo through the platform picker in web forms |
+| `Videos` | uploading a video through the platform picker |
+| `Music` | uploading an audio file through the platform picker |
 | `Documents` | uploading a document through the platform picker |
+| `MediaIndexing` | the platform picker's Images, Videos, Music and Documents lists: they are Tracker queries, and without talking to `org.freedesktop.Tracker3.Miner.Files` they come up empty, leaving File system the only way to a file. Jolla's browser holds it for the same picker |
 
 `OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
 data, cache and config directories; apart from downloads, nothing is stored anywhere
@@ -66,8 +69,9 @@ else. Sharing needs no permission (part of the `Base` set), and neither do notif
 `Base` includes `Notifications.permission`, which lets an application talk to
 `org.freedesktop.Notifications` (`DECISIONS/0033-web-notifications.md`). They are shown
 through `Nemo.Notifications 1.0`, on the validator's list of QML imports, and the package
-requires `nemo-qml-plugin-notifications-qt5`, on its list of dependencies. Whether the pickers need more
-than `Pictures` and `Documents` is SCOPE.md §9 item 5 and is verified on the device smoke
+requires `nemo-qml-plugin-notifications-qt5`, on its list of dependencies. The upload
+picker is Sailfish.Pickers' `ContentPickerPage`: each of its lists needs the folder its files
+are in and `MediaIndexing` to find them (SCOPE.md §9 item 5), verified on the device smoke
 test.
 
 ## Runtime path policy

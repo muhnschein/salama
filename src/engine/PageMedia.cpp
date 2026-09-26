@@ -53,16 +53,17 @@ const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed
  });
  return playing ? 'playing' : paused ? 'paused' : '';)";
 
-QString commandName(int command)
+QString commandName(PageMedia::Command command)
 {
     switch (command) {
-    case PageMedia::Pause:
+    case PageMedia::Command::Pause:
         return QStringLiteral("pause");
-    case PageMedia::Play:
+    case PageMedia::Command::Play:
         return QStringLiteral("play");
-    default:
-        return QStringLiteral("query");
+    case PageMedia::Command::Query:
+        break;
     }
+    return QStringLiteral("query");
 }
 
 } // namespace
@@ -78,13 +79,13 @@ PageMedia::PageMedia(TabModel *tabs, int queryDelay, QObject *parent)
 {
     m_queryTimer.setSingleShot(true);
     m_queryTimer.setInterval(queryDelay);
-    connect(&m_queryTimer, &QTimer::timeout, this, [this]() { emit requested(0, Query); });
+    connect(&m_queryTimer, &QTimer::timeout, this, [this]() { request(0, Command::Query); });
     // A tab being left is paused while its page is still the one on the screen: told
     // it is hidden, a page may pause itself where nothing here can play it again.
     connect(m_tabs, &TabModel::activeTabLeaving, this, [this](int tabId) {
         if (m_tabs->mediaState(tabId) == TabModel::MediaPlaying) {
             m_held.insert(tabId);
-            emit requested(tabId, Pause);
+            request(tabId, Command::Pause);
         }
     });
     // Back in front, it plays again what was held; and every page is asked.
@@ -93,7 +94,7 @@ PageMedia::PageMedia(TabModel *tabs, int queryDelay, QObject *parent)
         if (m_tabs->activeTabId() != m_frontTabId) {
             m_frontTabId = m_tabs->activeTabId();
             if (m_held.remove(m_frontTabId)) {
-                emit requested(m_frontTabId, Play);
+                request(m_frontTabId, Command::Play);
             }
             refresh();
         }
@@ -107,6 +108,11 @@ int PageMedia::queryDelay() const
 
 QString PageMedia::script(int tabId, int command) const
 {
+    return script(tabId, static_cast<Command>(command));
+}
+
+QString PageMedia::script(int tabId, Command command) const
+{
     return QString::fromUtf8(ScriptTemplate)
         .arg(commandName(command),
              m_tabs->isMuted(tabId) ? QStringLiteral("true") : QStringLiteral("false"),
@@ -114,6 +120,11 @@ QString PageMedia::script(int tabId, int command) const
 }
 
 void PageMedia::answer(int tabId, int command, const QVariant &answer)
+{
+    this->answer(tabId, static_cast<Command>(command), answer);
+}
+
+void PageMedia::answer(int tabId, Command command, const QVariant &answer)
 {
     const QString said = answer.userType() == QMetaType::QString ? answer.toString() : QString();
     TabModel::MediaState state = TabModel::NoMedia;
@@ -123,7 +134,7 @@ void PageMedia::answer(int tabId, int command, const QVariant &answer)
         state = TabModel::MediaPaused;
     }
     m_tabs->setMediaState(tabId, state);
-    if (command == Pause || m_tabs->mediaState(tabId) != TabModel::MediaPlaying) {
+    if (command == Command::Pause || m_tabs->mediaState(tabId) != TabModel::MediaPlaying) {
         return;
     }
     // One tab plays at a time, and it is the one in front: it pauses the others, and
@@ -131,13 +142,13 @@ void PageMedia::answer(int tabId, int command, const QVariant &answer)
     const int front = m_tabs->activeTabId();
     if (tabId != front) {
         if (m_tabs->mediaState(front) == TabModel::MediaPlaying) {
-            emit requested(tabId, Pause);
+            request(tabId, Command::Pause);
         }
         return;
     }
     for (const Tab &tab : m_tabs->tabs()) {
         if (tab.id != front && m_tabs->mediaState(tab.id) == TabModel::MediaPlaying) {
-            emit requested(tab.id, Pause);
+            request(tab.id, Command::Pause);
         }
     }
 }
@@ -155,7 +166,7 @@ void PageMedia::toggleMuted(int tabId)
     }
     if (isHeard(tabId)) {
         m_tabs->setMuted(tabId, true);
-        emit requested(tabId, Pause);
+        request(tabId, Command::Pause);
         return;
     }
     m_tabs->setMuted(tabId, false);
@@ -165,7 +176,7 @@ void PageMedia::toggleMuted(int tabId)
         m_tabs->activateTabById(tabId);
         return;
     }
-    emit requested(tabId, Play);
+    request(tabId, Command::Play);
 }
 
 bool PageMedia::isHeard(int tabId) const
@@ -179,7 +190,7 @@ void PageMedia::setBackground(bool background)
     // the moment the page is.
     if (m_background != background) {
         m_background = background;
-        emit requested(0, Query);
+        request(0, Command::Query);
     }
 }
 
@@ -188,6 +199,11 @@ void PageMedia::refresh()
     if (!m_queryTimer.isActive()) {
         m_queryTimer.start();
     }
+}
+
+void PageMedia::request(int tabId, Command command)
+{
+    emit requested(tabId, static_cast<int>(command));
 }
 
 } // namespace Salama

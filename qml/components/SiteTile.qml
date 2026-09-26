@@ -15,7 +15,7 @@ BackgroundItem {
     property string url
     property string title
     property string favicon
-    readonly property string host: Settings.displayAddress(url)
+    readonly property string host: SearchSettings.displayAddress(url)
 
     objectName: "siteTile"
     height: Theme.paddingMedium + square.height + Theme.paddingSmall + siteName.height

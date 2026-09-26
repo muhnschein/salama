@@ -95,7 +95,7 @@ Item {
             iconSource: "image://theme/icon-m-search"
             //: The row above the address bar that searches the web: %1 is the search
             //: engine's name, %2 what was typed
-            title: qsTr("Search %1 for “%2”").arg(Settings.searchEngineNames[Settings.searchEngineIndex])
+            title: qsTr("Search %1 for “%2”").arg(SearchSettings.engineNames[SearchSettings.engineIndex])
                                            .arg(pane.typed)
         }
     }

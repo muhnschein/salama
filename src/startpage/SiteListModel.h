@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QList>
 #include <QString>
@@ -34,15 +36,11 @@ class SiteListModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
-    // Unscoped, as every other model's roles are, and not the oversight SonarQube
-    // reads it as (cpp:S3642): a role is an int wherever Qt handles one -- data()'s
-    // argument, roleNames()' keys, Qt::UserRole it starts from -- and a scoped enum
-    // would need a cast at each of them.
-    enum Role
+    enum class Role
     {
-        UrlRole = Qt::UserRole + 1,
-        TitleRole,
-        FaviconRole
+        Url = Qt::UserRole + 1,
+        Title,
+        Favicon
     };
 
     explicit SiteListModel(QObject *parent = nullptr);

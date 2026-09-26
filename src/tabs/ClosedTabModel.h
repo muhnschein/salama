@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include "Tab.h"
 
 #include <QAbstractListModel>
@@ -21,12 +23,12 @@ class ClosedTabModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        ClosedIdRole = Qt::UserRole + 1,
-        UrlRole,
-        TitleRole,
-        FaviconRole
+        ClosedId = Qt::UserRole + 1,
+        Url,
+        Title,
+        Favicon
     };
 
     static const int Limit = 30;

@@ -14,12 +14,12 @@ import harbour.salama 1.0
 SilicaFlickable {
     id: startPage
 
-    readonly property bool blank: Settings.startPageBlank
-    readonly property bool showsTopSites: !blank && Settings.startPageTopSites
+    readonly property bool blank: StartPageSettings.blank
+    readonly property bool showsTopSites: !blank && StartPageSettings.topSites
                                           && StartPage.topSites.count > 0
-    readonly property bool showsBookmarks: !blank && Settings.startPageBookmarks
+    readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
                                            && StartPage.bookmarks.count > 0
-    readonly property bool showsRecentPages: !blank && Settings.startPageRecent
+    readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
     // Four tiles to a row, the way the phone's own app grid sets them.
     readonly property int columns: 4

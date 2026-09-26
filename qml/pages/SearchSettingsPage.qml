@@ -32,17 +32,17 @@ Page {
                 objectName: "searchEngineCombo"
                 width: parent.width
                 label: qsTr("Search engine")
-                currentIndex: Settings.searchEngineIndex
+                currentIndex: SearchSettings.engineIndex
                 menu: ContextMenu {
                     Repeater {
-                        model: Settings.searchEngineNames
+                        model: SearchSettings.engineNames
 
                         MenuItem {
                             text: modelData
                         }
                     }
                 }
-                onCurrentIndexChanged: Settings.searchEngineIndex = currentIndex
+                onCurrentIndexChanged: SearchSettings.engineIndex = currentIndex
             }
 
             // Where the rows the address bar lists come from, each on until it is
@@ -56,29 +56,29 @@ Page {
             TextSwitch {
                 objectName: "omnibarTabsSwitch"
                 text: qsTr("Open tabs")
-                checked: Settings.omnibarTabs
-                onCheckedChanged: Settings.omnibarTabs = checked
+                checked: SearchSettings.omnibarTabs
+                onCheckedChanged: SearchSettings.omnibarTabs = checked
             }
 
             TextSwitch {
                 objectName: "omnibarBookmarksSwitch"
                 text: qsTr("Bookmarks")
-                checked: Settings.omnibarBookmarks
-                onCheckedChanged: Settings.omnibarBookmarks = checked
+                checked: SearchSettings.omnibarBookmarks
+                onCheckedChanged: SearchSettings.omnibarBookmarks = checked
             }
 
             TextSwitch {
                 objectName: "omnibarHistorySwitch"
                 text: qsTr("History")
-                checked: Settings.omnibarHistory
-                onCheckedChanged: Settings.omnibarHistory = checked
+                checked: SearchSettings.omnibarHistory
+                onCheckedChanged: SearchSettings.omnibarHistory = checked
             }
 
             TextSwitch {
                 objectName: "omnibarDownloadsSwitch"
                 text: qsTr("Downloads")
-                checked: Settings.omnibarDownloads
-                onCheckedChanged: Settings.omnibarDownloads = checked
+                checked: SearchSettings.omnibarDownloads
+                onCheckedChanged: SearchSettings.omnibarDownloads = checked
             }
         }
 

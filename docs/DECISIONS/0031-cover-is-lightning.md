@@ -19,7 +19,7 @@ ambience turns it muddy. The icon's bolt is the application's name — *salama* 
 for lightning — is drawn once, and is the picture the reader already knows it by.
 
 ## Decision
-By default the cover is **the bolt and nothing to read**: `Settings.CoverLightning`,
+By default the cover is **the bolt and nothing to read**: `CoverSettings.Lightning`,
 drawn by `components/CoverLightning.qml`.
 
 - The launcher icon's bolt, alone: `icons/cover-bolt.svg`, rendered once by
@@ -43,7 +43,7 @@ drawn by `components/CoverLightning.qml`.
   view. Two peaks half a second apart is far under what counts as flicker.
 
 The last tab stays, **for readers who want the cover to say something**:
-`Settings.CoverLatestTab`, 0014's heading and number over the tab last in front, drawn by
+`CoverSettings.LatestTab`, 0014's heading and number over the tab last in front, drawn by
 `components/CoverTabPicture.qml`, the field cut down to its one-picture case. The
 icon-only and every-tab styles are gone, and the six-cell field with them.
 

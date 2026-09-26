@@ -303,16 +303,18 @@ void tst_webnotifications::permissionList()
     const auto at = [&permissions](int row, int role) {
         return permissions.data(permissions.index(row), role);
     };
-    QCOMPARE(at(0, NotificationPermissions::OriginRole).toString(),
+    QCOMPARE(at(0, roleId(NotificationPermissions::Role::Origin)).toString(),
              QStringLiteral("https://b.example:8443"));
-    QCOMPARE(at(0, NotificationPermissions::HostRole).toString(), QStringLiteral("b.example"));
-    QCOMPARE(at(1, NotificationPermissions::OriginRole).toString(), Chat);
-    QVERIFY(at(1, NotificationPermissions::AllowedRole).toBool());
-    QCOMPARE(at(2, NotificationPermissions::HostRole).toString(), QStringLiteral("news.example"));
-    QVERIFY(!at(2, NotificationPermissions::AllowedRole).toBool());
-    QVERIFY(!at(3, NotificationPermissions::OriginRole).isValid());
+    QCOMPARE(at(0, roleId(NotificationPermissions::Role::Host)).toString(),
+             QStringLiteral("b.example"));
+    QCOMPARE(at(1, roleId(NotificationPermissions::Role::Origin)).toString(), Chat);
+    QVERIFY(at(1, roleId(NotificationPermissions::Role::Allowed)).toBool());
+    QCOMPARE(at(2, roleId(NotificationPermissions::Role::Host)).toString(),
+             QStringLiteral("news.example"));
+    QVERIFY(!at(2, roleId(NotificationPermissions::Role::Allowed)).toBool());
+    QVERIFY(!at(3, roleId(NotificationPermissions::Role::Origin)).isValid());
     QVERIFY(!at(0, Qt::DisplayRole).isValid());
-    QCOMPARE(permissions.roleNames().value(NotificationPermissions::AllowedRole),
+    QCOMPARE(permissions.roleNames().value(roleId(NotificationPermissions::Role::Allowed)),
              QByteArray("allowed"));
     QCOMPARE(permissions.rowCount(permissions.index(0)), 0);
 
@@ -386,7 +388,8 @@ void tst_webnotifications::permissionChanges()
     // In its place by host.
     permissions.setAllowed(Chat, false);
     QCOMPARE(request(1).value(QStringLiteral("permission")).toInt(), 2);
-    QCOMPARE(permissions.data(permissions.index(0), NotificationPermissions::OriginRole).toString(),
+    QCOMPARE(permissions.data(permissions.index(0), roleId(NotificationPermissions::Role::Origin))
+                 .toString(),
              Chat);
     QVERIFY(permissions.isBlocked(Chat));
 

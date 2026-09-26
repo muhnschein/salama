@@ -47,7 +47,7 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   tabs/        TabModel, TabPersistence
   history/     HistoryModel (SQLite)
   bookmarks/   BookmarkModel (SQLite)
-  settings/    Settings (QSettings)
+  settings/    Settings and a section per settings page (QSettings)
   startpage/   StartPage: what a tab with no address shows
   reader/      Reader: the reader view, and Firefox's style sheet for it
   notifications/

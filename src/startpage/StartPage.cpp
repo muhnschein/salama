@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "StartPage.h"
 
-#include "settings/Settings.h"
+#include "settings/SearchSettings.h"
 #include "storage/Storage.h"
 
 #include <QSet>
@@ -61,7 +61,7 @@ void StartPage::refresh()
 
 QString StartPage::siteOf(const QString &url)
 {
-    return Settings::displayAddress(url);
+    return SearchSettings::displayAddress(url);
 }
 
 Site StartPage::siteAt(const QSqlQuery &query)
@@ -88,7 +88,7 @@ QList<Site> StartPage::readHistory(const QString &order, int limit, bool onePerS
     QSet<QString> seen;
     while (sites.count() < limit && query.next()) {
         const Site site = siteAt(query);
-        if (Settings::isSearchUrl(site.url)) {
+        if (SearchSettings::isSearchUrl(site.url)) {
             continue;
         }
         if (onePerSite) {

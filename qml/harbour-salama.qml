@@ -42,9 +42,9 @@ ApplicationWindow {
     }
 
     function startQuickAction(page) {
-        var action = Settings.quickAction
-        var bookmark = action === Settings.QuickActionBookmark ? findQuickActionBookmark() : 0
-        if (action === Settings.QuickActionSearch) {
+        var action = CoverSettings.quickAction
+        var bookmark = action === CoverSettings.QuickActionBookmark ? findQuickActionBookmark() : 0
+        if (action === CoverSettings.QuickActionSearch) {
             page.openOmnibar(true)
         } else if (bookmark > 0) {
             var url = BookmarkModel.urlOf(bookmark)
@@ -54,12 +54,12 @@ ApplicationWindow {
             } else {
                 TabModel.newTab(url)
             }
-        } else if (action === Settings.QuickActionBookmarks
-                   || action === Settings.QuickActionBookmark) {
+        } else if (action === CoverSettings.QuickActionBookmarks
+                   || action === CoverSettings.QuickActionBookmark) {
             pageStack.push(Qt.resolvedUrl("pages/BookmarksPage.qml"))
-        } else if (action === Settings.QuickActionDownloads) {
+        } else if (action === CoverSettings.QuickActionDownloads) {
             pageStack.push(Qt.resolvedUrl("pages/DownloadsPage.qml"))
-        } else if (action === Settings.QuickActionHistory) {
+        } else if (action === CoverSettings.QuickActionHistory) {
             pageStack.push(Qt.resolvedUrl("pages/HistoryPage.qml"))
         }
     }
@@ -70,12 +70,12 @@ ApplicationWindow {
     // found, without a word, so that a bookmark given another title or address is still
     // found by it after that. 0 when neither finds one.
     function findQuickActionBookmark() {
-        var id = Settings.quickActionBookmark
+        var id = CoverSettings.quickActionBookmark
         if (!BookmarkModel.hasBookmark(id)) {
-            id = BookmarkModel.idForUrl(Settings.quickActionBookmarkUrl)
+            id = BookmarkModel.idForUrl(CoverSettings.quickActionBookmarkUrl)
         }
         if (id > 0) {
-            Settings.setQuickActionBookmark(id, BookmarkModel.urlOf(id), BookmarkModel.titleOf(id))
+            CoverSettings.setQuickActionBookmark(id, BookmarkModel.urlOf(id), BookmarkModel.titleOf(id))
         }
         return id
     }

@@ -80,7 +80,7 @@ workaround; a failure blocks the tag.
 - [ ] Two tabs with media, played one after the other: never more than one preview shows a whole speaker, and it is the tab in front's.
 - [ ] Play a video with sound, minimise: the sound goes on, and after ten seconds or so `top` shows harbour-salama well below what it takes with the app on the screen playing the same video. Back in the app, the video shows and plays on.
 - [ ] The rows along the grid's head and foot: the cells scrolling under them barely show through.
-- [ ] Upload a photo in a web form through the platform picker (permissions check).
+- [ ] Upload a file in a web form (a file input's page, such as a webmail attachment) through the platform picker (permissions check): Images, Videos, Music and Documents each list the phone's files of that kind, not an empty page, and File system lists the folders; a photo picked from Images uploads.
 - [ ] Settings opens on General (Start page, Search), Appearance (Reader view, Cover, Avoid the screen cutout) and Privacy (Privacy, History). Each entry is a theme icon (none blank) and its name alone, highlighted while pressed, and opens its page; only the cutout switch has a line under it. Nothing offers desktop sites or pages kept loaded; the menu's Desktop version still switches a page.
 - [ ] Settings > Search: the engines are Qwant, Ecosia and Startpage, Qwant first; change the search engine.
 - [ ] Settings > Start page: no address field. Each section's switch takes it off the start page and back at once; Shows > "A blank page" leaves the start page empty -- no hint either -- and dims the three switches, which keep their state for when "Your sites" is chosen again. The choice survives a restart.

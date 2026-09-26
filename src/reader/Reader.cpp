@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "Reader.h"
 
-#include "settings/Settings.h"
+#include "settings/ReaderSettings.h"
 
 #include <QFile>
 #include <QJsonDocument>
@@ -205,7 +205,7 @@ const char *const ShadowModule = "var module;\n";
 
 } // namespace
 
-Reader::Reader(const Settings &settings, QObject *parent)
+Reader::Reader(const ReaderSettings &settings, QObject *parent)
     : QObject(parent)
     , m_settings(settings)
 {
@@ -219,9 +219,9 @@ Reader::Reader(const Settings &settings, QObject *parent)
                       QLatin1String(ArticleScript);
     m_styleSheet = resource(QStringLiteral(":/reader/reader.css"));
 
-    connect(&settings, &Settings::readerColorsChanged, this, &Reader::styleChanged);
-    connect(&settings, &Settings::readerTypefaceChanged, this, &Reader::styleChanged);
-    connect(&settings, &Settings::readerTextSizeChanged, this, &Reader::styleChanged);
+    connect(&settings, &ReaderSettings::colorsChanged, this, &Reader::styleChanged);
+    connect(&settings, &ReaderSettings::typefaceChanged, this, &Reader::styleChanged);
+    connect(&settings, &ReaderSettings::textSizeChanged, this, &Reader::styleChanged);
 }
 
 QString Reader::readerableScript() const
@@ -265,17 +265,17 @@ bool Reader::isDarkAmbience(const QColor &primaryColor)
 
 QString Reader::colorScheme(bool darkAmbience) const
 {
-    return schemeFor(m_settings.readerColors(), darkAmbience);
+    return schemeFor(m_settings.colors(), darkAmbience);
 }
 
 QString Reader::schemeFor(int colors, bool darkAmbience)
 {
     switch (colors) {
-    case Settings::ReaderLight:
+    case ReaderSettings::Light:
         return QStringLiteral("light");
-    case Settings::ReaderSepia:
+    case ReaderSettings::Sepia:
         return QStringLiteral("sepia");
-    case Settings::ReaderDark:
+    case ReaderSettings::Dark:
         return QStringLiteral("dark");
     default:
         return darkAmbience ? QStringLiteral("dark") : QStringLiteral("light");
@@ -284,7 +284,7 @@ QString Reader::schemeFor(int colors, bool darkAmbience)
 
 QString Reader::bodyClass(bool darkAmbience) const
 {
-    const QString typeface = m_settings.readerTypeface() == Settings::ReaderSerif
+    const QString typeface = m_settings.typeface() == ReaderSettings::Serif
                                  ? QStringLiteral("serif")
                                  : QStringLiteral("sans-serif");
     return colorScheme(darkAmbience) + QLatin1Char(' ') + typeface;
@@ -380,7 +380,7 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
     html += QStringLiteral("<style>") + m_styleSheet + QStringLiteral("</style></head>");
     html += QStringLiteral("<body class=\"%1\" style=\"--font-size: %2px\">")
                 .arg(bodyClass(darkAmbience))
-                .arg(fontSizeFor(m_settings.readerTextSize()));
+                .arg(fontSizeFor(m_settings.textSize()));
     html += QStringLiteral("<div class=\"container\"%1>").arg(textAttributes);
     html += QStringLiteral("<div class=\"header reader-header\"%1>").arg(textAttributes);
     html += QStringLiteral("<a class=\"domain reader-domain\" href=\"%1\">%2</a>")
@@ -431,7 +431,7 @@ QString Reader::styleScript(bool darkAmbience) const
                " if (color) { color.content = '%3'; }"
                " return '';")
         .arg(bodyClass(darkAmbience))
-        .arg(fontSizeFor(m_settings.readerTextSize()))
+        .arg(fontSizeFor(m_settings.textSize()))
         .arg(themeBackground(colorScheme(darkAmbience)));
 }
 

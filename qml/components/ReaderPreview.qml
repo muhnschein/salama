@@ -15,12 +15,12 @@ import harbour.salama 1.0
 Rectangle {
     id: preview
 
-    readonly property string scheme: Reader.schemeFor(Settings.readerColors,
+    readonly property string scheme: Reader.schemeFor(ReaderSettings.colors,
                                                       Reader.isDarkAmbience(Theme.primaryColor))
     readonly property real cssPixel: Settings.pageZoom(Theme.pixelRatio)
     // The article's --font-size, which every em below is of.
-    readonly property real em: Reader.fontSizeFor(Settings.readerTextSize) * cssPixel
-    readonly property string family: Settings.readerTypeface === Settings.ReaderSerif ? "serif"
+    readonly property real em: Reader.fontSizeFor(ReaderSettings.textSize) * cssPixel
+    readonly property string family: ReaderSettings.typeface === ReaderSettings.Serif ? "serif"
                                                                                       : "sans-serif"
 
     objectName: "readerPreview"

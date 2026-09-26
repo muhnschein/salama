@@ -19,7 +19,7 @@ page, and holds, from the bottom up:
 
 - **the actions**, fixed directly above the bar, in reach of the thumb that typed
   (`OmnibarAction`): *Go to* the address, with the url it resolves to under it, when
-  `Settings.isAddress()` says the text is one — true exactly when `urlForInput()` would
+  `SearchSettings.isAddress()` says the text is one — true exactly when `urlForInput()` would
   not make a search of it — and *Search <engine> for “…”* whenever something is typed, a
   search even of an address. They follow the text at once. Enter means what it meant.
 - **the results**, a `SilicaListView` over the `Omnibar` model: one list, ranked, no

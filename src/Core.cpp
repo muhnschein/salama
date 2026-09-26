@@ -19,16 +19,17 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_bookmarks(m_storage)
     , m_downloads(m_storage, downloadDirectory)
     , m_settings(configFilePath)
-    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, &m_settings)
+    , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, m_settings.search(),
+                m_settings.privacy())
     , m_pageMedia(&m_tabs)
-    , m_reader(m_settings)
+    , m_reader(*m_settings.reader())
     , m_startPage(m_storage)
     , m_webNotifications(&m_notificationPermissions,
                          Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
     // Unless the history is not to be kept.
     connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
-        if (m_settings.rememberHistory()) {
+        if (m_settings.privacy()->rememberHistory()) {
             m_history.visit(url);
         }
     });
@@ -63,7 +64,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
 
 void Core::clearOnClose()
 {
-    if (!m_settings.clearHistoryOnClose()) {
+    if (!m_settings.privacy()->clearHistoryOnClose()) {
         return;
     }
     m_history.clear();
@@ -103,7 +104,32 @@ DownloadModel *Core::downloads()
 
 Settings *Core::settings()
 {
-    return &m_settings;
+    return m_settings.general();
+}
+
+SearchSettings *Core::searchSettings()
+{
+    return m_settings.search();
+}
+
+ReaderSettings *Core::readerSettings()
+{
+    return m_settings.reader();
+}
+
+CoverSettings *Core::coverSettings()
+{
+    return m_settings.cover();
+}
+
+PrivacySettings *Core::privacySettings()
+{
+    return m_settings.privacy();
+}
+
+StartPageSettings *Core::startPageSettings()
+{
+    return m_settings.startPage();
 }
 
 OmnibarModel *Core::omnibar()

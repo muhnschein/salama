@@ -2,18 +2,19 @@
 // Copyright (c) 2026 salama contributors
 #include "bookmarks/BookmarkModel.h"
 #include "history/HistoryModel.h"
-#include "settings/Settings.h"
+#include "settings/SearchSettings.h"
 #include "startpage/SiteListModel.h"
 #include "startpage/StartPage.h"
 #include "storage/Storage.h"
 
+#include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
 
 using Salama::BookmarkModel;
 using Salama::HistoryModel;
-using Salama::Settings;
+using Salama::SearchSettings;
 using Salama::Site;
 using Salama::SiteListModel;
 using Salama::StartPage;
@@ -40,7 +41,7 @@ QStringList urls(const SiteListModel &model)
 {
     QStringList list;
     for (int row = 0; row < model.rowCount(); ++row) {
-        list.append(model.data(model.index(row, 0), SiteListModel::UrlRole).toString());
+        list.append(model.data(model.index(row, 0), roleId(SiteListModel::Role::Url)).toString());
     }
     return list;
 }
@@ -58,9 +59,11 @@ void tst_startpage::siteList()
 {
     SiteListModel model;
     QCOMPARE(model.count(), 0);
-    QCOMPARE(model.roleNames().value(SiteListModel::UrlRole), QByteArrayLiteral("url"));
-    QCOMPARE(model.roleNames().value(SiteListModel::TitleRole), QByteArrayLiteral("title"));
-    QCOMPARE(model.roleNames().value(SiteListModel::FaviconRole), QByteArrayLiteral("favicon"));
+    QCOMPARE(model.roleNames().value(roleId(SiteListModel::Role::Url)), QByteArrayLiteral("url"));
+    QCOMPARE(model.roleNames().value(roleId(SiteListModel::Role::Title)),
+             QByteArrayLiteral("title"));
+    QCOMPARE(model.roleNames().value(roleId(SiteListModel::Role::Favicon)),
+             QByteArrayLiteral("favicon"));
 
     QSignalSpy resetSpy(&model, &SiteListModel::modelReset);
     QSignalSpy countSpy(&model, &SiteListModel::countChanged);
@@ -72,13 +75,13 @@ void tst_startpage::siteList()
     QCOMPARE(model.rowCount(model.index(0, 0)), 0);
     QCOMPARE(resetSpy.count(), 1);
     QCOMPARE(countSpy.count(), 1);
-    QCOMPARE(model.data(model.index(0, 0), SiteListModel::TitleRole).toString(),
+    QCOMPARE(model.data(model.index(0, 0), roleId(SiteListModel::Role::Title)).toString(),
              QStringLiteral("A"));
-    QCOMPARE(model.data(model.index(0, 0), SiteListModel::FaviconRole).toString(),
+    QCOMPARE(model.data(model.index(0, 0), roleId(SiteListModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/icon.png"));
-    QVERIFY(model.data(model.index(1, 0), SiteListModel::TitleRole).toString().isEmpty());
+    QVERIFY(model.data(model.index(1, 0), roleId(SiteListModel::Role::Title)).toString().isEmpty());
     QVERIFY(!model.data(model.index(0, 0), Qt::DisplayRole).isValid());
-    QVERIFY(!model.data(model.index(2, 0), SiteListModel::UrlRole).isValid());
+    QVERIFY(!model.data(model.index(2, 0), roleId(SiteListModel::Role::Url)).isValid());
 
     // The same list again is no change; the same sites under another title is one, of
     // as many rows.
@@ -158,7 +161,8 @@ void tst_startpage::searchesAreNotVisits()
     QTemporaryDir dir;
     Storage storage(dir.path());
     HistoryModel history(storage);
-    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
+    QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
+    SearchSettings settings(file);
     for (int i = 0; i < 5; ++i) {
         history.visit(settings.searchUrl(QStringLiteral("search %1").arg(i)));
     }

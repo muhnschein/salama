@@ -33,7 +33,7 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-HistoryModel::HistoryModel(Storage &storage, QObject *parent)
+HistoryModel::HistoryModel(const Storage &storage, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
 {
@@ -55,16 +55,16 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Entry &entry = m_entries.at(index.row());
-    switch (role) {
-    case UrlRole:
+    switch (static_cast<Role>(role)) {
+    case Role::Url:
         return entry.url;
-    case TitleRole:
+    case Role::Title:
         return entry.title.isEmpty() ? entry.url : entry.title;
-    case DateRole:
+    case Role::Date:
         return entry.date;
-    case VisitCountRole:
+    case Role::VisitCount:
         return entry.visitCount;
-    case FaviconRole:
+    case Role::Favicon:
         return entry.favicon;
     default:
         return {};
@@ -74,11 +74,11 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> HistoryModel::roleNames() const
 {
     return {
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {DateRole, QByteArrayLiteral("date")},
-        {VisitCountRole, QByteArrayLiteral("visitCount")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Date), QByteArrayLiteral("date")},
+        {roleId(Role::VisitCount), QByteArrayLiteral("visitCount")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
     };
 }
 
@@ -193,7 +193,7 @@ void HistoryModel::updateTitle(const QString &url, const QString &title)
         if (m_entries.at(i).url == url && m_entries.at(i).title != title) {
             m_entries[i].title = title;
             const QModelIndex modelIndex = index(i, 0);
-            emit dataChanged(modelIndex, modelIndex, QVector<int>{TitleRole});
+            emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(Role::Title)});
         }
     }
 }
@@ -214,7 +214,7 @@ void HistoryModel::updateFavicon(const QString &url, const QString &favicon)
         if (m_entries.at(i).url == url) {
             m_entries[i].favicon = favicon;
             const QModelIndex modelIndex = index(i, 0);
-            emit dataChanged(modelIndex, modelIndex, QVector<int>{FaviconRole});
+            emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(Role::Favicon)});
         }
     }
 }
@@ -355,7 +355,7 @@ QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now
     return ranks;
 }
 
-void HistoryModel::prune()
+void HistoryModel::prune() const
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("DELETE FROM browser_history WHERE id NOT IN "

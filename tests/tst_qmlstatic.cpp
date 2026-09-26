@@ -15,11 +15,13 @@
 #include <QMetaMethod>
 #include <QMetaProperty>
 #include <QRegularExpression>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest>
 
 using Salama::BookmarkModel;
 using Salama::ClosedTabModel;
+using Salama::CoverSettings;
 using Salama::DownloadModel;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
@@ -28,10 +30,14 @@ using Salama::NotificationPermissions;
 using Salama::OmnibarModel;
 using Salama::PageActivity;
 using Salama::PageMedia;
+using Salama::PrivacySettings;
 using Salama::Reader;
+using Salama::ReaderSettings;
+using Salama::SearchSettings;
 using Salama::Settings;
 using Salama::SiteListModel;
 using Salama::StartPage;
+using Salama::StartPageSettings;
 using Salama::Storage;
 using Salama::TabGroupModel;
 using Salama::TabModel;
@@ -72,7 +78,7 @@ QSet<QString> metaMembers(const QMetaObject *meta)
     for (int i = 0; i < meta->methodCount(); ++i) {
         members.insert(QString::fromLatin1(meta->method(i).name()));
     }
-    // Enumerators too: QML reads `Settings.CoverLatestTab` off the singleton the same
+    // Enumerators too: QML reads `CoverSettings.LatestTab` off the singleton the same
     // way it reads a property, and a checker that knew only properties and methods
     // called every one of them a typo.
     for (int i = 0; i < meta->enumeratorCount(); ++i) {
@@ -153,8 +159,11 @@ void tst_qmlstatic::delegateRolesExist()
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
     DownloadModel downloads(storage, dir.path());
-    Settings settings(dir.path() + QStringLiteral("/salama.conf"));
-    OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &settings);
+    QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
+    SearchSettings searchSettings(file);
+    PrivacySettings privacySettings(file);
+    OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &searchSettings,
+                         &privacySettings);
     SiteListModel sites;
     NotificationPermissions notificationSites;
 
@@ -216,6 +225,11 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("DownloadModel"), metaMembers(&DownloadModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
+        {QStringLiteral("SearchSettings"), metaMembers(&SearchSettings::staticMetaObject)},
+        {QStringLiteral("ReaderSettings"), metaMembers(&ReaderSettings::staticMetaObject)},
+        {QStringLiteral("CoverSettings"), metaMembers(&CoverSettings::staticMetaObject)},
+        {QStringLiteral("PrivacySettings"), metaMembers(&PrivacySettings::staticMetaObject)},
+        {QStringLiteral("StartPageSettings"), metaMembers(&StartPageSettings::staticMetaObject)},
         {QStringLiteral("Omnibar"), metaMembers(&OmnibarModel::staticMetaObject)},
         {QStringLiteral("EngineMessages"), metaMembers(&EngineMessages::staticMetaObject)},
         {QStringLiteral("PageActivity"), metaMembers(&PageActivity::staticMetaObject)},
@@ -228,7 +242,8 @@ void tst_qmlstatic::singletonMembersExist()
     };
     const QRegularExpression reference(
         QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|DownloadModel|Settings|Omnibar|EngineMessages|"
+                       "BookmarkModel|DownloadModel|Settings|SearchSettings|ReaderSettings|"
+                       "CoverSettings|PrivacySettings|StartPageSettings|Omnibar|EngineMessages|"
                        "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
                        "WebNotifications)\\."
                        "([A-Za-z_][A-Za-z0-9_]*)"));

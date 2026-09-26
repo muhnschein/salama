@@ -3,7 +3,7 @@
 #include "EngineMessages.h"
 
 #include "EngineData.h"
-#include "settings/Settings.h"
+#include "settings/PrivacySettings.h"
 
 #include <QColor>
 #include <QRegularExpression>
@@ -23,7 +23,7 @@ bool isWebScheme(const QString &scheme)
 const int FindFound = 0;
 const int FindWrapped = 2;
 
-// One engine preference, and its value at each level of Settings::TrackingProtection.
+// One engine preference, and its value at each level of PrivacySettings::TrackingProtection.
 struct TrackingPreference
 {
     const char *name;
@@ -227,9 +227,9 @@ QVariantList EngineMessages::trackingProtectionPreferences(int level)
     QVariantList list;
     for (const TrackingPreference &preference : trackingPreferences()) {
         QVariant value = preference.standard;
-        if (level == Settings::TrackingProtectionOff) {
+        if (level == PrivacySettings::TrackingProtectionOff) {
             value = preference.off;
-        } else if (level == Settings::TrackingProtectionStrict) {
+        } else if (level == PrivacySettings::TrackingProtectionStrict) {
             value = preference.strict;
         }
         list.append(QVariantMap{

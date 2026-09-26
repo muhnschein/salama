@@ -11,7 +11,7 @@ while a tab plays (0026).
 ## Decision
 **One action**, chosen on the cover's settings page (0028) under *Quick action*: none,
 *Search*, *Bookmarks* (the list), *Open a bookmark* (one), *Downloads* or *History*. It is
-`Settings.quickAction`, an unscoped enum stored as a number as the cover's style is, which
+`CoverSettings.quickAction`, an unscoped enum stored as a number as the cover's style is, which
 reads back out of range as the default, Search — what the cover offered before there was a
 choice. A line over the choice says why there is one: the place beside it is kept for the
 media control, which appears while the tab in front plays. Two small pictures of the cover
@@ -33,7 +33,7 @@ as their list draws them, without its menu, under a field that narrows them with
 word matcher (0027) through `BookmarkModel.matching()`, asked again whenever the bookmarks
 change (`BookmarkModel.revision`). A tap picks one, and only then is the action the
 bookmark's; backing out has changed nothing. The setting keeps the bookmark's id with its
-address and title beside it, written together (`Settings.setQuickActionBookmark()`). The
+address and title beside it, written together (`CoverSettings.setQuickActionBookmark()`). The
 menu sheet's Bookmark, tapped twice, takes a bookmark away and adds it back under a new
 id, so the bookmark is found by its id and then by its address, and the window points the
 setting at what it finds without a word, on every change to the bookmarks — keeping the
@@ -49,7 +49,7 @@ wears a filled star over lines, as the menu's Bookmarks is the filled star.
 **The glyphs are drawn**, as the speakers are (0026). The home screen draws an action's
 picture from its file as it is, so each glyph is in `icons/cover/`, in the speakers'
 strokes, and `icons/render.sh` renders it into `art/cover/` at each size Silica's small
-icon takes and in both inks. `Settings.coverIconPath()` names the file for a glyph, a size
+icon takes and in both inks. `CoverSettings.iconPath()` names the file for a glyph, a size
 and an ambience, and the cover's mute goes through it too. The theme's `icon-cover-search`
 and its kin could not be matched to a drawn speaker in weight or size without the phone,
 and the theme has no glyph for a bookmark of the reader's own.
@@ -71,7 +71,7 @@ opens it in a new tab. The action comes before the window is activated, as the s
 always did: the field has its focus as the window comes up, and the keyboard with it.
 
 ## Consequences
-`Settings` stores the choice, the bookmark and its glyph, and `BookmarkModel` answers by id
+`CoverSettings` stores the choice, the bookmark and its glyph, and `BookmarkModel` answers by id
 and by address and counts its changes for bindings to read; the cover holds its lists and
 their pictures, and none of what the action does. `BrowserPage.qml` grew by `uncover()` to
 599 lines (0010).

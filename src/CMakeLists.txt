@@ -2,6 +2,7 @@
 add_library(salama-core STATIC
     Core.cpp
     Core.h
+    ModelRoles.h
     QmlTypes.cpp
     QmlTypes.h
     bookmarks/BookmarkModel.cpp
@@ -29,8 +30,22 @@ add_library(salama-core STATIC
     reader/reader.qrc
     search/SearchWords.cpp
     search/SearchWords.h
+    settings/CoverSettings.cpp
+    settings/CoverSettings.h
+    settings/PrivacySettings.cpp
+    settings/PrivacySettings.h
+    settings/ReaderSettings.cpp
+    settings/ReaderSettings.h
+    settings/SearchSettings.cpp
+    settings/SearchSettings.h
     settings/Settings.cpp
     settings/Settings.h
+    settings/SettingsSection.cpp
+    settings/SettingsSection.h
+    settings/SettingsSections.cpp
+    settings/SettingsSections.h
+    settings/StartPageSettings.cpp
+    settings/StartPageSettings.h
     startpage/SiteListModel.cpp
     startpage/SiteListModel.h
     startpage/StartPage.cpp

@@ -141,26 +141,26 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Tab &tab = m_tabs.at(index.row());
-    switch (role) {
-    case TabIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::TabId:
         return tab.id;
-    case UrlRole:
+    case Role::Url:
         return tab.url;
-    case TitleRole:
+    case Role::Title:
         return tab.title;
-    case FaviconRole:
+    case Role::Favicon:
         return tab.favicon;
-    case ThumbnailRole:
+    case Role::Thumbnail:
         return tab.thumbnail;
-    case ActiveRole:
+    case Role::Active:
         return tab.id == m_activeTabId;
-    case GroupRole:
+    case Role::Group:
         return tab.groupId;
-    case LiveRole:
+    case Role::Live:
         return m_liveIds.contains(tab.id);
-    case MediaRole:
+    case Role::Media:
         return shownMediaState(tab.id);
-    case MutedRole:
+    case Role::Muted:
         return m_muted.contains(tab.id);
     default:
         return {};
@@ -170,16 +170,16 @@ QVariant TabModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> TabModel::roleNames() const
 {
     return {
-        {TabIdRole, QByteArrayLiteral("tabId")},
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
-        {ThumbnailRole, QByteArrayLiteral("thumbnail")},
-        {ActiveRole, QByteArrayLiteral("activeTab")},
-        {GroupRole, QByteArrayLiteral("groupId")},
-        {LiveRole, QByteArrayLiteral("liveTab")},
-        {MediaRole, QByteArrayLiteral("mediaState")},
-        {MutedRole, QByteArrayLiteral("muted")},
+        {roleId(Role::TabId), QByteArrayLiteral("tabId")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
+        {roleId(Role::Thumbnail), QByteArrayLiteral("thumbnail")},
+        {roleId(Role::Active), QByteArrayLiteral("activeTab")},
+        {roleId(Role::Group), QByteArrayLiteral("groupId")},
+        {roleId(Role::Live), QByteArrayLiteral("liveTab")},
+        {roleId(Role::Media), QByteArrayLiteral("mediaState")},
+        {roleId(Role::Muted), QByteArrayLiteral("muted")},
     };
 }
 
@@ -281,7 +281,7 @@ int TabModel::newTab(const QString &url)
     if (tab.groupId == m_currentGroupId) {
         m_groupTabs->append(tab.id);
     }
-    m_groupModel->changed(groupIndexOf(tab.groupId), TabGroupModel::TabCountRole);
+    m_groupModel->changed(groupIndexOf(tab.groupId), TabGroupModel::Role::TabCount);
 
     if (m_persistence != nullptr) {
         m_persistence->insertTab(tab);
@@ -412,7 +412,7 @@ void TabModel::closeTab(int index)
     m_media.remove(closing.id);
     m_muted.remove(closing.id);
     m_groupTabs->remove(closing.id);
-    m_groupModel->changed(groupIndexOf(closing.groupId), TabGroupModel::TabCountRole);
+    m_groupModel->changed(groupIndexOf(closing.groupId), TabGroupModel::Role::TabCount);
 
     if (m_persistence != nullptr) {
         m_persistence->removeTab(closing.id);
@@ -468,7 +468,7 @@ void TabModel::closeAllTabs()
     m_media.clear();
     m_muted.clear();
     m_groupTabs->reset(QList<int>());
-    m_groupModel->changedAll(TabGroupModel::TabCountRole);
+    m_groupModel->changedAll(TabGroupModel::Role::TabCount);
     for (const Tab &tab : closed) {
         m_closedTabs->record(tab);
     }
@@ -529,7 +529,7 @@ void TabModel::updateUrl(int tabId, const QString &url)
     }
     const bool leavesStartPage = tab.url.isEmpty();
     tab.url = url;
-    notifyRow(index, UrlRole);
+    notifyRow(index, Role::Url);
     persist(tab);
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
@@ -549,7 +549,7 @@ void TabModel::updateTitle(int tabId, const QString &title)
     }
     Tab &tab = m_tabs[index];
     tab.title = title;
-    notifyRow(index, TitleRole);
+    notifyRow(index, Role::Title);
     persist(tab);
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
@@ -565,7 +565,7 @@ void TabModel::updateFavicon(int tabId, const QString &favicon)
     }
     Tab &tab = m_tabs[index];
     tab.favicon = favicon;
-    notifyRow(index, FaviconRole);
+    notifyRow(index, Role::Favicon);
     persist(tab);
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
@@ -585,7 +585,7 @@ void TabModel::showStartPage(int tabId)
     tab.favicon.clear();
     discardThumbnail(tab.thumbnail);
     tab.thumbnail.clear();
-    for (const Role role : {UrlRole, TitleRole, FaviconRole, ThumbnailRole}) {
+    for (const Role role : {Role::Url, Role::Title, Role::Favicon, Role::Thumbnail}) {
         notifyRow(index, role);
     }
     persist(tab);
@@ -627,7 +627,7 @@ void TabModel::updateThumbnail(int tabId, const QString &path)
     Tab &tab = m_tabs[index];
     discardThumbnail(tab.thumbnail);
     tab.thumbnail = path;
-    notifyRow(index, ThumbnailRole);
+    notifyRow(index, Role::Thumbnail);
     persist(tab);
     emit recentTabsChanged();
 }
@@ -656,7 +656,7 @@ void TabModel::setMediaState(int tabId, MediaState state)
     } else {
         m_media.insert(tabId, state);
     }
-    notifyRow(index, MediaRole);
+    notifyRow(index, Role::Media);
     if (tabId == m_activeTabId) {
         emit activeMediaChanged();
     }
@@ -678,7 +678,7 @@ void TabModel::setMuted(int tabId, bool muted)
     } else {
         m_muted.remove(tabId);
     }
-    notifyRow(index, MutedRole);
+    notifyRow(index, Role::Muted);
     if (tabId == m_activeTabId) {
         emit activeMediaChanged();
     }
@@ -765,8 +765,8 @@ void TabModel::applyCurrentGroup(int groupId)
         }
     }
     m_groupTabs->reset(ids);
-    m_groupModel->changed(oldIndex, TabGroupModel::CurrentRole);
-    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::CurrentRole);
+    m_groupModel->changed(oldIndex, TabGroupModel::Role::Current);
+    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::Role::Current);
     if (m_persistence != nullptr) {
         m_persistence->setCurrentGroupId(groupId);
     }
@@ -800,7 +800,7 @@ void TabModel::renameGroup(int groupId, const QString &name)
         return;
     }
     m_groups[index].name = name.trimmed();
-    m_groupModel->changed(index, TabGroupModel::NameRole);
+    m_groupModel->changed(index, TabGroupModel::Role::Name);
     if (m_persistence != nullptr) {
         m_persistence->updateGroup(m_groups.at(index));
     }
@@ -847,15 +847,15 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
     }
     const int oldGroup = tab.groupId;
     tab.groupId = groupId;
-    notifyRow(index, GroupRole);
+    notifyRow(index, Role::Group);
     persist(tab);
     if (oldGroup == m_currentGroupId) {
         m_groupTabs->remove(tab.id);
     } else if (groupId == m_currentGroupId) {
         m_groupTabs->append(tab.id);
     }
-    m_groupModel->changed(groupIndexOf(oldGroup), TabGroupModel::TabCountRole);
-    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::TabCountRole);
+    m_groupModel->changed(groupIndexOf(oldGroup), TabGroupModel::Role::TabCount);
+    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::Role::TabCount);
     emit groupsChanged();
     // The active tab is in the current group, always: a tab moved away takes the
     // current group with it.
@@ -923,7 +923,7 @@ void TabModel::refreshLive()
     for (int i = 0; i < m_tabs.count(); ++i) {
         const int id = m_tabs.at(i).id;
         if (before.contains(id) != live.contains(id)) {
-            notifyRow(i, LiveRole);
+            notifyRow(i, Role::Live);
         }
         // Its view goes, and whatever it was playing with it.
         if (!live.contains(id)) {
@@ -972,9 +972,9 @@ void TabModel::applyActiveTab(int tabId)
     // Media shown as held behind the front, or no longer (shownMediaState()).
     for (const int index : {oldIndex, indexOf(tabId)}) {
         if (index >= 0) {
-            notifyRow(index, ActiveRole);
+            notifyRow(index, Role::Active);
             if (m_media.value(m_tabs.at(index).id, NoMedia) == MediaPlaying) {
-                notifyRow(index, MediaRole);
+                notifyRow(index, Role::Media);
             }
         }
     }
@@ -990,11 +990,11 @@ void TabModel::applyActiveTab(int tabId)
 void TabModel::notifyRow(int index, Role role)
 {
     const QModelIndex modelIndex = this->index(index, 0);
-    emit dataChanged(modelIndex, modelIndex, QVector<int>{role});
-    m_groupTabs->changed(m_tabs.at(index).id, role);
+    emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(role)});
+    m_groupTabs->changed(m_tabs.at(index).id, roleId(role));
 }
 
-void TabModel::persist(const Tab &tab)
+void TabModel::persist(const Tab &tab) const
 {
     if (m_persistence != nullptr) {
         m_persistence->updateTab(tab);

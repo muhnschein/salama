@@ -37,14 +37,14 @@ QVariant ClosedTabModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const ClosedTab &closed = m_closed.at(index.row());
-    switch (role) {
-    case ClosedIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::ClosedId:
         return closed.id;
-    case UrlRole:
+    case Role::Url:
         return closed.url;
-    case TitleRole:
+    case Role::Title:
         return closed.title;
-    case FaviconRole:
+    case Role::Favicon:
         return closed.favicon;
     default:
         return {};
@@ -54,10 +54,10 @@ QVariant ClosedTabModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> ClosedTabModel::roleNames() const
 {
     return {
-        {ClosedIdRole, QByteArrayLiteral("closedId")},
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
+        {roleId(Role::ClosedId), QByteArrayLiteral("closedId")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
     };
 }
 

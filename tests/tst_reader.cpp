@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "reader/Reader.h"
-#include "settings/Settings.h"
+#include "settings/ReaderSettings.h"
 
 #include <QColor>
 #include <QFile>
 #include <QJSEngine>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
 
 using Salama::Reader;
-using Salama::Settings;
+using Salama::ReaderSettings;
 
 namespace {
 
@@ -78,14 +79,17 @@ private slots:
 
 private:
     QScopedPointer<QTemporaryDir> m_dir;
-    QScopedPointer<Settings> m_settings;
+    QScopedPointer<QSettings> m_file;
+    QScopedPointer<ReaderSettings> m_settings;
     QScopedPointer<Reader> m_reader;
 };
 
 void tst_reader::init()
 {
     m_dir.reset(new QTemporaryDir);
-    m_settings.reset(new Settings(m_dir->path() + QStringLiteral("/salama.conf")));
+    m_file.reset(
+        new QSettings(m_dir->path() + QStringLiteral("/salama.conf"), QSettings::IniFormat));
+    m_settings.reset(new ReaderSettings(*m_file));
     m_reader.reset(new Reader(*m_settings));
 }
 
@@ -93,6 +97,7 @@ void tst_reader::cleanup()
 {
     m_reader.reset();
     m_settings.reset();
+    m_file.reset();
     m_dir.reset();
 }
 
@@ -197,18 +202,18 @@ void tst_reader::colors()
     // The ambience's own until something else is chosen.
     QCOMPARE(m_reader->colorScheme(true), QStringLiteral("dark"));
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("light"));
-    m_settings->setReaderColors(Settings::ReaderSepia);
+    m_settings->setColors(ReaderSettings::Sepia);
     QCOMPARE(m_reader->colorScheme(true), QStringLiteral("sepia"));
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("sepia"));
-    m_settings->setReaderColors(Settings::ReaderLight);
+    m_settings->setColors(ReaderSettings::Light);
     QCOMPARE(m_reader->colorScheme(true), QStringLiteral("light"));
-    m_settings->setReaderColors(Settings::ReaderDark);
+    m_settings->setColors(ReaderSettings::Dark);
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("dark"));
 
     // Asked for a setting rather than the one set, as the settings' preview asks.
-    QCOMPARE(Reader::schemeFor(Settings::ReaderAmbience, true), QStringLiteral("dark"));
-    QCOMPARE(Reader::schemeFor(Settings::ReaderAmbience, false), QStringLiteral("light"));
-    QCOMPARE(Reader::schemeFor(Settings::ReaderSepia, true), QStringLiteral("sepia"));
+    QCOMPARE(Reader::schemeFor(ReaderSettings::Ambience, true), QStringLiteral("dark"));
+    QCOMPARE(Reader::schemeFor(ReaderSettings::Ambience, false), QStringLiteral("light"));
+    QCOMPARE(Reader::schemeFor(ReaderSettings::Sepia, true), QStringLiteral("sepia"));
     QCOMPARE(Reader::schemeFor(99, false), QStringLiteral("light"));
 
     // The style sheet's colours for each theme.
@@ -229,9 +234,9 @@ void tst_reader::colors()
     QVERIFY(css.contains(QStringLiteral("--primary-color: rgb(0, 221, 255);")));
 
     // Firefox's text sizes: 10 and two more a step.
-    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeMin), 12);
-    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeDefault), 20);
-    QCOMPARE(Reader::fontSizeFor(Settings::ReaderTextSizeMax), 28);
+    QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeMin), 12);
+    QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeDefault), 20);
+    QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeMax), 28);
 }
 
 void tst_reader::refusesWhatIsNoArticle()
@@ -384,9 +389,9 @@ void tst_reader::styleFollowsSettings()
     // Only a reader view is restyled: it is recognised by its own head.
     QVERIFY(script.contains(QLatin1String("meta[name=\"salama-reader\"]")));
 
-    m_settings->setReaderColors(Settings::ReaderSepia);
-    m_settings->setReaderTypeface(Settings::ReaderSerif);
-    m_settings->setReaderTextSize(Settings::ReaderTextSizeMax);
+    m_settings->setColors(ReaderSettings::Sepia);
+    m_settings->setTypeface(ReaderSettings::Serif);
+    m_settings->setTextSize(ReaderSettings::TextSizeMax);
     QCOMPARE(changed.count(), 3);
     script = m_reader->styleScript(true);
     QVERIFY(script.contains(QLatin1String("document.body.className = 'sepia serif';")));
@@ -398,7 +403,7 @@ void tst_reader::styleFollowsSettings()
                                         QString(), QString(), true);
     QVERIFY(
         html.contains(QLatin1String("<body class=\"sepia serif\" style=\"--font-size: 28px\">")));
-    m_settings->setReaderTextSize(Settings::ReaderTextSizeMin);
+    m_settings->setTextSize(ReaderSettings::TextSizeMin);
     QVERIFY(m_reader->styleScript(true).contains(QLatin1String("'12px'")));
 }
 

@@ -11,6 +11,8 @@
 // keeps with its history and forgets with it (docs/DECISIONS/0027-omnibar.md).
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QDateTime>
 #include <QHash>
@@ -31,18 +33,19 @@ class HistoryModel : public QAbstractListModel
     Q_PROPERTY(QString searchTerm READ searchTerm WRITE setSearchTerm NOTIFY searchTermChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        UrlRole = Qt::UserRole + 1,
-        TitleRole,
-        DateRole,
-        VisitCountRole,
-        FaviconRole
+        Url = Qt::UserRole + 1,
+        Title,
+        Date,
+        VisitCount,
+        Favicon
     };
 
     // How far back clearing reaches: the choices Firefox's Clear browsing data dialog
-    // offers, "Today" from midnight on.
-    enum ClearRange
+    // offers, "Today" from midnight on. Unscoped, as TabModel::MediaState is: QML reads
+    // `HistoryModel.ClearEverything`.
+    enum ClearRange // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         ClearLastHour,
         ClearLastTwoHours,
@@ -68,7 +71,7 @@ public:
         QString favicon;
     };
 
-    explicit HistoryModel(Storage &storage, QObject *parent = nullptr);
+    explicit HistoryModel(const Storage &storage, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -130,7 +133,7 @@ private:
     static bool isRecordable(const QString &url);
     // What input_history holds for text as recordInput() keeps it.
     static QString inputKey(const QString &input);
-    void prune();
+    void prune() const;
     void reload();
 
     QSqlDatabase m_db;

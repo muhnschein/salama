@@ -231,7 +231,7 @@ WebViewPage {
     // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
     // keeps until it is up, and again whenever the level changes.
     function applyTrackingProtection() {
-        var preferences = EngineMessages.trackingProtectionPreferences(Settings.trackingProtection)
+        var preferences = EngineMessages.trackingProtectionPreferences(PrivacySettings.trackingProtection)
         for (var i = 0; i < preferences.length; ++i) {
             WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
         }
@@ -243,7 +243,7 @@ WebViewPage {
     }
 
     Connections {
-        target: Settings
+        target: PrivacySettings
         onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 

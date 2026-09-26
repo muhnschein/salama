@@ -33,8 +33,8 @@ Page {
                 objectName: "blockNotificationRequestsSwitch"
                 text: qsTr("Block new requests")
                 description: qsTr("Sites not listed here cannot ask to send notifications")
-                checked: Settings.blockNotificationRequests
-                onCheckedChanged: Settings.blockNotificationRequests = checked
+                checked: PrivacySettings.blockNotificationRequests
+                onCheckedChanged: PrivacySettings.blockNotificationRequests = checked
             }
 
             SectionHeader {

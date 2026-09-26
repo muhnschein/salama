@@ -6,6 +6,8 @@
 // Phase 2 folders are a column, not a file-format change.
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QList>
 #include <QSqlDatabase>
@@ -30,12 +32,12 @@ class BookmarkModel : public QAbstractListModel
     Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        BookmarkIdRole = Qt::UserRole + 1,
-        UrlRole,
-        TitleRole,
-        FaviconRole
+        BookmarkId = Qt::UserRole + 1,
+        Url,
+        Title,
+        Favicon
     };
 
     struct Bookmark
@@ -49,7 +51,7 @@ public:
         qint64 created = 0;
     };
 
-    explicit BookmarkModel(Storage &storage, QObject *parent = nullptr);
+    explicit BookmarkModel(const Storage &storage, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

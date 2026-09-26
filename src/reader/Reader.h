@@ -10,7 +10,7 @@
 
 namespace Salama {
 
-class Settings;
+class ReaderSettings;
 
 // The reader view: a page's article alone, set the way Firefox's reader view sets it
 // (docs/DECISIONS/0024-reader-view.md).
@@ -30,7 +30,7 @@ class Reader : public QObject
     Q_PROPERTY(QString articleScript READ articleScript CONSTANT)
 
 public:
-    explicit Reader(const Settings &settings, QObject *parent = nullptr);
+    explicit Reader(const ReaderSettings &settings, QObject *parent = nullptr);
 
     // Whether the page is worth offering the reader view of: Readability's
     // isProbablyReaderable() with Firefox's visibility test
@@ -59,7 +59,7 @@ public:
     // The reader theme the settings ask for -- "light", "sepia" or "dark" -- with the
     // ambience's own being light or dark as the ambience is.
     Q_INVOKABLE QString colorScheme(bool darkAmbience) const;
-    // The same for a colours setting given, a Settings::ReaderColors: what the reader
+    // The same for a colours setting given, a ReaderSettings::Colors: what the reader
     // settings' preview follows, as a binding on the setting.
     Q_INVOKABLE static QString schemeFor(int colors, bool darkAmbience);
 
@@ -69,7 +69,7 @@ public:
     Q_INVOKABLE static QColor textColorOf(const QString &scheme);
     Q_INVOKABLE static QColor linkColorOf(const QString &scheme);
 
-    // The article's text size for a Settings::readerTextSize step, in css pixels:
+    // The article's text size for a ReaderSettings::textSize step, in css pixels:
     // AboutReader._setFontSize's 10 + 2 * the step.
     Q_INVOKABLE static int fontSizeFor(int step);
 
@@ -110,7 +110,7 @@ signals:
 private:
     QString bodyClass(bool darkAmbience) const;
 
-    const Settings &m_settings;
+    const ReaderSettings &m_settings;
     QString m_readerableScript;
     QString m_articleScript;
     QString m_styleSheet;

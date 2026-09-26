@@ -6,7 +6,7 @@ What a person needs from a glance at the address is whose page this is, and whet
 connection to it is what it claims to be.
 
 ## Decision
-While the address is **not** being edited the bar shows `Settings::displayAddress(url)`:
+While the address is **not** being edited the bar shows `SearchSettings::displayAddress(url)`:
 the host, without the scheme, without a leading `www.`, without the path. Tapping it
 brings the field up with every character of the url back, so nothing is hidden from
 someone who asks for it.
@@ -45,7 +45,7 @@ platform glyph is the one people already recognise, and a themed id is only a ri
 is a guess: this one comes from Jolla's own browser.
 
 ## Consequences
-`Settings` owns `displayAddress` next to `urlForInput`, which is the same translation in
+`SearchSettings` owns `displayAddress` next to `urlForInput`, which is the same translation in
 the other direction: one turns what a person typed into a url, the other turns a url into
 what a person reads. Both are pure and both are covered by table-driven tests.
 

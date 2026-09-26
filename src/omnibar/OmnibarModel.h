@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QDateTime>
 #include <QList>
@@ -15,7 +17,8 @@ class BookmarkModel;
 class DownloadModel;
 class HistoryModel;
 class SearchWords;
-class Settings;
+class PrivacySettings;
+class SearchSettings;
 class TabModel;
 
 // What the omnibar's rows are made of, kept beside the model rather than inside it, as
@@ -110,37 +113,37 @@ class OmnibarModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY resultsChanged)
 
 public:
-    enum Role
+    enum class Role
     {
         // "tab", "bookmark", "history" or "download": what a tap on the row does.
-        KindRole = Qt::UserRole + 1,
+        Kind = Qt::UserRole + 1,
         // The page's or the file's name, the address when it has none.
-        TitleRole,
-        UrlRole,
-        // Settings::displayAddress() of the url: for a download, the host it came from.
-        HostRole,
+        Title,
+        Url,
+        // SearchSettings::displayAddress() of the url: for a download, the host it came from.
+        Host,
         // The title and the host as StyledText, every word typed in bold and the rest
         // escaped: what a page chose to be called can hold no markup of its own.
-        MarkedTitleRole,
-        MarkedHostRole,
+        MarkedTitle,
+        MarkedHost,
         // The page's icon, or when it has none of its own, one its site has shown in a
         // tab, a bookmark or the history; empty for a download.
-        FaviconRole,
+        Favicon,
         // The tab's id, and its group as the grid's search gives it; 0 and empty on
         // the other kinds.
-        TabIdRole,
-        GroupIdRole,
-        GroupNameRole,
-        GroupTabCountRole,
+        TabId,
+        GroupId,
+        GroupName,
+        GroupTabCount,
         // Whether a tab or a page of the history is bookmarked too; a bookmark is.
-        BookmarkedRole,
+        Bookmarked,
         // The download's own lasting id (DownloadModel::rowOf), its DownloadModel::Status
         // and its progress; 0 on the other kinds.
-        DownloadIdRole,
-        DownloadStatusRole,
-        ProgressRole,
+        DownloadId,
+        DownloadStatus,
+        Progress,
         // A page of the history's last visit, a download's start; invalid otherwise.
-        DateRole
+        Date
     };
 
     // How many rows there are at most, how many of them a download may take, and how
@@ -151,7 +154,8 @@ public:
     static const int MaxLearnt = 3;
 
     OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryModel *history,
-                 DownloadModel *downloads, Settings *settings, QObject *parent = nullptr);
+                 DownloadModel *downloads, SearchSettings *search, PrivacySettings *privacy,
+                 QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -166,7 +170,7 @@ public:
 
     // That what was typed led to the page chosen from the list, or gone to as typed,
     // for the address bar to put it first next time (HistoryModel::recordInput) --
-    // unless the history is not to be kept (Settings::rememberHistory).
+    // unless the history is not to be kept (PrivacySettings::rememberHistory).
     Q_INVOKABLE void learn(const QString &typed, const QString &url) const;
 
     // How a page is ranked among those that match as well: Firefox's frecency
@@ -199,7 +203,8 @@ private:
     BookmarkModel *m_bookmarks;
     HistoryModel *m_history;
     DownloadModel *m_downloads;
-    Settings *m_settings;
+    SearchSettings *m_search;
+    PrivacySettings *m_privacy;
     QString m_query;
     bool m_bookmarksWhenEmpty = false;
     QList<OmnibarRow> m_rows;

@@ -19,11 +19,12 @@ if [[ ${1:-} == --prune-only ]]; then
     shift
 fi
 
-remove() {
-    if [[ -w $(dirname "$1") ]]; then
-        rm -f "$1"
+remove() { # file
+    local file=$1
+    if [[ -w $(dirname "$file") ]]; then
+        rm -f "$file"
     else
-        sudo rm -f "$1"
+        sudo rm -f "$file"
     fi
 }
 

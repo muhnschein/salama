@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "ModelRoles.h"
+
 #include <QAbstractListModel>
 #include <QString>
 
@@ -18,14 +20,14 @@ class TabGroupModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
-    enum Role
+    enum class Role
     {
-        GroupIdRole = Qt::UserRole + 1,
-        NameRole,
-        TabCountRole,
-        CurrentRole,
+        GroupId = Qt::UserRole + 1,
+        Name,
+        TabCount,
+        Current,
         // The group every ordinary tab starts in, which is neither renamed nor removed.
-        DefaultRole
+        Default
     };
 
     explicit TabGroupModel(TabModel *tabs);
@@ -47,8 +49,8 @@ public:
     // Kept by TabModel.
     void inserted(int row);
     void removed(int row);
-    void changed(int row, int role);
-    void changedAll(int role);
+    void changed(int row, Role role);
+    void changedAll(Role role);
 
 signals:
     void countChanged();

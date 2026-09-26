@@ -55,7 +55,7 @@ int indexOfUrl(const QList<BookmarkModel::Bookmark> &bookmarks, const QString &u
 
 } // namespace
 
-BookmarkModel::BookmarkModel(Storage &storage, QObject *parent)
+BookmarkModel::BookmarkModel(const Storage &storage, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
 {
@@ -76,14 +76,14 @@ QVariant BookmarkModel::data(const QModelIndex &index, int role) const
         return {};
     }
     const Bookmark &bookmark = m_bookmarks.at(index.row());
-    switch (role) {
-    case BookmarkIdRole:
+    switch (static_cast<Role>(role)) {
+    case Role::BookmarkId:
         return bookmark.id;
-    case UrlRole:
+    case Role::Url:
         return bookmark.url;
-    case TitleRole:
+    case Role::Title:
         return shownTitle(bookmark);
-    case FaviconRole:
+    case Role::Favicon:
         return bookmark.favicon;
     default:
         return {};
@@ -93,10 +93,10 @@ QVariant BookmarkModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> BookmarkModel::roleNames() const
 {
     return {
-        {BookmarkIdRole, QByteArrayLiteral("bookmarkId")},
-        {UrlRole, QByteArrayLiteral("url")},
-        {TitleRole, QByteArrayLiteral("title")},
-        {FaviconRole, QByteArrayLiteral("favicon")},
+        {roleId(Role::BookmarkId), QByteArrayLiteral("bookmarkId")},
+        {roleId(Role::Url), QByteArrayLiteral("url")},
+        {roleId(Role::Title), QByteArrayLiteral("title")},
+        {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
     };
 }
 
@@ -265,11 +265,11 @@ void BookmarkModel::edit(int index, const QString &url, const QString &title)
     QVector<int> roles;
     if (bookmark.url != url) {
         bookmark.url = url;
-        roles.append(UrlRole);
+        roles.append(roleId(Role::Url));
     }
     if (bookmark.title != title) {
         bookmark.title = title;
-        roles.append(TitleRole);
+        roles.append(roleId(Role::Title));
     }
     notifyRow(index, roles);
     emit activeUrlBookmarkedChanged();
@@ -295,7 +295,7 @@ void BookmarkModel::updateFavicon(const QString &url, const QString &favicon)
         return;
     }
     m_bookmarks[index].favicon = favicon;
-    notifyRow(index, QVector<int>{FaviconRole});
+    notifyRow(index, QVector<int>{roleId(Role::Favicon)});
     bump();
 }
 

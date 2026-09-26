@@ -53,7 +53,7 @@ ListItem {
                 if (model.status === DownloadModel.Canceled) {
                     return qsTr("Cancelled")
                 }
-                return Settings.displayAddress(model.url)
+                return SearchSettings.displayAddress(model.url)
             }
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeExtraSmall

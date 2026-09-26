@@ -4,11 +4,13 @@
 #include "downloads/DownloadModel.h"
 #include "history/HistoryModel.h"
 #include "omnibar/OmnibarModel.h"
-#include "settings/Settings.h"
+#include "settings/PrivacySettings.h"
+#include "settings/SearchSettings.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 
 #include <QDateTime>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -18,7 +20,8 @@ using Salama::BookmarkModel;
 using Salama::DownloadModel;
 using Salama::HistoryModel;
 using Salama::OmnibarModel;
-using Salama::Settings;
+using Salama::PrivacySettings;
+using Salama::SearchSettings;
 using Salama::Storage;
 using Salama::TabModel;
 
@@ -64,8 +67,10 @@ struct Sources
     BookmarkModel bookmarks{storage};
     HistoryModel history{storage};
     DownloadModel downloads{storage, dir.path()};
-    Settings settings{dir.path() + QStringLiteral("/salama.conf")};
-    OmnibarModel omnibar{&tabs, &bookmarks, &history, &downloads, &settings};
+    QSettings file{dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat};
+    SearchSettings search{file};
+    PrivacySettings privacy{file};
+    OmnibarModel omnibar{&tabs, &bookmarks, &history, &downloads, &search, &privacy};
 };
 
 QVariant role(const OmnibarModel &model, int row, int role)
@@ -78,8 +83,9 @@ QStringList rows(const OmnibarModel &model)
 {
     QStringList rows;
     for (int row = 0; row < model.rowCount(); ++row) {
-        rows.append(role(model, row, OmnibarModel::KindRole).toString() + QStringLiteral(": ") +
-                    role(model, row, OmnibarModel::TitleRole).toString());
+        rows.append(role(model, row, roleId(OmnibarModel::Role::Kind)).toString() +
+                    QStringLiteral(": ") +
+                    role(model, row, roleId(OmnibarModel::Role::Title)).toString());
     }
     return rows;
 }
@@ -88,7 +94,7 @@ QStringList rows(const OmnibarModel &model)
 int rowOfKind(const OmnibarModel &model, const QString &kind)
 {
     for (int row = 0; row < model.rowCount(); ++row) {
-        if (role(model, row, OmnibarModel::KindRole).toString() == kind) {
+        if (role(model, row, roleId(OmnibarModel::Role::Kind)).toString() == kind) {
             return row;
         }
     }
@@ -99,7 +105,7 @@ int countOfKind(const OmnibarModel &model, const QString &kind)
 {
     int count = 0;
     for (int row = 0; row < model.rowCount(); ++row) {
-        count += role(model, row, OmnibarModel::KindRole).toString() == kind ? 1 : 0;
+        count += role(model, row, roleId(OmnibarModel::Role::Kind)).toString() == kind ? 1 : 0;
     }
     return count;
 }
@@ -127,7 +133,7 @@ int startDownload(DownloadModel &model, int engineId, const QString &name, const
                                              {QStringLiteral("displayName"), name},
                                              {QStringLiteral("sourceUrl"), url},
                                              {QStringLiteral("targetPath"), QString()}});
-    return model.data(model.index(0, 0), DownloadModel::DownloadIdRole).toInt();
+    return model.data(model.index(0, 0), roleId(DownloadModel::Role::DownloadId)).toInt();
 }
 
 void downloadMessage(DownloadModel &model, int engineId, const QVariantMap &extra)
@@ -159,13 +165,13 @@ void tst_omnibarmodel::roles()
     for (const QByteArray &name : expected) {
         QVERIFY2(names.values().contains(name), name.constData());
     }
-    QCOMPARE(names.value(OmnibarModel::KindRole), QByteArray("kind"));
-    QCOMPARE(names.value(OmnibarModel::DownloadStatusRole), QByteArray("downloadStatus"));
+    QCOMPARE(names.value(roleId(OmnibarModel::Role::Kind)), QByteArray("kind"));
+    QCOMPARE(names.value(roleId(OmnibarModel::Role::DownloadStatus)), QByteArray("downloadStatus"));
 
     QCOMPARE(sources.omnibar.rowCount(), 0);
     QCOMPARE(sources.omnibar.rowCount(sources.omnibar.index(0, 0)), 0);
-    QVERIFY(!role(sources.omnibar, 0, OmnibarModel::KindRole).isValid());
-    QVERIFY(!role(sources.omnibar, -1, OmnibarModel::KindRole).isValid());
+    QVERIFY(!role(sources.omnibar, 0, roleId(OmnibarModel::Role::Kind)).isValid());
+    QVERIFY(!role(sources.omnibar, -1, roleId(OmnibarModel::Role::Kind)).isValid());
 
     sources.bookmarks.add(QStringLiteral("https://a.example/"), QStringLiteral("A"));
     sources.omnibar.setQuery(QStringLiteral("a"));
@@ -286,66 +292,68 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
 
     // The tab: no title yet, so its address stands for it.
     const int tabRow = rowOfKind(omnibar, QStringLiteral("tab"));
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::TitleRole).toString(),
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("https://www.row.example/tab"));
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::UrlRole).toString(),
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::Url)).toString(),
              QStringLiteral("https://www.row.example/tab"));
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::HostRole).toString(),
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::Host)).toString(),
              QStringLiteral("row.example"));
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::FaviconRole).toString(),
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::Favicon)).toString(),
              QStringLiteral("https://row.example/tab.ico"));
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::TabIdRole).toInt(), tab);
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::GroupIdRole).toInt(),
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::TabId)).toInt(), tab);
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::GroupId)).toInt(),
              sources.tabs.defaultGroupId());
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::GroupTabCountRole).toInt(), 2);
-    QVERIFY(!role(omnibar, tabRow, OmnibarModel::BookmarkedRole).toBool());
-    QCOMPARE(role(omnibar, tabRow, OmnibarModel::DownloadIdRole).toInt(), 0);
-    QVERIFY(!role(omnibar, tabRow, OmnibarModel::DateRole).toDateTime().isValid());
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::GroupTabCount)).toInt(), 2);
+    QVERIFY(!role(omnibar, tabRow, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+    QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::DownloadId)).toInt(), 0);
+    QVERIFY(!role(omnibar, tabRow, roleId(OmnibarModel::Role::Date)).toDateTime().isValid());
 
     const int bookmarkRow = rowOfKind(omnibar, QStringLiteral("bookmark"));
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::TitleRole).toString(),
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("Bookmarked row"));
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::UrlRole).toString(),
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Url)).toString(),
              QStringLiteral("https://row.example/bookmark"));
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::FaviconRole).toString(),
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Favicon)).toString(),
              QStringLiteral("https://row.example/b.ico"));
-    QVERIFY(role(omnibar, bookmarkRow, OmnibarModel::BookmarkedRole).toBool());
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::TabIdRole).toInt(), 0);
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::GroupIdRole).toInt(), 0);
-    QVERIFY(role(omnibar, bookmarkRow, OmnibarModel::GroupNameRole).toString().isEmpty());
-    QCOMPARE(role(omnibar, bookmarkRow, OmnibarModel::DownloadIdRole).toInt(), 0);
-    QVERIFY(!role(omnibar, bookmarkRow, OmnibarModel::DateRole).toDateTime().isValid());
+    QVERIFY(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::TabId)).toInt(), 0);
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::GroupId)).toInt(), 0);
+    QVERIFY(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::GroupName)).toString().isEmpty());
+    QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::DownloadId)).toInt(), 0);
+    QVERIFY(!role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Date)).toDateTime().isValid());
 
     // A page of the history with no title shows its address, and when it was visited;
     // with no icon of its own, its site's, which the tab shows.
     const int historyRow = rowOfKind(omnibar, QStringLiteral("history"));
-    QCOMPARE(role(omnibar, historyRow, OmnibarModel::TitleRole).toString(),
+    QCOMPARE(role(omnibar, historyRow, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("https://row.example/history"));
-    QCOMPARE(role(omnibar, historyRow, OmnibarModel::HostRole).toString(),
+    QCOMPARE(role(omnibar, historyRow, roleId(OmnibarModel::Role::Host)).toString(),
              QStringLiteral("row.example"));
-    QCOMPARE(role(omnibar, historyRow, OmnibarModel::FaviconRole).toString(),
+    QCOMPARE(role(omnibar, historyRow, roleId(OmnibarModel::Role::Favicon)).toString(),
              QStringLiteral("https://row.example/tab.ico"));
-    QVERIFY(!role(omnibar, historyRow, OmnibarModel::BookmarkedRole).toBool());
-    const QDateTime visited = role(omnibar, historyRow, OmnibarModel::DateRole).toDateTime();
+    QVERIFY(!role(omnibar, historyRow, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+    const QDateTime visited =
+        role(omnibar, historyRow, roleId(OmnibarModel::Role::Date)).toDateTime();
     QVERIFY(visited.isValid());
     QVERIFY(qAbs(visited.msecsTo(QDateTime::currentDateTime()) - Day) < Minute);
 
     // The download, last: its own lasting id, where it came from, how far it has got.
     QCOMPARE(rowOfKind(omnibar, QStringLiteral("download")), 3);
-    QCOMPARE(role(omnibar, 3, OmnibarModel::TitleRole).toString(), QStringLiteral("row.pdf"));
-    QCOMPARE(role(omnibar, 3, OmnibarModel::UrlRole).toString(),
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::Title)).toString(),
+             QStringLiteral("row.pdf"));
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::Url)).toString(),
              QStringLiteral("https://files.row.example/row.pdf"));
-    QCOMPARE(role(omnibar, 3, OmnibarModel::HostRole).toString(),
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::Host)).toString(),
              QStringLiteral("files.row.example"));
-    QCOMPARE(role(omnibar, 3, OmnibarModel::DownloadIdRole).toInt(), download);
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::DownloadId)).toInt(), download);
     QCOMPARE(sources.downloads.rowOf(download), 0);
-    QCOMPARE(role(omnibar, 3, OmnibarModel::DownloadStatusRole).toInt(),
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::DownloadStatus)).toInt(),
              static_cast<int>(DownloadModel::Running));
-    QCOMPARE(role(omnibar, 3, OmnibarModel::ProgressRole).toInt(), 40);
-    QCOMPARE(role(omnibar, 3, OmnibarModel::TabIdRole).toInt(), 0);
-    QVERIFY(role(omnibar, 3, OmnibarModel::DateRole).toDateTime().isValid());
-    QVERIFY(role(omnibar, 3, OmnibarModel::FaviconRole).toString().isEmpty());
-    QCOMPARE(role(omnibar, 3, OmnibarModel::MarkedTitleRole).toString(),
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::Progress)).toInt(), 40);
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::TabId)).toInt(), 0);
+    QVERIFY(role(omnibar, 3, roleId(OmnibarModel::Role::Date)).toDateTime().isValid());
+    QVERIFY(role(omnibar, 3, roleId(OmnibarModel::Role::Favicon)).toString().isEmpty());
+    QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("<b>row</b>.pdf"));
 
     // A download with no name at all is called by its address.
@@ -372,18 +380,19 @@ void tst_omnibarmodel::tabsAcrossGroups()
     // comes first.
     QCOMPARE(rows(omnibar),
              (QStringList{QStringLiteral("tab: Office mail"), QStringLiteral("tab: Home mail")}));
-    QCOMPARE(role(omnibar, 0, OmnibarModel::TabIdRole).toInt(), office);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::GroupIdRole).toInt(), work);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::GroupNameRole).toString(), QStringLiteral("Work"));
-    QCOMPARE(role(omnibar, 0, OmnibarModel::GroupTabCountRole).toInt(), 2);
-    QCOMPARE(role(omnibar, 1, OmnibarModel::TabIdRole).toInt(), home);
-    QCOMPARE(role(omnibar, 1, OmnibarModel::GroupIdRole).toInt(), tabs.defaultGroupId());
-    QVERIFY(role(omnibar, 1, OmnibarModel::GroupNameRole).toString().isEmpty());
-    QCOMPARE(role(omnibar, 1, OmnibarModel::GroupTabCountRole).toInt(), 1);
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), office);
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::GroupId)).toInt(), work);
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::GroupName)).toString(),
+             QStringLiteral("Work"));
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::GroupTabCount)).toInt(), 2);
+    QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::TabId)).toInt(), home);
+    QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::GroupId)).toInt(), tabs.defaultGroupId());
+    QVERIFY(role(omnibar, 1, roleId(OmnibarModel::Role::GroupName)).toString().isEmpty());
+    QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::GroupTabCount)).toInt(), 1);
 
     // A group renamed is a row changed.
     tabs.renameGroup(work, QStringLiteral("Office"));
-    QTRY_COMPARE(role(omnibar, 0, OmnibarModel::GroupNameRole).toString(),
+    QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::GroupName)).toString(),
                  QStringLiteral("Office"));
 }
 
@@ -398,11 +407,11 @@ void tst_omnibarmodel::activeTabNotListed()
     OmnibarModel &omnibar = sources.omnibar;
     omnibar.setQuery(QStringLiteral("example"));
     QCOMPARE(omnibar.count(), 1);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::TabIdRole).toInt(), first);
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), first);
 
     // Another tab to the front: the list follows.
     tabs.activateTabById(first);
-    QTRY_COMPARE(role(omnibar, 0, OmnibarModel::TabIdRole).toInt(), second);
+    QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), second);
     QCOMPARE(omnibar.count(), 1);
 }
 
@@ -523,11 +532,13 @@ void tst_omnibarmodel::capped()
     // Every host begins with the word: the bookmarks weigh most, in their order, and
     // the newest two files follow.
     for (int i = 0; i < 6; ++i) {
-        QCOMPARE(role(omnibar, i, OmnibarModel::TitleRole).toString(),
+        QCOMPARE(role(omnibar, i, roleId(OmnibarModel::Role::Title)).toString(),
                  QStringLiteral("Bookmark %1").arg(i));
     }
-    QCOMPARE(role(omnibar, 6, OmnibarModel::TitleRole).toString(), QStringLiteral("cap-6.pdf"));
-    QCOMPARE(role(omnibar, 7, OmnibarModel::TitleRole).toString(), QStringLiteral("cap-5.pdf"));
+    QCOMPARE(role(omnibar, 6, roleId(OmnibarModel::Role::Title)).toString(),
+             QStringLiteral("cap-6.pdf"));
+    QCOMPARE(role(omnibar, 7, roleId(OmnibarModel::Role::Title)).toString(),
+             QStringLiteral("cap-5.pdf"));
 
     // One file matching leaves the pages seven.
     omnibar.setQuery(QStringLiteral("cap 1"));
@@ -567,19 +578,19 @@ void tst_omnibarmodel::onePageOneRow()
                                 QStringLiteral("tab: https://shared.example/"),
                                 QStringLiteral("history: Old page"),
                             }));
-    QVERIFY(role(omnibar, 2, OmnibarModel::BookmarkedRole).toBool());
-    QVERIFY(!role(omnibar, 3, OmnibarModel::BookmarkedRole).toBool());
+    QVERIFY(role(omnibar, 2, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+    QVERIFY(!role(omnibar, 3, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 
     // With the tabs switched off the shared page is its bookmark.
-    sources.settings.setOmnibarTabs(false);
+    sources.search.setOmnibarTabs(false);
     QTRY_COMPARE(rows(omnibar).first(), QStringLiteral("bookmark: Shared"));
     QCOMPARE(omnibar.count(), 4);
     // And with the bookmarks off too, the history, the bookmarked pages still weighing
     // more.
-    sources.settings.setOmnibarBookmarks(false);
+    sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("history")), 4);
     QCOMPARE(rows(omnibar).last(), QStringLiteral("history: Old page"));
-    QVERIFY(role(omnibar, 0, OmnibarModel::BookmarkedRole).toBool());
+    QVERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 }
 
 // What was chosen after what is typed now comes first, even when the words are not in
@@ -642,12 +653,12 @@ void tst_omnibarmodel::learningFollowsTheHistory()
     Sources sources;
     OmnibarModel &omnibar = sources.omnibar;
     sources.history.visit(QStringLiteral("https://kept.example/"), QStringLiteral("Kept"));
-    sources.settings.setRememberHistory(false);
+    sources.privacy.setRememberHistory(false);
     omnibar.learn(QStringLiteral("qq"), QStringLiteral("https://kept.example/"));
     omnibar.setQuery(QStringLiteral("qq"));
     QCOMPARE(omnibar.count(), 0);
 
-    sources.settings.setRememberHistory(true);
+    sources.privacy.setRememberHistory(true);
     omnibar.learn(QStringLiteral("qq"), QStringLiteral("https://kept.example/"));
     omnibar.setQuery(QString());
     omnibar.setQuery(QStringLiteral("qq"));
@@ -684,8 +695,8 @@ void tst_omnibarmodel::favicons()
 
     const auto iconOf = [&omnibar](const QString &title) {
         for (int row = 0; row < omnibar.rowCount(); ++row) {
-            if (role(omnibar, row, OmnibarModel::TitleRole).toString() == title) {
-                return role(omnibar, row, OmnibarModel::FaviconRole).toString();
+            if (role(omnibar, row, roleId(OmnibarModel::Role::Title)).toString() == title) {
+                return role(omnibar, row, roleId(OmnibarModel::Role::Favicon)).toString();
             }
         }
         return QStringLiteral("(not listed)");
@@ -723,22 +734,22 @@ void tst_omnibarmodel::markedWords()
     sources.bookmarks.add(QStringLiteral("https://forest.example/"),
                           QStringLiteral("Forest <walks> & more"));
     omnibar.setQuery(QStringLiteral("for walk"));
-    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("<b>For</b>est &lt;<b>walk</b>s&gt; &amp; more"));
-    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedHostRole).toString(),
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedHost)).toString(),
              QStringLiteral("<b>for</b>est.example"));
     QSignalSpy changed(&omnibar, &OmnibarModel::dataChanged);
     omnibar.setQuery(QStringLiteral("forest"));
     QCOMPARE(changed.count(), 1);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("<b>Forest</b> &lt;walks&gt; &amp; more"));
 
     // With nothing typed, the new tab's bookmarks, escaped and nothing more.
     omnibar.setQuery(QString());
     omnibar.setBookmarksWhenEmpty(true);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedTitleRole).toString(),
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("Forest &lt;walks&gt; &amp; more"));
-    QCOMPARE(role(omnibar, 0, OmnibarModel::MarkedHostRole).toString(),
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedHost)).toString(),
              QStringLiteral("forest.example"));
 }
 
@@ -754,26 +765,27 @@ void tst_omnibarmodel::sourcesSwitchedOff()
                   QStringLiteral("https://files.example/off.pdf"));
 
     OmnibarModel &omnibar = sources.omnibar;
-    Settings &settings = sources.settings;
+    SearchSettings &search = sources.search;
     omnibar.setQuery(QStringLiteral("off"));
     QCOMPARE(omnibar.count(), 4);
 
-    settings.setOmnibarTabs(false);
+    search.setOmnibarTabs(false);
     QTRY_COMPARE(omnibar.count(), 3);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("tab")), 0);
 
-    settings.setOmnibarBookmarks(false);
+    search.setOmnibarBookmarks(false);
     QTRY_COMPARE(omnibar.count(), 2);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("bookmark")), 0);
 
-    settings.setOmnibarHistory(false);
+    search.setOmnibarHistory(false);
     QTRY_COMPARE(omnibar.count(), 1);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::KindRole).toString(), QStringLiteral("download"));
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Kind)).toString(),
+             QStringLiteral("download"));
 
-    settings.setOmnibarDownloads(false);
+    search.setOmnibarDownloads(false);
     QTRY_COMPARE(omnibar.count(), 0);
 
-    settings.setOmnibarHistory(true);
+    search.setOmnibarHistory(true);
     QTRY_COMPARE(omnibar.count(), 1);
     QCOMPARE(rows(omnibar), QStringList{QStringLiteral("history: https://off-history.example/")});
 }
@@ -799,9 +811,11 @@ void tst_omnibarmodel::bookmarksWhenEmpty()
     QCOMPARE(spy.count(), 1);
     QCOMPARE(omnibar.count(), 12);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("bookmark")), 12);
-    QCOMPARE(role(omnibar, 0, OmnibarModel::TitleRole).toString(), QStringLiteral("Bookmark 0"));
-    QCOMPARE(role(omnibar, 11, OmnibarModel::TitleRole).toString(), QStringLiteral("Bookmark 11"));
-    QVERIFY(role(omnibar, 0, OmnibarModel::BookmarkedRole).toBool());
+    QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Title)).toString(),
+             QStringLiteral("Bookmark 0"));
+    QCOMPARE(role(omnibar, 11, roleId(OmnibarModel::Role::Title)).toString(),
+             QStringLiteral("Bookmark 11"));
+    QVERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 
     // Something typed is a search like any other.
     omnibar.setQuery(QStringLiteral("tab"));
@@ -811,14 +825,14 @@ void tst_omnibarmodel::bookmarksWhenEmpty()
 
     // The bookmarks follow while they are listed.
     sources.bookmarks.remove(0);
-    QTRY_COMPARE(role(omnibar, 0, OmnibarModel::TitleRole).toString(),
+    QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Title)).toString(),
                  QStringLiteral("Bookmark 1"));
     QCOMPARE(omnibar.count(), 11);
 
     // The bookmarks switched off in Settings are off here too.
-    sources.settings.setOmnibarBookmarks(false);
+    sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(omnibar.count(), 0);
-    sources.settings.setOmnibarBookmarks(true);
+    sources.search.setOmnibarBookmarks(true);
     QTRY_COMPARE(omnibar.count(), 11);
 
     omnibar.setBookmarksWhenEmpty(false);
@@ -894,7 +908,7 @@ void tst_omnibarmodel::quietWhileNothingIsAsked()
     sources.tabs.newTab(QStringLiteral("https://front.example/"));
     sources.bookmarks.add(QStringLiteral("https://quiet.example/"), QStringLiteral("Q"));
     sources.history.visit(QStringLiteral("https://quiet.example/history"));
-    sources.settings.setOmnibarTabs(false);
+    sources.search.setOmnibarTabs(false);
     settle();
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.count(), 0);
@@ -934,7 +948,7 @@ void tst_omnibarmodel::changesInPlace()
     downloadMessage(sources.downloads, 3,
                     {{QStringLiteral("msg"), QStringLiteral("dl-progress")},
                      {QStringLiteral("percent"), 50.0}});
-    QTRY_COMPARE(role(omnibar, 1, OmnibarModel::ProgressRole).toInt(), 50);
+    QTRY_COMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::Progress)).toInt(), 50);
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.count(), 1);
     // Only the row that changed is told.
@@ -945,13 +959,13 @@ void tst_omnibarmodel::changesInPlace()
     downloadMessage(sources.downloads, 3,
                     {{QStringLiteral("msg"), QStringLiteral("dl-done")},
                      {QStringLiteral("targetPath"), QStringLiteral("/tmp/report.pdf")}});
-    QTRY_COMPARE(role(omnibar, 1, OmnibarModel::DownloadStatusRole).toInt(),
+    QTRY_COMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::DownloadStatus)).toInt(),
                  static_cast<int>(DownloadModel::Done));
-    QCOMPARE(role(omnibar, 1, OmnibarModel::ProgressRole).toInt(), 100);
+    QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::Progress)).toInt(), 100);
     QCOMPARE(resetSpy.count(), 0);
 
     sources.tabs.updateFavicon(tab, QStringLiteral("https://report.example/favicon.ico"));
-    QTRY_COMPARE(role(omnibar, 0, OmnibarModel::FaviconRole).toString(),
+    QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Favicon)).toString(),
                  QStringLiteral("https://report.example/favicon.ico"));
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.last().at(0).toModelIndex().row(), 0);
