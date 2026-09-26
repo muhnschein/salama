@@ -18,18 +18,21 @@ SPEC=$ROOT/rpm/harbour-salama.spec
 DESKTOP=$ROOT/harbour-salama.desktop
 
 fail() { # check-id location message
-    printf 'ERROR [%s] [%s] %s\n' "$1" "$2" "$3"
+    local id=$1 location=$2 message=$3
+    printf 'ERROR [%s] [%s] %s\n' "$id" "$location" "$message"
     FAILED=1
+    return 0
 }
 
 have() { # tool
-    if command -v "$1" >/dev/null 2>&1; then
+    local tool=$1
+    if command -v "$tool" >/dev/null 2>&1; then
         return 0
     fi
     if [[ $STRICT == 1 ]]; then
-        fail tool-missing "$1" "required in CI (PACKAGING_LINT_STRICT=1)"
+        fail tool-missing "$tool" "required in CI (PACKAGING_LINT_STRICT=1)"
     else
-        echo "SKIP  [$1] not installed"
+        echo "SKIP  [$tool] not installed"
     fi
     return 1
 }
@@ -52,7 +55,11 @@ fi
 
 # 4. Translations compile and are current
 TS_SOURCE=$ROOT/translations/harbour-salama.ts
-sources_of() { grep -o '<source>[^<]*</source>' "$1" | sort -u; }
+sources_of() { # catalogue
+    local ts=$1
+    grep -o '<source>[^<]*</source>' "$ts" | sort -u
+    return 0
+}
 if have lrelease; then
     tmp=$(mktemp -d)
     for ts in "$ROOT"/translations/*.ts; do

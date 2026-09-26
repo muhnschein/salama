@@ -58,14 +58,14 @@ grep -q '^!END!' "$log" || fail "the validator produced no verdict"
 # Same format as ci/harbour-check.sh: `<check-id> <subject-glob> <message-glob>`, where
 # the check id is `rpm-<section>` (e.g. rpm-requires) for validator findings.
 waived() { # id subject message
-    local entry wid wsubject wmessage
+    local id=$1 subject=$2 message=$3 entry wid wsubject wmessage
     [[ -f $WAIVERS ]] || return 1
     while IFS= read -r entry; do
         entry=${entry%%#*}
         read -r wid wsubject wmessage <<<"$entry"
         [[ -n ${wid:-} && -n ${wsubject:-} && -n ${wmessage:-} ]] || continue
         # shellcheck disable=SC2053
-        [[ $1 == "$wid" && $2 == $wsubject && $3 == $wmessage ]] && return 0
+        [[ $id == "$wid" && $subject == $wsubject && $message == $wmessage ]] && return 0
     done <"$WAIVERS"
     return 1
 }

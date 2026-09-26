@@ -18,10 +18,14 @@ fresh() {
     mkdir -p "$TREE"
     cp -r "$ROOT/ci" "$ROOT/qml" "$ROOT/rpm" "$ROOT/src" "$ROOT/icons" \
         "$ROOT/CMakeLists.txt" "$ROOT/harbour-salama.desktop" "$TREE/"
+    return 0
 }
 
 run_check() {
+    local status
     NO_COLOR=1 "$CHECK" --root "$TREE" 2>&1
+    status=$?
+    return "$status"
 }
 
 # expect <error|warning|waived|clean> <check-id> <description>
@@ -35,6 +39,7 @@ expect() {
         warning) [[ $status -eq 0 ]] && grep -q "^WARNING \[$id\]" <<<"$output" && ok=1 ;;
         waived) [[ $status -eq 0 ]] && grep -q "^WAIVED \[$id\]" <<<"$output" && ok=1 ;;
         clean) [[ $status -eq 0 ]] && ! grep -q '^ERROR' <<<"$output" && ok=1 ;;
+        *) echo "expect: unknown kind '$kind'" >&2 ;;
     esac
     if [[ $ok -eq 1 ]]; then
         echo "ok   $desc"
@@ -43,10 +48,13 @@ expect() {
         grep -E '^(ERROR|WARNING|WAIVED)' <<<"$output" | sed 's/^/     /'
         FAILED=1
     fi
+    return 0
 }
 
 add_import() { # file import-line
-    sed -i "0,/^import /s//$2\nimport /" "$1"
+    local file=$1 import=$2
+    sed -i "0,/^import /s//$import\nimport /" "$file"
+    return 0
 }
 
 fresh
