@@ -739,6 +739,14 @@
         <source>Notifications</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tutorial</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
@@ -913,6 +921,162 @@
     </message>
     <message>
         <source>No matching tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialMenu</name>
+    <message>
+        <source>This page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search on page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Desktop version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialOmnibar</name>
+    <message>
+        <source>Go to %1</source>
+        <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search %1 for “%2”</source>
+        <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialPage</name>
+    <message>
+        <source>Close tutorial</source>
+        <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The address bar opens websites and searches the web. Tap it.</source>
+        <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.</source>
+        <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tap the menu button to open the menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The menu contains actions for this page and for the browser. Tap outside the menu to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the bar up to show your tabs.</source>
+        <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Swipe a tab to the left to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it to another position.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it onto a group name to move it to that group.</source>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull down to return to the page.</source>
+        <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This short tutorial explains the address bar, the menu and the tabs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start tutorial</source>
+        <extracomment>Starts the tutorial from its first card</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tutorial complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can open the tutorial again in Settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialStrip</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

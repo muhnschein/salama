@@ -51,6 +51,8 @@ public:
         qmlRegisterUncreatableType<Dock>(uri, 1, 0, "Dock", reason);
         qmlRegisterUncreatableType<OpacityRamp>(uri, 1, 0, "OpacityRamp", reason);
         qmlRegisterUncreatableType<FocusBehavior>(uri, 1, 0, "FocusBehavior", reason);
+        qmlRegisterUncreatableType<PageStackAction>(uri, 1, 0, "PageStackAction", reason);
+        qmlRegisterUncreatableType<TouchInteraction>(uri, 1, 0, "TouchInteraction", reason);
     }
 
     void initializeEngine(QQmlEngine *engine, const char *uri) override

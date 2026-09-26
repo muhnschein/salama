@@ -38,4 +38,16 @@ done
 # cover is on any phone this runs on, so it is only ever drawn smaller, and at the
 # aspect the cover stretches it to, so it is not drawn out of shape on the way.
 rsvg-convert -w 414 -h 1024 cover-bolt.svg -o ../art/cover/bolt.png
+
+# The launcher icon again, larger, for the tutorial's first card, which shows it over the
+# application's name (qml/components/TutorialCard.qml): drawn at an extra-large item's
+# size, which is never larger than this on a phone this runs on.
+rsvg-convert -w 512 -h 512 harbour-salama.svg -o ../art/logo.png
+
+# And the made-up pages the tutorial's sketch of the tab grid shows in its cells, at
+# the size the grid draws a preview: half the screen across.
+mkdir -p ../art/tutorial
+for source in tutorial/*.svg; do
+    rsvg-convert -w 540 -h 1120 "$source" -o "../art/tutorial/$(basename "$source" .svg).png"
+done
 echo "icons rendered"

@@ -43,6 +43,7 @@ private slots:
     void coverIconPathNamesEveryGlyph();
     void startPage();
     void retiresTheHomePage();
+    void tutorialShown();
     void isSearchUrl_data();
     void isSearchUrl();
 };
@@ -787,6 +788,26 @@ void tst_settings::retiresTheHomePage()
     QSettings file(path, QSettings::IniFormat);
     QVERIFY(!file.contains(QStringLiteral("homePage")));
     QVERIFY(file.contains(QStringLiteral("cutoutGuard")));
+}
+
+// The tutorial comes up by itself until it has been shown once, and stays shown
+// (docs/DECISIONS/0034-tutorial.md).
+void tst_settings::tutorialShown()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Settings settings(path);
+        QVERIFY(!settings.tutorialShown());
+        QSignalSpy spy(&settings, &Settings::tutorialShownChanged);
+        settings.setTutorialShown(false);
+        QCOMPARE(spy.count(), 0);
+        settings.setTutorialShown(true);
+        settings.setTutorialShown(true);
+        QCOMPARE(spy.count(), 1);
+    }
+    Settings reloaded(path);
+    QVERIFY(reloaded.tutorialShown());
 }
 
 void tst_settings::isSearchUrl_data()

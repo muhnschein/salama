@@ -77,6 +77,11 @@ class Settings : public QObject
                    startPageChanged)
     Q_PROPERTY(
         bool startPageRecent READ startPageRecent WRITE setStartPageRecent NOTIFY startPageChanged)
+    // Whether the tutorial has been shown: it comes up by itself over the browsing page
+    // until it has been, once, and Settings > Tutorial shows it again whenever asked
+    // (docs/DECISIONS/0034-tutorial.md).
+    Q_PROPERTY(
+        bool tutorialShown READ tutorialShown WRITE setTutorialShown NOTIFY tutorialShownChanged)
 
 public:
     // What the cover shows; see docs/DECISIONS/0031-cover-is-lightning.md. The values
@@ -244,6 +249,10 @@ public:
     bool startPageRecent() const;
     void setStartPageRecent(bool shown);
 
+    // Off until the tutorial first comes up.
+    bool tutorialShown() const;
+    void setTutorialShown(bool shown);
+
     Q_INVOKABLE QString searchUrl(const QString &query) const;
     // Whether the url is a page of results from one of the search engines on offer:
     // a search is something done, not a site visited (src/startpage/StartPage.h).
@@ -278,6 +287,7 @@ signals:
     void quickActionIconChanged();
 
     void startPageChanged();
+    void tutorialShownChanged();
 
 private:
     // Trimmed text as an address, or empty when it is words to search for.
