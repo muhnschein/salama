@@ -48,6 +48,11 @@ class Settings : public QObject
                    rememberHistoryChanged)
     Q_PROPERTY(bool clearHistoryOnClose READ clearHistoryOnClose WRITE setClearHistoryOnClose NOTIFY
                    clearHistoryOnCloseChanged)
+    // Whether sites the reader has not decided on may ask to send notifications, as they
+    // may unless this is switched on: Firefox's Block new requests asking to allow
+    // notifications (docs/DECISIONS/0033-web-notifications.md).
+    Q_PROPERTY(bool blockNotificationRequests READ blockNotificationRequests WRITE
+                   setBlockNotificationRequests NOTIFY blockNotificationRequestsChanged)
     // The cover's one quick action, a QuickAction value, and for QuickActionBookmark the
     // bookmark it opens and the picture it wears (docs/DECISIONS/0029-quick-action.md).
     // The bookmark is kept as its id, and its address and title beside it: the id for
@@ -196,6 +201,9 @@ public:
     bool clearHistoryOnClose() const;
     void setClearHistoryOnClose(bool on);
 
+    bool blockNotificationRequests() const;
+    void setBlockNotificationRequests(bool on);
+
     // Search unless changed: what the cover offered before there was a choice. Out of
     // range reads back as the default, like coverStyle.
     int quickAction() const;
@@ -264,6 +272,7 @@ signals:
     void omnibarDownloadsChanged();
     void rememberHistoryChanged();
     void clearHistoryOnCloseChanged();
+    void blockNotificationRequestsChanged();
     void quickActionChanged();
     void quickActionBookmarkChanged();
     void quickActionIconChanged();

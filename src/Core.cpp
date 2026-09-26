@@ -23,6 +23,8 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_pageMedia(&m_tabs)
     , m_reader(m_settings)
     , m_startPage(m_storage)
+    , m_webNotifications(&m_notificationPermissions,
+                         Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
     // Unless the history is not to be kept.
     connect(&m_tabs, &TabModel::visited, &m_history, [this](const QString &url) {
@@ -132,6 +134,16 @@ Reader *Core::reader()
 StartPage *Core::startPage()
 {
     return &m_startPage;
+}
+
+NotificationPermissions *Core::notificationPermissions()
+{
+    return &m_notificationPermissions;
+}
+
+WebNotifications *Core::webNotifications()
+{
+    return &m_webNotifications;
 }
 
 } // namespace Salama

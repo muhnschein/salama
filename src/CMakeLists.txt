@@ -18,6 +18,10 @@ add_library(salama-core STATIC
     engine/PageMedia.h
     history/HistoryModel.cpp
     history/HistoryModel.h
+    notifications/NotificationPermissions.cpp
+    notifications/NotificationPermissions.h
+    notifications/WebNotifications.cpp
+    notifications/WebNotifications.h
     omnibar/OmnibarModel.cpp
     omnibar/OmnibarModel.h
     reader/Reader.cpp

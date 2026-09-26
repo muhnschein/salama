@@ -65,6 +65,8 @@ Item {
     signal viewInitialized()
     // QuickMozView: a message from the page's own scripts, on a name listened for.
     signal recvAsyncMessage(string message, var data)
+    // The platform's WebView: about to answer what a page asked the engine for itself.
+    signal aboutToOpenPopup(var topic, var data)
 
     function record(name) {
         var list = calls
@@ -117,6 +119,15 @@ Item {
         var list = messageListeners
         list.push(name)
         messageListeners = list
+    }
+
+    // QuickMozView's frame scripts, by url, in the order they were loaded.
+    property var frameScripts: []
+
+    function loadFrameScript(name) {
+        var list = frameScripts
+        list.push(name)
+        frameScripts = list
     }
 
     // QuickMozView's synthetic touches, in the view's own coordinates: recorded as

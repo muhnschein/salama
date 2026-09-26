@@ -2,9 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // Settings: a way to each subject -- the start page, search, the reader view, the cover,
-// privacy, the history -- on a page of its own, in headed groups, as Firefox for
-// Android arranges its settings and Jolla's own browser reaches its privacy settings
-// (docs/DECISIONS/0028-settings-pages.md, 0030-history-settings.md). Each way in is its
+// privacy, notifications, the history -- on a page of its own, in headed groups, as
+// Firefox for Android arranges its settings and Jolla's own browser reaches its privacy
+// settings (docs/DECISIONS/0028-settings-pages.md, 0030-history-settings.md,
+// 0033-web-notifications.md). Each way in is its
 // icon and its name alone: how a subject is set is read on its page. The one setting
 // that takes a line is here too, under the heading of what it changes, and says what it
 // does.
@@ -112,6 +113,16 @@ Page {
                 iconSource: "image://theme/icon-m-device-lock"
                 text: qsTr("Privacy")
                 onClicked: settingsPage.open("PrivacySettingsPage.qml")
+            }
+
+            // Firefox keeps the sites allowed to send notifications with the other
+            // permissions, under Privacy (docs/DECISIONS/0033-web-notifications.md).
+            SettingsEntry {
+                objectName: "notificationSettingsEntry"
+                // The platform's own for notifications.
+                iconSource: "image://theme/icon-m-notifications"
+                text: qsTr("Notifications")
+                onClicked: settingsPage.open("NotificationSettingsPage.qml")
             }
 
             SettingsEntry {

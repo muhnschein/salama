@@ -127,7 +127,8 @@ A frame script was considered: `loadFrameScript` takes a local or `data:` url an
 with the engine's own privileges, where Gecko's `audio-playback` topic names the page
 that sounds and the browsing context can mute all of it. It is not used: privileged code
 bound to Gecko's internals, which change with every ESR, and none of it can be verified
-without a phone (SCOPE.md §7).
+without a phone (SCOPE.md §7). (0033 loads one for the pages' notifications that binds to
+none of them: it hands on what the page says, over the message manager.)
 
 ## Consequences
 Media the page's own scripts cannot reach has no controls: a player in a frame from

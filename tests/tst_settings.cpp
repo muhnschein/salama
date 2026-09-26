@@ -32,6 +32,7 @@ private slots:
     void isAddress();
     void omnibarSources();
     void historySwitches();
+    void blockNotificationRequests();
     void pageZoom();
     void quickAction();
     void quickActionBookmark();
@@ -475,6 +476,28 @@ void tst_settings::historySwitches()
     QSettings raw(path, QSettings::IniFormat);
     QCOMPARE(raw.value(QStringLiteral("rememberHistory")).toBool(), false);
     QCOMPARE(raw.value(QStringLiteral("clearHistoryOnClose")).toBool(), true);
+}
+
+// Sites may ask to send notifications until new requests are blocked, as in Firefox
+// (docs/DECISIONS/0033-web-notifications.md).
+void tst_settings::blockNotificationRequests()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    {
+        Settings settings(path);
+        QVERIFY(!settings.blockNotificationRequests());
+        QSignalSpy spy(&settings, &Settings::blockNotificationRequestsChanged);
+        settings.setBlockNotificationRequests(false);
+        QCOMPARE(spy.count(), 0);
+        settings.setBlockNotificationRequests(true);
+        settings.setBlockNotificationRequests(true);
+        QCOMPARE(spy.count(), 1);
+    }
+    Settings again(path);
+    QVERIFY(again.blockNotificationRequests());
+    QSettings raw(path, QSettings::IniFormat);
+    QCOMPARE(raw.value(QStringLiteral("blockNotificationRequests")).toBool(), true);
 }
 
 // 1.75 of the screen's pixel ratio, in steps of a half.

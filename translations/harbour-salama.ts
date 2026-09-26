@@ -405,6 +405,81 @@
     </message>
 </context>
 <context>
+    <name>NotificationPermissionDialog</name>
+    <message>
+        <source>Allow</source>
+        <extracomment>Lets the site send notifications from now on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not now</source>
+        <extracomment>Refuses the site this time; it may ask again when the page is next loaded</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow %1 to send notifications?</source>
+        <extracomment>%1 is the site asking, its host alone</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>They show up with the phone&apos;s other notifications while the site is open in a tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always block</source>
+        <extracomment>Refuses the site for good: it cannot ask again</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NotificationSettingsPage</name>
+    <message>
+        <source>Notifications</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Block new requests</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites not listed here cannot ask to send notifications</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Block</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blocked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites you allow to send notifications, or block, are listed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
@@ -658,6 +733,10 @@
     </message>
     <message>
         <source>Start page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notifications</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

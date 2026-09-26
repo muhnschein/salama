@@ -29,6 +29,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
                       Salama::Storage::defaultDownloadDirectory());
     Salama::registerQmlTypes(&core);
     QObject::connect(app.data(), &QGuiApplication::aboutToQuit, &core, &Salama::Core::clearOnClose);
+    // A page's notifications go with the page, and every page goes with the browser.
+    QObject::connect(app.data(), &QGuiApplication::aboutToQuit, core.webNotifications(),
+                     &Salama::WebNotifications::closeAll);
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->setSource(SailfishApp::pathToMainQml());

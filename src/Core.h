@@ -8,6 +8,8 @@
 #include "engine/PageActivity.h"
 #include "engine/PageMedia.h"
 #include "history/HistoryModel.h"
+#include "notifications/NotificationPermissions.h"
+#include "notifications/WebNotifications.h"
 #include "omnibar/OmnibarModel.h"
 #include "reader/Reader.h"
 #include "settings/Settings.h"
@@ -45,6 +47,8 @@ public:
     PageMedia *pageMedia();
     Reader *reader();
     StartPage *startPage();
+    NotificationPermissions *notificationPermissions();
+    WebNotifications *webNotifications();
 
     // What is set to go as the browser closes -- the history, the list of downloads and
     // the recently closed tabs, with Settings::clearHistoryOnClose -- goes: main() calls
@@ -68,6 +72,9 @@ private:
     PageMedia m_pageMedia;
     Reader m_reader;
     StartPage m_startPage;
+    NotificationPermissions m_notificationPermissions;
+    // After the permissions, which it reads.
+    WebNotifications m_webNotifications;
 };
 
 } // namespace Salama

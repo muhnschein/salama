@@ -27,6 +27,7 @@ const char *const OmnibarHistoryKey = "omnibarHistory";
 const char *const OmnibarDownloadsKey = "omnibarDownloads";
 const char *const RememberHistoryKey = "rememberHistory";
 const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
+const char *const BlockNotificationRequestsKey = "blockNotificationRequests";
 const char *const QuickActionKey = "quickAction";
 const char *const QuickActionBookmarkKey = "quickActionBookmark";
 const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
@@ -326,6 +327,18 @@ void Settings::setClearHistoryOnClose(bool on)
 {
     if (setFlag(ClearHistoryOnCloseKey, on, false)) {
         emit clearHistoryOnCloseChanged();
+    }
+}
+
+bool Settings::blockNotificationRequests() const
+{
+    return flag(BlockNotificationRequestsKey, false);
+}
+
+void Settings::setBlockNotificationRequests(bool on)
+{
+    if (setFlag(BlockNotificationRequestsKey, on, false)) {
+        emit blockNotificationRequestsChanged();
     }
 }
 

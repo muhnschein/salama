@@ -99,6 +99,16 @@ QObject *startPageProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/
     return keepOwnership(coreInstance->startPage());
 }
 
+QObject *notificationPermissionsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->notificationPermissions());
+}
+
+QObject *webNotificationsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(coreInstance->webNotifications());
+}
+
 } // namespace
 
 void registerQmlTypes(Core *core)
@@ -128,6 +138,10 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<PageMedia>(ModuleUri, 1, 0, "PageMedia", &pageMediaProvider);
     qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
     qmlRegisterSingletonType<StartPage>(ModuleUri, 1, 0, "StartPage", &startPageProvider);
+    qmlRegisterSingletonType<NotificationPermissions>(ModuleUri, 1, 0, "NotificationPermissions",
+                                                      &notificationPermissionsProvider);
+    qmlRegisterSingletonType<WebNotifications>(ModuleUri, 1, 0, "WebNotifications",
+                                               &webNotificationsProvider);
     // The start page's lists, reached as its properties and never made in QML.
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));

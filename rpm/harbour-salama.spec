@@ -32,6 +32,8 @@ Requires:   sailfish-components-webview-qt5-pickers >= 1.7.0
 Requires:   qt5-plugin-imageformat-ico
 # QtGraphicalEffects, for the rounded corners on the tab previews.
 Requires:   qt5-qtgraphicaleffects
+# Nemo.Notifications, for what pages show as notifications (docs/DECISIONS/0033-web-notifications.md).
+Requires:   nemo-qml-plugin-notifications-qt5
 
 %description
 Web browser for Sailfish OS with a Silica interface over the platform web engine.
