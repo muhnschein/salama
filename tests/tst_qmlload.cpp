@@ -153,11 +153,14 @@ private slots:
     void webNotifications();
     void notificationPermissions();
     void notificationSettingsPage();
+    void tutorialOnFirstStart();
+    void tutorial();
+    void tutorialUnderAFinger();
 
 private:
     bool loadWindow();
     void forgetStartupMessages();
-    bool startWithoutTabs();
+    bool startWithoutTabs(bool tutorialShown = true);
     QObject *find(const QString &name) const;
     QList<QObject *> findAll(const QString &name) const;
     QObject *pageStack() const;
@@ -193,8 +196,10 @@ void tst_qmlload::init()
                           m_dir->path() + QStringLiteral("/Downloads/Salama")));
     // Most of these tests are about a page, and start with one open, as a session
     // restored with one tab does. A first start opens the start page instead
-    // (firstStartShowsTheStartPage()).
+    // (firstStartShowsTheStartPage()), with the tutorial over it (tutorialOnFirstStart()),
+    // which the rest have seen.
     m_core->tabs()->newTab(QLatin1String(FirstPage));
+    m_core->settings()->setTutorialShown(true);
     QVERIFY(loadWindow());
     forgetStartupMessages();
 }
@@ -229,13 +234,15 @@ bool tst_qmlload::loadWindow()
     return !m_window.isNull() && find(QStringLiteral("browserPage")) != nullptr;
 }
 
-// A first start: a new data directory, and no tab to restore.
-bool tst_qmlload::startWithoutTabs()
+// A first start: a new data directory, and no tab to restore. The tutorial, which a
+// first start shows, is taken as seen unless asked for.
+bool tst_qmlload::startWithoutTabs(bool tutorialShown)
 {
     cleanup();
     m_dir.reset(new QTemporaryDir);
     m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
                           m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    m_core->settings()->setTutorialShown(tutorialShown);
     return loadWindow();
 }
 
@@ -3489,6 +3496,8 @@ void tst_qmlload::settingsPage()
         QStringLiteral("privacySettingsEntry"),
         QStringLiteral("notificationSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
+        QStringLiteral("#Help"),
+        QStringLiteral("tutorialSettingsEntry"),
     };
     QCOMPARE(columnOf(find(QStringLiteral("searchSettingsEntry"))), expected);
 
@@ -3516,6 +3525,8 @@ void tst_qmlload::settingsPage()
          QStringLiteral("notificationSettingsPage")},
         {QStringLiteral("historySettingsEntry"), QStringLiteral("icon-m-history"),
          QStringLiteral("historySettingsPage")},
+        {QStringLiteral("tutorialSettingsEntry"), QStringLiteral("icon-m-gesture"),
+         QStringLiteral("tutorialPage")},
     };
     const qreal itemSize = evaluate(page, QStringLiteral("Theme.itemSizeMedium")).toReal();
     const qreal iconSize = evaluate(page, QStringLiteral("Theme.iconSizeMedium")).toReal();
@@ -5459,4 +5470,203 @@ void tst_qmlload::notificationSettingsPage()
 }
 
 QTEST_MAIN(tst_qmlload)
+// The first start shows the tutorial over the browsing page, and from then on it has
+// been shown: the next start is the page alone (docs/DECISIONS/0034-tutorial.md).
+void tst_qmlload::tutorialOnFirstStart()
+{
+    QVERIFY(startWithoutTabs(false));
+    QTRY_COMPARE(currentPage()->objectName(), QStringLiteral("tutorialPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 2);
+    QVERIFY(m_core->settings()->tutorialShown());
+
+    // Back leaves it, for the browsing page on the start page, as a first start is.
+    popPage();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(find(QStringLiteral("startPageLayer"))->property("active").toBool());
+
+    m_window.reset();
+    m_engine.reset();
+    QVERIFY(loadWindow());
+    QTest::qWait(100);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 1);
+}
+
+// The tutorial, from Settings, as the platform's own Tutorial runs a lesson: a card says
+// what it is for, then the bar to drag up and the grid to pull down, each step shown by a
+// hint going the way the finger is to go and said by a label at the other end of the
+// screen, both put away under a finger, and each waiting for its gesture -- a drag let go
+// of short of the threshold leaves it where it was. Well done a moment after, to try again
+// or to close. What is dragged is a sketch: no tab is touched. Closed, it goes back to
+// where it was opened from (docs/DECISIONS/0034-tutorial.md).
+void tst_qmlload::tutorial()
+{
+    QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("tutorialSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
+    QCOMPARE(pageStack()->property("depth").toInt(), 3);
+    const int tabCount = m_core->tabs()->count();
+    const int activeTab = m_core->tabs()->activeTabId();
+
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
+    QObject *grid = find(QStringLiteral("tutorialGrid"));
+    QObject *hint = find(QStringLiteral("tutorialHint"));
+    QObject *label = find(QStringLiteral("tutorialHintLabel"));
+    QObject *intro = find(QStringLiteral("tutorialIntro"));
+    QObject *recap = find(QStringLiteral("tutorialRecap"));
+    const qreal threshold = deck->property("pullThreshold").toReal();
+    const auto step = [page]() { return page->property("step").toString(); };
+    const auto running = [hint]() { return hint->property("running").toBool(); };
+    const auto dragBar = [&](qreal distance) {
+        evaluate(bar, QStringLiteral("dragStarted()"));
+        evaluate(bar, QStringLiteral("dragMoved(%1)").arg(distance));
+        evaluate(bar, QStringLiteral("dragFinished(%1)").arg(distance));
+    };
+    const auto pullGrid = [&](qreal distance) {
+        evaluate(grid, QStringLiteral("pullStarted()"));
+        evaluate(grid, QStringLiteral("pulled(%1)").arg(distance));
+        evaluate(grid, QStringLiteral("pullFinished(%1)").arg(distance));
+    };
+
+    // First the card, and no hint under it.
+    QCOMPARE(step(), QStringLiteral("intro"));
+    QVERIFY(intro->property("visible").toBool());
+    QVERIFY(!findObjects(intro, QStringLiteral("tutorialCardHeading"))
+                 .first()
+                 ->property("text")
+                 .toString()
+                 .isEmpty());
+    QVERIFY(!running());
+    QVERIFY(!page->property("hinting").toBool());
+    QVERIFY(!recap->property("visible").toBool());
+    click(find(QStringLiteral("tutorialStartButton")));
+
+    // The bar: the hint goes up from its handle, a pull, and the words are at the head
+    // of the screen, the band inverted to lie along it.
+    QCOMPARE(step(), QStringLiteral("open"));
+    QTRY_VERIFY(!intro->property("visible").toBool());
+    QVERIFY(page->property("hinting").toBool());
+    QVERIFY(running());
+    QCOMPARE(hint->property("direction"), evaluate(page, QStringLiteral("TouchInteraction.Up")));
+    QCOMPARE(hint->property("interactionMode"),
+             evaluate(page, QStringLiteral("TouchInteraction.Pull")));
+    QVERIFY(hint->property("loops").toInt() < 0);
+    const qreal handleY = page->property("height").toReal() - bar->property("height").toReal();
+    QCOMPARE(hint->property("startY").toReal() + hint->property("height").toReal() / 2, handleY);
+    QVERIFY(label->property("invert").toBool());
+    QCOMPARE(label->property("y").toReal(), qreal(0));
+    const QString openWords = label->property("text").toString();
+    QVERIFY(!openWords.isEmpty());
+    QVERIFY(!grid->property("visible").toBool());
+
+    // No hint and no words under a finger already dragging; the deck follows it, and
+    // let go of short of the threshold it springs back and the step is still the bar's.
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    QVERIFY(!running());
+    QVERIFY(!page->property("hinting").toBool());
+    evaluate(bar, QStringLiteral("dragMoved(%1)").arg(threshold - 1));
+    QVERIFY(deck->property("tabsOffset").toReal() > 0);
+    QVERIFY(grid->property("visible").toBool());
+    evaluate(bar, QStringLiteral("dragFinished(%1)").arg(threshold - 1));
+    QVERIFY(!deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("open"));
+    QVERIFY(running());
+
+    // Dragged all the way, the grid is up, and the hint goes down from the grid's upper
+    // third, the words at the foot of the screen.
+    dragBar(threshold + 1);
+    QVERIFY(deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("close"));
+    QVERIFY(running());
+    QCOMPARE(hint->property("direction"), evaluate(page, QStringLiteral("TouchInteraction.Down")));
+    QCOMPARE(hint->property("startY").toReal() + hint->property("height").toReal() / 2,
+             page->property("height").toReal() / 3);
+    QVERIFY(!label->property("invert").toBool());
+    QCOMPARE(label->property("y").toReal() + label->property("height").toReal(),
+             page->property("height").toReal());
+    QVERIFY(!label->property("text").toString().isEmpty());
+    QVERIFY(label->property("text").toString() != openWords);
+
+    // Pulled short, the grid stays; all the way, the page is back, and that is all: well
+    // done, a moment after.
+    pullGrid(threshold - 1);
+    QVERIFY(deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("close"));
+    pullGrid(threshold + 1);
+    QVERIFY(!deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("done"));
+    QVERIFY(!running());
+    QVERIFY(!page->property("hinting").toBool());
+    QVERIFY(!recap->property("visible").toBool());
+    QTRY_VERIFY(recap->property("visible").toBool());
+
+    // Again, from the bar; and done again.
+    click(find(QStringLiteral("tutorialAgainButton")));
+    QCOMPARE(step(), QStringLiteral("open"));
+    QVERIFY(running());
+    QTRY_VERIFY(!recap->property("visible").toBool());
+    dragBar(threshold + 1);
+    pullGrid(threshold + 1);
+    QCOMPARE(step(), QStringLiteral("done"));
+    QTRY_VERIFY(recap->property("visible").toBool());
+
+    // Nothing of it was done to a tab, and the browsing page's own grid stayed down.
+    QCOMPARE(m_core->tabs()->count(), tabCount);
+    QCOMPARE(m_core->tabs()->activeTabId(), activeTab);
+    QVERIFY(!find(QStringLiteral("browserPage"))->property("tabsOpen").toBool());
+
+    // Closed, it is where it was opened from.
+    click(find(QStringLiteral("tutorialCloseButton")));
+    QCOMPARE(currentPage(), settings);
+}
+
+// The tutorial's two gestures under a real finger: the drag up from the bar goes through
+// the bar's own gesture, and the pull down is the sketched grid's overscroll, as each is
+// on the browsing page. The card before them keeps the sketch from being dragged.
+void tst_qmlload::tutorialUnderAFinger()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialBarGesture")));
+    const int threshold = deck->property("pullThreshold").toInt();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int onBar = int(gestureTop.y() + gesture->property("reach").toReal() +
+                          gesture->property("strip").toReal() / 2);
+    const int across = int(gesture->width()) / 2;
+    const QPoint up(0, 3 * threshold);
+
+    drag(&window, QPoint(across, onBar), QPoint(across, onBar) - up);
+    QVERIFY(!deck->property("tabsOpen").toBool());
+    click(find(QStringLiteral("tutorialStartButton")));
+    QTRY_VERIFY(!find(QStringLiteral("tutorialIntro"))->property("visible").toBool());
+
+    // A drag up from the bar that stops short springs back; one past the threshold
+    // brings the grid up, the handle lit while the finger was on it.
+    drag(&window, QPoint(across, onBar), QPoint(across, onBar - threshold / 2));
+    QVERIFY(!deck->property("tabsOpen").toBool());
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(across, onBar));
+    QTest::mouseMove(&window, QPoint(across, onBar - threshold));
+    QVERIFY(find(QStringLiteral("tutorialDragHandle"))->property("active").toBool());
+    QTest::mouseMove(&window, QPoint(across, onBar) - up);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(across, onBar) - up);
+    QVERIFY(deck->property("tabsOpen").toBool());
+    QCOMPARE(page->property("step").toString(), QStringLiteral("close"));
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), deck->property("fullHeight").toReal());
+
+    // Pulled down from the middle of the grid, the page comes back and the lesson is
+    // done.
+    const QPoint middle(across, window.height() / 2);
+    drag(&window, middle, middle + up);
+    QVERIFY(!deck->property("tabsOpen").toBool());
+    QCOMPARE(page->property("step").toString(), QStringLiteral("done"));
+}
+
 #include "tst_qmlload.moc"

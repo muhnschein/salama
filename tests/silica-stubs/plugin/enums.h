@@ -123,3 +123,43 @@ public:
     };
     Q_ENUM(Value)
 };
+
+// How a page is put on the stack or taken off it: with Silica's transition, or at once.
+class PageStackAction : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Value
+    {
+        Animated = 0,
+        Immediate = 1
+    };
+    Q_ENUM(Value)
+};
+
+// The movement a TouchInteractionHint shows: which way the finger goes, and whether it
+// swipes, swipes in from the edge of the screen, or pulls. The values are Silica's own,
+// as its plugins.qmltypes lists them.
+class TouchInteraction : public QObject
+{
+    Q_OBJECT
+
+public:
+    enum Direction
+    {
+        Left = 0,
+        Up = 1,
+        Right = 2,
+        Down = 3
+    };
+    Q_ENUM(Direction)
+
+    enum Mode
+    {
+        Swipe = 0,
+        EdgeSwipe = 1,
+        Pull = 2
+    };
+    Q_ENUM(Mode)
+};

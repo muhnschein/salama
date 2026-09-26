@@ -81,6 +81,7 @@ Reuse policy:
 - Web notifications, as Firefox's: a site asks, the answer is kept in the engine's permissions, and what it shows is the platform's notification
 - Settings: a main page leading to a page each for the start page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level), notifications (the sites allowed and blocked, blocking new requests) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
 - Cover: a lightning bolt that flashes as it comes into view, or the tab count over the last tab, chosen in Settings, and one quick action chosen there beside the playing tab's mute
+- Tutorial: the tab grid's gesture, taught as Sailfish's own Tutorial teaches its gestures, over the browsing page on the first start and from Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2

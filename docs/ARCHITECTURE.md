@@ -40,7 +40,8 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
 - `Settings` — what the start page shows, search engine and the sources the address bar
   suggests from, desktop mode, the cover's style and quick action, tracking protection
-  level, the reader view's look, address-bar heuristics.
+  level, the reader view's look, whether the tutorial has been shown, address-bar
+  heuristics.
 - `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
@@ -128,7 +129,11 @@ search (`DECISIONS/0027-omnibar.md`).
 
 Settings is a main page leading to a page each for search, the reader view, the cover,
 privacy, notifications and the history (`DECISIONS/0028-settings-pages.md`,
-`DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`).
+`DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`), and to the
+tutorial, which the root window also pushes over the browsing page until
+`Settings.tutorialShown` says it has been seen: the tab gesture made on a sketch of the
+browser that carries a `TabDeck` and a `BarGesture` of its own, and touches no tab
+(`DECISIONS/0034-tutorial.md`).
 
 ## Storage
 

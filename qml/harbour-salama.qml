@@ -101,6 +101,25 @@ ApplicationWindow {
         onTabRequested: window.showNotifiedTab(tabId)
     }
 
+    // The tutorial, over the browsing page, until it has come up once: on the first
+    // start, and on the first start of a build that has it. It counts as shown as it
+    // comes up, so one left by back is not forced on the reader again; Settings >
+    // Tutorial shows it whenever it is asked for (docs/DECISIONS/0034-tutorial.md).
+    function showTutorial() {
+        Settings.tutorialShown = true
+        pageStack.push(Qt.resolvedUrl("pages/TutorialPage.qml"), {}, PageStackAction.Immediate)
+    }
+
+    // Once the window is made and the browsing page is on the stack: a timer of no
+    // length fires on the first turn of the event loop after that, which is Qt 5.6's
+    // way of saying "next".
+    Timer {
+        objectName: "tutorialTimer"
+        interval: 0
+        running: !Settings.tutorialShown
+        onTriggered: window.showTutorial()
+    }
+
     // As the bookmarks change, and not only when the action is taken: an address edited
     // after the bookmark came back under a new id is one the old id's address would no
     // longer find.

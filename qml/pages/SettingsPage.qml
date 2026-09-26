@@ -5,10 +5,10 @@
 // privacy, notifications, the history -- on a page of its own, in headed groups, as
 // Firefox for Android arranges its settings and Jolla's own browser reaches its privacy
 // settings (docs/DECISIONS/0028-settings-pages.md, 0030-history-settings.md,
-// 0033-web-notifications.md). Each way in is its
-// icon and its name alone: how a subject is set is read on its page. The one setting
-// that takes a line is here too, under the heading of what it changes, and says what it
-// does.
+// 0033-web-notifications.md), and last the way to the tutorial (0034-tutorial.md). Each
+// way in is its icon and its name alone: how a subject is set is read on its page. The
+// one setting that takes a line is here too, under the heading of what it changes, and
+// says what it does.
 //
 // Every control writes its setting as it changes; nothing waits on a Save.
 import QtQuick 2.6
@@ -131,6 +131,21 @@ Page {
                 iconSource: "image://theme/icon-m-history"
                 text: qsTr("History")
                 onClicked: settingsPage.open("HistorySettingsPage.qml")
+            }
+
+            // Last, as Firefox for Android ends its settings with its help: the
+            // tutorial the first start shows, again (docs/DECISIONS/0034-tutorial.md).
+            SectionHeader {
+                text: qsTr("Help")
+            }
+
+            SettingsEntry {
+                objectName: "tutorialSettingsEntry"
+                // The theme's own for a gesture, which is what the tutorial teaches.
+                // Jolla's Settings has no row for its Tutorial to take one from.
+                iconSource: "image://theme/icon-m-gesture"
+                text: qsTr("Tutorial")
+                onClicked: settingsPage.open("TutorialPage.qml")
             }
         }
 

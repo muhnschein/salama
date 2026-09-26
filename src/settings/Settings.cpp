@@ -37,6 +37,7 @@ const char *const StartPageBlankKey = "startPageBlank";
 const char *const StartPageTopSitesKey = "startPageTopSites";
 const char *const StartPageBookmarksKey = "startPageBookmarks";
 const char *const StartPageRecentKey = "startPageRecent";
+const char *const TutorialShownKey = "tutorialShown";
 // Where an earlier release kept the address of its home page. The start page took the
 // home page's place (docs/DECISIONS/0032-start-page.md), and nothing reads it now.
 const char *const RetiredHomePageKey = "homePage";
@@ -527,6 +528,18 @@ void Settings::setStartPageRecent(bool shown)
 {
     if (setFlag(StartPageRecentKey, shown)) {
         emit startPageChanged();
+    }
+}
+
+bool Settings::tutorialShown() const
+{
+    return flag(TutorialShownKey, false);
+}
+
+void Settings::setTutorialShown(bool shown)
+{
+    if (setFlag(TutorialShownKey, shown, false)) {
+        emit tutorialShownChanged();
     }
 }
 

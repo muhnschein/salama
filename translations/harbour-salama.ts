@@ -739,6 +739,14 @@
         <source>Notifications</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tutorial</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
@@ -913,6 +921,54 @@
     </message>
     <message>
         <source>No matching tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialPage</name>
+    <message>
+        <source>Drag the bar up to see your tabs</source>
+        <extracomment>The tutorial&apos;s first step: the navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull down to go back to the page</source>
+        <extracomment>The tutorial&apos;s second step: the grid of tabs is pulled down past its top to bring the page back</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Learn where your tabs are</source>
+        <extracomment>The tutorial&apos;s first card: what it teaches</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>salama has no tabs button: your tabs lie under the page. Follow the instructions on the screen to learn the gesture that brings them up.</source>
+        <extracomment>Under the tutorial&apos;s heading: the grid of tabs is reached by a gesture, which the tutorial has the reader make on a picture of the browser</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <extracomment>Starts the tutorial&apos;s lesson</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Well done!</source>
+        <extracomment>The tutorial&apos;s lesson has been done</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Now you know where your tabs are: under the page, one drag up from the bar.</source>
+        <extracomment>What the tutorial taught, said back to the reader at its end</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <extracomment>Starts the tutorial&apos;s lesson over</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close tutorial</source>
+        <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

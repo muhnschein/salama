@@ -34,3 +34,6 @@ OpacityRampEffect 1.0 OpacityRampEffect.qml
 CoverBackground 1.0 CoverBackground.qml
 CoverActionList 1.0 CoverActionList.qml
 CoverAction 1.0 CoverAction.qml
+TouchInteractionHint 1.0 TouchInteractionHint.qml
+InteractionHintLabel 1.0 InteractionHintLabel.qml
+FadeAnimation 1.0 FadeAnimation.qml
