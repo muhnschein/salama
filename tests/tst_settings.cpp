@@ -64,20 +64,20 @@ void tst_settings::defaults()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.search.engine(), SearchSettings::defaultEngine());
-    QCOMPARE(settings.search.engineIndex(), 0);
+    QCOMPARE(settings.search()->engine(), SearchSettings::defaultEngine());
+    QCOMPARE(settings.search()->engineIndex(), 0);
     // On unless it is turned off: a camera cutout over the first line of a page is
     // not a design decision (docs/DECISIONS/0013-screen-cutout.md).
-    QVERIFY(settings.general.cutoutGuard());
-    QCOMPARE(settings.search.engineNames().count(), settings.search.engineKeys().count());
-    QCOMPARE(settings.search.engineNames().first(), QStringLiteral("Qwant"));
-    QVERIFY(settings.search.engineNames().contains(QStringLiteral("Ecosia")));
+    QVERIFY(settings.general()->cutoutGuard());
+    QCOMPARE(settings.search()->engineNames().count(), settings.search()->engineKeys().count());
+    QCOMPARE(settings.search()->engineNames().first(), QStringLiteral("Qwant"));
+    QVERIFY(settings.search()->engineNames().contains(QStringLiteral("Ecosia")));
     // Removed by choice, and the list is the whole set on offer.
-    QVERIFY(!settings.search.engineKeys().contains(QStringLiteral("google")));
-    QVERIFY(!settings.search.engineKeys().contains(QStringLiteral("bing")));
-    QVERIFY(!settings.search.engineKeys().contains(QStringLiteral("duckduckgo")));
-    QVERIFY(!settings.search.engineKeys().contains(QStringLiteral("wikipedia")));
-    QVERIFY(settings.search.engineKeys().contains(QStringLiteral("startpage")));
+    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("google")));
+    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("bing")));
+    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("duckduckgo")));
+    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("wikipedia")));
+    QVERIFY(settings.search()->engineKeys().contains(QStringLiteral("startpage")));
 }
 
 void tst_settings::persistsValues()
@@ -86,35 +86,35 @@ void tst_settings::persistsValues()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QSignalSpy cutoutSpy(&settings.general, &Settings::cutoutGuardChanged);
+        QSignalSpy cutoutSpy(settings.general(), &Settings::cutoutGuardChanged);
 
-        settings.general.setCutoutGuard(false);
-        settings.general.setCutoutGuard(false);
+        settings.general()->setCutoutGuard(false);
+        settings.general()->setCutoutGuard(false);
         QCOMPARE(cutoutSpy.count(), 1);
-        settings.search.setEngine(QStringLiteral("startpage"));
+        settings.search()->setEngine(QStringLiteral("startpage"));
     }
     Sections reloaded(path);
-    QVERIFY(!reloaded.general.cutoutGuard());
-    QCOMPARE(reloaded.search.engine(), QStringLiteral("startpage"));
+    QVERIFY(!reloaded.general()->cutoutGuard());
+    QCOMPARE(reloaded.search()->engine(), QStringLiteral("startpage"));
 }
 
 void tst_settings::searchEngineSelection()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QSignalSpy spy(&settings.search, &SearchSettings::engineChanged);
+    QSignalSpy spy(settings.search(), &SearchSettings::engineChanged);
 
-    settings.search.setEngine(QStringLiteral("nonsense"));
+    settings.search()->setEngine(QStringLiteral("nonsense"));
     QCOMPARE(spy.count(), 0);
-    settings.search.setEngineIndex(-1);
-    settings.search.setEngineIndex(99);
+    settings.search()->setEngineIndex(-1);
+    settings.search()->setEngineIndex(99);
     QCOMPARE(spy.count(), 0);
 
-    settings.search.setEngineIndex(2);
+    settings.search()->setEngineIndex(2);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(settings.search.engine(), QStringLiteral("startpage"));
-    QCOMPARE(settings.search.engineIndex(), 2);
-    settings.search.setEngine(QStringLiteral("startpage"));
+    QCOMPARE(settings.search()->engine(), QStringLiteral("startpage"));
+    QCOMPARE(settings.search()->engineIndex(), 2);
+    settings.search()->setEngine(QStringLiteral("startpage"));
     QCOMPARE(spy.count(), 1);
 }
 
@@ -123,36 +123,36 @@ void tst_settings::coverStyle()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Sections settings(path);
-    QSignalSpy spy(&settings.cover, &CoverSettings::styleChanged);
+    QSignalSpy spy(settings.cover(), &CoverSettings::styleChanged);
 
     // The lightning by default: the cover a reader who has not been to Settings gets.
-    QCOMPARE(settings.cover.style(), int(CoverSettings::Lightning));
+    QCOMPARE(settings.cover()->style(), int(CoverSettings::Lightning));
 
-    settings.cover.setStyle(CoverSettings::LatestTab);
-    QCOMPARE(settings.cover.style(), int(CoverSettings::LatestTab));
+    settings.cover()->setStyle(CoverSettings::LatestTab);
+    QCOMPARE(settings.cover()->style(), int(CoverSettings::LatestTab));
     QCOMPARE(spy.count(), 1);
 
     // Setting what is already set says nothing.
-    settings.cover.setStyle(CoverSettings::LatestTab);
+    settings.cover()->setStyle(CoverSettings::LatestTab);
     QCOMPARE(spy.count(), 1);
 
     // A value from outside the range is refused rather than stored: this comes from a
     // file a user can edit. 2 among them, the number the every-tab cover had.
-    settings.cover.setStyle(7);
-    settings.cover.setStyle(2);
-    settings.cover.setStyle(-1);
-    QCOMPARE(settings.cover.style(), int(CoverSettings::LatestTab));
+    settings.cover()->setStyle(7);
+    settings.cover()->setStyle(2);
+    settings.cover()->setStyle(-1);
+    QCOMPARE(settings.cover()->style(), int(CoverSettings::LatestTab));
     QCOMPARE(spy.count(), 1);
     {
         Sections again(path);
-        QCOMPARE(again.cover.style(), int(CoverSettings::LatestTab));
+        QCOMPARE(again.cover()->style(), int(CoverSettings::LatestTab));
     }
 
-    settings.cover.setStyle(CoverSettings::Lightning);
+    settings.cover()->setStyle(CoverSettings::Lightning);
     QCOMPARE(spy.count(), 2);
     {
         Sections again(path);
-        QCOMPARE(again.cover.style(), int(CoverSettings::Lightning));
+        QCOMPARE(again.cover()->style(), int(CoverSettings::Lightning));
     }
 
     // What the covers before the lightning left in the file. The icon alone was 0 and
@@ -171,7 +171,7 @@ void tst_settings::coverStyle()
             raw.setValue(QStringLiteral("coverStyle"), entry.first);
         }
         Sections again(path);
-        QCOMPARE(again.cover.style(), entry.second);
+        QCOMPARE(again.cover()->style(), entry.second);
     }
 }
 
@@ -179,10 +179,10 @@ void tst_settings::searchUrl()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.search.searchUrl(QStringLiteral("sailfish os")),
+    QCOMPARE(settings.search()->searchUrl(QStringLiteral("sailfish os")),
              QStringLiteral("https://www.qwant.com/?q=sailfish%20os"));
-    settings.search.setEngine(QStringLiteral("ecosia"));
-    QCOMPARE(settings.search.searchUrl(QStringLiteral(" a&b ")),
+    settings.search()->setEngine(QStringLiteral("ecosia"));
+    QCOMPARE(settings.search()->searchUrl(QStringLiteral(" a&b ")),
              QStringLiteral("https://www.ecosia.org/search?q=a%26b"));
 }
 
@@ -231,7 +231,7 @@ void tst_settings::urlForInput()
     QFETCH(QString, expected);
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.search.urlForInput(input), expected);
+    QCOMPARE(settings.search()->urlForInput(input), expected);
 }
 
 void tst_settings::displayAddress_data()
@@ -275,29 +275,32 @@ void tst_settings::trackingProtection()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Sections settings(path);
-    QSignalSpy spy(&settings.privacy, &PrivacySettings::trackingProtectionChanged);
+    QSignalSpy spy(settings.privacy(), &PrivacySettings::trackingProtectionChanged);
 
     // Standard by default, as in Firefox (docs/DECISIONS/0023-tracking-protection.md).
-    QCOMPARE(settings.privacy.trackingProtection(),
+    QCOMPARE(settings.privacy()->trackingProtection(),
              int(PrivacySettings::TrackingProtectionStandard));
 
-    settings.privacy.setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
-    QCOMPARE(settings.privacy.trackingProtection(), int(PrivacySettings::TrackingProtectionStrict));
+    settings.privacy()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
+    QCOMPARE(settings.privacy()->trackingProtection(),
+             int(PrivacySettings::TrackingProtectionStrict));
     QCOMPARE(spy.count(), 1);
-    settings.privacy.setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
+    settings.privacy()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(spy.count(), 1);
 
     // Refused rather than stored, as the cover's style is.
-    settings.privacy.setTrackingProtection(3);
-    settings.privacy.setTrackingProtection(-1);
-    QCOMPARE(settings.privacy.trackingProtection(), int(PrivacySettings::TrackingProtectionStrict));
+    settings.privacy()->setTrackingProtection(3);
+    settings.privacy()->setTrackingProtection(-1);
+    QCOMPARE(settings.privacy()->trackingProtection(),
+             int(PrivacySettings::TrackingProtectionStrict));
     QCOMPARE(spy.count(), 1);
 
-    settings.privacy.setTrackingProtection(PrivacySettings::TrackingProtectionOff);
+    settings.privacy()->setTrackingProtection(PrivacySettings::TrackingProtectionOff);
     QCOMPARE(spy.count(), 2);
     {
         Sections again(path);
-        QCOMPARE(again.privacy.trackingProtection(), int(PrivacySettings::TrackingProtectionOff));
+        QCOMPARE(again.privacy()->trackingProtection(),
+                 int(PrivacySettings::TrackingProtectionOff));
     }
 
     // Written by hand, out of range: the default, not a level the engine has no
@@ -308,7 +311,7 @@ void tst_settings::trackingProtection()
     }
     {
         Sections again(path);
-        QCOMPARE(again.privacy.trackingProtection(),
+        QCOMPARE(again.privacy()->trackingProtection(),
                  int(PrivacySettings::TrackingProtectionStandard));
     }
 }
@@ -322,43 +325,43 @@ void tst_settings::readerStyle()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     {
         Sections settings(path);
-        QCOMPARE(settings.reader.colors(), int(ReaderSettings::Ambience));
-        QCOMPARE(settings.reader.typeface(), int(ReaderSettings::SansSerif));
-        QCOMPARE(settings.reader.textSize(), int(ReaderSettings::TextSizeDefault));
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Ambience));
+        QCOMPARE(settings.reader()->typeface(), int(ReaderSettings::SansSerif));
+        QCOMPARE(settings.reader()->textSize(), int(ReaderSettings::TextSizeDefault));
         QCOMPARE(int(ReaderSettings::TextSizeDefault), 5);
 
-        QSignalSpy colors(&settings.reader, &ReaderSettings::colorsChanged);
-        QSignalSpy typeface(&settings.reader, &ReaderSettings::typefaceChanged);
-        QSignalSpy size(&settings.reader, &ReaderSettings::textSizeChanged);
+        QSignalSpy colors(settings.reader(), &ReaderSettings::colorsChanged);
+        QSignalSpy typeface(settings.reader(), &ReaderSettings::typefaceChanged);
+        QSignalSpy size(settings.reader(), &ReaderSettings::textSizeChanged);
 
-        settings.reader.setColors(ReaderSettings::Sepia);
-        settings.reader.setColors(ReaderSettings::Sepia);
-        settings.reader.setColors(ReaderSettings::Dark + 1);
-        settings.reader.setColors(-1);
-        QCOMPARE(settings.reader.colors(), int(ReaderSettings::Sepia));
+        settings.reader()->setColors(ReaderSettings::Sepia);
+        settings.reader()->setColors(ReaderSettings::Sepia);
+        settings.reader()->setColors(ReaderSettings::Dark + 1);
+        settings.reader()->setColors(-1);
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Sepia));
         QCOMPARE(colors.count(), 1);
 
-        settings.reader.setTypeface(ReaderSettings::Serif);
-        settings.reader.setTypeface(ReaderSettings::Serif);
-        settings.reader.setTypeface(2);
-        settings.reader.setTypeface(-1);
-        QCOMPARE(settings.reader.typeface(), int(ReaderSettings::Serif));
+        settings.reader()->setTypeface(ReaderSettings::Serif);
+        settings.reader()->setTypeface(ReaderSettings::Serif);
+        settings.reader()->setTypeface(2);
+        settings.reader()->setTypeface(-1);
+        QCOMPARE(settings.reader()->typeface(), int(ReaderSettings::Serif));
         QCOMPARE(typeface.count(), 1);
 
-        settings.reader.setTextSize(ReaderSettings::TextSizeMax);
-        settings.reader.setTextSize(ReaderSettings::TextSizeMax);
-        settings.reader.setTextSize(ReaderSettings::TextSizeMax + 1);
-        settings.reader.setTextSize(ReaderSettings::TextSizeMin - 1);
-        QCOMPARE(settings.reader.textSize(), int(ReaderSettings::TextSizeMax));
+        settings.reader()->setTextSize(ReaderSettings::TextSizeMax);
+        settings.reader()->setTextSize(ReaderSettings::TextSizeMax);
+        settings.reader()->setTextSize(ReaderSettings::TextSizeMax + 1);
+        settings.reader()->setTextSize(ReaderSettings::TextSizeMin - 1);
+        QCOMPARE(settings.reader()->textSize(), int(ReaderSettings::TextSizeMax));
         QCOMPARE(size.count(), 1);
-        settings.reader.setTextSize(ReaderSettings::TextSizeMin);
+        settings.reader()->setTextSize(ReaderSettings::TextSizeMin);
         QCOMPARE(size.count(), 2);
     }
     {
         Sections again(path);
-        QCOMPARE(again.reader.colors(), int(ReaderSettings::Sepia));
-        QCOMPARE(again.reader.typeface(), int(ReaderSettings::Serif));
-        QCOMPARE(again.reader.textSize(), int(ReaderSettings::TextSizeMin));
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Sepia));
+        QCOMPARE(again.reader()->typeface(), int(ReaderSettings::Serif));
+        QCOMPARE(again.reader()->textSize(), int(ReaderSettings::TextSizeMin));
     }
     {
         QSettings raw(path, QSettings::IniFormat);
@@ -368,9 +371,9 @@ void tst_settings::readerStyle()
     }
     {
         Sections again(path);
-        QCOMPARE(again.reader.colors(), int(ReaderSettings::Ambience));
-        QCOMPARE(again.reader.typeface(), int(ReaderSettings::SansSerif));
-        QCOMPARE(again.reader.textSize(), int(ReaderSettings::TextSizeDefault));
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Ambience));
+        QCOMPARE(again.reader()->typeface(), int(ReaderSettings::SansSerif));
+        QCOMPARE(again.reader()->textSize(), int(ReaderSettings::TextSizeDefault));
     }
 }
 
@@ -405,10 +408,10 @@ void tst_settings::isAddress()
     QFETCH(bool, expected);
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.search.isAddress(input), expected);
-    const QString url = settings.search.urlForInput(input);
+    QCOMPARE(settings.search()->isAddress(input), expected);
+    const QString url = settings.search()->urlForInput(input);
     if (!input.trimmed().isEmpty()) {
-        QCOMPARE(url == settings.search.searchUrl(input), !expected);
+        QCOMPARE(url == settings.search()->searchUrl(input), !expected);
     }
 }
 
@@ -420,28 +423,28 @@ void tst_settings::omnibarSources()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     {
         Sections settings(path);
-        QVERIFY(settings.search.omnibarTabs());
-        QVERIFY(settings.search.omnibarBookmarks());
-        QVERIFY(settings.search.omnibarHistory());
-        QVERIFY(settings.search.omnibarDownloads());
+        QVERIFY(settings.search()->omnibarTabs());
+        QVERIFY(settings.search()->omnibarBookmarks());
+        QVERIFY(settings.search()->omnibarHistory());
+        QVERIFY(settings.search()->omnibarDownloads());
 
-        QSignalSpy tabs(&settings.search, &SearchSettings::omnibarTabsChanged);
-        QSignalSpy bookmarks(&settings.search, &SearchSettings::omnibarBookmarksChanged);
-        QSignalSpy history(&settings.search, &SearchSettings::omnibarHistoryChanged);
-        QSignalSpy downloads(&settings.search, &SearchSettings::omnibarDownloadsChanged);
+        QSignalSpy tabs(settings.search(), &SearchSettings::omnibarTabsChanged);
+        QSignalSpy bookmarks(settings.search(), &SearchSettings::omnibarBookmarksChanged);
+        QSignalSpy history(settings.search(), &SearchSettings::omnibarHistoryChanged);
+        QSignalSpy downloads(settings.search(), &SearchSettings::omnibarDownloadsChanged);
 
-        settings.search.setOmnibarTabs(true);
+        settings.search()->setOmnibarTabs(true);
         QCOMPARE(tabs.count(), 0);
-        settings.search.setOmnibarTabs(false);
-        settings.search.setOmnibarTabs(false);
+        settings.search()->setOmnibarTabs(false);
+        settings.search()->setOmnibarTabs(false);
         QCOMPARE(tabs.count(), 1);
-        settings.search.setOmnibarHistory(false);
-        settings.search.setOmnibarHistory(false);
+        settings.search()->setOmnibarHistory(false);
+        settings.search()->setOmnibarHistory(false);
         QCOMPARE(history.count(), 1);
-        settings.search.setOmnibarBookmarks(false);
-        settings.search.setOmnibarBookmarks(true);
+        settings.search()->setOmnibarBookmarks(false);
+        settings.search()->setOmnibarBookmarks(true);
         QCOMPARE(bookmarks.count(), 2);
-        settings.search.setOmnibarDownloads(false);
+        settings.search()->setOmnibarDownloads(false);
         QCOMPARE(downloads.count(), 1);
         // Each signal is its own flag's.
         QCOMPARE(tabs.count(), 1);
@@ -449,10 +452,10 @@ void tst_settings::omnibarSources()
     }
     {
         Sections again(path);
-        QVERIFY(!again.search.omnibarTabs());
-        QVERIFY(again.search.omnibarBookmarks());
-        QVERIFY(!again.search.omnibarHistory());
-        QVERIFY(!again.search.omnibarDownloads());
+        QVERIFY(!again.search()->omnibarTabs());
+        QVERIFY(again.search()->omnibarBookmarks());
+        QVERIFY(!again.search()->omnibarHistory());
+        QVERIFY(!again.search()->omnibarDownloads());
     }
     QSettings raw(path, QSettings::IniFormat);
     QCOMPARE(raw.value(QStringLiteral("omnibarTabs")).toBool(), false);
@@ -469,25 +472,25 @@ void tst_settings::historySwitches()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     {
         Sections settings(path);
-        QVERIFY(settings.privacy.rememberHistory());
-        QVERIFY(!settings.privacy.clearHistoryOnClose());
-        QSignalSpy remember(&settings.privacy, &PrivacySettings::rememberHistoryChanged);
-        QSignalSpy clear(&settings.privacy, &PrivacySettings::clearHistoryOnCloseChanged);
+        QVERIFY(settings.privacy()->rememberHistory());
+        QVERIFY(!settings.privacy()->clearHistoryOnClose());
+        QSignalSpy remember(settings.privacy(), &PrivacySettings::rememberHistoryChanged);
+        QSignalSpy clear(settings.privacy(), &PrivacySettings::clearHistoryOnCloseChanged);
 
-        settings.privacy.setRememberHistory(true);
-        settings.privacy.setClearHistoryOnClose(false);
+        settings.privacy()->setRememberHistory(true);
+        settings.privacy()->setClearHistoryOnClose(false);
         QCOMPARE(remember.count(), 0);
         QCOMPARE(clear.count(), 0);
-        settings.privacy.setRememberHistory(false);
-        settings.privacy.setRememberHistory(false);
-        settings.privacy.setClearHistoryOnClose(true);
-        settings.privacy.setClearHistoryOnClose(true);
+        settings.privacy()->setRememberHistory(false);
+        settings.privacy()->setRememberHistory(false);
+        settings.privacy()->setClearHistoryOnClose(true);
+        settings.privacy()->setClearHistoryOnClose(true);
         QCOMPARE(remember.count(), 1);
         QCOMPARE(clear.count(), 1);
     }
     Sections again(path);
-    QVERIFY(!again.privacy.rememberHistory());
-    QVERIFY(again.privacy.clearHistoryOnClose());
+    QVERIFY(!again.privacy()->rememberHistory());
+    QVERIFY(again.privacy()->clearHistoryOnClose());
     QSettings raw(path, QSettings::IniFormat);
     QCOMPARE(raw.value(QStringLiteral("rememberHistory")).toBool(), false);
     QCOMPARE(raw.value(QStringLiteral("clearHistoryOnClose")).toBool(), true);
@@ -501,16 +504,16 @@ void tst_settings::blockNotificationRequests()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     {
         Sections settings(path);
-        QVERIFY(!settings.privacy.blockNotificationRequests());
-        QSignalSpy spy(&settings.privacy, &PrivacySettings::blockNotificationRequestsChanged);
-        settings.privacy.setBlockNotificationRequests(false);
+        QVERIFY(!settings.privacy()->blockNotificationRequests());
+        QSignalSpy spy(settings.privacy(), &PrivacySettings::blockNotificationRequestsChanged);
+        settings.privacy()->setBlockNotificationRequests(false);
         QCOMPARE(spy.count(), 0);
-        settings.privacy.setBlockNotificationRequests(true);
-        settings.privacy.setBlockNotificationRequests(true);
+        settings.privacy()->setBlockNotificationRequests(true);
+        settings.privacy()->setBlockNotificationRequests(true);
         QCOMPARE(spy.count(), 1);
     }
     Sections again(path);
-    QVERIFY(again.privacy.blockNotificationRequests());
+    QVERIFY(again.privacy()->blockNotificationRequests());
     QSettings raw(path, QSettings::IniFormat);
     QCOMPARE(raw.value(QStringLiteral("blockNotificationRequests")).toBool(), true);
 }
@@ -532,9 +535,9 @@ void tst_settings::quickAction()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Sections settings(path);
-    QSignalSpy spy(&settings.cover, &CoverSettings::quickActionChanged);
+    QSignalSpy spy(settings.cover(), &CoverSettings::quickActionChanged);
 
-    QCOMPARE(settings.cover.quickAction(), int(CoverSettings::QuickActionSearch));
+    QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionSearch));
     // Stored as numbers, so the numbers may not move.
     QCOMPARE(int(CoverSettings::QuickActionNone), 0);
     QCOMPARE(int(CoverSettings::QuickActionSearch), 1);
@@ -543,19 +546,19 @@ void tst_settings::quickAction()
     QCOMPARE(int(CoverSettings::QuickActionDownloads), 4);
     QCOMPARE(int(CoverSettings::QuickActionHistory), 5);
 
-    settings.cover.setQuickAction(CoverSettings::QuickActionHistory);
-    settings.cover.setQuickAction(CoverSettings::QuickActionHistory);
-    QCOMPARE(settings.cover.quickAction(), int(CoverSettings::QuickActionHistory));
+    settings.cover()->setQuickAction(CoverSettings::QuickActionHistory);
+    settings.cover()->setQuickAction(CoverSettings::QuickActionHistory);
+    QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionHistory));
     QCOMPARE(spy.count(), 1);
-    settings.cover.setQuickAction(CoverSettings::QuickActionHistory + 1);
-    settings.cover.setQuickAction(-1);
-    QCOMPARE(settings.cover.quickAction(), int(CoverSettings::QuickActionHistory));
+    settings.cover()->setQuickAction(CoverSettings::QuickActionHistory + 1);
+    settings.cover()->setQuickAction(-1);
+    QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionHistory));
     QCOMPARE(spy.count(), 1);
-    settings.cover.setQuickAction(CoverSettings::QuickActionNone);
+    settings.cover()->setQuickAction(CoverSettings::QuickActionNone);
     QCOMPARE(spy.count(), 2);
     {
         Sections again(path);
-        QCOMPARE(again.cover.quickAction(), int(CoverSettings::QuickActionNone));
+        QCOMPARE(again.cover()->quickAction(), int(CoverSettings::QuickActionNone));
     }
     {
         QSettings raw(path, QSettings::IniFormat);
@@ -564,7 +567,7 @@ void tst_settings::quickAction()
     }
     {
         Sections again(path);
-        QCOMPARE(again.cover.quickAction(), int(CoverSettings::QuickActionSearch));
+        QCOMPARE(again.cover()->quickAction(), int(CoverSettings::QuickActionSearch));
     }
 }
 
@@ -575,52 +578,52 @@ void tst_settings::quickActionBookmark()
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     {
         Sections settings(path);
-        QSignalSpy spy(&settings.cover, &CoverSettings::quickActionBookmarkChanged);
-        QCOMPARE(settings.cover.quickActionBookmark(), 0);
-        QVERIFY(settings.cover.quickActionBookmarkUrl().isEmpty());
-        QVERIFY(settings.cover.quickActionBookmarkTitle().isEmpty());
+        QSignalSpy spy(settings.cover(), &CoverSettings::quickActionBookmarkChanged);
+        QCOMPARE(settings.cover()->quickActionBookmark(), 0);
+        QVERIFY(settings.cover()->quickActionBookmarkUrl().isEmpty());
+        QVERIFY(settings.cover()->quickActionBookmarkTitle().isEmpty());
 
-        settings.cover.setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
-                                              QStringLiteral("A"));
+        settings.cover()->setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
+                                                 QStringLiteral("A"));
         QCOMPARE(spy.count(), 1);
-        QCOMPARE(settings.cover.quickActionBookmark(), 4);
-        QCOMPARE(settings.cover.quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
-        QCOMPARE(settings.cover.quickActionBookmarkTitle(), QStringLiteral("A"));
-        settings.cover.setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
-                                              QStringLiteral("A"));
+        QCOMPARE(settings.cover()->quickActionBookmark(), 4);
+        QCOMPARE(settings.cover()->quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
+        QCOMPARE(settings.cover()->quickActionBookmarkTitle(), QStringLiteral("A"));
+        settings.cover()->setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
+                                                 QStringLiteral("A"));
         QCOMPARE(spy.count(), 1);
         // A negative id is no bookmark's, and nothing is written.
-        settings.cover.setQuickActionBookmark(-2, QStringLiteral("https://b.example/"),
-                                              QStringLiteral("B"));
+        settings.cover()->setQuickActionBookmark(-2, QStringLiteral("https://b.example/"),
+                                                 QStringLiteral("B"));
         QCOMPARE(spy.count(), 1);
-        QCOMPARE(settings.cover.quickActionBookmark(), 4);
+        QCOMPARE(settings.cover()->quickActionBookmark(), 4);
 
         // Found again under a new id: the same address, and one signal.
-        settings.cover.setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
-                                              QStringLiteral("A"));
+        settings.cover()->setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
+                                                 QStringLiteral("A"));
         QCOMPARE(spy.count(), 2);
         // Only the title changed is a change.
-        settings.cover.setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
-                                              QStringLiteral("Alpha"));
+        settings.cover()->setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
+                                                 QStringLiteral("Alpha"));
         QCOMPARE(spy.count(), 3);
         // The action is left as it was.
-        QCOMPARE(settings.cover.quickAction(), int(CoverSettings::QuickActionSearch));
+        QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionSearch));
     }
     {
         Sections again(path);
-        QCOMPARE(again.cover.quickActionBookmark(), 9);
-        QCOMPARE(again.cover.quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
-        QCOMPARE(again.cover.quickActionBookmarkTitle(), QStringLiteral("Alpha"));
+        QCOMPARE(again.cover()->quickActionBookmark(), 9);
+        QCOMPARE(again.cover()->quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
+        QCOMPARE(again.cover()->quickActionBookmarkTitle(), QStringLiteral("Alpha"));
 
         // No bookmark is no address and no title either.
-        QSignalSpy spy(&again.cover, &CoverSettings::quickActionBookmarkChanged);
-        again.cover.setQuickActionBookmark(0, QStringLiteral("https://a.example/"),
-                                           QStringLiteral("Alpha"));
+        QSignalSpy spy(again.cover(), &CoverSettings::quickActionBookmarkChanged);
+        again.cover()->setQuickActionBookmark(0, QStringLiteral("https://a.example/"),
+                                              QStringLiteral("Alpha"));
         QCOMPARE(spy.count(), 1);
-        QCOMPARE(again.cover.quickActionBookmark(), 0);
-        QVERIFY(again.cover.quickActionBookmarkUrl().isEmpty());
-        QVERIFY(again.cover.quickActionBookmarkTitle().isEmpty());
-        again.cover.setQuickActionBookmark(0, QString(), QString());
+        QCOMPARE(again.cover()->quickActionBookmark(), 0);
+        QVERIFY(again.cover()->quickActionBookmarkUrl().isEmpty());
+        QVERIFY(again.cover()->quickActionBookmarkTitle().isEmpty());
+        again.cover()->setQuickActionBookmark(0, QString(), QString());
         QCOMPARE(spy.count(), 1);
     }
     {
@@ -628,7 +631,7 @@ void tst_settings::quickActionBookmark()
         raw.setValue(QStringLiteral("quickActionBookmark"), -5);
     }
     Sections again(path);
-    QCOMPARE(again.cover.quickActionBookmark(), 0);
+    QCOMPARE(again.cover()->quickActionBookmark(), 0);
 }
 
 void tst_settings::quickActionIcon()
@@ -636,33 +639,33 @@ void tst_settings::quickActionIcon()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
     Sections settings(path);
-    QSignalSpy spy(&settings.cover, &CoverSettings::quickActionIconChanged);
+    QSignalSpy spy(settings.cover(), &CoverSettings::quickActionIconChanged);
 
     // The star last: it is the bookmarks overview's own glyph.
-    QCOMPARE(settings.cover.quickActionIcons(),
+    QCOMPARE(settings.cover()->quickActionIcons(),
              (QStringList{QStringLiteral("globe"), QStringLiteral("heart"), QStringLiteral("home"),
                           QStringLiteral("work"), QStringLiteral("news"), QStringLiteral("music"),
                           QStringLiteral("shop"), QStringLiteral("star")}));
-    QCOMPARE(settings.cover.quickActionIcon(), QStringLiteral("globe"));
+    QCOMPARE(settings.cover()->quickActionIcon(), QStringLiteral("globe"));
 
-    settings.cover.setQuickActionIcon(QStringLiteral("music"));
-    settings.cover.setQuickActionIcon(QStringLiteral("music"));
+    settings.cover()->setQuickActionIcon(QStringLiteral("music"));
+    settings.cover()->setQuickActionIcon(QStringLiteral("music"));
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(settings.cover.quickActionIcon(), QStringLiteral("music"));
-    settings.cover.setQuickActionIcon(QStringLiteral("rocket"));
-    settings.cover.setQuickActionIcon(QString());
+    QCOMPARE(settings.cover()->quickActionIcon(), QStringLiteral("music"));
+    settings.cover()->setQuickActionIcon(QStringLiteral("rocket"));
+    settings.cover()->setQuickActionIcon(QString());
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(settings.cover.quickActionIcon(), QStringLiteral("music"));
+    QCOMPARE(settings.cover()->quickActionIcon(), QStringLiteral("music"));
     {
         Sections again(path);
-        QCOMPARE(again.cover.quickActionIcon(), QStringLiteral("music"));
+        QCOMPARE(again.cover()->quickActionIcon(), QStringLiteral("music"));
     }
     {
         QSettings raw(path, QSettings::IniFormat);
         raw.setValue(QStringLiteral("quickActionIcon"), QStringLiteral("Music"));
     }
     Sections again(path);
-    QCOMPARE(again.cover.quickActionIcon(), QStringLiteral("globe"));
+    QCOMPARE(again.cover()->quickActionIcon(), QStringLiteral("globe"));
 }
 
 void tst_settings::coverIconPath_data()
@@ -729,7 +732,7 @@ void tst_settings::coverIconPathNamesEveryGlyph()
     const QDir source(QStringLiteral(SALAMA_SOURCE_DIR));
     const QStringList names = QStringList{QStringLiteral("search"), QStringLiteral("bookmarks"),
                                           QStringLiteral("downloads"), QStringLiteral("history")} +
-                              settings.cover.quickActionIcons();
+                              settings.cover()->quickActionIcons();
     QCOMPARE(names.count(), 12);
     const auto contents = [&source](const QString &path) {
         QFile file(source.absoluteFilePath(path));
@@ -758,30 +761,30 @@ void tst_settings::startPage()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QVERIFY(!settings.startPage.blank());
-        QVERIFY(settings.startPage.topSites());
-        QVERIFY(settings.startPage.bookmarks());
-        QVERIFY(settings.startPage.recent());
+        QVERIFY(!settings.startPage()->blank());
+        QVERIFY(settings.startPage()->topSites());
+        QVERIFY(settings.startPage()->bookmarks());
+        QVERIFY(settings.startPage()->recent());
 
-        QSignalSpy spy(&settings.startPage, &StartPageSettings::changed);
-        settings.startPage.setTopSites(true);
-        settings.startPage.setBlank(false);
+        QSignalSpy spy(settings.startPage(), &StartPageSettings::changed);
+        settings.startPage()->setTopSites(true);
+        settings.startPage()->setBlank(false);
         QCOMPARE(spy.count(), 0);
-        settings.startPage.setBlank(true);
-        settings.startPage.setBlank(true);
+        settings.startPage()->setBlank(true);
+        settings.startPage()->setBlank(true);
         QCOMPARE(spy.count(), 1);
-        settings.startPage.setTopSites(false);
-        settings.startPage.setBookmarks(false);
-        settings.startPage.setRecent(false);
+        settings.startPage()->setTopSites(false);
+        settings.startPage()->setBookmarks(false);
+        settings.startPage()->setRecent(false);
         QCOMPARE(spy.count(), 4);
-        settings.startPage.setRecent(true);
+        settings.startPage()->setRecent(true);
         QCOMPARE(spy.count(), 5);
     }
     Sections reloaded(path);
-    QVERIFY(reloaded.startPage.blank());
-    QVERIFY(!reloaded.startPage.topSites());
-    QVERIFY(!reloaded.startPage.bookmarks());
-    QVERIFY(reloaded.startPage.recent());
+    QVERIFY(reloaded.startPage()->blank());
+    QVERIFY(!reloaded.startPage()->topSites());
+    QVERIFY(!reloaded.startPage()->bookmarks());
+    QVERIFY(reloaded.startPage()->recent());
 }
 
 // The home page an earlier release kept is taken out of the file: the start page took
@@ -797,7 +800,7 @@ void tst_settings::retiresTheHomePage()
     }
     {
         Sections settings(path);
-        QVERIFY(!settings.general.cutoutGuard());
+        QVERIFY(!settings.general()->cutoutGuard());
     }
     QSettings file(path, QSettings::IniFormat);
     QVERIFY(!file.contains(QStringLiteral("homePage")));
@@ -812,16 +815,16 @@ void tst_settings::tutorialShown()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QVERIFY(!settings.general.tutorialShown());
-        QSignalSpy spy(&settings.general, &Settings::tutorialShownChanged);
-        settings.general.setTutorialShown(false);
+        QVERIFY(!settings.general()->tutorialShown());
+        QSignalSpy spy(settings.general(), &Settings::tutorialShownChanged);
+        settings.general()->setTutorialShown(false);
         QCOMPARE(spy.count(), 0);
-        settings.general.setTutorialShown(true);
-        settings.general.setTutorialShown(true);
+        settings.general()->setTutorialShown(true);
+        settings.general()->setTutorialShown(true);
         QCOMPARE(spy.count(), 1);
     }
     Sections reloaded(path);
-    QVERIFY(reloaded.general.tutorialShown());
+    QVERIFY(reloaded.general()->tutorialShown());
 }
 
 void tst_settings::isSearchUrl_data()
@@ -831,10 +834,10 @@ void tst_settings::isSearchUrl_data()
 
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    for (int i = 0; i < settings.search.engineKeys().count(); ++i) {
-        settings.search.setEngineIndex(i);
-        const QString results = settings.search.searchUrl(QStringLiteral("sailfish os"));
-        QTest::newRow(qPrintable(settings.search.engineKeys().at(i))) << results << true;
+    for (int i = 0; i < settings.search()->engineKeys().count(); ++i) {
+        settings.search()->setEngineIndex(i);
+        const QString results = settings.search()->searchUrl(QStringLiteral("sailfish os"));
+        QTest::newRow(qPrintable(settings.search()->engineKeys().at(i))) << results << true;
     }
     // As the engines themselves hand the results on: with parameters of their own ahead
     // of the words, and with or without "www.".

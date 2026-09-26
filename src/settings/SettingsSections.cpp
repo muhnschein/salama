@@ -6,13 +6,43 @@ namespace Salama {
 
 SettingsSections::SettingsSections(const QString &filePath)
     : m_file(filePath, QSettings::IniFormat)
-    , general(m_file)
-    , search(m_file)
-    , reader(m_file)
-    , cover(m_file)
-    , privacy(m_file)
-    , startPage(m_file)
+    , m_general(m_file)
+    , m_search(m_file)
+    , m_reader(m_file)
+    , m_cover(m_file)
+    , m_privacy(m_file)
+    , m_startPage(m_file)
 {
+}
+
+Settings *SettingsSections::general()
+{
+    return &m_general;
+}
+
+SearchSettings *SettingsSections::search()
+{
+    return &m_search;
+}
+
+ReaderSettings *SettingsSections::reader()
+{
+    return &m_reader;
+}
+
+CoverSettings *SettingsSections::cover()
+{
+    return &m_cover;
+}
+
+PrivacySettings *SettingsSections::privacy()
+{
+    return &m_privacy;
+}
+
+StartPageSettings *SettingsSections::startPage()
+{
+    return &m_startPage;
 }
 
 } // namespace Salama
