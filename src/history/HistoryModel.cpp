@@ -33,7 +33,7 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-HistoryModel::HistoryModel(Storage &storage, QObject *parent)
+HistoryModel::HistoryModel(const Storage &storage, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
 {
@@ -355,7 +355,7 @@ QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now
     return ranks;
 }
 
-void HistoryModel::prune()
+void HistoryModel::prune() const
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("DELETE FROM browser_history WHERE id NOT IN "

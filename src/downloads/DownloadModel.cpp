@@ -32,7 +32,7 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-DownloadModel::DownloadModel(Storage &storage, QString directory, QObject *parent)
+DownloadModel::DownloadModel(const Storage &storage, QString directory, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
     , m_directory(std::move(directory))
@@ -368,7 +368,7 @@ void DownloadModel::load()
     }
 }
 
-void DownloadModel::insert(const Download &download)
+void DownloadModel::insert(const Download &download) const
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("INSERT INTO download "
@@ -385,7 +385,7 @@ void DownloadModel::insert(const Download &download)
     run(query);
 }
 
-void DownloadModel::store(const Download &download)
+void DownloadModel::store(const Download &download) const
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("UPDATE download SET status = ?, path = ? WHERE id = ?"));
@@ -395,7 +395,7 @@ void DownloadModel::store(const Download &download)
     run(query);
 }
 
-void DownloadModel::erase(int id)
+void DownloadModel::erase(int id) const
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("DELETE FROM download WHERE id = ?"));

@@ -19,37 +19,37 @@ class Storage;
 class TabPersistence
 {
 public:
-    explicit TabPersistence(Storage &storage);
+    explicit TabPersistence(const Storage &storage);
 
     QList<Tab> loadTabs() const;
     int loadActiveTabId() const;
 
-    void insertTab(const Tab &tab);
-    void updateTab(const Tab &tab);
-    void removeTab(int tabId);
+    void insertTab(const Tab &tab) const;
+    void updateTab(const Tab &tab) const;
+    void removeTab(int tabId) const;
     // Rewrites position from the order of the list.
-    void saveOrder(const QList<Tab> &tabs);
-    void removeAllTabs();
-    void setActiveTabId(int tabId);
+    void saveOrder(const QList<Tab> &tabs) const;
+    void removeAllTabs() const;
+    void setActiveTabId(int tabId) const;
 
     // Tab groups, in the order the strip shows them (docs/DECISIONS/0015-tab-groups.md).
     QList<TabGroup> loadGroups() const;
     int loadCurrentGroupId() const;
-    void insertGroup(const TabGroup &group);
-    void updateGroup(const TabGroup &group);
-    void removeGroup(int groupId);
+    void insertGroup(const TabGroup &group) const;
+    void updateGroup(const TabGroup &group) const;
+    void removeGroup(int groupId) const;
     // Rewrites position from the order of the list.
-    void saveGroupOrder(const QList<TabGroup> &groups);
-    void setCurrentGroupId(int groupId);
+    void saveGroupOrder(const QList<TabGroup> &groups) const;
+    void setCurrentGroupId(int groupId) const;
 
     // Recently closed tabs, newest first.
     QList<ClosedTab> loadClosedTabs() const;
-    void insertClosedTab(const ClosedTab &closed);
-    void removeClosedTab(int closedId);
-    void removeAllClosedTabs();
+    void insertClosedTab(const ClosedTab &closed) const;
+    void removeClosedTab(int closedId) const;
+    void removeAllClosedTabs() const;
 
 private:
-    Storage &m_storage;
+    const Storage &m_storage;
 };
 
 } // namespace Salama

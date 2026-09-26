@@ -32,16 +32,16 @@ struct Tab
         return id > 0;
     }
 
-    bool operator==(const Tab &other) const
+    friend bool operator==(const Tab &lhs, const Tab &rhs)
     {
-        return id == other.id && url == other.url && title == other.title &&
-               favicon == other.favicon && thumbnail == other.thumbnail &&
-               lastActive == other.lastActive && groupId == other.groupId;
+        return lhs.id == rhs.id && lhs.url == rhs.url && lhs.title == rhs.title &&
+               lhs.favicon == rhs.favicon && lhs.thumbnail == rhs.thumbnail &&
+               lhs.lastActive == rhs.lastActive && lhs.groupId == rhs.groupId;
     }
 
-    bool operator!=(const Tab &other) const
+    friend bool operator!=(const Tab &lhs, const Tab &rhs)
     {
-        return !(*this == other);
+        return !(lhs == rhs);
     }
 };
 
@@ -59,14 +59,14 @@ struct TabGroup
         return id > 0;
     }
 
-    bool operator==(const TabGroup &other) const
+    friend bool operator==(const TabGroup &lhs, const TabGroup &rhs)
     {
-        return id == other.id && name == other.name;
+        return lhs.id == rhs.id && lhs.name == rhs.name;
     }
 
-    bool operator!=(const TabGroup &other) const
+    friend bool operator!=(const TabGroup &lhs, const TabGroup &rhs)
     {
-        return !(*this == other);
+        return !(lhs == rhs);
     }
 };
 
@@ -81,15 +81,15 @@ struct ClosedTab
     // Milliseconds since the epoch, for the order and nothing else.
     qint64 closedAt = 0;
 
-    bool operator==(const ClosedTab &other) const
+    friend bool operator==(const ClosedTab &lhs, const ClosedTab &rhs)
     {
-        return id == other.id && url == other.url && title == other.title &&
-               favicon == other.favicon && closedAt == other.closedAt;
+        return lhs.id == rhs.id && lhs.url == rhs.url && lhs.title == rhs.title &&
+               lhs.favicon == rhs.favicon && lhs.closedAt == rhs.closedAt;
     }
 
-    bool operator!=(const ClosedTab &other) const
+    friend bool operator!=(const ClosedTab &lhs, const ClosedTab &rhs)
     {
-        return !(*this == other);
+        return !(lhs == rhs);
     }
 };
 

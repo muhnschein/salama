@@ -16,7 +16,13 @@ namespace {
 
 const char *const ModuleUri = "harbour.salama";
 
-Core *coreInstance = nullptr;
+// The Core the providers hand out from, which registerQmlTypes() sets. A provider is a
+// plain function pointer on Qt 5.6 and cannot capture it.
+Core *&registeredCore()
+{
+    static Core *core = nullptr;
+    return core;
+}
 
 QObject *keepOwnership(QObject *object)
 {
@@ -26,87 +32,87 @@ QObject *keepOwnership(QObject *object)
 
 QObject *tabModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->tabs());
+    return keepOwnership(registeredCore()->tabs());
 }
 
 QObject *groupTabModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->tabs()->groupTabs());
+    return keepOwnership(registeredCore()->tabs()->groupTabs());
 }
 
 QObject *closedTabModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->tabs()->closedTabs());
+    return keepOwnership(registeredCore()->tabs()->closedTabs());
 }
 
 QObject *tabGroupModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->tabs()->groupModel());
+    return keepOwnership(registeredCore()->tabs()->groupModel());
 }
 
 QObject *tabSearchModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->tabSearch());
+    return keepOwnership(registeredCore()->tabSearch());
 }
 
 QObject *historyModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->history());
+    return keepOwnership(registeredCore()->history());
 }
 
 QObject *bookmarkModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->bookmarks());
+    return keepOwnership(registeredCore()->bookmarks());
 }
 
 QObject *downloadModelProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->downloads());
+    return keepOwnership(registeredCore()->downloads());
 }
 
 QObject *settingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->settings());
+    return keepOwnership(registeredCore()->settings());
 }
 
 QObject *omnibarProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->omnibar());
+    return keepOwnership(registeredCore()->omnibar());
 }
 
 QObject *engineMessagesProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->engineMessages());
+    return keepOwnership(registeredCore()->engineMessages());
 }
 
 QObject *pageActivityProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->pageActivity());
+    return keepOwnership(registeredCore()->pageActivity());
 }
 
 QObject *pageMediaProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->pageMedia());
+    return keepOwnership(registeredCore()->pageMedia());
 }
 
 QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->reader());
+    return keepOwnership(registeredCore()->reader());
 }
 
 QObject *startPageProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->startPage());
+    return keepOwnership(registeredCore()->startPage());
 }
 
 QObject *notificationPermissionsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->notificationPermissions());
+    return keepOwnership(registeredCore()->notificationPermissions());
 }
 
 QObject *webNotificationsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
-    return keepOwnership(coreInstance->webNotifications());
+    return keepOwnership(registeredCore()->webNotifications());
 }
 
 } // namespace
@@ -114,7 +120,7 @@ QObject *webNotificationsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptE
 void registerQmlTypes(Core *core)
 {
     static bool registered = false;
-    coreInstance = core;
+    registeredCore() = core;
     if (registered) {
         return;
     }

@@ -55,7 +55,7 @@ int indexOfUrl(const QList<BookmarkModel::Bookmark> &bookmarks, const QString &u
 
 } // namespace
 
-BookmarkModel::BookmarkModel(Storage &storage, QObject *parent)
+BookmarkModel::BookmarkModel(const Storage &storage, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
 {

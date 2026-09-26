@@ -14,7 +14,7 @@
 Q_DECL_EXPORT int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
-    app->setApplicationVersion(QStringLiteral(SALAMA_VERSION));
+    QGuiApplication::setApplicationVersion(QStringLiteral(SALAMA_VERSION));
 
     QTranslator translator;
     const QString translationDir =

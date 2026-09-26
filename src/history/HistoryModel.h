@@ -68,7 +68,7 @@ public:
         QString favicon;
     };
 
-    explicit HistoryModel(Storage &storage, QObject *parent = nullptr);
+    explicit HistoryModel(const Storage &storage, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -130,7 +130,7 @@ private:
     static bool isRecordable(const QString &url);
     // What input_history holds for text as recordInput() keeps it.
     static QString inputKey(const QString &input);
-    void prune();
+    void prune() const;
     void reload();
 
     QSqlDatabase m_db;

@@ -49,7 +49,7 @@ public:
         qint64 created = 0;
     };
 
-    explicit BookmarkModel(Storage &storage, QObject *parent = nullptr);
+    explicit BookmarkModel(const Storage &storage, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
