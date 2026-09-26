@@ -131,8 +131,9 @@ Settings is a main page leading to a page each for search, the reader view, the 
 privacy, notifications and the history (`DECISIONS/0028-settings-pages.md`,
 `DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`), and to the
 tutorial, which the root window also pushes over the browsing page until
-`Settings.tutorialShown` says it has been seen: the tab gesture made on a sketch of the
-browser that carries a `TabDeck` and a `BarGesture` of its own, and touches no tab
+`Settings.tutorialShown` says it has been seen: the address bar, the menu and the tabs,
+taught on a sketch of the browser that carries a `TabDeck`, a `BarGesture` and
+`TabPreview` cells of its own over a model of made-up pages, and touches no tab
 (`DECISIONS/0034-tutorial.md`).
 
 ## Storage

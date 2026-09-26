@@ -102,12 +102,14 @@ ApplicationWindow {
     }
 
     // The tutorial, over the browsing page, until it has come up once: on the first
-    // start, and on the first start of a build that has it. It counts as shown as it
-    // comes up, so one left by back is not forced on the reader again; Settings >
-    // Tutorial shows it whenever it is asked for (docs/DECISIONS/0034-tutorial.md).
+    // start, and on the first start of a build that has it, with its first card to start
+    // it or skip it. It counts as shown as it comes up, so one skipped or left by back is
+    // not forced on the reader again; Settings > Tutorial shows it whenever it is asked
+    // for (docs/DECISIONS/0034-tutorial.md).
     function showTutorial() {
         Settings.tutorialShown = true
-        pageStack.push(Qt.resolvedUrl("pages/TutorialPage.qml"), {}, PageStackAction.Immediate)
+        pageStack.push(Qt.resolvedUrl("pages/TutorialPage.qml"), { welcome: true },
+                       PageStackAction.Immediate)
     }
 
     // Once the window is made and the browsing page is on the stack: a timer of no

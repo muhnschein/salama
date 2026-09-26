@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A made-up page for the tutorial's sketch of the tab grid (shop). Rendered to PNG by icons/render.sh. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="270" height="560" viewBox="0 0 270 560">
+  <rect width="270" height="560" fill="#fafafa"/>
+  <rect width="270" height="48" fill="#c2410c"/>
+  <rect x="16" y="16" width="64" height="16" rx="4" fill="#ffffff"/>
+  <rect x="206" y="21" width="48" height="6" rx="3" fill="#ffffff"/>
+  <rect x="206" y="29" width="48" height="6" rx="3" fill="#ffffff" opacity="0.6"/>
+  <rect x="16" y="64" width="238" height="28" rx="14" fill="#e5e5e5"/>
+  <rect x="16" y="108" width="112" height="132" rx="6" fill="#fcd9bd"/>
+  <rect x="142" y="108" width="112" height="132" rx="6" fill="#fde68a"/>
+  <rect x="16" y="248" width="80" height="10" rx="5" fill="#404040"/>
+  <rect x="142" y="248" width="80" height="10" rx="5" fill="#404040"/>
+  <rect x="16" y="264" width="44" height="10" rx="5" fill="#c2410c"/>
+  <rect x="142" y="264" width="44" height="10" rx="5" fill="#c2410c"/>
+  <rect x="16" y="292" width="112" height="132" rx="6" fill="#bfdbfe"/>
+  <rect x="142" y="292" width="112" height="132" rx="6" fill="#d9f99d"/>
+  <rect x="16" y="432" width="80" height="10" rx="5" fill="#404040"/>
+  <rect x="142" y="432" width="80" height="10" rx="5" fill="#404040"/>
+  <rect x="16" y="448" width="44" height="10" rx="5" fill="#c2410c"/>
+  <rect x="142" y="448" width="44" height="10" rx="5" fill="#c2410c"/>
+</svg>

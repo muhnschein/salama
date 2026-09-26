@@ -925,51 +925,159 @@
     </message>
 </context>
 <context>
+    <name>TutorialMenu</name>
+    <message>
+        <source>This page</source>
+        <translation>Tämä sivu</translation>
+    </message>
+    <message>
+        <source>Search on page</source>
+        <translation>Etsi sivulta</translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation>Kirjanmerkki</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation>Jaa</translation>
+    </message>
+    <message>
+        <source>Desktop version</source>
+        <translation>Työpöytäversio</translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation>Lukunäkymä</translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation>Selain</translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Historia</translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation>Lataukset</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Asetukset</translation>
+    </message>
+</context>
+<context>
+    <name>TutorialOmnibar</name>
+    <message>
+        <source>Go to %1</source>
+        <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
+        <translation>Siirry osoitteeseen %1</translation>
+    </message>
+    <message>
+        <source>Search %1 for “%2”</source>
+        <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
+        <translation>Hae ”%2” hakukoneella %1</translation>
+    </message>
+</context>
+<context>
     <name>TutorialPage</name>
-    <message>
-        <source>Drag the bar up to see your tabs</source>
-        <extracomment>The tutorial&apos;s first step: the navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation>Vedä palkkia ylöspäin nähdäksesi välilehtesi</translation>
-    </message>
-    <message>
-        <source>Pull down to go back to the page</source>
-        <extracomment>The tutorial&apos;s second step: the grid of tabs is pulled down past its top to bring the page back</extracomment>
-        <translation>Vedä alas palataksesi sivulle</translation>
-    </message>
-    <message>
-        <source>Learn where your tabs are</source>
-        <extracomment>The tutorial&apos;s first card: what it teaches</extracomment>
-        <translation>Opi, missä välilehtesi ovat</translation>
-    </message>
-    <message>
-        <source>salama has no tabs button: your tabs lie under the page. Follow the instructions on the screen to learn the gesture that brings them up.</source>
-        <extracomment>Under the tutorial&apos;s heading: the grid of tabs is reached by a gesture, which the tutorial has the reader make on a picture of the browser</extracomment>
-        <translation>Tässä selaimessa ei ole välilehtipainiketta: välilehdet ovat sivun alla. Seuraa näytön ohjeita ja opi ele, joka tuo ne esiin.</translation>
-    </message>
-    <message>
-        <source>Start</source>
-        <extracomment>Starts the tutorial&apos;s lesson</extracomment>
-        <translation>Aloita</translation>
-    </message>
-    <message>
-        <source>Well done!</source>
-        <extracomment>The tutorial&apos;s lesson has been done</extracomment>
-        <translation>Hyvin tehty!</translation>
-    </message>
-    <message>
-        <source>Now you know where your tabs are: under the page, one drag up from the bar.</source>
-        <extracomment>What the tutorial taught, said back to the reader at its end</extracomment>
-        <translation>Nyt tiedät, missä välilehtesi ovat: sivun alla, yhden vedon päässä palkista ylöspäin.</translation>
-    </message>
-    <message>
-        <source>Try again</source>
-        <extracomment>Starts the tutorial&apos;s lesson over</extracomment>
-        <translation>Yritä uudelleen</translation>
-    </message>
     <message>
         <source>Close tutorial</source>
         <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
         <translation>Sulje opastus</translation>
+    </message>
+    <message>
+        <source>The address bar opens websites and searches the web. Tap it.</source>
+        <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
+        <translation>Osoitepalkki avaa verkkosivustoja ja hakee verkosta. Napauta sitä.</translation>
+    </message>
+    <message>
+        <source>Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.</source>
+        <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
+        <translation>Kirjoita osoite avataksesi verkkosivuston tai kirjoita sanoja hakeaksesi verkosta. Vastaavat välilehdet, kirjanmerkit ja historia näytetään palkin yläpuolella.</translation>
+    </message>
+    <message>
+        <source>Tap the menu button to open the menu.</source>
+        <translation>Avaa valikko napauttamalla valikkopainiketta.</translation>
+    </message>
+    <message>
+        <source>The menu contains actions for this page and for the browser. Tap outside the menu to close it.</source>
+        <translation>Valikossa on toimintoja tälle sivulle ja selaimelle. Sulje valikko napauttamalla sen ulkopuolelle.</translation>
+    </message>
+    <message>
+        <source>Drag the bar up to show your tabs.</source>
+        <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
+        <translation>Tuo välilehdet näkyviin vetämällä palkkia ylöspäin.</translation>
+    </message>
+    <message>
+        <source>Swipe a tab to the left to close it.</source>
+        <translation>Sulje välilehti pyyhkäisemällä sitä vasemmalle.</translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it to another position.</source>
+        <translation>Paina välilehteä pitkään ja vedä se sitten toiseen kohtaan.</translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it onto a group name to move it to that group.</source>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <translation>Siirrä välilehti toiseen ryhmään painamalla sitä pitkään ja vetämällä se ryhmän nimen päälle.</translation>
+    </message>
+    <message>
+        <source>Pull down to return to the page.</source>
+        <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
+        <translation>Palaa sivulle vetämällä alas.</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
+        <translation>Jatka</translation>
+    </message>
+    <message>
+        <source>Web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>Verkkoselain Sailfish OS:lle</translation>
+    </message>
+    <message>
+        <source>This short tutorial explains the address bar, the menu and the tabs.</source>
+        <translation>Tämä lyhyt opastus esittelee osoitepalkin, valikon ja välilehdet.</translation>
+    </message>
+    <message>
+        <source>Start tutorial</source>
+        <extracomment>Starts the tutorial from its first card</extracomment>
+        <translation>Aloita opastus</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
+        <translation>Ohita</translation>
+    </message>
+    <message>
+        <source>Tutorial complete</source>
+        <translation>Opastus on valmis</translation>
+    </message>
+    <message>
+        <source>You can open the tutorial again in Settings.</source>
+        <translation>Voit avata opastuksen uudelleen asetuksista.</translation>
+    </message>
+</context>
+<context>
+    <name>TutorialStrip</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation>
+            <numerusform>%n välilehti</numerusform>
+            <numerusform>%n välilehteä</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
+        <translation>Työ</translation>
     </message>
 </context>
 </TS>

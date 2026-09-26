@@ -925,50 +925,158 @@
     </message>
 </context>
 <context>
+    <name>TutorialMenu</name>
+    <message>
+        <source>This page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search on page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Desktop version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialOmnibar</name>
+    <message>
+        <source>Go to %1</source>
+        <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search %1 for “%2”</source>
+        <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TutorialPage</name>
-    <message>
-        <source>Drag the bar up to see your tabs</source>
-        <extracomment>The tutorial&apos;s first step: the navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Pull down to go back to the page</source>
-        <extracomment>The tutorial&apos;s second step: the grid of tabs is pulled down past its top to bring the page back</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Learn where your tabs are</source>
-        <extracomment>The tutorial&apos;s first card: what it teaches</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>salama has no tabs button: your tabs lie under the page. Follow the instructions on the screen to learn the gesture that brings them up.</source>
-        <extracomment>Under the tutorial&apos;s heading: the grid of tabs is reached by a gesture, which the tutorial has the reader make on a picture of the browser</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Start</source>
-        <extracomment>Starts the tutorial&apos;s lesson</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Well done!</source>
-        <extracomment>The tutorial&apos;s lesson has been done</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Now you know where your tabs are: under the page, one drag up from the bar.</source>
-        <extracomment>What the tutorial taught, said back to the reader at its end</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Try again</source>
-        <extracomment>Starts the tutorial&apos;s lesson over</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Close tutorial</source>
         <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The address bar opens websites and searches the web. Tap it.</source>
+        <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.</source>
+        <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tap the menu button to open the menu.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The menu contains actions for this page and for the browser. Tap outside the menu to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the bar up to show your tabs.</source>
+        <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Swipe a tab to the left to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it to another position.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press and hold a tab, then drag it onto a group name to move it to that group.</source>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pull down to return to the page.</source>
+        <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This short tutorial explains the address bar, the menu and the tabs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start tutorial</source>
+        <extracomment>Starts the tutorial from its first card</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tutorial complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can open the tutorial again in Settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TutorialStrip</name>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
