@@ -122,7 +122,11 @@ Item {
     }
 
     // Each corner's icon at the page margin, and its button round it a padding either
-    // side and the height of the row: the thumb has more to find than the icon.
+    // side and the height of the row: the thumb has more to find than the icon. The new
+    // tab is the theme's ringed plus on its own, with nothing drawn behind it -- the
+    // ring is the icon's own, as in the recipient field of Jolla's contacts
+    // (Sailfish/Contacts/recipientfield/AutoCompleteField.qml) -- so that it and the
+    // pencil in the other corner are the same kind of button.
     IconButton {
         id: newTabButton
 
@@ -231,13 +235,17 @@ Item {
                            + (index === buttons.count - 1 ? row.extraMargin : 0)
                     height: row.height
 
-                    // What marks the group a carried tab would go into: the wash the
-                    // grid marks its cells with, square as theirs is, round the name.
+                    // What marks the group a carried tab would go into: Silica's wash
+                    // for a chosen item, round the name, with its corners rounded as
+                    // the cells' pictures are, so that what the carried picture is
+                    // held over reads as a place to put it rather than a square cut
+                    // out of the row.
                     Rectangle {
                         objectName: "tabGroupDropHighlight"
                         anchors.centerIn: label
                         width: label.width + 2 * Theme.paddingMedium
                         height: label.height + 2 * Theme.paddingSmall
+                        radius: Theme.paddingSmall
                         color: Theme.rgba(Theme.highlightBackgroundColor,
                                           Theme.highlightBackgroundOpacity)
                         visible: button.target

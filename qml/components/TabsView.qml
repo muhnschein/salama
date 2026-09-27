@@ -47,6 +47,19 @@ Item {
     // cells.
     readonly property bool searching: searchField.text.length > 0
                                       && TabSearch.searchTerm.length > 0
+    // What the results light: every word of the term, wherever it is, whatever its case,
+    // as TabSearch matched them -- a RegExp of the words, each escaped, as Jolla's
+    // contacts build theirs for Theme.highlightText() (Sailfish/Contacts/ContactItem.qml).
+    readonly property var searchMatch: {
+        var words = TabSearch.searchTerm.trim().split(/\s+/)
+        var escaped = []
+        for (var i = 0; i < words.length; ++i) {
+            if (words[i].length > 0) {
+                escaped.push(words[i].replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"))
+            }
+        }
+        return escaped.length > 0 ? new RegExp(escaped.join("|"), "i") : null
+    }
 
     objectName: "tabsView"
     // Nothing of the grid is drawn over the page. A grid scrolled down has a row of
@@ -274,6 +287,7 @@ Item {
         model: TabSearch
 
         delegate: TabSearchDelegate {
+            match: tabsView.searchMatch
             onChosen: tabsView.openFound(model.tabId)
         }
 

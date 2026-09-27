@@ -24,6 +24,12 @@ kind of sheet from the same edge (0021). Its rows are
 lists read the same. A tap on a row opens the tab, hides the panel and hands the page
 back through the grid's `tabActivated`.
 
+*Revised.* The panel is the same sheet as the menu's (0021), so that the two read as one
+kind of thing: the opaque ground of `components/SheetBackground.qml` in place of a
+see-through tint, which let the cells show through; the handle in a strip as tall as the
+menu's; and its heading, which was large and on the left, Silica's `SectionHeader`, as
+the grid's search heads each group it finds.
+
 ## Consequences
 Thirty is a number: enough to undo an afternoon, not a history. The panel is part of
 the grid rather than a page of its own, so it does not move the page stack and the

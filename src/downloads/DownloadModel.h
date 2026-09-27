@@ -48,6 +48,14 @@ class DownloadModel : public QAbstractListModel
     Q_PROPERTY(QString topic READ topic CONSTANT)
     // The folder the engine is told to save into, for WebEngineSettings.downloadDir.
     Q_PROPERTY(QString directory READ directory CONSTANT)
+    // How many downloads are still coming, and how far along they are together, as a
+    // percentage: what the ring round the menu's Downloads says at a glance
+    // (docs/DECISIONS/0021-menu-sheet.md). Together is the mean of their percentages,
+    // not of their bytes: the engine's size is 0 while it does not know it, and a
+    // download of unknown size would count for nothing in a sum of bytes. 0 while
+    // nothing is coming.
+    Q_PROPERTY(int runningCount READ runningCount NOTIFY runningChanged)
+    Q_PROPERTY(int runningProgress READ runningProgress NOTIFY runningChanged)
 
 public:
     // Unscoped, as TabModel::MediaState is: QML reads `DownloadModel.Running`.
@@ -105,6 +113,8 @@ public:
     int count() const;
     QString topic() const;
     QString directory() const;
+    int runningCount() const;
+    int runningProgress() const;
     // The rows as the list shows them, newest first, for the address bar's suggestions
     // (docs/DECISIONS/0027-omnibar.md).
     const QList<Download> &downloads() const;
@@ -131,8 +141,13 @@ public:
 
 signals:
     void countChanged();
+    void runningChanged();
 
 private:
+    // Counts the downloads still coming again, and says so if that or how far along
+    // they are has changed: after every change to a row's status or progress, and to
+    // which rows there are.
+    void updateRunning();
     void start(int engineId, const QVariantMap &message);
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);
@@ -150,6 +165,8 @@ private:
     QString m_directory;
     QList<Download> m_downloads;
     int m_nextId = 1;
+    int m_runningCount = 0;
+    int m_runningProgress = 0;
 };
 
 } // namespace Salama

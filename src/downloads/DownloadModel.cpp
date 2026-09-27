@@ -112,6 +112,35 @@ QString DownloadModel::directory() const
     return m_directory;
 }
 
+int DownloadModel::runningCount() const
+{
+    return m_runningCount;
+}
+
+int DownloadModel::runningProgress() const
+{
+    return m_runningProgress;
+}
+
+void DownloadModel::updateRunning()
+{
+    int running = 0;
+    int percent = 0;
+    for (const Download &download : m_downloads) {
+        if (download.status == Running) {
+            ++running;
+            percent += download.progress;
+        }
+    }
+    const int progress = running > 0 ? qRound(double(percent) / running) : 0;
+    if (running == m_runningCount && progress == m_runningProgress) {
+        return;
+    }
+    m_runningCount = running;
+    m_runningProgress = progress;
+    emit runningChanged();
+}
+
 const QList<DownloadModel::Download> &DownloadModel::downloads() const
 {
     return m_downloads;
@@ -164,6 +193,8 @@ void DownloadModel::remove(int row)
     endRemoveRows();
     erase(id);
     emit countChanged();
+    // One still coming may be forgotten; the engine goes on with it, unheard.
+    updateRunning();
 }
 
 void DownloadModel::clearSince(double since)
@@ -197,6 +228,7 @@ void DownloadModel::clear()
     query.prepare(QStringLiteral("DELETE FROM download"));
     run(query);
     emit countChanged();
+    updateRunning();
 }
 
 QString DownloadModel::fileUrl(int row) const
@@ -245,6 +277,7 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     if (m_downloads.count() != before) {
         emit countChanged();
     }
+    updateRunning();
 }
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
@@ -303,6 +336,8 @@ void DownloadModel::changed(int row, const QVector<int> &roles)
 {
     const QModelIndex modelIndex = index(row, 0);
     emit dataChanged(modelIndex, modelIndex, roles);
+    // Every change to a row's status or progress comes through here.
+    updateRunning();
 }
 
 int DownloadModel::rowForEngineId(int engineId) const

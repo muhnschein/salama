@@ -25,6 +25,7 @@ private slots:
     void startsAtTheTop();
     void nameFallsBackToTheFile();
     void progress();
+    void running();
     void wholeNumbers();
     void done();
     void failAndCancel();
@@ -259,6 +260,76 @@ void tst_downloadmodel::progress()
     model.observe(Topic, progressMessage(1, true));
     QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 67);
     QCOMPARE(changeSpy.count(), 5);
+}
+
+// How many downloads are still coming and how far along they are together: what the
+// menu's ring says. The mean of their percentages, each counted alike whatever its size.
+void tst_downloadmodel::running()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy runningSpy(&model, &DownloadModel::runningChanged);
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(model.runningProgress(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.runningProgress(), 0);
+    QCOMPARE(runningSpy.count(), 1);
+    model.observe(Topic, progressMessage(1, 40.0));
+    QCOMPARE(model.runningProgress(), 40);
+    QCOMPARE(runningSpy.count(), 2);
+    // A second, of no known size, counts as much as the first: half of 40 and 0.
+    QVariantMap unsized = startMessage(2, QStringLiteral("b.iso"));
+    unsized.insert(QStringLiteral("size"), 0.0);
+    model.observe(Topic, unsized);
+    QCOMPARE(model.runningCount(), 2);
+    QCOMPARE(model.runningProgress(), 20);
+    model.observe(Topic, progressMessage(2, 45.0));
+    QCOMPARE(model.runningProgress(), 43);
+    const int said = runningSpy.count();
+    // The same figure again says nothing, and nor does a change that leaves both as
+    // they were.
+    model.observe(Topic, progressMessage(2, 45.0));
+    QCOMPARE(runningSpy.count(), said);
+
+    // Done, failed or cancelled, a download is no longer coming, and the rest are what
+    // is left of the mean.
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.runningProgress(), 45);
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(model.runningProgress(), 0);
+    // Started again, it is coming again, from where it had got to.
+    model.observe(Topic, startMessage(2, QStringLiteral("b.iso")));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.runningProgress(), 45);
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
+    QCOMPARE(model.runningCount(), 0);
+
+    // Forgotten while it is coming, it is not counted; nor is anything once the list is
+    // cleared.
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    model.observe(Topic, progressMessage(3, 10.0));
+    QCOMPARE(model.runningCount(), 1);
+    model.remove(0);
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(model.runningProgress(), 0);
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    model.observe(Topic, progressMessage(4, 70.0));
+    QCOMPARE(model.runningProgress(), 70);
+    model.clear();
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(model.runningProgress(), 0);
+
+    // Read back after a restart, nothing is coming: the engine forgot them all.
+    model.observe(Topic, startMessage(5, QStringLiteral("e.pdf")));
+    QCOMPARE(model.runningCount(), 1);
+    DownloadModel reloaded(storage, dir.path());
+    QCOMPARE(reloaded.runningCount(), 0);
+    QCOMPARE(reloaded.runningProgress(), 0);
 }
 
 // The same messages with their whole numbers as other readers give them: a qlonglong,

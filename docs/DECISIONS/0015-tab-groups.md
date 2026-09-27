@@ -91,6 +91,11 @@ The row is Silica's `TabBar` turned into a place to put things, which Silica has
 model for; the strip does not scroll itself while a cell is held over one end of it, so
 with more groups than fit, a name out of sight has to be scrolled to first.
 
+*Revised.* The grid no longer marks its cells with a wash (0010), and the name a carried
+tab is over is lit in Silica's wash for a chosen item with its corners rounded, a small
+padding, as the pictures' are: square, it read as a piece cut out of the row rather than
+a place to put something.
+
 `TabGroupsPage` is a list with a tap to make a group current, rename and delete in each
 row's menu, and under the last row a row shaped like a group's with a plus where its name
 would start, which makes a group (`TabGroupDialog`, a name) — under the list rather than
@@ -115,6 +120,16 @@ burst of typing asks once; both are what postivene's chat search does, for the s
 reasons.
 The group heading is a role on the first row of each group rather than a section of
 the list, so two unnamed groups holding the same number of tabs stay two headings.
+
+*Revised.* What was typed is lit in each result, in its title and its address, as
+Silica's own search results light it: `Theme.highlightText()`, which hands the text back
+as StyledText with every match in the colour given — the highlight colour in the title,
+its secondary in the address, as the two lines are coloured under a finger. The grid
+builds the pattern once a term (`TabsView.searchMatch`): a `RegExp` of the words, each
+escaped and matched whatever its case, as Jolla's contacts build theirs
+(`Sailfish/Contacts/ContactItem.qml`), so that every word the model matched is lit
+wherever it is. `components/TabRow.qml` takes it (`match`); without one it lights
+nothing, as in the list of closed tabs and on the start page.
 
 The search was a page of its own, pushed by a button in the corner of the grid's head
 row. It is now **the head row itself**: Silica's `SearchField`, "Search tabs", across

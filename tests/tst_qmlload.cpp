@@ -130,6 +130,9 @@ private slots:
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
     void browserMenu();
+    void menuSheetLayout();
+    void menuNamesThePage();
+    void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
     void findInPage();
     void readerView();
@@ -1582,7 +1585,21 @@ void tst_qmlload::tabGrid()
         QCOMPARE(icon->property("sourceSize").toSizeF(), QSizeF(smallPlus, smallPlus));
         QCOMPARE(corner->height(), footRow->height());
         QVERIFY(corner->width() > smallPlus);
+        // The icon alone, nothing drawn behind it.
+        QVERIFY(corner->childItems().isEmpty());
     }
+    // New tab is the theme's ringed plus, whose ring is its own, and the same size of
+    // button as the pencil across from it.
+    QCOMPARE(
+        item("newTabButton")->property("icon").value<QObject *>()->property("source").toString(),
+        QStringLiteral("image://theme/icon-m-add"));
+    QCOMPARE(item("editGroupsButton")
+                 ->property("icon")
+                 .value<QObject *>()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-edit"));
+    QCOMPARE(item("newTabButton")->width(), item("editGroupsButton")->width());
     QCOMPARE(sceneX(item("newTabButton"), (item("newTabButton")->width() - smallPlus) / 2), margin);
     QCOMPARE(sceneX(item("editGroupsButton"), (item("editGroupsButton")->width() + smallPlus) / 2),
              screenWidth - margin);
@@ -1920,11 +1937,30 @@ void tst_qmlload::tabSearch()
                  ->property("text")
                  .toString(),
              QStringLiteral("1 tab(s)"));
+    // What was typed is lit in each result, in the highlight colour, as Silica's own
+    // search results light it (Theme.highlightText()); the rest is as it was.
+    const QString highlight =
+        evaluate(field, QStringLiteral("'' + Theme.highlightColor")).toString();
+    const QString secondaryHighlight =
+        evaluate(field, QStringLiteral("'' + Theme.secondaryHighlightColor")).toString();
+    const auto line = [](QObject *result, const char *name) {
+        return findObjects(result, QLatin1String(name)).first();
+    };
+    QCOMPARE(line(results.at(0), "tabRowTitle")->property("text").toString(),
+             QStringLiteral("<font color=\"%1\">Office</font> hours").arg(highlight));
+    QVERIFY(evaluate(line(results.at(0), "tabRowTitle"),
+                     QStringLiteral("textFormat === Text.StyledText"))
+                .toBool());
+    QCOMPARE(line(results.at(0), "tabRowSubtitle")->property("text").toString(),
+             QLatin1String(FirstPage));
     // Emptied, the field gives the cells back at once.
     field->setProperty("text", QString());
     QVERIFY(!found->property("visible").toBool());
     QVERIFY(cellsShown());
-    field->setProperty("text", QStringLiteral("mail"));
+    // Two words, one in the title and the other in the address, in any case: each is lit
+    // where it is, the address's in the secondary highlight colour its line is dimmed
+    // to, and a word with a pattern's characters in it is only itself.
+    field->setProperty("text", QStringLiteral("MAIL two"));
     QMetaObject::invokeMethod(debounce, "triggered");
     // Enter puts the keyboard away and leaves what was found.
     field->setProperty("focus", true);
@@ -1933,11 +1969,21 @@ void tst_qmlload::tabSearch()
     QVERIFY(found->property("visible").toBool());
     results = findAll(QStringLiteral("tabSearchDelegate"));
     QCOMPARE(results.count(), 1);
-    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabRowTitle"))
-                 .first()
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("Office mail"));
+    QCOMPARE(line(results.at(0), "tabRowTitle")->property("text").toString(),
+             QStringLiteral("Office <font color=\"%1\">mail</font>").arg(highlight));
+    QCOMPARE(
+        line(results.at(0), "tabRowSubtitle")->property("text").toString(),
+        QStringLiteral("https://<font color=\"%1\">two</font>.example/").arg(secondaryHighlight));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('Two')")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("a.b (c"));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('a.b')")).toBool());
+    QVERIFY(!evaluate(view, QStringLiteral("searchMatch.test('axb')")).toBool());
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('(c')")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("  "));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch === null")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("MAIL two"));
+    results = findAll(QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
     click(findObjects(results.at(0), QStringLiteral("tabSearchItem")).first());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QVERIFY(!page->property("tabsOpen").toBool());
@@ -2080,7 +2126,7 @@ void tst_qmlload::previewGestures()
     QVERIFY(page->property("tabsOpen").toBool());
 
     // The close button is its own mark, a disc faint enough not to be the first thing
-    // seen on each cell -- it is opaque only under a finger, which
+    // seen on each cell -- at half, and opaque only under a finger, which
     // gridGesturesUnderAFinger() puts on it; there is no second disc under it. The disc
     // is in no colour of the ambience's but the ground Silica lays under what goes over
     // a picture, black in the stub's dark theme, and the cross on it is opaque in the
@@ -2088,20 +2134,36 @@ void tst_qmlload::previewGestures()
     QObject *mark = find(QStringLiteral("closeTabMark"));
     QVERIFY(mark != nullptr);
     const QColor disc = mark->property("color").value<QColor>();
-    QCOMPARE(disc.alphaF(), evaluate(mark, QStringLiteral("Theme.opacityHigh")).toReal());
+    QVERIFY(qAbs(disc.alphaF() - 0.5) < 0.01);
     QCOMPARE(disc.rgb(),
              evaluate(mark, QStringLiteral("Theme.overlayBackgroundColor")).value<QColor>().rgb());
     QCOMPARE(mark->property("opacity").toReal(), 1.0);
     const QList<QQuickItem *> cross = qobject_cast<QQuickItem *>(mark)->childItems();
     QCOMPARE(cross.count(), 3); // the two strokes and the Repeater that made them
+    const qreal discWidth = mark->property("width").toReal();
     for (QQuickItem *stroke : cross) {
         if (stroke->property("rotation").toReal() != 0) {
             QCOMPARE(stroke->property("color").value<QColor>(),
                      evaluate(mark, QStringLiteral("Theme.primaryColor")).value<QColor>());
+            // A thin cross, two fifths of the disc across.
+            QCOMPARE(stroke->height(), evaluate(mark, QStringLiteral("Theme._lineWidth")).toReal());
+            QCOMPARE(stroke->width(), discWidth * 2 / 5);
         }
     }
-    QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
+    QCOMPARE(mark->property("radius").toReal(), discWidth / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
+    // About two thirds of the disc it was -- a small icon and a medium padding across --
+    // while the target round it is as large as it was, and the disc in its middle.
+    const qreal wasDisc =
+        evaluate(mark, QStringLiteral("Theme.iconSizeSmall + Theme.paddingMedium")).toReal();
+    QVERIFY(discWidth > wasDisc * 0.6);
+    QVERIFY(discWidth < wasDisc * 0.75);
+    auto *closeButton = qobject_cast<QQuickItem *>(find(QStringLiteral("closeTabButton")));
+    QCOMPARE(closeButton->width(),
+             evaluate(mark, QStringLiteral("Theme.iconSizeMedium + Theme.paddingSmall")).toReal());
+    QCOMPARE(closeButton->height(), closeButton->width());
+    QVERIFY(closeButton->width() > 2 * discWidth);
+    QCOMPARE(qobject_cast<QQuickItem *>(mark)->x(), (closeButton->width() - discWidth) / 2);
 }
 
 namespace {
@@ -2503,9 +2565,14 @@ void tst_qmlload::carryToGroupUnderAFinger()
     carry(at, workName);
     QCOMPARE(strip->property("dropIndex").toInt(), 1);
     QCOMPARE(highlights(), 1);
-    // The cells' own wash, square as theirs is.
-    QCOMPARE(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("radius").toReal(),
-             qreal(0));
+    // Silica's wash for a chosen item, with rounded corners, as the pictures have.
+    QObject *wash = findAll(QStringLiteral("tabGroupDropHighlight")).at(1);
+    QCOMPARE(wash->property("radius").toReal(),
+             evaluate(wash, QStringLiteral("Theme.paddingSmall")).toReal());
+    QCOMPARE(wash->property("color").value<QColor>(),
+             evaluate(wash, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor,"
+                                           " Theme.highlightBackgroundOpacity)"))
+                 .value<QColor>());
     QCOMPARE(workLabel->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
     QCOMPARE(tabOrder(), order);
 
@@ -2832,6 +2899,27 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(panel->property("modal").toBool());
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
+    // The same sheet as the menu: its opaque ground, its handle at the top, and a
+    // heading as Silica heads a section.
+    QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
+    QCOMPARE(grounds.count(), 2);
+    QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
+    QCOMPARE(ground->property("color").value<QColor>(),
+             findObjects(find(QStringLiteral("browserMenu")), QStringLiteral("sheetBackground"))
+                 .first()
+                 ->property("color")
+                 .value<QColor>());
+    QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
+    QCOMPARE(ground->property("height").toReal(), panel->property("height").toReal());
+    auto *handle =
+        qobject_cast<QQuickItem *>(findObjects(panel, QStringLiteral("panelDragHandle")).first());
+    auto *title = qobject_cast<QQuickItem *>(
+        findObjects(panel, QStringLiteral("recentlyClosedTitle")).first());
+    QCOMPARE(title->property("text").toString(), QStringLiteral("Recently closed"));
+    QVERIFY(title->inherits("QQuickItem"));
+    QVERIFY(QString::fromLatin1(title->metaObject()->className())
+                .startsWith(QLatin1String("SectionHeader")));
+    QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3021,7 +3109,8 @@ void tst_qmlload::browserMenu()
     typeAddress(QStringLiteral("two.example"));
     QCOMPARE(tabs->activeUrl(), QStringLiteral("https://two.example"));
 
-    // Bookmarking is a switch, which says which way it goes.
+    // Bookmarking is a switch, lit while it is on (menuSheetLayout()), and named alike
+    // either way.
     tapBar(QStringLiteral("menu"));
     QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
     QVERIFY(!bookmark->property("checked").toBool());
@@ -3032,7 +3121,7 @@ void tst_qmlload::browserMenu()
     QVERIFY(!menu->property("open").toBool());
     tapBar(QStringLiteral("menu"));
     QVERIFY(bookmark->property("checked").toBool());
-    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Remove bookmark"));
+    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
     click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 0);
 
@@ -3093,6 +3182,275 @@ void tst_qmlload::browserMenu()
     QVERIFY(!menu->property("open").toBool());
 }
 
+// The sheet as the stubs can show it: the page's five actions in one row on discs, a
+// line, the browser's four without; an opaque ground; and a switch that is on, or an
+// entry under a finger, lit -- disc, icon and name -- with no wash across it.
+void tst_qmlload::menuSheetLayout()
+{
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    // All five of the page's actions in one row, a fifth of the sheet each, every one
+    // on a disc; the browser's four in the row under a line, a quarter each, with none.
+    // Each is named under its icon.
+    const QStringList pageActions{
+        QStringLiteral("findMenuButton"), QStringLiteral("bookmarkMenuButton"),
+        QStringLiteral("shareMenuButton"), QStringLiteral("desktopMenuButton"),
+        QStringLiteral("readerMenuButton")};
+    const QStringList names{QStringLiteral("Find in page"), QStringLiteral("Bookmark"),
+                            QStringLiteral("Share"), QStringLiteral("Desktop site"),
+                            QStringLiteral("Reader view")};
+    auto *sheetItem = qobject_cast<QQuickItem *>(menu);
+    const qreal rowY =
+        qobject_cast<QQuickItem *>(find(pageActions.first()))->mapToScene(QPointF()).y();
+    for (int i = 0; i < pageActions.count(); ++i) {
+        auto *button = qobject_cast<QQuickItem *>(find(pageActions.at(i)));
+        QCOMPARE(button->mapToScene(QPointF()).y(), rowY);
+        QCOMPARE(button->width(), sheetItem->width() / 5);
+        QCOMPARE(button->property("text").toString(), names.at(i));
+        QVERIFY(button->property("round").toBool());
+        QVERIFY(findObjects(button, QStringLiteral("menuButtonDisc"))
+                    .first()
+                    ->property("visible")
+                    .toBool());
+    }
+    for (const QString &entry :
+         {QStringLiteral("bookmarksMenuButton"), QStringLiteral("historyMenuButton"),
+          QStringLiteral("downloadsMenuButton"), QStringLiteral("settingsMenuButton")}) {
+        auto *button = qobject_cast<QQuickItem *>(find(entry));
+        QVERIFY(button->mapToScene(QPointF()).y() > rowY);
+        QCOMPARE(button->width(), sheetItem->width() / 4);
+        QVERIFY(!findObjects(button, QStringLiteral("menuButtonDisc"))
+                     .first()
+                     ->property("visible")
+                     .toBool());
+    }
+    // The line between the two rows, and no headings over them: the head of the sheet
+    // names the page instead.
+    auto *line = qobject_cast<QQuickItem *>(find(QStringLiteral("menuSeparator")));
+    QVERIFY(line != nullptr);
+    const qreal lineY = line->mapToScene(QPointF()).y();
+    QVERIFY(lineY > rowY + find(QStringLiteral("findMenuButton"))->property("height").toReal() - 1);
+    QVERIFY(lineY < qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")))
+                        ->mapToScene(QPointF())
+                        .y());
+    // Two of Silica's lines end to end, each fading away from the middle.
+    const QList<QQuickItem *> halves = line->childItems();
+    QCOMPARE(halves.count(), 2);
+    QCOMPARE(halves.at(0)->rotation(), 180.0);
+    QCOMPARE(halves.at(1)->rotation(), 0.0);
+    // The sheet is opaque: its ground is the tint of the grid's rows, whole.
+    QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
+    QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
+    QCOMPARE(ground->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
+    QCOMPARE(ground->property("width").toReal(), sheetItem->width());
+    QCOMPARE(ground->property("height").toReal(), sheetItem->height());
+    QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
+
+    // How much of an entry is lit: its disc, its icon, its name -- all three or none.
+    const auto litParts = [this](QObject *button) {
+        const QColor wash =
+            evaluate(button, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor,"
+                                            " Theme.highlightBackgroundOpacity)"))
+                .value<QColor>();
+        const QColor highlight =
+            evaluate(button, QStringLiteral("Theme.highlightColor")).value<QColor>();
+        const auto part = [button](const char *name) {
+            return findObjects(button, QLatin1String(name)).first();
+        };
+        return int(part("menuButtonDisc")->property("color").value<QColor>() == wash) +
+               int(part("menuButtonIcon")->property("highlighted").toBool()) +
+               int(part("menuButtonLabel")->property("color").value<QColor>() == highlight);
+    };
+    QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
+    QObject *desktop = find(QStringLiteral("desktopMenuButton"));
+    QObject *share = find(QStringLiteral("shareMenuButton"));
+    QCOMPARE(litParts(bookmark), 0);
+    QCOMPARE(litParts(desktop), 0);
+    m_core->bookmarks()->add(m_core->tabs()->activeUrl(), m_core->tabs()->activeTitle(), QString());
+    QVERIFY(bookmark->property("checked").toBool());
+    QCOMPARE(litParts(bookmark), 3);
+    currentWebView()->setProperty("desktopMode", true);
+    QVERIFY(desktop->property("checked").toBool());
+    QCOMPARE(litParts(desktop), 3);
+    QCOMPARE(litParts(share), 0);
+    QCOMPARE(share->property("highlightedColor").value<QColor>().alpha(), 0);
+    share->setProperty("down", true);
+    QCOMPARE(litParts(share), 3);
+}
+
+// The head of the sheet names the page its actions are for -- its icon, its title, and
+// under that a padlock for https and the host -- and copies its address. On the start
+// page there is no page: the head says so, and the page's actions are dimmed.
+void tst_qmlload::menuNamesThePage()
+{
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    const QString title = QStringLiteral("Qwant, the search engine that respects your privacy");
+    tabs->updateTitle(front, title);
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    const auto shown = [&item](const char *name) { return item(name)->isVisible(); };
+    const auto text = [&item](const char *name) { return item(name)->property("text").toString(); };
+    const auto sceneY = [](QQuickItem *of) { return of->mapToScene(QPointF()).y(); };
+
+    // Under the handle and over the page's row.
+    QQuickItem *header = item("menuHeader");
+    QVERIFY(header != nullptr);
+    QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
+    QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
+    QCOMPARE(text("menuPageTitle"), title);
+    QVERIFY(
+        evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
+            .toBool());
+    QVERIFY(
+        evaluate(item("menuPageTitle"), QStringLiteral("textFormat === Text.PlainText")).toBool());
+    QCOMPARE(text("menuPageHost"), QStringLiteral("qwant.com"));
+    QVERIFY(shown("menuPageHost"));
+    QVERIFY(shown("menuPageSecurity"));
+    QCOMPARE(item("menuPageSecurity")->property("source").toString(),
+             QStringLiteral("image://theme/icon-s-outline-secure"));
+    QVERIFY(!shown("menuStartPageIcon"));
+    // No icon yet: the host's initial on the tile. With one, the icon.
+    QVERIFY(!shown("menuPageFavicon"));
+    QVERIFY(shown("menuPageInitial"));
+    QCOMPARE(text("menuPageInitial"), QStringLiteral("Q"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/qwant-favicon"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/qwant-favicon"));
+    QTRY_VERIFY(shown("menuPageFavicon"));
+    QVERIFY(!shown("menuPageInitial"));
+    // A page not yet titled is named by its host.
+    tabs->updateTitle(front, QString());
+    QCOMPARE(text("menuPageTitle"), QStringLiteral("qwant.com"));
+    tabs->updateTitle(front, title);
+
+    // While the engine is unhappy with the connection, the bar's warning in its colour
+    // takes the padlock's place.
+    auto *security = currentWebView()->property("security").value<QObject *>();
+    security->setProperty("allGood", false);
+    QVERIFY(menu->property("tlsBroken").toBool());
+    QCOMPARE(item("menuPageSecurity")->property("source").toString(),
+             QStringLiteral("image://theme/icon-s-filled-warning"));
+    QCOMPARE(item("menuPageSecurity")->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.errorColor")).value<QColor>());
+    security->setProperty("allGood", true);
+    QVERIFY(!menu->property("tlsBroken").toBool());
+
+    // The button at the right puts the address on the clipboard, says so for a moment,
+    // and puts the sheet away, as every entry does.
+    QObject *copy = find(QStringLiteral("copyAddressButton"));
+    QVERIFY(shown("copyAddressButton"));
+    QCOMPARE(copy->property("icon").value<QObject *>()->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-clipboard"));
+    QVERIFY(sceneY(item("copyAddressButton")) >= sceneY(header));
+    QObject *notice = find(QStringLiteral("addressCopiedNotice"));
+    QCOMPARE(notice->property("shownCount").toInt(), 0);
+    click(copy);
+    QCOMPARE(evaluate(menu, QStringLiteral("Clipboard.text")).toString(), QLatin1String(FirstPage));
+    QCOMPARE(notice->property("shownCount").toInt(), 1);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Address copied"));
+    QCOMPARE(notice->property("duration").toInt(),
+             evaluate(notice, QStringLiteral("Notice.Short")).toInt());
+    QVERIFY(!menu->property("open").toBool());
+
+    // A page over plain http has no padlock.
+    typeAddress(QStringLiteral("http://plain.example/"));
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(text("menuPageHost"), QStringLiteral("plain.example"));
+    QVERIFY(!shown("menuPageSecurity"));
+    evaluate(menu, QStringLiteral("hide()"));
+
+    // The start page: named as such beside the theme's home, nothing to copy, and the
+    // page's five actions dimmed as a disabled Silica control is, doing nothing.
+    tabs->newTab(QString());
+    QVERIFY(tabs->activeUrl().isEmpty());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(text("menuPageTitle"), QStringLiteral("Start page"));
+    QVERIFY(shown("menuStartPageIcon"));
+    QCOMPARE(item("menuStartPageIcon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-home"));
+    QVERIFY(!shown("menuPageFavicon"));
+    QVERIFY(!shown("menuPageInitial"));
+    QVERIFY(!shown("menuPageHost"));
+    QVERIFY(!shown("menuPageSecurity"));
+    QVERIFY(!shown("copyAddressButton"));
+    const qreal dimmed = evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal();
+    for (const char *entry : {"findMenuButton", "bookmarkMenuButton", "shareMenuButton",
+                              "desktopMenuButton", "readerMenuButton"}) {
+        QVERIFY2(!item(entry)->isEnabled(), entry);
+        QCOMPARE(item(entry)->opacity(), dimmed);
+    }
+    // The browser's own are there as ever.
+    for (const char *entry : {"bookmarksMenuButton", "historyMenuButton", "downloadsMenuButton",
+                              "settingsMenuButton"}) {
+        QVERIFY2(item(entry)->isEnabled(), entry);
+        QCOMPARE(item(entry)->opacity(), 1.0);
+    }
+}
+
+// Downloads wears a ring round its icon while anything is coming, filled as far as the
+// downloads under way have gone together, and none once they are all there.
+void tst_qmlload::menuShowsDownloadsComing()
+{
+    // Something of BrowserPage.qml's own, whose scope has the engine.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto send = [this, scope](const QString &message) {
+        evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
+    };
+    tapBar(QStringLiteral("menu"));
+    QObject *downloads = find(QStringLiteral("downloadsMenuButton"));
+    auto *ring = qobject_cast<QQuickItem *>(
+        findObjects(downloads, QStringLiteral("menuButtonProgress")).first());
+    QVERIFY(!downloads->property("busy").toBool());
+    QVERIFY(!ring->isVisible());
+    // Round the icon, in the highlight colour over a faint track, and thinner than
+    // Silica draws its own.
+    auto *icon = qobject_cast<QQuickItem *>(
+        findObjects(downloads, QStringLiteral("menuButtonIcon")).first());
+    QCOMPARE(ring->mapToScene(QPointF(ring->width() / 2, ring->height() / 2)),
+             icon->mapToScene(QPointF(icon->width() / 2, icon->height() / 2)));
+    QVERIFY(ring->width() > icon->width());
+    QCOMPARE(ring->property("progressColor").value<QColor>(),
+             evaluate(downloads, QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QVERIFY(ring->property("borderWidth").toReal() <
+            evaluate(downloads, QStringLiteral("Theme.paddingSmall")).toReal());
+
+    send(QStringLiteral(
+        "{msg: 'dl-start', id: 1, displayName: 'a.pdf', sourceUrl: 'https://files.example/a.pdf',"
+        " targetPath: '/tmp/a.pdf', mimeType: 'application/pdf', size: 2048}"));
+    QVERIFY(downloads->property("busy").toBool());
+    QVERIFY(ring->isVisible());
+    QCOMPARE(ring->property("value").toReal(), 0.0);
+    send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 60}"));
+    QCOMPARE(ring->property("value").toReal(), 0.6);
+    // Two coming: the ring says how far they are together.
+    send(QStringLiteral(
+        "{msg: 'dl-start', id: 2, displayName: 'b.iso', sourceUrl: 'https://files.example/b.iso',"
+        " targetPath: '/tmp/b.iso', mimeType: '', size: 0}"));
+    send(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
+    QCOMPARE(ring->property("value").toReal(), 0.4);
+    send(QStringLiteral("{msg: 'dl-done', id: 1, targetPath: '/tmp/a.pdf'}"));
+    QCOMPARE(ring->property("value").toReal(), 0.2);
+    QVERIFY(ring->isVisible());
+    send(QStringLiteral("{msg: 'dl-fail', id: 2}"));
+    QVERIFY(!downloads->property("busy").toBool());
+    QVERIFY(!ring->isVisible());
+    // The other entries have no ring.
+    for (const char *entry : {"findMenuButton", "historyMenuButton", "settingsMenuButton"}) {
+        QVERIFY(!findObjects(find(QLatin1String(entry)), QStringLiteral("menuButtonProgress"))
+                     .first()
+                     ->property("visible")
+                     .toBool());
+    }
+}
+
 // The sheet of icons goes back down under a finger that pulls it, begun on an icon as
 // much as anywhere, and keeps the icon under the finger: let go past a short distance
 // it goes away, short of it it comes back up. The stub icons take no presses, so what
@@ -3124,15 +3482,20 @@ void tst_qmlload::menuSheetUnderAFinger()
         }
     };
 
-    // Short of the distance: the sheet goes down with the finger, as far as the finger
-    // less the way a drag takes to start -- not half of it, which is what the flickable
-    // itself draws -- and the icon with it. It comes back up when the finger lifts.
+    // Short of the distance: the sheet goes down with the finger, never further, and
+    // further than the flickable alone draws a pull -- half the finger's way past the
+    // way a drag takes to start -- and the icon with it. It comes back up when the
+    // finger lifts. Not the whole of the finger's way: the flickable reads the finger
+    // where it is on the flickable, and the flickable goes down with the sheet under
+    // it, so the sheet goes about two thirds of it (docs/DECISIONS/0021-menu-sheet.md).
+    // The bound was the finger's way less two drag distances, which the first sheet,
+    // short enough for its pull to be short, met by that margin alone.
     const int shortPull = int(closeDistance / 2);
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
     pullTo(shortPull);
     const qreal travelled = menu->y() - openY;
     QVERIFY(travelled <= shortPull);
-    QVERIFY2(travelled >= shortPull - 2 * slack, qPrintable(QString::number(travelled)));
+    QVERIFY2(travelled > (shortPull - slack) / 2.0, qPrintable(QString::number(travelled)));
     QVERIFY(qAbs(icon->mapToScene(QPointF(0, 0)).y() - iconY - travelled) < 1);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, shortPull));
     QTRY_COMPARE(menu->y(), openY);
@@ -4917,14 +5280,38 @@ void tst_qmlload::gridCellsArePicturesAlone()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(1);
 
-    // The preview box is rounded, and the wash drawn round the active one is square,
-    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
-    // it, so the picture is cut to the box's corners by a mask.
+    // The preview box is rounded. Clipping is rectangular whatever the shape of the
+    // item doing it, so the picture is cut to the box's corners by a mask.
     QObject *shot = findObjects(cell, QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
-    QObject *wash = findObjects(cell, QStringLiteral("tabPreviewHighlight")).first();
-    QVERIFY(wash->property("visible").toBool());
-    QCOMPARE(wash->property("radius").toReal(), qreal(0));
+    // The active one is marked by a thin frame just outside the picture, following its
+    // corners, in the highlight background colour -- not a square wash behind it, which
+    // is gone -- and the other cells by nothing.
+    QVERIFY(findObjects(cell, QStringLiteral("tabPreviewHighlight")).isEmpty());
+    auto *frame =
+        qobject_cast<QQuickItem *>(findObjects(cell, QStringLiteral("tabPreviewFrame")).first());
+    QVERIFY(frame->isVisible());
+    QCOMPARE(frame->property("color").value<QColor>().alpha(), 0);
+    auto *border = frame->property("border").value<QObject *>();
+    const qreal stroke = border->property("width").toReal();
+    QCOMPARE(stroke, evaluate(cell, QStringLiteral("Theme._lineWidth")).toReal());
+    QVERIFY(stroke < evaluate(cell, QStringLiteral("Theme.paddingSmall")).toReal());
+    QCOMPARE(border->property("color").value<QColor>(),
+             evaluate(cell, QStringLiteral("Theme.highlightBackgroundColor")).value<QColor>());
+    const qreal gap = cell->property("frameGap").toReal();
+    QVERIFY(gap > 0);
+    const QRectF picture(
+        qobject_cast<QQuickItem *>(shot)->mapToScene(QPointF(0, 0)),
+        QSizeF(shot->property("width").toReal(), shot->property("height").toReal()));
+    const QRectF framed(frame->mapToScene(QPointF(0, 0)), QSizeF(frame->width(), frame->height()));
+    QCOMPARE(framed, picture.adjusted(-gap - stroke, -gap - stroke, gap + stroke, gap + stroke));
+    QCOMPARE(frame->property("radius").toReal(), shot->property("radius").toReal() + gap + stroke);
+    // Inside the cell, short of its edges.
+    QVERIFY(gap + stroke < cell->property("inset").toReal());
+    QVERIFY(!findObjects(previews.at(0), QStringLiteral("tabPreviewFrame"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
     // The picture sits in from the cell's edges by a little more than a medium padding,
     // and two cells stand twice that apart. Nothing is under it: no favicon and no
     // title, so it runs down to the same inset at the foot.
