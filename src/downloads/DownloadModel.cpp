@@ -185,6 +185,14 @@ void DownloadModel::clearSince(double since)
     }
 }
 
+int DownloadModel::countSince(double since) const
+{
+    return int(
+        std::count_if(m_downloads.cbegin(), m_downloads.cend(), [since](const Download &download) {
+            return download.status != Running && double(download.started) >= since;
+        }));
+}
+
 void DownloadModel::clear()
 {
     if (m_downloads.isEmpty()) {

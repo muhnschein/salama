@@ -23,6 +23,7 @@ WebViewPage {
     property Item currentView: null
     property Item currentLoader: null
     property NotificationCenter notifications: NotificationCenter { page: browserPage }
+    property EnginePreferences preferences: EnginePreferences {}
 
     // The deck's state, as the rest of this page and the tests read it.
     property alias tabsOpen: deck.tabsOpen
@@ -227,24 +228,9 @@ WebViewPage {
         return Settings.pageZoom(Theme.pixelRatio)
     }
 
-    // The engine's own anti-tracking, at the level Settings holds
-    // (docs/DECISIONS/0023-tracking-protection.md). Given on start, which the engine
-    // keeps until it is up, and again whenever the level changes.
-    function applyTrackingProtection() {
-        var preferences = EngineMessages.trackingProtectionPreferences(PrivacySettings.trackingProtection)
-        for (var i = 0; i < preferences.length; ++i) {
-            WebEngineSettings.setPreference(preferences[i].name, preferences[i].value)
-        }
-    }
-
     Connections {
         target: Qt.application
         onStateChanged: browserPage.applicationStateChanged(Qt.application.state)
-    }
-
-    Connections {
-        target: PrivacySettings
-        onTrackingProtectionChanged: browserPage.applyTrackingProtection()
     }
 
     Connections {
@@ -281,7 +267,6 @@ WebViewPage {
         // where each time (docs/DECISIONS/0025-downloads-folder.md).
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
-        applyTrackingProtection()
         for (var i = 0; i < PageActivity.topics.length; ++i) {
             WebEngine.addObserver(PageActivity.topics[i])
         }

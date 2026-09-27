@@ -8,6 +8,7 @@ namespace {
 
 const char *const CutoutGuardKey = "cutoutGuard";
 const char *const TutorialShownKey = "tutorialShown";
+const char *const WebsiteColorsKey = "websiteColors";
 
 } // namespace
 
@@ -25,6 +26,20 @@ void Settings::setCutoutGuard(bool cutoutGuard)
 {
     if (setFlag(CutoutGuardKey, cutoutGuard)) {
         emit cutoutGuardChanged();
+    }
+}
+
+int Settings::websiteColors() const
+{
+    return choice(WebsiteColorsKey, WebsiteColorsAutomatic, WebsiteColorsAutomatic,
+                  WebsiteColorsDark);
+}
+
+void Settings::setWebsiteColors(int colors)
+{
+    if (setChoice(WebsiteColorsKey, colors, WebsiteColorsAutomatic, WebsiteColorsAutomatic,
+                  WebsiteColorsDark)) {
+        emit websiteColorsChanged();
     }
 }
 

@@ -673,6 +673,9 @@ void tst_downloadmodel::clearSince()
     model.observe(Topic, startMessage(2, QStringLiteral("coming.pdf")));
     QCOMPARE(model.count(), 3);
     QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+    // What would go is counted as it would be taken: none still coming.
+    QCOMPARE(model.countSince(double(before)), 1);
+    QCOMPARE(model.countSince(0), 2);
 
     model.clearSince(double(before));
     QCOMPARE(model.count(), 2);

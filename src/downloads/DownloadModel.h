@@ -122,6 +122,9 @@ public:
     // epoch, as HistoryModel::clearSince() takes it, but for any still coming: what
     // clearing the history takes of the list of downloads.
     Q_INVOKABLE void clearSince(double since);
+    // How many rows clearSince() would take for the same time: what the dialog that
+    // clears says goes of the list.
+    Q_INVOKABLE int countSince(double since) const;
 
     // The file as a URL to open it by, or empty when there is no such row or no file.
     Q_INVOKABLE QString fileUrl(int row) const;

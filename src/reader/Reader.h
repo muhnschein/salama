@@ -3,10 +3,13 @@
 #pragma once
 
 #include <QColor>
+#include <QList>
 #include <QObject>
+#include <QPair>
 #include <QString>
 #include <QUrl>
 #include <QVariant>
+#include <QVariantMap>
 
 namespace Salama {
 
@@ -56,32 +59,46 @@ public:
     // written on a dark ambience.
     Q_INVOKABLE static bool isDarkAmbience(const QColor &primaryColor);
 
-    // The reader theme the settings ask for -- "light", "sepia" or "dark" -- with the
-    // ambience's own being light or dark as the ambience is.
+    // The reader theme the settings ask for -- "light", "sepia", "dark", or "ambience"
+    // for the ambience's own look -- with Automatic being light or dark as the ambience
+    // is.
     Q_INVOKABLE QString colorScheme(bool darkAmbience) const;
     // The same for a colours setting given, a ReaderSettings::Colors: what the reader
     // settings' preview follows, as a binding on the setting.
     Q_INVOKABLE static QString schemeFor(int colors, bool darkAmbience);
 
-    // What a reader theme paints its page, its text and its links in, from the style
-    // sheet (reader.css): the colours the reader settings' preview is drawn in.
+    // What one of Firefox's reader themes paints its page, its text and its links in,
+    // from the style sheet (reader.css): the colours the reader settings' preview is
+    // drawn in. The ambience's own look has no colours of its own; it is drawn in the
+    // ambience's.
     Q_INVOKABLE static QColor backgroundOf(const QString &scheme);
     Q_INVOKABLE static QColor textColorOf(const QString &scheme);
     Q_INVOKABLE static QColor linkColorOf(const QString &scheme);
+
+    // The ambience, as the reader view is set in it, is a map of Silica's Theme values
+    // by their own names -- primaryColor, secondaryColor, highlightColor,
+    // secondaryHighlightColor, highlightBackgroundColor, highlightDimmerColor,
+    // overlayBackgroundColor, fontFamily and fontFamilyHeading -- which QML has and the
+    // core does not. A value missing reads as a dark ambience's. The ambience's own look
+    // lays the article on a page that runs from highlightDimmerColor at the top down to
+    // this, half way to the overlay's background: a page of the ambience's colour, as a
+    // Silica page over its wallpaper is, darker (or on a light ambience lighter) where the
+    // text is.
+    Q_INVOKABLE static QColor ambienceBackground(const QVariantMap &ambience);
 
     // The article's text size for a ReaderSettings::textSize step, in css pixels:
     // AboutReader._setFontSize's 10 + 2 * the step.
     Q_INVOKABLE static int fontSizeFor(int step);
 
     // The reader view of an article: articleScript's answer, set in Firefox's
-    // about:reader markup and style sheet as the settings ask, headed by the site it
-    // came from, its title, its byline and how long it takes to read. pageUrl is the
-    // page the article was read from, and the document carries it, for sourceUrl();
-    // pageTitle is the document's title, so the tab keeps the page's own. Empty when
-    // the answer holds no article.
+    // about:reader markup and style sheet as the settings ask and in the ambience
+    // given, headed by the site it came from, its title, its byline and how long it
+    // takes to read. pageUrl is the page the article was read from, and the document
+    // carries it, for sourceUrl(); pageTitle is the document's title, so the tab keeps
+    // the page's own. Empty when the answer holds no article.
     Q_INVOKABLE QString page(const QString &article, const QString &pageUrl,
                              const QString &pageTitle, const QString &favicon,
-                             bool darkAmbience) const;
+                             const QVariantMap &ambience) const;
 
     // The page a reader view was made from, when this is the address of one; empty
     // for any other. The engine reports the view's address as the data: url it
@@ -92,7 +109,7 @@ public:
     // A script that sets a reader view already on the screen as the settings now ask,
     // without loading it again: Firefox's reader view changes its own classes and
     // properties the same way.
-    Q_INVOKABLE QString styleScript(bool darkAmbience) const;
+    Q_INVOKABLE QString styleScript(const QVariantMap &ambience) const;
 
     // Firefox's estimate of how long an article of this many characters takes to
     // read, in a language (ReaderMode._assignReadTime), written out: "3–4 minutes".
@@ -108,7 +125,12 @@ signals:
     void styleChanged();
 
 private:
-    QString bodyClass(bool darkAmbience) const;
+    QString bodyClass(const QVariantMap &ambience) const;
+    // The properties the body carries: the text size, and the ambience's colours and
+    // typefaces for its own look, as a list of name and value.
+    QList<QPair<QString, QString>> bodyProperties(const QVariantMap &ambience) const;
+    // The colour the strip beside the cutout is painted: the page's, at its top.
+    QString themeBackground(const QVariantMap &ambience) const;
 
     const ReaderSettings &m_settings;
     QString m_readerableScript;

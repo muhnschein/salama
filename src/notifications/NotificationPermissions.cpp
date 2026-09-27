@@ -33,6 +33,12 @@ bool byHost(const QString &one, const QString &other)
     return oneHost == otherHost ? one < other : oneHost < otherHost;
 }
 
+// The list's order: the sites allowed, then the sites blocked, each by host.
+bool before(const QString &one, bool oneAllowed, const QString &other, bool otherAllowed)
+{
+    return oneAllowed == otherAllowed ? byHost(one, other) : oneAllowed;
+}
+
 } // namespace
 
 NotificationPermissions::NotificationPermissions(QObject *parent)
@@ -80,6 +86,17 @@ QString NotificationPermissions::topic() const
     return ListTopic;
 }
 
+int NotificationPermissions::allowedCount() const
+{
+    return int(std::count_if(m_sites.cbegin(), m_sites.cend(),
+                             [](const Site &site) { return site.allowed; }));
+}
+
+int NotificationPermissions::blockedCount() const
+{
+    return m_sites.count() - allowedCount();
+}
+
 void NotificationPermissions::refresh()
 {
     emit engineRequest(RequestTopic,
@@ -121,15 +138,17 @@ void NotificationPermissions::observe(const QString &topic, const QVariant &data
             sites.append({origin, action == AllowAction});
         }
     }
-    std::sort(sites.begin(), sites.end(),
-              [](const Site &one, const Site &other) { return byHost(one.origin, other.origin); });
-    const int before = m_sites.count();
+    std::sort(sites.begin(), sites.end(), [](const Site &one, const Site &other) {
+        return before(one.origin, one.allowed, other.origin, other.allowed);
+    });
+    const int rows = m_sites.count();
     beginResetModel();
     m_sites = sites;
     endResetModel();
-    if (m_sites.count() != before) {
+    if (m_sites.count() != rows) {
         emit countChanged();
     }
+    emit sitesChanged();
 }
 
 void NotificationPermissions::setAllowed(const QString &origin, bool allowed)
@@ -154,6 +173,7 @@ void NotificationPermissions::remove(const QString &origin)
     m_sites.remove(row);
     endRemoveRows();
     emit countChanged();
+    emit sitesChanged();
 }
 
 bool NotificationPermissions::isAllowed(const QString &url) const
@@ -227,25 +247,49 @@ int NotificationPermissions::rowOf(const QString &origin) const
     return -1;
 }
 
+int NotificationPermissions::positionOf(const QString &origin, bool allowed) const
+{
+    return static_cast<int>(std::find_if(m_sites.cbegin(), m_sites.cend(),
+                                         [&origin, allowed](const Site &site) {
+                                             return site.origin != origin &&
+                                                    before(origin, allowed, site.origin,
+                                                           site.allowed);
+                                         }) -
+                            m_sites.cbegin());
+}
+
+// A site allowed or blocked from here goes under the other heading: its row moves
+// rather than being taken out and put back, so the list keeps the row a finger is on.
 void NotificationPermissions::put(const QString &origin, bool allowed)
 {
     const int row = rowOf(origin);
     if (row >= 0) {
-        if (m_sites.at(row).allowed != allowed) {
-            m_sites[row].allowed = allowed;
-            const QModelIndex changed = index(row);
-            emit dataChanged(changed, changed, {roleId(Role::Allowed)});
+        if (m_sites.at(row).allowed == allowed) {
+            return;
         }
+        // Where it goes counted among the others, and where that is before the move
+        // as beginMoveRows() counts it.
+        int to = positionOf(origin, allowed);
+        if (to > row) {
+            --to;
+        }
+        if (to != row) {
+            beginMoveRows(QModelIndex(), row, row, QModelIndex(), to > row ? to + 1 : to);
+            m_sites.move(row, to);
+            endMoveRows();
+        }
+        m_sites[to].allowed = allowed;
+        const QModelIndex changed = index(to);
+        emit dataChanged(changed, changed, {roleId(Role::Allowed)});
+        emit sitesChanged();
         return;
     }
-    const auto position = static_cast<int>(
-        std::find_if(m_sites.cbegin(), m_sites.cend(),
-                     [&origin](const Site &site) { return byHost(origin, site.origin); }) -
-        m_sites.cbegin());
+    const int position = positionOf(origin, allowed);
     beginInsertRows(QModelIndex(), position, position);
     m_sites.insert(position, {origin, allowed});
     endInsertRows();
     emit countChanged();
+    emit sitesChanged();
 }
 
 void NotificationPermissions::send(const QString &message, const QString &origin, int capability)

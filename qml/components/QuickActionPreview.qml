@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The cover as the home screen draws it, small: a picture on the cover's settings page of
-// where its quick action goes (pages/CoverSettingsPage.qml,
-// docs/DECISIONS/0029-quick-action.md). With nothing playing the action is alone, in the
-// middle of the strip along the foot; while a tab plays the home screen draws two, one in
-// the middle of each half, and the tab's mute is the second (0026). With no action chosen
-// the mute is alone while a tab plays, and a dot keeps the action's place while nothing
-// does.
+// The cover as the home screen draws it, small: one of the two pictures the cover's
+// settings page offers to choose what the cover shows (pages/CoverSettingsPage.qml,
+// docs/DECISIONS/0031-cover-is-lightning.md), each with the quick action where the home
+// screen draws it, alone in the middle of the strip along the foot
+// (0029-quick-action.md). While a tab plays the tab's mute is drawn beside it (0026);
+// the page says so in a line rather than in a second pair of pictures.
 //
 // What is behind the actions is the cover as it is set to show itself. The lightning is
 // the cover's own, at rest (components/CoverLightning.qml); the heading over the tab last
@@ -15,7 +14,8 @@
 // blank cell for the page. Every measure is the cover's own (cover/CoverPage.qml) scaled
 // from a real cover's size, so the pictures the actions wear are as large against it as
 // they will be there, and they are the very files the cover hands the home screen. Not a
-// button: the picture only follows the choices under it.
+// button itself: the page makes each picture a choice, ringed while it is the one set,
+// and the pictures follow the quick action chosen under them.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -25,23 +25,21 @@ Item {
 
     // The glyph the action wears, by the name CoverSettings.iconPath takes; "" for none.
     property string glyph
-    // Drawn as it is while a tab plays: with the mute.
-    property bool playing: false
     // Whether the ambience is dark, which is the ink the pictures are drawn in.
     property bool onDark: true
     // What the picture shows, under it.
     property alias text: caption.text
+    // Which cover it is a picture of, a CoverSettings.Style value, and whether it is the
+    // one set.
+    property int style: CoverSettings.style
+    property bool selected
 
     // How much smaller than a real cover the picture is.
     readonly property real ratio: width / Theme.coverSizeLarge.width
     readonly property real iconSize: Theme.iconSizeSmall * ratio
-    readonly property bool latestTab: CoverSettings.style === CoverSettings.LatestTab
-    // The actions along the foot, left to right: the one alone, or the action and the
-    // mute beside it, or the mute alone, or none.
-    readonly property var actions: {
-        var drawn = glyph === "" ? [] : [glyph]
-        return playing ? drawn.concat(["speaker-on"]) : drawn
-    }
+    readonly property bool latestTab: style === CoverSettings.LatestTab
+    // The action along the foot, or none.
+    readonly property var actions: glyph === "" ? [] : [glyph]
 
     // A file of the cover's own, as a whole URL, resolved from here as the cover
     // resolves it.
@@ -143,6 +141,17 @@ Item {
                 smooth: true
             }
         }
+
+        // The ring, over the picture's edge: the highlight while it is the cover set.
+        Rectangle {
+            objectName: "previewRing"
+            anchors.fill: parent
+            radius: parent.radius
+            color: "transparent"
+            border.width: preview.selected ? 2 * Theme._lineWidth : Theme._lineWidth
+            border.color: preview.selected ? Theme.highlightColor
+                                           : Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
+        }
     }
 
     Label {
@@ -153,7 +162,7 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
         textFormat: Text.PlainText
-        font.pixelSize: Theme.fontSizeExtraSmall
-        color: Theme.secondaryHighlightColor
+        font.pixelSize: Theme.fontSizeSmall
+        color: preview.selected ? Theme.highlightColor : Theme.primaryColor
     }
 }

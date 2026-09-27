@@ -71,8 +71,77 @@ body.dark .moz-reader-content img:not(.emoji):not(.wp-smiley) {
   filter: brightness(0.8) contrast(1.2);
 }
 
+/* The ambience's own look, which Firefox has no theme for: the article set as a Silica
+ * page is, in the ambience's colours and typefaces, which the view hands in as the
+ * body's --ambience-* properties -- text in the primary colour, links and the title in
+ * the highlight colour, the page from the dimmer highlight down to where it meets the
+ * overlay, the title at the end of the line and light, as a PageHeader has it, and the
+ * site under it as a PageHeader's description is (docs/DECISIONS/0024-reader-view.md). */
+body.ambience {
+  --main-background: var(--ambience-bottom);
+  --main-foreground: var(--ambience-primary);
+  --primary-color: var(--ambience-highlight);
+  --selected-background: var(--ambience-selection);
+  --link-foreground: var(--ambience-highlight);
+  --link-selected-foreground: var(--ambience-primary);
+  --visited-link-foreground: var(--ambience-secondary-highlight);
+  min-height: 100vh;
+  box-sizing: border-box;
+  background-image: linear-gradient(var(--ambience-top), var(--ambience-bottom));
+  background-repeat: no-repeat;
+}
+
+body.ambience-dark {
+  color-scheme: dark;
+}
+
+body.ambience-light {
+  color-scheme: light;
+}
+
+body.ambience .header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: end;
+}
+
+body.ambience .header > h1 {
+  order: -1;
+  margin: 10px 0 4px;
+  font-family: var(--ambience-heading-font), sans-serif;
+  font-weight: 300;
+  color: var(--ambience-highlight);
+}
+
+body.ambience.serif .header > h1 {
+  font-family: serif;
+  font-weight: normal;
+}
+
+body.ambience .domain {
+  font-family: var(--ambience-font), sans-serif;
+  text-decoration: none !important;
+  color: var(--ambience-secondary-highlight);
+}
+
+body.ambience .header > .credits,
+body.ambience .header > .meta-data {
+  color: var(--ambience-secondary-highlight);
+}
+
+body.ambience hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--ambience-secondary);
+}
+
 body.sans-serif {
   --font-family: sans-serif;
+}
+
+body.ambience.sans-serif {
+  --font-family: var(--ambience-font), sans-serif;
 }
 
 body.serif {

@@ -87,6 +87,31 @@ int HistoryModel::count() const
     return m_entries.count();
 }
 
+int HistoryModel::pageCount() const
+{
+    return m_pageCount;
+}
+
+int HistoryModel::countSince(double since) const
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT COUNT(*) FROM browser_history WHERE date >= ?"));
+    query.addBindValue(since > 0 ? qint64(since) : 0);
+    if (!run(query) || !query.next()) {
+        return 0;
+    }
+    return query.value(0).toInt();
+}
+
+void HistoryModel::recount()
+{
+    const int pages = countSince(0);
+    if (pages != m_pageCount) {
+        m_pageCount = pages;
+        emit pageCountChanged();
+    }
+}
+
 QString HistoryModel::searchTerm() const
 {
     return m_searchTerm;
@@ -238,6 +263,7 @@ void HistoryModel::remove(int index)
     m_entries.removeAt(index);
     endRemoveRows();
     emit countChanged();
+    recount();
 }
 
 void HistoryModel::removeUrl(const QString &url)
@@ -400,6 +426,7 @@ void HistoryModel::reload()
     if (oldCount != m_entries.count()) {
         emit countChanged();
     }
+    recount();
 }
 
 } // namespace Salama

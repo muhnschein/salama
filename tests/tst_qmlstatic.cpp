@@ -128,11 +128,13 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
     // The browsing page, which drives the engine; the history settings, which tell it
-    // to clear its data; and the notifications' part of the browsing page, which keeps
-    // the sites' permissions in it (docs/ARCHITECTURE.md).
+    // to clear its data; and the two parts of the browsing page that keep something in
+    // it, the notifications' the sites' permissions and the preferences' what the
+    // settings ask of it (docs/ARCHITECTURE.md).
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
                                     QStringLiteral("pages/HistorySettingsPage.qml"),
-                                    QStringLiteral("components/NotificationCenter.qml")};
+                                    QStringLiteral("components/NotificationCenter.qml"),
+                                    QStringLiteral("components/EnginePreferences.qml")};
 
     bool browserPageImportsWebView = false;
     for (const QString &file : qmlFiles()) {

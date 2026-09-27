@@ -2,9 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // Notifications: whether sites may ask to send them, and the sites allowed and blocked,
-// as Firefox's Notification Settings list them -- each with its status, and a way to
-// change it or remove the site, which then asks again the next time it wants to. The
-// list is the engine's own, read as the page opens (docs/DECISIONS/0033-web-notifications.md).
+// as Firefox's Notification Settings list them -- under a heading each here, so a site's
+// status is where it is rather than a line under it -- with a way to change it or forget
+// the site, which then asks again the next time it wants to. The list is the engine's
+// own, read as the page opens (docs/DECISIONS/0033-web-notifications.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -28,19 +29,22 @@ Page {
                 title: qsTr("Notifications")
             }
 
-            // Firefox's "Block new requests asking to allow notifications".
+            // Firefox's "Block new requests asking to allow notifications", said the way
+            // round a switch that is on reads: what it lets happen.
             TextSwitch {
-                objectName: "blockNotificationRequestsSwitch"
-                text: qsTr("Block new requests")
-                description: qsTr("Sites not listed here cannot ask to send notifications")
-                checked: PrivacySettings.blockNotificationRequests
-                onCheckedChanged: PrivacySettings.blockNotificationRequests = checked
+                objectName: "sitesCanAskSwitch"
+                //: Whether sites not yet allowed or blocked may ask to send notifications
+                text: qsTr("Sites can ask")
+                checked: !PrivacySettings.blockNotificationRequests
+                onCheckedChanged: PrivacySettings.blockNotificationRequests = !checked
             }
+        }
 
-            SectionHeader {
-                text: qsTr("Sites")
-                visible: NotificationPermissions.count > 0
-            }
+        // The model lists the allowed first and the blocked after them.
+        section.property: "allowed"
+        section.delegate: SectionHeader {
+            objectName: "notificationSiteSection"
+            text: section === "true" ? qsTr("Allowed") : qsTr("Blocked")
         }
 
         delegate: ListItem {
@@ -49,10 +53,11 @@ Page {
             // Held apart from the row, which a change in the menu may remove or move.
             readonly property string origin: model.origin
             readonly property bool allowed: model.allowed
+            readonly property string host: model.host
 
             objectName: "notificationSite"
             width: ListView.view.width
-            contentHeight: Theme.itemSizeMedium
+            contentHeight: Theme.itemSizeSmall
             menu: ContextMenu {
                 MenuItem {
                     objectName: "notificationSiteToggle"
@@ -63,35 +68,63 @@ Page {
                 MenuItem {
                     objectName: "notificationSiteRemove"
                     //: Forgets the site's permission: it asks again when it next wants to
-                    text: qsTr("Remove")
+                    text: qsTr("Forget this site")
                     onClicked: NotificationPermissions.remove(site.origin)
                 }
             }
 
-            Column {
+            // The site's first letter on a square, as the start page draws a site whose
+            // icon it does not know (components/SiteTile.qml): the engine keeps no icon
+            // with a permission.
+            Rectangle {
+                id: letter
+
                 anchors {
                     left: parent.left
-                    right: parent.right
-                    margins: Theme.horizontalPageMargin
+                    leftMargin: Theme.horizontalPageMargin
                     verticalCenter: parent.verticalCenter
                 }
+                width: Theme.iconSizeSmall
+                height: width
+                radius: Theme.paddingSmall
+                color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
 
                 Label {
-                    objectName: "notificationSiteHost"
-                    width: parent.width
-                    text: model.host
-                    truncationMode: TruncationMode.Fade
-                    color: site.highlighted ? Theme.highlightColor : Theme.primaryColor
-                }
-
-                Label {
-                    objectName: "notificationSiteStatus"
-                    width: parent.width
-                    text: site.allowed ? qsTr("Allowed") : qsTr("Blocked")
+                    anchors.centerIn: parent
+                    text: SearchSettings.displayAddress(site.origin).charAt(0).toUpperCase()
                     font.pixelSize: Theme.fontSizeExtraSmall
-                    color: site.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                    font.bold: true
+                    color: Theme.primaryColor
                 }
             }
+
+            Label {
+                objectName: "notificationSiteHost"
+                anchors {
+                    left: letter.right
+                    right: parent.right
+                    leftMargin: Theme.paddingMedium
+                    rightMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                text: site.host
+                truncationMode: TruncationMode.Fade
+                color: site.highlighted ? Theme.highlightColor : Theme.primaryColor
+            }
+        }
+
+        footer: Label {
+            objectName: "notificationSitesFooter"
+            x: Theme.horizontalPageMargin
+            width: notificationsPage.width - 2 * x
+            visible: NotificationPermissions.count > 0
+            topPadding: Theme.paddingLarge
+            bottomPadding: Theme.paddingLarge
+            wrapMode: Text.Wrap
+            font.pixelSize: Theme.fontSizeExtraSmall
+            color: Theme.secondaryHighlightColor
+            //: Under the sites allowed and blocked from sending notifications
+            text: qsTr("A site you forget asks again the next time it wants to send one.")
         }
 
         ViewPlaceholder {

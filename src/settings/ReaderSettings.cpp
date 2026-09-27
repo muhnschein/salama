@@ -19,12 +19,12 @@ ReaderSettings::ReaderSettings(QSettings &file, QObject *parent)
 
 int ReaderSettings::colors() const
 {
-    return choice(ColorsKey, Ambience, Ambience, Dark);
+    return choice(ColorsKey, Ambience, Automatic, Ambience);
 }
 
 void ReaderSettings::setColors(int colors)
 {
-    if (setChoice(ColorsKey, colors, Ambience, Ambience, Dark)) {
+    if (setChoice(ColorsKey, colors, Ambience, Automatic, Ambience)) {
         emit colorsChanged();
     }
 }

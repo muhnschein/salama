@@ -30,6 +30,9 @@ class HistoryModel : public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
+    // Every page the history keeps, whatever the search term and past the DisplayLimit
+    // the list shows: what Settings > History says is kept.
+    Q_PROPERTY(int pageCount READ pageCount NOTIFY pageCountChanged)
     Q_PROPERTY(QString searchTerm READ searchTerm WRITE setSearchTerm NOTIFY searchTermChanged)
 
 public:
@@ -78,6 +81,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     int count() const;
+    int pageCount() const;
     QString searchTerm() const;
     void setSearchTerm(const QString &term);
 
@@ -105,6 +109,9 @@ public:
     // clear(). A page visited before that time and again since goes whole: a row keeps
     // its last visit, not the ones before it.
     Q_INVOKABLE void clearSince(double since);
+    // How many pages clearSince() would take for the same time: what the dialog that
+    // clears says the history holds of the range chosen.
+    Q_INVOKABLE int countSince(double since) const;
     // Where a ClearRange reaches back to from now, as clearSince() takes it: 0 for
     // everything, and for a range out of bounds.
     Q_INVOKABLE static double rangeStart(int range);
@@ -125,6 +132,7 @@ public:
 
 signals:
     void countChanged();
+    void pageCountChanged();
     void searchTermChanged();
 
 private:
@@ -135,11 +143,14 @@ private:
     static QString inputKey(const QString &input);
     void prune() const;
     void reload();
+    // Counts the pages again, and says so when that changes the count.
+    void recount();
 
     QSqlDatabase m_db;
     QList<Entry> m_entries;
     QString m_searchTerm;
     qint64 m_lastVisit = 0;
+    int m_pageCount = 0;
 };
 
 } // namespace Salama

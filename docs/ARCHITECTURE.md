@@ -11,10 +11,11 @@
 `Sailfish.WebView` is imported in `qml/pages/BrowserPage.qml` only; a device without
 the engine package fails to open that page, not the application. `Sailfish.WebEngine`
 is imported there, in `HistorySettingsPage.qml`, which clears browsing data behind
-its dialog (`DECISIONS/0030-history-settings.md`), and in `components/NotificationCenter.qml`,
-which the browsing page alone makes and which keeps the sites' notification permissions
-in the engine (`DECISIONS/0033-web-notifications.md`). `tests/tst_qmlstatic.cpp` enforces
-both.
+its dialog (`DECISIONS/0030-history-settings.md`), and in the two parts the browsing page
+alone makes: `components/NotificationCenter.qml`, which keeps the sites' notification
+permissions in the engine (`DECISIONS/0033-web-notifications.md`), and
+`components/EnginePreferences.qml`, which gives it the preferences the settings stand for
+(`DECISIONS/0035-website-colours.md`). `tests/tst_qmlstatic.cpp` enforces both.
 
 The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 
@@ -32,7 +33,8 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   history and downloads holding every word typed, a ranked section of each
   (`DECISIONS/0027-omnibar.md`). It and `TabSearchModel` match through the one
   `SearchWords` (`src/search/`), so the browser's searches agree.
-- `HistoryModel` — visited pages, search, pruning.
+- `HistoryModel` — visited pages, search, pruning, and how many pages it keeps, whole or
+  from a time on, which Settings counts (`DECISIONS/0036-settings-choose-in-place.md`).
 - `BookmarkModel` — bookmarks and "is the active page bookmarked"; one bookmark by id
   or address for the cover's quick action (`DECISIONS/0029-quick-action.md`).
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
@@ -44,13 +46,16 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
   quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
   notification requests; `StartPageSettings` -- what the start page shows; and
-  `Settings` -- the screen cutout and whether the tutorial has been shown.
+  `Settings` -- the website colours, the screen cutout and whether the tutorial has been
+  shown.
 - `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
-  preferences each tracking-protection level stands for, which `BrowserPage` writes through
-  `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`).
+  preferences each tracking-protection level and each choice of website colours stands
+  for, which the browsing page's `EnginePreferences` writes through
+  `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`,
+  `0035-website-colours.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
@@ -62,7 +67,8 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   and compiled in, handed to the page to find its article, and the page the article is
   then shown on (`DECISIONS/0024-reader-view.md`).
 - `NotificationPermissions` — the sites allowed and blocked from sending notifications,
-  as the engine's permission manager keeps them, which Settings > Notifications lists.
+  as the engine's permission manager keeps them, the allowed first, which Settings >
+  Notifications lists under a heading each and the main page counts.
 - `WebNotifications` — the Notifications API for the pages: the script that puts the
   browser's Notification in each page, the frame script that hands on what it says with
   the page's origin, the question a page asks, and what each page shows, which
@@ -130,8 +136,10 @@ lists what `Omnibar` finds, ranked as Firefox ranks it and learning from what is
 over a row to go to the address, when `SearchSettings.isAddress` says it is one, and a row to
 search (`DECISIONS/0027-omnibar.md`).
 
-Settings is a main page leading to a page each for search, the reader view, the cover,
-privacy, notifications and the history (`DECISIONS/0028-settings-pages.md`,
+Settings is a main page leading to a page each for the start page, search, the reader
+view, the cover, tracking protection, notifications and the history, each way in saying
+how its subject is set, and each page making its choices where they are laid out
+(`DECISIONS/0028-settings-pages.md`, `DECISIONS/0036-settings-choose-in-place.md`,
 `DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`), and to the
 tutorial, which the root window also pushes over the browsing page until
 `Settings.tutorialShown` says it has been seen: the address bar, the menu and the tabs,

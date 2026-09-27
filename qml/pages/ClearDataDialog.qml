@@ -8,7 +8,10 @@
 // of downloads, which know when they were made, and the rest is cleared whole, as the
 // line under it says. What is cleared to forget where one has been is on to begin
 // with; the open tabs are not, since closing them takes away what is being read.
-// Clear is dimmed while nothing is on.
+// Clear is dimmed while nothing is on. Under each kind that can be counted, how much of
+// it goes -- the open tabs, and the pages, downloads and closed tabs of the range
+// chosen -- and under the cookies what their going does, so what is about to be lost is
+// read before Clear is pressed.
 //
 // The dialog only asks. The history page it is opened from reads it as it is accepted
 // and does the clearing, under one remorse of its own
@@ -30,6 +33,41 @@ Dialog {
     objectName: "clearDataDialog"
     allowedOrientations: Orientation.Portrait
     canAccept: clearTabs || clearHistory || clearSiteData || clearCache
+
+    // Where the range reaches back to, and what of the history, the downloads and the
+    // closed tabs it takes: the closed tabs go only with everything
+    // (pages/HistorySettingsPage.qml). The counts are read again as the history changes.
+    readonly property double since: HistoryModel.rangeStart(range)
+    readonly property int pages: (HistoryModel.pageCount, HistoryModel.countSince(since))
+    readonly property int downloads: (DownloadModel.count, DownloadModel.countSince(since))
+    readonly property int closedTabs: range === HistoryModel.ClearEverything ? ClosedTabs.count : 0
+
+    // "342 pages, 18 downloads and 6 closed tabs", leaving out what there is none of.
+    function historyText(pages, downloads, closedTabs) {
+        var parts = []
+        if (pages > 0) {
+            //: Pages of the history that clearing takes
+            parts.push(qsTr("%n page(s)", "", pages))
+        }
+        if (downloads > 0) {
+            //: Rows of the list of downloads that clearing takes
+            parts.push(qsTr("%n download(s)", "", downloads))
+        }
+        if (closedTabs > 0) {
+            //: Recently closed tabs that clearing takes
+            parts.push(qsTr("%n closed tab(s)", "", closedTabs))
+        }
+        if (parts.length === 3) {
+            //: Three amounts cleared: "342 pages, 18 downloads and 6 closed tabs"
+            return qsTr("%1, %2 and %3").arg(parts[0]).arg(parts[1]).arg(parts[2])
+        }
+        if (parts.length === 2) {
+            //: Two amounts cleared: "342 pages and 18 downloads"
+            return qsTr("%1 and %2").arg(parts[0]).arg(parts[1])
+        }
+        //: The history holds nothing from the time range chosen
+        return parts.length === 1 ? parts[0] : qsTr("Nothing from this time")
+    }
 
     SilicaFlickable {
         anchors.fill: parent
@@ -83,6 +121,8 @@ Dialog {
 
                 objectName: "clearTabsSwitch"
                 text: qsTr("Open tabs")
+                //: How many tabs clearing the open tabs closes
+                description: qsTr("%n tab(s), in every group", "", TabModel.count)
             }
 
             TextSwitch {
@@ -90,6 +130,7 @@ Dialog {
 
                 objectName: "clearHistorySwitch"
                 text: qsTr("Browsing and download history")
+                description: dialog.historyText(dialog.pages, dialog.downloads, dialog.closedTabs)
                 checked: true
             }
 
@@ -98,6 +139,8 @@ Dialog {
 
                 objectName: "clearSiteDataSwitch"
                 text: qsTr("Cookies and site data")
+                //: What clearing the cookies does
+                description: qsTr("Signs you out of most sites")
                 checked: true
             }
 

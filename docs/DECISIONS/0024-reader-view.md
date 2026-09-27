@@ -80,6 +80,26 @@ engine: it follows the choices as they are made, and the serif and sans-serif it
 fontconfig for are the ones the engine's generic families are. It sits below the
 controls, so a text size growing it never moves the slider from under a finger.
 
+*Revised.* "Ambience" first meant Firefox's light or dark as the ambience is; it is now
+*Automatic*, keeping the stored 0 so a reader who chose it keeps what it did. *Ambience*
+is a look Firefox has no theme for, and the default: the article set as a Silica page is,
+in the ambience's own colours and typeface. The text is `Theme.primaryColor`, links and
+the title `highlightColor`, the site and the byline `secondaryHighlightColor`; the title
+comes first, light and at the end of the line as a `PageHeader`'s, the site under it as a
+header's description; the page runs down from `highlightDimmerColor` to half way to
+`overlayBackgroundColor` (`Reader.ambienceBackground`), a page of the ambience's colour as
+a Silica page over its wallpaper is, and the strip beside the cutout takes its top. The
+engine cannot read the ambience, and the core does not know it: the view hands `page()`
+and `styleScript()` the Theme's values by their own names, `reader.css` sets the look from
+the body's `--ambience-*` properties they become, and a change of ambience restyles a
+reader view in place as a change of setting does. A typeface's name is written into those
+properties in quotes with anything but letters, digits, spaces and hyphens taken out, so
+it cannot end what it is written into. Stored as 4, after Firefox's three, since the
+numbers are the file's. The settings page offers the colours as five squares each painted
+as the reader view will be, Automatic half light and half dark, and the typefaces as two
+tiles each written in its own face, in place of two combo boxes (0028); the preview draws
+the ambience's look from the Theme directly.
+
 The entry's icon is `icon-m-file-formatted`, the one Jolla's Documents gives a text
 document (sailfish-office `plugin/TextDocumentPage.qml`), for the reason 0021 gives for
 the names it uses. It is the fifth in its row, so *This page* runs to a second line.

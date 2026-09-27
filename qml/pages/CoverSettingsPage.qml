@@ -5,11 +5,13 @@
 // (docs/DECISIONS/0031-cover-is-lightning.md, 0028-settings-pages.md), and the one quick
 // action it offers there (0029-quick-action.md).
 //
-// The action is one choice among six, made in a row drawn as Silica draws a ComboBox,
-// under a line saying why there is one and two pictures of the cover with it. Choosing a
-// bookmark asks which, and the action is that bookmark's only once one is picked: backing
-// out leaves it as it was. The row then names the bookmark as it is called now, and under
-// it are the glyphs the action can wear.
+// What it shows is chosen by its picture: the two covers side by side, each with the
+// quick action where the home screen draws it, the one set ringed. The action is one of
+// six rows under a line saying why there is one, each with the glyph it wears on the
+// cover, the one set lit -- every choice on the screen at once, where one row's menu hid
+// them. Choosing a bookmark asks which, and the action is that bookmark's only once one is
+// picked: backing out leaves it as it was. Its row then names the bookmark as it is called
+// now, and under the rows are the glyphs the action can wear.
 //
 // Nothing here needs saving: each control writes its setting as it changes, and the
 // cover (cover/CoverPage.qml) follows the settings.
@@ -21,10 +23,10 @@ import "../components"
 Page {
     id: coverSettingsPage
 
+    property SettingNames names: SettingNames {}
     // The glyph the action wears, as the cover picks it: what it opens, and for one
     // bookmark the glyph chosen for it here; none for no action.
-    readonly property string glyph: ["", "search", "bookmarks", CoverSettings.quickActionIcon,
-                                     "downloads", "history"][CoverSettings.quickAction]
+    readonly property string glyph: glyphOf(CoverSettings.quickAction)
     // Whether the ambience is dark, which decides the ink the cover's pictures are drawn
     // in, worked out as the cover works it out.
     readonly property bool onDark: {
@@ -41,37 +43,14 @@ Page {
                                        : BookmarkModel.idForUrl(CoverSettings.quickActionBookmarkUrl))
     readonly property string bookmarkTitle: (BookmarkModel.revision,
                                              BookmarkModel.titleOf(bookmarkId))
+    // The bookmark's row names it once there is one picked, whether or not the action is
+    // that bookmark's now.
+    readonly property bool bookmarkPicked: CoverSettings.quickActionBookmark > 0
+                                           || CoverSettings.quickActionBookmarkUrl.length > 0
 
-    function kindLabel(action) {
-        return [
-            //: The cover has no quick action
-            qsTr("None"),
-            //: A quick action on the cover: the address bar, opened for a new tab
-            qsTr("Search"),
-            //: A quick action on the cover: the list of bookmarks
-            qsTr("Bookmarks"),
-            //: A quick action on the cover: one bookmark's page, picked on the next page
-            qsTr("Open a bookmark"),
-            //: A quick action on the cover: the list of downloads
-            qsTr("Downloads"),
-            //: A quick action on the cover: the history
-            qsTr("History")
-        ][action]
-    }
-
-    // What the row says the action does now: a bookmark's by its title, as it is called
-    // now, and a bookmark gone for good as gone -- the cover keeps offering it, and it
-    // opens the bookmarks then.
-    function valueText(action, bookmarkId, bookmarkTitle) {
-        if (action !== CoverSettings.QuickActionBookmark) {
-            return kindLabel(action)
-        }
-        if (bookmarkId > 0) {
-            //: The cover's quick action opens this bookmark
-            return qsTr("Bookmark: %1").arg(bookmarkTitle)
-        }
-        //: The cover's quick action opens a bookmark that has since been deleted
-        return qsTr("Deleted bookmark")
+    function glyphOf(action) {
+        return ["", "search", "bookmarks", CoverSettings.quickActionIcon, "downloads",
+                "history"][action] || ""
     }
 
     function choose(action) {
@@ -111,32 +90,76 @@ Page {
             id: column
 
             width: parent.width
-            spacing: Theme.paddingMedium
 
             PageHeader {
                 title: qsTr("Cover")
             }
 
-            // The default first, and the index is the stored value -- CoverSettings.Lightning,
-            // CoverLatestTab (docs/DECISIONS/0031-cover-is-lightning.md). A combo rather
-            // than a switch: which of two covers it is, not something turned on or off.
-            ComboBox {
-                objectName: "coverStyleCombo"
-                width: parent.width
-                label: qsTr("Shows")
-                currentIndex: CoverSettings.style
-                menu: ContextMenu {
-                    MenuItem {
-                        objectName: "coverLightningItem"
-                        text: qsTr("Lightning")
-                    }
+            SectionHeader {
+                //: What the cover on the home screen shows
+                text: qsTr("Shows")
+            }
 
-                    MenuItem {
-                        objectName: "coverLatestTabItem"
-                        text: qsTr("The tab count and the last tab")
+            // The two covers side by side and centred, the default first, each a choice.
+            // Two thirds of a real cover across, so the rows under them start on the
+            // screen with them and the glyph on each is still told apart. By bindings
+            // rather than a Row, which would place them only once it had been polished.
+            Item {
+                id: styles
+
+                readonly property real between: 2 * Theme.paddingLarge
+                readonly property real tileWidth: Math.min(Theme.coverSizeLarge.width * 2 / 3,
+                                                           (width - between) / 2
+                                                           - Theme.horizontalPageMargin)
+
+                objectName: "coverStyles"
+                width: parent.width
+                height: Math.max(lightningChoice.height, latestTabChoice.height)
+                        + Theme.paddingMedium
+
+                BackgroundItem {
+                    id: lightningChoice
+
+                    objectName: "coverStyleChoice-lightning"
+                    x: styles.width / 2 - styles.between / 2 - width
+                    width: styles.tileWidth
+                    height: lightningPreview.height
+                    onClicked: CoverSettings.style = CoverSettings.Lightning
+
+                    QuickActionPreview {
+                        id: lightningPreview
+
+                        objectName: "lightningCoverPreview"
+                        width: parent.width
+                        style: CoverSettings.Lightning
+                        selected: CoverSettings.style === CoverSettings.Lightning
+                        glyph: coverSettingsPage.glyph
+                        onDark: coverSettingsPage.onDark
+                        text: coverSettingsPage.names.coverStyle(CoverSettings.Lightning)
                     }
                 }
-                onCurrentIndexChanged: CoverSettings.style = currentIndex
+
+                BackgroundItem {
+                    id: latestTabChoice
+
+                    objectName: "coverStyleChoice-latestTab"
+                    x: styles.width / 2 + styles.between / 2
+                    width: styles.tileWidth
+                    height: latestTabPreview.height
+                    onClicked: CoverSettings.style = CoverSettings.LatestTab
+
+                    QuickActionPreview {
+                        id: latestTabPreview
+
+                        objectName: "latestTabCoverPreview"
+                        width: parent.width
+                        style: CoverSettings.LatestTab
+                        selected: CoverSettings.style === CoverSettings.LatestTab
+                        glyph: coverSettingsPage.glyph
+                        onDark: coverSettingsPage.onDark
+                        text: coverSettingsPage.names.coverStyle(CoverSettings.LatestTab)
+                    }
+                }
             }
 
             SectionHeader {
@@ -148,139 +171,106 @@ Page {
                 objectName: "quickActionExplained"
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
+                bottomPadding: Theme.paddingMedium
                 wrapMode: Text.Wrap
                 textFormat: Text.PlainText
-                font.pixelSize: Theme.fontSizeSmall
+                font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
                 //: The cover is the app's picture on the Sailfish home screen while it runs
                 //: in the background; a quick action is an icon on it that a tap does
-                //: something with. Use the same word for "quick action" as the section
-                //: over this.
-                text: qsTr("The cover on the home screen shows one quick action. The place beside it is kept for the media control, which appears there while the tab in front plays something.")
+                //: something with. The mute button is the playing tab's own.
+                text: qsTr("The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.")
             }
 
-            // The cover twice, side by side and centred: with nothing playing, and while a
-            // tab plays. Two thirds of a real cover across, so that the choice under them is
-            // on the screen with them and the glyphs are still told apart. By bindings
-            // rather than a Row, which would place them only once it had been polished.
-            Item {
-                id: previews
+            // The six, in the stored order, each with the glyph it wears on the cover; the
+            // one set lit, as Silica lights a chosen item.
+            Repeater {
+                model: [
+                    { "action": CoverSettings.QuickActionNone, "key": "none" },
+                    { "action": CoverSettings.QuickActionSearch, "key": "search" },
+                    { "action": CoverSettings.QuickActionBookmarks, "key": "bookmarks" },
+                    { "action": CoverSettings.QuickActionBookmark, "key": "bookmark" },
+                    { "action": CoverSettings.QuickActionDownloads, "key": "downloads" },
+                    { "action": CoverSettings.QuickActionHistory, "key": "history" }
+                ]
 
-                readonly property real between: 2 * Theme.paddingLarge
-                readonly property real tileWidth: Math.min(Theme.coverSizeLarge.width * 2 / 3,
-                                                           (width - between) / 2
-                                                           - Theme.horizontalPageMargin)
+                BackgroundItem {
+                    id: actionRow
 
-                objectName: "quickActionPreviews"
-                width: parent.width
-                height: Math.max(quietPreview.height, playingPreview.height)
+                    readonly property int action: modelData.action
+                    readonly property bool chosen: CoverSettings.quickAction === action
+                    readonly property bool lit: chosen || highlighted
+                    readonly property string rowGlyph: coverSettingsPage.glyphOf(action)
+                    readonly property string detail: action === CoverSettings.QuickActionBookmark
+                                                     && coverSettingsPage.bookmarkPicked
+                                                     ? coverSettingsPage.names.quickActionValue(
+                                                           action, coverSettingsPage.bookmarkId,
+                                                           coverSettingsPage.bookmarkTitle)
+                                                     : ""
 
-                QuickActionPreview {
-                    id: quietPreview
+                    objectName: "quickAction-" + modelData.key
+                    width: column.width
+                    height: detail.length > 0 ? Theme.itemSizeMedium : Theme.itemSizeSmall
+                    onClicked: coverSettingsPage.choose(action)
 
-                    objectName: "quietCoverPreview"
-                    x: previews.width / 2 - previews.between / 2 - width
-                    width: previews.tileWidth
-                    glyph: coverSettingsPage.glyph
-                    onDark: coverSettingsPage.onDark
-                    //: Under a picture of the cover and its quick action while nothing
-                    //: plays
-                    text: qsTr("Nothing playing")
-                }
+                    Item {
+                        id: glyphSlot
 
-                QuickActionPreview {
-                    id: playingPreview
+                        x: Theme.horizontalPageMargin
+                        width: Theme.iconSizeMedium
+                        height: parent.height
 
-                    objectName: "playingCoverPreview"
-                    x: previews.width / 2 + previews.between / 2
-                    width: previews.tileWidth
-                    glyph: coverSettingsPage.glyph
-                    onDark: coverSettingsPage.onDark
-                    playing: true
-                    //: Under a picture of the cover while a tab plays: its quick action,
-                    //: and the tab's mute beside it
-                    text: qsTr("While a tab plays")
-                }
-            }
+                        Icon {
+                            objectName: "quickActionGlyph"
+                            anchors.centerIn: parent
+                            visible: actionRow.rowGlyph.length > 0
+                            width: Theme.iconSizeSmall
+                            height: width
+                            source: actionRow.rowGlyph.length > 0
+                                    ? coverSettingsPage.iconSource(actionRow.rowGlyph) : ""
+                            highlighted: actionRow.lit
+                        }
 
-            // The choice: what the action is called and what it does now, drawn the way
-            // Silica draws a ComboBox, with the kinds in a menu that opens under it. Not a
-            // ComboBox: its value is the words of the item last tapped, so "Open a
-            // bookmark" would read as chosen before a bookmark was, and after the picker
-            // was backed out of, where this row names the bookmark once there is one; and
-            // Silica puts a ComboBox's choices on a page of their own past a handful,
-            // where a row's menu opens where it is.
-            ListItem {
-                id: choice
-
-                objectName: "quickActionChoice"
-                width: parent.width
-                contentHeight: Theme.itemSizeSmall
-                onClicked: openMenu()
-                menu: ContextMenu {
-                    MenuItem {
-                        objectName: "quickAction-none"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionNone)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionNone)
+                        // No action wears nothing: a dot keeps its place.
+                        Rectangle {
+                            anchors.centerIn: parent
+                            visible: actionRow.rowGlyph.length === 0
+                            width: Theme.paddingSmall
+                            height: width
+                            radius: width / 2
+                            color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
+                        }
                     }
 
-                    MenuItem {
-                        objectName: "quickAction-search"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionSearch)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionSearch)
+                    Column {
+                        anchors {
+                            left: glyphSlot.right
+                            right: parent.right
+                            leftMargin: Theme.paddingMedium
+                            rightMargin: Theme.horizontalPageMargin
+                            verticalCenter: parent.verticalCenter
+                        }
+
+                        Label {
+                            objectName: "quickActionName"
+                            width: parent.width
+                            text: coverSettingsPage.names.quickAction(actionRow.action)
+                            truncationMode: TruncationMode.Fade
+                            color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
+                        }
+
+                        Label {
+                            objectName: "quickActionDetail"
+                            width: parent.width
+                            visible: text.length > 0
+                            text: actionRow.detail
+                            textFormat: Text.PlainText
+                            truncationMode: TruncationMode.Fade
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: actionRow.lit ? Theme.secondaryHighlightColor
+                                                 : Theme.secondaryColor
+                        }
                     }
-
-                    MenuItem {
-                        objectName: "quickAction-bookmarks"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionBookmarks)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionBookmarks)
-                    }
-
-                    MenuItem {
-                        objectName: "quickAction-bookmark"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionBookmark)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionBookmark)
-                    }
-
-                    MenuItem {
-                        objectName: "quickAction-downloads"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionDownloads)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionDownloads)
-                    }
-
-                    MenuItem {
-                        objectName: "quickAction-history"
-                        text: coverSettingsPage.kindLabel(CoverSettings.QuickActionHistory)
-                        onClicked: coverSettingsPage.choose(CoverSettings.QuickActionHistory)
-                    }
-                }
-
-                Label {
-                    id: choiceLabel
-
-                    objectName: "quickActionLabel"
-                    x: Theme.horizontalPageMargin
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: choice.highlighted ? Theme.highlightColor : Theme.primaryColor
-                    //: What the cover's quick action does, over the choice of it
-                    text: qsTr("Action")
-                }
-
-                Label {
-                    objectName: "quickActionValue"
-                    anchors {
-                        left: choiceLabel.right
-                        leftMargin: Theme.paddingMedium
-                        right: parent.right
-                        rightMargin: Theme.horizontalPageMargin
-                        verticalCenter: parent.verticalCenter
-                    }
-                    textFormat: Text.PlainText
-                    truncationMode: TruncationMode.Fade
-                    color: Theme.highlightColor
-                    text: coverSettingsPage.valueText(CoverSettings.quickAction,
-                                                      coverSettingsPage.bookmarkId,
-                                                      coverSettingsPage.bookmarkTitle)
                 }
             }
 
@@ -288,36 +278,50 @@ Page {
             // as the page's width allows, each as full as the next. Drawn from the files
             // the cover hands the home screen, so what is picked here is what is seen
             // there.
-            Grid {
-                id: icons
-
-                // How many cells a row has room for, and how many glyphs there are.
-                readonly property int room: Math.max(1, Math.floor((parent.width
-                                                                    - 2 * Theme.horizontalPageMargin)
-                                                                   / Theme.itemSizeSmall))
-                readonly property int glyphs: CoverSettings.quickActionIcons.length
-
-                objectName: "quickActionIcons"
-                anchors.horizontalCenter: parent.horizontalCenter
+            Column {
+                objectName: "quickActionIconPicker"
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
                 visible: CoverSettings.quickAction === CoverSettings.QuickActionBookmark
-                columns: Math.ceil(glyphs / Math.ceil(glyphs / room))
+                topPadding: Theme.paddingMedium
+                spacing: Theme.paddingSmall
 
-                Repeater {
-                    model: CoverSettings.quickActionIcons
+                Label {
+                    width: parent.width
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryColor
+                    //: Over the glyphs a bookmark's quick action can wear on the cover
+                    text: qsTr("Its icon on the cover")
+                }
 
-                    BackgroundItem {
-                        objectName: "quickActionIcon-" + modelData
-                        width: Theme.itemSizeSmall
-                        height: width
-                        highlighted: down || CoverSettings.quickActionIcon === modelData
-                        onClicked: CoverSettings.quickActionIcon = modelData
+                Grid {
+                    id: icons
 
-                        Image {
-                            objectName: "quickActionIconImage"
-                            anchors.centerIn: parent
-                            width: Theme.iconSizeSmall
+                    // How many cells a row has room for, and how many glyphs there are.
+                    readonly property int room: Math.max(1, Math.floor(parent.width
+                                                                       / Theme.itemSizeSmall))
+                    readonly property int glyphs: CoverSettings.quickActionIcons.length
+
+                    objectName: "quickActionIcons"
+                    columns: Math.ceil(glyphs / Math.ceil(glyphs / room))
+
+                    Repeater {
+                        model: CoverSettings.quickActionIcons
+
+                        BackgroundItem {
+                            objectName: "quickActionIcon-" + modelData
+                            width: Theme.itemSizeSmall
                             height: width
-                            source: coverSettingsPage.iconSource(modelData)
+                            highlighted: down || CoverSettings.quickActionIcon === modelData
+                            onClicked: CoverSettings.quickActionIcon = modelData
+
+                            Image {
+                                objectName: "quickActionIconImage"
+                                anchors.centerIn: parent
+                                width: Theme.iconSizeSmall
+                                height: width
+                                source: coverSettingsPage.iconSource(modelData)
+                            }
                         }
                     }
                 }

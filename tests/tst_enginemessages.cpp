@@ -2,11 +2,13 @@
 // Copyright (c) 2026 salama contributors
 #include "engine/EngineMessages.h"
 #include "settings/PrivacySettings.h"
+#include "settings/Settings.h"
 
 #include <QtTest>
 
 using Salama::EngineMessages;
 using Salama::PrivacySettings;
+using Salama::Settings;
 
 namespace {
 
@@ -61,6 +63,8 @@ private slots:
     void trackingProtectionNamesTheSamePreferences();
     void trackingProtectionLevels();
     void trackingProtectionFeatures();
+    void websiteColors_data();
+    void websiteColors();
 };
 
 void tst_enginemessages::constants()
@@ -378,6 +382,37 @@ void tst_enginemessages::trackingProtectionFeatures()
         QCOMPARE(annotation.contains(QStringLiteral("trackers-content")),
                  level == PrivacySettings::TrackingProtectionStrict);
     }
+}
+
+void tst_enginemessages::websiteColors_data()
+{
+    QTest::addColumn<int>("colors");
+    QTest::addColumn<bool>("darkAmbience");
+    QTest::addColumn<int>("dark");
+
+    QTest::newRow("automatic, dark ambience") << int(Settings::WebsiteColorsAutomatic) << true << 1;
+    QTest::newRow("automatic, light ambience")
+        << int(Settings::WebsiteColorsAutomatic) << false << 0;
+    QTest::newRow("light, dark ambience") << int(Settings::WebsiteColorsLight) << true << 0;
+    QTest::newRow("dark, light ambience") << int(Settings::WebsiteColorsDark) << false << 1;
+    QTest::newRow("out of range is automatic") << 9 << true << 1;
+}
+
+// One preference, the engine's own override of the toolkit's dark theme, and an int:
+// Gecko reads it as one (docs/DECISIONS/0035-website-colours.md).
+void tst_enginemessages::websiteColors()
+{
+    QFETCH(int, colors);
+    QFETCH(bool, darkAmbience);
+    QFETCH(int, dark);
+
+    const QVariantList preferences = EngineMessages::websiteColorPreferences(colors, darkAmbience);
+    QCOMPARE(preferences.count(), 1);
+    const QVariantMap preference = preferences.first().toMap();
+    QCOMPARE(preference.value(QStringLiteral("name")).toString(),
+             QStringLiteral("ui.systemUsesDarkTheme"));
+    QCOMPARE(preference.value(QStringLiteral("value")).type(), QVariant::Int);
+    QCOMPARE(preference.value(QStringLiteral("value")).toInt(), dark);
 }
 
 QTEST_GUILESS_MAIN(tst_enginemessages)

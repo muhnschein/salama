@@ -16,6 +16,7 @@ QtObject {
     readonly property real fontSizeHuge: 90
     readonly property string fontFamily: "Sans"
     readonly property string fontFamilyHeading: "Sans"
+    readonly property real iconSizeExtraSmall: 24
     readonly property real iconSizeSmall: 32
     readonly property real iconSizeSmallPlus: 48
     readonly property real iconSizeMedium: 64

@@ -3,7 +3,9 @@
 //
 // Search: which engine the address bar searches with, and what on the phone it
 // suggests from as something is typed -- the two Firefox for Android keeps on its own
-// Search page (docs/DECISIONS/0028-settings-pages.md).
+// Search page (docs/DECISIONS/0028-settings-pages.md). The engines are few, so every one
+// is on the screen at once, one tap to change: TextSwitches that do not check
+// themselves, the one chosen lit.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -22,27 +24,25 @@ Page {
             id: column
 
             width: parent.width
-            spacing: Theme.paddingMedium
 
             PageHeader {
                 title: qsTr("Search")
             }
 
-            ComboBox {
-                objectName: "searchEngineCombo"
-                width: parent.width
-                label: qsTr("Search engine")
-                currentIndex: SearchSettings.engineIndex
-                menu: ContextMenu {
-                    Repeater {
-                        model: SearchSettings.engineNames
+            SectionHeader {
+                text: qsTr("Search engine")
+            }
 
-                        MenuItem {
-                            text: modelData
-                        }
-                    }
+            Repeater {
+                model: SearchSettings.engineNames
+
+                TextSwitch {
+                    objectName: "searchEngineChoice"
+                    automaticCheck: false
+                    text: modelData
+                    checked: SearchSettings.engineIndex === index
+                    onClicked: SearchSettings.engineIndex = index
                 }
-                onCurrentIndexChanged: SearchSettings.engineIndex = currentIndex
             }
 
             // Where the rows the address bar lists come from, each on until it is

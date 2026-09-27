@@ -291,7 +291,8 @@ void tst_webnotifications::permissionList()
     QCOMPARE(requests.at(0).at(1).toMap().value(QStringLiteral("msg")).toString(),
              QStringLiteral("get-all"));
 
-    // Sorted by host; the origin's attributes after a caret are not the site's.
+    // The allowed first, then the blocked, each sorted by host; the origin's attributes
+    // after a caret are not the site's.
     permissions.observe(QStringLiteral("embed:perms:all"),
                         QVariantList{
                             notificationPermission(QStringLiteral("https://news.example"), 2),
@@ -313,6 +314,8 @@ void tst_webnotifications::permissionList()
              QStringLiteral("news.example"));
     QVERIFY(!at(2, roleId(NotificationPermissions::Role::Allowed)).toBool());
     QVERIFY(!at(3, roleId(NotificationPermissions::Role::Origin)).isValid());
+    QCOMPARE(permissions.allowedCount(), 2);
+    QCOMPARE(permissions.blockedCount(), 1);
     QVERIFY(!at(0, Qt::DisplayRole).isValid());
     QCOMPARE(permissions.roleNames().value(roleId(NotificationPermissions::Role::Allowed)),
              QByteArray("allowed"));
@@ -369,6 +372,8 @@ void tst_webnotifications::permissionChanges()
     QSignalSpy requests(&permissions, &NotificationPermissions::engineRequest);
     QSignalSpy count(&permissions, &NotificationPermissions::countChanged);
     QSignalSpy changed(&permissions, &QAbstractItemModel::dataChanged);
+    QSignalSpy moved(&permissions, &QAbstractItemModel::rowsMoved);
+    QSignalSpy sites(&permissions, &NotificationPermissions::sitesChanged);
     const auto request = [&requests](int index) { return requests.at(index).at(1).toMap(); };
 
     // Allowed for good, as the engine's permission manager keeps it.
@@ -385,35 +390,61 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(permissions.rowCount(), 1);
     QCOMPARE(count.count(), 1);
 
-    // In its place by host.
+    // In its place: among the blocked, after the allowed.
+    const auto originAt = [&permissions](int row) {
+        return permissions
+            .data(permissions.index(row), roleId(NotificationPermissions::Role::Origin))
+            .toString();
+    };
     permissions.setAllowed(Chat, false);
     QCOMPARE(request(1).value(QStringLiteral("permission")).toInt(), 2);
-    QCOMPARE(permissions.data(permissions.index(0), roleId(NotificationPermissions::Role::Origin))
-                 .toString(),
-             Chat);
+    QCOMPARE(originAt(1), Chat);
     QVERIFY(permissions.isBlocked(Chat));
+    QCOMPARE(permissions.allowedCount(), 1);
+    QCOMPARE(permissions.blockedCount(), 1);
 
-    // Changed in place; the same again changes nothing but tells the engine.
+    // Allowed, it moves up among the allowed, before news by host, as one row moved;
+    // the same again changes nothing but tells the engine.
     permissions.setAllowed(Chat, true);
+    QCOMPARE(moved.count(), 1);
     QCOMPARE(changed.count(), 1);
+    QCOMPARE(originAt(0), Chat);
+    QCOMPARE(originAt(1), QStringLiteral("https://news.example"));
     QVERIFY(permissions.isAllowed(Chat));
+    QCOMPARE(permissions.allowedCount(), 2);
     permissions.setAllowed(Chat, true);
     QCOMPARE(changed.count(), 1);
     QCOMPARE(requests.count(), 4);
     QCOMPARE(count.count(), 2);
+    QCOMPARE(sites.count(), 3);
+
+    // Blocked, down past the allowed; news blocked too, and chat's place is by host
+    // among the blocked.
+    permissions.setAllowed(Chat, false);
+    QCOMPARE(originAt(1), Chat);
+    QCOMPARE(moved.count(), 2);
+    permissions.setAllowed(QStringLiteral("https://news.example"), false);
+    QCOMPARE(originAt(0), Chat);
+    QCOMPARE(originAt(1), QStringLiteral("https://news.example"));
+    QCOMPARE(permissions.blockedCount(), 2);
+    permissions.setAllowed(Chat, true);
+    QCOMPARE(originAt(0), Chat);
+    QCOMPARE(moved.count(), 3);
+    QCOMPARE(requests.count(), 7);
 
     // Removed: asked about again.
     permissions.remove(QStringLiteral("https://chat.example/room"));
-    QCOMPARE(request(4).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
-    QCOMPARE(request(4).value(QStringLiteral("uri")).toString(), Chat);
+    QCOMPARE(request(7).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+    QCOMPARE(request(7).value(QStringLiteral("uri")).toString(), Chat);
     QCOMPARE(permissions.rowCount(), 1);
     QVERIFY(!permissions.isAllowed(Chat));
     QCOMPARE(count.count(), 3);
+    QCOMPARE(permissions.allowedCount(), 0);
 
     // Nothing to remove, and nothing a site: nothing said.
     permissions.remove(Chat);
     permissions.setAllowed(QStringLiteral("about:blank"), true);
-    QCOMPARE(requests.count(), 5);
+    QCOMPARE(requests.count(), 8);
 }
 
 void tst_webnotifications::defaultPreference()
