@@ -14,6 +14,7 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <algorithm>
 
 using Salama::ClosedTabModel;
 using Salama::GroupTabModel;
@@ -52,6 +53,9 @@ private slots:
     void removingAGroupClosesItsTabs();
     void movingATabToAnotherGroup();
     void groupsSurviveARestart();
+    void ungroupingKeepsTheTabs();
+    void movingGroups();
+    void groupPreviews();
     void searchSpansTheGroups();
     void searchRefinesWithoutResetting();
     void searchTakesEveryWord();
@@ -977,6 +981,217 @@ void tst_tabmodel::groupsSurviveARestart()
         QCOMPARE(model.currentGroupId(), 40);
         QVERIFY(model.addGroup(QString()) > 40);
     }
+}
+
+void tst_tabmodel::ungroupingKeepsTheTabs()
+{
+    TabModel model(nullptr);
+    const int home = model.defaultGroupId();
+    const int a1 = model.newTab(QStringLiteral("https://a1.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    const int b1 = model.newTab(QStringLiteral("https://b1.example/"));
+    const int b2 = model.newTab(QStringLiteral("https://b2.example/"));
+    const int play = model.addGroup(QStringLiteral("Play"));
+    const int c1 = model.newTab(QStringLiteral("https://c1.example/"));
+    QSignalSpy closedSpy(&model, &TabModel::tabClosed);
+    QSignalSpy moveSpy(&model, &TabModel::rowsMoved);
+    QSignalSpy removedSpy(model.groupModel(), &TabGroupModel::rowsRemoved);
+    QSignalSpy groupsSpy(&model, &TabModel::groupsChanged);
+
+    // The default group has nothing to be ungrouped from, and a group that is not there
+    // has nothing to ungroup.
+    QVERIFY(!model.ungroup(home));
+    QVERIFY(!model.groupModel()->ungroup(4242));
+    QCOMPARE(model.groups().count(), 3);
+
+    // A group that is not the one shown: its tabs join the default group, open and in
+    // the rows they had, and the group goes. The grid stays where it was.
+    model.activateTabById(b2);
+    model.activateTabById(c1);
+    QCOMPARE(model.currentGroupId(), play);
+    QVERIFY(model.groupModel()->ungroup(work));
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groupIndexOf(work), -1);
+    QCOMPARE(removedSpy.count(), 1);
+    QCOMPARE(groupsSpy.count(), 1);
+    QCOMPARE(closedSpy.count(), 0);
+    QCOMPARE(moveSpy.count(), 0);
+    QCOMPARE(model.count(), 4);
+    QCOMPARE(model.indexOf(b1), 1);
+    QCOMPARE(role(model, model.indexOf(b1), roleId(TabModel::Role::Group)).toInt(), home);
+    QCOMPARE(role(model, model.indexOf(b2), roleId(TabModel::Role::Group)).toInt(), home);
+    QCOMPARE(model.tabCountInGroup(home), 3);
+    QCOMPARE(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::TabCount)).toInt(), 3);
+    QCOMPARE(model.currentGroupId(), play);
+    QCOMPARE(model.currentGroupIndex(), 1);
+    QCOMPARE(model.activeTabId(), c1);
+    QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c1});
+
+    // The group shown, holding the tab in front: the grid goes with the tabs to the
+    // default group, and the tab in front stays in front.
+    QVERIFY(model.ungroup(play));
+    QCOMPARE(model.groups().count(), 1);
+    QCOMPARE(model.currentGroupId(), home);
+    QCOMPARE(model.activeTabId(), c1);
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, b1, b2, c1}));
+    QCOMPARE(closedSpy.count(), 0);
+    QCOMPARE(model.count(), 4);
+
+    // Into the default group while it is the one shown: the grid takes the tabs after
+    // its own. An empty group shown, ungrouped, hands the grid to the default group and
+    // the page to that group's most recent tab.
+    const int mail = model.addGroup(QStringLiteral("Mail"));
+    const int d1 = model.newTab(QStringLiteral("https://d1.example/"));
+    model.activateTabById(a1);
+    QCOMPARE(model.currentGroupId(), home);
+    QVERIFY(model.ungroup(mail));
+    QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, b1, b2, c1, d1}));
+    model.activateTabById(b2);
+    const int side = model.addGroup(QStringLiteral("Side"));
+    const int s1 = model.newTab(QStringLiteral("https://s1.example/"));
+    const int empty = model.addGroup(QString());
+    QCOMPARE(model.currentGroupId(), empty);
+    QCOMPARE(model.activeTabId(), s1);
+    QVERIFY(model.ungroup(empty));
+    QCOMPARE(model.currentGroupId(), home);
+    QCOMPARE(model.activeTabId(), b2);
+    QCOMPARE(model.groups().count(), 2);
+    QCOMPARE(model.groupIndexOf(side), 1);
+}
+
+void tst_tabmodel::movingGroups()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    int home = 0;
+    int work = 0;
+    int play = 0;
+    int mail = 0;
+    {
+        TabModel model(&persistence);
+        home = model.defaultGroupId();
+        work = model.addGroup(QStringLiteral("Work"));
+        play = model.addGroup(QStringLiteral("Play"));
+        mail = model.addGroup(QStringLiteral("Mail"));
+        model.setCurrentGroupId(work);
+        QSignalSpy moveSpy(model.groupModel(), &TabGroupModel::rowsMoved);
+        QSignalSpy groupsSpy(&model, &TabModel::groupsChanged);
+        QSignalSpy currentSpy(&model, &TabModel::currentGroupChanged);
+
+        // The current group, down the list: current still, at its new row.
+        QVERIFY(model.groupModel()->moveGroup(1, 3));
+        QCOMPARE(model.groups().at(1).id, play);
+        QCOMPARE(model.groups().at(2).id, mail);
+        QCOMPARE(model.groups().at(3).id, work);
+        QCOMPARE(moveSpy.count(), 1);
+        QCOMPARE(moveSpy.last().at(1).toInt(), 1);
+        QCOMPARE(moveSpy.last().at(4).toInt(), 4);
+        QCOMPARE(groupsSpy.count(), 1);
+        QCOMPARE(currentSpy.count(), 1);
+        QCOMPARE(model.currentGroupId(), work);
+        QCOMPARE(model.currentGroupIndex(), 3);
+        QCOMPARE(model.groupModel()->groupIdAt(3), work);
+
+        // Two others trading places leave the current group's row as it was, and nobody
+        // is told it changed.
+        QVERIFY(model.moveGroup(2, 1));
+        QCOMPARE(model.groups().at(1).id, mail);
+        QCOMPARE(model.groups().at(2).id, play);
+        QCOMPARE(moveSpy.count(), 2);
+        QCOMPARE(moveSpy.last().at(4).toInt(), 1);
+        QCOMPARE(currentSpy.count(), 1);
+
+        // The default group is first and stays there; nothing outside the list moves,
+        // and a group put where it is has not moved.
+        QVERIFY(!model.moveGroup(0, 2));
+        QVERIFY(!model.moveGroup(2, 0));
+        QVERIFY(!model.moveGroup(1, 4));
+        QVERIFY(!model.moveGroup(-1, 1));
+        QVERIFY(!model.moveGroup(2, 2));
+        QCOMPARE(moveSpy.count(), 2);
+        QCOMPARE(groupsSpy.count(), 2);
+        QCOMPARE(model.groups().first().id, home);
+    }
+    {
+        // The order survives a restart, and a group made afterwards still goes last.
+        TabModel model(&persistence);
+        QCOMPARE(model.groups().count(), 4);
+        QCOMPARE(model.groups().at(0).id, home);
+        QCOMPARE(model.groups().at(1).id, mail);
+        QCOMPARE(model.groups().at(2).id, play);
+        QCOMPARE(model.groups().at(3).id, work);
+        const int news = model.addGroup(QStringLiteral("News"));
+        QCOMPARE(model.groups().last().id, news);
+    }
+}
+
+void tst_tabmodel::groupPreviews()
+{
+    TabModel model(nullptr);
+    const int home = model.defaultGroupId();
+    QCOMPARE(model.groupModel()->roleNames().value(roleId(TabGroupModel::Role::Previews)),
+             QByteArrayLiteral("previews"));
+    const auto previews = [&model](int row) {
+        return role(*model.groupModel(), row, roleId(TabGroupModel::Role::Previews)).toStringList();
+    };
+    // An empty group has none.
+    QVERIFY(previews(0).isEmpty());
+    QVERIFY(model.groupThumbnails(4242, 4).isEmpty());
+
+    // The most recent first, four at most; a tab with no picture is a place for one.
+    QList<int> ids;
+    for (int i = 0; i < 5; ++i) {
+        ids.append(model.newTab(QStringLiteral("https://t%1.example/").arg(i)));
+        model.updateThumbnail(ids.last(), QStringLiteral("/previews/t%1.png").arg(i));
+    }
+    const int limit = TabGroupModel::PreviewLimit;
+    QCOMPARE(limit, 4);
+    QCOMPARE(previews(0),
+             (QStringList{QStringLiteral("/previews/t4.png"), QStringLiteral("/previews/t3.png"),
+                          QStringLiteral("/previews/t2.png"), QStringLiteral("/previews/t1.png")}));
+    const int bare = model.newTab(QStringLiteral("https://bare.example/"));
+    QCOMPARE(previews(0).first(), QString());
+    QCOMPARE(model.groupThumbnails(home, 2),
+             (QStringList{QString(), QStringLiteral("/previews/t4.png")}));
+
+    // Each group its own; the views are told as a tab comes to the front, as a preview
+    // is taken, and as a tab moves from one group to another.
+    QSignalSpy changeSpy(model.groupModel(), &TabGroupModel::dataChanged);
+    const auto told = [&changeSpy](int row) {
+        return std::any_of(changeSpy.cbegin(), changeSpy.cend(),
+                           [row](const QList<QVariant> &change) {
+                               return change.at(0).toModelIndex().row() <= row &&
+                                      change.at(1).toModelIndex().row() >= row &&
+                                      change.at(2).value<QVector<int>>().contains(
+                                          roleId(TabGroupModel::Role::Previews));
+                           });
+    };
+    const int work = model.addGroup(QStringLiteral("Work"));
+    QVERIFY(previews(1).isEmpty());
+    QVERIFY(model.moveTabToGroup(ids.at(0), work));
+    QVERIFY(told(0));
+    QVERIFY(told(1));
+    QCOMPARE(previews(1), QStringList{QStringLiteral("/previews/t0.png")});
+    QCOMPARE(previews(0).count(), limit);
+    QVERIFY(!previews(0).contains(QStringLiteral("/previews/t0.png")));
+
+    changeSpy.clear();
+    model.activateTabById(ids.at(1));
+    QVERIFY(told(0));
+    QCOMPARE(previews(0).first(), QStringLiteral("/previews/t1.png"));
+    changeSpy.clear();
+    model.updateThumbnail(bare, QStringLiteral("/previews/bare.png"));
+    QVERIFY(told(0));
+    QVERIFY(previews(0).contains(QStringLiteral("/previews/bare.png")));
+
+    // Ungrouped, a group's tabs are in the default group's picture, by how recent they
+    // are.
+    changeSpy.clear();
+    model.activateTabById(ids.at(0));
+    QVERIFY(model.ungroup(work));
+    QVERIFY(told(0));
+    QCOMPARE(previews(0).first(), QStringLiteral("/previews/t0.png"));
 }
 
 void tst_tabmodel::searchSpansTheGroups()

@@ -172,9 +172,18 @@ public:
     void renameGroup(int groupId, const QString &name);
     // Closes the group's tabs and removes it. Refused for the default group.
     bool removeGroup(int groupId);
+    // Puts the group's tabs in the default group, open as they were, and removes it.
+    // Refused for the default group.
+    bool ungroup(int groupId);
+    // Puts the group at one place in the order at another. The default group is first
+    // and stays there: it is not moved, and nothing is moved in front of it.
+    bool moveGroup(int from, int to);
     // Puts a tab in another group. Its row in this model does not move, so the view
     // behind it stays; its place in the group is after the tabs already there.
     bool moveTabToGroup(int tabId, int groupId);
+    // The previews of the group's tabs, most recently in front first, at most this
+    // many; a tab with no picture is an empty string, as in recentThumbnails().
+    QStringList groupThumbnails(int groupId, int limit) const;
 
     // How many tabs keep their page loaded, 0 for all of them. The browser keeps
     // LiveTabLimit, as Jolla's does (docs/DECISIONS/0016-five-live-pages.md).
@@ -210,7 +219,7 @@ signals:
     void titleUpdated(const QString &url, const QString &title);
     void faviconUpdated(const QString &url, const QString &favicon);
     void currentGroupChanged();
-    // A group was added, renamed or removed, or a tab changed group.
+    // A group was added, renamed, moved or removed, or a tab changed group.
     void groupsChanged();
 
 private:

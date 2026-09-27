@@ -31,6 +31,11 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     m_liveIds = liveSet();
     // Another tab in front is other media in front.
     connect(this, &TabModel::activeTabChanged, this, &TabModel::activeMediaChanged);
+    // A group's picture is its most recent tabs' previews, so it changes whenever the
+    // cover's list does: a tab opened or closed, one brought to the front, a preview
+    // taken. Every group is told, there being only a handful.
+    connect(this, &TabModel::recentTabsChanged, m_groupModel,
+            [this]() { m_groupModel->changedAll(TabGroupModel::Role::Previews); });
 }
 
 void TabModel::load()
@@ -854,8 +859,10 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
     } else if (groupId == m_currentGroupId) {
         m_groupTabs->append(tab.id);
     }
-    m_groupModel->changed(groupIndexOf(oldGroup), TabGroupModel::Role::TabCount);
-    m_groupModel->changed(groupIndexOf(groupId), TabGroupModel::Role::TabCount);
+    for (const int group : {oldGroup, groupId}) {
+        m_groupModel->changed(groupIndexOf(group), TabGroupModel::Role::TabCount);
+        m_groupModel->changed(groupIndexOf(group), TabGroupModel::Role::Previews);
+    }
     emit groupsChanged();
     // The active tab is in the current group, always: a tab moved away takes the
     // current group with it.
@@ -863,6 +870,84 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
         setCurrentGroupId(groupId);
     }
     return true;
+}
+
+bool TabModel::ungroup(int groupId)
+{
+    const int index = groupIndexOf(groupId);
+    const int home = defaultGroupId();
+    if (index < 0 || groupId == home) {
+        return false;
+    }
+    // Each tab keeps its row, and so its page, as a tab carried onto another group does,
+    // and joins the default group's grid after the tabs already there.
+    for (int i = 0; i < m_tabs.count(); ++i) {
+        Tab &tab = m_tabs[i];
+        if (tab.groupId != groupId) {
+            continue;
+        }
+        tab.groupId = home;
+        notifyRow(i, Role::Group);
+        persist(tab);
+        if (home == m_currentGroupId) {
+            m_groupTabs->append(tab.id);
+        }
+    }
+    m_groupModel->changed(groupIndexOf(home), TabGroupModel::Role::TabCount);
+    m_groupModel->changed(groupIndexOf(home), TabGroupModel::Role::Previews);
+    // The group shown goes, and the grid goes with its tabs, to the default group. The
+    // tab in front, if it was one of them, is the most recent tab there and stays.
+    if (groupId == m_currentGroupId) {
+        setCurrentGroupId(home);
+    }
+    m_groups.removeAt(index);
+    m_groupModel->removed(index);
+    if (m_persistence != nullptr) {
+        m_persistence->removeGroup(groupId);
+    }
+    emit groupsChanged();
+    // The current group's row may have moved up.
+    emit currentGroupChanged();
+    return true;
+}
+
+bool TabModel::moveGroup(int from, int to)
+{
+    const int last = m_groups.count() - 1;
+    if (from == to || from < 1 || from > last || to < 1 || to > last) {
+        return false;
+    }
+    const int currentIndex = currentGroupIndex();
+    m_groups.move(from, to);
+    m_groupModel->moved(from, to);
+    if (m_persistence != nullptr) {
+        m_persistence->saveGroupOrder(m_groups);
+    }
+    emit groupsChanged();
+    if (currentGroupIndex() != currentIndex) {
+        emit currentGroupChanged();
+    }
+    return true;
+}
+
+QStringList TabModel::groupThumbnails(int groupId, int limit) const
+{
+    // Ordered as the cover's list is, on a copy, and for the same reasons.
+    QList<const Tab *> ordered;
+    for (const Tab &tab : m_tabs) {
+        if (tab.groupId == groupId) {
+            ordered.append(&tab);
+        }
+    }
+    std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
+        return one->lastActive > other->lastActive;
+    });
+
+    QStringList thumbnails;
+    for (int i = 0; i < ordered.count() && i < limit; ++i) {
+        thumbnails.append(ordered.at(i)->thumbnail);
+    }
+    return thumbnails;
 }
 
 int TabModel::liveTabLimit() const
