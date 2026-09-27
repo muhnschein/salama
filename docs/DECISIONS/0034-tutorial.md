@@ -99,7 +99,11 @@ as the platform's Tutorial counts its own, and go with the words while a finger 
 The first card lists what the lessons cover as three icons with their names — the
 address bar's search, the menu's button, the tabs — in place of a sentence listing them,
 and the heading is in the light heading face; the last card carries a check mark over
-its heading, drawn in the highlight colour so it is the same in every ambience.
+its heading, drawn in the highlight colour so it is the same in every ambience. The menu
+lesson draws the sheet as the browser's now is (0021) -- its ground, a head naming the
+sketched page, the page's five actions on their discs in one row, a line, the browser's
+four -- and the grid's cells and strip are the real ones', so the tab in front is framed
+and a group name a tab is carried over lit in the rounded wash.
 
 ## Consequences
 The first thing a first start shows is the first card rather than the start page, one tap
