@@ -117,6 +117,8 @@ private slots:
     void gridCellsArePicturesAlone();
     void gridRowsAreOpaque();
     void tabGroups();
+    void tabGroupRows();
+    void tabGroupsCarryAndUngroup();
     void tabSearch();
     void tabsDropOntoGroups();
     void previewGestures();
@@ -125,6 +127,7 @@ private slots:
     void carryToGroupUnderAFinger();
     void carryOverTheStripUnderAFinger();
     void tabGroupStripFades();
+    void tabGroupsReorderUnderAFinger();
     void barReachUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
@@ -1765,7 +1768,8 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->currentGroupId(), work);
     QList<QObject *> delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
     QCOMPARE(delegates.count(), 2);
-    // The default group is named by its count, and offers neither rename nor delete.
+    // The default group is named by its count, and has no menu: none of rename, ungroup
+    // and delete applies to it.
     QCOMPARE(findObjects(delegates.at(0), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
@@ -1776,18 +1780,8 @@ void tst_qmlload::tabGroups()
                  ->property("text")
                  .toString(),
              QStringLiteral("Work"));
-    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("renameGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
-    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("deleteGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
-    QVERIFY(findObjects(delegates.at(1), QStringLiteral("renameGroupMenu"))
-                .first()
-                ->property("enabled")
-                .toBool());
+    QVERIFY(delegates.at(0)->property("menu").value<QObject *>() == nullptr);
+    QVERIFY(delegates.at(1)->property("menu").value<QObject *>() != nullptr);
 
     // Tapping a group there makes it current and returns to the grid, still open.
     click(delegates.at(1));
@@ -1837,7 +1831,7 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->tabCountInGroup(work), 0);
     QCOMPARE(tabs->tabCountInGroup(home), 1);
 
-    // Rename and delete are in the group's own menu; the default group has neither.
+    // Rename and delete are in the group's own menu; the default group has no menu.
     pullUpToTabs();
     click(find(QStringLiteral("editGroupsButton")));
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
@@ -1852,9 +1846,7 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Play"));
 
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QObject *deleteMenu = findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first();
-    QVERIFY(deleteMenu->property("enabled").toBool());
-    click(deleteMenu);
+    click(findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first());
     QCOMPARE(tabs->groups().count(), 2);
     QCOMPARE(tabs->count(), 1);
     QCOMPARE(tabs->activeTabId(), first);
@@ -1862,12 +1854,184 @@ void tst_qmlload::tabGroups()
                       QStringLiteral("deleteGroupMenu"))
               .first());
     QCOMPARE(tabs->groups().count(), 1);
-    QVERIFY(!findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(0),
-                         QStringLiteral("deleteGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
+    QVERIFY(byRow(findAll(QStringLiteral("tabGroupDelegate")))
+                .at(0)
+                ->property("menu")
+                .value<QObject *>() == nullptr);
     QCOMPARE(tabs->currentGroupIndex(), 0);
+    popPage();
+}
+
+namespace {
+
+QString textOf(QObject *root, const char *name)
+{
+    return findObjects(root, QLatin1String(name)).first()->property("text").toString();
+}
+
+bool shownIn(QObject *root, const char *name)
+{
+    return findObjects(root, QLatin1String(name)).first()->property("visible").toBool();
+}
+
+} // namespace
+
+// Each row of the list of groups: a picture of the group's tabs, its name and count, a
+// grip and a menu -- neither on the default group -- and under the last row, one of the
+// same height that makes a group, through a dialog that asks for a name and creates.
+void tst_qmlload::tabGroupRows()
+{
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    pullUpToTabs();
+    // A picture for the default group's to show, set once the grid has taken its own.
+    const QString shot = tabs->thumbnailPath(first);
+    tabs->updateThumbnail(first, shot);
+    click(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QCOMPARE(rows.count(), 2);
+
+    // An unnamed group is named by its count, and has nothing under its name; a named
+    // one says its count under it. The default group has neither grip nor menu; the
+    // others have both, and the menu renames, ungroups and deletes.
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("1 tab(s)"));
+    QVERIFY(!shownIn(rows.at(0), "tabGroupCount"));
+    QCOMPARE(textOf(rows.at(1), "tabGroupName"), QStringLiteral("Work"));
+    QCOMPARE(textOf(rows.at(1), "tabGroupCount"), QStringLiteral("0 tab(s)"));
+    QVERIFY(rows.at(0)->property("menu").value<QObject *>() == nullptr);
+    QVERIFY(!shownIn(rows.at(0), "tabGroupGrip"));
+    auto *menu = rows.at(1)->property("menu").value<QObject *>();
+    QVERIFY(menu != nullptr);
+    for (const char *item : {"renameGroupMenu", "ungroupMenu", "deleteGroupMenu"}) {
+        QCOMPARE(findObjects(menu, QLatin1String(item)).count(), 1);
+    }
+    QVERIFY(shownIn(rows.at(1), "tabGroupGrip"));
+
+    // Each group's picture: the default group's one tab, the top left of four places,
+    // and the new group, empty, the outline alone -- framed, being current.
+    QObject *homePicture = findObjects(rows.at(0), QStringLiteral("tabGroupCollage")).first();
+    QObject *workPicture = findObjects(rows.at(1), QStringLiteral("tabGroupCollage")).first();
+    QCOMPARE(homePicture->property("tabCount").toInt(), 1);
+    const QList<QObject *> cells = findObjects(homePicture, QStringLiteral("tabGroupCollageCell"));
+    QCOMPARE(cells.count(), 4);
+    QVERIFY(cells.at(0)->property("holdsTab").toBool());
+    QVERIFY(!cells.at(1)->property("holdsTab").toBool());
+    const auto imageIn = [](QObject *cell) {
+        return findObjects(cell, QStringLiteral("tabGroupCollageImage"))
+            .first()
+            ->property("source")
+            .toUrl();
+    };
+    QCOMPARE(imageIn(cells.at(0)), QUrl(QStringLiteral("file://") + shot));
+    QVERIFY(imageIn(cells.at(1)).isEmpty());
+    QVERIFY(shownIn(homePicture, "tabGroupCollagePicture"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageOutline"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageFrame"));
+    QCOMPARE(workPicture->property("tabCount").toInt(), 0);
+    QVERIFY(!shownIn(workPicture, "tabGroupCollagePicture"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageOutline"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageFrame"));
+
+    // Under the last group, a row as tall as a group's with the theme's plus where a
+    // group has its picture. Its dialog asks for a name and nothing else, and creates.
+    QObject *newGroupRow = find(QStringLiteral("newGroupButton"));
+    QCOMPARE(newGroupRow->property("contentHeight").toReal(),
+             rows.at(0)->property("contentHeight").toReal());
+    QCOMPARE(find(QStringLiteral("newGroupPlus"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-add")));
+    click(newGroupRow);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupDialog"));
+    QObject *header = find(QStringLiteral("tabGroupDialogHeader"));
+    QCOMPARE(header->property("title").toString(), QStringLiteral("New tab group"));
+    QCOMPARE(header->property("acceptText").toString(), QStringLiteral("Create"));
+    QObject *nameField = find(QStringLiteral("groupNameField"));
+    QCOMPARE(nameField->property("label").toString(), QStringLiteral("Name"));
+    QCOMPARE(nameField->property("placeholderText").toString(), QStringLiteral("Name"));
+    popPage();
+    QCOMPARE(tabs->groups().count(), 2);
+
+    // Renaming, the same dialog saves.
+    click(findObjects(rows.at(1), QStringLiteral("renameGroupMenu")).first());
+    QCOMPARE(currentPage()->property("groupId").toInt(), work);
+    header = find(QStringLiteral("tabGroupDialogHeader"));
+    QCOMPARE(header->property("title").toString(), QStringLiteral("Rename tab group"));
+    QCOMPARE(header->property("acceptText").toString(), QStringLiteral("Save"));
+    popPage();
+    popPage();
+}
+
+// A group carried by its grip trades places with the one its middle is carried into,
+// and is lit while it is held; the default group stays first however far up anything
+// is carried, and the strip takes the new order. Ungrouped, a group goes and its tabs
+// stay open, in the default group, which the grid follows them to.
+void tst_qmlload::tabGroupsCarryAndUngroup()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int play = tabs->addGroup(QStringLiteral("Play"));
+    const int mail = tabs->addGroup(QStringLiteral("Mail"));
+    const int second = tabs->newTab(QStringLiteral("https://mail.example/"));
+    QCOMPARE(tabs->currentGroupId(), mail);
+    pullUpToTabs();
+    click(find(QStringLiteral("editGroupsButton")));
+
+    QObject *mailRow = byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(2);
+    const qreal rowHeight = mailRow->property("contentHeight").toReal();
+    const qreal grab = mailRow->property("y").toReal() + rowHeight / 2;
+    const auto carry = [&](const QString &call, qreal y) {
+        evaluate(mailRow, QStringLiteral("%1(%2)").arg(call).arg(y));
+    };
+    carry(QStringLiteral("pickUp"), grab);
+    QVERIFY(mailRow->property("carried").toBool());
+    QVERIFY(shownIn(mailRow, "tabGroupCarryWash"));
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 0.4);
+    QCOMPARE(tabs->groups().at(2).id, mail);
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 0.6);
+    QCOMPARE(tabs->groups().at(1).id, mail);
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 3);
+    QCOMPARE(tabs->groups().at(0).id, home);
+    QCOMPARE(tabs->groups().at(1).id, mail);
+    QCOMPARE(tabs->groups().at(2).id, play);
+    evaluate(mailRow, QStringLiteral("drop()"));
+    QVERIFY(!mailRow->property("carried").toBool());
+    QVERIFY(!shownIn(mailRow, "tabGroupCarryWash"));
+    QCOMPARE(tabs->currentGroupIndex(), 1);
+    // The strip's row lays its names out in the order of its children, on its next frame.
+    const auto stripName = [this](int place) {
+        return textOf(qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupItem")))
+                          ->parentItem()
+                          ->childItems()
+                          .at(place),
+                      "tabGroupLabel");
+    };
+    QCOMPARE(stripName(1), QStringLiteral("Mail"));
+    QCOMPARE(stripName(2), QStringLiteral("Play"));
+    // The row it passed makes way rather than jump, so the list is read once it has.
+    QTRY_COMPARE(textOf(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1), "tabGroupName"),
+                 QStringLiteral("Mail"));
+
+    // Ungrouped, the group goes, and its tab is open in the default group, still in
+    // front, with the grid showing the default group.
+    click(findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1),
+                      QStringLiteral("ungroupMenu"))
+              .first());
+    QCOMPARE(tabs->groups().count(), 2);
+    QCOMPARE(tabs->groupIndexOf(mail), -1);
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->tabCountInGroup(home), 2);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("2 tab(s)"));
+    QCOMPARE(findObjects(rows.at(0), QStringLiteral("tabGroupCollage"))
+                 .first()
+                 ->property("tabCount")
+                 .toInt(),
+             2);
     popPage();
 }
 
@@ -2735,6 +2899,51 @@ void tst_qmlload::tabGroupStripFades()
     QVERIFY(left->property("enabled").toBool());
     QCOMPARE(names->property("contentX").toReal(),
              names->property("contentWidth").toReal() - names->width());
+}
+
+// A group carried by its grip under a real finger, in a real window. Whether the list
+// leaves the grip a drag up or down, rather than taking it to scroll, is decided inside
+// Qt's own delivery, which calling the grip's functions skips.
+void tst_qmlload::tabGroupsReorderUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    // More groups than the screen holds, so the list has somewhere to scroll to.
+    for (int i = 0; i < 24; ++i) {
+        tabs->addGroup(QStringLiteral("Group %1").arg(i));
+    }
+    pullUpToTabs();
+    click(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    QObject *list = find(QStringLiteral("tabGroupsList"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    ScriptErrors errors;
+
+    // Two rows down by the grip: the group is two places further on, the list has not
+    // moved, and the row is put down.
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QObject *carried = rows.at(1);
+    const int rowHeight = carried->property("contentHeight").toInt();
+    const int moved = tabs->groups().at(1).id;
+    const qreal top = list->property("contentY").toReal();
+    const QPoint grip = centreOf(findObjects(carried, QStringLiteral("tabGroupGrip")).first());
+    drag(&window, grip, grip + QPoint(0, rowHeight * 2));
+    QCOMPARE(tabs->groups().at(3).id, moved);
+    QCOMPARE(tabs->groups().at(0).id, tabs->defaultGroupId());
+    QCOMPARE(list->property("contentY").toReal(), top);
+    QVERIFY(!carried->property("carried").toBool());
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+
+    // Anywhere else on a row, the drag is the list's, to scroll, and no group moves.
+    rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    const QPoint name = centreOf(findObjects(rows.at(2), QStringLiteral("tabGroupName")).first());
+    drag(&window, name, name - QPoint(0, rowHeight * 3));
+    QTRY_VERIFY(!list->property("moving").toBool());
+    QVERIFY(list->property("contentY").toReal() > top);
+    QCOMPARE(tabs->groups().at(3).id, moved);
+    popPage();
 }
 
 // The reach above the navigation bar lies over the foot of the page, where a player
