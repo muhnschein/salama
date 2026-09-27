@@ -468,7 +468,7 @@ void tst_qmlload::rootWindowLoads()
                                               expected.value(QStringLiteral("value"))) {
             return false;
         }
-        given.removeAt(int(preference - given.cbegin()));
+        given.removeAt(preference - given.cbegin());
         return true;
     };
     QVERIFY(takeGiven(NotificationPermissions::defaultPreference(false)));
