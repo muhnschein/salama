@@ -111,7 +111,7 @@ Rectangle {
             verticalCenterOffset: field.textVerticalCenterOffset === undefined
                                   ? 0 : field.textVerticalCenterOffset
         }
-        placeholderText: qsTr("Search on page")
+        placeholderText: qsTr("Find in page")
         font.pixelSize: Theme.fontSizeMedium
         errorHighlight: !findBar.found
         inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase

@@ -319,7 +319,7 @@
 <context>
     <name>FindBar</name>
     <message>
-        <source>Search on page</source>
+        <source>Find in page</source>
         <translation>Etsi sivulta</translation>
     </message>
 </context>

@@ -3735,7 +3735,7 @@ void tst_qmlload::menuSheetUnderAFinger()
     QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
 }
 
-// Search on page: a field over the navigation bar, whose search and steps are the
+// Find in page: a field over the navigation bar, whose search and steps are the
 // engine's own messages to the page, and whose answers come back on the name the
 // page was told to listen for.
 void tst_qmlload::findInPage()
