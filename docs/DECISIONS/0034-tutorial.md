@@ -86,6 +86,21 @@ own hints on a new device, and stays silent for good once Settings > Gestures > 
 hints and tips* is off; that switch speaks for the platform's hints, which teach what every
 application shares.
 
+*Revised.* The words were made shorter and plainer, one short sentence for a gesture and
+two where a step shows something first: "Tap the address bar to open a website or
+search.", "Type an address or a search. Matching tabs, bookmarks and history appear above
+the bar.", "Tap the menu button.", "The menu has actions for this page and the browser.
+Tap outside it to close it.", "Drag the bar up to see your tabs.", "Swipe a tab left to
+close it.", "Hold a tab, then drag it to a new position.", "Hold a tab, then drop it on a
+group name to move it there.", "Pull down to return to the page."; the last card says
+"You can open it again from Settings." Five dots just past the words, towards the middle
+of the screen, say which of the five lessons this is (`components/TutorialProgress.qml`),
+as the platform's Tutorial counts its own, and go with the words while a finger is down.
+The first card lists what the lessons cover as three icons with their names — the
+address bar's search, the menu's button, the tabs — in place of a sentence listing them,
+and the heading is in the light heading face; the last card carries a check mark over
+its heading, drawn in the highlight colour so it is the same in every ambience.
+
 ## Consequences
 The first thing a first start shows is the first card rather than the start page, one tap
 from either. `tests/tst_qmlload.cpp` marks the tutorial shown for every test but

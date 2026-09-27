@@ -5982,6 +5982,19 @@ void tst_qmlload::tutorialOnFirstStart()
                  ->property("text")
                  .toString()
                  .isEmpty());
+    // What the lessons cover, as three icons with their names rather than a sentence.
+    QVERIFY(!findObjects(card, QStringLiteral("tutorialCardText"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    QStringList topics;
+    for (QObject *name : findObjects(card, QStringLiteral("tutorialTopicName"))) {
+        topics.append(name->property("text").toString());
+    }
+    QCOMPARE(topics, (QStringList{QStringLiteral("Address bar"), QStringLiteral("Menu"),
+                                  QStringLiteral("Tabs")}));
+    QVERIFY(
+        !findObjects(card, QStringLiteral("tutorialCheck")).first()->property("visible").toBool());
     QVERIFY(find(QStringLiteral("tutorialStartButton")) != nullptr);
     QVERIFY(!find(QStringLiteral("tutorialTouchHint"))->property("running").toBool());
     QVERIFY(!find(QStringLiteral("tutorialTapHint"))->property("running").toBool());
@@ -6061,6 +6074,24 @@ void tst_qmlload::tutorial()
     QCOMPARE(centre(tapHint), point(bar, "addressCentre"));
     QVERIFY(labelAtTop());
     QCOMPARE(label->property("text").toString(), said.at(0));
+    QCOMPARE(said.at(0), QStringLiteral("Tap the address bar to open a website or search."));
+    // Under the words, which of the five lessons this is.
+    QObject *progress = find(QStringLiteral("tutorialProgress"));
+    QCOMPARE(progress->property("count").toInt(), 5);
+    QCOMPARE(findObjects(progress, QStringLiteral("tutorialProgressDot")).count(), 5);
+    QCOMPARE(progress->property("current").toInt(), 0);
+    QVERIFY(progress->property("visible").toBool());
+    QVERIFY(progress->property("y").toReal() >= label->property("height").toReal());
+    const QStringList lessonOrder{
+        QStringLiteral("address"),  QStringLiteral("omnibar"),  QStringLiteral("menu"),
+        QStringLiteral("menuOpen"), QStringLiteral("open"),     QStringLiteral("closeTab"),
+        QStringLiteral("moveTab"),  QStringLiteral("groupTab"), QStringLiteral("close")};
+    const QList<int> lessonIndex{0, 0, 1, 1, 2, 3, 3, 3, 4};
+    for (int i = 0; i < lessonOrder.count(); ++i) {
+        QCOMPARE(evaluate(page, QStringLiteral("lessonOf('%1')").arg(lessonOrder.at(i))).toInt(),
+                 lessonIndex.at(i));
+    }
+    QCOMPARE(evaluate(page, QStringLiteral("lessonOf('done')")).toInt(), -1);
 
     // Out of turn: the menu, and a drag up, do nothing yet.
     evaluate(bar, QStringLiteral("activate('menu')"));
@@ -6103,6 +6134,7 @@ void tst_qmlload::tutorial()
     QCOMPARE(step(), QStringLiteral("menu"));
     evaluate(bar, QStringLiteral("activate('menu')"));
     QCOMPARE(step(), QStringLiteral("menuOpen"));
+    QCOMPARE(progress->property("current").toInt(), 1);
     QObject *menu = find(QStringLiteral("tutorialMenu"));
     QVERIFY(menu->property("visible").toBool());
     const qreal sheetTop = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialMenuSheet")))
@@ -6280,6 +6312,13 @@ void tst_qmlload::tutorialGrid()
     QVERIFY(!page->property("hinting").toBool());
     QVERIFY(!recap->property("visible").toBool());
     QTRY_VERIFY(recap->property("visible").toBool());
+    // The card says it is done under a check mark, and where to find it again.
+    QVERIFY(
+        findObjects(recap, QStringLiteral("tutorialCheck")).first()->property("visible").toBool());
+    QCOMPARE(
+        findObjects(recap, QStringLiteral("tutorialCardText")).first()->property("text").toString(),
+        QStringLiteral("You can open it again from Settings."));
+    QVERIFY(!find(QStringLiteral("tutorialProgress"))->property("visible").toBool());
 
     // Nothing of it was done to a tab, and the browsing page's own grid stayed down.
     QCOMPARE(m_core->tabs()->count(), tabCount);
