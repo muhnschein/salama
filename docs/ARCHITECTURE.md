@@ -39,8 +39,10 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `BookmarkModel` — bookmarks and "is the active page bookmarked"; one bookmark by id
   or address for the cover's quick action (`DECISIONS/0029-quick-action.md`).
 - `DownloadModel` — the downloads, read from the engine's own `embed:download`
-  notifications (`DECISIONS/0022-downloads-list.md`), and the folder the engine saves
-  them to, `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
+  notifications (`DECISIONS/0022-downloads-list.md`), how many are still coming and how
+  far along they are together, which the menu's Downloads rings its icon with
+  (`DECISIONS/0021-menu-sheet.md`), and the folder the engine saves them to,
+  `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
 - The settings, one section per settings page, each a QML singleton over the one
   settings file (`DECISIONS/0028-settings-pages.md`): `SearchSettings` -- the search
   engine, the sources the address bar suggests from, and the address-bar heuristics;

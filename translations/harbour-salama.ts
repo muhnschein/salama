@@ -95,27 +95,7 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>This page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search on page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Desktop version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -140,6 +120,19 @@
     </message>
     <message>
         <source>Reader view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address copied</source>
+        <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find in page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Desktop site</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -198,6 +191,58 @@
         <source>Browsing and download history</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>%n page(s)</source>
+        <extracomment>Pages of the history that clearing takes</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n page</numerusform>
+            <numerusform>%n pages</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n download(s)</source>
+        <extracomment>Rows of the list of downloads that clearing takes</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n download</numerusform>
+            <numerusform>%n downloads</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n closed tab(s)</source>
+        <extracomment>Recently closed tabs that clearing takes</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n closed tab</numerusform>
+            <numerusform>%n closed tabs</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1, %2 and %3</source>
+        <extracomment>Three amounts cleared: &quot;342 pages, 18 downloads and 6 closed tabs&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 and %2</source>
+        <extracomment>Two amounts cleared: &quot;342 pages and 18 downloads&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nothing from this time</source>
+        <extracomment>The history holds nothing from the time range chosen</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s), in every group</source>
+        <extracomment>How many tabs clearing the open tabs closes</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n tab, in every group</numerusform>
+            <numerusform>%n tabs, in every group</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Signs you out of most sites</source>
+        <extracomment>What clearing the cookies does</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -214,50 +259,7 @@
     </message>
     <message>
         <source>Shows</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The tab count and the last tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>None</source>
-        <extracomment>The cover has no quick action</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search</source>
-        <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmarks</source>
-        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open a bookmark</source>
-        <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloads</source>
-        <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>History</source>
-        <extracomment>A quick action on the cover: the history</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bookmark: %1</source>
-        <extracomment>The cover&apos;s quick action opens this bookmark</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Deleted bookmark</source>
-        <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
+        <extracomment>What the cover on the home screen shows</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -266,27 +268,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The cover on the home screen shows one quick action. The place beside it is kept for the media control, which appears there while the tab in front plays something.</source>
-        <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. Use the same word for &quot;quick action&quot; as the section over this.</extracomment>
+        <source>The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.</source>
+        <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. The mute button is the playing tab&apos;s own.</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Nothing playing</source>
-        <extracomment>Under a picture of the cover and its quick action while nothing plays</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>While a tab plays</source>
-        <extracomment>Under a picture of the cover while a tab plays: its quick action, and the tab&apos;s mute beside it</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Action</source>
-        <extracomment>What the cover&apos;s quick action does, over the choice of it</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lightning</source>
+        <source>Its icon on the cover</source>
+        <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -388,19 +376,72 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep the pages you visit, to find them in the history and the address bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Clear history when closed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The history, the list of downloads and the recently closed tabs go each time the browser is closed</source>
+        <source>Clear browsing data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clear browsing data</source>
+        <source>With it, the list of downloads and the recently closed tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kept on this phone</source>
+        <extracomment>What browsing has left on the phone, counted</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n page(s)</source>
+        <extracomment>How many pages the history keeps</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n page</numerusform>
+            <numerusform>%n pages</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s)</source>
+        <extracomment>How many downloads the list of them keeps</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n file</numerusform>
+            <numerusform>%n files</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Recently closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <extracomment>How many closed tabs can be opened again</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Open tabs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, in %n group(s)</source>
+        <extracomment>How many tabs are open, and in how many groups: &quot;17, in 5 groups&quot;</extracomment>
+        <translation type="unfinished">
+            <numerusform>%1, in %n group</numerusform>
+            <numerusform>%1, in %n groups</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>MenuPageHeader</name>
+    <message>
+        <source>Start page</source>
+        <extracomment>The head of the browser&apos;s menu on the start page, where there is no page</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -438,28 +479,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Block new requests</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sites not listed here cannot ask to send notifications</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Block</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Allow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -476,6 +500,21 @@
     </message>
     <message>
         <source>Sites you allow to send notifications, or block, are listed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites can ask</source>
+        <extracomment>Whether sites not yet allowed or blocked may ask to send notifications</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forget this site</source>
+        <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A site you forget asks again the next time it wants to send one.</source>
+        <extracomment>Under the sites allowed and blocked from sending notifications</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -529,41 +568,6 @@
     </message>
 </context>
 <context>
-    <name>PrivacySettingsPage</name>
-    <message>
-        <source>Privacy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sites can follow you from one to another</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stops more tracking, and can break some sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stops sites following you with cookies</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strict</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -592,31 +596,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ambience</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Light</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sepia</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Typeface</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sans serif</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Serif</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -624,7 +604,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 %</source>
+        <source>Aa</source>
+        <extracomment>A sample of text in each of the reader view&apos;s typefaces</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ReaderSwatch</name>
+    <message>
+        <source>Aa</source>
+        <extracomment>A sample of text, a capital and a small letter, drawn in each of the reader view&apos;s colours to choose from</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -690,6 +679,183 @@
     </message>
 </context>
 <context>
+    <name>SettingNames</name>
+    <message>
+        <source>Blank page</source>
+        <extracomment>What a new tab shows: the start page&apos;s sections, or nothing</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <extracomment>Pages are drawn light or dark as the ambience is
+----------
+The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sepia</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ambience</source>
+        <extracomment>The reader view set as a Sailfish page is, in the ambience&apos;s colours</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sans serif</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 %</source>
+        <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · %2 · %3</source>
+        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tabs and count</source>
+        <extracomment>The cover shows the tab count over a picture of the last tab</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lightning</source>
+        <extracomment>The cover shows the browser&apos;s lightning bolt</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <extracomment>The cover has no quick action</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmarks</source>
+        <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a bookmark</source>
+        <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloads</source>
+        <extracomment>A quick action on the cover: the list of downloads</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>History</source>
+        <extracomment>A quick action on the cover: the history</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleted bookmark</source>
+        <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · %2</source>
+        <extracomment>What the cover shows, and its quick action: &quot;Lightning · Search&quot;
+----------
+&quot;2 sites allowed · 1 blocked&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <extracomment>Tracking protection is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strict</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites can follow you from one to another</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stops sites following you with cookies</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stops more tracking, and can break some sites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites cannot ask</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites can ask</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s) allowed</source>
+        <extracomment>How many sites may send notifications</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n site allowed</numerusform>
+            <numerusform>%n sites allowed</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n blocked</source>
+        <extracomment>How many sites may not send notifications</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n blocked</numerusform>
+            <numerusform>%n blocked</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s) blocked</source>
+        <extracomment>How many sites may not send notifications, with none allowed</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n site blocked</numerusform>
+            <numerusform>%n sites blocked</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Not remembered</source>
+        <extracomment>The pages visited are not kept in the history</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cleared when closed</source>
+        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remembered</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
@@ -697,10 +863,6 @@
     </message>
     <message>
         <source>Avoid the screen cutout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep pages and the tab grid out from under the camera cutout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -713,10 +875,6 @@
     </message>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -747,6 +905,31 @@
         <source>Tutorial</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Browsing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Website colours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>StartPagePreview</name>
+    <message>
+        <source>Nothing but the address bar</source>
+        <extracomment>What a new tab shows with the start page blank or every section off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <extracomment>Under a picture of what a new tab will show</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
@@ -755,23 +938,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Shows</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Your sites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>A blank page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Frequently visited</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tiles for the sites you visit most</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -779,15 +946,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tiles for your first bookmarks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Recently visited</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The pages you read last</source>
+        <source>Sections</source>
+        <extracomment>The parts of the start page, each switched on or off</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -843,6 +1007,11 @@
             <numerusform>%n tabs</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Ungroup</source>
+        <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TabGroupDialog</name>
@@ -860,6 +1029,11 @@
     </message>
     <message>
         <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <extracomment>Accepts the dialog that makes a new tab group</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -925,15 +1099,14 @@
     </message>
 </context>
 <context>
+    <name>TrackingSettingsPage</name>
+    <message>
+        <source>Tracking protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TutorialMenu</name>
-    <message>
-        <source>This page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search on page</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Bookmark</source>
         <translation type="unfinished"></translation>
@@ -943,15 +1116,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Desktop version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -968,6 +1133,14 @@
     </message>
     <message>
         <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find in page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Desktop site</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -992,42 +1165,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The address bar opens websites and searches the web. Tap it.</source>
-        <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.</source>
-        <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tap the menu button to open the menu.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The menu contains actions for this page and for the browser. Tap outside the menu to close it.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag the bar up to show your tabs.</source>
-        <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Swipe a tab to the left to close it.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Press and hold a tab, then drag it to another position.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Press and hold a tab, then drag it onto a group name to move it to that group.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Pull down to return to the page.</source>
         <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
         <translation type="unfinished"></translation>
@@ -1040,10 +1177,6 @@
     <message>
         <source>Web browser for Sailfish OS</source>
         <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This short tutorial explains the address bar, the menu and the tabs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1061,7 +1194,58 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You can open the tutorial again in Settings.</source>
+        <source>Tap the address bar to open a website or search.</source>
+        <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type an address or a search. Matching tabs, bookmarks and history appear above the bar.</source>
+        <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tap the menu button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The menu has actions for this page and the browser. Tap outside it to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag the bar up to see your tabs.</source>
+        <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Swipe a tab left to close it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hold a tab, then drag it to a new position.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hold a tab, then drop it on a group name to move it there.</source>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address bar</source>
+        <extracomment>What the tutorial covers: the address bar</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu</source>
+        <extracomment>What the tutorial covers: the menu</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tabs</source>
+        <extracomment>What the tutorial covers: the tabs and the grid of them</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can open it again from Settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

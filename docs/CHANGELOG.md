@@ -12,6 +12,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic.
 - Settings > History counts what is kept on the phone -- the pages in the history, the downloads, the recently closed tabs and the open tabs -- above Clear browsing data, and the Clear browsing data dialog says how much of each kind goes.
 - Settings > Start page shows a picture of a new tab under its switches, following each one.
+- The menu names the page it acts on -- its icon, title, padlock and host -- with a button to copy its address, and says "Start page" on the start page, where the page's actions are dimmed. While a download is coming, the menu's Downloads wears a ring that fills as it goes.
+- Tab groups can be put in order: drag a group by the bars at the end of its row. The "N tabs" group stays first.
+- Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
 
 ### Changed
 - Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
@@ -19,6 +22,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Lines under settings that said their names again are gone; the ones left say what the name does not.
 - Settings > Notifications lists the sites under Allowed and Blocked; its switch reads Sites can ask, and a site is forgotten with Forget this site.
 - Clear browsing data on the history page is a button.
+- The menu is an opaque sheet with the page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit while they are on, and the browser's four under a line.
+- In the grid, the tab in front is framed by a thin rounded line just outside its picture rather than washed; the close buttons are smaller discs with the same place to tap; a group name a tab is carried over lights in a rounded wash; search results light the letters typed; and the list of recently closed tabs comes up on the same sheet as the menu.
+- The list of tab groups shows each group as a small picture of its most recent tabs, with the current group framed, and "N tabs" under the name; the row that makes a new group wears the theme's ringed plus, and its dialog reads New tab group, with Create.
 - The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
 
 ## [0.8.0] - 2026-09-26
