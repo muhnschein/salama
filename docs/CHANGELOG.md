@@ -7,6 +7,20 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 
 ## [Unreleased]
 
+### Added
+- Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
+- The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic.
+- Settings > History counts what is kept on the phone -- the pages in the history, the downloads, the recently closed tabs and the open tabs -- above Clear browsing data, and the Clear browsing data dialog says how much of each kind goes.
+- Settings > Start page shows a picture of a new tab under its switches, following each one.
+
+### Changed
+- Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
+- Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; the cover's style is its two pictures, and its quick action six rows, each with the glyph it wears on the cover.
+- Lines under settings that said their names again are gone; the ones left say what the name does not.
+- Settings > Notifications lists the sites under Allowed and Blocked; its switch reads Sites can ask, and a site is forgotten with Forget this site.
+- Clear browsing data on the history page is a button.
+- The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
+
 ## [0.8.0] - 2026-09-26
 
 ### Fixed
