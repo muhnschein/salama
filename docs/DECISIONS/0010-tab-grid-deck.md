@@ -95,7 +95,9 @@ stays with the content:
   edit them in the right corner. The corners are the same width, so the names are
   centred on the screen. Held rather than tapped, new tab brings up the tabs closed
   lately (0018). The strip was in the head until a tab could be carried onto a group to
-  move it there (0015): at the foot it is under the thumb doing the carrying.
+  move it there (0015): at the foot it is under the thumb doing the carrying. New tab is
+  the theme's ringed plus, `icon-m-add`, on its own: the ring is the icon's, nothing is
+  drawn behind it, and it and the pencil in the other corner are one kind of button.
 
 Both rows are panes of **Silica's glass**: their tint, `Theme.highlightDimmerColor`,
 **opaque** as the navigation bar's is, with the ambience's own pattern, `Theme._patternImage`, tiled over
@@ -122,6 +124,14 @@ device said nothing at all; it came back with the box's rounded corners, and aft
 another look on device it is square, as Silica's own is. For a while the border stayed
 beside it, and the active cell's title was lit as well; three marks for one thing made
 the grid busy, and the wash, the quietest of them, is the only one left.
+
+*Revised.* A square wash behind a rounded picture was still two shapes for one cell. The
+active cell, and one under a finger, is marked by a **frame** now: a thin line just
+outside the picture that follows its rounded corners, half a small padding out from it
+(`frameGap`), as thin as the rule under the current group's name (`Theme._lineWidth`,
+0015), which says the same of a group, and in the highlight background colour the line
+across the top of the grid is drawn in. It is still the only mark, and there is nothing
+behind the picture.
 
 Nothing is drawn under the picture. There were the tab's favicon and title, and on device
 they made the grid busier than the pictures, which are what tells one page from another;
@@ -238,6 +248,14 @@ one -- and the cross on it is `Theme.primaryColor`, which is the one set against
 ground. The faintness is in the disc's colour rather than the item's opacity, so the
 cross is drawn opaque: white on a dark disc reads over a white page and a black one
 alike, and the same holds the other way round in a light ambience.
+
+*Revised.* The disc was a small icon and a medium padding across, at `Theme.opacityHigh`,
+and it was still more of every picture than a corner mark needs. It is two thirds of that
+now, the smallest icon and a small padding across (`Theme.iconSizeExtraSmall +
+Theme.paddingSmall`), at half, and the cross through it is two fifths of the disc and as
+thin as the frame round the active picture. The button round the disc is the size it
+was, a medium icon and a small padding: the disc is what is seen, and the button is what
+the thumb has to find.
 
 The picture sits `Theme.paddingMedium` and half a `Theme.paddingSmall` in
 from the cell's edges (`inset`), so two cells stand twice that apart. It was a medium

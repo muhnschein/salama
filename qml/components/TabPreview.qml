@@ -17,8 +17,8 @@
 // their own taps (docs/DECISIONS/0010-tab-grid-deck.md).
 //
 // It is a plain Item rather than a Silica BackgroundItem. That one draws its press
-// and its highlight as a wash across the whole cell, edge to edge; the wash here is as
-// square, but stops short of the edges, round the picture.
+// and its highlight as a wash across the whole cell, edge to edge; here they are a thin
+// frame round the picture, following its rounded corners.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -59,9 +59,11 @@ Item {
     property bool sideways: false
     // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
-    // The picture's inset from the cell's edges, half the gap between cells.
+    // The picture's inset from the cell's edges, half the gap between cells, and how
+    // far outside the picture the frame round the active one stands.
     readonly property real inset: Theme.paddingMedium + Theme.paddingSmall / 2
-    // What the wash below marks: this cell is the active tab, or has a finger. A cell
+    readonly property real frameGap: Theme.paddingSmall / 2
+    // What the frame below marks: this cell is the active tab, or has a finger. A cell
     // whose tab has just been closed outlives its row for a moment, and its role is then
     // undefined, which a bool cannot be.
     readonly property bool highlighted: dragArea.pressed || model.activeTab === true
@@ -234,17 +236,25 @@ Item {
             }
         }
 
-        // What marks the active cell, and the one under a finger: the wash Silica's
-        // BackgroundItem would have drawn across the cell, square as that one is, round
-        // the picture. It is the only mark: a border in the highlight colour on the box
+        // What marks the active cell, and the one under a finger: a thin frame just
+        // outside the picture, following its rounded corners, in the highlight background
+        // colour the grid's top edge is drawn in -- as thin as the rule under the current
+        // group's name, which says the same of a group. It was a square wash behind the
+        // picture, as Silica's BackgroundItem draws one, and a square round a rounded
+        // picture was two shapes for one cell. It is the only mark: a border on the box
         // as well, and the title lit, said it three times over.
         Rectangle {
-            objectName: "tabPreviewHighlight"
+            objectName: "tabPreviewFrame"
             anchors {
-                fill: parent
-                margins: preview.inset - Theme.paddingSmall
+                fill: shot
+                margins: -(preview.frameGap + border.width)
             }
-            color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+            radius: shot.radius + preview.frameGap + border.width
+            color: "transparent"
+            border {
+                width: Theme._lineWidth
+                color: Theme.highlightBackgroundColor
+            }
             visible: preview.highlighted
         }
 
@@ -318,10 +328,11 @@ Item {
                 color: Theme.secondaryColor
             }
 
-            // The close button: a plain dark or light disc with a cross through it in
-            // the colour set against it. Drawn here, not the theme's icon-m-clear: that
-            // icon carries a disc of its own at its own transparency, so the glyph alone
-            // was lost on most pages and a disc behind it was a disc inside a disc.
+            // The close button: a plain dark or light disc with a thin cross through it
+            // in the colour set against it, the cross two fifths of the disc across and
+            // as thin as the frame. Drawn here, not the theme's icon-m-clear: that icon
+            // carries a disc of its own at its own transparency, so the glyph alone was
+            // lost on most pages and a disc behind it was a disc inside a disc.
             PreviewButton {
                 objectName: "closeTabButton"
                 markName: "closeTabMark"
@@ -336,8 +347,8 @@ Item {
 
                     Rectangle {
                         anchors.centerIn: parent
-                        width: parent.width / 2
-                        height: Theme.paddingSmall / 2
+                        width: parent.width * 2 / 5
+                        height: Theme._lineWidth
                         radius: height / 2
                         rotation: index === 0 ? 45 : -45
                         color: Theme.primaryColor

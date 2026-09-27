@@ -52,4 +52,35 @@ QtObject {
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)
     }
+
+    // Silica's hands back the text as StyledText, escaped, with every match of the
+    // pattern -- a string, whatever its case, or a RegExp -- in the colour given. So does
+    // the stub's, simply, so that a test can read what was lit.
+    function highlightText(text, pattern, color) {
+        text = String(text)
+        var escape = function (plain) {
+            return plain.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        }
+        var source = pattern instanceof RegExp
+                ? pattern.source
+                : String(pattern).replace(/[.*+?^${}()|[\]\\\/-]/g, "\\$&")
+        var caseless = pattern instanceof RegExp ? pattern.ignoreCase : true
+        if (source.length === 0) {
+            return escape(text)
+        }
+        var find = new RegExp(source, caseless ? "gi" : "g")
+        var styled = ""
+        var written = 0
+        var match
+        while ((match = find.exec(text)) !== null) {
+            if (match[0].length === 0) {
+                find.lastIndex += 1
+                continue
+            }
+            styled += escape(text.substring(written, match.index))
+                    + "<font color=\"" + color + "\">" + escape(match[0]) + "</font>"
+            written = match.index + match[0].length
+        }
+        return styled + escape(text.substring(written))
+    }
 }
