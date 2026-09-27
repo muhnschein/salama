@@ -103,15 +103,6 @@ int HistoryModel::countSince(double since) const
     return query.value(0).toInt();
 }
 
-void HistoryModel::recount()
-{
-    const int pages = countSince(0);
-    if (pages != m_pageCount) {
-        m_pageCount = pages;
-        emit pageCountChanged();
-    }
-}
-
 QString HistoryModel::searchTerm() const
 {
     return m_searchTerm;
@@ -263,7 +254,9 @@ void HistoryModel::remove(int index)
     m_entries.removeAt(index);
     endRemoveRows();
     emit countChanged();
-    recount();
+    // The one row of the table gone.
+    --m_pageCount;
+    emit pageCountChanged();
 }
 
 void HistoryModel::removeUrl(const QString &url)
@@ -426,7 +419,12 @@ void HistoryModel::reload()
     if (oldCount != m_entries.count()) {
         emit countChanged();
     }
-    recount();
+    // Every page the table keeps, which the page of them shown may not be.
+    const int pages = countSince(0);
+    if (pages != m_pageCount) {
+        m_pageCount = pages;
+        emit pageCountChanged();
+    }
 }
 
 } // namespace Salama

@@ -147,16 +147,11 @@ signals:
     void runningChanged();
 
 private:
-    // Counts the downloads still coming again, and says so if that or how far along
-    // they are has changed: after every change to a row's status or progress, and to
-    // which rows there are.
-    void updateRunning();
     void start(int engineId, const QVariantMap &message);
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);
     void setStatus(int row, Status status);
     void changed(int row, const QVector<int> &roles);
-    int rowForEngineId(int engineId) const;
     void dropOldest();
 
     void load();

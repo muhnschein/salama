@@ -143,8 +143,6 @@ private:
     static QString inputKey(const QString &input);
     void prune() const;
     void reload();
-    // Counts the pages again, and says so when that changes the count.
-    void recount();
 
     QSqlDatabase m_db;
     QList<Entry> m_entries;
