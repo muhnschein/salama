@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// One tab group in the list of them: a picture of its tabs, its name -- or, unnamed,
-// what it holds -- and how many tabs it has, with a grip at its end to carry it to
-// another place in the list, and rename, ungroup and delete in its menu. The default
-// group has neither grip nor menu: it is first, and none of the three applies to it
-// (docs/DECISIONS/0015-tab-groups.md).
+// One tab group in the list of them, laid out as the Gallery lists its albums: how many
+// tabs it has, a square picture of the one last in front, and its name, large, with a
+// grip at its end to carry it to another place in the list, and rename, ungroup and
+// delete in its menu. The default group has neither grip nor menu: it is first, and none
+// of the three applies to it (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -130,47 +130,48 @@ ListItem {
             visible: delegate.carried
         }
 
-        TabGroupCollage {
-            id: collage
-
-            objectName: "tabGroupCollage"
+        // The count, at the end of the room before the picture, as the Gallery counts
+        // an album's photos.
+        Label {
+            objectName: "tabGroupCount"
             anchors {
-                left: parent.left
-                leftMargin: Theme.horizontalPageMargin
+                right: picture.left
+                rightMargin: Theme.paddingLarge
                 verticalCenter: parent.verticalCenter
             }
-            previews: model.previews
-            current: model.currentGroup
+            text: model.tabCount
+            font.pixelSize: Theme.fontSizeLarge
+            color: delegate.highlighted || delegate.carried || model.currentGroup
+                   ? Theme.secondaryHighlightColor : Theme.secondaryColor
         }
 
-        Column {
+        TabGroupPicture {
+            id: picture
+
+            objectName: "tabGroupPicture"
+            // As far in as it is wide, which leaves the count its room.
+            x: width
+            width: height
+            height: parent.height
+            previews: model.previews
+        }
+
+        // The group the grid shows is named in the highlight colour, as Silica lights
+        // the item that is chosen.
+        Label {
+            objectName: "tabGroupName"
             anchors {
-                left: collage.right
+                left: picture.right
                 right: grip.left
                 leftMargin: Theme.paddingLarge
                 verticalCenter: parent.verticalCenter
             }
-
-            Label {
-                objectName: "tabGroupName"
-                width: parent.width
-                text: model.name.length > 0 ? model.name : qsTr("%n tab(s)", "", model.tabCount)
-                truncationMode: TruncationMode.Fade
-                color: delegate.highlighted || delegate.carried || model.currentGroup
-                       ? Theme.highlightColor : Theme.primaryColor
-            }
-
-            // Just the count: the picture beside it says what the tabs are.
-            Label {
-                objectName: "tabGroupCount"
-                width: parent.width
-                text: qsTr("%n tab(s)", "", model.tabCount)
-                // The name already says this for an unnamed group.
-                visible: model.name.length > 0
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: delegate.highlighted || delegate.carried || model.currentGroup
-                       ? Theme.secondaryHighlightColor : Theme.secondaryColor
-            }
+            //: The name of the tab group that holds the tabs in no group of their own
+            text: model.name.length > 0 ? model.name : qsTr("Tabs")
+            font.pixelSize: Theme.fontSizeLarge
+            truncationMode: TruncationMode.Fade
+            color: delegate.highlighted || delegate.carried || model.currentGroup
+                   ? Theme.highlightColor : Theme.primaryColor
         }
 
         // The grip: three short bars at the row's end, with room round them for a thumb.

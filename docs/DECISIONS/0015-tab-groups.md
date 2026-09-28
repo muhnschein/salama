@@ -104,20 +104,21 @@ in a pulley, the way postivene offers another profile, because that is where a r
 has just read the list is looking. It was also a picker once, given a tab, for the menu's
 "Move tab to group"; carrying the tab onto the strip replaced both (0021).
 
-*Revised.* Each row is now a **picture of its group** beside its name: the previews of the
-group's four most recent tabs, two by two in a small square with the grid's rounded
-corners, the most recent at the top left (`components/TabGroupCollage.qml`). They are the
-pictures the grid already has (0008), handed out by a `previews` role on `TabGroupModel`
-— up to four paths, the most recent tab's first, as the cover's list is ordered, and an
-empty one for a tab never shown, which is drawn as the grid's placeholder ground. A place
-with no tab is fainter still, and a group with no tabs is the square's outline alone, in
-dashes with the corners left open: Qt Quick's `Rectangle` draws no dashed border, and
-`Canvas` learnt dashes after Qt 5.6, so each side is a row of short bars. The current
-group's picture is framed in the highlight background colour, just outside it and round
-its corners, the frame the grid gives the tab in front. Under the name is the count and
-nothing else, "3 tabs", since the picture says what the tabs are; an unnamed group is
-named by its count already and has no line under it. The page's header is its name
-alone.
+*Revised.* The rows are laid out as the **Gallery lists its albums**, a list that is
+Sailfish's own: the group's count, large and in the secondary colour, at the end of the
+room before its picture; the picture, a square as tall as the row and as far in as it is
+wide, touching the pictures above and below, uncut at the corners; and the name, large,
+after it. The picture is the preview of the tab last in front in the group, filling the
+square from the top of the page (`components/TabGroupPicture.qml`), as an album is shown
+by one of its photos. A 2×2 collage of the four most recent, with the grid's rounded
+corners, came first; beside the Gallery's it read as a picture of its own making rather
+than the platform's. The preview is one the grid already has (0008), handed out by a
+`previews` role on `TabGroupModel` — the paths of the group's most recent tabs, as the
+cover's list is ordered, one of them (`PreviewLimit`), and an empty one for a tab never
+shown, which is drawn as the grid's placeholder ground; a group with no tabs is a fainter
+one. The group the grid shows is named in the highlight colour, as Silica lights what is
+chosen. The default group, which has no name, is *Tabs* here, the count beside it saying
+how many, where the strip names it by its count. The page's header is its name alone.
 
 A group is **reordered** by a grip of three bars at its row's end. The grip takes the
 finger at once, without the hold a cell of the grid needs (0010): it is there for nothing
@@ -142,7 +143,8 @@ it, so a hold on it opens nothing.
 
 The row that makes a group is as tall as a group's, with the theme's **ringed plus** —
 `icon-m-add`, which carries its own ring, so nothing is drawn behind it — in the middle
-of the place a group's picture takes, as Piirit's rows that add something wear it. Its
+of the place a group's picture takes, as Piirit's rows that add something wear it, and
+its words in the names' size, or a size smaller where they are longer than the room. Its
 dialog asks for a name and nothing else, and its accept reads *Create*; renaming a group
 reads *Save*.
 
