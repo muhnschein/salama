@@ -6,12 +6,16 @@ Pages can draw themselves for a dark screen or a light one: a style sheet's
 every year. The engine takes the answer from its widget toolkit, and on the phone that
 says nothing of the ambience, so a page is light over a dark ambience that the rest of the
 browser follows. Firefox offers the choice as *Website appearance* — Automatic, Light,
-Dark — under Language and Appearance; sailfish-browser has no setting for it.
+Dark — under Language and Appearance. sailfish-browser's current sources have one too,
+*Preferred color scheme* under Appearance — Light, Dark, Match ambience — through a
+`colorScheme` the webview's `WebEngineSettings` has gained; the release this browser is
+built for is not known to carry it, so it is not used here.
 
 ## Decision
 **Settings > Website colours** (`Settings.websiteColors`), a Silica `ComboBox` on the main
 page under Appearance, beside the screen cutout's switch — one choice of three needs no
-page of its own (0028). *Automatic*, the default, is dark on a dark ambience and light on
+page of its own (0028) — wearing sailfish-browser's icon for its colour scheme,
+`icon-m-night`, as its combo box wears it (`components/SettingsComboBox.qml`). *Automatic*, the default, is dark on a dark ambience and light on
 a light one, as `Reader.isDarkAmbience` tells them apart for the reader view (0024);
 *Light* and *Dark* hold whatever the ambience. Stored as 0, 1 and 2, Firefox's order.
 

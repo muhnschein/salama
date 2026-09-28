@@ -4269,6 +4269,37 @@ void tst_qmlload::settingsPage()
         QCOMPARE(currentPage(), page);
     }
 
+    // The two settings made in place stand in the same column of icons, each with the
+    // one sailfish-browser gives the same subject -- its colour scheme's, and its notch
+    // guard's -- at the page's margin, the control moved in past it, and lit with it.
+    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const qreal gap = evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal();
+    struct InPlace
+    {
+        QString name;
+        QString iconItem;
+        QString icon;
+    };
+    const QList<InPlace> inPlace{
+        {QStringLiteral("websiteColorsCombo"), QStringLiteral("settingsComboBoxIcon"),
+         QStringLiteral("icon-m-night")},
+        {QStringLiteral("cutoutGuardSwitch"), QStringLiteral("settingsSwitchIcon"),
+         QStringLiteral("icon-m-display")},
+    };
+    for (const InPlace &setting : inPlace) {
+        QObject *control = find(setting.name);
+        QObject *icon = findObjects(control, setting.iconItem).first();
+        QCOMPARE(icon->property("source").toUrl(),
+                 QUrl(QStringLiteral("image://theme/") + setting.icon));
+        QCOMPARE(icon->property("x").toReal(), margin);
+        QCOMPARE(control->property("leftMargin").toReal(),
+                 margin + icon->property("width").toReal() + gap);
+        QVERIFY(!icon->property("highlighted").toBool());
+        control->setProperty("highlighted", true);
+        QVERIFY(icon->property("highlighted").toBool());
+        control->setProperty("highlighted", false);
+    }
+
     // Lit while it is pressed, as Silica's rows are: the name in the highlight colour,
     // and the value under it in the secondary highlight until then.
     QObject *search = find(QStringLiteral("searchSettingsEntry"));

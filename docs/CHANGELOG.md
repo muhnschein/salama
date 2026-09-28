@@ -20,6 +20,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
 - Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; the cover's style is its two pictures, and its quick action six rows, each with the glyph it wears on the cover.
 - Lines under settings that said their names again are gone; the ones left say what the name does not.
+- Website colours and Avoid the screen cutout wear icons, as the rest of Settings does: a moon and a display, sailfish-browser's for its colour scheme and notch guard.
 - Settings > Notifications lists the sites under Allowed and Blocked; its switch reads Sites can ask, and a site is forgotten with Forget this site.
 - Clear browsing data on the history page is a button.
 - The menu is an opaque sheet with the page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit while they are on, and the browser's four under a line.

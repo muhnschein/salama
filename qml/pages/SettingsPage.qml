@@ -117,10 +117,11 @@ Page {
 
             // How pages are asked to colour themselves: one choice of three, made where it
             // is, as Silica makes one (docs/DECISIONS/0035-website-colours.md). The index
-            // is the stored value.
-            ComboBox {
+            // is the stored value. The icon is sailfish-browser's for its own colour
+            // scheme (apps/browser/qml/pages/SettingsPage.qml).
+            SettingsComboBox {
                 objectName: "websiteColorsCombo"
-                width: parent.width
+                iconSource: "image://theme/icon-m-night"
                 label: qsTr("Website colours")
                 currentIndex: Settings.websiteColors
                 menu: ContextMenu {
@@ -141,9 +142,11 @@ Page {
 
             // How pages and the grid sit on the screen, so under Appearance, last: a
             // switch rather than a page, whose name says what it does
-            // (docs/DECISIONS/0013-screen-cutout.md).
-            TextSwitch {
+            // (docs/DECISIONS/0013-screen-cutout.md). The icon is sailfish-browser's for
+            // its notch guard (apps/browser/qml/pages/SettingsPage.qml).
+            SettingsSwitch {
                 objectName: "cutoutGuardSwitch"
+                iconSource: "image://theme/icon-m-display"
                 text: qsTr("Avoid the screen cutout")
                 checked: Settings.cutoutGuard
                 onCheckedChanged: Settings.cutoutGuard = checked

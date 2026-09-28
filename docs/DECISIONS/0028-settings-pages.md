@@ -51,6 +51,15 @@ reader view (0024) and `icon-m-history` for the history. For the cover, `icon-m-
 its tab count into — what the cover is here — and not `icon-m-display`, which
 sailfish-browser gives its notch guard, the screen cutout here.
 
+*Revised.* The two settings made on the main page itself wear icons too, so every row
+stands in one column of them: the website colours sailfish-browser's `icon-m-night`, from
+its colour scheme, and the screen cutout's switch `icon-m-display`, from its notch guard.
+Each is at the page's margin, and the control moved in past it by the icon and a gap —
+the shape of sailfish-browser's `BrowserComboBox`, and of a `TextSwitch` given the same
+margin (`components/SettingsComboBox.qml`, `components/SettingsSwitch.qml`). Silica's own
+list of types is not to be had where this is built, so neither leans on an icon combo box
+or switch it may or may not have.
+
 **Clearing is a dialog** (`pages/ClearDataDialog.qml`), as sailfish-browser asks it: a
 switch for each kind, in the order Firefox for Android lists them — open tabs, history,
 cookies and site data, cache — and Clear dimmed while none is on. What forgets where one
