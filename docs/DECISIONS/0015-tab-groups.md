@@ -113,7 +113,7 @@ rather than the platform's. A row laid out as the Gallery lists albums — the c
 picture as tall as the row, the name large — was tried too, and read less well than the
 four pictures beside a name. They are the
 pictures the grid already has (0008), handed out by a `previews` role on `TabGroupModel`
-— up to four paths, the most recent tab's first, as the cover's list is ordered, and an
+— up to four paths, the most recent tab's first, by each tab's `lastActive`, and an
 empty one for a tab never shown, which is drawn as the grid's placeholder ground. A place
 with no tab is fainter still, and a group with no tabs is the square's outline alone, in
 dashes: Qt Quick's `Rectangle` draws no dashed border, and `Canvas` learnt dashes after

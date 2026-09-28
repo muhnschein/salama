@@ -31,9 +31,10 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     m_liveIds = liveSet();
     // Another tab in front is other media in front.
     connect(this, &TabModel::activeTabChanged, this, &TabModel::activeMediaChanged);
-    // A group's picture is its most recent tabs' previews, so it changes whenever the
-    // cover's list does: a tab opened or closed, one brought to the front, a preview
-    // taken. Every group is told, there being only a handful.
+    connect(this, &TabModel::currentGroupChanged, this, &TabModel::currentGroupNameChanged);
+    // A group's picture is its most recent tabs' previews, so it changes whenever one
+    // of those does: a tab opened or closed, one brought to the front, a preview taken.
+    // Every group is told, there being only a handful.
     connect(this, &TabModel::recentTabsChanged, m_groupModel,
             [this]() { m_groupModel->changedAll(TabGroupModel::Role::Previews); });
 }
@@ -231,27 +232,19 @@ bool TabModel::activeMuted() const
     return isMuted(m_activeTabId);
 }
 
-QStringList TabModel::recentThumbnails() const
+QString TabModel::activeMediaTitle() const
 {
-    // Ordered on a copy of the ids: the model's own order is what the grid shows and
-    // what is persisted, and the cover must not disturb either. std::stable_sort so
-    // that tabs never yet in front -- restored ones, before they are opened -- keep the
-    // order the grid puts them in rather than an arbitrary one.
-    QList<const Tab *> ordered;
-    ordered.reserve(m_tabs.count());
-    for (const Tab &tab : m_tabs) {
-        ordered.append(&tab);
-    }
-    std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
-        return one->lastActive > other->lastActive;
-    });
+    return mediaMetadata(m_activeTabId).title;
+}
 
-    QStringList thumbnails;
-    thumbnails.reserve(ordered.count());
-    for (const Tab *tab : ordered) {
-        thumbnails.append(tab->thumbnail);
-    }
-    return thumbnails;
+QString TabModel::activeMediaArtist() const
+{
+    return mediaMetadata(m_activeTabId).artist;
+}
+
+QString TabModel::activeMediaArtwork() const
+{
+    return mediaMetadata(m_activeTabId).artwork;
 }
 
 const QList<Tab> &TabModel::tabs() const
@@ -416,6 +409,7 @@ void TabModel::closeTab(int index)
     m_awaitingFirstUrl.removeAll(closing.id);
     m_media.remove(closing.id);
     m_muted.remove(closing.id);
+    m_metadata.remove(closing.id);
     m_groupTabs->remove(closing.id);
     m_groupModel->changed(groupIndexOf(closing.groupId), TabGroupModel::Role::TabCount);
 
@@ -472,6 +466,7 @@ void TabModel::closeAllTabs()
     m_liveIds.clear();
     m_media.clear();
     m_muted.clear();
+    m_metadata.clear();
     m_groupTabs->reset(QList<int>());
     m_groupModel->changedAll(TabGroupModel::Role::TabCount);
     for (const Tab &tab : closed) {
@@ -658,10 +653,27 @@ void TabModel::setMediaState(int tabId, MediaState state)
     }
     if (state == NoMedia) {
         m_media.remove(tabId);
+        m_metadata.remove(tabId);
     } else {
         m_media.insert(tabId, state);
     }
     notifyRow(index, Role::Media);
+    if (tabId == m_activeTabId) {
+        emit activeMediaChanged();
+    }
+}
+
+TabModel::MediaMetadata TabModel::mediaMetadata(int tabId) const
+{
+    return m_metadata.value(tabId);
+}
+
+void TabModel::setMediaMetadata(int tabId, const MediaMetadata &metadata)
+{
+    if (mediaState(tabId) == NoMedia || mediaMetadata(tabId) == metadata) {
+        return;
+    }
+    m_metadata.insert(tabId, metadata);
     if (tabId == m_activeTabId) {
         emit activeMediaChanged();
     }
@@ -744,6 +756,12 @@ int TabModel::currentGroupIndex() const
     return groupIndexOf(m_currentGroupId);
 }
 
+QString TabModel::currentGroupName() const
+{
+    const int index = groupIndexOf(m_currentGroupId);
+    return index >= 0 && m_currentGroupId != defaultGroupId() ? m_groups.at(index).name : QString();
+}
+
 void TabModel::setCurrentGroupId(int groupId)
 {
     if (groupId == m_currentGroupId || groupIndexOf(groupId) < 0) {
@@ -810,6 +828,9 @@ void TabModel::renameGroup(int groupId, const QString &name)
         m_persistence->updateGroup(m_groups.at(index));
     }
     emit groupsChanged();
+    if (groupId == m_currentGroupId) {
+        emit currentGroupNameChanged();
+    }
 }
 
 bool TabModel::removeGroup(int groupId)
@@ -932,7 +953,10 @@ bool TabModel::moveGroup(int from, int to)
 
 QStringList TabModel::groupThumbnails(int groupId, int limit) const
 {
-    // Ordered as the cover's list is, on a copy, and for the same reasons.
+    // Ordered on a copy of the ids: the model's own order is what the grid shows and
+    // what is persisted, and a group's picture must not disturb either.
+    // std::stable_sort so that tabs never yet in front -- restored ones, before they are
+    // opened -- keep the order the grid puts them in rather than an arbitrary one.
     QList<const Tab *> ordered;
     for (const Tab &tab : m_tabs) {
         if (tab.groupId == groupId) {

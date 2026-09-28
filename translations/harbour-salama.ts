@@ -245,21 +245,64 @@
     </message>
 </context>
 <context>
-    <name>CoverPage</name>
+    <name>CoverDownloads</name>
     <message>
-        <source>Tabs</source>
+        <source>Downloading</source>
+        <extracomment>On the cover, over the ring that shows how far the downloads have come</extracomment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%</source>
+        <extracomment>The unit after the downloads&apos; progress on the cover, set smaller than the number: &quot;64%&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s)</source>
+        <extracomment>How many downloads are coming, on the cover, under their progress</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n file</numerusform>
+            <numerusform>%n files</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>CoverMedia</name>
+    <message>
+        <source>Playing</source>
+        <extracomment>On the cover, of what the tab in front plays</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <extracomment>On the cover, of what the tab in front has muted or paused</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · %2</source>
+        <extracomment>On the cover, whether what the tab in front plays is heard, and the site: &quot;Playing · yle.fi&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CoverPlace</name>
+    <message>
+        <source>%1 ·</source>
+        <extracomment>The tab group of the tab in front, before the tab count on the cover: &quot;Reading · 14 tabs&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <extracomment>How many tabs are open, on the cover</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
     </message>
 </context>
 <context>
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows</source>
-        <extracomment>What the cover on the home screen shows</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -732,16 +775,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tabs and count</source>
-        <extracomment>The cover shows the tab count over a picture of the last tab</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Lightning</source>
-        <extracomment>The cover shows the browser&apos;s lightning bolt</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>None</source>
         <extracomment>The cover has no quick action</extracomment>
         <translation type="unfinished"></translation>
@@ -778,9 +811,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>%1 · %2</source>
-        <extracomment>What the cover shows, and its quick action: &quot;Lightning · Search&quot;
-----------
-&quot;2 sites allowed · 1 blocked&quot;</extracomment>
+        <extracomment>&quot;2 sites allowed · 1 blocked&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -852,6 +883,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Remembered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No quick action</source>
+        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -19,8 +19,8 @@ struct Tab
     QString thumbnail;
     // When this tab was last the active one, on the model's own activation clock: a
     // counter, not a time, because all the order needs is which came after which. Zero
-    // for a tab that has not been in front since the database was written. The cover
-    // reads it (docs/DECISIONS/0014-cover-is-the-tab-count.md).
+    // for a tab that has not been in front since the database was written. A group's
+    // picture reads it (docs/DECISIONS/0015-tab-groups.md).
     qint64 lastActive = 0;
     // The tab group this tab belongs to (docs/DECISIONS/0015-tab-groups.md). Every tab
     // is in exactly one; the model gives a tab the group that was current when it was

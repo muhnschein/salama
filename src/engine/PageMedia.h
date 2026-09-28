@@ -66,11 +66,14 @@ public:
 
     // Script for WebView.runJavaScript(): the body of a function, as EngineMessages'
     // are. It carries the command and whether the tab is muted, and answers what the
-    // page plays after carrying them out.
+    // page plays after carrying them out, and what the page says of it, as JSON.
     QString script(int tabId, Command command) const;
     Q_INVOKABLE QString script(int tabId, int command) const;
 
-    // What the script answered for this tab, to this command. What a page answers to
+    // What the script answered for this tab, to this command: its JSON, or a state
+    // alone, "playing", "paused" or nothing, as an answer that failed is handed back
+    // empty. What the page says of what it plays is kept with it, a picture only by an
+    // http or https address (TabModel::MediaMetadata). What a page answers to
     // being paused is taken as it comes and asks nothing more: a page that will not
     // pause would otherwise be asked again, and again.
     void answer(int tabId, Command command, const QVariant &answer);

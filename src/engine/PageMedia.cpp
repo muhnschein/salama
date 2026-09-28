@@ -4,6 +4,10 @@
 
 #include "tabs/TabModel.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QUrl>
+
 namespace Salama {
 
 namespace {
@@ -25,6 +29,11 @@ const QString Paused = QStringLiteral("paused");
 // its own visibility, so the page's layout stays as it is -- and shown again once the
 // application is back (salamaConcealed keeps what the page had set): Gecko stops
 // decoding the pictures of a video nobody can see, and what plays on is its sound.
+//
+// The answer is JSON: the state, and while something plays or was paused from here what
+// the page says of it for the cover -- its Media Session's title, artist and largest
+// picture (the widest by its sizes; of pictures as wide, the last listed, which is how a
+// page lists them), and failing a picture there, the poster of a video it plays.
 const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed = %3;
  var media = [];
  var collect = function (doc) {
@@ -36,7 +45,7 @@ const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed
    }
  };
  collect(document);
- var playing = false, paused = false;
+ var playing = false, paused = false, poster = '';
  media.forEach(function (m) {
    if (muted && !m.muted) { m.muted = true; m.salamaMuted = true; }
    else if (!muted && m.salamaMuted) { m.muted = false; delete m.salamaMuted; }
@@ -50,8 +59,61 @@ const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed
    else if (command === 'play' && m.salamaPaused) { var p = m.play(); if (p) { p.catch(function () {}); } }
    if (!m.paused && !m.ended) { playing = true; delete m.salamaPaused; }
    else if (m.salamaPaused && !m.ended) { paused = true; }
+   else { return; }
+   if (!poster && m.localName === 'video' && m.poster) { poster = m.poster; }
  });
- return playing ? 'playing' : paused ? 'paused' : '';)";
+ var said = { state: playing ? 'playing' : paused ? 'paused' : '' };
+ var session = said.state && typeof navigator !== 'undefined' && navigator.mediaSession
+     ? navigator.mediaSession.metadata : null;
+ if (session) {
+   said.title = session.title || '';
+   said.artist = session.artist || '';
+   var widest = -1;
+   (session.artwork || []).forEach(function (art) {
+     var width = 0;
+     String(art.sizes || '').split(/\s+/).forEach(function (size) {
+       width = Math.max(width, size === 'any' ? Infinity : parseInt(size, 10) || 0);
+     });
+     if (art.src && width >= widest) { widest = width; said.artwork = art.src; }
+   });
+ }
+ if (said.state && !said.artwork && poster) { said.artwork = poster; }
+ return JSON.stringify(said);)";
+
+// What the script answered, read. Its JSON, or a state alone, which is also how an
+// answer that went wrong is handed back: as nothing.
+struct Answer
+{
+    TabModel::MediaState state = TabModel::NoMedia;
+    TabModel::MediaMetadata metadata;
+};
+
+Answer readAnswer(const QVariant &answer)
+{
+    Answer read;
+    if (answer.userType() != QMetaType::QString) {
+        return read;
+    }
+    const QString text = answer.toString();
+    const QJsonDocument json = QJsonDocument::fromJson(text.toUtf8());
+    const QJsonObject said = json.object();
+    const QString state = json.isObject() ? said.value(QStringLiteral("state")).toString() : text;
+    if (state == Playing) {
+        read.state = TabModel::MediaPlaying;
+    } else if (state == Paused) {
+        read.state = TabModel::MediaPaused;
+    }
+    read.metadata.title = said.value(QStringLiteral("title")).toString().simplified();
+    read.metadata.artist = said.value(QStringLiteral("artist")).toString().simplified();
+    // Only a picture the cover can fetch on its own: not one the page made for itself
+    // (blob:), nor one carried whole in its address (data:), however large.
+    const QUrl artwork(said.value(QStringLiteral("artwork")).toString());
+    if (artwork.isValid() &&
+        (artwork.scheme() == QLatin1String("https") || artwork.scheme() == QLatin1String("http"))) {
+        read.metadata.artwork = artwork.toString();
+    }
+    return read;
+}
 
 QString commandName(PageMedia::Command command)
 {
@@ -126,14 +188,9 @@ void PageMedia::answer(int tabId, int command, const QVariant &answer)
 
 void PageMedia::answer(int tabId, Command command, const QVariant &answer)
 {
-    const QString said = answer.userType() == QMetaType::QString ? answer.toString() : QString();
-    TabModel::MediaState state = TabModel::NoMedia;
-    if (said == Playing) {
-        state = TabModel::MediaPlaying;
-    } else if (said == Paused) {
-        state = TabModel::MediaPaused;
-    }
-    m_tabs->setMediaState(tabId, state);
+    const Answer said = readAnswer(answer);
+    m_tabs->setMediaState(tabId, said.state);
+    m_tabs->setMediaMetadata(tabId, said.metadata);
     if (command == Command::Pause || m_tabs->mediaState(tabId) != TabModel::MediaPlaying) {
         return;
     }
