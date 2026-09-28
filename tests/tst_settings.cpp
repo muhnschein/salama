@@ -40,6 +40,7 @@ private slots:
     void coverStyle();
     void trackingProtection();
     void readerStyle();
+    void readerColorsOfAnEarlierRelease();
     void isAddress_data();
     void isAddress();
     void omnibarSources();
@@ -366,7 +367,7 @@ void tst_settings::readerStyle()
     }
     {
         QSettings raw(path, QSettings::IniFormat);
-        raw.setValue(QStringLiteral("readerColors"), 9);
+        raw.setValue(QStringLiteral("readerColorScheme"), 9);
         raw.setValue(QStringLiteral("readerTypeface"), 5);
         raw.setValue(QStringLiteral("readerTextSize"), 40);
     }
@@ -375,6 +376,46 @@ void tst_settings::readerStyle()
         QCOMPARE(again.reader()->colors(), int(ReaderSettings::Ambience));
         QCOMPARE(again.reader()->typeface(), int(ReaderSettings::SansSerif));
         QCOMPARE(again.reader()->textSize(), int(ReaderSettings::TextSizeDefault));
+    }
+}
+
+// The colours as an earlier release kept them, when 0 was the light or dark theme as the
+// ambience is: that reader has the Ambience look, which follows the ambience too, and one
+// who chose a theme keeps it. The earlier key goes, so Automatic chosen since stays.
+void tst_settings::readerColorsOfAnEarlierRelease()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    const auto earlier = [&path](int colors) {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.clear();
+        raw.setValue(QStringLiteral("readerColors"), colors);
+    };
+    const auto kept = [&path]() {
+        return QSettings(path, QSettings::IniFormat).contains(QStringLiteral("readerColors"));
+    };
+
+    earlier(ReaderSettings::Automatic);
+    {
+        Sections settings(path);
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Ambience));
+        settings.reader()->setColors(ReaderSettings::Automatic);
+    }
+    QVERIFY(!kept());
+    {
+        Sections again(path);
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Automatic));
+    }
+
+    earlier(ReaderSettings::Sepia);
+    {
+        Sections settings(path);
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Sepia));
+    }
+    QVERIFY(!kept());
+    {
+        Sections again(path);
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Sepia));
     }
 }
 

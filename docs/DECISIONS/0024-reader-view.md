@@ -81,8 +81,8 @@ fontconfig for are the ones the engine's generic families are. It sits below the
 controls, so a text size growing it never moves the slider from under a finger.
 
 *Revised.* "Ambience" first meant Firefox's light or dark as the ambience is; it is now
-*Automatic*, keeping the stored 0 so a reader who chose it keeps what it did. *Ambience*
-is a look Firefox has no theme for, and the default: the article set as a Silica page is,
+*Automatic*, stored as the 0 it was. *Ambience* is a look Firefox has no theme for, and
+the default: the article set as a Silica page is,
 in the ambience's own colours and typeface. The text is `Theme.primaryColor`, links and
 the title `highlightColor`, the site and the byline `secondaryHighlightColor`; the title
 comes first, light and at the end of the line as a `PageHeader`'s, the site under it as a
@@ -95,7 +95,11 @@ the body's `--ambience-*` properties they become, and a change of ambience resty
 reader view in place as a change of setting does. A typeface's name is written into those
 properties in quotes with anything but letters, digits, spaces and hyphens taken out, so
 it cannot end what it is written into. Stored as 4, after Firefox's three, since the
-numbers are the file's. The settings page offers the colours as five squares each painted
+numbers are the file's. The choice moved to a key of its own, `readerColorScheme`, as
+the look became the default: a 0 under the earlier `readerColors` -- which a reader had
+for choosing the old Ambience, or for trying another theme and coming back to it --
+becomes the Ambience look, which follows the ambience as that did; a theme chosen stays,
+and the earlier key goes (`ReaderSettings`' constructor). The settings page offers the colours as five squares each painted
 as the reader view will be, Automatic half light and half dark, and the typefaces as two
 tiles each written in its own face, in place of two combo boxes (0028); the preview draws
 the ambience's look from the Theme directly.

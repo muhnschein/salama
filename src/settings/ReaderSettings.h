@@ -18,11 +18,12 @@ class ReaderSettings : public SettingsSection
 public:
     // The reader view's colours: Firefox's light or dark theme as the ambience is light
     // or dark, one of Firefox's reader themes whatever the ambience, or the ambience's
-    // own -- the article set as a Silica page is, in its colours and typeface. Stored,
-    // so the numbers are part of the file format: Automatic has the 0 the ambience's
-    // light or dark had when that was all "Ambience" meant, so a reader who chose it
-    // keeps what it did, and the Silica look is added after the rest
-    // (docs/DECISIONS/0024-reader-view.md).
+    // own -- the article set as a Silica page is, in its colours and typeface, and what
+    // a reader who has chosen nothing gets. Stored, so the numbers are part of the file
+    // format: Automatic has the 0 the ambience's light or dark had when that was all
+    // "Ambience" meant, and the Silica look is added after the rest. Kept under a key of
+    // its own since the Silica look became the default, which a 0 under the earlier one
+    // becomes, the others staying as they were (docs/DECISIONS/0024-reader-view.md).
     //
     // Unscoped on purpose, as every enum QML reads is (cpp:S3642): the page reaches
     // these as `ReaderSettings.Sepia`, and QML could not do that with a scoped enum
