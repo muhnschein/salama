@@ -37,7 +37,6 @@ private slots:
     void urlForInput();
     void displayAddress_data();
     void displayAddress();
-    void coverStyle();
     void trackingProtection();
     void readerStyle();
     void readerColorsOfAnEarlierRelease();
@@ -118,63 +117,6 @@ void tst_settings::searchEngineSelection()
     QCOMPARE(settings.search()->engineIndex(), 2);
     settings.search()->setEngine(QStringLiteral("startpage"));
     QCOMPARE(spy.count(), 1);
-}
-
-void tst_settings::coverStyle()
-{
-    QTemporaryDir dir;
-    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
-    Sections settings(path);
-    QSignalSpy spy(settings.cover(), &CoverSettings::styleChanged);
-
-    // The lightning by default: the cover a reader who has not been to Settings gets.
-    QCOMPARE(settings.cover()->style(), int(CoverSettings::Lightning));
-
-    settings.cover()->setStyle(CoverSettings::LatestTab);
-    QCOMPARE(settings.cover()->style(), int(CoverSettings::LatestTab));
-    QCOMPARE(spy.count(), 1);
-
-    // Setting what is already set says nothing.
-    settings.cover()->setStyle(CoverSettings::LatestTab);
-    QCOMPARE(spy.count(), 1);
-
-    // A value from outside the range is refused rather than stored: this comes from a
-    // file a user can edit. 2 among them, the number the every-tab cover had.
-    settings.cover()->setStyle(7);
-    settings.cover()->setStyle(2);
-    settings.cover()->setStyle(-1);
-    QCOMPARE(settings.cover()->style(), int(CoverSettings::LatestTab));
-    QCOMPARE(spy.count(), 1);
-    {
-        Sections again(path);
-        QCOMPARE(again.cover()->style(), int(CoverSettings::LatestTab));
-    }
-
-    settings.cover()->setStyle(CoverSettings::Lightning);
-    QCOMPARE(spy.count(), 2);
-    {
-        Sections again(path);
-        QCOMPARE(again.cover()->style(), int(CoverSettings::Lightning));
-    }
-
-    // What the covers before the lightning left in the file. The icon alone was 0 and
-    // the last tab 1, which the numbers still mean; every tab was 2, and reads back as
-    // the default, as any value out of range does rather than as a cover that draws
-    // nothing.
-    const QList<QPair<int, int>> stored{
-        {0, CoverSettings::Lightning},
-        {1, CoverSettings::LatestTab},
-        {2, CoverSettings::Lightning},
-        {42, CoverSettings::Lightning},
-    };
-    for (const QPair<int, int> &entry : stored) {
-        {
-            QSettings raw(path, QSettings::IniFormat);
-            raw.setValue(QStringLiteral("coverStyle"), entry.first);
-        }
-        Sections again(path);
-        QCOMPARE(again.cover()->style(), entry.second);
-    }
 }
 
 void tst_settings::searchUrl()
@@ -290,7 +232,7 @@ void tst_settings::trackingProtection()
     settings.privacy()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(spy.count(), 1);
 
-    // Refused rather than stored, as the cover's style is.
+    // Refused rather than stored, as the cover's quick action is.
     settings.privacy()->setTrackingProtection(3);
     settings.privacy()->setTrackingProtection(-1);
     QCOMPARE(settings.privacy()->trackingProtection(),

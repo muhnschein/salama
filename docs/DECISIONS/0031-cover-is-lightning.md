@@ -1,5 +1,9 @@
 # 0031 — The cover is lightning
 
+**Superseded by 0037.** The cover says where the reader was, what downloads and what
+plays, over the icon's bolt as a field of faint dots; the lightning and the choice of
+covers are gone. This record is kept for the history.
+
 ## Context
 0014 made the cover the tab count over a field of the open tabs' previews, with two
 other styles in Settings: the icon alone, and the count over the tab last read. None of

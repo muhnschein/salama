@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The cover: what it shows on the home screen, the lightning or the last tab
-// (docs/DECISIONS/0031-cover-is-lightning.md, 0028-settings-pages.md), and the one quick
-// action it offers there (0029-quick-action.md).
+// The cover: the one quick action it offers on the home screen (docs/DECISIONS/
+// 0029-quick-action.md, 0028-settings-pages.md), under a picture of the cover with the
+// action on it (0037-cover-is-where-you-were.md). What the cover shows is not a choice:
+// it says what the browser has to say.
 //
-// What it shows is chosen by its picture: the two covers side by side, each with the
-// quick action where the home screen draws it, the one set ringed. The action is one of
-// six rows under a line saying why there is one, each with the glyph it wears on the
-// cover, the one set lit -- every choice on the screen at once, where one row's menu hid
-// them. Choosing a bookmark asks which, and the action is that bookmark's only once one is
-// picked: backing out leaves it as it was. Its row then names the bookmark as it is called
-// now, and under the rows are the glyphs the action can wear.
+// The action is one of six rows under a line saying why there is one, each with the glyph
+// it wears on the cover, the one set lit -- every choice on the screen at once, where one
+// row's menu hid them. Choosing a bookmark asks which, and the action is that bookmark's
+// only once one is picked: backing out leaves it as it was. Its row then names the
+// bookmark as it is called now, and under the rows are the glyphs the action can wear.
 //
 // Nothing here needs saving: each control writes its setting as it changes, and the
 // cover (cover/CoverPage.qml) follows the settings.
@@ -95,71 +94,15 @@ Page {
                 title: qsTr("Cover")
             }
 
-            SectionHeader {
-                //: What the cover on the home screen shows
-                text: qsTr("Shows")
-            }
-
-            // The two covers side by side and centred, the default first, each a choice.
-            // Two thirds of a real cover across, so the rows under them start on the
-            // screen with them and the glyph on each is still told apart. By bindings
-            // rather than a Row, which would place them only once it had been polished.
-            Item {
-                id: styles
-
-                readonly property real between: 2 * Theme.paddingLarge
-                readonly property real tileWidth: Math.min(Theme.coverSizeLarge.width * 2 / 3,
-                                                           (width - between) / 2
-                                                           - Theme.horizontalPageMargin)
-
-                objectName: "coverStyles"
-                width: parent.width
-                height: Math.max(lightningChoice.height, latestTabChoice.height)
-                        + Theme.paddingMedium
-
-                BackgroundItem {
-                    id: lightningChoice
-
-                    objectName: "coverStyleChoice-lightning"
-                    x: styles.width / 2 - styles.between / 2 - width
-                    width: styles.tileWidth
-                    height: lightningPreview.height
-                    onClicked: CoverSettings.style = CoverSettings.Lightning
-
-                    QuickActionPreview {
-                        id: lightningPreview
-
-                        objectName: "lightningCoverPreview"
-                        width: parent.width
-                        style: CoverSettings.Lightning
-                        selected: CoverSettings.style === CoverSettings.Lightning
-                        glyph: coverSettingsPage.glyph
-                        onDark: coverSettingsPage.onDark
-                        text: coverSettingsPage.names.coverStyle(CoverSettings.Lightning)
-                    }
-                }
-
-                BackgroundItem {
-                    id: latestTabChoice
-
-                    objectName: "coverStyleChoice-latestTab"
-                    x: styles.width / 2 + styles.between / 2
-                    width: styles.tileWidth
-                    height: latestTabPreview.height
-                    onClicked: CoverSettings.style = CoverSettings.LatestTab
-
-                    QuickActionPreview {
-                        id: latestTabPreview
-
-                        objectName: "latestTabCoverPreview"
-                        width: parent.width
-                        style: CoverSettings.LatestTab
-                        selected: CoverSettings.style === CoverSettings.LatestTab
-                        glyph: coverSettingsPage.glyph
-                        onDark: coverSettingsPage.onDark
-                        text: coverSettingsPage.names.coverStyle(CoverSettings.LatestTab)
-                    }
-                }
+            // The cover, centred, two thirds of a real one across, so the rows under it
+            // start on the screen with it and the glyph on it is still told apart.
+            QuickActionPreview {
+                objectName: "coverPreview"
+                x: (parent.width - width) / 2
+                width: Math.min(Theme.coverSizeLarge.width * 2 / 3,
+                                parent.width - 2 * Theme.horizontalPageMargin)
+                glyph: coverSettingsPage.glyph
+                onDark: coverSettingsPage.onDark
             }
 
             SectionHeader {

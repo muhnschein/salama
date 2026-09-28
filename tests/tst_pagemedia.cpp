@@ -4,6 +4,8 @@
 #include "tabs/TabModel.h"
 
 #include <QJSEngine>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSignalSpy>
 #include <QtTest>
 
@@ -36,6 +38,7 @@ QString request(int tabId, PageMedia::Command command)
 // muted or not, and with what the engine says of its sound (hasAudio), a <video> -- or
 // an <audio> when that is left out, Gecko having mozHasAudio on a video only. `page`
 // makes a document of elements and frames; a frame from another site has no document.
+// `navigator` has a Media Session with nothing said in it until a test says something.
 const char *const FakeDom = R"(
 function media(options) {
   var m = { paused: true, ended: false, muted: false, volume: 1, plays: 0,
@@ -56,6 +59,7 @@ function run(script, doc) {
   return new Function(script)();
 }
 var document = null;
+var navigator = { mediaSession: { metadata: null } };
 )";
 
 } // namespace
@@ -67,6 +71,7 @@ class tst_pagemedia : public QObject
 private slots:
     void scriptCarriesTheCommandAndTheMute();
     void scriptOverAPage();
+    void scriptSaysWhatPlays();
     void answersBecomeTheTabsState();
     void theTabInFrontPausesTheOthers();
     void aTabBehindIsPausedWhileTheFrontPlays();
@@ -113,10 +118,11 @@ void tst_pagemedia::scriptOverAPage()
     const int id = tabs.newTab(QStringLiteral("https://a.example/"));
     QJSEngine engine;
     QVERIFY(!engine.evaluate(QString::fromUtf8(FakeDom)).isError());
-    // The script for a command, run over a page; what it answers, or its error.
+    // The script for a command, run over a page; the state it answers, or its error.
     const auto run = [&](PageMedia::Command command, const QString &page) {
         engine.globalObject().setProperty(QStringLiteral("script"), media.script(id, command));
-        const QJSValue result = engine.evaluate(QStringLiteral("run(script, %1)").arg(page));
+        const QJSValue result =
+            engine.evaluate(QStringLiteral("JSON.parse(run(script, %1)).state").arg(page));
         return result.isError() ? QStringLiteral("error: ") + result.toString() : result.toString();
     };
     const auto js = [&](const QString &code) { return engine.evaluate(code); };
@@ -222,6 +228,78 @@ void tst_pagemedia::scriptOverAPage()
                 .toBool());
 }
 
+// What the page says of what it plays, for the cover: its Media Session's, and a
+// video's poster when that has no picture.
+void tst_pagemedia::scriptSaysWhatPlays()
+{
+    TabModel tabs(nullptr);
+    PageMedia media(&tabs, Delay);
+    const int id = tabs.newTab(QStringLiteral("https://a.example/"));
+    QJSEngine engine;
+    QVERIFY(!engine.evaluate(QString::fromUtf8(FakeDom)).isError());
+    const auto said = [&](const QString &page) {
+        engine.globalObject().setProperty(QStringLiteral("script"),
+                                          media.script(id, PageMedia::Command::Query));
+        const QJSValue result = engine.evaluate(QStringLiteral("run(script, %1)").arg(page));
+        return QJsonDocument::fromJson(result.toString().toUtf8()).object();
+    };
+    const auto js = [&](const QString &code) { return engine.evaluate(code); };
+    const QString title = QStringLiteral("title");
+    const QString artist = QStringLiteral("artist");
+    const QString artwork = QStringLiteral("artwork");
+
+    // Nothing said: the state alone.
+    js(QStringLiteral("var song = media({ paused: false });"
+                      "var film = media({ paused: false, hasAudio: true,"
+                      " poster: 'https://a.example/poster.jpg' });"));
+    QCOMPARE(said(QStringLiteral("page([song])")),
+             QJsonObject({{QStringLiteral("state"), QStringLiteral("playing")}}));
+
+    // A video's poster is its picture while nothing else is said.
+    QCOMPARE(said(QStringLiteral("page([song, film])")).value(artwork).toString(),
+             QStringLiteral("https://a.example/poster.jpg"));
+
+    // The Media Session's title and artist, and its widest picture, over the poster.
+    js(QStringLiteral(
+        "navigator.mediaSession.metadata = { title: 'Symphony No. 5', artist: 'Beethoven',"
+        " artwork: [{ src: 'https://a.example/96.png', sizes: '96x96' },"
+        "           { src: 'https://a.example/512.png', sizes: '256x256 512x512' },"
+        "           { src: 'https://a.example/128.png', sizes: '128x128' }] };"));
+    QJsonObject answer = said(QStringLiteral("page([film])"));
+    QCOMPARE(answer.value(title).toString(), QStringLiteral("Symphony No. 5"));
+    QCOMPARE(answer.value(artist).toString(), QStringLiteral("Beethoven"));
+    QCOMPARE(answer.value(artwork).toString(), QStringLiteral("https://a.example/512.png"));
+    // A picture of any size is the widest; of pictures saying nothing of their size, the
+    // last listed.
+    js(QStringLiteral("navigator.mediaSession.metadata.artwork = ["
+                      " { src: 'https://a.example/any.svg', sizes: 'any' },"
+                      " { src: 'https://a.example/512.png', sizes: '512x512' }];"));
+    QCOMPARE(said(QStringLiteral("page([film])")).value(artwork).toString(),
+             QStringLiteral("https://a.example/any.svg"));
+    js(QStringLiteral(
+        "navigator.mediaSession.metadata.artwork = ["
+        " { src: 'https://a.example/one.png' }, { src: 'https://a.example/two.png' }];"));
+    QCOMPARE(said(QStringLiteral("page([film])")).value(artwork).toString(),
+             QStringLiteral("https://a.example/two.png"));
+    // No picture in the session: the poster.
+    js(QStringLiteral("navigator.mediaSession.metadata.artwork = [];"));
+    QCOMPARE(said(QStringLiteral("page([film])")).value(artwork).toString(),
+             QStringLiteral("https://a.example/poster.jpg"));
+
+    // Paused from here, it is still said; with nothing playing, nothing is.
+    js(QStringLiteral("film.paused = true; film.salamaPaused = true;"));
+    QCOMPARE(said(QStringLiteral("page([film])")).value(title).toString(),
+             QStringLiteral("Symphony No. 5"));
+    js(QStringLiteral("delete film.salamaPaused;"));
+    QCOMPARE(said(QStringLiteral("page([film])")),
+             QJsonObject({{QStringLiteral("state"), QString()}}));
+
+    // A page without a Media Session says what it plays all the same.
+    js(QStringLiteral("navigator = {};"));
+    QCOMPARE(said(QStringLiteral("page([song])")).value(QStringLiteral("state")).toString(),
+             QStringLiteral("playing"));
+}
+
 void tst_pagemedia::answersBecomeTheTabsState()
 {
     TabModel tabs(nullptr);
@@ -246,10 +324,40 @@ void tst_pagemedia::answersBecomeTheTabsState()
     media.answer(id, PageMedia::Command::Query, QStringLiteral("Playing"));
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
 
-    // A page going takes what it played with it.
-    media.answer(id, PageMedia::Command::Query, QStringLiteral("playing"));
+    // The script's JSON: the state, and what the page says of what it plays -- a
+    // picture only by an address the cover can fetch.
+    media.answer(
+        id, PageMedia::Command::Query,
+        QStringLiteral("{\"state\":\"playing\",\"title\":\" Symphony\\n No. 5 \","
+                       "\"artist\":\"Beethoven\",\"artwork\":\"https://a.example/5.png\"}"));
+    QCOMPARE(tabs.mediaState(id), TabModel::MediaPlaying);
+    QCOMPARE(tabs.activeMediaTitle(), QStringLiteral("Symphony No. 5"));
+    QCOMPARE(tabs.activeMediaArtist(), QStringLiteral("Beethoven"));
+    QCOMPARE(tabs.activeMediaArtwork(), QStringLiteral("https://a.example/5.png"));
+    for (const QString &unreachable :
+         {QStringLiteral("blob:https://a.example/1"), QStringLiteral("data:image/png;base64,AA"),
+          QStringLiteral("file:///etc/passwd"), QStringLiteral("5.png")}) {
+        media.answer(id, PageMedia::Command::Query,
+                     QStringLiteral("{\"state\":\"paused\",\"artwork\":\"%1\"}").arg(unreachable));
+        QCOMPARE(tabs.mediaState(id), TabModel::MediaPaused);
+        QCOMPARE(tabs.activeMediaArtwork(), QString());
+    }
+    QCOMPARE(tabs.activeMediaTitle(), QString());
+    // What is not a string says nothing; a state that is not one of the words is none.
+    media.answer(id, PageMedia::Command::Query,
+                 QStringLiteral("{\"state\":\"playing\",\"title\":5,\"artist\":null}"));
+    QCOMPARE(tabs.mediaState(id), TabModel::MediaPlaying);
+    QCOMPARE(tabs.activeMediaTitle(), QString());
+    media.answer(id, PageMedia::Command::Query, QStringLiteral("{\"state\":1,\"title\":\"A\"}"));
+    QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
+    QCOMPARE(tabs.activeMediaTitle(), QString());
+
+    // A page going takes what it played with it, and what it said of it.
+    media.answer(id, PageMedia::Command::Query,
+                 QStringLiteral("{\"state\":\"playing\",\"title\":\"Symphony No. 5\"}"));
     media.forget(id);
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
+    QCOMPARE(tabs.activeMediaTitle(), QString());
 
     // A tab that is not there has nothing to say.
     media.answer(id + 1, PageMedia::Command::Query, QStringLiteral("playing"));

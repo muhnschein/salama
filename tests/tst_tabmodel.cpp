@@ -63,6 +63,7 @@ private slots:
     void closedTabsCanBeReopened();
     void livePagesAreCapped();
     void mediaFollowsThePage();
+    void mediaMetadataGoesWithWhatPlays();
     void startPageTabs();
 };
 
@@ -391,11 +392,15 @@ void tst_tabmodel::recentThumbnailsFollowTheFront()
     const int second = model.newTab(QStringLiteral("https://second.example/"));
     const int third = model.newTab(QStringLiteral("https://third.example/"));
     QSignalSpy recent(&model, &TabModel::recentTabsChanged);
+    // The default group's, which holds every tab here.
+    const auto recentThumbnails = [&model]() {
+        return model.groupThumbnails(model.defaultGroupId(), 10);
+    };
 
-    // One entry per tab, whether or not it has a picture, so the list is never shorter
-    // than the number the cover prints above it.
-    QCOMPARE(model.recentThumbnails().count(), 3);
-    for (const QString &thumbnail : model.recentThumbnails()) {
+    // One entry per tab, whether or not it has a picture, so a group's picture keeps a
+    // cell for each.
+    QCOMPARE(recentThumbnails().count(), 3);
+    for (const QString &thumbnail : recentThumbnails()) {
         QVERIFY(thumbnail.isEmpty());
     }
 
@@ -408,28 +413,28 @@ void tst_tabmodel::recentThumbnailsFollowTheFront()
     QVERIFY(recent.count() > 0);
 
     // The third tab is the one in front: newTab activates what it opens.
-    QCOMPARE(model.recentThumbnails().first(), thirdShot);
+    QCOMPARE(recentThumbnails().first(), thirdShot);
 
     recent.clear();
     model.activateTabById(first);
     QVERIFY(recent.count() > 0);
-    QCOMPARE(model.recentThumbnails().first(), firstShot);
+    QCOMPARE(recentThumbnails().first(), firstShot);
 
-    // Nothing the grid does reorders the cover: a carried cell changes positions, not
+    // Nothing the grid does reorders the pictures: a carried cell changes positions, not
     // which tab was last read.
     model.moveTab(0, 2);
-    QCOMPARE(model.recentThumbnails().first(), firstShot);
+    QCOMPARE(recentThumbnails().first(), firstShot);
 
     // The tab that has never been in front keeps the grid's order rather than an
     // arbitrary one: second was opened before third and comes after it here only
     // because third was activated later.
     model.activateTabById(second);
-    QCOMPARE(model.recentThumbnails().at(1), firstShot);
-    QCOMPARE(model.recentThumbnails().at(2), thirdShot);
+    QCOMPARE(recentThumbnails().at(1), firstShot);
+    QCOMPARE(recentThumbnails().at(2), thirdShot);
 
     model.closeTab(model.indexOf(first));
-    QCOMPARE(model.recentThumbnails().count(), 2);
-    QVERIFY(!model.recentThumbnails().contains(firstShot));
+    QCOMPARE(recentThumbnails().count(), 2);
+    QVERIFY(!recentThumbnails().contains(firstShot));
 }
 
 void tst_tabmodel::recentOrderSurvivesARestart()
@@ -451,9 +456,10 @@ void tst_tabmodel::recentOrderSurvivesARestart()
     }
     {
         TabModel model(&persistence, shots.path());
-        QCOMPARE(model.recentThumbnails().count(), 3);
+        const QStringList recent = model.groupThumbnails(model.defaultGroupId(), 10);
+        QCOMPARE(recent.count(), 3);
         // The restored tab is in front, and was also the last one read.
-        QCOMPARE(model.recentThumbnails().first(), wanted);
+        QCOMPARE(recent.first(), wanted);
     }
 }
 
@@ -1503,6 +1509,52 @@ void tst_tabmodel::livePagesAreCapped()
     model.closeTabById(ids.at(5));
     QVERIFY(role(model, model.indexOf(ids.at(3)), roleId(TabModel::Role::Live)).toBool());
     model.closeAllTabs();
+}
+
+// What a page says of what it plays is the cover's to show while the page plays, and
+// goes with what it plays: stopping, the tab closing.
+void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
+{
+    TabModel model(nullptr);
+    const int behind = model.newTab(QStringLiteral("https://a.example/"));
+    const int front = model.newTab(QStringLiteral("https://b.example/"));
+    const TabModel::MediaMetadata symphony{QStringLiteral("Symphony No. 5"),
+                                           QStringLiteral("Beethoven"),
+                                           QStringLiteral("https://b.example/5.png")};
+    QSignalSpy activeSpy(&model, &TabModel::activeMediaChanged);
+
+    // Nothing plays: nothing is kept.
+    model.setMediaMetadata(front, symphony);
+    QCOMPARE(model.mediaMetadata(front), TabModel::MediaMetadata());
+    QCOMPARE(activeSpy.count(), 0);
+
+    model.setMediaState(front, TabModel::MediaPlaying);
+    activeSpy.clear();
+    model.setMediaMetadata(front, symphony);
+    QCOMPARE(activeSpy.count(), 1);
+    QCOMPARE(model.activeMediaTitle(), symphony.title);
+    QCOMPARE(model.activeMediaArtist(), symphony.artist);
+    QCOMPARE(model.activeMediaArtwork(), symphony.artwork);
+    // Said twice, it is said once.
+    model.setMediaMetadata(front, symphony);
+    QCOMPARE(activeSpy.count(), 1);
+
+    // Behind the front, it is kept but not the front's to tell.
+    model.setMediaState(behind, TabModel::MediaPlaying);
+    activeSpy.clear();
+    model.setMediaMetadata(behind, {QStringLiteral("Other"), QString(), QString()});
+    QCOMPARE(activeSpy.count(), 0);
+    QCOMPARE(model.mediaMetadata(behind).title, QStringLiteral("Other"));
+    // Brought to the front, it is.
+    model.activateTabById(behind);
+    QCOMPARE(model.activeMediaTitle(), QStringLiteral("Other"));
+    model.activateTabById(front);
+
+    // Stopped, it goes; closed, too.
+    model.setMediaState(front, TabModel::NoMedia);
+    QCOMPARE(model.activeMediaTitle(), QString());
+    model.closeTabById(behind);
+    QCOMPARE(model.mediaMetadata(behind), TabModel::MediaMetadata());
 }
 
 // What a page plays is the page's, and goes with it; whether its tab is muted is the

@@ -8,6 +8,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- A new cover: where you were -- the site and title of the tab in front -- over the app's bolt drawn as faint dots in the ambience's colour. While something downloads, a ring fills as it goes, with the percentage in it; while the tab in front plays, the cover shows what plays, with its cover art or the video's picture when the page gives one, and says whether it plays or is paused. With no tab open, the dotted bolt alone. Nothing on it moves, and the quick action and the mute stay along its foot.
 - Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
 - The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic; a reader who had it chosen gets the new look, and one who chose Light, Sepia or Dark keeps it.
 - Settings > History counts what is kept on the phone -- the pages in the history, the downloads, the recently closed tabs and the open tabs -- above Clear browsing data, and the Clear browsing data dialog says how much of each kind goes.
@@ -18,7 +19,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 
 ### Changed
 - Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
-- Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; the cover's style is its two pictures, and its quick action six rows, each with the glyph it wears on the cover.
+- Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; and the cover's quick action six rows, each with the glyph it wears on the cover, under a picture of the cover wearing it.
 - Lines under settings that said their names again are gone; the ones left say what the name does not.
 - Website colours and Avoid the screen cutout wear icons, as the rest of Settings does: a moon and a display, sailfish-browser's for its colour scheme and notch guard.
 - Settings > Notifications lists the sites under Allowed and Blocked; its switch reads Sites can ask, and a site is forgotten with Forget this site.
@@ -27,6 +28,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - In the grid, the tab in front is framed by a thin rounded line just outside its picture rather than washed; the close buttons are smaller discs with the same place to tap; a group name a tab is carried over lights in a rounded wash; search results light the letters typed; and the list of recently closed tabs comes up on the same sheet as the menu.
 - The list of tab groups shows each group as a small square picture of its most recent tabs, with the current group framed, and "N tabs" under the name; the row that makes a new group wears the theme's ringed plus, and its dialog reads New tab group, with Create.
 - The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
+
+### Removed
+- The lightning cover and its flash, and the choice of cover in Settings: there is one cover now.
 
 ## [0.8.0] - 2026-09-26
 

@@ -8,7 +8,6 @@ namespace Salama {
 
 namespace {
 
-const char *const StyleKey = "coverStyle";
 const char *const QuickActionKey = "quickAction";
 const char *const QuickActionBookmarkKey = "quickActionBookmark";
 const char *const QuickActionBookmarkUrlKey = "quickActionBookmarkUrl";
@@ -33,18 +32,6 @@ const QStringList &quickActionIconNames()
 CoverSettings::CoverSettings(QSettings &file, QObject *parent)
     : SettingsSection(file, parent)
 {
-}
-
-int CoverSettings::style() const
-{
-    return choice(StyleKey, Lightning, Lightning, LatestTab);
-}
-
-void CoverSettings::setStyle(int style)
-{
-    if (setChoice(StyleKey, style, Lightning, Lightning, LatestTab)) {
-        emit styleChanged();
-    }
 }
 
 int CoverSettings::quickAction() const

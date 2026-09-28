@@ -52,14 +52,6 @@ QtObject {
                                    .arg(textSize(step))
     }
 
-    function coverStyle(style) {
-        return style === CoverSettings.LatestTab
-                //: The cover shows the tab count over a picture of the last tab
-                ? qsTr("Tabs and count")
-                //: The cover shows the browser's lightning bolt
-                : qsTr("Lightning")
-    }
-
     function quickAction(action) {
         return [
             //: The cover has no quick action
@@ -88,14 +80,12 @@ QtObject {
         return bookmarkId > 0 ? bookmarkTitle : qsTr("Deleted bookmark")
     }
 
-    // The cover, and its quick action when it has one: "Lightning · Yle Uutiset".
-    function cover(style, action, bookmarkId, bookmarkTitle) {
-        if (action === CoverSettings.QuickActionNone) {
-            return coverStyle(style)
-        }
-        //: What the cover shows, and its quick action: "Lightning · Search"
-        return qsTr("%1 · %2").arg(coverStyle(style))
-                              .arg(quickActionValue(action, bookmarkId, bookmarkTitle))
+    // The cover, by its quick action: "Search", "Yle Uutiset" for a bookmark's.
+    function cover(action, bookmarkId, bookmarkTitle) {
+        return action === CoverSettings.QuickActionNone
+                //: The cover's line in Settings when it offers no quick action
+                ? qsTr("No quick action")
+                : quickActionValue(action, bookmarkId, bookmarkTitle)
     }
 
     function trackingProtection(level) {

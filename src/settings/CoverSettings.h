@@ -9,11 +9,12 @@
 
 namespace Salama {
 
-// Settings > Cover: what the cover shows, and its one quick action.
+// Settings > Cover: the cover's one quick action. What the cover shows is not a setting
+// (docs/DECISIONS/0037-cover-is-where-you-were.md); the "coverStyle" key an earlier
+// version kept is left in the file, unread.
 class CoverSettings : public SettingsSection
 {
     Q_OBJECT
-    Q_PROPERTY(int style READ style WRITE setStyle NOTIFY styleChanged)
     // The cover's one quick action, a QuickAction value, and for QuickActionBookmark the
     // bookmark it opens and the picture it wears (docs/DECISIONS/0029-quick-action.md).
     // The bookmark is kept as its id, and its address and title beside it: the id for
@@ -30,24 +31,11 @@ class CoverSettings : public SettingsSection
     Q_PROPERTY(QStringList quickActionIcons READ quickActionIcons CONSTANT)
 
 public:
-    // What the cover shows; see docs/DECISIONS/0031-cover-is-lightning.md. The values
-    // are stored, so their numbers are part of the file format. 0 and 1 are the numbers
-    // the icon-only and last-tab covers had, so a reader who chose the one gets the
-    // lightning and a reader who chose the other keeps it; the every-tab cover's 2 is
-    // out of range now, and reads back as the lightning as any such value does.
-    //
-    // Unscoped on purpose, as ReaderSettings::Colors is (cpp:S3642): the cover reaches
-    // these as `CoverSettings.LatestTab`, which Qt 5.6 cannot do for a scoped enum.
-    enum Style // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
-    {
-        Lightning = 0,
-        LatestTab = 1
-    };
-    Q_ENUM(Style)
-
     // What the cover's quick action does: nothing, open the address bar for a new tab,
     // show the bookmarks, open one bookmark, show the downloads, or show the history.
-    // Stored, and unscoped as Style is, for the same reason.
+    // Stored, so the numbers are part of the file format. Unscoped on purpose, as
+    // ReaderSettings::Colors is (cpp:S3642): QML reaches these as
+    // `CoverSettings.QuickActionSearch`, which Qt 5.6 cannot do for a scoped enum.
     enum QuickAction // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         QuickActionNone = 0,
@@ -61,13 +49,8 @@ public:
 
     explicit CoverSettings(QSettings &file, QObject *parent = nullptr);
 
-    // Out-of-range values read back as the default rather than as a cover that draws
-    // nothing: this comes from a file a user can edit.
-    int style() const;
-    void setStyle(int style);
-
     // Search unless changed: what the cover offered before there was a choice. Out of
-    // range reads back as the default, like style.
+    // range reads back as the default: this comes from a file a user can edit.
     int quickAction() const;
     void setQuickAction(int action);
     // 0, with no address and no title, when no bookmark has been picked.
@@ -90,7 +73,6 @@ public:
     Q_INVOKABLE static QString iconPath(const QString &name, qreal iconSize, bool onDark);
 
 signals:
-    void styleChanged();
     void quickActionChanged();
     void quickActionBookmarkChanged();
     void quickActionIconChanged();

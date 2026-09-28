@@ -1,8 +1,8 @@
 # 0014 — The cover is the tab count over a field of page previews
 
-**Superseded by 0031.** The cover is lightning by default, and of the three styles
-below only the last tab remains, as the one a reader can choose instead; this record is
-kept for the history and for the heading's measures, which that style still uses.
+**Superseded by 0031**, itself superseded by 0037: the cover says where the reader was,
+what downloads and what plays, and none of the three styles below remains. This record is
+kept for the history.
 
 ## Context
 The first cover showed the active tab: its favicon, its title over three lines, and

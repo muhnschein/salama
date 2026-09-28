@@ -78,7 +78,7 @@ QSet<QString> metaMembers(const QMetaObject *meta)
     for (int i = 0; i < meta->methodCount(); ++i) {
         members.insert(QString::fromLatin1(meta->method(i).name()));
     }
-    // Enumerators too: QML reads `CoverSettings.LatestTab` off the singleton the same
+    // Enumerators too: QML reads `CoverSettings.QuickActionSearch` off the singleton the same
     // way it reads a property, and a checker that knew only properties and methods
     // called every one of them a typo.
     for (int i = 0; i < meta->enumeratorCount(); ++i) {

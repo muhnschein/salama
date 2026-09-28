@@ -73,6 +73,8 @@ always did: the field has its focus as the window comes up, and the keyboard wit
 *Revised* (0036): the action is six rows on the page, each with the glyph it wears, rather
 than one row's menu, and the cover's two pictures are the choice of what it shows, each
 with the action on it; the picture of the cover while a tab plays gave way to a line.
+*Revised* (0037): there is one cover, so one picture of it heads the page, the halftone with
+the action on it, and chooses nothing.
 
 ## Consequences
 `CoverSettings` stores the choice, the bookmark and its glyph, and `BookmarkModel` answers by id

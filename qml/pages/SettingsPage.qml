@@ -102,13 +102,13 @@ Page {
             SettingsEntry {
                 objectName: "coverSettingsEntry"
                 // The one sailfish-browser's toolbar writes the tab count into
-                // (apps/browser/qml/pages/components/ToolBar.qml:162), which is what
-                // the cover can be set to show (docs/DECISIONS/0031-cover-is-lightning.md).
+                // (apps/browser/qml/pages/components/ToolBar.qml:162), which the cover
+                // says at rest (docs/DECISIONS/0037-cover-is-where-you-were.md).
                 // Not icon-m-display: sailfish-browser has that for its notch guard,
                 // which is the screen cutout below.
                 iconSource: "image://theme/icon-m-tabs"
                 text: qsTr("Cover")
-                value: settingsPage.names.cover(CoverSettings.style, CoverSettings.quickAction,
+                value: settingsPage.names.cover(CoverSettings.quickAction,
                                                 settingsPage.coverBookmark,
                                                 (BookmarkModel.revision,
                                                  BookmarkModel.titleOf(settingsPage.coverBookmark)))

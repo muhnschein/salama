@@ -43,10 +43,6 @@ class TabModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list of row
     Q_PROPERTY(QString activeUrl READ activeUrl NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeTitle READ activeTitle NOTIFY activeTabDataChanged)
     Q_PROPERTY(QString activeFavicon READ activeFavicon NOTIFY activeTabDataChanged)
-    // The open tabs' previews, most recently in front first. The last-tab cover draws
-    // the first (docs/DECISIONS/0031-cover-is-lightning.md); a tab with no picture is an
-    // empty string rather than a gap, so the list is always as long as count.
-    Q_PROPERTY(QStringList recentThumbnails READ recentThumbnails NOTIFY recentTabsChanged)
     // The group the grid shows and new tabs open in. It follows the active tab, and
     // choosing another group brings that group's most recent tab to the front.
     Q_PROPERTY(
@@ -56,6 +52,11 @@ class TabModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list of row
     // bar's media controls show (docs/DECISIONS/0026-media-controls.md).
     Q_PROPERTY(int activeMediaState READ activeMediaState NOTIFY activeMediaChanged)
     Q_PROPERTY(bool activeMuted READ activeMuted NOTIFY activeMediaChanged)
+    // What the page in front says of what it plays, as the cover shows it
+    // (docs/DECISIONS/0037-cover-is-where-you-were.md): empty while it says nothing.
+    Q_PROPERTY(QString activeMediaTitle READ activeMediaTitle NOTIFY activeMediaChanged)
+    Q_PROPERTY(QString activeMediaArtist READ activeMediaArtist NOTIFY activeMediaChanged)
+    Q_PROPERTY(QString activeMediaArtwork READ activeMediaArtwork NOTIFY activeMediaChanged)
 
 public:
     enum class Role
@@ -81,8 +82,8 @@ public:
 
     // Something with sound is playing on the page; or this browser paused it, and it
     // can be played again from here; or neither. Unscoped on purpose, as
-    // CoverSettings::Style is: QML reads these as `TabModel.MediaPlaying`, which Qt 5.6
-    // cannot do for a scoped enum (cpp:S3642).
+    // CoverSettings::QuickAction is: QML reads these as `TabModel.MediaPlaying`, which
+    // Qt 5.6 cannot do for a scoped enum (cpp:S3642).
     enum MediaState // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         NoMedia,
@@ -90,6 +91,26 @@ public:
         MediaPaused
     };
     Q_ENUM(MediaState)
+
+    // What a page says of what it plays: the title, the artist and the address of a
+    // picture, as its Media Session has them, or a video's poster for the picture
+    // (PageMedia). Kept only while the page plays something, as its state is.
+    struct MediaMetadata
+    {
+        QString title;
+        QString artist;
+        QString artwork;
+
+        friend bool operator==(const MediaMetadata &lhs, const MediaMetadata &rhs)
+        {
+            return lhs.title == rhs.title && lhs.artist == rhs.artist && lhs.artwork == rhs.artwork;
+        }
+
+        friend bool operator!=(const MediaMetadata &lhs, const MediaMetadata &rhs)
+        {
+            return !(lhs == rhs);
+        }
+    };
 
     // A null persistence keeps the model in memory only (used by tests). An empty
     // thumbnail directory turns page previews off.
@@ -108,7 +129,9 @@ public:
     QString activeFavicon() const;
     int activeMediaState() const;
     bool activeMuted() const;
-    QStringList recentThumbnails() const;
+    QString activeMediaTitle() const;
+    QString activeMediaArtist() const;
+    QString activeMediaArtwork() const;
     const QList<Tab> &tabs() const;
 
     // Returns the new tab id, or 0 when the url is handed to another app (tel:, sms:, ...).
@@ -154,6 +177,11 @@ public:
     // when it is brought to the front.
     MediaState shownMediaState(int tabId) const;
     void setMediaState(int tabId, MediaState state);
+    // What the page says of what it plays. Setting it is refused for a page that plays
+    // nothing, and it goes as the page stops playing: what it says goes with what it
+    // plays.
+    MediaMetadata mediaMetadata(int tabId) const;
+    void setMediaMetadata(int tabId, const MediaMetadata &metadata);
     bool isMuted(int tabId) const;
     void setMuted(int tabId, bool muted);
 
@@ -182,7 +210,7 @@ public:
     // behind it stays; its place in the group is after the tabs already there.
     bool moveTabToGroup(int tabId, int groupId);
     // The previews of the group's tabs, most recently in front first, at most this
-    // many; a tab with no picture is an empty string, as in recentThumbnails().
+    // many; a tab with no picture is an empty string rather than a gap.
     QStringList groupThumbnails(int groupId, int limit) const;
 
     // How many tabs keep their page loaded, 0 for all of them. The browser keeps
@@ -205,8 +233,8 @@ signals:
     // while the page being left is still the one on the screen (PageMedia).
     void activeTabLeaving(int tabId);
     void activeTabChanged();
-    // The cover's list has changed: a tab opened or closed, one came to the front, or
-    // a preview was captured.
+    // The groups' pictures have changed: a tab opened or closed, one came to the
+    // front, or a preview was captured.
     void recentTabsChanged();
     void activeTabDataChanged();
     // What the tab in front plays, or whether it is muted, has changed -- or another tab
@@ -238,7 +266,7 @@ private:
     int successorOf(int index) const;
     int mostRecentTabId(int groupId) const;
     int groupRowFor(int index) const;
-    // Marks the tab in front as the most recent one, and tells the cover.
+    // Marks the tab in front as the most recent one, and tells the groups' pictures.
     void stampActive();
     void notifyRow(int index, Role role);
     void persist(const Tab &tab) const;
@@ -256,6 +284,7 @@ private:
     // Only the tabs whose page plays something, and only the muted tabs.
     QHash<int, MediaState> m_media;
     QSet<int> m_muted;
+    QHash<int, MediaMetadata> m_metadata;
     int m_liveLimit = 0;
     int m_activeTabId = 0;
     int m_currentGroupId = 0;

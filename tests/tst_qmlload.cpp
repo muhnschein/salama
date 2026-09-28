@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QFont>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -151,9 +152,9 @@ private slots:
     void clearDataDialog();
     void coverSettingsPage();
     void cover();
-    void coverFlashesAsItComesIntoView();
-    void coverPictureFollowsTheFront();
-    void coverStyleIsConfigurable();
+    void coverWithNothingToSay();
+    void coverShowsDownloads();
+    void coverShowsWhatPlays();
     void quickActions();
     void quickActionLists();
     void quickActionChoice();
@@ -4235,7 +4236,7 @@ void tst_qmlload::settingsPage()
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
          QStringLiteral("readerSettingsPage"), QStringLiteral("Ambience · Sans serif · 100 %")},
         {QStringLiteral("coverSettingsEntry"), QStringLiteral("icon-m-tabs"),
-         QStringLiteral("coverSettingsPage"), QStringLiteral("Lightning · Search")},
+         QStringLiteral("coverSettingsPage"), QStringLiteral("Search")},
         {QStringLiteral("trackingSettingsEntry"), QStringLiteral("icon-m-device-lock"),
          QStringLiteral("trackingSettingsPage"), QStringLiteral("Standard")},
         {QStringLiteral("notificationSettingsEntry"), QStringLiteral("icon-m-notifications"),
@@ -4332,16 +4333,14 @@ void tst_qmlload::settingsPage()
     m_core->readerSettings()->setTextSize(ReaderSettings::TextSizeMax);
     QCOMPARE(valueOf(QStringLiteral("readerSettingsEntry")),
              QStringLiteral("Sepia · Serif · 140 %"));
-    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
     m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionNone);
-    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("Tabs and count"));
+    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("No quick action"));
     const int bookmark = m_core->bookmarks()->add(QStringLiteral("https://yle.fi/uutiset"),
                                                   QStringLiteral("Yle Uutiset"));
     m_core->coverSettings()->setQuickActionBookmark(
         bookmark, QStringLiteral("https://yle.fi/uutiset"), QStringLiteral("Yle Uutiset"));
     m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionBookmark);
-    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")),
-             QStringLiteral("Tabs and count · Yle Uutiset"));
+    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("Yle Uutiset"));
     m_core->privacySettings()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(valueOf(QStringLiteral("trackingSettingsEntry")), QStringLiteral("Strict"));
     m_core->privacySettings()->setBlockNotificationRequests(true);
@@ -5040,83 +5039,41 @@ void tst_qmlload::clearDataDialog()
     QCOMPARE(notification(3, QStringLiteral("value")), QStringLiteral("cache"));
 }
 
-// The cover's style, the one choice among the settings that another page has to answer,
-// chosen by its picture, and under it the cover's quick action, a row for each with the
-// glyph it wears. The way in says what the cover shows and what its action is, in the
-// words the choices are offered in.
+// The cover's quick action, a row for each with the glyph it wears, under a picture of
+// the cover with the action on it. The way in says what the action is, in the words the
+// choices are offered in.
 void tst_qmlload::coverSettingsPage()
 {
-    CoverSettings *settings = m_core->coverSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("coverSettingsEntry"));
     click(entry);
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
 
-    QObject *styles = find(QStringLiteral("coverStyles"));
+    QObject *preview = find(QStringLiteral("coverPreview"));
     const QStringList layout{
-        QStringLiteral("#Shows"),
-        QStringLiteral("coverStyles"),
-        QStringLiteral("#Quick action"),
-        QStringLiteral("quickActionExplained"),
-        QStringLiteral("quickAction-none"),
-        QStringLiteral("quickAction-search"),
-        QStringLiteral("quickAction-bookmarks"),
-        QStringLiteral("quickAction-bookmark"),
-        QStringLiteral("quickAction-downloads"),
-        QStringLiteral("quickAction-history"),
-        QStringLiteral("quickActionIconPicker"),
+        QStringLiteral("coverPreview"),         QStringLiteral("#Quick action"),
+        QStringLiteral("quickActionExplained"), QStringLiteral("quickAction-none"),
+        QStringLiteral("quickAction-search"),   QStringLiteral("quickAction-bookmarks"),
+        QStringLiteral("quickAction-bookmark"), QStringLiteral("quickAction-downloads"),
+        QStringLiteral("quickAction-history"),  QStringLiteral("quickActionIconPicker"),
     };
-    QCOMPARE(columnOf(styles), layout);
+    QCOMPARE(columnOf(preview), layout);
 
-    // The two covers, each a picture a choice: the one set ringed and named in the
-    // highlight colour, the other not; a tap on either sets it, and the cover answers.
-    QObject *lightningChoice = find(QStringLiteral("coverStyleChoice-lightning"));
-    QObject *latestTabChoice = find(QStringLiteral("coverStyleChoice-latestTab"));
-    QObject *lightning = find(QStringLiteral("lightningCoverPreview"));
-    QObject *latestTab = find(QStringLiteral("latestTabCoverPreview"));
-    QCOMPARE(lightning->property("text").toString(), QStringLiteral("Lightning"));
-    QCOMPARE(latestTab->property("text").toString(), QStringLiteral("Tabs and count"));
-    QVERIFY(lightning->property("selected").toBool());
-    QVERIFY(!latestTab->property("selected").toBool());
-    QObject *ring = findObjects(lightning, QStringLiteral("previewRing")).first();
-    QCOMPARE(evaluate(ring, QStringLiteral("border.color")),
-             evaluate(page, QStringLiteral("Theme.highlightColor")));
-    click(latestTabChoice);
-    QCOMPARE(settings->style(), int(CoverSettings::LatestTab));
-    QVERIFY(latestTab->property("selected").toBool());
-    QVERIFY(!lightning->property("selected").toBool());
-    auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
-                ->property("visible")
-                .toBool());
-    click(lightningChoice);
-    QCOMPARE(settings->style(), int(CoverSettings::Lightning));
-
-    // Each picture is the cover it offers, whatever is set: the lightning, the cover's
-    // own and still, or the heading over the tab last read.
-    QObject *previewLightning = findObjects(lightning, QStringLiteral("previewLightning")).first();
-    QVERIFY(previewLightning->property("visible").toBool());
-    QVERIFY(!previewLightning->property("active").toBool());
-    QVERIFY(!findObjects(latestTab, QStringLiteral("previewLightning"))
-                 .first()
-                 ->property("visible")
-                 .toBool());
-    settings->setStyle(CoverSettings::LatestTab);
-    QVERIFY(previewLightning->property("visible").toBool());
-
-    // The pictures are a real cover's shape, two thirds its size, side by side.
+    // The picture is a real cover's shape, two thirds its size and centred, the cover
+    // with nothing to say: the halftone alone, whole.
     const qreal coverWidth = evaluate(page, QStringLiteral("Theme.coverSizeLarge.width")).toReal();
     const qreal coverHeight =
         evaluate(page, QStringLiteral("Theme.coverSizeLarge.height")).toReal();
-    auto *left = qobject_cast<QQuickItem *>(lightningChoice);
-    auto *right = qobject_cast<QQuickItem *>(latestTabChoice);
-    QCOMPARE(left->width(), coverWidth * 2 / 3);
-    QCOMPARE(right->width(), left->width());
-    QVERIFY(left->x() + left->width() < right->x());
-    auto *picture = qobject_cast<QQuickItem *>(
-        findObjects(lightning, QStringLiteral("previewPicture")).first());
+    auto *previewItem = qobject_cast<QQuickItem *>(preview);
+    QCOMPARE(previewItem->width(), coverWidth * 2 / 3);
+    QCOMPARE(previewItem->x() + previewItem->width() / 2, previewItem->parentItem()->width() / 2);
+    auto *picture =
+        qobject_cast<QQuickItem *>(findObjects(preview, QStringLiteral("previewPicture")).first());
     QCOMPARE(picture->height(), qreal(qRound(picture->width() * coverHeight / coverWidth)));
+    QObject *halftone = findObjects(preview, QStringLiteral("previewHalftone")).first();
+    QVERIFY(halftone->property("visible").toBool());
+    QCOMPARE(halftone->property("strength").toReal(), 1.0);
 
     // Why there is one action, in the voice of a hint rather than a control: small, in
     // the secondary highlight, and the words of a sentence rather than rich text.
@@ -5150,162 +5107,281 @@ void tst_qmlload::coverSettingsPage()
                  .toBool());
 }
 
+namespace {
+
+// The cover's own items, found by name.
+QObject *coverPart(QObject *coverItem, const QString &name)
+{
+    return coverItem->findChild<QObject *>(name);
+}
+
+bool shown(QObject *coverItem, const QString &name)
+{
+    return coverPart(coverItem, name)->property("visible").toBool();
+}
+
+// Which of the cover's views is up, as the reader sees it: where they were, the
+// downloads, what plays, or none -- the halftone alone.
+QString coverView(QObject *coverItem)
+{
+    QStringList up;
+    for (const QString &view : {QStringLiteral("coverPlace"), QStringLiteral("coverDownloads"),
+                                QStringLiteral("coverMedia")}) {
+        if (shown(coverItem, view)) {
+            up.append(view);
+        }
+    }
+    return up.join(QLatin1Char(' '));
+}
+
+qreal halftoneStrength(QObject *coverItem)
+{
+    return coverPart(coverItem, QStringLiteral("coverHalftone"))->property("strength").toReal();
+}
+
+} // namespace
+
+// At rest, the cover says where the reader was: the site and title of the tab in front,
+// over the faint halftone, the bolt in the cover's middle
+// (docs/DECISIONS/0037-cover-is-where-you-were.md). Its quick action is a search until
+// another is chosen.
 void tst_qmlload::cover()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
+    // As large as the home screen draws it, so there is a layout to measure.
+    coverItem->setProperty("width", 234);
+    coverItem->setProperty("height", 374);
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
 
-    // The lightning, and nothing to read: no name, no number, no picture of a page.
-    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
-    QVERIFY(lightning->property("visible").toBool());
-    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
-                 ->property("visible")
-                 .toBool());
-    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"))
-                 ->property("visible")
-                 .toBool());
-    QVERIFY(!coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"))
-                 ->property("visible")
-                 .toBool());
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverPlace"));
+    QVERIFY(shown(coverItem, QStringLiteral("coverHalftone")));
+    QVERIFY(halftoneStrength(coverItem) < 0.2);
+    const auto text = [coverItem](const QString &name) {
+        return coverPart(coverItem, name)->property("text").toString();
+    };
+    QCOMPARE(text(QStringLiteral("coverPlaceHost")), QStringLiteral("qwant.com"));
+    // A page with no title yet is named by its site.
+    QCOMPARE(text(QStringLiteral("coverPlaceTitle")), QStringLiteral("qwant.com"));
+    // Nothing under the title: it has the room down to the actions.
+    QVERIFY(coverPart(coverItem, QStringLiteral("coverPlaceCount")) == nullptr);
+    QVERIFY(coverPart(coverItem, QStringLiteral("coverPlaceGroup")) == nullptr);
+    auto *place = qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverPlace")));
+    auto *title =
+        qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverPlaceTitle")));
+    QCOMPARE(title->y() + title->height(), place->height());
+    // No icon known: the site's first letter.
+    QCOMPARE(text(QStringLiteral("coverPlaceLetter")), QStringLiteral("Q"));
+    QVERIFY(shown(coverItem, QStringLiteral("coverPlaceLetter")));
 
-    // The bolt is a picture the cover has on disk, installed beside the QML.
-    const QUrl bolt =
-        coverItem->findChild<QObject *>(QStringLiteral("coverBolt"))->property("source").toUrl();
-    QVERIFY(bolt.toString().endsWith(QLatin1String("art/cover/bolt.png")));
-    QVERIFY2(QFile::exists(bolt.toLocalFile()), qPrintable(bolt.toString()));
+    // It follows the tab in front: its title, its site.
+    tabs->updateTitle(front, QStringLiteral("Catatumbo lightning"));
+    QCOMPARE(text(QStringLiteral("coverPlaceTitle")), QStringLiteral("Catatumbo lightning"));
+    const int second = tabs->newTab(QStringLiteral("https://yle.fi/uutiset"));
+    QCOMPARE(text(QStringLiteral("coverPlaceHost")), QStringLiteral("yle.fi"));
+    tabs->closeTabById(second);
+
+    // The halftone is a picture the cover has on disk, installed beside the QML. It fills
+    // the cover and is cut to it top and bottom alike, being taller than a cover: the
+    // bolt, in the picture's middle, is in the cover's.
+    auto *halftone =
+        qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverHalftone")));
+    QCOMPARE(halftone->width(), 234.0);
+    QCOMPARE(halftone->height(), 374.0);
+    QObject *dots = coverPart(coverItem, QStringLiteral("coverHalftoneDots"));
+    const QUrl source = dots->property("source").toUrl();
+    QVERIFY(source.toString().endsWith(QLatin1String("art/cover/halftone.png")));
+    QVERIFY2(QFile::exists(source.toLocalFile()), qPrintable(source.toString()));
+    QCOMPARE(dots->property("fillMode").toInt(),
+             evaluate(dots, QStringLiteral("Image.PreserveAspectCrop")).toInt());
+    QCOMPARE(dots->property("verticalAlignment").toInt(),
+             evaluate(dots, QStringLiteral("Image.AlignVCenter")).toInt());
+    const QSize drawn = QImage(source.toLocalFile()).size();
+    const qreal coverAspect = evaluate(dots, QStringLiteral("Theme.coverSizeLarge.height"
+                                                            " / Theme.coverSizeLarge.width"))
+                                  .toReal();
+    QVERIFY(qreal(drawn.height()) / drawn.width() > coverAspect);
 
     // The quick action is a search until another is chosen: the window raised, and the
     // address bar opened for a new tab, which is made once something is chosen and
     // counted from then on.
-    QMetaObject::invokeMethod(coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction")),
+    QMetaObject::invokeMethod(coverPart(coverItem, QStringLiteral("quickCoverAction")),
                               "triggered");
     QCOMPARE(m_window->property("activateCount").toInt(), 1);
     QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
     QVERIFY(find(QStringLiteral("navigationBar"))->property("forNewTab").toBool());
-    QCOMPARE(m_core->tabs()->count(), 1);
+    QCOMPARE(tabs->count(), 1);
     QObject *field = find(QStringLiteral("addressField"));
     field->setProperty("text", QStringLiteral("example.org"));
     enterKey(field);
-    QCOMPARE(m_core->tabs()->count(), 2);
+    QCOMPARE(tabs->count(), 2);
 }
 
-void tst_qmlload::coverFlashesAsItComesIntoView()
+// With nowhere to say the reader was -- no tab open, or the one in front on the start
+// page -- the halftone alone, whole; the quick action stays.
+void tst_qmlload::coverWithNothingToSay()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
-    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
-    auto *strike = coverItem->findChild<QObject *>(QStringLiteral("coverStrike"));
-    QVERIFY(strike != nullptr);
-    const int inactive = 0;
-    const int active = 2;
-
-    // Nothing moves on a cover nobody is looking at.
-    QVERIFY(!lightning->property("active").toBool());
-    QVERIFY(!strike->property("running").toBool());
-    QCOMPARE(lightning->property("flash").toReal(), 0.0);
-
-    // In view: one flash, and then the cover is still again.
-    coverItem->setProperty("status", active);
-    QVERIFY(lightning->property("active").toBool());
-    QVERIFY(strike->property("running").toBool());
-    QTRY_VERIFY(lightning->property("flash").toReal() > 0.5);
-    QTRY_VERIFY_WITH_TIMEOUT(!strike->property("running").toBool(), 5000);
-    QCOMPARE(lightning->property("flash").toReal(), 0.0);
-
-    // Out of view mid-flash: put out at once, not left lit for the next time.
-    coverItem->setProperty("status", inactive);
-    coverItem->setProperty("status", active);
-    QTRY_VERIFY(lightning->property("flash").toReal() > 0.0);
-    coverItem->setProperty("status", inactive);
-    QVERIFY(!strike->property("running").toBool());
-    QCOMPARE(lightning->property("flash").toReal(), 0.0);
-
-    // The last tab's cover has no lightning to flash.
-    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
-    coverItem->setProperty("status", active);
-    QVERIFY(!lightning->property("active").toBool());
-    QVERIFY(!strike->property("running").toBool());
-}
-
-void tst_qmlload::coverPictureFollowsTheFront()
-{
-    auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    QVERIFY(coverItem != nullptr);
-    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
     TabModel *tabs = m_core->tabs();
-    const int first = tabs->activeTabId();
-    const int second = tabs->newTab(QStringLiteral("https://second.example/"));
 
-    // A picture for each, so which one the cover draws can be read off its source.
-    QObject *webView = currentWebView();
-    webView->setProperty("loading", true);
-    webView->setProperty("loading", false);
-    const QString secondShot = webView->property("lastGrabPath").toString();
-    QVERIFY(!secondShot.isEmpty());
-    tabs->activateTabById(first);
-    webView = currentWebView();
-    webView->setProperty("loading", true);
-    webView->setProperty("loading", false);
-    const QString firstShot = webView->property("lastGrabPath").toString();
-    QVERIFY(!firstShot.isEmpty());
-    QVERIFY(firstShot != secondShot);
+    tabs->newTab(QString());
+    QCOMPARE(coverView(coverItem), QString());
+    QVERIFY(shown(coverItem, QStringLiteral("coverHalftone")));
+    QCOMPARE(halftoneStrength(coverItem), 1.0);
+    QVERIFY(
+        coverPart(coverItem, QStringLiteral("quickCoverActions"))->property("enabled").toBool());
 
-    // The tab in front is the one drawn, whatever the grid's own order is.
-    auto *picture = coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"));
-    QCOMPARE(picture->property("source").toString(), firstShot);
-    QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverTabShot"))
-                ->property("source")
+    tabs->closeAllTabs();
+    QTRY_COMPARE(tabs->activeUrl(), QString());
+    QCOMPARE(coverView(coverItem), QString());
+    QCOMPARE(halftoneStrength(coverItem), 1.0);
+}
+
+// While something downloads, how far the downloads have come, in steps of five; before
+// what plays, when both happen at once.
+void tst_qmlload::coverShowsDownloads()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    Core *core = m_core.data();
+    const auto progress = [core](int id, int percent) {
+        observeDownload(core, {{QStringLiteral("msg"), QStringLiteral("dl-progress")},
+                               {QStringLiteral("id"), id},
+                               {QStringLiteral("percent"), percent}});
+    };
+    const auto start = [core](int id, const QString &name) {
+        observeDownload(
+            core, {{QStringLiteral("msg"), QStringLiteral("dl-start")},
+                   {QStringLiteral("id"), id},
+                   {QStringLiteral("displayName"), name},
+                   {QStringLiteral("sourceUrl"), QStringLiteral("https://files.example/") + name},
+                   {QStringLiteral("targetPath"), QStringLiteral("/tmp/") + name},
+                   {QStringLiteral("mimeType"), QStringLiteral("application/pdf")},
+                   {QStringLiteral("size"), 2048}});
+    };
+    QObject *ring = coverPart(coverItem, QStringLiteral("coverDownloadsRing"));
+    const auto percent = [coverItem]() {
+        return coverPart(coverItem, QStringLiteral("coverDownloadsPercent"))
+            ->property("text")
+            .toString();
+    };
+
+    start(1, QStringLiteral("map.pdf"));
+    progress(1, 43);
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverDownloads"));
+    QVERIFY(halftoneStrength(coverItem) < 0.2);
+    QCOMPARE(percent(), QStringLiteral("40"));
+    QCOMPARE(ring->property("value").toReal(), 0.4);
+    QCOMPARE(
+        coverPart(coverItem, QStringLiteral("coverDownloadsCount"))->property("text").toString(),
+        QStringLiteral("1 file(s)"));
+    // Within a step, nothing on the cover changes.
+    QSignalSpy redrawn(ring, SIGNAL(valueChanged()));
+    progress(1, 44);
+    QCOMPARE(redrawn.count(), 0);
+    progress(1, 45);
+    QCOMPARE(redrawn.count(), 1);
+    QCOMPARE(percent(), QStringLiteral("45"));
+
+    // Two together; and playing meanwhile, the downloads stay, the mute beside the action.
+    start(2, QStringLiteral("iso.pdf"));
+    QCOMPARE(
+        coverPart(coverItem, QStringLiteral("coverDownloadsCount"))->property("text").toString(),
+        QStringLiteral("2 file(s)"));
+    m_core->tabs()->setMediaState(m_core->tabs()->activeTabId(), TabModel::MediaPlaying);
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverDownloads"));
+    QVERIFY(
+        coverPart(coverItem, QStringLiteral("mediaCoverActions"))->property("enabled").toBool());
+
+    // Done, what plays comes back; and with nothing playing, where the reader was.
+    observeDownload(core, {{QStringLiteral("msg"), QStringLiteral("dl-done")},
+                           {QStringLiteral("id"), 1},
+                           {QStringLiteral("targetPath"), QStringLiteral("/tmp/map.pdf")}});
+    observeDownload(
+        core, {{QStringLiteral("msg"), QStringLiteral("dl-fail")}, {QStringLiteral("id"), 2}});
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverMedia"));
+    m_core->tabs()->setMediaState(m_core->tabs()->activeTabId(), TabModel::NoMedia);
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverPlace"));
+}
+
+// While the tab in front plays, what plays: with a picture, the picture and under it
+// what the page calls it; without one, the site large over the faint halftone. Muted,
+// it reads paused and the picture dims.
+void tst_qmlload::coverShowsWhatPlays()
+{
+    auto *coverItem = m_window->property("coverItem").value<QObject *>();
+    QVERIFY(coverItem != nullptr);
+    // As large as the home screen draws it, so there is a layout to measure.
+    coverItem->setProperty("width", 234);
+    coverItem->setProperty("height", 374);
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    tabs->updateTitle(front, QStringLiteral("Yle Areena"));
+    const auto text = [coverItem](const QString &name) {
+        return coverPart(coverItem, name)->property("text").toString();
+    };
+
+    // Nothing said of it: the plain view, the page's own title.
+    tabs->setMediaState(front, TabModel::MediaPlaying);
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverMedia"));
+    QVERIFY(shown(coverItem, QStringLiteral("coverMediaPlain")));
+    QVERIFY(!shown(coverItem, QStringLiteral("coverMediaFrame")));
+    QVERIFY(shown(coverItem, QStringLiteral("coverHalftone")));
+    QVERIFY(halftoneStrength(coverItem) < 0.2);
+    QCOMPARE(text(QStringLiteral("coverMediaPlainState")), QStringLiteral("Playing"));
+    QCOMPARE(text(QStringLiteral("coverMediaPlainHost")), QStringLiteral("qwant.com"));
+    QCOMPARE(text(QStringLiteral("coverMediaPlainTitle")), QStringLiteral("Yle Areena"));
+    QVERIFY(!shown(coverItem, QStringLiteral("coverMediaPlainArtist")));
+
+    // What the page says, with no picture: its words, still plain.
+    TabModel::MediaMetadata said{QStringLiteral("Symphony No. 5"), QStringLiteral("Beethoven"),
+                                 QString()};
+    tabs->setMediaMetadata(front, said);
+    QCOMPARE(text(QStringLiteral("coverMediaPlainTitle")), QStringLiteral("Symphony No. 5"));
+    QCOMPARE(text(QStringLiteral("coverMediaPlainArtist")), QStringLiteral("Beethoven"));
+
+    // With a picture: the picture, and the halftone gives it the room.
+    said.artwork =
+        QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/art/logo.png")).toString();
+    tabs->setMediaMetadata(front, said);
+    QTRY_VERIFY(shown(coverItem, QStringLiteral("coverMediaFrame")));
+    QVERIFY(!shown(coverItem, QStringLiteral("coverMediaPlain")));
+    QVERIFY(!shown(coverItem, QStringLiteral("coverHalftone")));
+    QCOMPARE(text(QStringLiteral("coverMediaTitle")), QStringLiteral("Symphony No. 5"));
+    QCOMPARE(text(QStringLiteral("coverMediaArtist")), QStringLiteral("Beethoven"));
+    QCOMPARE(text(QStringLiteral("coverMediaState")), QStringLiteral("Playing · qwant.com"));
+    QObject *frame = coverPart(coverItem, QStringLiteral("coverMediaFrame"));
+    // Square, as the picture is, and clear of the actions with the words under it;
+    // fetched at the widest it is shown at.
+    QObject *mediaView = coverPart(coverItem, QStringLiteral("coverMedia"));
+    QObject *caption = coverPart(coverItem, QStringLiteral("coverMediaCaption"));
+    QCOMPARE(frame->property("height"), frame->property("width"));
+    QVERIFY(frame->property("width").toReal() > 0);
+    QVERIFY(caption->property("y").toReal() + caption->property("height").toReal() <=
+            mediaView->property("height").toReal());
+    QCOMPARE(coverPart(coverItem, QStringLiteral("coverMediaArtwork"))
+                 ->property("sourceSize")
+                 .toSize()
+                 .width(),
+             qRound(mediaView->property("width").toReal()));
+    QCOMPARE(frame->property("opacity").toReal(), 1.0);
+
+    // Muted: paused, dimmed, the speaker struck through.
+    tabs->setMuted(front, true);
+    QCOMPARE(text(QStringLiteral("coverMediaState")), QStringLiteral("Paused · qwant.com"));
+    QVERIFY(frame->property("opacity").toReal() < 1.0);
+    QVERIFY(coverPart(coverItem, QStringLiteral("muteCoverAction"))
+                ->property("iconSource")
                 .toUrl()
                 .toString()
-                .endsWith(firstShot));
+                .contains(QLatin1String("speaker-mute")));
 
-    tabs->activateTabById(second);
-    QCOMPARE(picture->property("source").toString(), secondShot);
-}
-
-void tst_qmlload::coverStyleIsConfigurable()
-{
-    auto *coverItem = m_window->property("coverItem").value<QObject *>();
-    QVERIFY(coverItem != nullptr);
-
-    auto *lightning = coverItem->findChild<QObject *>(QStringLiteral("coverLightning"));
-    auto *heading = coverItem->findChild<QObject *>(QStringLiteral("coverHeading"));
-    auto *count = coverItem->findChild<QObject *>(QStringLiteral("coverTabCount"));
-    auto *picture = coverItem->findChild<QObject *>(QStringLiteral("coverTabPicture"));
-
-    // The lightning, which is what a reader who has not been to Settings gets.
-    QVERIFY(lightning->property("visible").toBool());
-    QVERIFY(!heading->property("visible").toBool());
-    QVERIFY(!count->property("visible").toBool());
-    QVERIFY(!picture->property("visible").toBool());
-
-    // The last tab: the name, what the number counts and the number over the tab
-    // last read, and no lightning.
-    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
-    QVERIFY(!lightning->property("visible").toBool());
-    QVERIFY(heading->property("visible").toBool());
-    QVERIFY(count->property("visible").toBool());
-    QVERIFY(picture->property("visible").toBool());
-    QCOMPARE(
-        coverItem->findChild<QObject *>(QStringLiteral("coverBrand"))->property("text").toString(),
-        QStringLiteral("Salama"));
-    QCOMPARE(coverItem->findChild<QObject *>(QStringLiteral("coverSubtitle"))
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("Tabs"));
-
-    // The number follows the tabs, and the quick action stays whatever the style is --
-    // it is what the cover is there to offer.
-    auto *quickActions = coverItem->findChild<QObject *>(QStringLiteral("quickCoverActions"));
-    QCOMPARE(count->property("text").toString(), QStringLiteral("1"));
-    m_core->tabs()->newTab(QStringLiteral("https://second.example/"));
-    QCOMPARE(count->property("text").toString(), QStringLiteral("2"));
-    QVERIFY(quickActions->property("enabled").toBool());
-
-    m_core->coverSettings()->setStyle(CoverSettings::Lightning);
-    QVERIFY(lightning->property("visible").toBool());
-    QVERIFY(!heading->property("visible").toBool());
-    QVERIFY(quickActions->property("enabled").toBool());
+    // Stopped, where the reader was.
+    tabs->setMuted(front, false);
+    tabs->setMediaState(front, TabModel::NoMedia);
+    QCOMPARE(coverView(coverItem), QStringLiteral("coverPlace"));
 }
 
 namespace {
@@ -5515,20 +5591,18 @@ void tst_qmlload::quickActionChoice()
     click(find(QStringLiteral("coverSettingsEntry")));
     QObject *page = currentPage();
     QObject *icons = find(QStringLiteral("quickActionIconPicker"));
-    QObject *lightning = find(QStringLiteral("lightningCoverPreview"));
-    QObject *latestTab = find(QStringLiteral("latestTabCoverPreview"));
+    QObject *preview = find(QStringLiteral("coverPreview"));
     QObject *bookmarkItem = find(QStringLiteral("quickAction-bookmark"));
     QObject *detail = findObjects(bookmarkItem, QStringLiteral("quickActionDetail")).first();
     const auto glyphOf = [](QObject *row) {
         return findObjects(row, QStringLiteral("quickActionGlyph")).first();
     };
 
-    // A search until another is chosen: in the middle of both pictures' strip, drawn from
+    // A search until another is chosen: in the middle of the picture's strip, drawn from
     // the cover's own files, and its row wearing the same.
-    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("search")});
-    QCOMPARE(previewGlyphs(latestTab), QStringList{QStringLiteral("search")});
+    QCOMPARE(previewGlyphs(preview), QStringList{QStringLiteral("search")});
     QVERIFY(drawnFrom(
-        findObjects(lightning, QStringLiteral("previewAction")).first()->property("source").toUrl(),
+        findObjects(preview, QStringLiteral("previewAction")).first()->property("source").toUrl(),
         QStringLiteral("search-32-white.png")));
     QVERIFY(
         drawnFrom(glyphOf(find(QStringLiteral("quickAction-search")))->property("source").toUrl(),
@@ -5574,9 +5648,8 @@ void tst_qmlload::quickActionChoice()
             }
         }
         // No action leaves the strip bare.
-        QCOMPARE(previewGlyphs(lightning),
+        QCOMPARE(previewGlyphs(preview),
                  choice.glyph.isEmpty() ? QStringList() : QStringList{choice.glyph});
-        QCOMPARE(previewGlyphs(latestTab), previewGlyphs(lightning));
         QVERIFY(!icons->property("visible").toBool());
     }
 
@@ -5633,13 +5706,12 @@ void tst_qmlload::quickActionChoice()
                           name + QStringLiteral("-32-white.png")));
         QCOMPARE(cell->property("highlighted").toBool(), name == QStringLiteral("globe"));
     }
-    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("globe")});
+    QCOMPARE(previewGlyphs(preview), QStringList{QStringLiteral("globe")});
     click(find(QStringLiteral("quickActionIcon-heart")));
     QCOMPARE(settings->quickActionIcon(), QStringLiteral("heart"));
     QVERIFY(find(QStringLiteral("quickActionIcon-heart"))->property("highlighted").toBool());
     QVERIFY(!find(QStringLiteral("quickActionIcon-globe"))->property("highlighted").toBool());
-    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("heart")});
-    QCOMPARE(previewGlyphs(latestTab), QStringList{QStringLiteral("heart")});
+    QCOMPARE(previewGlyphs(preview), QStringList{QStringLiteral("heart")});
     QVERIFY(drawnFrom(glyphOf(bookmarkItem)->property("source").toUrl(),
                       QStringLiteral("heart-32-white.png")));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();

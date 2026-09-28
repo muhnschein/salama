@@ -67,6 +67,10 @@ other heading as it is switched, rather than taking it out and putting it back
 switch that is on reads, and *Remove* is *Forget this site*, with a line under the list
 saying what that does.
 
+*Revised* (0037): the cover has no style left to choose. Its page is the quick action under
+one picture of the cover, and its line on the main page is the action alone — "Search",
+"Yle Uutiset", or "No quick action".
+
 ## Consequences
 Every choice is on the screen with the others, so a page is read at a glance and changed
 with one tap; the price is length, and the cover's page scrolls on the phone. The words
