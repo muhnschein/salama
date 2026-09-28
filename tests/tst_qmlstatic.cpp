@@ -192,6 +192,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},
         {QStringLiteral("components/OmnibarResultRow.qml"), roleSet(omnibar)},
         {QStringLiteral("components/StartPageView.qml"), roleSet(sites)},
+        {QStringLiteral("components/StartPagePreview.qml"), roleSet(sites)},
         {QStringLiteral("pages/NotificationSettingsPage.qml"), roleSet(notificationSites)},
     };
 

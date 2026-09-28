@@ -46,9 +46,13 @@ plays, gave way to the line that says the tab's mute sits beside the action.
 
 **What a page does is said, and only that.** A line under a switch stays where it says
 more than the name — what goes with the history as the browser closes, what each tracking
-level does — and goes where it said the name again. The start page shows a picture of a
-new tab that follows its switches (`components/StartPagePreview.qml`), captioned
-*Preview*. The history page counts what is kept on the phone, as Silica lays out details
+level does — and goes where it said the name again. The start page shows, under the
+heading *Preview*, the screen as a new tab will show it, at half its size and following
+the switches (`components/StartPagePreview.qml`): the start page's own tiles and rows,
+with the reader's own sites, laid out at the screen's size and made smaller, and the
+navigation bar along the foot as a new tab has it. A section with nothing in it yet is
+drawn as where its tiles and rows go, so a switch always shows what it does; a blank
+page is the bar alone, as it is. The history page counts what is kept on the phone, as Silica lays out details
 (`DetailItem`): the pages the history holds (`HistoryModel.pageCount`, the whole table
 rather than the page of it the list shows), the downloads, the recently closed tabs and
 the open tabs with their groups; *Clear browsing data* is a Silica `Button` under them,
@@ -69,7 +73,7 @@ with one tap; the price is length, and the cover's page scrolls on the phone. Th
 of each choice live in `SettingNames.qml`, whose context translators see once. The load
 tests reach each page as before and drive the choices by `objectName`
 (`searchEngineChoice`, `trackingProtectionChoice`, `readerColorsChoice`,
-`readerTypefaceChoice`, `coverStyleChoice-*`, `quickAction-*`), checking that each line
+`readerTypefaceChoice`, `coverStyleChoice-*`, `quickAction-*`, `startPagePreview*`), checking that each line
 under a way in follows its setting wherever it is written from; `tst_historymodel`,
 `tst_downloadmodel` and `tst_webnotifications` check the counts and the order. The stubs
 gain `DetailItem` and `Theme.iconSizeExtraSmall`. How the squares, tiles and pictures look

@@ -7,7 +7,7 @@
 // not check themselves, the one chosen lit; then Firefox's home sections, the sites
 // visited most, the bookmarks and the pages read last, each switched on or off. The
 // sections keep their switches while the page is blank, and are dimmed. Under them, a
-// picture of what a new tab will show follows each switch as it moves.
+// picture of the screen as a new tab will show it follows each switch as it moves.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -23,7 +23,7 @@ Page {
 
     SilicaFlickable {
         anchors.fill: parent
-        contentHeight: column.height + Theme.paddingLarge
+        contentHeight: column.height + 2 * Theme.paddingLarge
 
         Column {
             id: column
@@ -79,14 +79,20 @@ Page {
                 onCheckedChanged: StartPageSettings.recent = checked
             }
 
+            SectionHeader {
+                //: Over a picture of what a new tab will show
+                text: qsTr("Preview")
+            }
+
             Item {
                 width: parent.width
                 height: Theme.paddingLarge
             }
 
             StartPagePreview {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * x
+                width: parent.width
+                screenWidth: startPageSettings.width
+                screenHeight: startPageSettings.height
             }
         }
 
