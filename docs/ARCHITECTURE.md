@@ -24,7 +24,7 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   group, and which tabs keep their page loaded. `TabModel` owns
   three views of itself for QML: `GroupTabModel` (`GroupTabs`), the current group's
   tabs, which the grid shows; `TabGroupModel` (`TabGroups`), the groups in their order,
-  each with the preview of its tab last in front, which the strip along the grid's foot and
+  each with its most recent tabs' previews, which the strip along the grid's foot and
   the Tab groups page show and the group actions -- reordering and ungrouping among
   them -- are reached through (`DECISIONS/0015-tab-groups.md`); and `ClosedTabModel`
   (`ClosedTabs`), the tabs closed lately (`0018-recently-closed.md`).

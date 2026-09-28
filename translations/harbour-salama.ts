@@ -1012,10 +1012,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Tabs</source>
-        <extracomment>The name of the tab group that holds the tabs in no group of their own</extracomment>
-        <translation type="unfinished"></translation>
+    <message numerus="yes">
+        <source>%n tab(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n tab</numerusform>
+            <numerusform>%n tabs</numerusform>
+        </translation>
     </message>
 </context>
 <context>

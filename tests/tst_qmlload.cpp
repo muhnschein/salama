@@ -1795,13 +1795,13 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->currentGroupId(), work);
     QList<QObject *> delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
     QCOMPARE(delegates.count(), 2);
-    // The default group is named Tabs, and has no menu: none of rename, ungroup and
-    // delete applies to it.
+    // The default group is named by its count, and has no menu: none of rename, ungroup
+    // and delete applies to it.
     QCOMPARE(findObjects(delegates.at(0), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
                  .toString(),
-             QStringLiteral("Tabs"));
+             QStringLiteral("1 tab(s)"));
     QCOMPARE(findObjects(delegates.at(1), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
@@ -1903,10 +1903,9 @@ bool shownIn(QObject *root, const char *name)
 
 } // namespace
 
-// Each row of the list of groups, as the Gallery lists albums: the group's count, a
-// picture of its tabs and its name, a grip and a menu -- neither on the default group --
-// and under the last row, one of the same height that makes a group, through a dialog
-// that asks for a name and creates.
+// Each row of the list of groups: a picture of the group's tabs, its name and count, a
+// grip and a menu -- neither on the default group -- and under the last row, one of the
+// same height that makes a group, through a dialog that asks for a name and creates.
 void tst_qmlload::tabGroupRows()
 {
     TabModel *tabs = m_core->tabs();
@@ -1921,22 +1920,13 @@ void tst_qmlload::tabGroupRows()
     const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
     QCOMPARE(rows.count(), 2);
 
-    // Each row counts its tabs before its picture; the unnamed default group is named
-    // Tabs, the count beside it saying how many. The group the grid shows is named in
-    // the highlight colour. The default group has neither grip nor menu; the others
-    // have both, and the menu renames, ungroups and deletes.
-    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("Tabs"));
-    QCOMPARE(textOf(rows.at(0), "tabGroupCount"), QStringLiteral("1"));
+    // An unnamed group is named by its count, and has nothing under its name; a named
+    // one says its count under it. The default group has neither grip nor menu; the
+    // others have both, and the menu renames, ungroups and deletes.
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("1 tab(s)"));
+    QVERIFY(!shownIn(rows.at(0), "tabGroupCount"));
     QCOMPARE(textOf(rows.at(1), "tabGroupName"), QStringLiteral("Work"));
-    QCOMPARE(textOf(rows.at(1), "tabGroupCount"), QStringLiteral("0"));
-    const auto nameColor = [](QObject *row) {
-        QObject *name = findObjects(row, QStringLiteral("tabGroupName")).first();
-        return name->property("color").value<QColor>();
-    };
-    QCOMPARE(nameColor(rows.at(0)),
-             evaluate(rows.at(0), QStringLiteral("Theme.primaryColor")).value<QColor>());
-    QCOMPARE(nameColor(rows.at(1)),
-             evaluate(rows.at(1), QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QCOMPARE(textOf(rows.at(1), "tabGroupCount"), QStringLiteral("0 tab(s)"));
     QVERIFY(rows.at(0)->property("menu").value<QObject *>() == nullptr);
     QVERIFY(!shownIn(rows.at(0), "tabGroupGrip"));
     auto *menu = rows.at(1)->property("menu").value<QObject *>();
@@ -1946,24 +1936,36 @@ void tst_qmlload::tabGroupRows()
     }
     QVERIFY(shownIn(rows.at(1), "tabGroupGrip"));
 
-    // Each group's picture, square, as tall as the row and as far in as it is wide: the
-    // default group's one tab, and nothing for the new group, which is empty.
-    QObject *homePicture = findObjects(rows.at(0), QStringLiteral("tabGroupPicture")).first();
-    QObject *workPicture = findObjects(rows.at(1), QStringLiteral("tabGroupPicture")).first();
-    QCOMPARE(homePicture->property("width").toReal(),
-             rows.at(0)->property("contentHeight").toReal());
-    QCOMPARE(homePicture->property("height").toReal(), homePicture->property("width").toReal());
-    QCOMPARE(homePicture->property("x").toReal(), homePicture->property("width").toReal());
-    const auto imageIn = [](QObject *picture) {
-        return findObjects(picture, QStringLiteral("tabGroupPictureImage"))
+    // Each group's picture: the default group's one tab, the top left of four places,
+    // and the new group, empty, the outline alone -- framed, being current.
+    QObject *homePicture = findObjects(rows.at(0), QStringLiteral("tabGroupCollage")).first();
+    QObject *workPicture = findObjects(rows.at(1), QStringLiteral("tabGroupCollage")).first();
+    QCOMPARE(homePicture->property("tabCount").toInt(), 1);
+    const QList<QObject *> cells = findObjects(homePicture, QStringLiteral("tabGroupCollageCell"));
+    QCOMPARE(cells.count(), 4);
+    QVERIFY(cells.at(0)->property("holdsTab").toBool());
+    QVERIFY(!cells.at(1)->property("holdsTab").toBool());
+    const auto imageIn = [](QObject *cell) {
+        return findObjects(cell, QStringLiteral("tabGroupCollageImage"))
             .first()
             ->property("source")
             .toUrl();
     };
-    QVERIFY(homePicture->property("holdsTab").toBool());
-    QCOMPARE(imageIn(homePicture), QUrl(QStringLiteral("file://") + shot));
-    QVERIFY(!workPicture->property("holdsTab").toBool());
-    QVERIFY(imageIn(workPicture).isEmpty());
+    QCOMPARE(imageIn(cells.at(0)), QUrl(QStringLiteral("file://") + shot));
+    QVERIFY(imageIn(cells.at(1)).isEmpty());
+    QVERIFY(shownIn(homePicture, "tabGroupCollagePicture"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageOutline"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageFrame"));
+    QCOMPARE(workPicture->property("tabCount").toInt(), 0);
+    QVERIFY(!shownIn(workPicture, "tabGroupCollagePicture"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageOutline"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageFrame"));
+    // Square at the corners, frame and all, as Silica's pictures in a list are.
+    QCOMPARE(findObjects(workPicture, QStringLiteral("tabGroupCollageFrame"))
+                 .first()
+                 ->property("radius")
+                 .toReal(),
+             qreal(0));
 
     // Under the last group, a row as tall as a group's with the theme's plus where a
     // group has its picture. Its dialog asks for a name and nothing else, and creates.
@@ -2057,7 +2059,12 @@ void tst_qmlload::tabGroupsCarryAndUngroup()
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
     const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
     QCOMPARE(rows.count(), 2);
-    QCOMPARE(textOf(rows.at(0), "tabGroupCount"), QStringLiteral("2"));
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("2 tab(s)"));
+    QCOMPARE(findObjects(rows.at(0), QStringLiteral("tabGroupCollage"))
+                 .first()
+                 ->property("tabCount")
+                 .toInt(),
+             2);
     popPage();
 }
 

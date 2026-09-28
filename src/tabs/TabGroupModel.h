@@ -30,13 +30,12 @@ public:
         Default,
         // The previews of the group's most recent tabs, up to PreviewLimit, the most
         // recent first: the picture of the group on the Tab groups page. A tab with no
-        // preview is an empty string, and a group with no tabs has none.
+        // preview is an empty string.
         Previews
     };
 
-    // The picture of a group is the preview of the tab last in front in it, as the
-    // Gallery shows an album by one of its photos.
-    static const int PreviewLimit = 1;
+    // The picture of a group is two previews by two.
+    static const int PreviewLimit = 4;
 
     explicit TabGroupModel(TabModel *tabs);
 
