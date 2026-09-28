@@ -30,8 +30,9 @@ role on a row that stays put. Two views are built on that list for QML:
   what is persisted is the order the grid shows; the other groups' tabs, interleaved
   in the model, stay where they are.
 - `TabGroupModel` (`TabGroups`) — the groups, in the order the strip shows them, with
-  each one's tab count and whether it is current. The group actions are reached
-  through it: `activate(row)`, `addGroup`, `renameGroup`, `removeGroup`, `moveTab`.
+  each one's tab count, whether it is current, and its most recent tabs' previews
+  (`previews`, below). The group actions are reached through it: `activate(row)`,
+  `addGroup`, `renameGroup`, `removeGroup`, `ungroup`, `moveGroup`, `moveTab`.
 
 The **current group** (`TabModel.currentGroupId`) is the one the grid shows and the one
 a new tab opens in. It follows the active tab — bringing a tab to the front from a
@@ -91,12 +92,64 @@ The row is Silica's `TabBar` turned into a place to put things, which Silica has
 model for; the strip does not scroll itself while a cell is held over one end of it, so
 with more groups than fit, a name out of sight has to be scrolled to first.
 
+*Revised.* The grid no longer marks its cells with a wash (0010), and the name a carried
+tab is over is lit in Silica's wash for a chosen item with its corners rounded, a small
+padding, as the pictures' are: square, it read as a piece cut out of the row rather than
+a place to put something.
+
 `TabGroupsPage` is a list with a tap to make a group current, rename and delete in each
 row's menu, and under the last row a row shaped like a group's with a plus where its name
 would start, which makes a group (`TabGroupDialog`, a name) — under the list rather than
 in a pulley, the way postivene offers another profile, because that is where a reader who
 has just read the list is looking. It was also a picker once, given a tab, for the menu's
 "Move tab to group"; carrying the tab onto the strip replaced both (0021).
+
+*Revised.* Each row is now a **picture of its group** beside its name: the previews of the
+group's four most recent tabs, two by two in a small square, the most recent at the top
+left (`components/TabGroupCollage.qml`). The square is square at its corners, pictures
+and frame alike, as Silica's pictures in a list are — the Gallery's albums, a contact's
+avatar; cut round as the grid's cells are, it read as a picture of this browser's making
+rather than the platform's. A row laid out as the Gallery lists albums — the count, one
+picture as tall as the row, the name large — was tried too, and read less well than the
+four pictures beside a name. They are the
+pictures the grid already has (0008), handed out by a `previews` role on `TabGroupModel`
+— up to four paths, the most recent tab's first, as the cover's list is ordered, and an
+empty one for a tab never shown, which is drawn as the grid's placeholder ground. A place
+with no tab is fainter still, and a group with no tabs is the square's outline alone, in
+dashes: Qt Quick's `Rectangle` draws no dashed border, and `Canvas` learnt dashes after
+Qt 5.6, so each side is a row of short bars. The current group's picture is framed in the
+highlight background colour, just outside it, the colour of the frame the grid gives the
+tab in front. Under the name is the count and
+nothing else, "3 tabs", since the picture says what the tabs are; an unnamed group is
+named by its count already and has no line under it. The page's header is its name
+alone.
+
+A group is **reordered** by a grip of three bars at its row's end. The grip takes the
+finger at once, without the hold a cell of the grid needs (0010): it is there for nothing
+else, so there is no tap or slide to tell apart, and it keeps the touch from the list
+(`preventStealing`), which would otherwise take a drag up or down to scroll. The row
+follows the finger, washed as a pressed row is, and trades places with the row its middle
+is carried into (`TabGroups.moveGroup(from, to)`), which makes way for it rather than
+jump. The trade is counted from the row the carry began at, not asked of the list, which
+lays its rows out again only on its next frame, so a second trade before then would go by
+where the rows had been. The order is `tab_group.position`, written on every trade, and
+the strip and the search follow it. The default group has no grip: it is first and stays
+first, and nothing is carried in front of it.
+
+The row's menu is Rename, **Ungroup** and Delete. Ungroup (`TabGroups.ungroup(groupId)`)
+puts the group's tabs in the default group, open, in the rows they had — a change of
+group, as carrying a tab onto the strip is, so no page is reloaded — and removes the
+group, with no remorse timer, since nothing is closed; Chrome's "Ungroup" does the same
+at once. Delete still closes the tabs, behind the timer. Ungrouping the group the grid
+shows takes the grid to the default group, after its tabs, and the tab in front stays in
+front. The default group has **no menu** rather than one whose entries do not apply to
+it, so a hold on it opens nothing.
+
+The row that makes a group is as tall as a group's, with the theme's **ringed plus** —
+`icon-m-add`, which carries its own ring, so nothing is drawn behind it — in the middle
+of the place a group's picture takes, as Piirit's rows that add something wear it. Its
+dialog asks for a name and nothing else, and its accept reads *Create*; renaming a group
+reads *Save*.
 
 `TabSearchModel` (`TabSearch`) lists the tabs whose title and address hold every word of
 the term, case-insensitively, group by group in the strip's order — matched as the
@@ -115,6 +168,16 @@ burst of typing asks once; both are what postivene's chat search does, for the s
 reasons.
 The group heading is a role on the first row of each group rather than a section of
 the list, so two unnamed groups holding the same number of tabs stay two headings.
+
+*Revised.* What was typed is lit in each result, in its title and its address, as
+Silica's own search results light it: `Theme.highlightText()`, which hands the text back
+as StyledText with every match in the colour given — the highlight colour in the title,
+its secondary in the address, as the two lines are coloured under a finger. The grid
+builds the pattern once a term (`TabsView.searchMatch`): a `RegExp` of the words, each
+escaped and matched whatever its case, as Jolla's contacts build theirs
+(`Sailfish/Contacts/ContactItem.qml`), so that every word the model matched is lit
+wherever it is. `components/TabRow.qml` takes it (`match`); without one it lights
+nothing, as in the list of closed tabs and on the start page.
 
 The search was a page of its own, pushed by a button in the corner of the grid's head
 row. It is now **the head row itself**: Silica's `SearchField`, "Search tabs", across
@@ -140,11 +203,17 @@ that fails half way.
 is unchanged. The grid's delegates address tabs by id (`activateTabById`,
 `closeTabById`) rather than by row, because the grid's rows are no longer the model's.
 
-There is no way to reorder groups yet: the default group is first and a new group
-goes last. Two unnamed groups are told apart in the strip only by their counts. The
-private group that once sat before the default one is gone (0019).
+Groups are reordered on the Tab groups page only, by their grips: the default group is
+first, and a new group goes last. The list does not scroll itself while a row is carried
+to one of its ends, as the strip does not while a tab is held over one of its own, so a
+group goes past the screen's edge in more than one carry, with a scroll between. Two
+unnamed groups are told apart in the strip only by their counts; on the page, by their
+pictures. The private group that once sat before the default one is gone (0019).
 
 `components/TabsView.qml` keeps its size by handing the strip its own file. The load
 tests drive the strip through `select(index)`, which is what a tap calls, and through
 `dropTab()` with `dropIndex` set; the carry itself is tested under a real finger. The
-pages are driven through their `objectName`s as the other pages are.
+pages are driven through their `objectName`s as the other pages are, and a group's grip
+through the functions it calls, `pickUp()`, `carryTo()` and `drop()`; whether the list
+leaves the grip its drag is Qt's delivery to decide, and is tested under a real finger
+(`tst_qmlload::tabGroupsReorderUnderAFinger`).

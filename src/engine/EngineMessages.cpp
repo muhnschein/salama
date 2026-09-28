@@ -4,6 +4,7 @@
 
 #include "EngineData.h"
 #include "settings/PrivacySettings.h"
+#include "settings/Settings.h"
 
 #include <QColor>
 #include <QRegularExpression>
@@ -238,6 +239,20 @@ QVariantList EngineMessages::trackingProtectionPreferences(int level)
         });
     }
     return list;
+}
+
+QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbience)
+{
+    bool dark = darkAmbience;
+    if (colors == Settings::WebsiteColorsLight) {
+        dark = false;
+    } else if (colors == Settings::WebsiteColorsDark) {
+        dark = true;
+    }
+    return {QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("ui.systemUsesDarkTheme")},
+        {QStringLiteral("value"), dark ? 1 : 0},
+    }};
 }
 
 } // namespace Salama

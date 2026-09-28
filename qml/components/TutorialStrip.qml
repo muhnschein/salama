@@ -128,6 +128,8 @@ Item {
                 anchors.centerIn: otherLabel
                 width: otherLabel.width + 2 * Theme.paddingMedium
                 height: otherLabel.height + 2 * Theme.paddingSmall
+                // Rounded, as the real strip lights a name a tab is carried over.
+                radius: Theme.paddingSmall
                 color: Theme.rgba(Theme.highlightBackgroundColor,
                                   Theme.highlightBackgroundOpacity)
                 visible: strip.dropIndex === 1

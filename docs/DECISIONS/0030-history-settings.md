@@ -39,6 +39,9 @@ history. On it, Firefox's three:
 
 The privacy page keeps tracking protection alone.
 
+*Revised* (0036): the page counts what is kept on the phone above *Clear browsing data*,
+which is a Silica `Button`, and the dialog says under each kind how much of it goes.
+
 ## Consequences
 `HistoryModel` gained `clearSince()` and `rangeStart()`, `DownloadModel` `clearSince()`;
 `tst_historymodel`, `tst_downloadmodel`, `tst_settings` and `tst_core` test them and the

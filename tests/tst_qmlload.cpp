@@ -117,6 +117,8 @@ private slots:
     void gridCellsArePicturesAlone();
     void gridRowsAreOpaque();
     void tabGroups();
+    void tabGroupRows();
+    void tabGroupsCarryAndUngroup();
     void tabSearch();
     void tabsDropOntoGroups();
     void previewGestures();
@@ -125,11 +127,15 @@ private slots:
     void carryToGroupUnderAFinger();
     void carryOverTheStripUnderAFinger();
     void tabGroupStripFades();
+    void tabGroupsReorderUnderAFinger();
     void barReachUnderAFinger();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
     void browserMenu();
+    void menuSheetLayout();
+    void menuNamesThePage();
+    void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
     void findInPage();
     void readerView();
@@ -140,7 +146,7 @@ private slots:
     void startPageSettingsPage();
     void searchSettingsPage();
     void readerSettingsPage();
-    void privacySettingsPage();
+    void trackingSettingsPage();
     void historySettingsPage();
     void clearDataDialog();
     void coverSettingsPage();
@@ -451,21 +457,31 @@ void tst_qmlload::rootWindowLoads()
     QVERIFY(!webView->property("desktopMode").toBool());
 
     // The engine is given its tracking protection on start, at the level Settings
-    // holds: Standard, until it is changed; and whether sites may ask to send
-    // notifications, which they may until that is changed.
+    // holds: Standard, until it is changed; whether sites may ask to send
+    // notifications, which they may until that is changed; and whether pages are drawn
+    // dark, which they are as the ambience is -- the stub's is dark -- until that is
+    // changed.
     QVariantList given =
         evaluate(find(QStringLiteral("viewArea")), QStringLiteral("WebEngineSettings.preferences"))
             .toList();
-    const QVariantMap notificationDefault = NotificationPermissions::defaultPreference(false);
-    const auto notificationPreference =
-        std::find_if(given.cbegin(), given.cend(), [&notificationDefault](const QVariant &one) {
-            return one.toMap().value(QStringLiteral("key")) ==
-                   notificationDefault.value(QStringLiteral("name"));
-        });
-    QVERIFY(notificationPreference != given.cend());
-    QCOMPARE(notificationPreference->toMap().value(QStringLiteral("value")),
-             notificationDefault.value(QStringLiteral("value")));
-    given.removeAt(notificationPreference - given.cbegin());
+    const auto takeGiven = [&given](const QVariantMap &expected) {
+        const auto preference =
+            std::find_if(given.cbegin(), given.cend(), [&expected](const QVariant &one) {
+                return one.toMap().value(QStringLiteral("key")) ==
+                       expected.value(QStringLiteral("name"));
+            });
+        if (preference == given.cend() || preference->toMap().value(QStringLiteral("value")) !=
+                                              expected.value(QStringLiteral("value"))) {
+            return false;
+        }
+        given.removeAt(preference - given.cbegin());
+        return true;
+    };
+    QVERIFY(takeGiven(NotificationPermissions::defaultPreference(false)));
+    QVERIFY(
+        takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
+                      .first()
+                      .toMap()));
     const QVariantList standard =
         EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(given.count(), standard.count());
@@ -1582,7 +1598,21 @@ void tst_qmlload::tabGrid()
         QCOMPARE(icon->property("sourceSize").toSizeF(), QSizeF(smallPlus, smallPlus));
         QCOMPARE(corner->height(), footRow->height());
         QVERIFY(corner->width() > smallPlus);
+        // The icon alone, nothing drawn behind it.
+        QVERIFY(corner->childItems().isEmpty());
     }
+    // New tab is the theme's ringed plus, whose ring is its own, and the same size of
+    // button as the pencil across from it.
+    QCOMPARE(
+        item("newTabButton")->property("icon").value<QObject *>()->property("source").toString(),
+        QStringLiteral("image://theme/icon-m-add"));
+    QCOMPARE(item("editGroupsButton")
+                 ->property("icon")
+                 .value<QObject *>()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-edit"));
+    QCOMPARE(item("newTabButton")->width(), item("editGroupsButton")->width());
     QCOMPARE(sceneX(item("newTabButton"), (item("newTabButton")->width() - smallPlus) / 2), margin);
     QCOMPARE(sceneX(item("editGroupsButton"), (item("editGroupsButton")->width() + smallPlus) / 2),
              screenWidth - margin);
@@ -1765,7 +1795,8 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->currentGroupId(), work);
     QList<QObject *> delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
     QCOMPARE(delegates.count(), 2);
-    // The default group is named by its count, and offers neither rename nor delete.
+    // The default group is named by its count, and has no menu: none of rename, ungroup
+    // and delete applies to it.
     QCOMPARE(findObjects(delegates.at(0), QStringLiteral("tabGroupName"))
                  .first()
                  ->property("text")
@@ -1776,18 +1807,8 @@ void tst_qmlload::tabGroups()
                  ->property("text")
                  .toString(),
              QStringLiteral("Work"));
-    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("renameGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
-    QVERIFY(!findObjects(delegates.at(0), QStringLiteral("deleteGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
-    QVERIFY(findObjects(delegates.at(1), QStringLiteral("renameGroupMenu"))
-                .first()
-                ->property("enabled")
-                .toBool());
+    QVERIFY(delegates.at(0)->property("menu").value<QObject *>() == nullptr);
+    QVERIFY(delegates.at(1)->property("menu").value<QObject *>() != nullptr);
 
     // Tapping a group there makes it current and returns to the grid, still open.
     click(delegates.at(1));
@@ -1837,7 +1858,7 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->tabCountInGroup(work), 0);
     QCOMPARE(tabs->tabCountInGroup(home), 1);
 
-    // Rename and delete are in the group's own menu; the default group has neither.
+    // Rename and delete are in the group's own menu; the default group has no menu.
     pullUpToTabs();
     click(find(QStringLiteral("editGroupsButton")));
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
@@ -1852,9 +1873,7 @@ void tst_qmlload::tabGroups()
     QCOMPARE(tabs->groups().at(1).name, QStringLiteral("Play"));
 
     delegates = byRow(findAll(QStringLiteral("tabGroupDelegate")));
-    QObject *deleteMenu = findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first();
-    QVERIFY(deleteMenu->property("enabled").toBool());
-    click(deleteMenu);
+    click(findObjects(delegates.at(2), QStringLiteral("deleteGroupMenu")).first());
     QCOMPARE(tabs->groups().count(), 2);
     QCOMPARE(tabs->count(), 1);
     QCOMPARE(tabs->activeTabId(), first);
@@ -1862,12 +1881,190 @@ void tst_qmlload::tabGroups()
                       QStringLiteral("deleteGroupMenu"))
               .first());
     QCOMPARE(tabs->groups().count(), 1);
-    QVERIFY(!findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(0),
-                         QStringLiteral("deleteGroupMenu"))
-                 .first()
-                 ->property("enabled")
-                 .toBool());
+    QVERIFY(byRow(findAll(QStringLiteral("tabGroupDelegate")))
+                .at(0)
+                ->property("menu")
+                .value<QObject *>() == nullptr);
     QCOMPARE(tabs->currentGroupIndex(), 0);
+    popPage();
+}
+
+namespace {
+
+QString textOf(QObject *root, const char *name)
+{
+    return findObjects(root, QLatin1String(name)).first()->property("text").toString();
+}
+
+bool shownIn(QObject *root, const char *name)
+{
+    return findObjects(root, QLatin1String(name)).first()->property("visible").toBool();
+}
+
+} // namespace
+
+// Each row of the list of groups: a picture of the group's tabs, its name and count, a
+// grip and a menu -- neither on the default group -- and under the last row, one of the
+// same height that makes a group, through a dialog that asks for a name and creates.
+void tst_qmlload::tabGroupRows()
+{
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    pullUpToTabs();
+    // A picture for the default group's to show, set once the grid has taken its own.
+    const QString shot = tabs->thumbnailPath(first);
+    tabs->updateThumbnail(first, shot);
+    click(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QCOMPARE(rows.count(), 2);
+
+    // An unnamed group is named by its count, and has nothing under its name; a named
+    // one says its count under it. The default group has neither grip nor menu; the
+    // others have both, and the menu renames, ungroups and deletes.
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("1 tab(s)"));
+    QVERIFY(!shownIn(rows.at(0), "tabGroupCount"));
+    QCOMPARE(textOf(rows.at(1), "tabGroupName"), QStringLiteral("Work"));
+    QCOMPARE(textOf(rows.at(1), "tabGroupCount"), QStringLiteral("0 tab(s)"));
+    QVERIFY(rows.at(0)->property("menu").value<QObject *>() == nullptr);
+    QVERIFY(!shownIn(rows.at(0), "tabGroupGrip"));
+    auto *menu = rows.at(1)->property("menu").value<QObject *>();
+    QVERIFY(menu != nullptr);
+    for (const char *item : {"renameGroupMenu", "ungroupMenu", "deleteGroupMenu"}) {
+        QCOMPARE(findObjects(menu, QLatin1String(item)).count(), 1);
+    }
+    QVERIFY(shownIn(rows.at(1), "tabGroupGrip"));
+
+    // Each group's picture: the default group's one tab, the top left of four places,
+    // and the new group, empty, the outline alone -- framed, being current.
+    QObject *homePicture = findObjects(rows.at(0), QStringLiteral("tabGroupCollage")).first();
+    QObject *workPicture = findObjects(rows.at(1), QStringLiteral("tabGroupCollage")).first();
+    QCOMPARE(homePicture->property("tabCount").toInt(), 1);
+    const QList<QObject *> cells = findObjects(homePicture, QStringLiteral("tabGroupCollageCell"));
+    QCOMPARE(cells.count(), 4);
+    QVERIFY(cells.at(0)->property("holdsTab").toBool());
+    QVERIFY(!cells.at(1)->property("holdsTab").toBool());
+    const auto imageIn = [](QObject *cell) {
+        return findObjects(cell, QStringLiteral("tabGroupCollageImage"))
+            .first()
+            ->property("source")
+            .toUrl();
+    };
+    QCOMPARE(imageIn(cells.at(0)), QUrl(QStringLiteral("file://") + shot));
+    QVERIFY(imageIn(cells.at(1)).isEmpty());
+    QVERIFY(shownIn(homePicture, "tabGroupCollagePicture"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageOutline"));
+    QVERIFY(!shownIn(homePicture, "tabGroupCollageFrame"));
+    QCOMPARE(workPicture->property("tabCount").toInt(), 0);
+    QVERIFY(!shownIn(workPicture, "tabGroupCollagePicture"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageOutline"));
+    QVERIFY(shownIn(workPicture, "tabGroupCollageFrame"));
+    // Square at the corners, frame and all, as Silica's pictures in a list are.
+    QCOMPARE(findObjects(workPicture, QStringLiteral("tabGroupCollageFrame"))
+                 .first()
+                 ->property("radius")
+                 .toReal(),
+             qreal(0));
+
+    // Under the last group, a row as tall as a group's with the theme's plus where a
+    // group has its picture. Its dialog asks for a name and nothing else, and creates.
+    QObject *newGroupRow = find(QStringLiteral("newGroupButton"));
+    QCOMPARE(newGroupRow->property("contentHeight").toReal(),
+             rows.at(0)->property("contentHeight").toReal());
+    QCOMPARE(find(QStringLiteral("newGroupPlus"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-add")));
+    click(newGroupRow);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupDialog"));
+    QObject *header = find(QStringLiteral("tabGroupDialogHeader"));
+    QCOMPARE(header->property("title").toString(), QStringLiteral("New tab group"));
+    QCOMPARE(header->property("acceptText").toString(), QStringLiteral("Create"));
+    QObject *nameField = find(QStringLiteral("groupNameField"));
+    QCOMPARE(nameField->property("label").toString(), QStringLiteral("Name"));
+    QCOMPARE(nameField->property("placeholderText").toString(), QStringLiteral("Name"));
+    popPage();
+    QCOMPARE(tabs->groups().count(), 2);
+
+    // Renaming, the same dialog saves.
+    click(findObjects(rows.at(1), QStringLiteral("renameGroupMenu")).first());
+    QCOMPARE(currentPage()->property("groupId").toInt(), work);
+    header = find(QStringLiteral("tabGroupDialogHeader"));
+    QCOMPARE(header->property("title").toString(), QStringLiteral("Rename tab group"));
+    QCOMPARE(header->property("acceptText").toString(), QStringLiteral("Save"));
+    popPage();
+    popPage();
+}
+
+// A group carried by its grip trades places with the one its middle is carried into,
+// and is lit while it is held; the default group stays first however far up anything
+// is carried, and the strip takes the new order. Ungrouped, a group goes and its tabs
+// stay open, in the default group, which the grid follows them to.
+void tst_qmlload::tabGroupsCarryAndUngroup()
+{
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int play = tabs->addGroup(QStringLiteral("Play"));
+    const int mail = tabs->addGroup(QStringLiteral("Mail"));
+    const int second = tabs->newTab(QStringLiteral("https://mail.example/"));
+    QCOMPARE(tabs->currentGroupId(), mail);
+    pullUpToTabs();
+    click(find(QStringLiteral("editGroupsButton")));
+
+    QObject *mailRow = byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(2);
+    const qreal rowHeight = mailRow->property("contentHeight").toReal();
+    const qreal grab = mailRow->property("y").toReal() + rowHeight / 2;
+    const auto carry = [&](const QString &call, qreal y) {
+        evaluate(mailRow, QStringLiteral("%1(%2)").arg(call).arg(y));
+    };
+    carry(QStringLiteral("pickUp"), grab);
+    QVERIFY(mailRow->property("carried").toBool());
+    QVERIFY(shownIn(mailRow, "tabGroupCarryWash"));
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 0.4);
+    QCOMPARE(tabs->groups().at(2).id, mail);
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 0.6);
+    QCOMPARE(tabs->groups().at(1).id, mail);
+    carry(QStringLiteral("carryTo"), grab - rowHeight * 3);
+    QCOMPARE(tabs->groups().at(0).id, home);
+    QCOMPARE(tabs->groups().at(1).id, mail);
+    QCOMPARE(tabs->groups().at(2).id, play);
+    evaluate(mailRow, QStringLiteral("drop()"));
+    QVERIFY(!mailRow->property("carried").toBool());
+    QVERIFY(!shownIn(mailRow, "tabGroupCarryWash"));
+    QCOMPARE(tabs->currentGroupIndex(), 1);
+    // The strip's row lays its names out in the order of its children, on its next frame.
+    const auto stripName = [this](int place) {
+        return textOf(qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupItem")))
+                          ->parentItem()
+                          ->childItems()
+                          .at(place),
+                      "tabGroupLabel");
+    };
+    QCOMPARE(stripName(1), QStringLiteral("Mail"));
+    QCOMPARE(stripName(2), QStringLiteral("Play"));
+    // The row it passed makes way rather than jump, so the list is read once it has.
+    QTRY_COMPARE(textOf(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1), "tabGroupName"),
+                 QStringLiteral("Mail"));
+
+    // Ungrouped, the group goes, and its tab is open in the default group, still in
+    // front, with the grid showing the default group.
+    click(findObjects(byRow(findAll(QStringLiteral("tabGroupDelegate"))).at(1),
+                      QStringLiteral("ungroupMenu"))
+              .first());
+    QCOMPARE(tabs->groups().count(), 2);
+    QCOMPARE(tabs->groupIndexOf(mail), -1);
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->tabCountInGroup(home), 2);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(textOf(rows.at(0), "tabGroupName"), QStringLiteral("2 tab(s)"));
+    QCOMPARE(findObjects(rows.at(0), QStringLiteral("tabGroupCollage"))
+                 .first()
+                 ->property("tabCount")
+                 .toInt(),
+             2);
     popPage();
 }
 
@@ -1920,11 +2117,30 @@ void tst_qmlload::tabSearch()
                  ->property("text")
                  .toString(),
              QStringLiteral("1 tab(s)"));
+    // What was typed is lit in each result, in the highlight colour, as Silica's own
+    // search results light it (Theme.highlightText()); the rest is as it was.
+    const QString highlight =
+        evaluate(field, QStringLiteral("'' + Theme.highlightColor")).toString();
+    const QString secondaryHighlight =
+        evaluate(field, QStringLiteral("'' + Theme.secondaryHighlightColor")).toString();
+    const auto line = [](QObject *result, const char *name) {
+        return findObjects(result, QLatin1String(name)).first();
+    };
+    QCOMPARE(line(results.at(0), "tabRowTitle")->property("text").toString(),
+             QStringLiteral("<font color=\"%1\">Office</font> hours").arg(highlight));
+    QVERIFY(evaluate(line(results.at(0), "tabRowTitle"),
+                     QStringLiteral("textFormat === Text.StyledText"))
+                .toBool());
+    QCOMPARE(line(results.at(0), "tabRowSubtitle")->property("text").toString(),
+             QLatin1String(FirstPage));
     // Emptied, the field gives the cells back at once.
     field->setProperty("text", QString());
     QVERIFY(!found->property("visible").toBool());
     QVERIFY(cellsShown());
-    field->setProperty("text", QStringLiteral("mail"));
+    // Two words, one in the title and the other in the address, in any case: each is lit
+    // where it is, the address's in the secondary highlight colour its line is dimmed
+    // to, and a word with a pattern's characters in it is only itself.
+    field->setProperty("text", QStringLiteral("MAIL two"));
     QMetaObject::invokeMethod(debounce, "triggered");
     // Enter puts the keyboard away and leaves what was found.
     field->setProperty("focus", true);
@@ -1933,11 +2149,21 @@ void tst_qmlload::tabSearch()
     QVERIFY(found->property("visible").toBool());
     results = findAll(QStringLiteral("tabSearchDelegate"));
     QCOMPARE(results.count(), 1);
-    QCOMPARE(findObjects(results.at(0), QStringLiteral("tabRowTitle"))
-                 .first()
-                 ->property("text")
-                 .toString(),
-             QStringLiteral("Office mail"));
+    QCOMPARE(line(results.at(0), "tabRowTitle")->property("text").toString(),
+             QStringLiteral("Office <font color=\"%1\">mail</font>").arg(highlight));
+    QCOMPARE(
+        line(results.at(0), "tabRowSubtitle")->property("text").toString(),
+        QStringLiteral("https://<font color=\"%1\">two</font>.example/").arg(secondaryHighlight));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('Two')")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("a.b (c"));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('a.b')")).toBool());
+    QVERIFY(!evaluate(view, QStringLiteral("searchMatch.test('axb')")).toBool());
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch.test('(c')")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("  "));
+    QVERIFY(evaluate(view, QStringLiteral("searchMatch === null")).toBool());
+    m_core->tabSearch()->setSearchTerm(QStringLiteral("MAIL two"));
+    results = findAll(QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
     click(findObjects(results.at(0), QStringLiteral("tabSearchItem")).first());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
     QVERIFY(!page->property("tabsOpen").toBool());
@@ -2080,7 +2306,7 @@ void tst_qmlload::previewGestures()
     QVERIFY(page->property("tabsOpen").toBool());
 
     // The close button is its own mark, a disc faint enough not to be the first thing
-    // seen on each cell -- it is opaque only under a finger, which
+    // seen on each cell -- at half, and opaque only under a finger, which
     // gridGesturesUnderAFinger() puts on it; there is no second disc under it. The disc
     // is in no colour of the ambience's but the ground Silica lays under what goes over
     // a picture, black in the stub's dark theme, and the cross on it is opaque in the
@@ -2088,20 +2314,36 @@ void tst_qmlload::previewGestures()
     QObject *mark = find(QStringLiteral("closeTabMark"));
     QVERIFY(mark != nullptr);
     const QColor disc = mark->property("color").value<QColor>();
-    QCOMPARE(disc.alphaF(), evaluate(mark, QStringLiteral("Theme.opacityHigh")).toReal());
+    QVERIFY(qAbs(disc.alphaF() - 0.5) < 0.01);
     QCOMPARE(disc.rgb(),
              evaluate(mark, QStringLiteral("Theme.overlayBackgroundColor")).value<QColor>().rgb());
     QCOMPARE(mark->property("opacity").toReal(), 1.0);
     const QList<QQuickItem *> cross = qobject_cast<QQuickItem *>(mark)->childItems();
     QCOMPARE(cross.count(), 3); // the two strokes and the Repeater that made them
+    const qreal discWidth = mark->property("width").toReal();
     for (QQuickItem *stroke : cross) {
         if (stroke->property("rotation").toReal() != 0) {
             QCOMPARE(stroke->property("color").value<QColor>(),
                      evaluate(mark, QStringLiteral("Theme.primaryColor")).value<QColor>());
+            // A thin cross, two fifths of the disc across.
+            QCOMPARE(stroke->height(), evaluate(mark, QStringLiteral("Theme._lineWidth")).toReal());
+            QCOMPARE(stroke->width(), discWidth * 2 / 5);
         }
     }
-    QCOMPARE(mark->property("radius").toReal(), mark->property("width").toReal() / 2);
+    QCOMPARE(mark->property("radius").toReal(), discWidth / 2);
     QVERIFY(find(QStringLiteral("closeTabDisc")) == nullptr);
+    // About two thirds of the disc it was -- a small icon and a medium padding across --
+    // while the target round it is as large as it was, and the disc in its middle.
+    const qreal wasDisc =
+        evaluate(mark, QStringLiteral("Theme.iconSizeSmall + Theme.paddingMedium")).toReal();
+    QVERIFY(discWidth > wasDisc * 0.6);
+    QVERIFY(discWidth < wasDisc * 0.75);
+    auto *closeButton = qobject_cast<QQuickItem *>(find(QStringLiteral("closeTabButton")));
+    QCOMPARE(closeButton->width(),
+             evaluate(mark, QStringLiteral("Theme.iconSizeMedium + Theme.paddingSmall")).toReal());
+    QCOMPARE(closeButton->height(), closeButton->width());
+    QVERIFY(closeButton->width() > 2 * discWidth);
+    QCOMPARE(qobject_cast<QQuickItem *>(mark)->x(), (closeButton->width() - discWidth) / 2);
 }
 
 namespace {
@@ -2503,9 +2745,14 @@ void tst_qmlload::carryToGroupUnderAFinger()
     carry(at, workName);
     QCOMPARE(strip->property("dropIndex").toInt(), 1);
     QCOMPARE(highlights(), 1);
-    // The cells' own wash, square as theirs is.
-    QCOMPARE(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("radius").toReal(),
-             qreal(0));
+    // Silica's wash for a chosen item, with rounded corners, as the pictures have.
+    QObject *wash = findAll(QStringLiteral("tabGroupDropHighlight")).at(1);
+    QCOMPARE(wash->property("radius").toReal(),
+             evaluate(wash, QStringLiteral("Theme.paddingSmall")).toReal());
+    QCOMPARE(wash->property("color").value<QColor>(),
+             evaluate(wash, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor,"
+                                           " Theme.highlightBackgroundOpacity)"))
+                 .value<QColor>());
     QCOMPARE(workLabel->property("color").value<QColor>(), QColor(QStringLiteral("#aaccff")));
     QCOMPARE(tabOrder(), order);
 
@@ -2737,6 +2984,51 @@ void tst_qmlload::tabGroupStripFades()
              names->property("contentWidth").toReal() - names->width());
 }
 
+// A group carried by its grip under a real finger, in a real window. Whether the list
+// leaves the grip a drag up or down, rather than taking it to scroll, is decided inside
+// Qt's own delivery, which calling the grip's functions skips.
+void tst_qmlload::tabGroupsReorderUnderAFinger()
+{
+    TabModel *tabs = m_core->tabs();
+    // More groups than the screen holds, so the list has somewhere to scroll to.
+    for (int i = 0; i < 24; ++i) {
+        tabs->addGroup(QStringLiteral("Group %1").arg(i));
+    }
+    pullUpToTabs();
+    click(find(QStringLiteral("editGroupsButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    QObject *list = find(QStringLiteral("tabGroupsList"));
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    ScriptErrors errors;
+
+    // Two rows down by the grip: the group is two places further on, the list has not
+    // moved, and the row is put down.
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    QObject *carried = rows.at(1);
+    const int rowHeight = carried->property("contentHeight").toInt();
+    const int moved = tabs->groups().at(1).id;
+    const qreal top = list->property("contentY").toReal();
+    const QPoint grip = centreOf(findObjects(carried, QStringLiteral("tabGroupGrip")).first());
+    drag(&window, grip, grip + QPoint(0, rowHeight * 2));
+    QCOMPARE(tabs->groups().at(3).id, moved);
+    QCOMPARE(tabs->groups().at(0).id, tabs->defaultGroupId());
+    QCOMPARE(list->property("contentY").toReal(), top);
+    QVERIFY(!carried->property("carried").toBool());
+    QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
+
+    // Anywhere else on a row, the drag is the list's, to scroll, and no group moves.
+    rows = byRow(findAll(QStringLiteral("tabGroupDelegate")));
+    const QPoint name = centreOf(findObjects(rows.at(2), QStringLiteral("tabGroupName")).first());
+    drag(&window, name, name - QPoint(0, rowHeight * 3));
+    QTRY_VERIFY(!list->property("moving").toBool());
+    QVERIFY(list->property("contentY").toReal() > top);
+    QCOMPARE(tabs->groups().at(3).id, moved);
+    popPage();
+}
+
 // The reach above the navigation bar lies over the foot of the page, where a player
 // keeps its seek bar and its buttons. It keeps the one thing it is there for -- a drag
 // upwards, which opens the grid -- and hands the page everything else: a tap, a drag
@@ -2832,6 +3124,27 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(panel->property("modal").toBool());
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
+    // The same sheet as the menu: its opaque ground, its handle at the top, and a
+    // heading as Silica heads a section.
+    QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
+    QCOMPARE(grounds.count(), 2);
+    QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
+    QCOMPARE(ground->property("color").value<QColor>(),
+             findObjects(find(QStringLiteral("browserMenu")), QStringLiteral("sheetBackground"))
+                 .first()
+                 ->property("color")
+                 .value<QColor>());
+    QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
+    QCOMPARE(ground->property("height").toReal(), panel->property("height").toReal());
+    auto *handle =
+        qobject_cast<QQuickItem *>(findObjects(panel, QStringLiteral("panelDragHandle")).first());
+    auto *title = qobject_cast<QQuickItem *>(
+        findObjects(panel, QStringLiteral("recentlyClosedTitle")).first());
+    QCOMPARE(title->property("text").toString(), QStringLiteral("Recently closed"));
+    QVERIFY(title->inherits("QQuickItem"));
+    QVERIFY(QString::fromLatin1(title->metaObject()->className())
+                .startsWith(QLatin1String("SectionHeader")));
+    QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3021,7 +3334,8 @@ void tst_qmlload::browserMenu()
     typeAddress(QStringLiteral("two.example"));
     QCOMPARE(tabs->activeUrl(), QStringLiteral("https://two.example"));
 
-    // Bookmarking is a switch, which says which way it goes.
+    // Bookmarking is a switch, lit while it is on (menuSheetLayout()), and named alike
+    // either way.
     tapBar(QStringLiteral("menu"));
     QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
     QVERIFY(!bookmark->property("checked").toBool());
@@ -3032,7 +3346,7 @@ void tst_qmlload::browserMenu()
     QVERIFY(!menu->property("open").toBool());
     tapBar(QStringLiteral("menu"));
     QVERIFY(bookmark->property("checked").toBool());
-    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Remove bookmark"));
+    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
     click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 0);
 
@@ -3093,6 +3407,275 @@ void tst_qmlload::browserMenu()
     QVERIFY(!menu->property("open").toBool());
 }
 
+// The sheet as the stubs can show it: the page's five actions in one row on discs, a
+// line, the browser's four without; an opaque ground; and a switch that is on, or an
+// entry under a finger, lit -- disc, icon and name -- with no wash across it.
+void tst_qmlload::menuSheetLayout()
+{
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    // All five of the page's actions in one row, a fifth of the sheet each, every one
+    // on a disc; the browser's four in the row under a line, a quarter each, with none.
+    // Each is named under its icon.
+    const QStringList pageActions{
+        QStringLiteral("findMenuButton"), QStringLiteral("bookmarkMenuButton"),
+        QStringLiteral("shareMenuButton"), QStringLiteral("desktopMenuButton"),
+        QStringLiteral("readerMenuButton")};
+    const QStringList names{QStringLiteral("Find in page"), QStringLiteral("Bookmark"),
+                            QStringLiteral("Share"), QStringLiteral("Desktop site"),
+                            QStringLiteral("Reader view")};
+    auto *sheetItem = qobject_cast<QQuickItem *>(menu);
+    const qreal rowY =
+        qobject_cast<QQuickItem *>(find(pageActions.first()))->mapToScene(QPointF()).y();
+    for (int i = 0; i < pageActions.count(); ++i) {
+        auto *button = qobject_cast<QQuickItem *>(find(pageActions.at(i)));
+        QCOMPARE(button->mapToScene(QPointF()).y(), rowY);
+        QCOMPARE(button->width(), sheetItem->width() / 5);
+        QCOMPARE(button->property("text").toString(), names.at(i));
+        QVERIFY(button->property("round").toBool());
+        QVERIFY(findObjects(button, QStringLiteral("menuButtonDisc"))
+                    .first()
+                    ->property("visible")
+                    .toBool());
+    }
+    for (const QString &entry :
+         {QStringLiteral("bookmarksMenuButton"), QStringLiteral("historyMenuButton"),
+          QStringLiteral("downloadsMenuButton"), QStringLiteral("settingsMenuButton")}) {
+        auto *button = qobject_cast<QQuickItem *>(find(entry));
+        QVERIFY(button->mapToScene(QPointF()).y() > rowY);
+        QCOMPARE(button->width(), sheetItem->width() / 4);
+        QVERIFY(!findObjects(button, QStringLiteral("menuButtonDisc"))
+                     .first()
+                     ->property("visible")
+                     .toBool());
+    }
+    // The line between the two rows, and no headings over them: the head of the sheet
+    // names the page instead.
+    auto *line = qobject_cast<QQuickItem *>(find(QStringLiteral("menuSeparator")));
+    QVERIFY(line != nullptr);
+    const qreal lineY = line->mapToScene(QPointF()).y();
+    QVERIFY(lineY > rowY + find(QStringLiteral("findMenuButton"))->property("height").toReal() - 1);
+    QVERIFY(lineY < qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")))
+                        ->mapToScene(QPointF())
+                        .y());
+    // Two of Silica's lines end to end, each fading away from the middle.
+    const QList<QQuickItem *> halves = line->childItems();
+    QCOMPARE(halves.count(), 2);
+    QCOMPARE(halves.at(0)->rotation(), 180.0);
+    QCOMPARE(halves.at(1)->rotation(), 0.0);
+    // The sheet is opaque: its ground is the tint of the grid's rows, whole.
+    QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
+    QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
+    QCOMPARE(ground->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
+    QCOMPARE(ground->property("width").toReal(), sheetItem->width());
+    QCOMPARE(ground->property("height").toReal(), sheetItem->height());
+    QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
+
+    // How much of an entry is lit: its disc, its icon, its name -- all three or none.
+    const auto litParts = [this](QObject *button) {
+        const QColor wash =
+            evaluate(button, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor,"
+                                            " Theme.highlightBackgroundOpacity)"))
+                .value<QColor>();
+        const QColor highlight =
+            evaluate(button, QStringLiteral("Theme.highlightColor")).value<QColor>();
+        const auto part = [button](const char *name) {
+            return findObjects(button, QLatin1String(name)).first();
+        };
+        return int(part("menuButtonDisc")->property("color").value<QColor>() == wash) +
+               int(part("menuButtonIcon")->property("highlighted").toBool()) +
+               int(part("menuButtonLabel")->property("color").value<QColor>() == highlight);
+    };
+    QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
+    QObject *desktop = find(QStringLiteral("desktopMenuButton"));
+    QObject *share = find(QStringLiteral("shareMenuButton"));
+    QCOMPARE(litParts(bookmark), 0);
+    QCOMPARE(litParts(desktop), 0);
+    m_core->bookmarks()->add(m_core->tabs()->activeUrl(), m_core->tabs()->activeTitle(), QString());
+    QVERIFY(bookmark->property("checked").toBool());
+    QCOMPARE(litParts(bookmark), 3);
+    currentWebView()->setProperty("desktopMode", true);
+    QVERIFY(desktop->property("checked").toBool());
+    QCOMPARE(litParts(desktop), 3);
+    QCOMPARE(litParts(share), 0);
+    QCOMPARE(share->property("highlightedColor").value<QColor>().alpha(), 0);
+    share->setProperty("down", true);
+    QCOMPARE(litParts(share), 3);
+}
+
+// The head of the sheet names the page its actions are for -- its icon, its title, and
+// under that a padlock for https and the host -- and copies its address. On the start
+// page there is no page: the head says so, and the page's actions are dimmed.
+void tst_qmlload::menuNamesThePage()
+{
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    const QString title = QStringLiteral("Qwant, the search engine that respects your privacy");
+    tabs->updateTitle(front, title);
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    const auto shown = [&item](const char *name) { return item(name)->isVisible(); };
+    const auto text = [&item](const char *name) { return item(name)->property("text").toString(); };
+    const auto sceneY = [](QQuickItem *of) { return of->mapToScene(QPointF()).y(); };
+
+    // Under the handle and over the page's row.
+    QQuickItem *header = item("menuHeader");
+    QVERIFY(header != nullptr);
+    QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
+    QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
+    QCOMPARE(text("menuPageTitle"), title);
+    QVERIFY(
+        evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
+            .toBool());
+    QVERIFY(
+        evaluate(item("menuPageTitle"), QStringLiteral("textFormat === Text.PlainText")).toBool());
+    QCOMPARE(text("menuPageHost"), QStringLiteral("qwant.com"));
+    QVERIFY(shown("menuPageHost"));
+    QVERIFY(shown("menuPageSecurity"));
+    QCOMPARE(item("menuPageSecurity")->property("source").toString(),
+             QStringLiteral("image://theme/icon-s-outline-secure"));
+    QVERIFY(!shown("menuStartPageIcon"));
+    // No icon yet: the host's initial on the tile. With one, the icon.
+    QVERIFY(!shown("menuPageFavicon"));
+    QVERIFY(shown("menuPageInitial"));
+    QCOMPARE(text("menuPageInitial"), QStringLiteral("Q"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/qwant-favicon"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/qwant-favicon"));
+    QTRY_VERIFY(shown("menuPageFavicon"));
+    QVERIFY(!shown("menuPageInitial"));
+    // A page not yet titled is named by its host.
+    tabs->updateTitle(front, QString());
+    QCOMPARE(text("menuPageTitle"), QStringLiteral("qwant.com"));
+    tabs->updateTitle(front, title);
+
+    // While the engine is unhappy with the connection, the bar's warning in its colour
+    // takes the padlock's place.
+    auto *security = currentWebView()->property("security").value<QObject *>();
+    security->setProperty("allGood", false);
+    QVERIFY(menu->property("tlsBroken").toBool());
+    QCOMPARE(item("menuPageSecurity")->property("source").toString(),
+             QStringLiteral("image://theme/icon-s-filled-warning"));
+    QCOMPARE(item("menuPageSecurity")->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.errorColor")).value<QColor>());
+    security->setProperty("allGood", true);
+    QVERIFY(!menu->property("tlsBroken").toBool());
+
+    // The button at the right puts the address on the clipboard, says so for a moment,
+    // and puts the sheet away, as every entry does.
+    QObject *copy = find(QStringLiteral("copyAddressButton"));
+    QVERIFY(shown("copyAddressButton"));
+    QCOMPARE(copy->property("icon").value<QObject *>()->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-clipboard"));
+    QVERIFY(sceneY(item("copyAddressButton")) >= sceneY(header));
+    QObject *notice = find(QStringLiteral("addressCopiedNotice"));
+    QCOMPARE(notice->property("shownCount").toInt(), 0);
+    click(copy);
+    QCOMPARE(evaluate(menu, QStringLiteral("Clipboard.text")).toString(), QLatin1String(FirstPage));
+    QCOMPARE(notice->property("shownCount").toInt(), 1);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Address copied"));
+    QCOMPARE(notice->property("duration").toInt(),
+             evaluate(notice, QStringLiteral("Notice.Short")).toInt());
+    QVERIFY(!menu->property("open").toBool());
+
+    // A page over plain http has no padlock.
+    typeAddress(QStringLiteral("http://plain.example/"));
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(text("menuPageHost"), QStringLiteral("plain.example"));
+    QVERIFY(!shown("menuPageSecurity"));
+    evaluate(menu, QStringLiteral("hide()"));
+
+    // The start page: named as such beside the theme's home, nothing to copy, and the
+    // page's five actions dimmed as a disabled Silica control is, doing nothing.
+    tabs->newTab(QString());
+    QVERIFY(tabs->activeUrl().isEmpty());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(text("menuPageTitle"), QStringLiteral("Start page"));
+    QVERIFY(shown("menuStartPageIcon"));
+    QCOMPARE(item("menuStartPageIcon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-home"));
+    QVERIFY(!shown("menuPageFavicon"));
+    QVERIFY(!shown("menuPageInitial"));
+    QVERIFY(!shown("menuPageHost"));
+    QVERIFY(!shown("menuPageSecurity"));
+    QVERIFY(!shown("copyAddressButton"));
+    const qreal dimmed = evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal();
+    for (const char *entry : {"findMenuButton", "bookmarkMenuButton", "shareMenuButton",
+                              "desktopMenuButton", "readerMenuButton"}) {
+        QVERIFY2(!item(entry)->isEnabled(), entry);
+        QCOMPARE(item(entry)->opacity(), dimmed);
+    }
+    // The browser's own are there as ever.
+    for (const char *entry : {"bookmarksMenuButton", "historyMenuButton", "downloadsMenuButton",
+                              "settingsMenuButton"}) {
+        QVERIFY2(item(entry)->isEnabled(), entry);
+        QCOMPARE(item(entry)->opacity(), 1.0);
+    }
+}
+
+// Downloads wears a ring round its icon while anything is coming, filled as far as the
+// downloads under way have gone together, and none once they are all there.
+void tst_qmlload::menuShowsDownloadsComing()
+{
+    // Something of BrowserPage.qml's own, whose scope has the engine.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto send = [this, scope](const QString &message) {
+        evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
+    };
+    tapBar(QStringLiteral("menu"));
+    QObject *downloads = find(QStringLiteral("downloadsMenuButton"));
+    auto *ring = qobject_cast<QQuickItem *>(
+        findObjects(downloads, QStringLiteral("menuButtonProgress")).first());
+    QVERIFY(!downloads->property("busy").toBool());
+    QVERIFY(!ring->isVisible());
+    // Round the icon, in the highlight colour over a faint track, and thinner than
+    // Silica draws its own.
+    auto *icon = qobject_cast<QQuickItem *>(
+        findObjects(downloads, QStringLiteral("menuButtonIcon")).first());
+    QCOMPARE(ring->mapToScene(QPointF(ring->width() / 2, ring->height() / 2)),
+             icon->mapToScene(QPointF(icon->width() / 2, icon->height() / 2)));
+    QVERIFY(ring->width() > icon->width());
+    QCOMPARE(ring->property("progressColor").value<QColor>(),
+             evaluate(downloads, QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QVERIFY(ring->property("borderWidth").toReal() <
+            evaluate(downloads, QStringLiteral("Theme.paddingSmall")).toReal());
+
+    send(QStringLiteral(
+        "{msg: 'dl-start', id: 1, displayName: 'a.pdf', sourceUrl: 'https://files.example/a.pdf',"
+        " targetPath: '/tmp/a.pdf', mimeType: 'application/pdf', size: 2048}"));
+    QVERIFY(downloads->property("busy").toBool());
+    QVERIFY(ring->isVisible());
+    QCOMPARE(ring->property("value").toReal(), 0.0);
+    send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 60}"));
+    QCOMPARE(ring->property("value").toReal(), 0.6);
+    // Two coming: the ring says how far they are together.
+    send(QStringLiteral(
+        "{msg: 'dl-start', id: 2, displayName: 'b.iso', sourceUrl: 'https://files.example/b.iso',"
+        " targetPath: '/tmp/b.iso', mimeType: '', size: 0}"));
+    send(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
+    QCOMPARE(ring->property("value").toReal(), 0.4);
+    send(QStringLiteral("{msg: 'dl-done', id: 1, targetPath: '/tmp/a.pdf'}"));
+    QCOMPARE(ring->property("value").toReal(), 0.2);
+    QVERIFY(ring->isVisible());
+    send(QStringLiteral("{msg: 'dl-fail', id: 2}"));
+    QVERIFY(!downloads->property("busy").toBool());
+    QVERIFY(!ring->isVisible());
+    // The other entries have no ring.
+    for (const char *entry : {"findMenuButton", "historyMenuButton", "settingsMenuButton"}) {
+        QVERIFY(!findObjects(find(QLatin1String(entry)), QStringLiteral("menuButtonProgress"))
+                     .first()
+                     ->property("visible")
+                     .toBool());
+    }
+}
+
 // The sheet of icons goes back down under a finger that pulls it, begun on an icon as
 // much as anywhere, and keeps the icon under the finger: let go past a short distance
 // it goes away, short of it it comes back up. The stub icons take no presses, so what
@@ -3124,15 +3707,20 @@ void tst_qmlload::menuSheetUnderAFinger()
         }
     };
 
-    // Short of the distance: the sheet goes down with the finger, as far as the finger
-    // less the way a drag takes to start -- not half of it, which is what the flickable
-    // itself draws -- and the icon with it. It comes back up when the finger lifts.
+    // Short of the distance: the sheet goes down with the finger, never further, and
+    // further than the flickable alone draws a pull -- half the finger's way past the
+    // way a drag takes to start -- and the icon with it. It comes back up when the
+    // finger lifts. Not the whole of the finger's way: the flickable reads the finger
+    // where it is on the flickable, and the flickable goes down with the sheet under
+    // it, so the sheet goes about two thirds of it (docs/DECISIONS/0021-menu-sheet.md).
+    // The bound was the finger's way less two drag distances, which the first sheet,
+    // short enough for its pull to be short, met by that margin alone.
     const int shortPull = int(closeDistance / 2);
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
     pullTo(shortPull);
     const qreal travelled = menu->y() - openY;
     QVERIFY(travelled <= shortPull);
-    QVERIFY2(travelled >= shortPull - 2 * slack, qPrintable(QString::number(travelled)));
+    QVERIFY2(travelled > (shortPull - slack) / 2.0, qPrintable(QString::number(travelled)));
     QVERIFY(qAbs(icon->mapToScene(QPointF(0, 0)).y() - iconY - travelled) < 1);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, shortPull));
     QTRY_COMPARE(menu->y(), openY);
@@ -3153,7 +3741,7 @@ void tst_qmlload::menuSheetUnderAFinger()
     QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
 }
 
-// Search on page: a field over the navigation bar, whose search and steps are the
+// Find in page: a field over the navigation bar, whose search and steps are the
 // engine's own messages to the page, and whose answers come back on the name the
 // page was told to listen for.
 void tst_qmlload::findInPage()
@@ -3338,12 +3926,17 @@ void tst_qmlload::readerView()
     QCOMPARE(runs(engine->readerableScript()), checks);
     QCOMPARE(tabs->activeFavicon(), QStringLiteral("https://example.com/favicon.ico"));
 
-    // The settings restyle it where it is, in the ambience's colours until others are
-    // chosen: the stub's ambience is a dark one.
-    QCOMPARE(runs(engine->styleScript(true)), 0);
+    // The settings restyle it where it is, in the ambience's own look until another is
+    // chosen, set in the ambience the view hands the reader: the stub's is a dark one,
+    // and its colours are the Theme's.
+    const QVariantMap ambience = reader->property("ambience").toMap();
+    QCOMPARE(ambience.value(QStringLiteral("highlightColor")).value<QColor>(),
+             evaluate(reader, QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QVERIFY(html.contains(QLatin1String("class=\"ambience ambience-dark sans-serif\"")));
+    QCOMPARE(runs(engine->styleScript(ambience)), 0);
     m_core->readerSettings()->setColors(ReaderSettings::Sepia);
-    QCOMPARE(runs(engine->styleScript(true)), 1);
-    QVERIFY(engine->styleScript(true).contains(QLatin1String("'sepia sans-serif'")));
+    QCOMPARE(runs(engine->styleScript(ambience)), 1);
+    QVERIFY(engine->styleScript(ambience).contains(QLatin1String("'sepia sans-serif'")));
     QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
 
     // Closed: back, as Firefox goes back to the page it was opened from.
@@ -3363,7 +3956,7 @@ void tst_qmlload::readerView()
     QCOMPARE(tabs->activeUrl(), story);
     // Nothing is restyled that is not a reader view.
     m_core->readerSettings()->setColors(ReaderSettings::Dark);
-    QCOMPARE(runs(engine->styleScript(true)), 0);
+    QCOMPARE(runs(engine->styleScript(ambience)), 0);
 
     // A reader view come back to through the history is one too, whatever the tab was
     // on in between: forward from a page the article linked to, say.
@@ -3588,25 +4181,34 @@ QStringList columnOf(QObject *item)
 } // namespace
 
 // Settings is a main page with a way each to a page of its own for the start page,
-// search, the reader view, the cover, privacy and the history, under the headings
-// General, Appearance and Privacy, and the one setting that takes a line, the cutout,
-// last under Appearance (docs/DECISIONS/0028-settings-pages.md). Each way in is a theme
-// icon and a name, nothing under it, and pushes its page over the main one.
+// search, the reader view, the cover, tracking protection, notifications and the
+// history, under the headings Browsing, Appearance, Privacy and Help, and the two
+// settings that take a line, the website colours and the cutout, last under Appearance
+// (docs/DECISIONS/0028-settings-pages.md). Each way in is a theme icon, a name and under
+// it how the subject is set, and pushes its page over the main one.
 void tst_qmlload::settingsPage()
 {
     QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
     QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
+    // Opened, it asks the engine for the sites' notification permissions, which the line
+    // under Notifications counts.
+    QCOMPARE(evaluate(find(QStringLiteral("viewArea")),
+                      QStringLiteral("WebEngine.notifications[WebEngine.notifications.length - 1]"
+                                     ".value.msg"))
+                 .toString(),
+             QStringLiteral("get-all"));
 
     const QStringList expected{
-        QStringLiteral("#General"),
+        QStringLiteral("#Browsing"),
         QStringLiteral("startPageSettingsEntry"),
         QStringLiteral("searchSettingsEntry"),
         QStringLiteral("#Appearance"),
         QStringLiteral("readerSettingsEntry"),
         QStringLiteral("coverSettingsEntry"),
+        QStringLiteral("websiteColorsCombo"),
         QStringLiteral("cutoutGuardSwitch"),
         QStringLiteral("#Privacy"),
-        QStringLiteral("privacySettingsEntry"),
+        QStringLiteral("trackingSettingsEntry"),
         QStringLiteral("notificationSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
         QStringLiteral("#Help"),
@@ -3616,30 +4218,32 @@ void tst_qmlload::settingsPage()
 
     // Each way in, with the theme icon a Jolla application gives the same subject --
     // the cover's is the tab count's, not the display's, which sailfish-browser has
-    // for what is the screen cutout here.
+    // for what is the screen cutout here -- and how the subject is set now, as the
+    // choices are named on its page.
     struct Entry
     {
         QString name;
         QString icon;
         QString page;
+        QString value;
     };
     const QList<Entry> entries{
         {QStringLiteral("startPageSettingsEntry"), QStringLiteral("icon-m-home"),
-         QStringLiteral("startPageSettingsPage")},
+         QStringLiteral("startPageSettingsPage"), QStringLiteral("Your sites")},
         {QStringLiteral("searchSettingsEntry"), QStringLiteral("icon-m-search"),
-         QStringLiteral("searchSettingsPage")},
+         QStringLiteral("searchSettingsPage"), QStringLiteral("Qwant")},
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
-         QStringLiteral("readerSettingsPage")},
+         QStringLiteral("readerSettingsPage"), QStringLiteral("Ambience · Sans serif · 100 %")},
         {QStringLiteral("coverSettingsEntry"), QStringLiteral("icon-m-tabs"),
-         QStringLiteral("coverSettingsPage")},
-        {QStringLiteral("privacySettingsEntry"), QStringLiteral("icon-m-device-lock"),
-         QStringLiteral("privacySettingsPage")},
+         QStringLiteral("coverSettingsPage"), QStringLiteral("Lightning · Search")},
+        {QStringLiteral("trackingSettingsEntry"), QStringLiteral("icon-m-device-lock"),
+         QStringLiteral("trackingSettingsPage"), QStringLiteral("Standard")},
         {QStringLiteral("notificationSettingsEntry"), QStringLiteral("icon-m-notifications"),
-         QStringLiteral("notificationSettingsPage")},
+         QStringLiteral("notificationSettingsPage"), QStringLiteral("Sites can ask")},
         {QStringLiteral("historySettingsEntry"), QStringLiteral("icon-m-history"),
-         QStringLiteral("historySettingsPage")},
+         QStringLiteral("historySettingsPage"), QStringLiteral("Remembered")},
         {QStringLiteral("tutorialSettingsEntry"), QStringLiteral("icon-m-gesture"),
-         QStringLiteral("tutorialPage")},
+         QStringLiteral("tutorialPage"), QString()},
     };
     const qreal itemSize = evaluate(page, QStringLiteral("Theme.itemSizeMedium")).toReal();
     const qreal iconSize = evaluate(page, QStringLiteral("Theme.iconSizeMedium")).toReal();
@@ -3649,7 +4253,10 @@ void tst_qmlload::settingsPage()
         QCOMPARE(item->property("iconSource").toString(),
                  QStringLiteral("image://theme/") + entry.icon);
         QVERIFY2(!item->property("text").toString().isEmpty(), qPrintable(entry.name));
-        QVERIFY2(item->property("summary").isNull(), qPrintable(entry.name));
+        QCOMPARE(item->property("value").toString(), entry.value);
+        QObject *value = findObjects(item, QStringLiteral("settingsEntryValue")).first();
+        QCOMPARE(value->property("text").toString(), entry.value);
+        QCOMPARE(value->property("visible").toBool(), !entry.value.isEmpty());
         QCOMPARE(item->property("height").toReal(), itemSize);
         QObject *icon = findObjects(item, QStringLiteral("settingsEntryIcon")).first();
         QCOMPARE(icon->property("width").toReal(), iconSize);
@@ -3662,10 +4269,47 @@ void tst_qmlload::settingsPage()
         QCOMPARE(currentPage(), page);
     }
 
-    // Lit while it is pressed, as Silica's rows are.
+    // The two settings made in place stand in the same column of icons, each with the
+    // one sailfish-browser gives the same subject -- its colour scheme's, and its notch
+    // guard's -- at the page's margin, the control moved in past it, and lit with it.
+    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const qreal gap = evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal();
+    struct InPlace
+    {
+        QString name;
+        QString iconItem;
+        QString icon;
+    };
+    const QList<InPlace> inPlace{
+        {QStringLiteral("websiteColorsCombo"), QStringLiteral("settingsComboBoxIcon"),
+         QStringLiteral("icon-m-night")},
+        {QStringLiteral("cutoutGuardSwitch"), QStringLiteral("settingsSwitchIcon"),
+         QStringLiteral("icon-m-display")},
+    };
+    for (const InPlace &setting : inPlace) {
+        QObject *control = find(setting.name);
+        QObject *icon = findObjects(control, setting.iconItem).first();
+        QCOMPARE(icon->property("source").toUrl(),
+                 QUrl(QStringLiteral("image://theme/") + setting.icon));
+        QCOMPARE(icon->property("x").toReal(), margin);
+        QCOMPARE(control->property("leftMargin").toReal(),
+                 margin + icon->property("width").toReal() + gap);
+        QVERIFY(!icon->property("highlighted").toBool());
+        control->setProperty("highlighted", true);
+        QVERIFY(icon->property("highlighted").toBool());
+        control->setProperty("highlighted", false);
+    }
+
+    // Lit while it is pressed, as Silica's rows are: the name in the highlight colour,
+    // and the value under it in the secondary highlight until then.
     QObject *search = find(QStringLiteral("searchSettingsEntry"));
     QObject *searchName = findObjects(search, QStringLiteral("settingsEntryName")).first();
+    QObject *searchValue = findObjects(search, QStringLiteral("settingsEntryValue")).first();
     QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.primaryColor")));
+    QCOMPARE(searchValue->property("color"),
+             evaluate(page, QStringLiteral("Theme.secondaryHighlightColor")));
+    QCOMPARE(searchValue->property("font").value<QFont>().pixelSize(),
+             evaluate(page, QStringLiteral("Theme.fontSizeExtraSmall")).toInt());
     search->setProperty("down", true);
     QVERIFY(findObjects(search, QStringLiteral("settingsEntryIcon"))
                 .first()
@@ -3674,10 +4318,83 @@ void tst_qmlload::settingsPage()
     QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.highlightColor")));
     search->setProperty("down", false);
 
-    // The cutout guard is on until it is turned off here, and the page answers. It is
-    // the one line that says what it does.
+    // Each value follows its setting wherever it is written from.
+    auto valueOf = [this](const QString &entry) {
+        return find(entry)->property("value").toString();
+    };
+    m_core->startPageSettings()->setBlank(true);
+    QCOMPARE(valueOf(QStringLiteral("startPageSettingsEntry")), QStringLiteral("Blank page"));
+    m_core->searchSettings()->setEngineIndex(1);
+    QCOMPARE(valueOf(QStringLiteral("searchSettingsEntry")),
+             m_core->searchSettings()->engineNames().at(1));
+    m_core->readerSettings()->setColors(ReaderSettings::Sepia);
+    m_core->readerSettings()->setTypeface(ReaderSettings::Serif);
+    m_core->readerSettings()->setTextSize(ReaderSettings::TextSizeMax);
+    QCOMPARE(valueOf(QStringLiteral("readerSettingsEntry")),
+             QStringLiteral("Sepia · Serif · 140 %"));
+    m_core->coverSettings()->setStyle(CoverSettings::LatestTab);
+    m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionNone);
+    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("Tabs and count"));
+    const int bookmark = m_core->bookmarks()->add(QStringLiteral("https://yle.fi/uutiset"),
+                                                  QStringLiteral("Yle Uutiset"));
+    m_core->coverSettings()->setQuickActionBookmark(
+        bookmark, QStringLiteral("https://yle.fi/uutiset"), QStringLiteral("Yle Uutiset"));
+    m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionBookmark);
+    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")),
+             QStringLiteral("Tabs and count · Yle Uutiset"));
+    m_core->privacySettings()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
+    QCOMPARE(valueOf(QStringLiteral("trackingSettingsEntry")), QStringLiteral("Strict"));
+    m_core->privacySettings()->setBlockNotificationRequests(true);
+    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
+             QStringLiteral("Sites cannot ask"));
+    NotificationPermissions *sites = m_core->notificationPermissions();
+    sites->setAllowed(QStringLiteral("https://mastodon.social"), true);
+    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
+             QStringLiteral("1 site(s) allowed"));
+    sites->setAllowed(QStringLiteral("https://app.element.io"), true);
+    sites->setAllowed(QStringLiteral("https://www.iltalehti.fi"), false);
+    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
+             QStringLiteral("2 site(s) allowed · 1 blocked"));
+    sites->setAllowed(QStringLiteral("https://mastodon.social"), false);
+    sites->setAllowed(QStringLiteral("https://app.element.io"), false);
+    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
+             QStringLiteral("3 site(s) blocked"));
+    m_core->privacySettings()->setClearHistoryOnClose(true);
+    QCOMPARE(valueOf(QStringLiteral("historySettingsEntry")),
+             QStringLiteral("Cleared when closed"));
+    m_core->privacySettings()->setRememberHistory(false);
+    QCOMPARE(valueOf(QStringLiteral("historySettingsEntry")), QStringLiteral("Not remembered"));
+
+    // The website colours, Automatic until changed; each choice reaches the engine at
+    // once, through the browsing page, as whether the page is drawn dark. The stub's
+    // ambience is a dark one.
+    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
+    QCOMPARE(colors->property("currentIndex").toInt(), int(Settings::WebsiteColorsAutomatic));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    const auto lastDark = [this, pageScope]() {
+        const QVariantList given =
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = given.count() - 1; i >= 0; --i) {
+            if (given.at(i).toMap().value(QStringLiteral("key")) ==
+                QStringLiteral("ui.systemUsesDarkTheme")) {
+                return given.at(i).toMap().value(QStringLiteral("value")).toInt();
+            }
+        }
+        return -1;
+    };
+    QCOMPARE(lastDark(), 1);
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsLight));
+    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsLight));
+    QCOMPARE(lastDark(), 0);
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsDark));
+    QCOMPARE(lastDark(), 1);
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
+    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+
+    // The cutout guard is on until it is turned off here, and the page answers. Its name
+    // says what it does, and nothing under it says it again.
     QObject *cutoutSwitch = find(QStringLiteral("cutoutGuardSwitch"));
-    QVERIFY(!cutoutSwitch->property("description").toString().isEmpty());
+    QVERIFY(cutoutSwitch->property("description").toString().isEmpty());
     QVERIFY(cutoutSwitch->property("checked").toBool());
     cutoutSwitch->setProperty("checked", false);
     QVERIFY(!m_core->settings()->cutoutGuard());
@@ -3687,9 +4404,12 @@ void tst_qmlload::settingsPage()
     QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
 }
 
-// Start page: what it shows, blank or the sections, each a switch that is on until it is
-// turned off and dimmed while the page is blank. There is no home page to set: the start
-// page is the home page (docs/DECISIONS/0032-start-page.md).
+// Start page: what it shows, the sections or a blank page, both on the page at once and
+// the one chosen lit; then the sections, each a switch that is on until it is turned off
+// and dimmed while the page is blank; then, under a heading, a picture of the screen as a
+// new tab shows it, which follows them.
+// There is no home page to set: the start page is the home page
+// (docs/DECISIONS/0032-start-page.md).
 void tst_qmlload::startPageSettingsPage()
 {
     StartPageSettings *settings = m_core->startPageSettings();
@@ -3697,40 +4417,99 @@ void tst_qmlload::startPageSettingsPage()
     click(find(QStringLiteral("startPageSettingsEntry")));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("startPageSettingsPage"));
     QVERIFY(find(QStringLiteral("homePageField")) == nullptr);
-    QObject *combo = find(QStringLiteral("startPageCombo"));
+    QObject *sites = find(QStringLiteral("startPageSitesSwitch"));
+    QObject *blank = find(QStringLiteral("startPageBlankSwitch"));
     const QStringList sections{QStringLiteral("startPageTopSitesSwitch"),
                                QStringLiteral("startPageBookmarksSwitch"),
                                QStringLiteral("startPageRecentSwitch")};
-    QCOMPARE(columnOf(combo), QStringList{QStringLiteral("startPageCombo")} + sections);
+    const QStringList layout =
+        QStringList{QStringLiteral("startPageSitesSwitch"), QStringLiteral("startPageBlankSwitch"),
+                    QStringLiteral("#Sections")} +
+        sections + QStringList{QStringLiteral("#Preview"), QStringLiteral("startPagePreview")};
+    QCOMPARE(columnOf(sites), layout);
 
-    QCOMPARE(combo->property("currentIndex").toInt(), 0);
+    // A choice, not two switches: neither checks itself, and the one set is lit.
+    QVERIFY(!sites->property("automaticCheck").toBool());
+    QVERIFY(!blank->property("automaticCheck").toBool());
+    QCOMPARE(sites->property("text").toString(), QStringLiteral("Your sites"));
+    QCOMPARE(blank->property("text").toString(), QStringLiteral("Blank page"));
+    QVERIFY(sites->property("checked").toBool());
+    QVERIFY(!blank->property("checked").toBool());
     for (const QString &name : sections) {
         QVERIFY2(find(name)->property("checked").toBool(), qPrintable(name));
         QVERIFY2(find(name)->property("enabled").toBool(), qPrintable(name));
+        QVERIFY2(find(name)->property("description").toString().isEmpty(), qPrintable(name));
     }
+
+    // The picture is the screen at half its size, the page's own, with the bar along its
+    // foot. It shows each section switched on -- one with nothing in it yet as where its
+    // tiles and rows go -- and nothing past them.
+    const auto shown = [this](const QString &part) {
+        return find(part)->property("visible").toBool();
+    };
+    m_core->history()->clear();
+    QObject *frame = find(QStringLiteral("startPagePreviewFrame"));
+    QCOMPARE(frame->property("width").toReal(), currentPage()->property("width").toReal() / 2);
+    QCOMPARE(frame->property("height").toReal(), currentPage()->property("height").toReal() / 2);
+    QVERIFY(shown(QStringLiteral("startPagePreviewBar")));
+    QVERIFY(shown(QStringLiteral("startPagePreviewTopSites")));
+    QVERIFY(shown(QStringLiteral("startPagePreviewBookmarks")));
+    QVERIFY(shown(QStringLiteral("startPagePreviewRecent")));
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 8);
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareRow")).count(), 3);
+    QVERIFY(findAll(QStringLiteral("startPagePreviewTile")).isEmpty());
+
+    // What the reader has is drawn as the start page draws it, in place of the spare
+    // tiles and rows: a site visited is a tile and a row, and a bookmark a tile under its
+    // title.
+    m_core->history()->visit(QStringLiteral("https://example.org/"), QStringLiteral("Example"));
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 4);
+    QVERIFY(findAll(QStringLiteral("startPagePreviewSpareRow")).isEmpty());
+    const QList<QObject *> rows = findAll(QStringLiteral("startPagePreviewRow"));
+    QCOMPARE(rows.count(), 1);
+    QCOMPARE(rows.first()->property("title").toString(), QStringLiteral("Example"));
+    m_core->bookmarks()->add(QStringLiteral("https://sailfishos.org/"),
+                             QStringLiteral("Sailfish OS"));
+    QVERIFY(findAll(QStringLiteral("startPagePreviewSpareTile")).isEmpty());
+    const QList<QObject *> tiles = findAll(QStringLiteral("startPagePreviewTile"));
+    QCOMPARE(tiles.count(), 2);
+    QCOMPARE(textOf(tiles.last(), "siteTileName"), QStringLiteral("Sailfish OS"));
     find(QStringLiteral("startPageTopSitesSwitch"))->setProperty("checked", false);
     QVERIFY(!settings->topSites());
+    QVERIFY(!shown(QStringLiteral("startPagePreviewTopSites")));
     find(QStringLiteral("startPageBookmarksSwitch"))->setProperty("checked", false);
     QVERIFY(!settings->bookmarks());
     find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", false);
     QVERIFY(!settings->recent());
+    QVERIFY(!shown(QStringLiteral("startPagePreviewBookmarks")));
+    QVERIFY(!shown(QStringLiteral("startPagePreviewRecent")));
+    QVERIFY(shown(QStringLiteral("startPagePreviewBar")));
     find(QStringLiteral("startPageRecentSwitch"))->setProperty("checked", true);
     QVERIFY(settings->recent());
+    QVERIFY(shown(QStringLiteral("startPagePreviewRecent")));
 
-    // Blank: the sections are dimmed, and keep their switches for when it is not.
-    combo->setProperty("currentIndex", 1);
+    // Blank: the sections are dimmed, and keep their switches for when it is not; the
+    // picture is empty.
+    click(blank);
     QVERIFY(settings->blank());
+    QVERIFY(blank->property("checked").toBool());
+    QVERIFY(!sites->property("checked").toBool());
     for (const QString &name : sections) {
         QVERIFY2(!find(name)->property("enabled").toBool(), qPrintable(name));
     }
     QVERIFY(find(QStringLiteral("startPageRecentSwitch"))->property("checked").toBool());
-    combo->setProperty("currentIndex", 0);
+    QVERIFY(!shown(QStringLiteral("startPagePreviewRecent")));
+    QVERIFY(shown(QStringLiteral("startPagePreviewBar")));
+    click(blank);
+    QVERIFY(settings->blank());
+    click(sites);
     QVERIFY(!settings->blank());
+    QVERIFY(shown(QStringLiteral("startPagePreviewRecent")));
 }
 
-// Search: the engine the address bar searches with, and the sources its suggestions
-// are drawn from, each a switch that is on until it is turned off. The way in names
-// the engine.
+// Search: the engine the address bar searches with, every one on the page and the one
+// chosen lit, and the sources its suggestions are drawn from, each a switch that is on
+// until it is turned off. The way in names the engine.
 void tst_qmlload::searchSettingsPage()
 {
     SearchSettings *settings = m_core->searchSettings();
@@ -3740,11 +4519,19 @@ void tst_qmlload::searchSettingsPage()
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
 
-    QObject *combo = find(QStringLiteral("searchEngineCombo"));
-    QCOMPARE(combo->property("currentIndex").toInt(), settings->engineIndex());
+    const QList<QObject *> choices = findAll(QStringLiteral("searchEngineChoice"));
+    QCOMPARE(choices.count(), engines.count());
+    for (int i = 0; i < choices.count(); ++i) {
+        QCOMPARE(choices.at(i)->property("text").toString(), engines.at(i));
+        QVERIFY(!choices.at(i)->property("automaticCheck").toBool());
+        QCOMPARE(choices.at(i)->property("checked").toBool(), i == settings->engineIndex());
+    }
     const int other = settings->engineIndex() == 1 ? 0 : 1;
-    combo->setProperty("currentIndex", other);
+    click(choices.at(other));
     QCOMPARE(settings->engineIndex(), other);
+    for (int i = 0; i < choices.count(); ++i) {
+        QCOMPARE(choices.at(i)->property("checked").toBool(), i == other);
+    }
 
     // A switch for each source, in the order the address bar lists them, each writing
     // its own setting and no other.
@@ -3755,12 +4542,16 @@ void tst_qmlload::searchSettingsPage()
         {QStringLiteral("omnibarHistorySwitch"), &SearchSettings::omnibarHistory},
         {QStringLiteral("omnibarDownloadsSwitch"), &SearchSettings::omnibarDownloads},
     };
-    const QStringList layout{
-        QStringLiteral("searchEngineCombo"),    QStringLiteral("#Address bar suggestions"),
-        QStringLiteral("omnibarTabsSwitch"),    QStringLiteral("omnibarBookmarksSwitch"),
-        QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch"),
+    QStringList layout{QStringLiteral("#Search engine")};
+    for (int i = 0; i < engines.count(); ++i) {
+        layout.append(QStringLiteral("searchEngineChoice"));
+    }
+    layout += QStringList{
+        QStringLiteral("#Address bar suggestions"), QStringLiteral("omnibarTabsSwitch"),
+        QStringLiteral("omnibarBookmarksSwitch"),   QStringLiteral("omnibarHistorySwitch"),
+        QStringLiteral("omnibarDownloadsSwitch"),
     };
-    QCOMPARE(columnOf(combo), layout);
+    QCOMPARE(columnOf(choices.first()), layout);
     for (const auto &source : sources) {
         QObject *toggle = find(source.first);
         QVERIFY2(!toggle->property("text").toString().isEmpty(), qPrintable(source.first));
@@ -3778,8 +4569,9 @@ void tst_qmlload::searchSettingsPage()
     }
 }
 
-// The reader view's look: each choice the stored value, Firefox's middle text size
-// written as the whole of itself, and the way in says all three in a line.
+// The reader view's look: each colour a square painted as the reader view will be and
+// each typeface a tile written in it, the one set lit, Firefox's middle text size written
+// as the whole of itself, and the way in says all three in a line.
 void tst_qmlload::readerSettingsPage()
 {
     openMenuItem(QStringLiteral("settingsMenuButton"));
@@ -3787,11 +4579,12 @@ void tst_qmlload::readerSettingsPage()
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("readerSettingsPage"));
 
-    // Under the choices, a few lines of an article as the reader view will set them,
-    // in the ambience's own colours to begin with -- the stub's is dark -- and at the
-    // reader view's own size.
+    // Under the choices, a few lines of an article as the reader view will set them, in
+    // the ambience's own look to begin with -- its colours and typeface, the heading
+    // first and at the end of the line -- and at the reader view's own size.
     QObject *preview = find(QStringLiteral("readerPreview"));
     QObject *domain = find(QStringLiteral("readerPreviewDomain"));
+    QObject *heading = find(QStringLiteral("readerPreviewHeading"));
     QObject *text = find(QStringLiteral("readerPreviewText"));
     const qreal zoom =
         Settings::pageZoom(evaluate(preview, QStringLiteral("Theme.pixelRatio")).toReal());
@@ -3799,26 +4592,75 @@ void tst_qmlload::readerSettingsPage()
     const auto sizedFor = [zoom, &fontOf](QObject *label, int step) {
         return qAbs(fontOf(label).pixelSize() - Reader::fontSizeFor(step) * zoom) <= 1;
     };
-    QCOMPARE(columnOf(find(QStringLiteral("readerColorsCombo"))).last(),
-             QStringLiteral("readerPreview"));
-    QCOMPARE(preview->property("color").value<QColor>(),
-             Reader::backgroundOf(QStringLiteral("dark")));
-    QCOMPARE(fontOf(text).family(), QStringLiteral("sans-serif"));
+    const auto theme = [this, preview](const char *name) {
+        return evaluate(preview, QStringLiteral("Theme.") + QLatin1String(name)).value<QColor>();
+    };
+    QCOMPARE(columnOf(preview).last(), QStringLiteral("readerPreview"));
+    QVERIFY(preview->property("ambience").toBool());
+    QCOMPARE(preview->property("color").value<QColor>(), theme("highlightDimmerColor"));
+    QCOMPARE(text->property("color").value<QColor>(), theme("primaryColor"));
+    QCOMPARE(heading->property("color").value<QColor>(), theme("highlightColor"));
+    QCOMPARE(domain->property("color").value<QColor>(), theme("secondaryHighlightColor"));
+    QCOMPARE(heading->property("horizontalAlignment").toInt(), int(Qt::AlignRight));
+    QVERIFY(heading->property("y").toReal() < domain->property("y").toReal());
+    QCOMPARE(fontOf(text).family(),
+             evaluate(preview, QStringLiteral("Theme.fontFamily")).toString());
     QVERIFY(sizedFor(text, ReaderSettings::TextSizeDefault));
 
-    QObject *readerColors = find(QStringLiteral("readerColorsCombo"));
-    QCOMPARE(readerColors->property("currentIndex").toInt(), int(ReaderSettings::Ambience));
-    readerColors->setProperty("currentIndex", int(ReaderSettings::Sepia));
+    // Five squares, in the order a reader reads them, each carrying its stored value.
+    const QList<QObject *> swatches = findAll(QStringLiteral("readerColorsChoice"));
+    const QList<int> order{ReaderSettings::Automatic, ReaderSettings::Ambience,
+                           ReaderSettings::Light, ReaderSettings::Sepia, ReaderSettings::Dark};
+    const QStringList names{QStringLiteral("Automatic"), QStringLiteral("Ambience"),
+                            QStringLiteral("Light"), QStringLiteral("Sepia"),
+                            QStringLiteral("Dark")};
+    QCOMPARE(swatches.count(), order.count());
+    for (int i = 0; i < swatches.count(); ++i) {
+        QCOMPARE(swatches.at(i)->property("colors").toInt(), order.at(i));
+        QCOMPARE(swatches.at(i)->property("text").toString(), names.at(i));
+        QCOMPARE(swatches.at(i)->property("selected").toBool(),
+                 order.at(i) == int(ReaderSettings::Ambience));
+    }
+    QCOMPARE(m_core->readerSettings()->colors(), int(ReaderSettings::Ambience));
+    // Each painted as its theme: Sepia's square is the style sheet's sepia.
+    QObject *sepiaSquare =
+        findObjects(swatches.at(3), QStringLiteral("readerSwatchSquare")).first();
+    QCOMPARE(sepiaSquare->property("color").value<QColor>(),
+             Reader::backgroundOf(QStringLiteral("sepia")));
+
+    click(swatches.at(3));
     QCOMPARE(m_core->readerSettings()->colors(), int(ReaderSettings::Sepia));
+    QVERIFY(swatches.at(3)->property("selected").toBool());
+    QVERIFY(!swatches.at(1)->property("selected").toBool());
+    QVERIFY(!preview->property("ambience").toBool());
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("sepia")));
     QCOMPARE(text->property("color").value<QColor>(), Reader::textColorOf(QStringLiteral("sepia")));
     QCOMPARE(domain->property("color").value<QColor>(),
              Reader::linkColorOf(QStringLiteral("sepia")));
-    QObject *readerTypeface = find(QStringLiteral("readerTypefaceCombo"));
-    QCOMPARE(readerTypeface->property("currentIndex").toInt(), int(ReaderSettings::SansSerif));
-    readerTypeface->setProperty("currentIndex", int(ReaderSettings::Serif));
+    // Firefox's order again: the site, then the heading.
+    QVERIFY(heading->property("y").toReal() > domain->property("y").toReal());
+    QCOMPARE(fontOf(text).family(), QStringLiteral("sans-serif"));
+    // Automatic is the ambience's light or dark: the stub's is dark.
+    click(swatches.at(0));
+    QCOMPARE(m_core->readerSettings()->colors(), int(ReaderSettings::Automatic));
+    QCOMPARE(preview->property("color").value<QColor>(),
+             Reader::backgroundOf(QStringLiteral("dark")));
+    click(swatches.at(3));
+
+    // The typefaces, each a tile written in itself.
+    const QList<QObject *> typefaces = findAll(QStringLiteral("readerTypefaceChoice"));
+    QCOMPARE(typefaces.count(), 2);
+    QCOMPARE(textIn(typefaces.at(0), QStringLiteral("readerTypefaceName")),
+             QStringLiteral("Sans serif"));
+    QCOMPARE(textIn(typefaces.at(1), QStringLiteral("readerTypefaceName")),
+             QStringLiteral("Serif"));
+    QVERIFY(typefaces.at(0)->property("selected").toBool());
+    QCOMPARE(m_core->readerSettings()->typeface(), int(ReaderSettings::SansSerif));
+    click(typefaces.at(1));
     QCOMPARE(m_core->readerSettings()->typeface(), int(ReaderSettings::Serif));
+    QVERIFY(typefaces.at(1)->property("selected").toBool());
+    QVERIFY(!typefaces.at(0)->property("selected").toBool());
     // The article in the typeface chosen, the site's name in the sans-serif still.
     QCOMPARE(fontOf(text).family(), QStringLiteral("serif"));
     QCOMPARE(fontOf(domain).family(), QStringLiteral("sans-serif"));
@@ -3835,40 +4677,59 @@ void tst_qmlload::readerSettingsPage()
     QCOMPARE(readerSize->property("valueText").toString(), QStringLiteral("60 %"));
     QVERIFY(sizedFor(text, 1));
 
-    // The line follows the setting wherever it is written from, and so does the
-    // picture.
+    // The picture follows the setting wherever it is written from, and so do the
+    // squares.
     m_core->readerSettings()->setColors(ReaderSettings::Light);
     QCOMPARE(preview->property("color").value<QColor>(),
              Reader::backgroundOf(QStringLiteral("light")));
+    QVERIFY(swatches.at(2)->property("selected").toBool());
     m_core->readerSettings()->setColors(ReaderSettings::Dark);
     QCOMPARE(domain->property("color").value<QColor>(),
              Reader::linkColorOf(QStringLiteral("dark")));
+    // In the ambience's look a serif article keeps its serif, and the heading is set in
+    // it too.
+    m_core->readerSettings()->setColors(ReaderSettings::Ambience);
+    QCOMPARE(fontOf(text).family(), QStringLiteral("serif"));
+    QCOMPARE(fontOf(heading).family(), QStringLiteral("serif"));
 }
 
-// Privacy: tracking protection, which reaches the engine at once, and the way to clear
-// browsing data, which asks first. The way in names the level.
-void tst_qmlload::privacySettingsPage()
+// Tracking protection: its three levels on the page at once, each saying what it does,
+// the one set lit; a change reaches the engine at once. The way in names the level.
+void tst_qmlload::trackingSettingsPage()
 {
     openMenuItem(QStringLiteral("settingsMenuButton"));
-    QObject *entry = find(QStringLiteral("privacySettingsEntry"));
+    QObject *entry = find(QStringLiteral("trackingSettingsEntry"));
     click(entry);
     QObject *page = currentPage();
-    QCOMPARE(page->objectName(), QStringLiteral("privacySettingsPage"));
+    QCOMPARE(page->objectName(), QStringLiteral("trackingSettingsPage"));
 
-    // Tracking protection is Standard until it is changed here, and a change reaches
-    // the engine at once, every preference of the new level after the old ones. The
-    // browsing page writes them, so they are read through something of BrowserPage.qml's
-    // own.
+    // Standard until it is changed here, and a change reaches the engine at once, every
+    // preference of the new level after the old ones. The browsing page writes them, so
+    // they are read through something of BrowserPage.qml's own.
     QObject *pageScope = find(QStringLiteral("viewArea"));
-    QObject *trackingCombo = find(QStringLiteral("trackingProtectionCombo"));
-    QCOMPARE(trackingCombo->property("currentIndex").toInt(),
-             int(PrivacySettings::TrackingProtectionStandard));
-    const QString standardDescription = trackingCombo->property("description").toString();
+    const QList<QObject *> levels = findAll(QStringLiteral("trackingProtectionChoice"));
+    QCOMPARE(levels.count(), 3);
+    const QStringList names{QStringLiteral("Off"), QStringLiteral("Standard"),
+                            QStringLiteral("Strict")};
+    QStringList descriptions;
+    for (int level = 0; level < levels.count(); ++level) {
+        QObject *choice = levels.at(level);
+        QCOMPARE(choice->property("text").toString(), names.at(level));
+        QVERIFY(!choice->property("automaticCheck").toBool());
+        QCOMPARE(choice->property("checked").toBool(),
+                 level == int(PrivacySettings::TrackingProtectionStandard));
+        const QString description = choice->property("description").toString();
+        QVERIFY2(!description.isEmpty(), qPrintable(names.at(level)));
+        QVERIFY(!descriptions.contains(description));
+        descriptions.append(description);
+    }
     const int given =
         evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt();
-    trackingCombo->setProperty("currentIndex", int(PrivacySettings::TrackingProtectionStrict));
+    click(levels.at(PrivacySettings::TrackingProtectionStrict));
     QCOMPARE(m_core->privacySettings()->trackingProtection(),
              int(PrivacySettings::TrackingProtectionStrict));
+    QVERIFY(levels.at(PrivacySettings::TrackingProtectionStrict)->property("checked").toBool());
+    QVERIFY(!levels.at(PrivacySettings::TrackingProtectionStandard)->property("checked").toBool());
     const QVariantList strict =
         EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStrict);
     const QVariantList preferences =
@@ -3880,39 +4741,65 @@ void tst_qmlload::privacySettingsPage()
         QCOMPARE(preferences.at(given + i).toMap().value(QStringLiteral("value")),
                  strict.at(i).toMap().value(QStringLiteral("value")));
     }
-    const QString strictDescription = trackingCombo->property("description").toString();
-    QVERIFY(!strictDescription.isEmpty());
-    QVERIFY(strictDescription != standardDescription);
-    trackingCombo->setProperty("currentIndex", int(PrivacySettings::TrackingProtectionOff));
+    click(levels.at(PrivacySettings::TrackingProtectionOff));
     QCOMPARE(m_core->privacySettings()->trackingProtection(),
              int(PrivacySettings::TrackingProtectionOff));
     QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
              given + 2 * strict.count());
-    const QString offDescription = trackingCombo->property("description").toString();
-    QVERIFY(!offDescription.isEmpty());
-    QVERIFY(offDescription != standardDescription && offDescription != strictDescription);
+    // The same level again tells the engine nothing.
+    click(levels.at(PrivacySettings::TrackingProtectionOff));
+    QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
+             given + 2 * strict.count());
 
     // Tracking protection is all there is here: clearing has a page of its own.
-    QCOMPARE(columnOf(trackingCombo), QStringList{QStringLiteral("trackingProtectionCombo")});
+    const QString choice = QStringLiteral("trackingProtectionChoice");
+    QCOMPARE(columnOf(levels.first()), (QStringList{choice, choice, choice}));
 }
 
 // History: whether pages are kept, and whether they go as the browser closes, each a
-// switch writing its setting, and the way to clear browsing data, which asks first. The
-// way in says whether and for how long the history is kept.
+// switch writing its setting; what is kept, counted; and the button to clear browsing
+// data, which asks first. The way in says whether and for how long the history is kept.
 void tst_qmlload::historySettingsPage()
 {
     PrivacySettings *settings = m_core->privacySettings();
     TabModel *tabs = m_core->tabs();
     openMenuItem(QStringLiteral("settingsMenuButton"));
+    // What Settings asked of the engine as it opened (settingsPage()) is not this page's.
+    forgetStartupMessages();
     QObject *entry = find(QStringLiteral("historySettingsEntry"));
     click(entry);
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("historySettingsPage"));
     QObject *remember = find(QStringLiteral("rememberHistorySwitch"));
     QObject *onClose = find(QStringLiteral("clearHistoryOnCloseSwitch"));
-    QCOMPARE(columnOf(remember), (QStringList{QStringLiteral("rememberHistorySwitch"),
-                                              QStringLiteral("clearHistoryOnCloseSwitch"),
-                                              QStringLiteral("clearDataEntry")}));
+    QCOMPARE(columnOf(remember),
+             (QStringList{QStringLiteral("rememberHistorySwitch"),
+                          QStringLiteral("clearHistoryOnCloseSwitch"),
+                          QStringLiteral("#Kept on this phone"), QStringLiteral("keptHistory"),
+                          QStringLiteral("keptDownloads"), QStringLiteral("keptClosedTabs"),
+                          QStringLiteral("keptOpenTabs"), QStringLiteral("clearDataButton")}));
+    // Remembering needs no line; clearing on close says what goes with it.
+    QVERIFY(remember->property("description").toString().isEmpty());
+    QCOMPARE(onClose->property("description").toString(),
+             QStringLiteral("With it, the list of downloads and the recently closed tabs"));
+
+    // What is kept, each counted as it changes: the one page the tests start on, no
+    // downloads, nothing closed, the one tab in the one group.
+    const auto kept = [this](const QString &detail) {
+        return find(detail)->property("value").toString();
+    };
+    QCOMPARE(find(QStringLiteral("keptHistory"))->property("label").toString(),
+             QStringLiteral("History"));
+    QCOMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("1 page(s)"));
+    QCOMPARE(kept(QStringLiteral("keptDownloads")), QStringLiteral("0 file(s)"));
+    QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("0 tab(s)"));
+    QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1 tab(s)"));
+    tabs->newTab(QStringLiteral("https://closed.example/"));
+    tabs->closeTab(tabs->activeTabIndex());
+    QCOMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("2 page(s)"));
+    QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("1 tab(s)"));
+    tabs->groupModel()->addGroup(QStringLiteral("Work"));
+    QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1, in 2 group(s)"));
 
     // Kept to begin with; switched off, a page visited is not, and what was kept stays.
     QVERIFY(remember->property("checked").toBool());
@@ -3942,9 +4829,7 @@ void tst_qmlload::historySettingsPage()
     const int again = m_core->history()->count();
     QVERIFY(again > 0);
     const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
-    QObject *clear = find(QStringLiteral("clearDataEntry"));
-    QCOMPARE(clear->property("iconSource").toString(),
-             QStringLiteral("image://theme/icon-m-delete"));
+    QObject *clear = find(QStringLiteral("clearDataButton"));
     QCOMPARE(clear->property("text").toString(), QStringLiteral("Clear browsing data"));
     click(clear);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("clearDataDialog"));
@@ -3965,6 +4850,8 @@ void tst_qmlload::clearDataDialog()
     tabs->newTab(QStringLiteral("https://two.example/"));
     QVERIFY(m_core->history()->count() > 0);
     openMenuItem(QStringLiteral("settingsMenuButton"));
+    // What Settings asked of the engine as it opened (settingsPage()) is not this page's.
+    forgetStartupMessages();
     click(find(QStringLiteral("historySettingsEntry")));
     QObject *privacy = currentPage();
     QCOMPARE(privacy->objectName(), QStringLiteral("historySettingsPage"));
@@ -3988,7 +4875,7 @@ void tst_qmlload::clearDataDialog()
     // Asks again, with the switches set in the order above, and accepts. The stub page
     // stack leaves popping an accepted dialog to its caller, as the other tests do.
     const auto clear = [this, &switches](const QList<bool> &on) {
-        click(find(QStringLiteral("clearDataEntry")));
+        click(find(QStringLiteral("clearDataButton")));
         QObject *dialog = currentPage();
         QCOMPARE(dialog->objectName(), QStringLiteral("clearDataDialog"));
         for (int i = 0; i < switches.count(); ++i) {
@@ -3999,7 +4886,7 @@ void tst_qmlload::clearDataDialog()
     };
 
     // The dialog as it opens, in Firefox's order: all but the open tabs on.
-    click(find(QStringLiteral("clearDataEntry")));
+    click(find(QStringLiteral("clearDataButton")));
     QObject *dialog = currentPage();
     QCOMPARE(dialog->objectName(), QStringLiteral("clearDataDialog"));
     const QList<bool> initially{false, true, true, true};
@@ -4017,6 +4904,32 @@ void tst_qmlload::clearDataDialog()
         QCOMPARE(toggle->property("checked").toBool(), initially.at(i));
     }
     QVERIFY(dialog->property("canAccept").toBool());
+
+    // Under each kind that can be counted, how much of it goes; under the cookies, what
+    // their going does; the cache is said by its name.
+    const auto said = [this](const QString &name) {
+        return find(name)->property("description").toString();
+    };
+    QCOMPARE(said(QStringLiteral("clearTabsSwitch")), QStringLiteral("2 tab(s), in every group"));
+    QCOMPARE(said(QStringLiteral("clearHistorySwitch")), QStringLiteral("2 page(s)"));
+    QCOMPARE(said(QStringLiteral("clearSiteDataSwitch")),
+             QStringLiteral("Signs you out of most sites"));
+    QVERIFY(said(QStringLiteral("clearCacheSwitch")).isEmpty());
+    // The closed tabs go with the whole history, and are counted while it is.
+    tabs->closeTab(tabs->activeTabIndex());
+    QCOMPARE(said(QStringLiteral("clearTabsSwitch")), QStringLiteral("1 tab(s), in every group"));
+    QCOMPARE(said(QStringLiteral("clearHistorySwitch")),
+             QStringLiteral("2 page(s) and 1 closed tab(s)"));
+    QCOMPARE(dialog->property("closedTabs").toInt(), 1);
+    range->setProperty("currentIndex", int(Salama::HistoryModel::ClearLastHour));
+    QCOMPARE(dialog->property("closedTabs").toInt(), 0);
+    QCOMPARE(said(QStringLiteral("clearHistorySwitch")), QStringLiteral("2 page(s)"));
+    range->setProperty("currentIndex", int(Salama::HistoryModel::ClearEverything));
+    QCOMPARE(evaluate(dialog, QStringLiteral("historyText(3, 18, 6)")).toString(),
+             QStringLiteral("3 page(s), 18 download(s) and 6 closed tab(s)"));
+    QCOMPARE(evaluate(dialog, QStringLiteral("historyText(0, 0, 0)")).toString(),
+             QStringLiteral("Nothing from this time"));
+    tabs->newTab(QStringLiteral("https://two.example/"));
 
     // With nothing on, Clear is dimmed and does nothing; any one on is enough.
     for (const QString &name : switches) {
@@ -4096,7 +5009,7 @@ void tst_qmlload::clearDataDialog()
     tabs->newTab(QStringLiteral("https://recent.example/"));
     const int closedBefore = tabs->closedTabs()->count();
     QVERIFY(closedBefore > 0);
-    click(find(QStringLiteral("clearDataEntry")));
+    click(find(QStringLiteral("clearDataButton")));
     find(QStringLiteral("clearRangeCombo"))
         ->setProperty("currentIndex", int(Salama::HistoryModel::ClearLastHour));
     for (int i = 0; i < switches.count(); ++i) {
@@ -4127,9 +5040,10 @@ void tst_qmlload::clearDataDialog()
     QCOMPARE(notification(3, QStringLiteral("value")), QStringLiteral("cache"));
 }
 
-// The cover's style, the one choice among the settings that another page has to
-// answer, and under it the cover's quick action. The way in says what the cover shows
-// and what its action is, in the words the choices are offered in.
+// The cover's style, the one choice among the settings that another page has to answer,
+// chosen by its picture, and under it the cover's quick action, a row for each with the
+// glyph it wears. The way in says what the cover shows and what its action is, in the
+// words the choices are offered in.
 void tst_qmlload::coverSettingsPage()
 {
     CoverSettings *settings = m_core->coverSettings();
@@ -4139,80 +5053,101 @@ void tst_qmlload::coverSettingsPage()
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
 
-    QObject *coverCombo = find(QStringLiteral("coverStyleCombo"));
+    QObject *styles = find(QStringLiteral("coverStyles"));
     const QStringList layout{
-        QStringLiteral("coverStyleCombo"),      QStringLiteral("#Quick action"),
-        QStringLiteral("quickActionExplained"), QStringLiteral("quickActionPreviews"),
-        QStringLiteral("quickActionChoice"),    QStringLiteral("quickActionIcons"),
+        QStringLiteral("#Shows"),
+        QStringLiteral("coverStyles"),
+        QStringLiteral("#Quick action"),
+        QStringLiteral("quickActionExplained"),
+        QStringLiteral("quickAction-none"),
+        QStringLiteral("quickAction-search"),
+        QStringLiteral("quickAction-bookmarks"),
+        QStringLiteral("quickAction-bookmark"),
+        QStringLiteral("quickAction-downloads"),
+        QStringLiteral("quickAction-history"),
+        QStringLiteral("quickActionIconPicker"),
     };
-    QCOMPARE(columnOf(coverCombo), layout);
-    QCOMPARE(coverCombo->property("currentIndex").toInt(), int(CoverSettings::Lightning));
-    coverCombo->setProperty("currentIndex", int(CoverSettings::LatestTab));
+    QCOMPARE(columnOf(styles), layout);
+
+    // The two covers, each a picture a choice: the one set ringed and named in the
+    // highlight colour, the other not; a tap on either sets it, and the cover answers.
+    QObject *lightningChoice = find(QStringLiteral("coverStyleChoice-lightning"));
+    QObject *latestTabChoice = find(QStringLiteral("coverStyleChoice-latestTab"));
+    QObject *lightning = find(QStringLiteral("lightningCoverPreview"));
+    QObject *latestTab = find(QStringLiteral("latestTabCoverPreview"));
+    QCOMPARE(lightning->property("text").toString(), QStringLiteral("Lightning"));
+    QCOMPARE(latestTab->property("text").toString(), QStringLiteral("Tabs and count"));
+    QVERIFY(lightning->property("selected").toBool());
+    QVERIFY(!latestTab->property("selected").toBool());
+    QObject *ring = findObjects(lightning, QStringLiteral("previewRing")).first();
+    QCOMPARE(evaluate(ring, QStringLiteral("border.color")),
+             evaluate(page, QStringLiteral("Theme.highlightColor")));
+    click(latestTabChoice);
     QCOMPARE(settings->style(), int(CoverSettings::LatestTab));
+    QVERIFY(latestTab->property("selected").toBool());
+    QVERIFY(!lightning->property("selected").toBool());
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem->findChild<QObject *>(QStringLiteral("coverHeading"))
                 ->property("visible")
                 .toBool());
+    click(lightningChoice);
+    QCOMPARE(settings->style(), int(CoverSettings::Lightning));
 
-    const QList<QPair<CoverSettings::Style, QString>> styles{
-        {CoverSettings::Lightning, QStringLiteral("coverLightningItem")},
-        {CoverSettings::LatestTab, QStringLiteral("coverLatestTabItem")},
-    };
-    for (const auto &style : styles) {
-        coverCombo->setProperty("currentIndex", int(style.first));
-        QCOMPARE(settings->style(), int(style.first));
-    }
+    // Each picture is the cover it offers, whatever is set: the lightning, the cover's
+    // own and still, or the heading over the tab last read.
+    QObject *previewLightning = findObjects(lightning, QStringLiteral("previewLightning")).first();
+    QVERIFY(previewLightning->property("visible").toBool());
+    QVERIFY(!previewLightning->property("active").toBool());
+    QVERIFY(!findObjects(latestTab, QStringLiteral("previewLightning"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
     settings->setStyle(CoverSettings::LatestTab);
-    settings->setQuickAction(CoverSettings::QuickActionNone);
-    settings->setQuickAction(CoverSettings::QuickActionBookmark);
+    QVERIFY(previewLightning->property("visible").toBool());
+
+    // The pictures are a real cover's shape, two thirds its size, side by side.
+    const qreal coverWidth = evaluate(page, QStringLiteral("Theme.coverSizeLarge.width")).toReal();
+    const qreal coverHeight =
+        evaluate(page, QStringLiteral("Theme.coverSizeLarge.height")).toReal();
+    auto *left = qobject_cast<QQuickItem *>(lightningChoice);
+    auto *right = qobject_cast<QQuickItem *>(latestTabChoice);
+    QCOMPARE(left->width(), coverWidth * 2 / 3);
+    QCOMPARE(right->width(), left->width());
+    QVERIFY(left->x() + left->width() < right->x());
+    auto *picture = qobject_cast<QQuickItem *>(
+        findObjects(lightning, QStringLiteral("previewPicture")).first());
+    QCOMPARE(picture->height(), qreal(qRound(picture->width() * coverHeight / coverWidth)));
 
     // Why there is one action, in the voice of a hint rather than a control: small, in
     // the secondary highlight, and the words of a sentence rather than rich text.
     QObject *explained = find(QStringLiteral("quickActionExplained"));
     QCOMPARE(explained->property("text").toString(),
-             QStringLiteral("The cover on the home screen shows one quick action. The place "
-                            "beside it is kept for the media control, which appears there "
-                            "while the tab in front plays something."));
+             QStringLiteral("The cover on the home screen offers one action. While a tab "
+                            "plays, its mute button sits beside it."));
     QCOMPARE(explained->property("textFormat").toInt(), int(Qt::PlainText));
     QCOMPARE(explained->property("wrapMode").toInt(),
              evaluate(explained, QStringLiteral("Text.Wrap")).toInt());
     QCOMPARE(explained->property("font").value<QFont>().pixelSize(),
-             evaluate(page, QStringLiteral("Theme.fontSizeSmall")).toInt());
+             evaluate(page, QStringLiteral("Theme.fontSizeExtraSmall")).toInt());
     QCOMPARE(explained->property("color"),
              evaluate(page, QStringLiteral("Theme.secondaryHighlightColor")));
 
-    // The pictures are a real cover's shape, two thirds its size, side by side, and the
-    // row is drawn as Silica draws a ComboBox: the name, and what it is set to in the
-    // highlight colour.
-    const qreal coverWidth = evaluate(page, QStringLiteral("Theme.coverSizeLarge.width")).toReal();
-    const qreal coverHeight =
-        evaluate(page, QStringLiteral("Theme.coverSizeLarge.height")).toReal();
-    auto *quiet = qobject_cast<QQuickItem *>(find(QStringLiteral("quietCoverPreview")));
-    auto *playing = qobject_cast<QQuickItem *>(find(QStringLiteral("playingCoverPreview")));
-    QCOMPARE(quiet->width(), coverWidth * 2 / 3);
-    QCOMPARE(playing->width(), quiet->width());
-    QVERIFY(quiet->x() + quiet->width() < playing->x());
-    auto *picture =
-        qobject_cast<QQuickItem *>(findObjects(quiet, QStringLiteral("previewPicture")).first());
-    QCOMPARE(picture->height(), qreal(qRound(picture->width() * coverHeight / coverWidth)));
-    // Behind the actions, the cover as it is set to show itself: the heading over the
-    // tab last read, or the lightning -- the cover's own, and still.
-    QObject *previewLightning = findObjects(quiet, QStringLiteral("previewLightning")).first();
-    QVERIFY(!previewLightning->property("visible").toBool());
-    settings->setStyle(CoverSettings::Lightning);
-    QVERIFY(previewLightning->property("visible").toBool());
-    QVERIFY(!previewLightning->property("active").toBool());
-    settings->setStyle(CoverSettings::LatestTab);
-    QCOMPARE(quiet->property("text").toString(), QStringLiteral("Nothing playing"));
-    QCOMPARE(playing->property("text").toString(), QStringLiteral("While a tab plays"));
-    QObject *choice = find(QStringLiteral("quickActionChoice"));
-    QCOMPARE(choice->property("contentHeight"),
-             evaluate(page, QStringLiteral("Theme.itemSizeSmall")));
-    QCOMPARE(textIn(choice, QStringLiteral("quickActionLabel")), QStringLiteral("Action"));
-    QCOMPARE(findObjects(choice, QStringLiteral("quickActionValue")).first()->property("color"),
+    // The rows: the one set lit, a small item tall, with no line under it but the
+    // bookmark's once one is picked.
+    QObject *search = find(QStringLiteral("quickAction-search"));
+    QVERIFY(search->property("chosen").toBool());
+    QCOMPARE(search->property("height"), evaluate(page, QStringLiteral("Theme.itemSizeSmall")));
+    QCOMPARE(findObjects(search, QStringLiteral("quickActionName")).first()->property("color"),
              evaluate(page, QStringLiteral("Theme.highlightColor")));
-    click(choice);
-    QVERIFY(choice->property("menuOpen").toBool());
+    QObject *history = find(QStringLiteral("quickAction-history"));
+    QVERIFY(!history->property("chosen").toBool());
+    QCOMPARE(findObjects(history, QStringLiteral("quickActionName")).first()->property("color"),
+             evaluate(page, QStringLiteral("Theme.primaryColor")));
+    QVERIFY(!findObjects(find(QStringLiteral("quickAction-bookmark")),
+                         QStringLiteral("quickActionDetail"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
 }
 
 void tst_qmlload::cover()
@@ -4563,10 +5498,11 @@ void tst_qmlload::quickActionLists()
     QVERIFY2(errors.all().isEmpty(), qPrintable(errors.all()));
 }
 
-// The choice of the quick action on the cover's settings page: each kind in the row's
-// menu writes it, the row says it, and the pictures of the cover draw it. "Open a
-// bookmark" asks which, and backing out has chosen nothing; under a bookmark's action are
-// the glyphs it can wear, drawn from the files the cover hands the home screen.
+// The choice of the quick action on the cover's settings page: each row writes it, is
+// lit while it is the one set, wears the glyph it has on the cover, and the pictures of
+// the cover draw it. "Open a bookmark" asks which, and backing out has chosen nothing;
+// its row then names the bookmark, and under the rows are the glyphs it can wear, drawn
+// from the files the cover hands the home screen.
 void tst_qmlload::quickActionChoice()
 {
     ScriptErrors errors;
@@ -4578,27 +5514,33 @@ void tst_qmlload::quickActionChoice()
     openMenuItem(QStringLiteral("settingsMenuButton"));
     click(find(QStringLiteral("coverSettingsEntry")));
     QObject *page = currentPage();
-    QObject *value = find(QStringLiteral("quickActionValue"));
-    QObject *icons = find(QStringLiteral("quickActionIcons"));
-    QObject *quiet = find(QStringLiteral("quietCoverPreview"));
-    QObject *playing = find(QStringLiteral("playingCoverPreview"));
-    const QString speaker = QStringLiteral("speaker-on");
+    QObject *icons = find(QStringLiteral("quickActionIconPicker"));
+    QObject *lightning = find(QStringLiteral("lightningCoverPreview"));
+    QObject *latestTab = find(QStringLiteral("latestTabCoverPreview"));
+    QObject *bookmarkItem = find(QStringLiteral("quickAction-bookmark"));
+    QObject *detail = findObjects(bookmarkItem, QStringLiteral("quickActionDetail")).first();
+    const auto glyphOf = [](QObject *row) {
+        return findObjects(row, QStringLiteral("quickActionGlyph")).first();
+    };
 
-    // A search until another is chosen: alone in the middle while nothing plays, on the
-    // left of the mute while a tab plays, drawn from the cover's own files.
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Search"));
-    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("search")});
-    QCOMPARE(previewGlyphs(playing), (QStringList{QStringLiteral("search"), speaker}));
+    // A search until another is chosen: in the middle of both pictures' strip, drawn from
+    // the cover's own files, and its row wearing the same.
+    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("search")});
+    QCOMPARE(previewGlyphs(latestTab), QStringList{QStringLiteral("search")});
     QVERIFY(drawnFrom(
-        findObjects(quiet, QStringLiteral("previewAction")).first()->property("source").toUrl(),
+        findObjects(lightning, QStringLiteral("previewAction")).first()->property("source").toUrl(),
         QStringLiteral("search-32-white.png")));
+    QVERIFY(
+        drawnFrom(glyphOf(find(QStringLiteral("quickAction-search")))->property("source").toUrl(),
+                  QStringLiteral("search-32-white.png")));
+    QVERIFY(glyphOf(find(QStringLiteral("quickAction-search")))->property("highlighted").toBool());
     QVERIFY(!icons->property("visible").toBool());
 
     struct Choice
     {
         QString item;
         CoverSettings::QuickAction action;
-        QString value;
+        QString name;
         QString glyph;
     };
     const QList<Choice> choices{
@@ -4615,22 +5557,32 @@ void tst_qmlload::quickActionChoice()
     };
     for (const Choice &choice : choices) {
         QObject *item = find(choice.item);
-        QCOMPARE(item->property("text").toString(), choice.value);
+        QCOMPARE(textIn(item, QStringLiteral("quickActionName")), choice.name);
+        // No action wears nothing: a dot keeps its place.
+        QCOMPARE(glyphOf(item)->property("visible").toBool(), !choice.glyph.isEmpty());
+        if (!choice.glyph.isEmpty()) {
+            QVERIFY(drawnFrom(glyphOf(item)->property("source").toUrl(),
+                              choice.glyph + QStringLiteral("-32-white.png")));
+        }
         click(item);
         QCOMPARE(settings->quickAction(), int(choice.action));
-        QCOMPARE(value->property("text").toString(), choice.value);
-        // No action leaves the strip bare; while a tab plays, the mute is alone.
-        QCOMPARE(previewGlyphs(quiet),
+        QVERIFY(item->property("chosen").toBool());
+        QVERIFY(glyphOf(item)->property("highlighted").toBool());
+        for (const Choice &other : choices) {
+            if (other.item != choice.item) {
+                QVERIFY2(!find(other.item)->property("chosen").toBool(), qPrintable(other.item));
+            }
+        }
+        // No action leaves the strip bare.
+        QCOMPARE(previewGlyphs(lightning),
                  choice.glyph.isEmpty() ? QStringList() : QStringList{choice.glyph});
-        QCOMPARE(previewGlyphs(playing), choice.glyph.isEmpty()
-                                             ? QStringList{speaker}
-                                             : (QStringList{choice.glyph, speaker}));
+        QCOMPARE(previewGlyphs(latestTab), previewGlyphs(lightning));
         QVERIFY(!icons->property("visible").toBool());
     }
 
     // "Open a bookmark" asks which, and backing out leaves the action as it was.
-    QObject *bookmarkItem = find(QStringLiteral("quickAction-bookmark"));
-    QCOMPARE(bookmarkItem->property("text").toString(), QStringLiteral("Open a bookmark"));
+    QCOMPARE(textIn(bookmarkItem, QStringLiteral("quickActionName")),
+             QStringLiteral("Open a bookmark"));
     click(bookmarkItem);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarkPickerPage"));
     QCOMPARE(findAll(QStringLiteral("bookmarkPickerRow")).count(), 2);
@@ -4638,7 +5590,8 @@ void tst_qmlload::quickActionChoice()
     QCOMPARE(currentPage(), page);
     QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionSearch));
     QCOMPARE(settings->quickActionBookmark(), 0);
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Search"));
+    QVERIFY(!bookmarkItem->property("chosen").toBool());
+    QVERIFY(!detail->property("visible").toBool());
 
     // The picker narrows to every word typed, says when nothing matches, and a tap
     // picks: the action is that bookmark's, and the page goes back.
@@ -4661,10 +5614,14 @@ void tst_qmlload::quickActionChoice()
     QCOMPARE(settings->quickActionBookmark(), wiki);
     QCOMPARE(settings->quickActionBookmarkUrl(), QStringLiteral("https://forest.example/wiki"));
     QCOMPARE(settings->quickActionBookmarkTitle(), QStringLiteral("Forest wiki"));
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Forest wiki"));
+    QVERIFY(bookmarkItem->property("chosen").toBool());
+    QVERIFY(detail->property("visible").toBool());
+    QCOMPARE(detail->property("text").toString(), QStringLiteral("Forest wiki"));
+    QCOMPARE(bookmarkItem->property("height"),
+             evaluate(page, QStringLiteral("Theme.itemSizeMedium")));
 
-    // Under it, every glyph it can wear, the one it wears lit; a tap on another writes
-    // it, and the pictures and the cover follow.
+    // Under the rows, every glyph it can wear, the one it wears lit; a tap on another
+    // writes it, and the row, the pictures and the cover follow.
     QVERIFY(icons->property("visible").toBool());
     for (const QString &name : settings->quickActionIcons()) {
         QObject *cell = find(QStringLiteral("quickActionIcon-") + name);
@@ -4676,13 +5633,15 @@ void tst_qmlload::quickActionChoice()
                           name + QStringLiteral("-32-white.png")));
         QCOMPARE(cell->property("highlighted").toBool(), name == QStringLiteral("globe"));
     }
-    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("globe")});
+    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("globe")});
     click(find(QStringLiteral("quickActionIcon-heart")));
     QCOMPARE(settings->quickActionIcon(), QStringLiteral("heart"));
     QVERIFY(find(QStringLiteral("quickActionIcon-heart"))->property("highlighted").toBool());
     QVERIFY(!find(QStringLiteral("quickActionIcon-globe"))->property("highlighted").toBool());
-    QCOMPARE(previewGlyphs(quiet), QStringList{QStringLiteral("heart")});
-    QCOMPARE(previewGlyphs(playing), (QStringList{QStringLiteral("heart"), speaker}));
+    QCOMPARE(previewGlyphs(lightning), QStringList{QStringLiteral("heart")});
+    QCOMPARE(previewGlyphs(latestTab), QStringList{QStringLiteral("heart")});
+    QVERIFY(drawnFrom(glyphOf(bookmarkItem)->property("source").toUrl(),
+                      QStringLiteral("heart-32-white.png")));
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(drawnFrom(coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction"))
                           ->property("iconSource")
@@ -4699,8 +5658,15 @@ void tst_qmlload::quickActionChoice()
     }
     QCOMPARE(currentPage(), page);
     QCOMPARE(settings->quickActionBookmark(), sea);
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Sea"));
+    QCOMPARE(detail->property("text").toString(), QStringLiteral("Sea"));
     QCOMPARE(settings->quickActionIcon(), QStringLiteral("heart"));
+
+    // Another action chosen, the bookmark's row still names the bookmark picked, for
+    // when it is chosen again.
+    click(find(QStringLiteral("quickAction-history")));
+    QVERIFY(detail->property("visible").toBool());
+    QCOMPARE(detail->property("text").toString(), QStringLiteral("Sea"));
+    QVERIFY(!icons->property("visible").toBool());
 
     // With no bookmarks at all, the picker says so.
     bookmarks->clear();
@@ -4732,18 +5698,20 @@ void tst_qmlload::quickActionBookmarkFollows()
     const auto openCoverSettings = [this]() {
         openMenuItem(QStringLiteral("settingsMenuButton"));
         click(find(QStringLiteral("coverSettingsEntry")));
-        return find(QStringLiteral("quickActionValue"));
+        return findObjects(find(QStringLiteral("quickAction-bookmark")),
+                           QStringLiteral("quickActionDetail"))
+            .first();
     };
     const auto backToBrowser = [this]() {
         popPage();
         popPage();
     };
     QObject *value = openCoverSettings();
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Bee"));
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bee"));
 
     // Renamed, while the page is open: read again, and what the setting keeps of it with it.
     bookmarks->edit(bookmarks->count() - 1, url, QStringLiteral("Bee hive"));
-    QCOMPARE(value->property("text").toString(), QStringLiteral("Bookmark: Bee hive"));
+    QCOMPARE(value->property("text").toString(), QStringLiteral("Bee hive"));
     QCOMPARE(settings->quickActionBookmarkTitle(), QStringLiteral("Bee hive"));
     backToBrowser();
 
@@ -4759,8 +5727,7 @@ void tst_qmlload::quickActionBookmarkFollows()
     QCOMPARE(settings->quickActionBookmarkUrl(), url);
     QCOMPARE(settings->quickAction(), int(CoverSettings::QuickActionBookmark));
     value = openCoverSettings();
-    QCOMPARE(value->property("text").toString(),
-             QStringLiteral("Bookmark: ") + bookmarks->titleOf(second));
+    QCOMPARE(value->property("text").toString(), bookmarks->titleOf(second));
     backToBrowser();
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     auto *action = coverItem->findChild<QObject *>(QStringLiteral("quickCoverAction"));
@@ -4917,14 +5884,38 @@ void tst_qmlload::gridCellsArePicturesAlone()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(1);
 
-    // The preview box is rounded, and the wash drawn round the active one is square,
-    // as Silica's own is. Clipping is rectangular whatever the shape of the item doing
-    // it, so the picture is cut to the box's corners by a mask.
+    // The preview box is rounded. Clipping is rectangular whatever the shape of the
+    // item doing it, so the picture is cut to the box's corners by a mask.
     QObject *shot = findObjects(cell, QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
-    QObject *wash = findObjects(cell, QStringLiteral("tabPreviewHighlight")).first();
-    QVERIFY(wash->property("visible").toBool());
-    QCOMPARE(wash->property("radius").toReal(), qreal(0));
+    // The active one is marked by a thin frame just outside the picture, following its
+    // corners, in the highlight background colour -- not a square wash behind it, which
+    // is gone -- and the other cells by nothing.
+    QVERIFY(findObjects(cell, QStringLiteral("tabPreviewHighlight")).isEmpty());
+    auto *frame =
+        qobject_cast<QQuickItem *>(findObjects(cell, QStringLiteral("tabPreviewFrame")).first());
+    QVERIFY(frame->isVisible());
+    QCOMPARE(frame->property("color").value<QColor>().alpha(), 0);
+    auto *border = frame->property("border").value<QObject *>();
+    const qreal stroke = border->property("width").toReal();
+    QCOMPARE(stroke, evaluate(cell, QStringLiteral("Theme._lineWidth")).toReal());
+    QVERIFY(stroke < evaluate(cell, QStringLiteral("Theme.paddingSmall")).toReal());
+    QCOMPARE(border->property("color").value<QColor>(),
+             evaluate(cell, QStringLiteral("Theme.highlightBackgroundColor")).value<QColor>());
+    const qreal gap = cell->property("frameGap").toReal();
+    QVERIFY(gap > 0);
+    const QRectF picture(
+        qobject_cast<QQuickItem *>(shot)->mapToScene(QPointF(0, 0)),
+        QSizeF(shot->property("width").toReal(), shot->property("height").toReal()));
+    const QRectF framed(frame->mapToScene(QPointF(0, 0)), QSizeF(frame->width(), frame->height()));
+    QCOMPARE(framed, picture.adjusted(-gap - stroke, -gap - stroke, gap + stroke, gap + stroke));
+    QCOMPARE(frame->property("radius").toReal(), shot->property("radius").toReal() + gap + stroke);
+    // Inside the cell, short of its edges.
+    QVERIFY(gap + stroke < cell->property("inset").toReal());
+    QVERIFY(!findObjects(previews.at(0), QStringLiteral("tabPreviewFrame"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
     // The picture sits in from the cell's edges by a little more than a medium padding,
     // and two cells stand twice that apart. Nothing is under it: no favicon and no
     // title, so it runs down to the same inset at the foot.
@@ -5512,8 +6503,9 @@ void tst_qmlload::notificationPermissions()
                               Q_ARG(QVariant, Qt::ApplicationActive));
 }
 
-// Settings > Notifications: whether sites may ask, and the sites the engine keeps, each
-// with a way to change it or remove it.
+// Settings > Notifications: whether sites may ask, and the sites the engine keeps, the
+// allowed and the blocked under a heading each, each with a way to change it or forget
+// it.
 void tst_qmlload::notificationSettingsPage()
 {
     NotificationPermissions *permissions = m_core->notificationPermissions();
@@ -5550,11 +6542,25 @@ void tst_qmlload::notificationSettingsPage()
         return findObjects(row, QLatin1String(name)).first()->property("text").toString();
     };
     QCOMPARE(text(rows.at(0), "notificationSiteHost"), QStringLiteral("chat.example"));
-    QCOMPARE(text(rows.at(0), "notificationSiteStatus"), QStringLiteral("Allowed"));
     QCOMPARE(text(rows.at(1), "notificationSiteHost"), QStringLiteral("news.example"));
-    QCOMPARE(text(rows.at(1), "notificationSiteStatus"), QStringLiteral("Blocked"));
     QCOMPARE(text(rows.at(0), "notificationSiteToggle"), QStringLiteral("Block"));
     QCOMPARE(text(rows.at(1), "notificationSiteToggle"), QStringLiteral("Allow"));
+    QCOMPARE(text(rows.at(1), "notificationSiteRemove"), QStringLiteral("Forget this site"));
+    // The headings are the list's sections, by whether a site is allowed.
+    QObject *list = find(QStringLiteral("notificationSiteList"));
+    QCOMPARE(evaluate(list, QStringLiteral("section.property")).toString(),
+             QStringLiteral("allowed"));
+    QCOMPARE(rows.at(0)->property("allowed").toBool(), true);
+    QCOMPARE(rows.at(1)->property("allowed").toBool(), false);
+    QStringList headings;
+    for (QObject *heading : findAll(QStringLiteral("notificationSiteSection"))) {
+        headings.append(heading->property("text").toString());
+    }
+    headings.sort();
+    QCOMPARE(headings, (QStringList{QStringLiteral("Allowed"), QStringLiteral("Blocked")}));
+    // Under the list, what forgetting a site does.
+    QCOMPARE(find(QStringLiteral("notificationSitesFooter"))->property("text").toString(),
+             QStringLiteral("A site you forget asks again the next time it wants to send one."));
 
     // From the menu: blocked, then removed, and the engine told each time.
     click(findObjects(rows.at(0), QStringLiteral("notificationSiteToggle")).first());
@@ -5569,17 +6575,19 @@ void tst_qmlload::notificationSettingsPage()
              QStringLiteral("https://news.example"));
     QCOMPARE(findAll(QStringLiteral("notificationSite")).count(), 1);
 
-    // Whether others may ask: the engine's default for the permission.
-    QObject *block = find(QStringLiteral("blockNotificationRequestsSwitch"));
-    QVERIFY(!block->property("checked").toBool());
-    block->setProperty("checked", true);
+    // Whether others may ask, said the way round a switch that is on reads: the
+    // engine's default for the permission.
+    QObject *canAsk = find(QStringLiteral("sitesCanAskSwitch"));
+    QVERIFY(canAsk->property("description").toString().isEmpty());
+    QVERIFY(canAsk->property("checked").toBool());
+    canAsk->setProperty("checked", false);
     QVERIFY(settings->blockNotificationRequests());
     const QVariantMap given =
         evaluate(scope, QStringLiteral("WebEngineSettings.preferences")).toList().last().toMap();
     QCOMPARE(given.value(QStringLiteral("key")).toString(),
              QStringLiteral("permissions.default.desktop-notification"));
     QCOMPARE(given.value(QStringLiteral("value")).toInt(), 2);
-    block->setProperty("checked", false);
+    canAsk->setProperty("checked", true);
     QVERIFY(!settings->blockNotificationRequests());
 
     // Nothing left: the page says what it will list.
@@ -5632,6 +6640,19 @@ void tst_qmlload::tutorialOnFirstStart()
                  ->property("text")
                  .toString()
                  .isEmpty());
+    // What the lessons cover, as three icons with their names rather than a sentence.
+    QVERIFY(!findObjects(card, QStringLiteral("tutorialCardText"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    QStringList topics;
+    for (QObject *name : findObjects(card, QStringLiteral("tutorialTopicName"))) {
+        topics.append(name->property("text").toString());
+    }
+    QCOMPARE(topics, (QStringList{QStringLiteral("Address bar"), QStringLiteral("Menu"),
+                                  QStringLiteral("Tabs")}));
+    QVERIFY(
+        !findObjects(card, QStringLiteral("tutorialCheck")).first()->property("visible").toBool());
     QVERIFY(find(QStringLiteral("tutorialStartButton")) != nullptr);
     QVERIFY(!find(QStringLiteral("tutorialTouchHint"))->property("running").toBool());
     QVERIFY(!find(QStringLiteral("tutorialTapHint"))->property("running").toBool());
@@ -5711,6 +6732,24 @@ void tst_qmlload::tutorial()
     QCOMPARE(centre(tapHint), point(bar, "addressCentre"));
     QVERIFY(labelAtTop());
     QCOMPARE(label->property("text").toString(), said.at(0));
+    QCOMPARE(said.at(0), QStringLiteral("Tap the address bar to open a website or search."));
+    // Under the words, which of the five lessons this is.
+    QObject *progress = find(QStringLiteral("tutorialProgress"));
+    QCOMPARE(progress->property("count").toInt(), 5);
+    QCOMPARE(findObjects(progress, QStringLiteral("tutorialProgressDot")).count(), 5);
+    QCOMPARE(progress->property("current").toInt(), 0);
+    QVERIFY(progress->property("visible").toBool());
+    QVERIFY(progress->property("y").toReal() >= label->property("height").toReal());
+    const QStringList lessonOrder{
+        QStringLiteral("address"),  QStringLiteral("omnibar"),  QStringLiteral("menu"),
+        QStringLiteral("menuOpen"), QStringLiteral("open"),     QStringLiteral("closeTab"),
+        QStringLiteral("moveTab"),  QStringLiteral("groupTab"), QStringLiteral("close")};
+    const QList<int> lessonIndex{0, 0, 1, 1, 2, 3, 3, 3, 4};
+    for (int i = 0; i < lessonOrder.count(); ++i) {
+        QCOMPARE(evaluate(page, QStringLiteral("lessonOf('%1')").arg(lessonOrder.at(i))).toInt(),
+                 lessonIndex.at(i));
+    }
+    QCOMPARE(evaluate(page, QStringLiteral("lessonOf('done')")).toInt(), -1);
 
     // Out of turn: the menu, and a drag up, do nothing yet.
     evaluate(bar, QStringLiteral("activate('menu')"));
@@ -5753,6 +6792,7 @@ void tst_qmlload::tutorial()
     QCOMPARE(step(), QStringLiteral("menu"));
     evaluate(bar, QStringLiteral("activate('menu')"));
     QCOMPARE(step(), QStringLiteral("menuOpen"));
+    QCOMPARE(progress->property("current").toInt(), 1);
     QObject *menu = find(QStringLiteral("tutorialMenu"));
     QVERIFY(menu->property("visible").toBool());
     const qreal sheetTop = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialMenuSheet")))
@@ -5930,6 +6970,13 @@ void tst_qmlload::tutorialGrid()
     QVERIFY(!page->property("hinting").toBool());
     QVERIFY(!recap->property("visible").toBool());
     QTRY_VERIFY(recap->property("visible").toBool());
+    // The card says it is done under a check mark, and where to find it again.
+    QVERIFY(
+        findObjects(recap, QStringLiteral("tutorialCheck")).first()->property("visible").toBool());
+    QCOMPARE(
+        findObjects(recap, QStringLiteral("tutorialCardText")).first()->property("text").toString(),
+        QStringLiteral("You can open it again from Settings."));
+    QVERIFY(!find(QStringLiteral("tutorialProgress"))->property("visible").toBool());
 
     // Nothing of it was done to a tab, and the browsing page's own grid stayed down.
     QCOMPARE(m_core->tabs()->count(), tabCount);

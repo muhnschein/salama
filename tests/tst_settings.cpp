@@ -40,6 +40,7 @@ private slots:
     void coverStyle();
     void trackingProtection();
     void readerStyle();
+    void readerColorsOfAnEarlierRelease();
     void isAddress_data();
     void isAddress();
     void omnibarSources();
@@ -56,6 +57,7 @@ private slots:
     void startPage();
     void retiresTheHomePage();
     void tutorialShown();
+    void websiteColors();
     void isSearchUrl_data();
     void isSearchUrl();
 };
@@ -336,7 +338,7 @@ void tst_settings::readerStyle()
 
         settings.reader()->setColors(ReaderSettings::Sepia);
         settings.reader()->setColors(ReaderSettings::Sepia);
-        settings.reader()->setColors(ReaderSettings::Dark + 1);
+        settings.reader()->setColors(ReaderSettings::Ambience + 1);
         settings.reader()->setColors(-1);
         QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Sepia));
         QCOMPARE(colors.count(), 1);
@@ -365,7 +367,7 @@ void tst_settings::readerStyle()
     }
     {
         QSettings raw(path, QSettings::IniFormat);
-        raw.setValue(QStringLiteral("readerColors"), 9);
+        raw.setValue(QStringLiteral("readerColorScheme"), 9);
         raw.setValue(QStringLiteral("readerTypeface"), 5);
         raw.setValue(QStringLiteral("readerTextSize"), 40);
     }
@@ -374,6 +376,46 @@ void tst_settings::readerStyle()
         QCOMPARE(again.reader()->colors(), int(ReaderSettings::Ambience));
         QCOMPARE(again.reader()->typeface(), int(ReaderSettings::SansSerif));
         QCOMPARE(again.reader()->textSize(), int(ReaderSettings::TextSizeDefault));
+    }
+}
+
+// The colours as an earlier release kept them, when 0 was the light or dark theme as the
+// ambience is: that reader has the Ambience look, which follows the ambience too, and one
+// who chose a theme keeps it. The earlier key goes, so Automatic chosen since stays.
+void tst_settings::readerColorsOfAnEarlierRelease()
+{
+    QTemporaryDir dir;
+    const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.conf"));
+    const auto earlier = [&path](int colors) {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.clear();
+        raw.setValue(QStringLiteral("readerColors"), colors);
+    };
+    const auto kept = [&path]() {
+        return QSettings(path, QSettings::IniFormat).contains(QStringLiteral("readerColors"));
+    };
+
+    earlier(ReaderSettings::Automatic);
+    {
+        Sections settings(path);
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Ambience));
+        settings.reader()->setColors(ReaderSettings::Automatic);
+    }
+    QVERIFY(!kept());
+    {
+        Sections again(path);
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Automatic));
+    }
+
+    earlier(ReaderSettings::Sepia);
+    {
+        Sections settings(path);
+        QCOMPARE(settings.reader()->colors(), int(ReaderSettings::Sepia));
+    }
+    QVERIFY(!kept());
+    {
+        Sections again(path);
+        QCOMPARE(again.reader()->colors(), int(ReaderSettings::Sepia));
     }
 }
 
@@ -825,6 +867,37 @@ void tst_settings::tutorialShown()
     }
     Sections reloaded(path);
     QVERIFY(reloaded.general()->tutorialShown());
+}
+
+// Pages are drawn as the ambience is until that is changed, and a choice out of range
+// -- the file is one a user can edit -- reads back as that
+// (docs/DECISIONS/0035-website-colours.md).
+void tst_settings::websiteColors()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QCOMPARE(settings.general()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+        QSignalSpy spy(settings.general(), &Settings::websiteColorsChanged);
+        settings.general()->setWebsiteColors(Settings::WebsiteColorsAutomatic);
+        settings.general()->setWebsiteColors(Settings::WebsiteColorsDark + 1);
+        settings.general()->setWebsiteColors(-1);
+        QCOMPARE(spy.count(), 0);
+        settings.general()->setWebsiteColors(Settings::WebsiteColorsDark);
+        settings.general()->setWebsiteColors(Settings::WebsiteColorsDark);
+        QCOMPARE(spy.count(), 1);
+    }
+    {
+        Sections reloaded(path);
+        QCOMPARE(reloaded.general()->websiteColors(), int(Settings::WebsiteColorsDark));
+    }
+    {
+        QSettings raw(path, QSettings::IniFormat);
+        raw.setValue(QStringLiteral("websiteColors"), 7);
+    }
+    Sections again(path);
+    QCOMPARE(again.general()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 }
 
 void tst_settings::isSearchUrl_data()

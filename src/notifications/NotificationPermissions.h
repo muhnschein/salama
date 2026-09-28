@@ -34,6 +34,10 @@ class NotificationPermissions : public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    // How many of the sites are allowed, and how many blocked: what Settings says of
+    // them before they are listed, and whether each of the list's sections is there.
+    Q_PROPERTY(int allowedCount READ allowedCount NOTIFY sitesChanged)
+    Q_PROPERTY(int blockedCount READ blockedCount NOTIFY sitesChanged)
     // The topic the engine answers on, for WebEngine.addObserver().
     Q_PROPERTY(QString topic READ topic CONSTANT)
 
@@ -52,6 +56,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     QString topic() const;
+    int allowedCount() const;
+    int blockedCount() const;
 
     // Asks the engine for what it holds; the answer arrives through observe().
     Q_INVOKABLE void refresh();
@@ -96,6 +102,8 @@ public:
 
 signals:
     void countChanged();
+    // A site was added, removed, allowed or blocked.
+    void sitesChanged();
     // Something for the engine, for WebEngine.notifyObservers().
     void engineRequest(const QString &topic, const QVariant &payload);
 
@@ -107,10 +115,13 @@ private:
     };
 
     int rowOf(const QString &origin) const;
+    // Where a site goes in the list as it is ordered.
+    int positionOf(const QString &origin, bool allowed) const;
     void put(const QString &origin, bool allowed);
     void send(const QString &message, const QString &origin, int capability);
 
-    // By host, as the reader looks for one.
+    // The allowed first and the blocked after them, as Settings lists them under a
+    // heading each, and each by host, as the reader looks for one.
     QVector<Site> m_sites;
 };
 

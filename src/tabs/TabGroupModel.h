@@ -27,8 +27,15 @@ public:
         TabCount,
         Current,
         // The group every ordinary tab starts in, which is neither renamed nor removed.
-        Default
+        Default,
+        // The previews of the group's most recent tabs, up to PreviewLimit, the most
+        // recent first: the picture of the group on the Tab groups page. A tab with no
+        // preview is an empty string.
+        Previews
     };
+
+    // The picture of a group is two previews by two.
+    static const int PreviewLimit = 4;
 
     explicit TabGroupModel(TabModel *tabs);
 
@@ -44,11 +51,16 @@ public:
     Q_INVOKABLE int addGroup(const QString &name);
     Q_INVOKABLE void renameGroup(int groupId, const QString &name);
     Q_INVOKABLE bool removeGroup(int groupId);
+    // Puts the group's tabs in the default group and removes it; the tabs stay open.
+    Q_INVOKABLE bool ungroup(int groupId);
+    // Reorder, from the Tab groups page. The default group stays first.
+    Q_INVOKABLE bool moveGroup(int from, int to);
     Q_INVOKABLE bool moveTab(int tabId, int groupId);
 
     // Kept by TabModel.
     void inserted(int row);
     void removed(int row);
+    void moved(int from, int to);
     void changed(int row, Role role);
     void changedAll(Role role);
 

@@ -102,6 +102,15 @@ public:
     // through the content classifier, the one list-driven path this embedding keeps
     // fed (docs/DECISIONS/0023-tracking-protection.md).
     Q_INVOKABLE static QVariantList trackingProtectionPreferences(int level);
+
+    // What the engine is told for a Settings::WebsiteColors choice, in the same
+    // {name, value} form: whether the system it draws for uses a dark theme, which is
+    // what a page's prefers-color-scheme reads. Gecko takes the answer from its widget
+    // toolkit unless the preference ui.systemUsesDarkTheme says otherwise
+    // (widget/nsXPLookAndFeel.cpp), and that is the one way to it Harbour leaves: 1 is
+    // dark and 0 light. Automatic is dark on a dark ambience; a choice out of range is
+    // Automatic (docs/DECISIONS/0035-website-colours.md).
+    Q_INVOKABLE static QVariantList websiteColorPreferences(int colors, bool darkAmbience);
 };
 
 } // namespace Salama

@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// How the reader view sets an article, as Firefox's reader view offers it: its
-// colours, typeface and text size, each index or value the stored one
-// (docs/DECISIONS/0024-reader-view.md, 0028-settings-pages.md). Under them, a few lines
-// of an article as the reader view will set them follow each choice as it is made; a
-// reader view on the screen follows them at once too. The picture is below the choices
-// rather than above, so a text size growing it never moves the slider from under the
-// finger dragging it.
+// How the reader view sets an article, as Firefox's reader view offers it: its colours,
+// typeface and text size, each the stored value (docs/DECISIONS/0024-reader-view.md,
+// 0028-settings-pages.md). The colours are five squares, each painted as the reader view
+// will be, and the typefaces two tiles each written in its own: every choice on the
+// screen at once, one tap to make, the one chosen lit, where two combo boxes named them
+// and hid the rest a tap away. Under them, a few lines of an article as the reader view
+// will set them follow each choice as it is made; a reader view on the screen follows
+// them at once too. The picture is below the choices rather than above, so a text size
+// growing it never moves the slider from under the finger dragging it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -16,63 +18,122 @@ import "../components"
 Page {
     id: readerSettingsPage
 
+    property SettingNames names: SettingNames {}
+
     objectName: "readerSettingsPage"
     allowedOrientations: Orientation.Portrait
 
     SilicaFlickable {
         anchors.fill: parent
-        contentHeight: column.height
+        contentHeight: column.height + Theme.paddingLarge
 
         Column {
             id: column
 
             width: parent.width
-            spacing: Theme.paddingMedium
 
             PageHeader {
                 title: qsTr("Reader view")
             }
 
-            ComboBox {
-                objectName: "readerColorsCombo"
-                width: parent.width
-                label: qsTr("Colours")
-                currentIndex: ReaderSettings.colors
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Ambience")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Light")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Sepia")
-                    }
-
-                    MenuItem {
-                        text: qsTr("Dark")
-                    }
-                }
-                onCurrentIndexChanged: ReaderSettings.colors = currentIndex
+            SectionHeader {
+                text: qsTr("Colours")
             }
 
-            ComboBox {
-                objectName: "readerTypefaceCombo"
-                width: parent.width
-                label: qsTr("Typeface")
-                currentIndex: ReaderSettings.typeface
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Sans serif")
-                    }
+            // In the order a reader reads them: Automatic and the ambience's own, which
+            // follow the phone, then Firefox's three. The stored values are not in this
+            // order (ReaderSettings::Colors), so each square carries its own.
+            Row {
+                id: swatches
 
-                    MenuItem {
-                        text: qsTr("Serif")
+                readonly property real cellWidth: (width - 4 * spacing) / 5
+
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
+                spacing: Theme.paddingSmall
+
+                Repeater {
+                    model: [ReaderSettings.Automatic, ReaderSettings.Ambience,
+                            ReaderSettings.Light, ReaderSettings.Sepia, ReaderSettings.Dark]
+
+                    ReaderSwatch {
+                        objectName: "readerColorsChoice"
+                        width: swatches.cellWidth
+                        colors: modelData
+                        text: readerSettingsPage.names.readerColors(modelData)
+                        selected: ReaderSettings.colors === modelData
+                        onClicked: ReaderSettings.colors = modelData
                     }
                 }
-                onCurrentIndexChanged: ReaderSettings.typeface = currentIndex
+            }
+
+            SectionHeader {
+                text: qsTr("Typeface")
+            }
+
+            // Each typeface written in itself, the one chosen washed and ringed in the
+            // highlight colour.
+            Row {
+                id: typefaces
+
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
+                spacing: Theme.paddingMedium
+
+                Repeater {
+                    model: [ReaderSettings.SansSerif, ReaderSettings.Serif]
+
+                    BackgroundItem {
+                        id: typeface
+
+                        readonly property bool selected: ReaderSettings.typeface === modelData
+
+                        objectName: "readerTypefaceChoice"
+                        width: (typefaces.width - typefaces.spacing) / 2
+                        height: Theme.itemSizeLarge
+                        onClicked: ReaderSettings.typeface = modelData
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.paddingMedium
+                            color: typeface.selected
+                                   ? Theme.rgba(Theme.highlightBackgroundColor,
+                                                Theme.highlightBackgroundOpacity)
+                                   : Theme.rgba(Theme.primaryColor, Theme.opacityFaint / 2)
+                            border.width: typeface.selected ? 2 * Theme._lineWidth : 0
+                            border.color: Theme.highlightColor
+                        }
+
+                        Column {
+                            anchors.centerIn: parent
+
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                //: A sample of text in each of the reader view's typefaces
+                                text: qsTr("Aa")
+                                font.family: modelData === ReaderSettings.Serif ? "serif"
+                                                                                : "sans-serif"
+                                font.pixelSize: Theme.fontSizeLarge
+                                color: typeface.selected ? Theme.highlightColor
+                                                         : Theme.primaryColor
+                            }
+
+                            Label {
+                                objectName: "readerTypefaceName"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: readerSettingsPage.names.typeface(modelData)
+                                font.pixelSize: Theme.fontSizeExtraSmall
+                                color: typeface.selected ? Theme.highlightColor
+                                                         : Theme.primaryColor
+                            }
+                        }
+                    }
+                }
+            }
+
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
             }
 
             // Firefox's nine steps, the middle one its default, written as a share of it.
@@ -84,8 +145,7 @@ Page {
                 maximumValue: ReaderSettings.TextSizeMax
                 stepSize: 1
                 value: ReaderSettings.textSize
-                valueText: qsTr("%1 %").arg(Math.round(100 * (10 + 2 * value)
-                                                       / (10 + 2 * ReaderSettings.TextSizeDefault)))
+                valueText: readerSettingsPage.names.textSize(value)
                 onValueChanged: ReaderSettings.textSize = Math.round(value)
             }
 

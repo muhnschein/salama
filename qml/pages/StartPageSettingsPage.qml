@@ -2,56 +2,63 @@
 // Copyright (c) 2026 salama contributors
 //
 // Start page: what a tab with no address shows, which is this browser's home page --
-// there is no other (docs/DECISIONS/0032-start-page.md). A blank page, or Firefox's
-// home: the sites visited most, the bookmarks and the pages read last, each section
-// switched on or off. The sections keep their switches while the page is blank, and are
-// dimmed.
+// there is no other (docs/DECISIONS/0032-start-page.md). The start page's sections or a
+// blank page, both on the screen at once and one tap to change, as TextSwitches that do
+// not check themselves, the one chosen lit; then Firefox's home sections, the sites
+// visited most, the bookmarks and the pages read last, each switched on or off. The
+// sections keep their switches while the page is blank, and are dimmed. Under them, a
+// picture of the screen as a new tab will show it follows each switch as it moves.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
+import "../components"
 
 Page {
     id: startPageSettings
+
+    property SettingNames names: SettingNames {}
 
     objectName: "startPageSettingsPage"
     allowedOrientations: Orientation.Portrait
 
     SilicaFlickable {
         anchors.fill: parent
-        contentHeight: column.height
+        contentHeight: column.height + 2 * Theme.paddingLarge
 
         Column {
             id: column
 
             width: parent.width
-            spacing: Theme.paddingMedium
 
             PageHeader {
                 title: qsTr("Start page")
             }
 
-            ComboBox {
-                objectName: "startPageCombo"
-                width: parent.width
-                label: qsTr("Shows")
-                currentIndex: StartPageSettings.blank ? 1 : 0
-                menu: ContextMenu {
-                    MenuItem {
-                        text: qsTr("Your sites")
-                    }
+            TextSwitch {
+                objectName: "startPageSitesSwitch"
+                automaticCheck: false
+                text: startPageSettings.names.startPage(false)
+                checked: !StartPageSettings.blank
+                onClicked: StartPageSettings.blank = false
+            }
 
-                    MenuItem {
-                        text: qsTr("A blank page")
-                    }
-                }
-                onCurrentIndexChanged: StartPageSettings.blank = currentIndex === 1
+            TextSwitch {
+                objectName: "startPageBlankSwitch"
+                automaticCheck: false
+                text: startPageSettings.names.startPage(true)
+                checked: StartPageSettings.blank
+                onClicked: StartPageSettings.blank = true
+            }
+
+            SectionHeader {
+                //: The parts of the start page, each switched on or off
+                text: qsTr("Sections")
             }
 
             TextSwitch {
                 objectName: "startPageTopSitesSwitch"
                 enabled: !StartPageSettings.blank
                 text: qsTr("Frequently visited")
-                description: qsTr("Tiles for the sites you visit most")
                 checked: StartPageSettings.topSites
                 onCheckedChanged: StartPageSettings.topSites = checked
             }
@@ -60,7 +67,6 @@ Page {
                 objectName: "startPageBookmarksSwitch"
                 enabled: !StartPageSettings.blank
                 text: qsTr("Bookmarks")
-                description: qsTr("Tiles for your first bookmarks")
                 checked: StartPageSettings.bookmarks
                 onCheckedChanged: StartPageSettings.bookmarks = checked
             }
@@ -69,9 +75,24 @@ Page {
                 objectName: "startPageRecentSwitch"
                 enabled: !StartPageSettings.blank
                 text: qsTr("Recently visited")
-                description: qsTr("The pages you read last")
                 checked: StartPageSettings.recent
                 onCheckedChanged: StartPageSettings.recent = checked
+            }
+
+            SectionHeader {
+                //: Over a picture of what a new tab will show
+                text: qsTr("Preview")
+            }
+
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
+            }
+
+            StartPagePreview {
+                width: parent.width
+                screenWidth: startPageSettings.width
+                screenHeight: startPageSettings.height
             }
         }
 

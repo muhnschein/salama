@@ -66,6 +66,9 @@ left behind is closed as the next starts.
 **A page of a site allowed to notify is not put to sleep out of sight** (amending 0020):
 it could send nothing asleep. Its view goes inactive with the rest.
 
+*Revised* (0036): Settings lists the sites under *Allowed* and *Blocked* rather than with
+a status under each, the switch reads *Sites can ask*, and *Remove* is *Forget this site*.
+
 ## Consequences
 Notifications come while the site's page is loaded in a tab -- one of the five pages kept
 loaded (0016) -- and the browser runs. There is no Push API: nothing wakes a page that is

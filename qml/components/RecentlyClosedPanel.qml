@@ -5,7 +5,9 @@
 // the grid's foot when the new-tab button is held. A tap opens the tab again and
 // puts the panel away; a tap outside it puts it away alone. Silica's DockedPanel is
 // the platform's own way of sliding a sheet in from an edge, and modal, it takes
-// the tap outside itself (docs/DECISIONS/0018-recently-closed.md).
+// the tap outside itself (docs/DECISIONS/0018-recently-closed.md). It is the same
+// sheet as the browser's menu, on the same opaque ground with the same handle, and
+// headed as Silica heads a section, so that the two read as one kind of thing.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -20,9 +22,8 @@ DockedPanel {
     dock: Dock.Bottom
     modal: true
 
-    Rectangle {
+    SheetBackground {
         anchors.fill: parent
-        color: Theme.rgba(Theme.highlightDimmerColor, Theme.opacityOverlay)
     }
 
     SilicaListView {
@@ -32,9 +33,11 @@ DockedPanel {
         anchors.fill: parent
         model: ClosedTabs
         clip: true
+        // The handle in a strip as tall as the menu's, and under it the heading, as the
+        // grid's search heads each group it finds.
         header: Item {
             width: closedList.width
-            height: Theme.itemSizeLarge
+            height: Theme.paddingLarge + heading.height
 
             DragHandle {
                 objectName: "panelDragHandle"
@@ -42,20 +45,12 @@ DockedPanel {
                 y: Theme.paddingSmall
             }
 
-            Label {
+            SectionHeader {
+                id: heading
+
                 objectName: "recentlyClosedTitle"
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                    leftMargin: Theme.horizontalPageMargin
-                    rightMargin: Theme.horizontalPageMargin
-                    bottomMargin: Theme.paddingMedium
-                }
+                y: Theme.paddingLarge
                 text: qsTr("Recently closed")
-                font.pixelSize: Theme.fontSizeLarge
-                color: Theme.highlightColor
-                truncationMode: TruncationMode.Fade
             }
         }
 

@@ -94,11 +94,35 @@ const ReadingSpeed &readingSpeed(const QString &language)
     return ReadingSpeeds.front();
 }
 
-// The background a reader theme paints, for the document's theme-color: the strip
-// beside the display's cutout is painted in it (docs/DECISIONS/0013-screen-cutout.md).
-QString themeBackground(const QString &scheme)
+// A Theme colour out of the ambience map, or what a dark ambience's is when the map
+// has none that reads as a colour.
+QColor themeColor(const QVariantMap &ambience, const char *name, const QColor &otherwise)
 {
-    return Reader::backgroundOf(scheme).name();
+    const QColor color = ambience.value(QLatin1String(name)).value<QColor>();
+    return color.isValid() ? color : otherwise;
+}
+
+// A colour as a style sheet takes it, its opacity with it: Silica's secondary colours
+// are its primary ones, faded.
+QString cssColor(const QColor &color)
+{
+    return QStringLiteral("rgba(%1, %2, %3, %4)")
+        .arg(color.red())
+        .arg(color.green())
+        .arg(color.blue())
+        .arg(QString::number(color.alphaF(), 'g', 3));
+}
+
+// A typeface's name as a style sheet takes it, in quotes: letters, digits, spaces and
+// hyphens, which are what family names are made of. Anything else is left out, so a
+// name cannot end the quotes, the declaration or the attribute it is written into.
+QString cssFamily(const QVariantMap &ambience, const char *name)
+{
+    QString family = ambience.value(QLatin1String(name)).toString();
+    family.remove(QRegularExpression(QStringLiteral("[^A-Za-z0-9 _-]")));
+    family = family.trimmed();
+    return family.isEmpty() ? QStringLiteral("sans-serif")
+                            : QLatin1Char('\'') + family + QLatin1Char('\'');
 }
 
 // What the document says in an attribute, escaped for one in double quotes.
@@ -277,21 +301,81 @@ QString Reader::schemeFor(int colors, bool darkAmbience)
         return QStringLiteral("sepia");
     case ReaderSettings::Dark:
         return QStringLiteral("dark");
+    case ReaderSettings::Ambience:
+        return QStringLiteral("ambience");
     default:
         return darkAmbience ? QStringLiteral("dark") : QStringLiteral("light");
     }
 }
 
-QString Reader::bodyClass(bool darkAmbience) const
+// The scheme and the typeface, and for the ambience's own look whether the ambience is
+// dark, which the style sheet reads for the colour scheme the page's own controls take.
+QString Reader::bodyClass(const QVariantMap &ambience) const
 {
+    const bool dark = isDarkAmbience(themeColor(ambience, "primaryColor", Qt::white));
+    const QString scheme = colorScheme(dark);
+    QString classes = scheme;
+    if (scheme == QLatin1String("ambience")) {
+        classes += dark ? QStringLiteral(" ambience-dark") : QStringLiteral(" ambience-light");
+    }
     const QString typeface = m_settings.typeface() == ReaderSettings::Serif
                                  ? QStringLiteral("serif")
                                  : QStringLiteral("sans-serif");
-    return colorScheme(darkAmbience) + QLatin1Char(' ') + typeface;
+    return classes + QLatin1Char(' ') + typeface;
+}
+
+QList<QPair<QString, QString>> Reader::bodyProperties(const QVariantMap &ambience) const
+{
+    const QColor highlightBackground =
+        themeColor(ambience, "highlightBackgroundColor", QColor(QStringLiteral("#e8872e")));
+    QColor selection = highlightBackground;
+    selection.setAlphaF(0.3);
+    return {
+        {QStringLiteral("--font-size"),
+         QString::number(fontSizeFor(m_settings.textSize())) + QStringLiteral("px")},
+        {QStringLiteral("--ambience-primary"),
+         cssColor(themeColor(ambience, "primaryColor", Qt::white))},
+        {QStringLiteral("--ambience-secondary"),
+         cssColor(themeColor(ambience, "secondaryColor", QColor(255, 255, 255, 176)))},
+        {QStringLiteral("--ambience-highlight"),
+         cssColor(themeColor(ambience, "highlightColor", QColor(QStringLiteral("#ffc480"))))},
+        {QStringLiteral("--ambience-secondary-highlight"),
+         cssColor(themeColor(ambience, "secondaryHighlightColor", QColor(255, 196, 128, 176)))},
+        {QStringLiteral("--ambience-selection"), cssColor(selection)},
+        {QStringLiteral("--ambience-top"),
+         cssColor(themeColor(ambience, "highlightDimmerColor", QColor(QStringLiteral("#4a2309"))))},
+        {QStringLiteral("--ambience-bottom"), cssColor(ambienceBackground(ambience))},
+        {QStringLiteral("--ambience-font"), cssFamily(ambience, "fontFamily")},
+        {QStringLiteral("--ambience-heading-font"), cssFamily(ambience, "fontFamilyHeading")},
+    };
+}
+
+// The background the page is painted, for the document's theme-color: the strip beside
+// the display's cutout is painted in it (docs/DECISIONS/0013-screen-cutout.md). The
+// ambience's own look is painted from the top in its dimmer highlight.
+QString Reader::themeBackground(const QVariantMap &ambience) const
+{
+    const QString scheme =
+        colorScheme(isDarkAmbience(themeColor(ambience, "primaryColor", Qt::white)));
+    if (scheme == QLatin1String("ambience")) {
+        return themeColor(ambience, "highlightDimmerColor", QColor(QStringLiteral("#4a2309")))
+            .name();
+    }
+    return backgroundOf(scheme).name();
+}
+
+QColor Reader::ambienceBackground(const QVariantMap &ambience)
+{
+    const QColor top =
+        themeColor(ambience, "highlightDimmerColor", QColor(QStringLiteral("#4a2309")));
+    const QColor overlay = themeColor(ambience, "overlayBackgroundColor", Qt::black);
+    return QColor::fromRgbF((top.redF() + overlay.redF()) / 2,
+                            (top.greenF() + overlay.greenF()) / 2,
+                            (top.blueF() + overlay.blueF()) / 2);
 }
 
 // The style sheet's --main-background, --main-foreground and --link-foreground for
-// each body class; the ambience's own is one of light and dark by then.
+// each of Firefox's body classes; Automatic is one of light and dark by then.
 QColor Reader::backgroundOf(const QString &scheme)
 {
     if (scheme == QLatin1String("dark")) {
@@ -325,7 +409,7 @@ int Reader::fontSizeFor(int step)
 }
 
 QString Reader::page(const QString &article, const QString &pageUrl, const QString &pageTitle,
-                     const QString &favicon, bool darkAmbience) const
+                     const QString &favicon, const QVariantMap &ambience) const
 {
     const QJsonDocument json = QJsonDocument::fromJson(article.toUtf8());
     if (!json.isObject()) {
@@ -366,7 +450,10 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
         iconLink = QStringLiteral("<link rel=\"icon\" href=\"%1\">").arg(attribute(favicon));
     }
 
-    const QString scheme = colorScheme(darkAmbience);
+    QString style;
+    for (const auto &property : bodyProperties(ambience)) {
+        style += property.first + QStringLiteral(": ") + property.second + QStringLiteral("; ");
+    }
     QString html;
     html += QLatin1String(HeadStart) + attribute(pageUrl) + QStringLiteral("\">");
     html += QStringLiteral("<meta http-equiv=\"Content-Security-Policy\" content=\"%1\">")
@@ -374,13 +461,12 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
     html += QStringLiteral("<meta name=\"viewport\" content=\"width=device-width, "
                            "initial-scale=1\">");
     html +=
-        QStringLiteral("<meta name=\"theme-color\" content=\"%1\">").arg(themeBackground(scheme));
+        QStringLiteral("<meta name=\"theme-color\" content=\"%1\">").arg(themeBackground(ambience));
     html += iconLink;
     html += QStringLiteral("<title>%1</title>").arg(documentTitle.toHtmlEscaped());
     html += QStringLiteral("<style>") + m_styleSheet + QStringLiteral("</style></head>");
-    html += QStringLiteral("<body class=\"%1\" style=\"--font-size: %2px\">")
-                .arg(bodyClass(darkAmbience))
-                .arg(fontSizeFor(m_settings.textSize()));
+    html += QStringLiteral("<body class=\"%1\" style=\"%2\">")
+                .arg(bodyClass(ambience), attribute(style.trimmed()));
     html += QStringLiteral("<div class=\"container\"%1>").arg(textAttributes);
     html += QStringLiteral("<div class=\"header reader-header\"%1>").arg(textAttributes);
     html += QStringLiteral("<a class=\"domain reader-domain\" href=\"%1\">%2</a>")
@@ -420,19 +506,26 @@ QString Reader::sourceUrl(const QUrl &url)
     return source;
 }
 
-QString Reader::styleScript(bool darkAmbience) const
+QString Reader::styleScript(const QVariantMap &ambience) const
 {
+    // Every value is one of this class's making, and none holds a quote but the ones
+    // cssFamily() puts round a name, which are escaped for the string they go into.
+    QString properties;
+    for (const auto &property : bodyProperties(ambience)) {
+        QString value = property.second;
+        value.replace(QLatin1Char('\''), QLatin1String("\\'"));
+        properties += QStringLiteral(" document.body.style.setProperty('%1', '%2');")
+                          .arg(property.first, value);
+    }
     return QStringLiteral(
                " if (!document.body || !document.querySelector('meta[name=\"salama-reader\"]'))"
                " { return ''; }"
                " document.body.className = '%1';"
-               " document.body.style.setProperty('--font-size', '%2px');"
+               "%2"
                " var color = document.querySelector('meta[name=\"theme-color\"]');"
                " if (color) { color.content = '%3'; }"
                " return '';")
-        .arg(bodyClass(darkAmbience))
-        .arg(fontSizeFor(m_settings.textSize()))
-        .arg(themeBackground(colorScheme(darkAmbience)));
+        .arg(bodyClass(ambience), properties, themeBackground(ambience));
 }
 
 QString Reader::readingTime(int length, const QString &language)

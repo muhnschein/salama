@@ -29,10 +29,21 @@ QtObject {
     // An article being read out of the page.
     property bool busy: false
 
-    // The ambience's own colours are light or dark as it is.
-    readonly property bool darkAmbience: Reader.isDarkAmbience(Theme.primaryColor)
+    // The ambience the article is set in: whether it is light or dark, for Automatic,
+    // and for the ambience's own look its colours and typefaces, by Theme's names.
+    readonly property var ambience: ({
+        "primaryColor": Theme.primaryColor,
+        "secondaryColor": Theme.secondaryColor,
+        "highlightColor": Theme.highlightColor,
+        "secondaryHighlightColor": Theme.secondaryHighlightColor,
+        "highlightBackgroundColor": Theme.highlightBackgroundColor,
+        "highlightDimmerColor": Theme.highlightDimmerColor,
+        "overlayBackgroundColor": Theme.overlayBackgroundColor,
+        "fontFamily": Theme.fontFamily,
+        "fontFamilyHeading": Theme.fontFamilyHeading
+    })
 
-    onDarkAmbienceChanged: restyle()
+    onAmbienceChanged: restyle()
 
     // The view is somewhere new: a reader view, or a page to be looked at afresh once it
     // has loaded -- or now, if it changed its address without loading. Answers the
@@ -84,7 +95,7 @@ QtObject {
                 return
             }
             var html = Reader.page(article, url, TabModel.activeTitle, TabModel.activeFavicon,
-                                   darkAmbience)
+                                   ambience)
             if (html.length > 0) {
                 view.loadHtml(html)
             } else {
@@ -117,7 +128,7 @@ QtObject {
         if (!active || !view) {
             return
         }
-        view.runJavaScript(Reader.styleScript(darkAmbience), function () {
+        view.runJavaScript(Reader.styleScript(ambience), function () {
             view.fetchThemeColor()
         })
     }

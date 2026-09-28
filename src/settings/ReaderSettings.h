@@ -16,9 +16,14 @@ class ReaderSettings : public SettingsSection
     Q_PROPERTY(int textSize READ textSize WRITE setTextSize NOTIFY textSizeChanged)
 
 public:
-    // The reader view's colours: the ambience's own, light or dark as it is, or one of
-    // Firefox's reader themes whatever the ambience. Stored, so the numbers are part of
-    // the file format.
+    // The reader view's colours: Firefox's light or dark theme as the ambience is light
+    // or dark, one of Firefox's reader themes whatever the ambience, or the ambience's
+    // own -- the article set as a Silica page is, in its colours and typeface, and what
+    // a reader who has chosen nothing gets. Stored, so the numbers are part of the file
+    // format: Automatic has the 0 the ambience's light or dark had when that was all
+    // "Ambience" meant, and the Silica look is added after the rest. Kept under a key of
+    // its own since the Silica look became the default, which a 0 under the earlier one
+    // becomes, the others staying as they were (docs/DECISIONS/0024-reader-view.md).
     //
     // Unscoped on purpose, as every enum QML reads is (cpp:S3642): the page reaches
     // these as `ReaderSettings.Sepia`, and QML could not do that with a scoped enum
@@ -26,10 +31,11 @@ public:
     // class` here would compile on the host and leave the choice unset on the phone.
     enum Colors // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
-        Ambience = 0,
+        Automatic = 0,
         Light = 1,
         Sepia = 2,
-        Dark = 3
+        Dark = 3,
+        Ambience = 4
     };
     Q_ENUM(Colors)
 
@@ -55,6 +61,7 @@ public:
 
     explicit ReaderSettings(QSettings &file, QObject *parent = nullptr);
 
+    // The ambience's own unless changed.
     int colors() const;
     void setColors(int colors);
     int typeface() const;

@@ -111,36 +111,46 @@ Page {
         }
     }
 
-    // What the label says for a step.
+    // What the label says for a step: one short sentence, or two where the first is
+    // what the step shows and the second what to do.
     function stepText(forStep) {
         switch (forStep) {
         case "address":
             //: The tutorial's first step: the address bar at the foot of the screen
-            return qsTr("The address bar opens websites and searches the web. Tap it.")
+            return qsTr("Tap the address bar to open a website or search.")
         case "omnibar":
             //: The tutorial shows the address bar being edited, with a row to go to an
             //: address and a row to search above it
-            return qsTr("Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.")
+            return qsTr("Type an address or a search. Matching tabs, bookmarks and history appear above the bar.")
         case "menu":
-            return qsTr("Tap the menu button to open the menu.")
+            return qsTr("Tap the menu button.")
         case "menuOpen":
-            return qsTr("The menu contains actions for this page and for the browser. Tap outside the menu to close it.")
+            return qsTr("The menu has actions for this page and the browser. Tap outside it to close it.")
         case "open":
             //: The navigation bar at the foot of the screen is dragged upwards, and the
             //: grid of open tabs comes up from under the page
-            return qsTr("Drag the bar up to show your tabs.")
+            return qsTr("Drag the bar up to see your tabs.")
         case "closeTab":
-            return qsTr("Swipe a tab to the left to close it.")
+            return qsTr("Swipe a tab left to close it.")
         case "moveTab":
-            return qsTr("Press and hold a tab, then drag it to another position.")
+            return qsTr("Hold a tab, then drag it to a new position.")
         case "groupTab":
             //: The names of the tab groups are in a row at the foot of the grid
-            return qsTr("Press and hold a tab, then drag it onto a group name to move it to that group.")
+            return qsTr("Hold a tab, then drop it on a group name to move it there.")
         case "close":
             //: The grid of tabs is pulled down past its top to bring the page back
             return qsTr("Pull down to return to the page.")
         }
         return ""
+    }
+
+    // Which of the five lessons a step is part of: the address bar, the menu, the grid
+    // brought up, the tabs in it, and the page brought back.
+    function lessonOf(forStep) {
+        return [["address", "omnibar"], ["menu", "menuOpen"], ["open"],
+                ["closeTab", "moveTab", "groupTab"], ["close"]]
+                .map(function (steps) { return steps.indexOf(forStep) >= 0 })
+                .indexOf(true)
     }
 
     onStepChanged: updateHints()
@@ -286,6 +296,8 @@ Page {
     // At the other end of the screen from the gesture, so the words do not cover it, and
     // put away while a finger is on the screen, as the Tutorial's own are.
     InteractionHintLabel {
+        id: label
+
         readonly property bool atTop: ["closeTab", "moveTab", "close"].indexOf(tutorialPage.step) < 0
 
         objectName: "tutorialHintLabel"
@@ -299,6 +311,19 @@ Page {
                 duration: 1000
             }
         }
+    }
+
+    // Which lesson this is, just past the words, towards the middle of the screen; and
+    // gone with them while a finger is down.
+    TutorialProgress {
+        objectName: "tutorialProgress"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: label.atTop ? label.y + label.height + Theme.paddingMedium
+                       : label.y - height - Theme.paddingMedium
+        count: 5
+        current: Math.max(0, tutorialPage.lessonOf(tutorialPage.step))
+        opacity: label.opacity
+        visible: tutorialPage.lessonOf(tutorialPage.step) >= 0
     }
 
     // The explanation has no gesture to wait for: this goes on from it.
@@ -320,7 +345,16 @@ Page {
         heading: "Salama"
         //: Under the application's name on the tutorial's first card
         subheading: qsTr("Web browser for Sailfish OS")
-        text: qsTr("This short tutorial explains the address bar, the menu and the tabs.")
+        // What the lessons cover, by the icons the browser draws them with: the bar
+        // searches, the menu is its button's, and the grid is the tabs'.
+        topics: [
+            //: What the tutorial covers: the address bar
+            { "icon": "image://theme/icon-m-search", "text": qsTr("Address bar") },
+            //: What the tutorial covers: the menu
+            { "icon": "image://theme/icon-m-menu", "text": qsTr("Menu") },
+            //: What the tutorial covers: the tabs and the grid of them
+            { "icon": "image://theme/icon-m-tabs", "text": qsTr("Tabs") }
+        ]
 
         Button {
             objectName: "tutorialStartButton"
@@ -350,8 +384,9 @@ Page {
         objectName: "tutorialRecap"
         anchors.fill: parent
         opacity: tutorialPage.recapShown ? 1.0 : 0.0
+        showCheck: true
         heading: qsTr("Tutorial complete")
-        text: qsTr("You can open the tutorial again in Settings.")
+        text: qsTr("You can open it again from Settings.")
 
         Button {
             objectName: "tutorialCloseButton"

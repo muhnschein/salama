@@ -38,6 +38,8 @@ QVariant TabGroupModel::data(const QModelIndex &index, int role) const
         return group.id == m_tabs->currentGroupId();
     case Role::Default:
         return group.id == m_tabs->defaultGroupId();
+    case Role::Previews:
+        return m_tabs->groupThumbnails(group.id, PreviewLimit);
     default:
         return {};
     }
@@ -51,6 +53,7 @@ QHash<int, QByteArray> TabGroupModel::roleNames() const
         {roleId(Role::TabCount), QByteArrayLiteral("tabCount")},
         {roleId(Role::Current), QByteArrayLiteral("currentGroup")},
         {roleId(Role::Default), QByteArrayLiteral("defaultGroup")},
+        {roleId(Role::Previews), QByteArrayLiteral("previews")},
     };
 }
 
@@ -88,6 +91,16 @@ bool TabGroupModel::removeGroup(int groupId)
     return m_tabs->removeGroup(groupId);
 }
 
+bool TabGroupModel::ungroup(int groupId)
+{
+    return m_tabs->ungroup(groupId);
+}
+
+bool TabGroupModel::moveGroup(int from, int to)
+{
+    return m_tabs->moveGroup(from, to);
+}
+
 bool TabGroupModel::moveTab(int tabId, int groupId)
 {
     return m_tabs->moveTabToGroup(tabId, groupId);
@@ -106,6 +119,16 @@ void TabGroupModel::removed(int row)
     beginRemoveRows(QModelIndex(), row, row);
     endRemoveRows();
     emit countChanged();
+}
+
+void TabGroupModel::moved(int from, int to)
+{
+    // As inserted() and removed(): the tab model has already moved the group. The rows
+    // land before the one past the destination when moving down the list, which is how
+    // beginMoveRows wants it said.
+    if (beginMoveRows(QModelIndex(), from, from, QModelIndex(), to > from ? to + 1 : to)) {
+        endMoveRows();
+    }
 }
 
 void TabGroupModel::changed(int row, Role role)

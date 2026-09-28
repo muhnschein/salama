@@ -176,11 +176,15 @@ void tst_historymodel::removeAndClear()
     model.visit(QStringLiteral("https://a.example/"));
     model.visit(QStringLiteral("https://b.example/"));
     model.visit(QStringLiteral("https://c.example/"));
+    QCOMPARE(model.pageCount(), 3);
     QSignalSpy countSpy(&model, &HistoryModel::countChanged);
+    QSignalSpy pagesSpy(&model, &HistoryModel::pageCountChanged);
 
     model.remove(1);
     QCOMPARE(model.count(), 2);
     QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(model.pageCount(), 2);
+    QCOMPARE(pagesSpy.count(), 1);
     QCOMPARE(role(model, 1, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://a.example/"));
     QCOMPARE(rowsInDatabase(storage), 2);
@@ -192,6 +196,8 @@ void tst_historymodel::removeAndClear()
     model.clear();
     QCOMPARE(model.count(), 0);
     QCOMPARE(rowsInDatabase(storage), 0);
+    QCOMPARE(model.pageCount(), 0);
+    QCOMPARE(pagesSpy.count(), 2);
 }
 
 void tst_historymodel::prunesAndLimits()
@@ -214,6 +220,8 @@ void tst_historymodel::prunesAndLimits()
     HistoryModel model(storage);
     QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
     QCOMPARE(model.count(), HistoryModel::DisplayLimit);
+    // What is kept is counted whole, past the page of it the list shows.
+    QCOMPARE(model.pageCount(), HistoryModel::MaxEntries);
     // Newest first, oldest pruned.
     QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://site%1.example/").arg(HistoryModel::MaxEntries + 24));
@@ -243,6 +251,8 @@ void tst_historymodel::wholeTable()
     HistoryModel model(storage);
     model.setSearchTerm(QStringLiteral("site1"));
     QVERIFY(model.count() < HistoryModel::DisplayLimit);
+    // The count of what is kept is not the search's.
+    QCOMPARE(model.pageCount(), HistoryModel::DisplayLimit + 10);
 
     const QList<HistoryModel::Entry> entries = model.allEntries();
     QCOMPARE(entries.count(), HistoryModel::DisplayLimit + 10);
@@ -278,6 +288,12 @@ void tst_historymodel::clearSince()
     QCOMPARE(model.count(), 2);
     model.recordInput(QStringLiteral("new"), QStringLiteral("https://new.example/"));
     QCOMPARE(inputsInDatabase(storage), 1);
+    // What would go is counted as it would be taken.
+    QCOMPARE(model.countSince(double(now - 60 * minute)), 1);
+    QCOMPARE(model.countSince(double(now - 601 * minute)), 2);
+    QCOMPARE(model.countSince(0), 2);
+    QCOMPARE(model.countSince(-1), 2);
+    QCOMPARE(model.countSince(double(now + minute)), 0);
 
     model.clearSince(double(now - 60 * minute));
     QCOMPARE(model.count(), 1);

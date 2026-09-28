@@ -51,6 +51,15 @@ reader view (0024) and `icon-m-history` for the history. For the cover, `icon-m-
 its tab count into — what the cover is here — and not `icon-m-display`, which
 sailfish-browser gives its notch guard, the screen cutout here.
 
+*Revised.* The two settings made on the main page itself wear icons too, so every row
+stands in one column of them: the website colours sailfish-browser's `icon-m-night`, from
+its colour scheme, and the screen cutout's switch `icon-m-display`, from its notch guard.
+Each is at the page's margin, and the control moved in past it by the icon and a gap —
+the shape of sailfish-browser's `BrowserComboBox`, and of a `TextSwitch` given the same
+margin (`components/SettingsComboBox.qml`, `components/SettingsSwitch.qml`). Silica's own
+list of types is not to be had where this is built, so neither leans on an icon combo box
+or switch it may or may not have.
+
 **Clearing is a dialog** (`pages/ClearDataDialog.qml`), as sailfish-browser asks it: a
 switch for each kind, in the order Firefox for Android lists them — open tabs, history,
 cookies and site data, cache — and Clear dimmed while none is on. What forgets where one
@@ -71,13 +80,19 @@ to notify the engine to clear its cookies, site data and cache; the page that cl
 imports it instead — the history page, since 0030 — and `tests/tst_qmlstatic.cpp` allows it
 there and in `BrowserPage.qml` alone.
 
+*Revised again* (0036): each way in says under its name how the subject is set, in one
+line of the choice's own name; the pages lay their choices out where they are made; the
+headings are Browsing, Appearance, Privacy and Help; Privacy's page is *Tracking
+protection* (`pages/TrackingSettingsPage.qml`), and the website colours joined the cutout's
+switch on the main page (0035).
+
 ## Consequences
 A subject is a tap further away, and how it is set is read there: the price of a main
 page that fits on a phone's screen and reads at a glance. A subject that grows past a
 line gets a page and an entry, not a section.
 
 The load tests reach each page by tapping its entry (`settingsPage`, `searchSettingsPage`,
-`startPageSettingsPage`, `readerSettingsPage`, `privacySettingsPage`,
+`startPageSettingsPage`, `readerSettingsPage`, `trackingSettingsPage`,
 `historySettingsPage`, `coverSettingsPage`); `clearDataDialog` drives the switches, the dimmed Clear, the remorse —
 the stub `Remorse` now records which page it was shown on — and what is cleared. Whether
 the icons are in the device's theme and whether the remorse shows on the history page as the dialog leaves are device checks

@@ -30,6 +30,39 @@ bool run(QSqlQuery &query)
     return true;
 }
 
+// The row a download of this run is on, by the engine's id for it, or -1.
+int rowForEngineId(const QList<DownloadModel::Download> &downloads, int engineId)
+{
+    for (int row = 0; row < downloads.count(); ++row) {
+        if (downloads.at(row).engineId == engineId) {
+            return row;
+        }
+    }
+    return -1;
+}
+
+// Counts the downloads still coming again, and how far along they are together, into
+// count and progress: answers whether either changed, so the model says so only then.
+// Called after every change to a row's status or progress, and to which rows there are.
+bool recountRunning(const QList<DownloadModel::Download> &downloads, int &count, int &progress)
+{
+    int running = 0;
+    int percent = 0;
+    for (const DownloadModel::Download &download : downloads) {
+        if (download.status == DownloadModel::Running) {
+            ++running;
+            percent += download.progress;
+        }
+    }
+    const int together = running > 0 ? qRound(double(percent) / running) : 0;
+    if (running == count && together == progress) {
+        return false;
+    }
+    count = running;
+    progress = together;
+    return true;
+}
+
 } // namespace
 
 DownloadModel::DownloadModel(const Storage &storage, QString directory, QObject *parent)
@@ -112,6 +145,16 @@ QString DownloadModel::directory() const
     return m_directory;
 }
 
+int DownloadModel::runningCount() const
+{
+    return m_runningCount;
+}
+
+int DownloadModel::runningProgress() const
+{
+    return m_runningProgress;
+}
+
 const QList<DownloadModel::Download> &DownloadModel::downloads() const
 {
     return m_downloads;
@@ -128,7 +171,7 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
         return;
     }
     const QString msg = message.value(QStringLiteral("msg")).toString();
-    const int row = rowForEngineId(engineId);
+    const int row = rowForEngineId(m_downloads, engineId);
     if (msg == QLatin1String("dl-start")) {
         // A download the engine starts again -- retried after it failed, or resumed
         // after it was canceled -- keeps its id, and its row.
@@ -164,6 +207,10 @@ void DownloadModel::remove(int row)
     endRemoveRows();
     erase(id);
     emit countChanged();
+    // One still coming may be forgotten; the engine goes on with it, unheard.
+    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
+        emit runningChanged();
+    }
 }
 
 void DownloadModel::clearSince(double since)
@@ -185,6 +232,14 @@ void DownloadModel::clearSince(double since)
     }
 }
 
+int DownloadModel::countSince(double since) const
+{
+    return int(
+        std::count_if(m_downloads.cbegin(), m_downloads.cend(), [since](const Download &download) {
+            return download.status != Running && double(download.started) >= since;
+        }));
+}
+
 void DownloadModel::clear()
 {
     if (m_downloads.isEmpty()) {
@@ -197,6 +252,9 @@ void DownloadModel::clear()
     query.prepare(QStringLiteral("DELETE FROM download"));
     run(query);
     emit countChanged();
+    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
+        emit runningChanged();
+    }
 }
 
 QString DownloadModel::fileUrl(int row) const
@@ -244,6 +302,9 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     dropOldest();
     if (m_downloads.count() != before) {
         emit countChanged();
+    }
+    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
+        emit runningChanged();
     }
 }
 
@@ -303,16 +364,10 @@ void DownloadModel::changed(int row, const QVector<int> &roles)
 {
     const QModelIndex modelIndex = index(row, 0);
     emit dataChanged(modelIndex, modelIndex, roles);
-}
-
-int DownloadModel::rowForEngineId(int engineId) const
-{
-    for (int row = 0; row < m_downloads.count(); ++row) {
-        if (m_downloads.at(row).engineId == engineId) {
-            return row;
-        }
+    // Every change to a row's status or progress comes through here.
+    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
+        emit runningChanged();
     }
-    return -1;
 }
 
 void DownloadModel::dropOldest()

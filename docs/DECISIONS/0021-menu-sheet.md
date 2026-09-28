@@ -21,6 +21,39 @@ the highlight colour while it is on. Each entry does what it says and puts the s
 the browser's own pages are pushed over the browsing page, which stays where it was under
 them.
 
+*Revised.* The sheet first held two rows under a section header each, four icons to a row
+— the reader view (0024), when it came, a second line of one — on a see-through ground,
+and a switch said which way it went: "Remove bookmark" once the page was one. It now
+names the page it acts on, in a head of its own (`components/MenuPageHeader.qml`): the
+page's icon on a faint tile, or the host's initial as the address bar's suggestions draw
+one (0027); its title, faded where it is long; and under the title the padlock
+sailfish-browser's toolbar draws for https, `icon-s-outline-secure` — the bar's
+`icon-s-filled-warning` in its colour instead while the engine is unhappy with the
+connection (0011) — and the host. At the head's right, `icon-m-clipboard`, the keyboard's
+paste key's icon, puts the address on Silica's `Clipboard`, and Silica's `Notice` says so
+for a moment above the bar, as sailfish-browser's toolbar does both
+(`apps/browser/qml/pages/components/ToolBar.qml`); the sheet goes, as it does for every
+entry. On the start page there is no page to name: the head says *Start page* beside the
+theme's `icon-m-home`, there is nothing to copy, and the page's actions are dimmed as a
+disabled Silica control is. All five of them sit in one row, each on a disc of its own
+with its name under it — *Find in page*, *Bookmark*, *Share*, *Desktop site*, *Reader
+view* — and a switch that is on lights its disc in Silica's wash for a chosen item and its
+icon and name in the highlight colour, and keeps its name either way. A line that fades
+towards both ends parts them from the browser's four, which have no disc: two of
+Silica's `Separator`s end to end, since one fades towards its right alone. While anything
+is downloading, Downloads wears Silica's `ProgressCircle` round its icon, as full as the
+downloads under way are together (`DownloadModel.runningCount`, `runningProgress`: the
+mean of their percentages, because the engine's size is 0 while it does not know it).
+The headings went: the head says what the first row is for, and the line where the rest
+begins. The icons are a step down from Silica's medium size, as the grid's corner buttons
+are (0015), so that a disc round one is no bigger than a medium icon, and nothing is
+washed across an entry under a finger — the disc, the icon and the name light, as an
+`IconButton` lights its icon — since a square round a disc was two shapes for one press.
+The ground is opaque: the tint and the glass of the grid's rows and the bar (0010), with
+a hairline and a faint glow of the highlight colour along its top edge, in
+`components/SheetBackground.qml`, which the list of closed tabs has too (0018); the page
+showing through the sheet was one more thing to read past what it offers.
+
 **The pull is the sheet's own.** On device the first build's sheet could be put away by a
 tap outside it but not by pulling it down from its icons, while the list of closed tabs
 goes down with a pull begun on its rows. `DockedPanel` is meant to take either: its
@@ -114,3 +147,17 @@ pull, and whether the flickable takes the pull from a pressed Silica icon on the
 a device check. Whether the icons are the right ones, whether a match is marked and
 scrolled to, and whether a page comes back in its desktop version are device checks
 (`docs/TESTING.md`).
+
+*Revised.* `menuNamesThePage` drives the head — the page named, the padlock and the
+warning, the address copied and said to be, the start page's head and its dimmed row —
+and `menuShowsDownloadsComing` the ring; `tests/silica-stubs` gains a `Clipboard` that
+keeps what is put on it, a `Notice` that counts what it shows, and a `ProgressCircle` and
+a `Separator` that draw nothing. The taller sheet made `menuSheetUnderAFinger` pull
+further, and so showed what the first sheet's short pull had hidden inside the test's
+margin: the sheet goes about two thirds of the finger's way past the start of the drag,
+not all of it, because the flickable reads the finger where it is on the flickable, and
+the flickable goes down with the sheet under it. The test now asks for more than the
+flickable alone would draw — half — and for the icon to stay under the finger; the pull
+itself is as it was, and whether two thirds reads as following the finger is the
+device's to say. Whether Silica's `Clipboard` and `Notice` reach the platform from inside
+Sailjail, as sailfish-browser's do, is a device check too.
