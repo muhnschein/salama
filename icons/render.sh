@@ -36,11 +36,13 @@ done
 # Then the halftone the cover is drawn over (qml/components/CoverHalftone.qml): the
 # launcher icon's bolt as a field of dots, once, in white -- the cover tints it with the
 # ambience's highlight colour itself, and fades it under what it has to say. The bolt is
-# harbour-salama.svg's outline, as a polygon, 6.4 of the picture's units to the icon's
-# and centred on the room above the actions. Largest inside the bolt and thinning towards
-# its foot; a halo just outside it; a faint even field everywhere else. Drawn at twice
-# the size it is laid out at, so the cover only ever draws it smaller.
-awk -v pitch=16 -v width=352 -v height=440 '
+# harbour-salama.svg's outline, as a polygon, 6.4 of the picture's units to the icon's,
+# its bounds centred on the picture. Largest inside the bolt and thinning towards its
+# foot; a halo just outside it; a faint even field everywhere else. Taller than any
+# cover, so the cover fills itself with it and cuts it top and bottom alike, which keeps
+# the bolt in the cover's middle whatever the cover's shape. Drawn at twice the size it
+# is laid out at, so the cover only ever draws it smaller.
+awk -v pitch=16 -v width=352 -v height=640 '
 function inside(x, y,    i, j, hit) {
     hit = 0
     for (i = 0; i < corners; i++) {
@@ -75,15 +77,27 @@ BEGIN {
               "48.11 35.55", q, " ")
     corners = n / 2
     for (i = 0; i < corners; i++) {
-        px[i] = q[2 * i + 1] * 6.4 - 111.5
-        py[i] = q[2 * i + 2] * 6.4 - 43.6
+        px[i] = q[2 * i + 1] * 6.4
+        py[i] = q[2 * i + 2] * 6.4
+        left = i == 0 || px[i] < left ? px[i] : left
+        right = i == 0 || px[i] > right ? px[i] : right
+        top = i == 0 || py[i] < top ? py[i] : top
+        bottom = i == 0 || py[i] > bottom ? py[i] : bottom
     }
+    tall = bottom - top
+    dx = (width - (right - left)) / 2 - left
+    dy = (height - tall) / 2 - top
+    for (i = 0; i < corners; i++) {
+        px[i] += dx
+        py[i] += dy
+    }
+    top += dy
     printf "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\">\n", width, height
     small = 0.18 * pitch
     halo = 2.5 * pitch
     for (y = pitch / 2; y < height; y += pitch) {
         for (x = pitch / 2; x < width; x += pitch) {
-            t = (y - 46) / 352
+            t = (y - top) / tall
             t = t < 0 ? 0 : t > 1 ? 1 : t
             big = 0.86 * pitch * (1 - 0.4 * t)
             if (inside(x, y)) {
@@ -103,7 +117,7 @@ BEGIN {
     }
     print "</svg>"
 }' > "$work/halftone.svg"
-rsvg-convert -w 704 -h 880 "$work/halftone.svg" -o ../art/cover/halftone.png
+rsvg-convert -w 704 -h 1280 "$work/halftone.svg" -o ../art/cover/halftone.png
 
 # The launcher icon again, larger, for the tutorial's first card, which shows it over the
 # application's name (qml/components/TutorialCard.qml): drawn at an extra-large item's

@@ -48,9 +48,6 @@ class TabModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list of row
     Q_PROPERTY(
         int currentGroupId READ currentGroupId WRITE setCurrentGroupId NOTIFY currentGroupChanged)
     Q_PROPERTY(int currentGroupIndex READ currentGroupIndex NOTIFY currentGroupChanged)
-    // The current group's name, empty for the default group and for one with no name: what
-    // the cover says beside the tab count (docs/DECISIONS/0037-cover-is-where-you-were.md).
-    Q_PROPERTY(QString currentGroupName READ currentGroupName NOTIFY currentGroupNameChanged)
     // What the tab in front is playing, and whether it is muted: what the navigation
     // bar's media controls show (docs/DECISIONS/0026-media-controls.md).
     Q_PROPERTY(int activeMediaState READ activeMediaState NOTIFY activeMediaChanged)
@@ -196,7 +193,6 @@ public:
     int tabCountInGroup(int groupId) const;
     int currentGroupId() const;
     int currentGroupIndex() const;
-    QString currentGroupName() const;
     void setCurrentGroupId(int groupId);
     // Returns the new group's id. The new group goes last and becomes the current one.
     int addGroup(const QString &name);
@@ -251,8 +247,6 @@ signals:
     void titleUpdated(const QString &url, const QString &title);
     void faviconUpdated(const QString &url, const QString &favicon);
     void currentGroupChanged();
-    // Another group is current, or the current one was renamed.
-    void currentGroupNameChanged();
     // A group was added, renamed, moved or removed, or a tab changed group.
     void groupsChanged();
 

@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QFont>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -5141,13 +5142,16 @@ qreal halftoneStrength(QObject *coverItem)
 } // namespace
 
 // At rest, the cover says where the reader was: the site and title of the tab in front,
-// its group and how many tabs are open, over the faint halftone
+// over the faint halftone, the bolt in the cover's middle
 // (docs/DECISIONS/0037-cover-is-where-you-were.md). Its quick action is a search until
 // another is chosen.
 void tst_qmlload::cover()
 {
     auto *coverItem = m_window->property("coverItem").value<QObject *>();
     QVERIFY(coverItem != nullptr);
+    // As large as the home screen draws it, so there is a layout to measure.
+    coverItem->setProperty("width", 234);
+    coverItem->setProperty("height", 374);
     TabModel *tabs = m_core->tabs();
     const int front = tabs->activeTabId();
 
@@ -5160,30 +5164,44 @@ void tst_qmlload::cover()
     QCOMPARE(text(QStringLiteral("coverPlaceHost")), QStringLiteral("qwant.com"));
     // A page with no title yet is named by its site.
     QCOMPARE(text(QStringLiteral("coverPlaceTitle")), QStringLiteral("qwant.com"));
-    QCOMPARE(text(QStringLiteral("coverPlaceCount")), QStringLiteral("1 tab(s)"));
-    QVERIFY(!shown(coverItem, QStringLiteral("coverPlaceGroup")));
+    // Nothing under the title: it has the room down to the actions.
+    QVERIFY(coverPart(coverItem, QStringLiteral("coverPlaceCount")) == nullptr);
+    QVERIFY(coverPart(coverItem, QStringLiteral("coverPlaceGroup")) == nullptr);
+    auto *place = qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverPlace")));
+    auto *title =
+        qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverPlaceTitle")));
+    QCOMPARE(title->y() + title->height(), place->height());
     // No icon known: the site's first letter.
     QCOMPARE(text(QStringLiteral("coverPlaceLetter")), QStringLiteral("Q"));
     QVERIFY(shown(coverItem, QStringLiteral("coverPlaceLetter")));
 
-    // It follows the tab in front: its title, its group, the count.
+    // It follows the tab in front: its title, its site.
     tabs->updateTitle(front, QStringLiteral("Catatumbo lightning"));
     QCOMPARE(text(QStringLiteral("coverPlaceTitle")), QStringLiteral("Catatumbo lightning"));
-    const int reading = tabs->addGroup(QStringLiteral("Reading"));
-    tabs->moveTabToGroup(front, reading);
-    tabs->activateTabById(front);
-    QVERIFY(shown(coverItem, QStringLiteral("coverPlaceGroup")));
-    QCOMPARE(text(QStringLiteral("coverPlaceGroup")), QStringLiteral("Reading ·"));
     const int second = tabs->newTab(QStringLiteral("https://yle.fi/uutiset"));
     QCOMPARE(text(QStringLiteral("coverPlaceHost")), QStringLiteral("yle.fi"));
-    QCOMPARE(text(QStringLiteral("coverPlaceCount")), QStringLiteral("2 tab(s)"));
     tabs->closeTabById(second);
 
-    // The halftone is a picture the cover has on disk, installed beside the QML.
-    const QUrl dots =
-        coverPart(coverItem, QStringLiteral("coverHalftoneDots"))->property("source").toUrl();
-    QVERIFY(dots.toString().endsWith(QLatin1String("art/cover/halftone.png")));
-    QVERIFY2(QFile::exists(dots.toLocalFile()), qPrintable(dots.toString()));
+    // The halftone is a picture the cover has on disk, installed beside the QML. It fills
+    // the cover and is cut to it top and bottom alike, being taller than a cover: the
+    // bolt, in the picture's middle, is in the cover's.
+    auto *halftone =
+        qobject_cast<QQuickItem *>(coverPart(coverItem, QStringLiteral("coverHalftone")));
+    QCOMPARE(halftone->width(), 234.0);
+    QCOMPARE(halftone->height(), 374.0);
+    QObject *dots = coverPart(coverItem, QStringLiteral("coverHalftoneDots"));
+    const QUrl source = dots->property("source").toUrl();
+    QVERIFY(source.toString().endsWith(QLatin1String("art/cover/halftone.png")));
+    QVERIFY2(QFile::exists(source.toLocalFile()), qPrintable(source.toString()));
+    QCOMPARE(dots->property("fillMode").toInt(),
+             evaluate(dots, QStringLiteral("Image.PreserveAspectCrop")).toInt());
+    QCOMPARE(dots->property("verticalAlignment").toInt(),
+             evaluate(dots, QStringLiteral("Image.AlignVCenter")).toInt());
+    const QSize drawn = QImage(source.toLocalFile()).size();
+    const qreal coverAspect = evaluate(dots, QStringLiteral("Theme.coverSizeLarge.height"
+                                                            " / Theme.coverSizeLarge.width"))
+                                  .toReal();
+    QVERIFY(qreal(drawn.height()) / drawn.width() > coverAspect);
 
     // The quick action is a search until another is chosen: the window raised, and the
     // address bar opened for a new tab, which is made once something is chosen and

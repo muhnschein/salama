@@ -56,7 +56,6 @@ private slots:
     void ungroupingKeepsTheTabs();
     void movingGroups();
     void groupPreviews();
-    void currentGroupName();
     void searchSpansTheGroups();
     void searchRefinesWithoutResetting();
     void searchTakesEveryWord();
@@ -1512,33 +1511,8 @@ void tst_tabmodel::livePagesAreCapped()
     model.closeAllTabs();
 }
 
-// What a page plays is the page's, and goes with it; whether its tab is muted is the
-// tab's, for as long as it is open (docs/DECISIONS/0026-media-controls.md).
 // What a page says of what it plays is the cover's to show while the page plays, and
 // goes with what it plays: stopping, the tab closing.
-// The cover names the group the tab in front is in, and none for the default one.
-void tst_tabmodel::currentGroupName()
-{
-    TabModel model(nullptr);
-    model.newTab(QStringLiteral("https://a.example/"));
-    QCOMPARE(model.currentGroupName(), QString());
-    QSignalSpy spy(&model, &TabModel::currentGroupNameChanged);
-
-    const int reading = model.addGroup(QStringLiteral("Reading"));
-    QCOMPARE(spy.count(), 1);
-    QCOMPARE(model.currentGroupName(), QStringLiteral("Reading"));
-    model.renameGroup(reading, QStringLiteral("Later"));
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(model.currentGroupName(), QStringLiteral("Later"));
-
-    // Another group renamed is not the current one's name changing.
-    model.setCurrentGroupId(model.defaultGroupId());
-    QCOMPARE(model.currentGroupName(), QString());
-    spy.clear();
-    model.renameGroup(reading, QStringLiteral("Reading"));
-    QCOMPARE(spy.count(), 0);
-}
-
 void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
 {
     TabModel model(nullptr);
@@ -1583,6 +1557,8 @@ void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
     QCOMPARE(model.mediaMetadata(behind), TabModel::MediaMetadata());
 }
 
+// What a page plays is the page's, and goes with it; whether its tab is muted is the
+// tab's, for as long as it is open (docs/DECISIONS/0026-media-controls.md).
 void tst_tabmodel::mediaFollowsThePage()
 {
     TabModel model(nullptr);

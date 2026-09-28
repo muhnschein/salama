@@ -2,8 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // The cover at rest: where the reader was. The site of the tab in front, its icon beside
-// it; the page's title, large, as much of it as there is room for; and at the foot the
-// tab's group, when it is in one, and how many tabs are open
+// it, and the page's title, large, as much of it as there is room for
 // (docs/DECISIONS/0037-cover-is-where-you-were.md).
 //
 // Words only, over the cover's faint halftone: nothing here is a picture of the page. It
@@ -19,9 +18,6 @@ Item {
     property string url
     property string title
     property string favicon
-    /// The group it is in, empty for the default one, and how many tabs are open.
-    property string group
-    property int tabCount
 
     /// The site, as the bar shows it.
     readonly property string host: SearchSettings.displayAddress(url)
@@ -83,16 +79,15 @@ Item {
         color: Theme.highlightColor
     }
 
-    // As many lines as fit between the site and the foot, the last cut short.
+    // As many lines as fit under the site, the last cut short.
     Label {
         objectName: "coverPlaceTitle"
         anchors {
             top: hostLabel.bottom
             left: parent.left
             right: parent.right
-            bottom: foot.top
+            bottom: parent.bottom
             topMargin: Theme.paddingSmall
-            bottomMargin: Theme.paddingSmall
         }
         textFormat: Text.PlainText
         text: place.title.length > 0 ? place.title : place.host
@@ -100,41 +95,5 @@ Item {
         elide: Text.ElideRight
         font.pixelSize: Theme.fontSizeMedium
         color: Theme.primaryColor
-    }
-
-    Row {
-        id: foot
-
-        objectName: "coverPlaceFoot"
-        anchors {
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-        }
-        spacing: Theme.paddingSmall
-
-        Label {
-            objectName: "coverPlaceGroup"
-            width: Math.min(implicitWidth, foot.width - count.width - foot.spacing)
-            visible: place.group.length > 0
-            textFormat: Text.PlainText
-            //: The tab group of the tab in front, before the tab count on the cover:
-            //: "Reading · 14 tabs"
-            text: qsTr("%1 ·").arg(place.group)
-            truncationMode: TruncationMode.Fade
-            font.pixelSize: Theme.fontSizeExtraSmall
-            color: Theme.secondaryHighlightColor
-        }
-
-        Label {
-            id: count
-
-            objectName: "coverPlaceCount"
-            textFormat: Text.PlainText
-            //: How many tabs are open, on the cover
-            text: qsTr("%n tab(s)", "", place.tabCount)
-            font.pixelSize: Theme.fontSizeExtraSmall
-            color: Theme.secondaryColor
-        }
     }
 }

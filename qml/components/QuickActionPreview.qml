@@ -54,11 +54,7 @@ Item {
 
         CoverHalftone {
             objectName: "previewHalftone"
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-            }
+            anchors.fill: parent
         }
 
         // Where the home screen draws the actions: across the strip along the foot, a

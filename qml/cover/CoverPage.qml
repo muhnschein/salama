@@ -4,8 +4,8 @@
 // What the cover shows while the app is minimised: the halftone bolt, and over it, faint,
 // what the browser has to say (docs/DECISIONS/0037-cover-is-where-you-were.md).
 //
-//  * At rest, where the reader was: the site and title of the tab in front, its group and
-//    how many tabs are open (components/CoverPlace.qml).
+//  * At rest, where the reader was: the site and title of the tab in front
+//    (components/CoverPlace.qml).
 //  * While something downloads, how far it has come (components/CoverDownloads.qml).
 //  * While the tab in front plays, or is muted, what plays (components/CoverMedia.qml).
 //    Downloads come first when both happen at once.
@@ -77,11 +77,7 @@ CoverBackground {
     // Under everything, and declared first so that it is. Faint under words, whole when
     // there are none; not under a picture of what plays, which has the room to itself.
     CoverHalftone {
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-        }
+        anchors.fill: parent
         visible: !(cover.showsMedia && media.pictured)
         // Faint enough that the words read first: Theme's faintest opacity left the bolt
         // pulling the eye off the title.
@@ -102,8 +98,6 @@ CoverBackground {
             url: TabModel.activeUrl
             title: TabModel.activeTitle
             favicon: TabModel.activeFavicon
-            group: TabModel.currentGroupName
-            tabCount: TabModel.count
         }
 
         CoverDownloads {

@@ -7,7 +7,9 @@
 //
 // One picture, drawn once: icons/render.sh renders the dots white into
 // art/cover/halftone.png, and they are tinted here, so they take on whatever ambience
-// the phone has. Nothing about it moves or is drawn again while the cover shows it.
+// the phone has. The picture is taller than any cover and is cut to fill it, top and
+// bottom alike, so the bolt is in the middle of whatever it is laid over. Nothing about
+// it moves or is drawn again while the cover shows it.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -19,9 +21,6 @@ Item {
     property real strength: 1
 
     objectName: "coverHalftone"
-    // At the picture's own aspect, as wide as the cover: from the top edge down to where
-    // the actions begin.
-    height: dots.implicitWidth > 0 ? width * dots.implicitHeight / dots.implicitWidth : width
 
     // The picture is the dots' shape only; what the reader sees is the tint below.
     Image {
@@ -30,6 +29,7 @@ Item {
         objectName: "coverHalftoneDots"
         anchors.fill: parent
         visible: false
+        fillMode: Image.PreserveAspectCrop
         smooth: true
         mipmap: true
         source: Qt.resolvedUrl("../../art/cover/halftone.png")

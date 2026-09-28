@@ -27,17 +27,21 @@ One cover, `cover/CoverPage.qml`, in four states, the first that applies:
   "Playing · *site*" or, muted or paused, "Paused · *site*", the picture dimmed. Without
   one, the words over the halftone: "Playing", the site large, and the title.
 - **Where you were** (`components/CoverPlace.qml`), while the tab in front has a page: the
-  site in the highlight colour beside its icon (its first letter while it has none), the
-  page's title large, as many lines as fit, and at the foot the tab's group when it is not
-  the default one, and "*n* tabs".
+  site in the highlight colour beside its icon (its first letter while it has none), and
+  the page's title large, as many lines as fit down to the actions. Nothing under it: a
+  line with the tab's group and "*n* tabs" was tried, and was one line more than a glance
+  takes in.
 - **The halftone alone**, whole, with no tab open or the one in front on the start page:
   there is nowhere to say the reader was.
 
 **The halftone** (`components/CoverHalftone.qml`) is the launcher icon's bolt as dots on a
 grid, largest inside the bolt and thinning towards its foot, with a halo just outside it
-and a faint even field elsewhere, from the top edge down to the actions. `icons/render.sh`
-computes it from the icon's outline and renders it once, white, into
-`art/cover/halftone.png`; the cover tints it with the ambience's highlight colour
+and a faint even field elsewhere, over the whole cover. `icons/render.sh` computes it
+from the icon's outline and renders it once, white, into `art/cover/halftone.png`, the
+bolt's bounds in the picture's middle and the picture taller than any cover; the cover
+fills itself with it, cut top and bottom alike (`PreserveAspectCrop`), so the bolt is in
+the cover's middle whatever its shape. The first cut stopped the field at the actions and
+centred the bolt on the room above them, and on the phone it sat high. The cover tints it with the ambience's highlight colour
 (`ColorOverlay`), whole on its own and at 0.12 under words -- `Theme.opacityFaint` left it
 pulling the eye off the title. It is hidden under a picture of what plays.
 
@@ -64,8 +68,7 @@ halftone with the action on it (`components/QuickActionPreview.qml`), and the li
 Cover on the main settings page is the action alone, or "No quick action".
 `components/CoverLightning.qml`, `CoverTabPicture.qml`, `icons/cover-bolt.svg` and
 `art/cover/bolt.png` go, and `TabModel.recentThumbnails` with them, the cover being the
-only reader; the groups' pictures keep `groupThumbnails`. `TabModel.currentGroupName`
-names the group for the cover.
+only reader; the groups' pictures keep `groupThumbnails`.
 
 The cover names the page in front again, which 0014 moved away from: its title is foreign
 text of unknown length, so it is cut to the room there is, and the site above it is what
@@ -76,7 +79,7 @@ a device question; without it, a video's poster or the plain view is what shows.
 state reads at cover size, in both ambiences, is on the `docs/TESTING.md` checklist.
 
 `tst_pagemedia` runs the script's metadata over a fake Media Session and checks what is
-kept of an answer; `tst_tabmodel` the metadata's life and the group's name; `tst_qmlload`
+kept of an answer; `tst_tabmodel` the metadata's life; `tst_qmlload`
 drives each state of the cover, the steps of five, and the settings page.
 
 Supersedes 0031, which is kept for the history.

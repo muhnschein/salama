@@ -284,22 +284,6 @@
     </message>
 </context>
 <context>
-    <name>CoverPlace</name>
-    <message>
-        <source>%1 ·</source>
-        <extracomment>The tab group of the tab in front, before the tab count on the cover: &quot;Reading · 14 tabs&quot;</extracomment>
-        <translation>%1 ·</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <extracomment>How many tabs are open, on the cover</extracomment>
-        <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>

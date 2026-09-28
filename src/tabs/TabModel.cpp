@@ -31,7 +31,6 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     m_liveIds = liveSet();
     // Another tab in front is other media in front.
     connect(this, &TabModel::activeTabChanged, this, &TabModel::activeMediaChanged);
-    connect(this, &TabModel::currentGroupChanged, this, &TabModel::currentGroupNameChanged);
     // A group's picture is its most recent tabs' previews, so it changes whenever one
     // of those does: a tab opened or closed, one brought to the front, a preview taken.
     // Every group is told, there being only a handful.
@@ -756,12 +755,6 @@ int TabModel::currentGroupIndex() const
     return groupIndexOf(m_currentGroupId);
 }
 
-QString TabModel::currentGroupName() const
-{
-    const int index = groupIndexOf(m_currentGroupId);
-    return index >= 0 && m_currentGroupId != defaultGroupId() ? m_groups.at(index).name : QString();
-}
-
 void TabModel::setCurrentGroupId(int groupId)
 {
     if (groupId == m_currentGroupId || groupIndexOf(groupId) < 0) {
@@ -828,9 +821,6 @@ void TabModel::renameGroup(int groupId, const QString &name)
         m_persistence->updateGroup(m_groups.at(index));
     }
     emit groupsChanged();
-    if (groupId == m_currentGroupId) {
-        emit currentGroupNameChanged();
-    }
 }
 
 bool TabModel::removeGroup(int groupId)
