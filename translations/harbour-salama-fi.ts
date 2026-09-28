@@ -921,14 +921,16 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>StartPagePreview</name>
     <message>
-        <source>Nothing but the address bar</source>
-        <extracomment>What a new tab shows with the start page blank or every section off</extracomment>
-        <translation>Vain osoitepalkki</translation>
+        <source>Frequently visited</source>
+        <translation>Usein vieraillut</translation>
     </message>
     <message>
-        <source>Preview</source>
-        <extracomment>Under a picture of what a new tab will show</extracomment>
-        <translation>Esikatselu</translation>
+        <source>Bookmarks</source>
+        <translation>Kirjanmerkit</translation>
+    </message>
+    <message>
+        <source>Recently visited</source>
+        <translation>Viimeksi vieraillut</translation>
     </message>
 </context>
 <context>
@@ -953,6 +955,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>Sections</source>
         <extracomment>The parts of the start page, each switched on or off</extracomment>
         <translation>Osiot</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <extracomment>Over a picture of what a new tab will show</extracomment>
+        <translation>Esikatselu</translation>
     </message>
 </context>
 <context>
@@ -1000,17 +1007,15 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>Deleting tab group</source>
         <translation>Poistetaan välilehtiryhmä</translation>
     </message>
-    <message numerus="yes">
-        <source>%n tab(s)</source>
-        <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
-        </translation>
-    </message>
     <message>
         <source>Ungroup</source>
         <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
         <translation>Pura ryhmä</translation>
+    </message>
+    <message>
+        <source>Tabs</source>
+        <extracomment>The name of the tab group that holds the tabs in no group of their own</extracomment>
+        <translation>Välilehdet</translation>
     </message>
 </context>
 <context>

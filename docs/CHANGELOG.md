@@ -9,11 +9,11 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 
 ### Added
 - Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
-- The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic.
+- The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic; a reader who had it chosen gets the new look, and one who chose Light, Sepia or Dark keeps it.
 - Settings > History counts what is kept on the phone -- the pages in the history, the downloads, the recently closed tabs and the open tabs -- above Clear browsing data, and the Clear browsing data dialog says how much of each kind goes.
-- Settings > Start page shows a picture of a new tab under its switches, following each one.
+- Settings > Start page shows the screen as a new tab will show it, at half its size under the switches and following each one: your own sites and bookmarks as the start page draws them, and the address bar along the foot.
 - The menu names the page it acts on -- its icon, title, padlock and host -- with a button to copy its address, and says "Start page" on the start page, where the page's actions are dimmed. While a download is coming, the menu's Downloads wears a ring that fills as it goes.
-- Tab groups can be put in order: drag a group by the bars at the end of its row. The "N tabs" group stays first.
+- Tab groups can be put in order: drag a group by the bars at the end of its row. The first group stays first.
 - Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
 
 ### Changed
@@ -24,7 +24,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Clear browsing data on the history page is a button.
 - The menu is an opaque sheet with the page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit while they are on, and the browser's four under a line.
 - In the grid, the tab in front is framed by a thin rounded line just outside its picture rather than washed; the close buttons are smaller discs with the same place to tap; a group name a tab is carried over lights in a rounded wash; search results light the letters typed; and the list of recently closed tabs comes up on the same sheet as the menu.
-- The list of tab groups shows each group as a small picture of its most recent tabs, with the current group framed, and "N tabs" under the name; the row that makes a new group wears the theme's ringed plus, and its dialog reads New tab group, with Create.
+- The list of tab groups is laid out as the Gallery lists albums: each group's tab count, a square picture of its tab last in front, and its name, large, the current group's in the ambience's colour; the first group is called Tabs there. The row that makes a new group wears the theme's ringed plus, and its dialog reads New tab group, with Create.
 - The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
 
 ## [0.8.0] - 2026-09-26
