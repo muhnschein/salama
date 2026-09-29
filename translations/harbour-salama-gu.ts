@@ -306,6 +306,31 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>એક મિનિટ કરતાં ઓછું બાકી</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 મિનિટ બાકી</numerusform>
+            <numerusform>બાકી %1 મિનિટ</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 કલાક બાકી</numerusform>
+            <numerusform>બાકી %1 કલાક</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -322,6 +347,26 @@
     <message>
         <source>Cancelled</source>
         <translation>રદ કરેલું</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>વિરામ</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>ફરી શરૂ કરો</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>રદ કરો</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>ફાઇલ કાઢી નાખો</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% પર વિરામ લીધો</translation>
     </message>
 </context>
 <context>
@@ -579,6 +624,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>%1 માં ટૅબ પર જાઓ</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% પર વિરામ લીધો</translation>
     </message>
 </context>
 <context>

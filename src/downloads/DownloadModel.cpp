@@ -3,16 +3,19 @@
 #include "DownloadModel.h"
 
 #include "engine/EngineData.h"
+#include "engine/EngineMessages.h"
 #include "storage/Storage.h"
 
 #include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUrl>
 #include <QtDebug>
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace Salama {
@@ -155,6 +158,81 @@ int DownloadModel::runningProgress() const
     return m_runningProgress;
 }
 
+int DownloadModel::finishedCount() const
+{
+    const qint64 since = earliestRunning();
+    if (since == 0) {
+        return 0;
+    }
+    int finished = 0;
+    for (const Download &download : m_downloads) {
+        const bool ended = download.status == Done || download.status == Failed;
+        if (ended && download.finished >= since) {
+            ++finished;
+        }
+    }
+    return finished;
+}
+
+int DownloadModel::failedCount() const
+{
+    const qint64 since = earliestRunning();
+    if (since == 0) {
+        return 0;
+    }
+    int failed = 0;
+    for (const Download &download : m_downloads) {
+        if (download.status == Failed && download.finished >= since) {
+            ++failed;
+        }
+    }
+    return failed;
+}
+
+qint64 DownloadModel::earliestRunning() const
+{
+    qint64 earliest = 0;
+    for (const Download &download : m_downloads) {
+        if (download.status == Running && (earliest == 0 || download.started < earliest)) {
+            earliest = download.started;
+        }
+    }
+    return earliest;
+}
+
+qint64 DownloadModel::estimate() const
+{
+    qint64 eta = -1;
+    for (const Download &download : m_downloads) {
+        if (download.status != Running || download.rate <= 0) {
+            continue;
+        }
+        const auto own = qint64(std::ceil((100.0 - download.progress) / download.rate));
+        if (eta < 0 || own > eta) {
+            eta = own;
+        }
+    }
+    return eta;
+}
+
+qint64 DownloadModel::etaSeconds() const
+{
+    return estimate();
+}
+
+QString DownloadModel::runningName() const
+{
+    if (m_runningCount != 1) {
+        return {};
+    }
+    for (const Download &download : m_downloads) {
+        if (download.status == Running) {
+            return download.name;
+        }
+    }
+    return {};
+}
+
 const QList<DownloadModel::Download> &DownloadModel::downloads() const
 {
     return m_downloads;
@@ -192,7 +270,12 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
     } else if (msg == QLatin1String("dl-fail")) {
         setStatus(row, Failed);
     } else if (msg == QLatin1String("dl-cancel")) {
-        setStatus(row, Canceled);
+        // Our own pause reaches here: it is the engine's cancel, whose echo must not
+        // untell the list's Paused. A cancel said of anything else is one.
+        const Download &download = m_downloads.at(row);
+        if (download.status != Paused) {
+            setStatus(row, Canceled);
+        }
     }
 }
 
@@ -207,10 +290,11 @@ void DownloadModel::remove(int row)
     endRemoveRows();
     erase(id);
     emit countChanged();
-    // One still coming may be forgotten; the engine goes on with it, unheard.
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    emit finishedChanged();
+    emit etaChanged();
 }
 
 void DownloadModel::clearSince(double since)
@@ -229,6 +313,8 @@ void DownloadModel::clearSince(double since)
     }
     if (m_downloads.count() != before) {
         emit countChanged();
+        emit finishedChanged();
+        emit etaChanged();
     }
 }
 
@@ -255,6 +341,8 @@ void DownloadModel::clear()
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    emit finishedChanged();
+    emit etaChanged();
 }
 
 QString DownloadModel::fileUrl(int row) const
@@ -273,6 +361,84 @@ int DownloadModel::rowOf(int downloadId) const
         }
     }
     return -1;
+}
+
+void DownloadModel::pause(int downloadId)
+{
+    const int row = rowOf(downloadId);
+    if (row < 0 || m_downloads.at(row).status != Running) {
+        return;
+    }
+    // The engine's cancel keeps the partial file, so the same download can start again.
+    // The row is Paused for the list's sake, and the engine's echo of its own cancel is
+    // not allowed to untell it (observe()). Written down, like the statuses the engine
+    // sends; a paused download read back after a restart is failed with the rest.
+    Download &download = m_downloads[row];
+    download.status = Paused;
+    store(download);
+    changed(row, {roleId(Role::Status)});
+    if (m_downloads.at(row).engineId > 0) {
+        emit engineRequest(EngineMessages::downloadTopic(),
+                           EngineMessages::downloadCancel(m_downloads.at(row).engineId));
+    }
+}
+
+void DownloadModel::resume(int downloadId)
+{
+    const int row = rowOf(downloadId);
+    if (row < 0 || m_downloads.at(row).status != Paused) {
+        return;
+    }
+    // Retry starts the download again from the partial file, and the engine says so
+    // with a dl-start for the id it kept, which brings the row back to Running.
+    if (m_downloads.at(row).engineId > 0) {
+        emit engineRequest(EngineMessages::downloadTopic(),
+                           EngineMessages::downloadRetry(m_downloads.at(row).engineId));
+    } else {
+        setStatus(row, Running);
+    }
+}
+
+void DownloadModel::cancel(int downloadId)
+{
+    const int row = rowOf(downloadId);
+    if (row < 0) {
+        return;
+    }
+    const Status status = m_downloads.at(row).status;
+    if (status != Running && status != Paused) {
+        return;
+    }
+    setStatus(row, Canceled);
+    if (m_downloads.at(row).engineId > 0) {
+        emit engineRequest(EngineMessages::downloadTopic(),
+                           EngineMessages::downloadCancel(m_downloads.at(row).engineId));
+    }
+}
+
+bool DownloadModel::hasFile(int downloadId)
+{
+    const int row = rowOf(downloadId);
+    return row >= 0 && m_downloads.at(row).status == Done && !m_downloads.at(row).path.isEmpty() &&
+           QFileInfo::exists(m_downloads.at(row).path);
+}
+
+void DownloadModel::deleteFile(int downloadId)
+{
+    const int row = rowOf(downloadId);
+    if (row < 0 || m_downloads.at(row).status != Done || m_downloads.at(row).path.isEmpty()) {
+        return;
+    }
+    // The file is the downloaded thing; the row is the record of it. The file goes, and
+    // the record keeps the site, so nothing left to open says so by opening nothing.
+    Download &download = m_downloads[row];
+    QFile file(download.path);
+    if (!file.remove()) {
+        return;
+    }
+    download.path.clear();
+    store(download);
+    changed(row, {roleId(Role::Path)});
 }
 
 void DownloadModel::start(int engineId, const QVariantMap &message)
@@ -306,6 +472,8 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    emit finishedChanged();
+    emit etaChanged();
 }
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
@@ -322,7 +490,25 @@ void DownloadModel::setProgress(int row, const QVariant &percent)
     }
     // Not written: it would be worth nothing after a restart, when a download read
     // back has either finished or never will (load()).
+    const int old = download.progress;
     download.progress = progress;
+    // The pace the estimate of the time left works from: how far the percentage has
+    // come since it last said, over the time between. Smoothed, so a pause in the
+    // reports does not swing the estimate whole, and only from reports a second apart,
+    // which a burst of them would otherwise read as an absurd pace. A report of less
+    // than the last one -- a server that restarts a file -- is moving backwards, and
+    // says nothing. A download started over carries no pace (start()).
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (download.progressAt > 0 && now > download.progressAt) {
+        const qint64 elapsed = now - download.progressAt;
+        if (elapsed >= 1000) {
+            const qreal instant = qreal(progress - old) / (qreal(elapsed) / 1000);
+            if (instant > 0) {
+                download.rate = download.rate > 0 ? 0.75 * download.rate + 0.25 * instant : instant;
+            }
+        }
+    }
+    download.progressAt = now;
     changed(row, {roleId(Role::Progress)});
 }
 
@@ -345,6 +531,8 @@ void DownloadModel::finish(int row, const QString &path)
     if (roles.isEmpty()) {
         return;
     }
+    // Not written: only true while this process runs, as a download's progress is.
+    download.finished = QDateTime::currentMSecsSinceEpoch();
     store(download);
     changed(row, roles);
 }
@@ -356,6 +544,14 @@ void DownloadModel::setStatus(int row, Status status)
         return;
     }
     download.status = status;
+    // Coming again after the engine started it over, or ended: the strip's count of the
+    // recent follows either way. Coming again is a fresh pace: what it made before, and
+    // the gap while it was away, are not the file's.
+    download.finished = status == Running ? 0 : QDateTime::currentMSecsSinceEpoch();
+    if (status == Running) {
+        download.rate = 0;
+        download.progressAt = 0;
+    }
     store(download);
     changed(row, {roleId(Role::Status)});
 }
@@ -368,6 +564,8 @@ void DownloadModel::changed(int row, const QVector<int> &roles)
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    emit finishedChanged();
+    emit etaChanged();
 }
 
 void DownloadModel::dropOldest()

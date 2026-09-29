@@ -306,6 +306,31 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>एक मिनिटापेक्षा कमी शिल्लक</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 मिनिट शिल्लक</numerusform>
+            <numerusform>%1 मिनिटे शिल्लक</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 तास शिल्लक</numerusform>
+            <numerusform>शिल्लक %1 तास</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -322,6 +347,26 @@
     <message>
         <source>Cancelled</source>
         <translation>रद्द केले</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>विराम</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>पुन्हा सुरू करा</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>रद्द करा</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>फाइल हटवा</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% वर विराम</translation>
     </message>
 </context>
 <context>
@@ -579,6 +624,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>%1 मधील टॅबवर जा</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% वर विराम</translation>
     </message>
 </context>
 <context>

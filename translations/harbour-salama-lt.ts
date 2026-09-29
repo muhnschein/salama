@@ -311,6 +311,33 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>Mažiau nei minutė</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>Liko %1 minutė</numerusform>
+            <numerusform>Liko %1 minutės</numerusform>
+            <numerusform>Liko %1 minučių</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>Liko %1 valanda</numerusform>
+            <numerusform>Liko %1 valandos</numerusform>
+            <numerusform>Liko %1 valandų</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -327,6 +354,26 @@
     <message>
         <source>Cancelled</source>
         <translation>Atšaukta</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pristabdyti</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Tęsti</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Atšaukti</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Ištrinti failą</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Pristabdyta ties %1 %</translation>
     </message>
 </context>
 <context>
@@ -589,6 +636,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Perjungti į kortelę %1</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Pristabdyta ties %1 %</translation>
     </message>
 </context>
 <context>

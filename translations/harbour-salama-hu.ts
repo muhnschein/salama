@@ -301,6 +301,29 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>Kevesebb mint egy perc van meg</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 perc van meg</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 óra van meg</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -317,6 +340,26 @@
     <message>
         <source>Cancelled</source>
         <translation>Megszakítva</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pillanat</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Megszakítás</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Fájl eltávolítása</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Megszakítva: %1 %</translation>
     </message>
 </context>
 <context>
@@ -569,6 +612,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Váltás a lapra itt: %1</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Megszakítva: %1 %</translation>
     </message>
 </context>
 <context>

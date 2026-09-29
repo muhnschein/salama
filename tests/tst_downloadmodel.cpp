@@ -41,6 +41,10 @@ private slots:
     void rowOf();
     void directory();
     void withoutDatabase();
+    void countsFinished();
+    void pauseResumeCancel();
+    void estimatesTimeLeft();
+    void deletesFile();
 };
 
 namespace {
@@ -128,11 +132,12 @@ void tst_downloadmodel::topicRolesAndStatuses()
     // QML compares a row's status with these by name, and the database keeps them as
     // numbers: neither may move.
     const QMetaEnum status = QMetaEnum::fromType<DownloadModel::Status>();
-    QCOMPARE(status.keyCount(), 4);
+    QCOMPARE(status.keyCount(), 5);
     QCOMPARE(status.keyToValue("Running"), 0);
     QCOMPARE(status.keyToValue("Done"), 1);
     QCOMPARE(status.keyToValue("Failed"), 2);
     QCOMPARE(status.keyToValue("Canceled"), 3);
+    QCOMPARE(status.keyToValue("Paused"), 4);
 
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     QCOMPARE(model.rowCount(model.index(0, 0)), 0);
@@ -867,6 +872,214 @@ void tst_downloadmodel::withoutDatabase()
              static_cast<int>(DownloadModel::Failed));
     model.remove(0);
     QCOMPARE(model.count(), 0);
+}
+
+// What the strip over the page counts: how many downloads ended while the ones still
+// coming have been coming, how many of those failed, and -- as the menu's ring reads --
+// how many are still coming (docs/DECISIONS/0038-download-notice.md).
+void tst_downloadmodel::countsFinished()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy finishedSpy(&model, &DownloadModel::finishedChanged);
+    QCOMPARE(model.finishedCount(), 0);
+    QCOMPARE(model.failedCount(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("b.iso")));
+    QCOMPARE(model.runningCount(), 2);
+    QCOMPARE(model.finishedCount(), 0);
+    QCOMPARE(model.failedCount(), 0);
+
+    // One done while the other is still coming: counted, and said.
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.finishedCount(), 1);
+    QCOMPARE(model.failedCount(), 0);
+    QVERIFY(finishedSpy.count() >= 1);
+
+    // A failure while one is still coming: counted, and failed.
+    model.observe(Topic, startMessage(3, QStringLiteral("c.bin")));
+    QCOMPARE(model.finishedCount(), 1);
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 3));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.finishedCount(), 2);
+    QCOMPARE(model.failedCount(), 1);
+
+    // Cancelled is ended, but not finished: the strip counts what came in.
+    model.observe(Topic, startMessage(4, QStringLiteral("d.bin")));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 4));
+    QCOMPARE(model.finishedCount(), 2);
+    QCOMPARE(model.failedCount(), 1);
+
+    // The engine starts one again: it is coming again, not finished.
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    QCOMPARE(model.runningCount(), 2);
+    QCOMPARE(model.finishedCount(), 1);
+    QCOMPARE(model.failedCount(), 1);
+
+    // The last one done, nothing is coming, and nothing is counted: the strip is away.
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    QCOMPARE(model.runningCount(), 1);
+    QCOMPARE(model.finishedCount(), 2);
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(model.finishedCount(), 0);
+    QCOMPARE(model.failedCount(), 0);
+
+    // Read back from the database, none of it is recent: the stamp is not written down.
+    DownloadModel reloaded(storage, dir.path());
+    QCOMPARE(reloaded.finishedCount(), 0);
+    QCOMPARE(reloaded.failedCount(), 0);
+
+    // Cleared, they all go.
+    model.clear();
+    QCOMPARE(model.finishedCount(), 0);
+}
+
+// Pause is the engine's cancel, which keeps the partial file, so resuming can start
+// again from it: the row says Paused, the engine is asked, and the echo of its own
+// cancel does not untell it. Cancel leaves the row to say so
+// (docs/DECISIONS/0038-download-notice.md).
+void tst_downloadmodel::pauseResumeCancel()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy requestSpy(&model, &DownloadModel::engineRequest);
+    QSignalSpy runningSpy(&model, &DownloadModel::runningChanged);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, progressMessage(1, 40.0));
+    const int id = role(model, 0, roleId(DownloadModel::Role::DownloadId)).toInt();
+    QVERIFY(id > 0);
+
+    model.pause(id);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Paused));
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(requestSpy.count(), 1);
+    QCOMPARE(requestSpy.last().at(0).toString(), QStringLiteral("embedui:download"));
+    const QVariantMap canceled = requestSpy.last().at(1).toMap();
+    QCOMPARE(canceled.value(QStringLiteral("msg")).toString(), QStringLiteral("cancelDownload"));
+    QCOMPARE(canceled.value(QStringLiteral("id")).toInt(), 1);
+    QCOMPARE(storedStatus(storage, id), static_cast<int>(DownloadModel::Paused));
+
+    // The engine's echo of the cancel it was asked for: still Paused.
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Paused));
+
+    model.resume(id);
+    QCOMPARE(requestSpy.count(), 2);
+    const QVariantMap retried = requestSpy.last().at(1).toMap();
+    QCOMPARE(retried.value(QStringLiteral("msg")).toString(), QStringLiteral("retryDownload"));
+    QCOMPARE(retried.value(QStringLiteral("id")).toInt(), 1);
+    // The engine says it is coming again.
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Running));
+    QCOMPARE(model.runningCount(), 1);
+    QVERIFY(runningSpy.count() >= 2);
+
+    // Cancelled: the row stays, saying so.
+    model.cancel(id);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Canceled));
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(requestSpy.count(), 3);
+    QCOMPARE(requestSpy.last().at(1).toMap().value(QStringLiteral("msg")).toString(),
+             QStringLiteral("cancelDownload"));
+    QCOMPARE(storedStatus(storage, id), static_cast<int>(DownloadModel::Canceled));
+
+    // A cancel the engine itself says, of a download no one paused.
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Canceled));
+
+    // Nothing else takes a pause.
+    const int said = requestSpy.count();
+    model.pause(0);
+    model.resume(id);
+    model.resume(0);
+    model.cancel(0);
+    QCOMPARE(requestSpy.count(), said);
+}
+
+// The estimate of the time left works from the pace the percentages have been moving,
+// and the strip's one name is the download's when there is only one
+// (docs/DECISIONS/0038-download-notice.md).
+void tst_downloadmodel::estimatesTimeLeft()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy etaSpy(&model, &DownloadModel::etaChanged);
+
+    QCOMPARE(model.etaSeconds(), -1);
+    QCOMPARE(model.runningName(), QString());
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    QCOMPARE(model.runningName(), QStringLiteral("a.pdf"));
+    QCOMPARE(model.etaSeconds(), -1);
+    // One report: nothing to measure against.
+    model.observe(Topic, progressMessage(1, 10.0));
+    QCOMPARE(model.etaSeconds(), -1);
+    QVERIFY(etaSpy.count() >= 1);
+
+    // A second, a second later: ten percent a second, so eighty percent to go is
+    // eight seconds, rounded up.
+    QTest::qSleep(1100);
+    model.observe(Topic, progressMessage(1, 20.0));
+    QVERIFY(model.etaSeconds() >= 5);
+    QVERIFY(model.etaSeconds() <= 15);
+    QCOMPARE(model.runningName(), QStringLiteral("a.pdf"));
+
+    // Two coming: no one name, and the estimate is the slower one's.
+    model.observe(Topic, startMessage(2, QStringLiteral("b.iso")));
+    model.observe(Topic, progressMessage(2, 30.0));
+    QTest::qSleep(1100);
+    model.observe(Topic, progressMessage(2, 45.0));
+    QCOMPARE(model.runningName(), QString());
+    QVERIFY(model.etaSeconds() >= 5);
+
+    // Done with them, there is nothing to say.
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    QCOMPARE(model.etaSeconds(), -1);
+    QCOMPARE(model.runningName(), QString());
+}
+
+// The saved file can be removed from its folder; the row stays, and nothing is left to
+// open (docs/DECISIONS/0038-download-notice.md).
+void tst_downloadmodel::deletesFile()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    const QString path = dir.filePath(QStringLiteral("map.pdf"));
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("map");
+    file.close();
+
+    QVariantMap started = startMessage(1, QStringLiteral("map.pdf"));
+    started.insert(QStringLiteral("targetPath"), path);
+    model.observe(Topic, started);
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(model.hasFile(1), true);
+    QCOMPARE(model.fileUrl(0), QUrl::fromLocalFile(path).toString());
+    QCOMPARE(model.hasFile(0), false);
+
+    model.deleteFile(1);
+    QVERIFY(!QFile::exists(path));
+    QCOMPARE(model.hasFile(1), false);
+    QCOMPARE(model.fileUrl(0), QString());
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Done));
 }
 
 QTEST_GUILESS_MAIN(tst_downloadmodel)

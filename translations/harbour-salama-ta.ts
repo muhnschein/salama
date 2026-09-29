@@ -306,6 +306,31 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>ஒரு நிமிடத்திற்கும் குறைவாக உள்ளது</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 நிமிடம் உள்ளது</numerusform>
+            <numerusform>%1 நிமிடங்கள் உள்ளன</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 மணிநேரம் உள்ளது</numerusform>
+            <numerusform>%1 மணிநேரங்கள் உள்ளன</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -322,6 +347,26 @@
     <message>
         <source>Cancelled</source>
         <translation>ரத்துசெய்யப்பட்டது</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>இடைநிறுத்து</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>தொடரவும்</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>ரத்துசெய்</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>கோப்பை நீக்கு</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% இல் இடைநிறுத்தப்பட்டது</translation>
     </message>
 </context>
 <context>
@@ -579,6 +624,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>%1 இல் உள்ள தாவலுக்குச் செல்</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% இல் இடைநிறுத்தப்பட்டது</translation>
     </message>
 </context>
 <context>

@@ -111,6 +111,17 @@ public:
     // dark and 0 light. Automatic is dark on a dark ambience; a choice out of range is
     // Automatic (docs/DECISIONS/0035-website-colours.md).
     Q_INVOKABLE static QVariantList websiteColorPreferences(int colors, bool darkAmbience);
+
+    // What to tell the engine about a download, on the topic it observes for them. The
+    // words are embedlite-components EmbedliteDownloadManager.js answers on
+    // "embedui:download": cancel keeps the partial file, so the same download can be
+    // started again in this session, and retry starts it again from there. Pausing is
+    // the engine's cancel, and resuming its retry (docs/DECISIONS/0022-downloads-list.md,
+    // 0038-download-notice.md). Static: DownloadModel sends the asking, and has no
+    // EngineMessages of its own.
+    static QString downloadTopic();
+    static QVariantMap downloadCancel(int engineId);
+    static QVariantMap downloadRetry(int engineId);
 };
 
 } // namespace Salama

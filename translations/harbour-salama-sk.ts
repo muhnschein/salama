@@ -311,6 +311,33 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>Menej ako minúta</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>Zostáva %1 minúta</numerusform>
+            <numerusform>Zostávajú %1 minúty</numerusform>
+            <numerusform>Zostáva %1 minút</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>Zostáva %1 hodina</numerusform>
+            <numerusform>Zostávajú %1 hodiny</numerusform>
+            <numerusform>Zostáva %1 hodín</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -327,6 +354,26 @@
     <message>
         <source>Cancelled</source>
         <translation>Zrušené</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pauza</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Pokračovať</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Zrušiť</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Odstrániť súbor</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Pauza na %1 %</translation>
     </message>
 </context>
 <context>
@@ -589,6 +636,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Prepnúť na kartu v %1</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Pauza na %1 %</translation>
     </message>
 </context>
 <context>

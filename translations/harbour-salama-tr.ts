@@ -301,6 +301,29 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>Bir dakikadan az kaldı</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 dakika kaldı</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 saat kaldı</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -317,6 +340,26 @@
     <message>
         <source>Cancelled</source>
         <translation>İptal edildi</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Duraklat</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Sürdür</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>İptal</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Dosyayı sil</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% duraklatıldı</translation>
     </message>
 </context>
 <context>
@@ -569,6 +612,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>%1 içindeki sekmeye geç</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% duraklatıldı</translation>
     </message>
 </context>
 <context>

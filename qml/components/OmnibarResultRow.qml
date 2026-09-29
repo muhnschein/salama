@@ -36,6 +36,9 @@ ListItem {
         if (model.downloadStatus === DownloadModel.Running) {
             return qsTr("Downloading, %1%").arg(model.progress)
         }
+        if (model.downloadStatus === DownloadModel.Paused) {
+            return qsTr("Paused at %1%").arg(model.progress)
+        }
         if (model.downloadStatus === DownloadModel.Failed) {
             return qsTr("Failed")
         }

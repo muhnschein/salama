@@ -255,4 +255,21 @@ QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbien
     }};
 }
 
+QString EngineMessages::downloadTopic()
+{
+    return QStringLiteral("embedui:download");
+}
+
+QVariantMap EngineMessages::downloadCancel(int engineId)
+{
+    return {{QStringLiteral("msg"), QStringLiteral("cancelDownload")},
+            {QStringLiteral("id"), engineId}};
+}
+
+QVariantMap EngineMessages::downloadRetry(int engineId)
+{
+    return {{QStringLiteral("msg"), QStringLiteral("retryDownload")},
+            {QStringLiteral("id"), engineId}};
+}
+
 } // namespace Salama

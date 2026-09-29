@@ -39,6 +39,7 @@
 using Salama::BookmarkModel;
 using Salama::Core;
 using Salama::CoverSettings;
+using Salama::DownloadModel;
 using Salama::EngineMessages;
 using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
@@ -141,6 +142,8 @@ private slots:
     void findInPage();
     void readerView();
     void downloadsPage();
+    void downloadNotice();
+    void downloadListActions();
     void historyPage();
     void bookmarksPage();
     void settingsPage();
@@ -4021,7 +4024,10 @@ void tst_qmlload::downloadsPage()
     };
     QCOMPARE(text(rows.first(), "downloadName"), QStringLiteral("report.pdf"));
     QCOMPARE(text(rows.first(), "downloadStatus"), QStringLiteral("Downloading, 40%"));
+    // A ring beside it, filled as far along, not a line along its foot.
+    QObject *ring = findObjects(rows.first(), QStringLiteral("downloadProgress")).first();
     QVERIFY(shows(rows.first(), "downloadProgress"));
+    QCOMPARE(ring->property("value").toReal(), 0.4);
 
     // Not yet there, a tap opens nothing.
     const UrlCatcher files(QStringLiteral("file"));
@@ -4062,6 +4068,212 @@ void tst_qmlload::downloadsPage()
     QCOMPARE(downloads->count(), 0);
     QCOMPARE(findAll(QStringLiteral("downloadDelegate")).count(), 0);
     QVERIFY(!clear->property("enabled").toBool());
+}
+
+// The downloads happening are said together, over the page and along the top of the bar:
+// a ring filled as far as they have come together, how many are coming -- or which one,
+// when there is one -- and how many finished recently. A second starting does not take
+// the first's place, and the strip goes only when nothing is coming, with the page given
+// back the room it took (docs/DECISIONS/0038-download-notice.md).
+void tst_qmlload::downloadNotice()
+{
+    // Something of BrowserPage.qml's own, whose scope has the engine.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto send = [this, scope](const QString &message) {
+        evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
+    };
+    QObject *banner = find(QStringLiteral("downloadBanner"));
+    QVERIFY(banner != nullptr);
+    QVERIFY(!banner->property("visible").toBool());
+
+    const auto text = [banner](const char *name) {
+        return findObjects(banner, QLatin1String(name)).first()->property("text").toString();
+    };
+    const auto shows = [banner](const char *name) {
+        return findObjects(banner, QLatin1String(name)).first()->property("visible").toBool();
+    };
+    auto *ring = qobject_cast<QQuickItem *>(
+        findObjects(banner, QStringLiteral("downloadBannerRing")).first());
+    auto *finishedIcon = qobject_cast<QQuickItem *>(
+        findObjects(banner, QStringLiteral("downloadBannerFinishedIcon")).first());
+    auto *area = qobject_cast<QQuickItem *>(find(QStringLiteral("viewArea")));
+    QVERIFY(area != nullptr);
+    const qreal wholePage = area->height();
+    const qreal strip = banner->property("height").toReal();
+    QVERIFY(strip > 0);
+
+    // Begun: the strip comes up, naming the one download, and the page gives it the room,
+    // so nothing of the page is covered. Nothing has moved yet, so no time to say.
+    send(QStringLiteral("{msg: 'dl-start', id: 1, displayName: 'report.pdf',"
+                        " sourceUrl: 'https://files.example/report.pdf',"
+                        " targetPath: '/tmp/report.pdf', mimeType: 'application/pdf',"
+                        " size: 2048}"));
+    QVERIFY(banner->property("visible").toBool());
+    QCOMPARE(area->height(), wholePage - strip);
+    QCOMPARE(ring->property("value").toReal(), 0.0);
+    QCOMPARE(text("downloadBannerPercent"), QStringLiteral("0%"));
+    QVERIFY(shows("downloadBannerName"));
+    QCOMPARE(text("downloadBannerName"), QStringLiteral("report.pdf"));
+    QVERIFY(!shows("downloadBannerActive"));
+    QVERIFY(!shows("downloadBannerEta"));
+    QVERIFY(!shows("downloadBannerFinished"));
+
+    send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 40}"));
+    QCOMPARE(ring->property("value").toReal(), 0.4);
+    QCOMPARE(text("downloadBannerPercent"), QStringLiteral("40%"));
+
+    // A second does not take the first's place: the name gives way to the count, the
+    // ring says how far they are together, and both are counted.
+    send(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'big.iso',"
+                        " sourceUrl: 'https://x.example/', targetPath: '/tmp/big.iso',"
+                        " mimeType: '', size: 0}"));
+    QVERIFY(!shows("downloadBannerName"));
+    QVERIFY(shows("downloadBannerActive"));
+    QCOMPARE(text("downloadBannerActiveCount"), QStringLiteral("2"));
+    QCOMPARE(ring->property("value").toReal(), 0.2);
+    send(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
+    QCOMPARE(ring->property("value").toReal(), 0.3);
+
+    // One done while the other is still coming: the strip stays, and counts it.
+    send(QStringLiteral("{msg: 'dl-done', id: 1, targetPath: '/tmp/report.pdf'}"));
+    QVERIFY(banner->property("visible").toBool());
+    QCOMPARE(text("downloadBannerActiveCount"), QStringLiteral("1"));
+    QVERIFY(shows("downloadBannerFinished"));
+    QCOMPARE(text("downloadBannerFinishedCount"), QStringLiteral("1"));
+    QCOMPARE(ring->property("value").toReal(), 0.2);
+    QCOMPARE(finishedIcon->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-enter-accept"));
+    QCOMPARE(ring->property("progressColor").value<QColor>(),
+             evaluate(banner, QStringLiteral("Theme.highlightColor")).value<QColor>());
+
+    // A failure while another is still coming is shown: the ring in the error colour,
+    // and the count of the finished wearing the warning.
+    send(QStringLiteral("{msg: 'dl-start', id: 3, displayName: 'half.bin',"
+                        " sourceUrl: 'https://x.example/half.bin',"
+                        " targetPath: '/tmp/half.bin', mimeType: '', size: 0}"));
+    send(QStringLiteral("{msg: 'dl-fail', id: 3}"));
+    QVERIFY(banner->property("visible").toBool());
+    QCOMPARE(text("downloadBannerActiveCount"), QStringLiteral("1"));
+    QCOMPARE(text("downloadBannerFinishedCount"), QStringLiteral("2"));
+    QCOMPARE(ring->property("progressColor").value<QColor>(),
+             evaluate(banner, QStringLiteral("Theme.errorColor")).value<QColor>());
+    QCOMPARE(finishedIcon->property("source").toString(),
+             QStringLiteral("image://theme/icon-s-filled-warning"));
+
+    // The last one done, the strip goes, and the page has its room back.
+    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '/tmp/big.iso'}"));
+    QVERIFY(!banner->property("visible").toBool());
+    QCOMPARE(area->height(), wholePage);
+
+    // A tap while it is up opens the list of them.
+    send(QStringLiteral("{msg: 'dl-start', id: 4, displayName: 'readme.txt',"
+                        " sourceUrl: 'https://x.example/readme.txt',"
+                        " targetPath: '/tmp/readme.txt', mimeType: '', size: 0}"));
+    QVERIFY(banner->property("visible").toBool());
+    click(banner);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    popPage();
+}
+
+// A download's menu pauses, resumes, cancels, or removes the file itself: the engine is
+// asked in the words EmbedliteDownloadManager.js answers, the row stays and says what it
+// is, and a cancelled download is not forgotten until the list is cleared
+// (docs/DECISIONS/0038-download-notice.md).
+void tst_qmlload::downloadListActions()
+{
+    // Something of BrowserPage.qml's own, whose scope has the engine.
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto send = [this, scope](const QString &message) {
+        evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
+    };
+    evaluate(scope, QStringLiteral("WebEngine.notifications = []"));
+
+    const auto text = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first()->property("text").toString();
+    };
+    const auto shows = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first()->property("visible").toBool();
+    };
+    const auto modelStatus = [this](int row) {
+        return m_core->downloads()
+            ->data(m_core->downloads()->index(row, 0), Salama::roleId(DownloadModel::Role::Status))
+            .toInt();
+    };
+
+    const QString file = m_dir->filePath(QStringLiteral("map.pdf"));
+    QFile saved(file);
+    QVERIFY(saved.open(QIODevice::WriteOnly));
+    saved.write("map");
+    saved.close();
+
+    send(QStringLiteral("{msg: 'dl-start', id: 1, displayName: 'map.pdf',"
+                        " sourceUrl: 'https://files.example/map.pdf', targetPath: '%1',"
+                        " mimeType: 'application/pdf', size: 2048}")
+             .arg(file));
+    send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 40}"));
+    QObject *page = openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(page->objectName(), QStringLiteral("downloadsPage"));
+
+    const auto lastTopic = [this, scope]() {
+        return evaluate(scope, QStringLiteral("WebEngine.notifications[WebEngine.notifications"
+                                              ".length - 1].topic"))
+            .toString();
+    };
+    const auto lastMsg = [this, scope]() {
+        return evaluate(scope, QStringLiteral("WebEngine.notifications[WebEngine.notifications"
+                                              ".length - 1].value.msg"))
+            .toString();
+    };
+    QObject *row = findAll(QStringLiteral("downloadDelegate")).first();
+
+    // Paused: its menu says so, the engine is asked to cancel -- which keeps the partial
+    // file -- and the engine's own cancel does not untell the row.
+    click(findObjects(row, QStringLiteral("pauseDownloadMenu")).first());
+    QCOMPARE(modelStatus(0), static_cast<int>(DownloadModel::Paused));
+    QCOMPARE(text(row, "downloadStatus"), QStringLiteral("Paused at 40%"));
+    QCOMPARE(shows(row, "downloadProgress"), true);
+    QCOMPARE(evaluate(scope, QStringLiteral("WebEngine.notifications.length")).toInt(), 1);
+    QCOMPARE(lastTopic(), QStringLiteral("embedui:download"));
+    QCOMPARE(lastMsg(), QStringLiteral("cancelDownload"));
+    send(QStringLiteral("{msg: 'dl-cancel', id: 1}"));
+    QCOMPARE(modelStatus(0), static_cast<int>(DownloadModel::Paused));
+
+    // Resumed: the engine is asked to retry, and the engine's dl-start brings it back.
+    click(findObjects(row, QStringLiteral("resumeDownloadMenu")).first());
+    QCOMPARE(lastMsg(), QStringLiteral("retryDownload"));
+    send(QStringLiteral("{msg: 'dl-start', id: 1, displayName: 'map.pdf',"
+                        " sourceUrl: 'https://files.example/map.pdf', targetPath: '%1',"
+                        " mimeType: 'application/pdf', size: 2048}")
+             .arg(file));
+    QCOMPARE(text(row, "downloadStatus"), QStringLiteral("Downloading, 40%"));
+
+    // Cancelled: the row stays and says so.
+    click(findObjects(row, QStringLiteral("cancelDownloadMenu")).first());
+    QCOMPARE(modelStatus(0), static_cast<int>(DownloadModel::Canceled));
+    QCOMPARE(m_core->downloads()->count(), 1);
+    QCOMPARE(text(row, "downloadStatus"), QStringLiteral("Cancelled"));
+
+    // A finished file is removed from its folder by its menu; the row stays, with
+    // nothing to open.
+    send(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'guide.pdf',"
+                        " sourceUrl: 'https://files.example/guide.pdf', targetPath: '%1',"
+                        " mimeType: 'application/pdf', size: 1024}")
+             .arg(file));
+    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '%1'}").arg(file));
+    row = byRow(findAll(QStringLiteral("downloadDelegate"))).first();
+    auto *deleteMenu = qobject_cast<QQuickItem *>(
+        findObjects(row, QStringLiteral("deleteDownloadFileMenu")).first());
+    QVERIFY(deleteMenu != nullptr);
+    QVERIFY(deleteMenu->isEnabled());
+    click(deleteMenu);
+    QVERIFY(!QFile::exists(file));
+    QCOMPARE(m_core->downloads()->hasFile(2), false);
+    QCOMPARE(m_core->downloads()->count(), 2);
+    QCOMPARE(text(row, "downloadName"), QStringLiteral("guide.pdf"));
+
+    // Clear list takes them all, cancelled ones included.
+    click(find(QStringLiteral("clearDownloadsMenu")));
+    QCOMPARE(m_core->downloads()->count(), 0);
 }
 
 void tst_qmlload::historyPage()

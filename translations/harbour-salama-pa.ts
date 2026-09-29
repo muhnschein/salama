@@ -306,6 +306,31 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>ਇੱਕ ਮਿੰਟ ਤੋਂ ਘੱਟ ਬਾਕੀ</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>%1 ਮਿੰਟ ਬਾਕੀ</numerusform>
+            <numerusform>ਬਾਕੀ %1 ਮਿੰਟ</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>%1 ਘੰਟਾ ਬਾਕੀ</numerusform>
+            <numerusform>%1 ਘੰਟੇ ਬਾਕੀ</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -322,6 +347,26 @@
     <message>
         <source>Cancelled</source>
         <translation>ਰੱਦ ਕੀਤਾ</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>ਰੋਕੋ</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>ਫਿਰ ਸ਼ੁਰੂ ਕਰੋ</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>ਰੱਦ ਕਰੋ</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>ਫਾਈਲ ਹਟਾਓ</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% ਤੇ ਰੋਕਿਆ</translation>
     </message>
 </context>
 <context>
@@ -579,6 +624,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>%1 ਵਿੱਚ ਟੈਬ ਉੱਤੇ ਜਾਓ</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>%1% ਤੇ ਰੋਕਿਆ</translation>
     </message>
 </context>
 <context>

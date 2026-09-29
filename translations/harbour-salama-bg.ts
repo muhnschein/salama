@@ -306,6 +306,31 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>По-малко от минута остава</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>Остава %1 минута</numerusform>
+            <numerusform>Остават %1 минути</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>Остава %1 час</numerusform>
+            <numerusform>Остават %1 часа</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -322,6 +347,26 @@
     <message>
         <source>Cancelled</source>
         <translation>Отменено</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Продължи</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Отмени</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Изтрий файла</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>На пауза при %1 %</translation>
     </message>
 </context>
 <context>
@@ -579,6 +624,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Преминаване към раздела в %1</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>На пауза при %1 %</translation>
     </message>
 </context>
 <context>

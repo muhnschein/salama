@@ -56,6 +56,23 @@ class DownloadModel : public QAbstractListModel
     // nothing is coming.
     Q_PROPERTY(int runningCount READ runningCount NOTIFY runningChanged)
     Q_PROPERTY(int runningProgress READ runningProgress NOTIFY runningChanged)
+    // How many downloads ended while the ones still coming have been coming, and how
+    // many of those failed: what the strip over the page counts beside them
+    // (docs/DECISIONS/0038-download-notice.md). A batch, not the fifty the list keeps,
+    // and 0 while nothing is coming, when the strip is away.
+    Q_PROPERTY(int finishedCount READ finishedCount NOTIFY finishedChanged)
+    Q_PROPERTY(int failedCount READ failedCount NOTIFY finishedChanged)
+    // How long the downloads still coming will take, rounded to whole seconds, at the
+    // pace they have been going: what the strip over the page says under its ring
+    // (docs/DECISIONS/0038-download-notice.md). Working from their sizes would be
+    // surer, but the engine reports a percentage alone (EmbedliteDownloadManager.js);
+    // a pace is two percentages and the time between them. -1 while it cannot be said:
+    // nothing is coming, or nothing has moved yet. Not time: the estimate moves with
+    // progress, and is only asked of.
+    Q_PROPERTY(qint64 etaSeconds READ etaSeconds NOTIFY etaChanged)
+    // The one download still coming, by name: what the strip shows instead of how many
+    // when there is no asking which. Empty while none or several are coming.
+    Q_PROPERTY(QString runningName READ runningName NOTIFY runningChanged)
 
 public:
     // Unscoped, as TabModel::MediaState is: QML reads `DownloadModel.Running`.
@@ -64,7 +81,11 @@ public:
         Running,
         Done,
         Failed,
-        Canceled
+        Canceled,
+        // The engine's cancel is a pause: the partial file stays, so the same download
+        // can start again (docs/DECISIONS/0038-download-notice.md). This status is for
+        // the list's sake, remembered here as long as the row is.
+        Paused
     };
     Q_ENUM(Status)
 
@@ -99,6 +120,15 @@ public:
         Status status = Running;
         // Milliseconds since the epoch.
         qint64 started = 0;
+        // When it ended, in milliseconds since the epoch, or 0 while it is coming or
+        // from an earlier run. Not written down: it is only true for this process.
+        qint64 finished = 0;
+        // How fast it has been coming, and when it last said so: the pace the estimate
+        // of the time left works from, in percent of the file per second, over the
+        // milliseconds since the epoch the last progress report was at. Like finished,
+        // only true for this process, and reset when the download starts over.
+        qreal rate = 0;
+        qint64 progressAt = 0;
     };
 
     // The directory is made here, parents and all, if it is missing: the engine saves
@@ -115,6 +145,12 @@ public:
     QString directory() const;
     int runningCount() const;
     int runningProgress() const;
+    // Downloads that ended while the ones still coming have been coming, and how many
+    // of those failed. A download forgotten is not among them: it is gone from the list.
+    int finishedCount() const;
+    int failedCount() const;
+    qint64 etaSeconds() const;
+    QString runningName() const;
     // The rows as the list shows them, newest first, for the address bar's suggestions
     // (docs/DECISIONS/0027-omnibar.md).
     const QList<Download> &downloads() const;
@@ -142,9 +178,33 @@ public:
     // gone: what a list other than this one keeps to find it again by.
     Q_INVOKABLE int rowOf(int downloadId) const;
 
+    // What a row's menu asks of a download, by the id that lasts: pause -- the engine's
+    // cancel, which keeps the partial file, so resuming can start again from it;
+    // resume -- the engine's retry; cancel -- stop, and leave the row to say so. The
+    // engine is told, and the row's status is the list's to keep. A row that is not
+    // where the menu sees it -- already gone -- is left alone.
+    Q_INVOKABLE void pause(int downloadId);
+    Q_INVOKABLE void resume(int downloadId);
+    Q_INVOKABLE void cancel(int downloadId);
+    // The saved file of a download that has arrived: whether it is still there, and
+    // removing it from the folder. The row stays, and no longer has a file to open.
+    Q_INVOKABLE bool hasFile(int downloadId);
+    Q_INVOKABLE void deleteFile(int downloadId);
+
 signals:
     void countChanged();
     void runningChanged();
+    // What finishedCount and failedCount stand for has moved: a download ended, or one
+    // that did was forgotten. Said beside runningChanged, which a download ending moves
+    // too (docs/DECISIONS/0038-download-notice.md).
+    void finishedChanged();
+    // What the estimate of the time left reads has moved. Said with the changes that
+    // can move the estimate: a download's progress, and which rows there are.
+    void etaChanged();
+    // Something the engine must be told, as NotificationPermissions::engineRequest:
+    // the topic to observe and the payload to send. The browsing page, which has the
+    // engine, sends it (docs/ARCHITECTURE.md).
+    void engineRequest(const QString &topic, const QVariant &payload);
 
 private:
     void start(int engineId, const QVariantMap &message);
@@ -153,6 +213,12 @@ private:
     void setStatus(int row, Status status);
     void changed(int row, const QVector<int> &roles);
     void dropOldest();
+    // When the earliest download still coming started, or 0 when nothing is: what the
+    // finished counts are measured from.
+    qint64 earliestRunning() const;
+    // How long the downloads still coming will take, at the pace of the one that has
+    // the furthest to go, in whole seconds, or -1 where no pace is known.
+    qint64 estimate() const;
 
     void load();
     void insert(const Download &download) const;

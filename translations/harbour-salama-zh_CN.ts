@@ -301,6 +301,29 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>不到一分钟</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>还剩 %1 分钟</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>还剩 %1 小时</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -317,6 +340,26 @@
     <message>
         <source>Cancelled</source>
         <translation>已取消</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>暂停</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>继续</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>删除文件</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>暂停在 %1%</translation>
     </message>
 </context>
 <context>
@@ -569,6 +612,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>切换到 %1 中的标签页</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>暂停在 %1%</translation>
     </message>
 </context>
 <context>

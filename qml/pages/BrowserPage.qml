@@ -42,6 +42,8 @@ WebViewPage {
     readonly property real viewHeight: fullHeight - (navigationBar.compact
                                                      || navigationBar.resizing
                                                      ? navigationBar.slimHeight : barHeight)
+    // How much of the page's foot the download strip takes while it is up (0038).
+    readonly property real downloadInset: downloadBanner.visible ? downloadBanner.height : 0
 
     // What the display's own cutout takes at the top of the screen, and how much of
     // it this application keeps out of. Silica reports the cutout's whole rectangle,
@@ -281,6 +283,13 @@ WebViewPage {
         onCountChanged: browserPage.ensureTab()
     }
 
+    // A download's menu asked the engine -- pause, resume, cancel -- and the model hands
+    // the asking on, as NotificationPermissions does: only this page has the engine.
+    Connections {
+        target: DownloadModel
+        onEngineRequest: WebEngine.notifyObservers(topic, payload)
+    }
+
     TabDeck {
         id: deck
 
@@ -307,10 +316,8 @@ WebViewPage {
                    ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
         }
 
-        // The engine gets the page between the cutout and the bar, and no
-        // further. Letting it run on behind a bar that scrolled away was the
-        // other answer, and on device the foot of a page was still out of reach
-        // often enough to be a defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
+        // The engine gets the page between the cutout and the bar, and no further
+        // (docs/DECISIONS/0009-navigation-bar-gesture.md).
         Item {
             id: viewArea
 
@@ -320,7 +327,7 @@ WebViewPage {
                 right: parent.right
             }
             y: browserPage.cutoutInset
-            height: browserPage.viewHeight - browserPage.cutoutInset
+            height: browserPage.viewHeight - browserPage.cutoutInset - browserPage.downloadInset
 
             // One WebView per tab shown this session; restored tabs stay unloaded
             // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
@@ -382,9 +389,17 @@ WebViewPage {
             view: browserPage.currentView
         }
 
-        // The pane above the bar while the address is edited into something to look
-        // for, or opened for a new tab: from under the cutout to the bar, over the
-        // page. After both bars, so that nothing of theirs is drawn over it.
+        // The downloads happening, and the page ends above the strip (0038).
+        DownloadBanner {
+            id: downloadBanner
+
+            width: parent.width
+            y: navigationBar.y - height
+            suppressed: navigationBar.editing || findBar.active
+        }
+
+        // The pane above the bar while the address is edited, from under the cutout to the
+        // bar, over the page, after both bars so nothing of theirs is drawn over it.
         OmnibarView {
             id: omnibar
 

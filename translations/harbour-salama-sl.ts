@@ -316,6 +316,35 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
+    </message>
+    <message>
+        <source>Less than a minute left</source>
+        <translation>Manj kot minuta</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 minute(s) left</source>
+        <translation>
+            <numerusform>Ostala je %1 minuta</numerusform>
+            <numerusform>Ostala sta %1 minuti</numerusform>
+            <numerusform>Ostale so %1 minute</numerusform>
+            <numerusform>Ostalih je %1 minut</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1 hour(s) left</source>
+        <translation>
+            <numerusform>Ostala je %1 ura</numerusform>
+            <numerusform>Ostali sta %1 uri</numerusform>
+            <numerusform>Ostale so %1 ure</numerusform>
+            <numerusform>Ostalih je %1 ur</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -332,6 +361,26 @@
     <message>
         <source>Cancelled</source>
         <translation>Preklicano</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Premor</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Nadaljuj</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Prekliči</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Izbriši datoteko</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Premorjeno pri %1 %</translation>
     </message>
 </context>
 <context>
@@ -599,6 +648,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Preklopi na zavihek v %1</translation>
+    </message>
+    <message>
+        <source>Paused at %1%</source>
+        <translation>Premorjeno pri %1 %</translation>
     </message>
 </context>
 <context>
