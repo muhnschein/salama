@@ -9,7 +9,6 @@ CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DSALAMA_COVERAGE=ON
 COVERAGE_MIN ?= 80
 
 CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
-TS_FILES := translations/harbour-salama.ts translations/harbour-salama-fi.ts
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
         harbour-check harbour-selftest sonar-selftest sonar-reports lint check \
@@ -85,12 +84,10 @@ lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
 check: lint build test coverage tidy
 	@echo "check: all gates green"
 
-# The application's own sources only: left to itself lupdate follows src/reader/reader.qrc
-# into Mozilla's Readability, which has no strings of ours and syntax its parser rejects.
-LUPDATE_EXTENSIONS := cpp,h,qml
-
+# Regenerate every catalog from the qsTr() calls in qml/ and src/. The tone the
+# strings are written in, and how the catalogs are guarded, are in docs/TRANSLATING.md.
 translations:
-	lupdate -no-obsolete -locations none -extensions $(LUPDATE_EXTENSIONS) qml src -ts $(TS_FILES)
+	scripts/update-translations.sh
 
 clean:
 	rm -rf $(BUILD)

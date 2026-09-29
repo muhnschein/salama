@@ -101,7 +101,8 @@ Adopted from postivene and vuo. The governing rule: **`make check` runs exactly 
 - Engine quirks are isolated in C++ with a comment naming the upstream issue. None in QML.
 - One responsibility per QML file. No file over 400 lines without an ADR.
 - No dead code, no commented-out code, no TODO without an issue number.
-- Every user-visible string translatable; catalogs current and compiling.
+- Every user-visible string translatable, and translated into the forty languages Sailfish
+  OS ships in; catalogs current, complete and compiling (`TRANSLATING.md`).
 
 ### Tests
 1. **C++ unit tests** (QtTest) for every model. Coverage of `src/` ≥ 80%, enforced in CI.

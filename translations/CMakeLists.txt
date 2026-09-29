@@ -7,10 +7,15 @@ if(NOT LRELEASE_EXECUTABLE)
     message(FATAL_ERROR "lrelease not found; install qt5-qttools-linguist")
 endif()
 
-set(TS_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama.ts
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-fi.ts
+# The source catalog harbour-salama.ts is not compiled: lupdate reads the strings
+# from it, and it is never loaded as a translation. Every language catalog beside
+# it is, one .qm each, which is what QTranslator loads at startup.
+file(GLOB TS_FILES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-*.ts
 )
+if(NOT TS_FILES)
+    message(FATAL_ERROR "no translations/harbour-salama-*.ts found")
+endif()
 
 set(QM_FILES)
 foreach(ts ${TS_FILES})

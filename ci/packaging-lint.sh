@@ -50,7 +50,7 @@ fi
 
 # 3. Shell scripts clean
 if have shellcheck; then
-    mapfile -t scripts < <(find "$ROOT/ci" "$ROOT/icons" -name '*.sh' | sort)
+    mapfile -t scripts < <(find "$ROOT/ci" "$ROOT/icons" "$ROOT/scripts" -name '*.sh' | sort)
     shellcheck --severity=style "${scripts[@]}" || fail shellcheck ci/ "shellcheck reported findings"
 fi
 
@@ -63,9 +63,8 @@ sources_of() { # catalogue
 }
 if have lrelease; then
     tmp=$(mktemp -d)
-    for ts in "$ROOT"/translations/*.ts; do
-        lrelease -silent "$ts" -qm "$tmp/$(basename "${ts%.ts}").qm" || fail translations "translations/$(basename "$ts")" "lrelease failed"
-    done
+    "$ROOT/scripts/release-translations.sh" "$tmp" >/dev/null \
+        || fail translations translations/ "a catalog does not compile cleanly with lrelease"
     rm -rf "$tmp"
 fi
 for ts in "$ROOT"/translations/*.ts; do

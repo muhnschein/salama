@@ -8,6 +8,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- The whole interface is translated into the forty languages Sailfish OS ships in, not just Finnish. A string added to the source is unfinished in every catalog until it is translated, and `make check` refuses to pass while one is (`docs/TRANSLATING.md`).
 - A new cover: where you were -- the site and title of the tab in front -- over the app's bolt drawn as faint dots in the ambience's colour. While something downloads, a ring fills as it goes, with the percentage in it; while the tab in front plays, the cover shows what plays, with its cover art or the video's picture when the page gives one, and says whether it plays or is paused. With no tab open, the dotted bolt alone. Nothing on it moves, and the quick action and the mute stay along its foot.
 - Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
 - The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic; a reader who had it chosen gets the new look, and one who chose Light, Sepia or Dark keeps it.

@@ -33,7 +33,8 @@ Missing tools are SKIP locally and failures in CI (`PACKAGING_LINT_STRICT=1`).
 
 ## Test tiers
 
-1. C++ unit tests (`tests/tst_*.cpp`, QtTest) for every model, on temporary directories.
+1. C++ unit tests (`tests/tst_*.cpp`, QtTest) for every model, on temporary directories,
+   and `tests/tst_translations.cpp` for the catalogs (`TRANSLATING.md`).
 2. QML load tests (`tests/tst_qmlload.cpp`) load the real `qml/` against
    `tests/silica-stubs/` and drive pages by `objectName`. Stubs imitate no layout.
 3. Static QML tests (`tests/tst_qmlstatic.cpp`): `Sailfish.WebView` only where §5 allows,

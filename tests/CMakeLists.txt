@@ -59,6 +59,7 @@ foreach(test
     tst_core
     tst_qmlload
     tst_qmlstatic
+    tst_translations
 )
     salama_add_test(${test})
 endforeach()
