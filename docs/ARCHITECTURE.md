@@ -55,8 +55,8 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
-  preferences each tracking-protection level and each choice of website colours stands
-  for, which the browsing page's `EnginePreferences` writes through
+  preferences each tracking-protection level, each choice of website colours and each
+  default of Site permissions stands for, which the browsing page's `EnginePreferences` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`,
   `0035-website-colours.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
@@ -72,6 +72,13 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
 - `NotificationPermissions` — the sites allowed and blocked from sending notifications,
   as the engine's permission manager keeps them, the allowed first, which Settings >
   Notifications lists under a heading each and the main page counts.
+- `SitePermissions` (and `SiteExceptions`, one kind's view of it) — the same engine's
+  records of every other kind a reader may decide for a site -- pop-ups, cookies,
+  location, camera, microphone, tracking protection's allow list -- which Settings > Site
+  permissions and a site's details read and write. It shares `EnginePermissions`, the
+  one reading of the engine's list and the one way to ask it, with
+  `NotificationPermissions`, and `Core` keeps the two in step
+  (`DECISIONS/0039-site-permissions.md`, `0040-site-details.md`).
 - `WebNotifications` — the Notifications API for the pages: the script that puts the
   browser's Notification in each page, the frame script that hands on what it says with
   the page's origin, the question a page asks, and what each page shows, which
@@ -157,7 +164,9 @@ Location: `QStandardPaths::AppDataLocation` (Sailjail: `~/.local/share/<org>/<ap
 file `salama.sqlite`. Settings: `AppConfigLocation/salama.conf` (INI). Tab previews are
 PNG files in `CacheLocation`, named per capture and removed with the tab, and so are
 the icons of the notifications shown, in its `notifications` folder, removed as each
-closes. The sites' notification permissions are the engine's, in its profile. Nothing else
+closes. The sites' permissions, notifications' and the rest, are the engine's, in its
+profile; the defaults they are exceptions to are `SitePermissionSettings`' keys in
+`salama.conf`. Nothing else
 is written. Schema version is `PRAGMA user_version` (`Storage::SchemaVersion`, currently
 9); a newer database than the build refuses to open rather than corrupt. Migration asks
 the table for its columns rather than trusting the version number, so a database from
