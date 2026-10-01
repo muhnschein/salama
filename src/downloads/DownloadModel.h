@@ -8,6 +8,7 @@
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 #include <QVector>
 
@@ -40,6 +41,18 @@ class Storage;
 // The id is the engine's, counted from 1 each time the engine starts, so it names a
 // download only for as long as this process runs; the rows carry an id of their own,
 // which lasts. A dl-start for an id already seen is the same download started again.
+//
+// What the engine is told goes the other way, on topic "embedui:download", and the
+// model only says it -- engineRequest() -- for the browsing page to hand to WebEngine,
+// which is kept to that page (docs/DECISIONS/0038-download-status.md):
+//
+//  * cancelDownload {id}: Gecko's Download.cancel(), which keeps what has arrived
+//  * retryDownload {id}: Download.start(), which goes on from there where it can
+//  * addDownload {from, to}: a new download of the same file, for one the engine forgot
+//
+// So a download is paused by cancelling it and resumed by starting it again; the engine
+// has no stop that is not also a pause, and the list says "Paused" for what it sends as
+// dl-cancel.
 class DownloadModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -56,6 +69,19 @@ class DownloadModel : public QAbstractListModel
     // nothing is coming.
     Q_PROPERTY(int runningCount READ runningCount NOTIFY runningChanged)
     Q_PROPERTY(int runningProgress READ runningProgress NOTIFY runningChanged)
+    // The downloads the browsing page's banner speaks for: the ones of this run that
+    // have not arrived -- coming, paused or failed -- and have not been swiped away
+    // (dismissTray()), newest first. How many, how many of those failed and how many
+    // are paused, their names, and the newest one's state and size, which is what the
+    // banner shows when it is the only one. Progress is the mean of their percentages,
+    // as runningProgress is, failed ones left out.
+    Q_PROPERTY(int trayCount READ trayCount NOTIFY trayChanged)
+    Q_PROPERTY(int trayFailed READ trayFailed NOTIFY trayChanged)
+    Q_PROPERTY(int trayPaused READ trayPaused NOTIFY trayChanged)
+    Q_PROPERTY(int trayProgress READ trayProgress NOTIFY trayChanged)
+    Q_PROPERTY(QStringList trayNames READ trayNames NOTIFY trayChanged)
+    Q_PROPERTY(int trayStatus READ trayStatus NOTIFY trayChanged)
+    Q_PROPERTY(double traySize READ traySize NOTIFY trayChanged)
 
 public:
     // Unscoped, as TabModel::MediaState is: QML reads `DownloadModel.Running`.
@@ -78,7 +104,12 @@ public:
         Size,
         Progress,
         Status,
-        Started
+        Started,
+        // The engine still has it, so pausing or resuming it goes on from where it was:
+        // one of this run's that has not arrived.
+        Resumable,
+        // It has arrived, and its file is still where it was saved.
+        FileExists
     };
 
     // The oldest go beyond this many, from the list and from the database.
@@ -99,6 +130,8 @@ public:
         Status status = Running;
         // Milliseconds since the epoch.
         qint64 started = 0;
+        // Swiped off the banner; it comes back when its state changes. Not stored.
+        bool dismissed = false;
     };
 
     // The directory is made here, parents and all, if it is missing: the engine saves
@@ -115,6 +148,13 @@ public:
     QString directory() const;
     int runningCount() const;
     int runningProgress() const;
+    int trayCount() const;
+    int trayFailed() const;
+    int trayPaused() const;
+    int trayProgress() const;
+    QStringList trayNames() const;
+    int trayStatus() const;
+    double traySize() const;
     // The rows as the list shows them, newest first, for the address bar's suggestions
     // (docs/DECISIONS/0027-omnibar.md).
     const QList<Download> &downloads() const;
@@ -125,9 +165,31 @@ public:
     // percentage that is not a number as the engine sends one (engine/EngineData.h).
     Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
 
-    // Forget rows. The files stay where they are.
+    // Forget rows. The files stay where they are; a download still coming is paused
+    // first, so that nothing goes on arriving that no list knows of.
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void clear();
+    // Forget the rows of the downloads that have arrived.
+    Q_INVOKABLE void clearFinished();
+
+    // Pause a download that is coming, and resume one that is paused or failed: from
+    // where it was when the engine still has it, and otherwise anew, in a row of its
+    // own that takes this one's place. Anything else is left as it is.
+    Q_INVOKABLE void pause(int row);
+    Q_INVOKABLE void resume(int row);
+
+    // Delete a download's file and forget its row. Only a file that has arrived, and
+    // only under the downloads folder's own parent -- ~/Downloads, where the engine
+    // saves when the folder is gone -- which is where the Downloads permission lets
+    // the application write. Answers whether the row went: a file already gone takes
+    // its row with it, one that cannot be deleted leaves both.
+    Q_INVOKABLE bool deleteFile(int row);
+
+    // Say again whether each file is still there: something else may have deleted one.
+    Q_INVOKABLE void refreshFiles();
+
+    // Take what the banner shows off it, until a download starts or changes state.
+    Q_INVOKABLE void dismissTray();
     // The rows of downloads started at or after a time, in milliseconds since the
     // epoch, as HistoryModel::clearSince() takes it, but for any still coming: what
     // clearing the history takes of the list of downloads.
@@ -141,10 +203,18 @@ public:
     // The row a download is on, by the id of its own that lasts, or -1 once it has
     // gone: what a list other than this one keeps to find it again by.
     Q_INVOKABLE int rowOf(int downloadId) const;
+    // A number of bytes as people read one: "512 B", "7.4 MB", "12 MB", in steps of
+    // 1024 and with a decimal below ten, in the locale's own digits.
+    Q_INVOKABLE static QString formatSize(double bytes);
 
 signals:
     void countChanged();
     void runningChanged();
+    void trayChanged();
+    // Something to tell the engine, for WebEngine.notifyObservers().
+    void engineRequest(const QString &topic, const QVariantMap &data);
+    // A download arrived: what the banner says for a moment.
+    void finished(int downloadId, const QString &name);
 
 private:
     void start(int engineId, const QVariantMap &message);
@@ -152,6 +222,9 @@ private:
     void finish(int row, const QString &path);
     void setStatus(int row, Status status);
     void changed(int row, const QVector<int> &roles);
+    void recount();
+    void request(const QVariantMap &data);
+    void removeRow(int row);
     void dropOldest();
 
     void load();
@@ -165,6 +238,20 @@ private:
     int m_nextId = 1;
     int m_runningCount = 0;
     int m_runningProgress = 0;
+
+    struct Tray
+    {
+        int count = 0;
+        int failed = 0;
+        int paused = 0;
+        int progress = 0;
+        QStringList names;
+        int status = Running;
+        qint64 size = 0;
+
+        bool operator==(const Tray &other) const;
+    };
+    Tray m_tray;
 };
 
 } // namespace Salama

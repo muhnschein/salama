@@ -252,6 +252,12 @@ WebViewPage {
         }
     }
 
+    // And what the downloads' list and banner ask of it (docs/DECISIONS/0038-download-status.md).
+    Connections {
+        target: DownloadModel
+        onEngineRequest: WebEngine.notifyObservers(topic, data)
+    }
+
     Timer {
         id: trimTimer
 
@@ -373,6 +379,14 @@ WebViewPage {
             onPageTouchStarted: browserPage.touchPage(position, "start")
             onPageTouchMoved: browserPage.touchPage(position, "move")
             onPageTouchEnded: browserPage.touchPage(position, "end")
+        }
+
+        // What the downloads are doing, just above the bar, over the foot of the page.
+        DownloadBanner {
+            width: parent.width
+            y: navigationBar.y - height
+            allowed: !navigationBar.editing && !findBar.active && !browserPage.tabsOpen
+                     && !browserPage.dragging
         }
 
         FindBar {

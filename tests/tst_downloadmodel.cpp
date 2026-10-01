@@ -4,6 +4,7 @@
 #include "storage/Storage.h"
 
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QMetaEnum>
@@ -41,6 +42,18 @@ private slots:
     void rowOf();
     void directory();
     void withoutDatabase();
+    void pauseAndResume();
+    void downloadAgain();
+    void removeAndClearPause();
+    void clearFinished();
+    void deleteFile();
+    void deleteFileStaysInDownloads();
+    void fileExists();
+    void formatSize_data();
+    void formatSize();
+    void tray();
+    void trayDismissed();
+    void finished();
 };
 
 namespace {
@@ -97,6 +110,12 @@ int storedStatus(const Storage &storage, int downloadId)
     return query.next() ? query.value(0).toInt() : -1;
 }
 
+// What a change of state changes: the state, and whether it can be resumed.
+QVector<int> statusRoles()
+{
+    return {roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable)};
+}
+
 QVector<int> changedRoles(const QSignalSpy &spy)
 {
     return spy.last().at(2).value<QVector<int>>();
@@ -123,7 +142,9 @@ void tst_downloadmodel::topicRolesAndStatuses()
     QCOMPARE(roles.value(roleId(DownloadModel::Role::Progress)), QByteArray("progress"));
     QCOMPARE(roles.value(roleId(DownloadModel::Role::Status)), QByteArray("status"));
     QCOMPARE(roles.value(roleId(DownloadModel::Role::Started)), QByteArray("started"));
-    QCOMPARE(roles.count(), 9);
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::Resumable)), QByteArray("resumable"));
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::FileExists)), QByteArray("fileExists"));
+    QCOMPARE(roles.count(), 11);
 
     // QML compares a row's status with these by name, and the database keeps them as
     // numbers: neither may move.
@@ -391,9 +412,11 @@ void tst_downloadmodel::done()
     QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("a(1).pdf"));
     QCOMPARE(changeSpy.count(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>({roleId(DownloadModel::Role::Status),
-                                                    roleId(DownloadModel::Role::Progress),
-                                                    roleId(DownloadModel::Role::Path)}));
+    QCOMPARE(
+        changedRoles(changeSpy),
+        QVector<int>({roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable),
+                      roleId(DownloadModel::Role::FileExists),
+                      roleId(DownloadModel::Role::Progress), roleId(DownloadModel::Role::Path)}));
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Done));
 
     // Said twice, it changes nothing the second time.
@@ -406,7 +429,9 @@ void tst_downloadmodel::done()
     model.observe(Topic, message(QStringLiteral("dl-done"), 2));
     QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("b.pdf"));
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
+    QCOMPARE(changedRoles(changeSpy), QVector<int>({roleId(DownloadModel::Role::Status),
+                                                    roleId(DownloadModel::Role::Resumable),
+                                                    roleId(DownloadModel::Role::FileExists)}));
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Done));
 }
 
@@ -424,7 +449,7 @@ void tst_downloadmodel::failAndCancel()
              static_cast<int>(DownloadModel::Failed));
     QCOMPARE(changeSpy.count(), 1);
     QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
+    QCOMPARE(changedRoles(changeSpy), statusRoles());
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Failed));
 
     model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
@@ -432,7 +457,7 @@ void tst_downloadmodel::failAndCancel()
              static_cast<int>(DownloadModel::Canceled));
     QCOMPARE(changeSpy.count(), 2);
     QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 0);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
+    QCOMPARE(changedRoles(changeSpy), statusRoles());
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Canceled));
 
     model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
@@ -462,7 +487,7 @@ void tst_downloadmodel::restart()
     // Resumed from where it stopped; the engine says so if it starts over.
     QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Progress)).toInt(), 30);
     QCOMPARE(changeSpy.count(), 1);
-    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::Status)});
+    QCOMPARE(changedRoles(changeSpy), statusRoles());
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Running));
 
     // Running already, a repeated start changes nothing.
@@ -867,6 +892,534 @@ void tst_downloadmodel::withoutDatabase()
              static_cast<int>(DownloadModel::Failed));
     model.remove(0);
     QCOMPARE(model.count(), 0);
+}
+
+namespace {
+
+const QString RequestTopic = QStringLiteral("embedui:download");
+
+// What the model asked the engine for, the last time.
+QVariantMap lastRequest(const QSignalSpy &spy)
+{
+    return spy.last().at(1).toMap();
+}
+
+QVariantMap engineRequest(const QString &msg, int id)
+{
+    return {{QStringLiteral("msg"), msg}, {QStringLiteral("id"), id}};
+}
+
+void writeFile(const QString &path)
+{
+    QDir().mkpath(QFileInfo(path).absolutePath());
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write("data");
+}
+
+// A download started and finished into a file of the test's own.
+void arrive(DownloadModel &model, int engineId, const QString &path)
+{
+    QVariantMap start = startMessage(engineId, QFileInfo(path).fileName());
+    start.insert(QStringLiteral("targetPath"), path);
+    model.observe(Topic, start);
+    QVariantMap done = message(QStringLiteral("dl-done"), engineId);
+    done.insert(QStringLiteral("targetPath"), path);
+    model.observe(Topic, done);
+}
+
+} // namespace
+
+// The engine pauses a download by cancelling it and resumes it by starting it again;
+// the model asks, by the engine's id, and shows what the engine then says.
+void tst_downloadmodel::pauseAndResume()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy requests(&model, &DownloadModel::engineRequest);
+    model.observe(Topic, startMessage(4, QStringLiteral("a.pdf")));
+    model.observe(Topic, startMessage(9, QStringLiteral("b.pdf")));
+    QVERIFY(!role(model, 0, roleId(DownloadModel::Role::Resumable)).toBool());
+
+    // No row, nothing asked; nor resuming one still coming.
+    model.pause(-1);
+    model.pause(2);
+    model.resume(-1);
+    model.resume(2);
+    model.resume(0);
+    QCOMPARE(requests.count(), 0);
+
+    model.pause(1);
+    QCOMPARE(requests.count(), 1);
+    QCOMPARE(requests.last().at(0).toString(), RequestTopic);
+    QCOMPARE(lastRequest(requests), engineRequest(QStringLiteral("cancelDownload"), 4));
+    // Asked, not done: the row says Paused when the engine says so.
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Running));
+    model.observe(Topic, progressMessage(4, 30.0));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 4));
+    QVERIFY(role(model, 1, roleId(DownloadModel::Role::Resumable)).toBool());
+    // Paused, it is not paused again.
+    model.pause(1);
+    QCOMPARE(requests.count(), 1);
+
+    model.resume(1);
+    QCOMPARE(requests.count(), 2);
+    QCOMPARE(lastRequest(requests), engineRequest(QStringLiteral("retryDownload"), 4));
+    model.observe(Topic, startMessage(4, QStringLiteral("a.pdf")));
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Running));
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Progress)).toInt(), 30);
+    QCOMPARE(model.count(), 2);
+
+    // A failed one is tried again the same way.
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 9));
+    QVERIFY(role(model, 0, roleId(DownloadModel::Role::Resumable)).toBool());
+    model.resume(0);
+    QCOMPARE(lastRequest(requests), engineRequest(QStringLiteral("retryDownload"), 9));
+
+    // One that has arrived is neither paused nor resumed.
+    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
+    QVERIFY(!role(model, 1, roleId(DownloadModel::Role::Resumable)).toBool());
+    model.pause(1);
+    model.resume(1);
+    QCOMPARE(requests.count(), 3);
+}
+
+// One of an earlier run is fetched anew from where it came from into where it was going,
+// and the engine's dl-start for it makes the row that takes its place.
+void tst_downloadmodel::downloadAgain()
+{
+    QTemporaryDir dir;
+    {
+        Storage storage(dir.path());
+        DownloadModel model(storage, dir.path());
+        model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+        model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+        model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
+        QVariantMap nowhere = startMessage(3, QStringLiteral("c.pdf"));
+        nowhere.remove(QStringLiteral("targetPath"));
+        model.observe(Topic, nowhere);
+        QVariantMap unsourced = startMessage(4, QStringLiteral("d.pdf"));
+        unsourced.remove(QStringLiteral("sourceUrl"));
+        model.observe(Topic, unsourced);
+        arrive(model, 5, dir.filePath(QStringLiteral("e.pdf")));
+    }
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy requests(&model, &DownloadModel::engineRequest);
+    QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+    QCOMPARE(model.count(), 5);
+    // Read back, none can go on from where it was.
+    for (int row = 0; row < model.count(); ++row) {
+        QVERIFY(!role(model, row, roleId(DownloadModel::Role::Resumable)).toBool());
+    }
+
+    // Arrived, there is nothing to fetch again; with nowhere to fetch it from, neither.
+    model.resume(0);
+    model.resume(1);
+    QCOMPARE(requests.count(), 0);
+    QCOMPARE(model.count(), 5);
+
+    // Stopped (paused in an earlier run), it is fetched again and its row goes.
+    QCOMPARE(role(model, 3, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.pdf"));
+    model.resume(3);
+    QCOMPARE(requests.count(), 1);
+    QCOMPARE(requests.last().at(0).toString(), RequestTopic);
+    QCOMPARE(lastRequest(requests),
+             QVariantMap({{QStringLiteral("msg"), QStringLiteral("addDownload")},
+                          {QStringLiteral("from"), QStringLiteral("https://files.example/b.pdf")},
+                          {QStringLiteral("to"), Downloads + QStringLiteral("b.pdf")}}));
+    QCOMPARE(model.count(), 4);
+    QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(model.rowOf(2), -1);
+    QCOMPARE(storedStatus(storage, 2), -1);
+
+    // Failed, the same; and with no path, it goes into the downloads folder by name.
+    QCOMPARE(role(model, 2, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("c.pdf"));
+    model.resume(2);
+    QCOMPARE(lastRequest(requests).value(QStringLiteral("to")).toString(),
+             QDir(dir.path()).filePath(QStringLiteral("c.pdf")));
+    QCOMPARE(model.count(), 3);
+
+    // The engine's start for it is a row of this run's.
+    model.observe(Topic, startMessage(1, QStringLiteral("b.pdf")));
+    QCOMPARE(model.count(), 4);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Status)).toInt(),
+             static_cast<int>(DownloadModel::Running));
+}
+
+// Forgetting a download still coming pauses it first, so that nothing goes on arriving
+// that no list knows of.
+void tst_downloadmodel::removeAndClearPause()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy requests(&model, &DownloadModel::engineRequest);
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+
+    // Failed, there is nothing to pause.
+    model.remove(0);
+    QCOMPARE(requests.count(), 0);
+    model.remove(0);
+    QCOMPARE(requests.count(), 1);
+    QCOMPARE(lastRequest(requests), engineRequest(QStringLiteral("cancelDownload"), 1));
+    QCOMPARE(model.count(), 0);
+
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
+    model.observe(Topic, startMessage(5, QStringLiteral("e.pdf")));
+    model.clear();
+    QCOMPARE(requests.count(), 3);
+    QCOMPARE(requests.at(1).at(1).toMap(), engineRequest(QStringLiteral("cancelDownload"), 5));
+    QCOMPARE(requests.at(2).at(1).toMap(), engineRequest(QStringLiteral("cancelDownload"), 3));
+}
+
+// Only the rows of downloads that have arrived; the rest still want a decision.
+void tst_downloadmodel::clearFinished()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+    model.clearFinished();
+    QCOMPARE(countSpy.count(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 3));
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    QCOMPARE(countSpy.count(), 4);
+    QSignalSpy runningSpy(&model, &DownloadModel::runningChanged);
+    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
+
+    model.clearFinished();
+    QCOMPARE(model.count(), 2);
+    QCOMPARE(countSpy.count(), 5);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("d.pdf"));
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("b.pdf"));
+    QCOMPARE(rowsInDatabase(storage), 2);
+    QCOMPARE(storedStatus(storage, 1), -1);
+    QCOMPARE(storedStatus(storage, 3), -1);
+    // What is coming and what the banner says are as they were.
+    QCOMPARE(runningSpy.count(), 0);
+    QCOMPARE(model.trayCount(), 2);
+    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("d.pdf"), QStringLiteral("b.pdf")}));
+    QCOMPARE(traySpy.count(), 0);
+
+    model.clearFinished();
+    QCOMPARE(countSpy.count(), 5);
+}
+
+void tst_downloadmodel::deleteFile()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const QString folder = dir.filePath(QStringLiteral("Downloads/Salama"));
+    DownloadModel model(storage, folder);
+    const QString kept = folder + QStringLiteral("/kept.pdf");
+    const QString fallback = dir.filePath(QStringLiteral("Downloads/fallback.pdf"));
+    const QString gone = folder + QStringLiteral("/gone.pdf");
+    writeFile(kept);
+    writeFile(fallback);
+    arrive(model, 1, gone);
+    arrive(model, 2, fallback);
+    arrive(model, 3, kept);
+    model.observe(Topic, startMessage(4, QStringLiteral("coming.pdf")));
+    QSignalSpy countSpy(&model, &DownloadModel::countChanged);
+
+    // Nothing to delete: no row, or no file yet.
+    QVERIFY(!model.deleteFile(-1));
+    QVERIFY(!model.deleteFile(model.count()));
+    QVERIFY(!model.deleteFile(0));
+    QCOMPARE(model.count(), 4);
+
+    // Its file and its row.
+    QCOMPARE(role(model, 1, roleId(DownloadModel::Role::Name)).toString(),
+             QStringLiteral("kept.pdf"));
+    QVERIFY(model.deleteFile(1));
+    QVERIFY(!QFileInfo::exists(kept));
+    QCOMPARE(model.count(), 3);
+    QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(storedStatus(storage, 3), -1);
+
+    // One the engine saved in ~/Downloads, the folder being gone, is as much the
+    // application's to delete.
+    QVERIFY(model.deleteFile(1));
+    QVERIFY(!QFileInfo::exists(fallback));
+
+    // A file already gone takes only its row.
+    QVERIFY(model.deleteFile(1));
+    QCOMPARE(model.count(), 1);
+}
+
+// Nothing outside ~/Downloads is deleted, whatever the path says: not through "..", not
+// through a link, and not a folder.
+void tst_downloadmodel::deleteFileStaysInDownloads()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const QString folder = dir.filePath(QStringLiteral("Downloads/Salama"));
+    DownloadModel model(storage, folder);
+    const QString outside = dir.filePath(QStringLiteral("secret.txt"));
+    writeFile(outside);
+    const QString climbing = folder + QStringLiteral("/../../secret.txt");
+    const QString link = folder + QStringLiteral("/link.txt");
+    QVERIFY(QFile::link(outside, link));
+    const QString lookalike = dir.filePath(QStringLiteral("DownloadsElsewhere/x.txt"));
+    writeFile(lookalike);
+    const QString inner = folder + QStringLiteral("/inner");
+    QVERIFY(QDir().mkpath(inner));
+    arrive(model, 1, outside);
+    arrive(model, 2, climbing);
+    arrive(model, 3, link);
+    arrive(model, 4, lookalike);
+    arrive(model, 5, inner);
+
+    for (int row = 0; row < 5; ++row) {
+        QVERIFY2(!model.deleteFile(row), qPrintable(QString::number(row)));
+    }
+    QCOMPARE(model.count(), 5);
+    QVERIFY(QFileInfo::exists(outside));
+    QVERIFY(QFileInfo(link).isSymLink());
+    QVERIFY(QFileInfo::exists(lookalike));
+    QVERIFY(QFileInfo(inner).isDir());
+
+    // With no folder to stand under, nothing is.
+    DownloadModel rootless(storage, QString());
+    arrive(rootless, 6, outside);
+    QVERIFY(!rootless.deleteFile(0));
+    QVERIFY(QFileInfo::exists(outside));
+}
+
+void tst_downloadmodel::fileExists()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    const QString path = dir.filePath(QStringLiteral("a.pdf"));
+    QVariantMap start = startMessage(1, QStringLiteral("a.pdf"));
+    start.insert(QStringLiteral("targetPath"), path);
+    model.observe(Topic, start);
+    writeFile(path);
+    // Coming, it has no file of its own yet, whatever is there.
+    QVERIFY(!role(model, 0, roleId(DownloadModel::Role::FileExists)).toBool());
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QVERIFY(role(model, 0, roleId(DownloadModel::Role::FileExists)).toBool());
+
+    QSignalSpy changeSpy(&model, &DownloadModel::dataChanged);
+    QVERIFY(QFile::remove(path));
+    model.refreshFiles();
+    QCOMPARE(changeSpy.count(), 1);
+    QCOMPARE(changeSpy.last().at(0).value<QModelIndex>().row(), 0);
+    QCOMPARE(changeSpy.last().at(1).value<QModelIndex>().row(), 0);
+    QCOMPARE(changedRoles(changeSpy), QVector<int>{roleId(DownloadModel::Role::FileExists)});
+    QVERIFY(!role(model, 0, roleId(DownloadModel::Role::FileExists)).toBool());
+
+    // Arrived with no path, there is no file to speak of.
+    QVariantMap nowhere = startMessage(2, QStringLiteral("x"));
+    nowhere.remove(QStringLiteral("targetPath"));
+    model.observe(Topic, nowhere);
+    model.observe(Topic, message(QStringLiteral("dl-done"), 2));
+    QVERIFY(!role(model, 0, roleId(DownloadModel::Role::FileExists)).toBool());
+
+    DownloadModel empty(storage, dir.path());
+    empty.clear();
+    QSignalSpy emptySpy(&empty, &DownloadModel::dataChanged);
+    empty.refreshFiles();
+    QCOMPARE(emptySpy.count(), 0);
+}
+
+void tst_downloadmodel::formatSize_data()
+{
+    QTest::addColumn<double>("bytes");
+    QTest::addColumn<QString>("text");
+    QTest::newRow("nothing") << 0.0 << QStringLiteral("0 B");
+    QTest::newRow("bytes") << 512.0 << QStringLiteral("512 B");
+    QTest::newRow("almost a kB") << 1023.0 << QStringLiteral("1023 B");
+    QTest::newRow("a kB") << 1024.0 << QStringLiteral("1.0 kB");
+    QTest::newRow("fraction") << 1536.0 << QStringLiteral("1.5 kB");
+    QTest::newRow("tens") << 12.0 * 1024 * 1024 << QStringLiteral("12 MB");
+    QTest::newRow("megabytes") << 7.4 * 1024 * 1024 << QStringLiteral("7.4 MB");
+    QTest::newRow("gigabytes") << 3.0 * 1024 * 1024 * 1024 << QStringLiteral("3.0 GB");
+    QTest::newRow("past the last unit")
+        << 2048.0 * 1024 * 1024 * 1024 * 1024 << QStringLiteral("2048 TB");
+    QTest::newRow("negative") << -5.0 << QStringLiteral("0 B");
+    QTest::newRow("not a number") << qQNaN() << QStringLiteral("0 B");
+    QTest::newRow("infinite") << qInf() << QStringLiteral("0 B");
+}
+
+void tst_downloadmodel::formatSize()
+{
+    QFETCH(double, bytes);
+    QFETCH(QString, text);
+    QCOMPARE(DownloadModel::formatSize(bytes), text);
+}
+
+// What the banner speaks for: this run's downloads that have not arrived.
+void tst_downloadmodel::tray()
+{
+    QTemporaryDir dir;
+    {
+        // An earlier run's are never on it.
+        Storage storage(dir.path());
+        DownloadModel model(storage, dir.path());
+        model.observe(Topic, startMessage(1, QStringLiteral("old.pdf")));
+        model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+        QCOMPARE(model.trayCount(), 1);
+    }
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
+    QCOMPARE(model.trayCount(), 0);
+    QCOMPARE(model.trayNames(), QStringList());
+
+    // One, as the banner shows it alone.
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, progressMessage(1, 40.0));
+    QCOMPARE(model.trayCount(), 1);
+    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
+    QCOMPARE(model.traySize(), 2048.0);
+    QCOMPARE(model.trayProgress(), 40);
+    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("a.pdf")});
+    QCOMPARE(traySpy.count(), 2);
+
+    // More, newest first; the progress is their mean, failed ones left out.
+    QVariantMap unsized = startMessage(2, QStringLiteral("b.iso"));
+    unsized.insert(QStringLiteral("size"), 0.0);
+    model.observe(Topic, unsized);
+    model.observe(Topic, progressMessage(2, 20.0));
+    model.observe(Topic, startMessage(3, QStringLiteral("c.zip")));
+    model.observe(Topic, progressMessage(3, 90.0));
+    QCOMPARE(model.trayCount(), 3);
+    QCOMPARE(model.trayProgress(), 50);
+    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("c.zip"), QStringLiteral("b.iso"),
+                                             QStringLiteral("a.pdf")}));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 3));
+    QCOMPARE(model.trayFailed(), 1);
+    QCOMPARE(model.trayProgress(), 30);
+    // The newest is still the one the banner would show alone, failed or not.
+    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Failed));
+    QCOMPARE(model.traySize(), 2048.0);
+    // Once it has gone, the next is.
+    model.remove(0);
+    QCOMPARE(model.trayNames().value(0), QStringLiteral("b.iso"));
+    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
+    QCOMPARE(model.traySize(), 0.0);
+    model.observe(Topic, startMessage(3, QStringLiteral("c.zip")));
+    model.observe(Topic, progressMessage(3, 90.0));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 3));
+    // Paused ones are counted, and in the mean, where they stopped.
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(model.trayPaused(), 1);
+    QCOMPARE(model.trayFailed(), 1);
+    QCOMPARE(model.trayProgress(), 30);
+    QCOMPARE(model.trayCount(), 3);
+
+    // Arrived, it leaves; nothing changing, nothing said.
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(model.trayCount(), 2);
+    QCOMPARE(model.trayPaused(), 0);
+    const int said = traySpy.count();
+    model.observe(Topic, progressMessage(2, 20.0));
+    QCOMPARE(traySpy.count(), said);
+
+    // A download that comes and arrives above the rest leaves them as they were once it
+    // has, and so does its row going.
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
+    const int arrived = traySpy.count();
+    model.remove(0);
+    QCOMPARE(traySpy.count(), arrived);
+    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("c.zip"), QStringLiteral("b.iso")}));
+    // Forgotten, it is not spoken for; nor after the history takes it.
+    model.remove(0);
+    QCOMPARE(model.trayCount(), 1);
+    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("b.iso")});
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    model.clearSince(0);
+    QCOMPARE(model.trayCount(), 0);
+    QCOMPARE(model.trayNames(), QStringList());
+    QCOMPARE(model.trayProgress(), 0);
+}
+
+// Swiped away, what the banner shows goes until something changes state.
+void tst_downloadmodel::trayDismissed()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
+    model.dismissTray();
+    QCOMPARE(traySpy.count(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 3));
+    QCOMPARE(model.trayCount(), 2);
+    model.dismissTray();
+    QCOMPARE(model.trayCount(), 0);
+    QCOMPARE(model.trayNames(), QStringList());
+
+    // Progress is no news.
+    model.observe(Topic, progressMessage(1, 50.0));
+    QCOMPARE(model.trayCount(), 0);
+    // A download starting is.
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    QCOMPARE(model.trayCount(), 1);
+    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("d.pdf")});
+    // So is one that changes state: paused, failed, or started again.
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(model.trayCount(), 2);
+    QCOMPARE(model.trayPaused(), 1);
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    QCOMPARE(model.trayCount(), 3);
+    // Arrived, it is not on the banner, swiped or not; and the arrival is no reason for
+    // the others to come back.
+    model.dismissTray();
+    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
+    QCOMPARE(model.trayCount(), 0);
+}
+
+// An arrival is said once, before the row says it, with the name the banner shows.
+void tst_downloadmodel::finished()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy finishedSpy(&model, &DownloadModel::finished);
+    int trayAtSignal = -1;
+    connect(&model, &DownloadModel::finished, this,
+            [&model, &trayAtSignal]() { trayAtSignal = model.trayCount(); });
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(finishedSpy.count(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(finishedSpy.count(), 1);
+    QCOMPARE(finishedSpy.last().at(0).toInt(), model.downloads().at(1).id);
+    QCOMPARE(finishedSpy.last().at(1).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(trayAtSignal, 2);
+    // A second done, with a new path or without, is no second arrival.
+    QVariantMap moved = message(QStringLiteral("dl-done"), 1);
+    moved.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("a(1).pdf"));
+    model.observe(Topic, moved);
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(finishedSpy.count(), 1);
 }
 
 QTEST_GUILESS_MAIN(tst_downloadmodel)

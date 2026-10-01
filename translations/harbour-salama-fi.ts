@@ -306,10 +306,67 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message numerus="yes">
+        <source>%n download(s)</source>
+        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
+        <translation>
+            <numerusform>%n lataus</numerusform>
+            <numerusform>%n latausta</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Epäonnistui</translation>
+    </message>
+    <message>
+        <source>Paused · %1%</source>
+        <translation>Keskeytetty · %1 %</translation>
+    </message>
+    <message>
+        <source>Downloaded</source>
+        <extracomment>The banner as a download arrives</extracomment>
+        <translation>Ladattu</translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
         <translation>Poista luettelosta</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Avaa</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Keskeytä</translation>
+    </message>
+    <message>
+        <source>Download again</source>
+        <extracomment>Fetch again a download the engine has forgotten, from the start</extracomment>
+        <translation>Lataa uudelleen</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Yritä uudelleen</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Jatka</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Poista tiedosto</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadText</name>
+    <message>
+        <source>%1 of %2 · %3%</source>
+        <extracomment>A download&apos;s progress: &quot;3.1 MB of 7.4 MB · 42%&quot;</extracomment>
+        <translation>%1 / %2 · %3 %</translation>
     </message>
     <message>
         <source>Downloading, %1%</source>
@@ -320,8 +377,19 @@
         <translation>Epäonnistui</translation>
     </message>
     <message>
-        <source>Cancelled</source>
-        <translation>Peruttu</translation>
+        <source>Paused · %1%</source>
+        <extracomment>A download stopped part way, which can go on: &quot;Paused · 42%&quot;</extracomment>
+        <translation>Keskeytetty · %1 %</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <extracomment>A download stopped in an earlier run, which can only start over</extracomment>
+        <translation>Pysäytetty</translation>
+    </message>
+    <message>
+        <source>File not found</source>
+        <extracomment>A download whose file has been deleted or moved since</extracomment>
+        <translation>Tiedostoa ei löydy</translation>
     </message>
 </context>
 <context>
@@ -331,16 +399,21 @@
         <translation>Lataukset</translation>
     </message>
     <message>
-        <source>Clear list</source>
-        <translation>Tyhjennä luettelo</translation>
-    </message>
-    <message>
         <source>No downloads</source>
         <translation>Ei latauksia</translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
         <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
+    </message>
+    <message>
+        <source>Clear finished</source>
+        <translation>Tyhjennä valmiit</translation>
+    </message>
+    <message>
+        <source>Deleting</source>
+        <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
+        <translation>Poistetaan</translation>
     </message>
 </context>
 <context>
