@@ -3,19 +3,23 @@
 #include "engine/EngineMessages.h"
 #include "settings/PrivacySettings.h"
 #include "settings/Settings.h"
+#include "settings/SitePermissionSettings.h"
 
 #include <QtTest>
 
 using Salama::EngineMessages;
 using Salama::PrivacySettings;
 using Salama::Settings;
+using Salama::SitePermissionSettings;
 
 namespace {
 
-QVariantMap trackingValues(int level)
+// The cookies the reader chose, Block cross-site unless a test says otherwise: only what
+// Off does with it is a test of its own.
+QVariantMap trackingValues(int level, int cookies = SitePermissionSettings::CookiesBlockCrossSite)
 {
     QVariantMap values;
-    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(level)) {
+    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(level, cookies)) {
         const QVariantMap preference = entry.toMap();
         values.insert(preference.value(QStringLiteral("name")).toString(),
                       preference.value(QStringLiteral("value")));
@@ -26,7 +30,8 @@ QVariantMap trackingValues(int level)
 QStringList trackingNames(int level)
 {
     QStringList names;
-    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(level)) {
+    for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(
+             level, SitePermissionSettings::CookiesBlockCrossSite)) {
         names.append(entry.toMap().value(QStringLiteral("name")).toString());
     }
     return names;
@@ -64,6 +69,8 @@ private slots:
     void trackingProtectionNamesTheSamePreferences();
     void trackingProtectionLevels();
     void trackingProtectionFeatures();
+    void cookiesAtOffAreTheReadersChoice();
+    void sitePermissionDefaults();
     void websiteColors_data();
     void websiteColors();
     void coversCutout_data();
@@ -302,7 +309,8 @@ void tst_enginemessages::trackingProtectionNamesTheSamePreferences()
     QCOMPARE(trackingNames(PrivacySettings::TrackingProtectionStrict), names);
 
     for (const QVariant &entry : EngineMessages::trackingProtectionPreferences(
-             PrivacySettings::TrackingProtectionStandard)) {
+             PrivacySettings::TrackingProtectionStandard,
+             SitePermissionSettings::CookiesBlockCrossSite)) {
         QCOMPARE(entry.toMap().count(), 2);
     }
     const QVariantMap off = trackingValues(PrivacySettings::TrackingProtectionOff);
@@ -338,10 +346,11 @@ void tst_enginemessages::trackingProtectionLevels()
     const QString convenience =
         QStringLiteral("privacy.trackingprotection.allow_list.convenience.enabled");
 
-    // Off is the engine as it comes: every cookie accepted, nothing classified,
-    // bounce tracking watched and never acted on.
+    // Off is the engine as it comes -- nothing classified, bounce tracking watched and
+    // never acted on -- save the cookies, which are the reader's choice: Block cross-site
+    // here (cookiesAtOffAreTheReadersChoice() has the others).
     const QVariantMap off = trackingValues(PrivacySettings::TrackingProtectionOff);
-    QCOMPARE(off.value(cookies), QVariant(0));
+    QCOMPARE(off.value(cookies), QVariant(1));
     QCOMPARE(off.value(blocking), QVariant(false));
     QCOMPARE(off.value(annotation), QVariant(false));
     QCOMPARE(off.value(bounceTracking), QVariant(3));
@@ -429,6 +438,90 @@ void tst_enginemessages::trackingProtectionFeatures()
         QCOMPARE(annotation.contains(QStringLiteral("trackers-content")),
                  level == PrivacySettings::TrackingProtectionStrict);
     }
+}
+
+// The cookies the reader chose count only while tracking protection is off: Standard
+// and Strict are Firefox's, whatever was chosen, and the choice is the one preference
+// of the twelve that differs.
+void tst_enginemessages::cookiesAtOffAreTheReadersChoice()
+{
+    const QString cookies = QStringLiteral("network.cookie.cookieBehavior");
+    const int off = PrivacySettings::TrackingProtectionOff;
+    QCOMPARE(trackingValues(off, SitePermissionSettings::CookiesAllowAll).value(cookies),
+             QVariant(0));
+    QCOMPARE(trackingValues(off, SitePermissionSettings::CookiesBlockCrossSite).value(cookies),
+             QVariant(1));
+    QCOMPARE(trackingValues(off, SitePermissionSettings::CookiesBlockAll).value(cookies),
+             QVariant(2));
+    // A choice out of range is the default, and the number reaches the engine as an
+    // integer.
+    QCOMPARE(trackingValues(off, 7).value(cookies), QVariant(1));
+    QCOMPARE(trackingValues(off, -1).value(cookies), QVariant(1));
+    QCOMPARE(trackingValues(off, 2).value(cookies).userType(), int(QMetaType::Int));
+
+    for (const int level : {int(PrivacySettings::TrackingProtectionStandard),
+                            int(PrivacySettings::TrackingProtectionStrict)}) {
+        for (const int choice : {0, 1, 2}) {
+            QCOMPARE(trackingValues(level, choice).value(cookies), QVariant(5));
+        }
+    }
+    // Nothing but the cookies follows the choice.
+    QVariantMap allowAll = trackingValues(off, SitePermissionSettings::CookiesAllowAll);
+    QVariantMap blockAll = trackingValues(off, SitePermissionSettings::CookiesBlockAll);
+    allowAll.remove(cookies);
+    blockAll.remove(cookies);
+    QCOMPARE(allowAll, blockAll);
+}
+
+// The defaults of Site permissions: pop-ups are blocked by a boolean preference that
+// says so, the rest are asked about (0) or refused outright (2), and a location is told
+// under both names the engine is known by.
+void tst_enginemessages::sitePermissionDefaults()
+{
+    const auto values = [](bool popups, bool location, bool camera, bool microphone) {
+        QVariantMap map;
+        for (const QVariant &entry :
+             EngineMessages::sitePermissionPreferences(popups, location, camera, microphone)) {
+            map.insert(entry.toMap().value(QStringLiteral("name")).toString(),
+                       entry.toMap().value(QStringLiteral("value")));
+        }
+        return map;
+    };
+    const QString popups = QStringLiteral("dom.disable_open_during_load");
+
+    // As it comes: pop-ups blocked, the rest asked.
+    const QVariantMap asked = values(false, false, false, false);
+    QCOMPARE(asked.count(), 5);
+    QCOMPARE(asked.value(popups), QVariant(true));
+    QCOMPARE(asked.value(popups).userType(), int(QMetaType::Bool));
+    for (const QString &name : {QStringLiteral("permissions.default.geo"),
+                                QStringLiteral("permissions.default.geolocation"),
+                                QStringLiteral("permissions.default.camera"),
+                                QStringLiteral("permissions.default.microphone")}) {
+        QCOMPARE(asked.value(name), QVariant(0));
+        QCOMPARE(asked.value(name).userType(), int(QMetaType::Int));
+    }
+
+    // Each choice moves its own preferences and no other.
+    QVariantMap changed = values(true, false, false, false);
+    QCOMPARE(changed.value(popups), QVariant(false));
+    changed.insert(popups, true);
+    QCOMPARE(changed, asked);
+
+    changed = values(false, true, false, false);
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.geo")), QVariant(2));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.geolocation")), QVariant(2));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.camera")), QVariant(0));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.microphone")), QVariant(0));
+
+    changed = values(false, false, true, false);
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.camera")), QVariant(2));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.microphone")), QVariant(0));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.geo")), QVariant(0));
+
+    changed = values(false, false, false, true);
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.microphone")), QVariant(2));
+    QCOMPARE(changed.value(QStringLiteral("permissions.default.camera")), QVariant(0));
 }
 
 void tst_enginemessages::websiteColors_data()

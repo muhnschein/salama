@@ -12,6 +12,7 @@ SettingsSections::SettingsSections(const QString &filePath)
     , m_cover(m_file)
     , m_privacy(m_file)
     , m_startPage(m_file)
+    , m_sitePermissions(m_file)
 {
 }
 
@@ -43,6 +44,11 @@ PrivacySettings *SettingsSections::privacy()
 StartPageSettings *SettingsSections::startPage()
 {
     return &m_startPage;
+}
+
+SitePermissionSettings *SettingsSections::sitePermissions()
+{
+    return &m_sitePermissions;
 }
 
 } // namespace Salama

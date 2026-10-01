@@ -428,12 +428,12 @@
     <message>
         <source>Forget</source>
         <extracomment>Drops an offered search engine from the list, without adding it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Unohda</translation>
     </message>
     <message>
         <source>%1 · Tap to add</source>
         <extracomment>Under an offered search engine: the site that offered it. %1 is its host</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Lisää napauttamalla</translation>
     </message>
 </context>
 <context>
@@ -765,18 +765,18 @@
     <message>
         <source>Remove</source>
         <extracomment>Takes an engine that was added while browsing out of the list</extracomment>
-        <translation type="unfinished">Poista</translation>
+        <translation>Poista</translation>
     </message>
 </context>
 <context>
     <name>SearchEngineInstaller</name>
     <message>
         <source>%1 search added</source>
-        <translation type="unfinished"></translation>
+        <translation>Haku %1 lisätty</translation>
     </message>
     <message>
         <source>Could not add %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hakua %1 ei voitu lisätä</translation>
     </message>
 </context>
 <context>
@@ -811,24 +811,24 @@
     </message>
     <message>
         <source>Remove added search engines</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista lisätyt hakukoneet</translation>
     </message>
     <message>
         <source>Removing added search engines</source>
-        <translation type="unfinished"></translation>
+        <translation>Poistetaan lisätyt hakukoneet</translation>
     </message>
     <message>
         <source>Added from %1</source>
         <extracomment>Under a search engine that was added while browsing. %1 is the site that offered it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Lisätty sivustolta %1</translation>
     </message>
     <message>
         <source>Found while browsing</source>
-        <translation type="unfinished"></translation>
+        <translation>Löydetty selatessa</translation>
     </message>
     <message>
         <source>Sites can offer their search. Tap one to add it and search with it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivustot voivat tarjota hakuaan. Napauta yhtä lisätäksesi sen ja hakeaksesi sillä.</translation>
     </message>
 </context>
 <context>
@@ -1015,6 +1015,19 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
         <translation>Pois käytöstä</translation>
     </message>
+    <message>
+        <source>No exceptions</source>
+        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
+        <translation>Ei poikkeuksia</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s) with exceptions</source>
+        <extracomment>How many sites have a permission decided for them</extracomment>
+        <translation>
+            <numerusform>%n sivustolla poikkeuksia</numerusform>
+            <numerusform>%n sivustolla poikkeuksia</numerusform>
+        </translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1049,10 +1062,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Start page</source>
         <translation>Aloitussivu</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <translation>Ilmoitukset</translation>
     </message>
     <message>
         <source>Help</source>
@@ -1113,6 +1122,335 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Blocked, some sites may not work correctly</source>
         <translation>Estetty, jotkin sivustot eivät ehkä toimi oikein</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>Sivustojen luvat</translation>
+    </message>
+</context>
+<context>
+    <name>SiteConnectionDetails</name>
+    <message>
+        <source>d MMM yyyy</source>
+        <extracomment>How a certificate&apos;s last day is written, as Qt reads a date format: &quot;14 Dec 2026&quot;</extracomment>
+        <translation>d.M.yyyy</translation>
+    </message>
+    <message>
+        <source>Connection</source>
+        <extracomment>Heading over what is known of a site&apos;s connection</extracomment>
+        <translation>Yhteys</translation>
+    </message>
+    <message>
+        <source>Issued to</source>
+        <extracomment>Whom a site&apos;s certificate was issued to</extracomment>
+        <translation>Myönnetty</translation>
+    </message>
+    <message>
+        <source>Verified by</source>
+        <extracomment>Who issued a site&apos;s certificate</extracomment>
+        <translation>Varmentaja</translation>
+    </message>
+    <message>
+        <source>Valid until</source>
+        <extracomment>The last day a site&apos;s certificate is good</extracomment>
+        <translation>Voimassa</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <extracomment>The protocol the connection to a site uses</extracomment>
+        <translation>Protokolla</translation>
+    </message>
+    <message>
+        <source>Cipher suite</source>
+        <extracomment>The cipher suite the connection to a site uses</extracomment>
+        <translation>Salausmenetelmä</translation>
+    </message>
+</context>
+<context>
+    <name>SiteDecisionRow</name>
+    <message>
+        <source>Always ask</source>
+        <extracomment>Lets the site be asked about the permission each time it wants it</extracomment>
+        <translation>Kysy aina</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <extracomment>Takes the site&apos;s own choice away, so that what is set for every site applies to it</extracomment>
+        <translation>Oletus</translation>
+    </message>
+    <message>
+        <source>default</source>
+        <extracomment>Marks a permission that is what is set for every site, rather than the site&apos;s own</extracomment>
+        <translation>oletus</translation>
+    </message>
+</context>
+<context>
+    <name>SiteDetailsPage</name>
+    <message>
+        <source>The certificate has expired or is not yet valid</source>
+        <translation>Varmenne on vanhentunut tai ei ole vielä voimassa</translation>
+    </message>
+    <message>
+        <source>The certificate is for another site</source>
+        <translation>Varmenne on toiselle sivustolle</translation>
+    </message>
+    <message>
+        <source>The certificate is not trusted</source>
+        <translation>Varmenteeseen ei luoteta</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <extracomment>Heading over what the site may do</extracomment>
+        <translation>Luvat</translation>
+    </message>
+    <message>
+        <source>Clear site permissions</source>
+        <translation>Tyhjennä sivuston luvat</translation>
+    </message>
+</context>
+<context>
+    <name>SiteExceptionDialog</name>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that adds a site to the exceptions</extracomment>
+        <translation>Lisää</translation>
+    </message>
+    <message>
+        <source>Address of the site</source>
+        <translation>Sivuston osoite</translation>
+    </message>
+    <message>
+        <source>Must begin with http:// or https://</source>
+        <translation>Alun on oltava http:// tai https://</translation>
+    </message>
+</context>
+<context>
+    <name>SiteExceptionItem</name>
+    <message>
+        <source>Block</source>
+        <translation>Estä</translation>
+    </message>
+    <message>
+        <source>Allow</source>
+        <translation>Salli</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <extracomment>Takes the site&apos;s exception away: it follows the default again</extracomment>
+        <translation>Poista</translation>
+    </message>
+</context>
+<context>
+    <name>SiteExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>Under the title of the list of sites tracking protection is off for</extracomment>
+        <translation>Poikkeukset</translation>
+    </message>
+    <message>
+        <source>Exceptions · default: %1</source>
+        <extracomment>Under the title of a list of exceptions to a permission; %1 is what it is for every other site</extracomment>
+        <translation>Poikkeukset · oletus: %1</translation>
+    </message>
+    <message>
+        <source>Add a site</source>
+        <translation>Lisää sivusto</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Poista kaikki poikkeukset</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Poistetaan poikkeukset</translation>
+    </message>
+    <message>
+        <source>Tracking protection off</source>
+        <translation>Seurannan esto pois</translation>
+    </message>
+    <message>
+        <source>Allowed</source>
+        <translation>Sallittu</translation>
+    </message>
+    <message>
+        <source>Blocked</source>
+        <translation>Estetty</translation>
+    </message>
+    <message>
+        <source>A site you remove follows the default again.</source>
+        <extracomment>Under the sites that are an exception to a permission</extracomment>
+        <translation>Poistamasi sivusto noudattaa taas oletusta.</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Ei poikkeuksia</translation>
+    </message>
+</context>
+<context>
+    <name>SitePermissionNames</name>
+    <message>
+        <source>Notifications</source>
+        <translation>Ilmoitukset</translation>
+    </message>
+    <message>
+        <source>Pop-ups</source>
+        <extracomment>Windows a page opens of its own accord</extracomment>
+        <translation>Ponnahdusikkunat</translation>
+    </message>
+    <message>
+        <source>Cookies</source>
+        <translation>Evästeet</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation>Sijainti</translation>
+    </message>
+    <message>
+        <source>Camera</source>
+        <translation>Kamera</translation>
+    </message>
+    <message>
+        <source>Microphone</source>
+        <translation>Mikrofoni</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Seurannan esto</translation>
+    </message>
+    <message>
+        <source>Allow</source>
+        <extracomment>A site may do it</extracomment>
+        <translation>Salli</translation>
+    </message>
+    <message>
+        <source>Block</source>
+        <extracomment>A site may not do it</extracomment>
+        <translation>Estä</translation>
+    </message>
+    <message>
+        <source>Ask</source>
+        <extracomment>A site is asked about it each time it wants to</extracomment>
+        <translation>Kysy</translation>
+    </message>
+    <message>
+        <source>Allow all</source>
+        <extracomment>Every site&apos;s cookies are accepted</extracomment>
+        <translation>Salli kaikki</translation>
+    </message>
+    <message>
+        <source>Block cross-site</source>
+        <extracomment>Cookies a site sets from inside another site&apos;s page are refused</extracomment>
+        <translation>Estä sivustojen väliset</translation>
+    </message>
+    <message>
+        <source>Block all</source>
+        <extracomment>No site&apos;s cookies are accepted</extracomment>
+        <translation>Estä kaikki</translation>
+    </message>
+    <message>
+        <source>Allowed</source>
+        <extracomment>A site has been allowed it</extracomment>
+        <translation>Sallittu</translation>
+    </message>
+    <message>
+        <source>Blocked</source>
+        <extracomment>A site has been blocked from it</extracomment>
+        <translation>Estetty</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <extracomment>Under a kind of permission, when no site has been given an exception to it</extracomment>
+        <translation>Ei poikkeuksia</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n exception(s)</source>
+        <translation>
+            <numerusform>%n poikkeus</numerusform>
+            <numerusform>%n poikkeusta</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>SitePermissionRow</name>
+    <message>
+        <source>Show exceptions</source>
+        <translation>Näytä poikkeukset</translation>
+    </message>
+</context>
+<context>
+    <name>SitePermissionsPage</name>
+    <message>
+        <source>Site permissions</source>
+        <extracomment>Settings page: what sites may do</extracomment>
+        <translation>Sivustojen luvat</translation>
+    </message>
+    <message>
+        <source>What sites may do unless you decided otherwise for a site. Tap one to change it or see the exceptions.</source>
+        <translation>Mitä sivustot saavat tehdä, ellet ole päättänyt sivustolle toisin. Napauta yhtä muuttaaksesi sitä tai nähdäksesi poikkeukset.</translation>
+    </message>
+    <message>
+        <source>Shown while tracking protection is off · %1</source>
+        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
+        <translation>Näkyy, kun seurannan esto on pois · %1</translation>
+    </message>
+    <message>
+        <source>Turned off for some sites</source>
+        <translation>Pois päältä joillakin sivustoilla</translation>
+    </message>
+    <message numerus="yes">
+        <source>Off for %n site(s)</source>
+        <translation>
+            <numerusform>Pois %n sivustolla</numerusform>
+            <numerusform>Pois %n sivustolla</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Turned off from a site’s details</source>
+        <translation>Kytketty pois sivuston tiedoista</translation>
+    </message>
+</context>
+<context>
+    <name>SiteSecurityHero</name>
+    <message>
+        <source>Connection is secure</source>
+        <extracomment>The connection to the site is encrypted and its certificate in order</extracomment>
+        <translation>Yhteys on suojattu</translation>
+    </message>
+    <message>
+        <source>Connection is not secure</source>
+        <extracomment>Either no encryption is in use, or the connection is broken in some way</extracomment>
+        <translation>Yhteys ei ole suojattu</translation>
+    </message>
+    <message>
+        <source>Verified by %1</source>
+        <extracomment>Under &quot;Connection is secure&quot;; %1 is who issued the site&apos;s certificate</extracomment>
+        <translation>Varmentaja: %1</translation>
+    </message>
+    <message>
+        <source>Do not enter personal data, passwords, card details on this site</source>
+        <translation>Älä anna tällä sivustolla henkilötietoja, salasanoja tai korttitietoja</translation>
+    </message>
+</context>
+<context>
+    <name>SiteTrackingSwitch</name>
+    <message>
+        <source>Off in Settings</source>
+        <extracomment>The site&apos;s details, under the tracking protection switch: it is off for every site</extracomment>
+        <translation>Pois päältä asetuksissa</translation>
+    </message>
+    <message>
+        <source>Off for this site. Turn it on to block trackers here again.</source>
+        <translation>Pois päältä tällä sivustolla. Kytke päälle estääksesi seurannan täällä taas.</translation>
+    </message>
+    <message>
+        <source>%1, on for this site. If something on it looks broken, try turning it off.</source>
+        <extracomment>The site&apos;s details, under the tracking protection switch; %1 is the level, Standard or Strict</extracomment>
+        <translation>%1, päällä tällä sivustolla. Jos jokin näyttää rikkinäiseltä, kokeile kytkeä se pois.</translation>
+    </message>
+    <message>
+        <source>Trackers were blocked on this page</source>
+        <translation>Tällä sivulla estettiin seurantaa</translation>
     </message>
 </context>
 <context>

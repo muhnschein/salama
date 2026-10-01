@@ -21,7 +21,7 @@ Capabilities=text/x-url
 SupportsMultipleFiles=no
 
 [X-Sailjail]
-Permissions=Internet;WebView;Audio;Downloads;Pictures;Videos;Music;Documents;MediaIndexing
+Permissions=Internet;WebView;Audio;Downloads;Pictures;Videos;Music;Documents;MediaIndexing;Location;Camera;Microphone
 OrganizationName=io.github.muhnschein
 ApplicationName=salama
 ExecDBus=harbour-salama

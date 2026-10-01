@@ -5,9 +5,11 @@
 // title, and under the title a padlock for a page that came over https and its host, as
 // the bar shows it (docs/DECISIONS/0021-menu-sheet.md). At the right, a button that puts
 // the page's address on the clipboard, as sailfish-browser does from its toolbar
-// (apps/browser/qml/pages/components/ToolBar.qml). On the start page there is no page
-// and no address: the head says so, beside the theme's home, and there is nothing to
-// copy.
+// (apps/browser/qml/pages/components/ToolBar.qml). A tap on the rest of the head opens
+// the page's site details, which a chevron after the title says are there
+// (docs/DECISIONS/0040-site-details.md). On the start page there is no page and no
+// address: the head says so, beside the theme's home, and there is nothing to copy and
+// no site to show the details of.
 //
 // Titles and hosts are what pages chose to be called, and are drawn as plain text.
 import QtQuick 2.6
@@ -28,9 +30,25 @@ Item {
 
     // The copy button was tapped.
     signal copyRequested()
+    // The rest of the head was tapped: the page's site details are wanted.
+    signal detailsRequested()
 
     objectName: "menuHeader"
     height: Theme.itemSizeSmall
+
+    // The head as a whole is the way to the site details, lit while it is pressed as
+    // Silica's rows are; the copy button, over it at the right, takes its own taps.
+    BackgroundItem {
+        objectName: "menuHeaderDetails"
+        anchors {
+            left: parent.left
+            top: parent.top
+            bottom: parent.bottom
+            right: copyButton.visible ? copyButton.left : parent.right
+        }
+        enabled: header.hasPage
+        onClicked: header.detailsRequested()
+    }
 
     // The page's icon on a tile of its own, the address bar's suggestions' faint tile,
     // so that an icon drawn for a light page still has a ground under it.
@@ -87,8 +105,8 @@ Item {
         anchors {
             left: tile.right
             leftMargin: Theme.paddingMedium
-            right: copyButton.visible ? copyButton.left : parent.right
-            rightMargin: copyButton.visible ? 0 : Theme.horizontalPageMargin
+            right: chevron.visible ? chevron.left : parent.right
+            rightMargin: chevron.visible ? Theme.paddingSmall : Theme.horizontalPageMargin
             verticalCenter: parent.verticalCenter
         }
 
@@ -137,6 +155,23 @@ Item {
                 color: Theme.secondaryColor
             }
         }
+    }
+
+    // After the title, small: there is more behind it, as a list row's has.
+    Icon {
+        id: chevron
+
+        objectName: "menuHeaderChevron"
+        anchors {
+            right: copyButton.left
+            verticalCenter: parent.verticalCenter
+        }
+        width: Theme.iconSizeExtraSmall
+        height: width
+        sourceSize: Qt.size(width, height)
+        visible: header.hasPage
+        source: "image://theme/icon-m-right"
+        color: Theme.secondaryColor
     }
 
     // At the page margin inside a button a padding wider either side and the row's

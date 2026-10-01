@@ -2,29 +2,21 @@
 // Copyright (c) 2026 salama contributors
 #include "NotificationPermissions.h"
 
-#include "engine/EngineData.h"
+#include "engine/EnginePermissions.h"
 
-#include <QJsonDocument>
-#include <QUrl>
-#include <QVariantList>
 #include <algorithm>
 
 namespace Salama {
 
 namespace {
 
-// What embedlite-components' ContentPermissionManager.js listens on, and answers on.
-const QString RequestTopic = QStringLiteral("embedui:perms");
-const QString ListTopic = QStringLiteral("embed:perms:all");
 // The permission's name in Gecko, Firefox's and the engine's own
 // (dom/notification/Notification.cpp, embedlite-components ContentPermissionPrompt.js).
 const QString PermissionType = QStringLiteral("desktop-notification");
 const QString DefaultPreference = QStringLiteral("permissions.default.desktop-notification");
 
-// nsIPermissionManager's capabilities and expiry types.
-const int AllowAction = 1;
-const int DenyAction = 2;
-const int ExpireNever = 0;
+using EnginePermissions::AllowAction;
+using EnginePermissions::DenyAction;
 
 bool byHost(const QString &one, const QString &other)
 {
@@ -83,7 +75,7 @@ QHash<int, QByteArray> NotificationPermissions::roleNames() const
 
 QString NotificationPermissions::topic() const
 {
-    return ListTopic;
+    return EnginePermissions::listTopic();
 }
 
 int NotificationPermissions::allowedCount() const
@@ -99,43 +91,24 @@ int NotificationPermissions::blockedCount() const
 
 void NotificationPermissions::refresh()
 {
-    emit engineRequest(RequestTopic,
-                       QVariantMap{{QStringLiteral("msg"), QStringLiteral("get-all")}});
+    emit engineRequest(EnginePermissions::requestTopic(),
+                       EnginePermissions::request(QStringLiteral("get-all")));
 }
 
 void NotificationPermissions::observe(const QString &topic, const QVariant &data)
 {
-    if (topic != ListTopic) {
+    if (topic != EnginePermissions::listTopic()) {
         return;
     }
-    // qtmozembed hands over what it could read as JSON read, and anything else as the
-    // string it was.
-    const QVariantList list =
-        data.userType() == QMetaType::QString
-            ? QJsonDocument::fromJson(data.toString().toUtf8()).toVariant().toList()
-            : data.toList();
     QVector<Site> sites;
-    for (const QVariant &entry : list) {
-        const QVariantMap permission = entry.toMap();
-        if (permission.value(QStringLiteral("type")).toString() != PermissionType) {
+    for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
+        if (permission.type != PermissionType) {
             continue;
         }
-        const QVariant expireType = permission.value(QStringLiteral("expireType"));
-        if (!EngineData::isNumber(expireType) || expireType.toInt() != ExpireNever) {
-            continue;
-        }
-        const QVariant capability = permission.value(QStringLiteral("capability"));
-        const int action = EngineData::isNumber(capability) ? capability.toInt() : 0;
-        // The origin may carry the principal's attributes after a caret; this engine
-        // has no containers, and the site is the part before it.
-        const QString origin = originOf(
-            permission.value(QStringLiteral("uri")).toString().section(QLatin1Char('^'), 0, 0));
-        if (origin.isEmpty() || (action != AllowAction && action != DenyAction)) {
-            continue;
-        }
+        const QString &origin = permission.origin;
         const auto same = [&origin](const Site &site) { return site.origin == origin; };
         if (std::none_of(sites.cbegin(), sites.cend(), same)) {
-            sites.append({origin, action == AllowAction});
+            sites.append({origin, permission.capability == AllowAction});
         }
     }
     std::sort(sites.begin(), sites.end(), [](const Site &one, const Site &other) {
@@ -159,6 +132,23 @@ void NotificationPermissions::setAllowed(const QString &origin, bool allowed)
     }
     send(QStringLiteral("add"), site, allowed ? AllowAction : DenyAction);
     put(site, allowed);
+    emit decided(site, allowed ? AllowAction : DenyAction);
+}
+
+void NotificationPermissions::adopt(const QString &origin, int capability)
+{
+    const QString site = originOf(origin);
+    if (site.isEmpty()) {
+        return;
+    }
+    if (capability == AllowAction || capability == DenyAction) {
+        put(site, capability == AllowAction);
+        return;
+    }
+    const int row = rowOf(site);
+    if (row >= 0) {
+        take(row);
+    }
 }
 
 void NotificationPermissions::remove(const QString &origin)
@@ -169,6 +159,12 @@ void NotificationPermissions::remove(const QString &origin)
         return;
     }
     send(QStringLiteral("remove"), site, 0);
+    take(row);
+    emit decided(site, 0);
+}
+
+void NotificationPermissions::take(int row)
+{
     beginRemoveRows(QModelIndex(), row, row);
     m_sites.remove(row);
     endRemoveRows();
@@ -207,31 +203,12 @@ void NotificationPermissions::undoAutomaticDenial(const QString &origin)
 
 QString NotificationPermissions::originOf(const QString &url)
 {
-    const QUrl address(url, QUrl::StrictMode);
-    const QString scheme = address.scheme().toLower();
-    if (!address.isValid() ||
-        (scheme != QLatin1String("https") && scheme != QLatin1String("http"))) {
-        return {};
-    }
-    QString host = address.host(QUrl::FullyEncoded).toLower();
-    if (host.isEmpty()) {
-        return {};
-    }
-    if (host.contains(QLatin1Char(':'))) {
-        host = QLatin1Char('[') + host + QLatin1Char(']');
-    }
-    const int port = address.port();
-    const int schemePort = scheme == QLatin1String("https") ? 443 : 80;
-    QString origin = scheme + QStringLiteral("://") + host;
-    if (port >= 0 && port != schemePort) {
-        origin += QLatin1Char(':') + QString::number(port);
-    }
-    return origin;
+    return EnginePermissions::originOf(url);
 }
 
 QString NotificationPermissions::hostOf(const QString &origin)
 {
-    return QUrl(origin).host(QUrl::PrettyDecoded);
+    return EnginePermissions::hostOf(origin);
 }
 
 int NotificationPermissions::rowOf(const QString &origin) const
@@ -294,13 +271,8 @@ void NotificationPermissions::put(const QString &origin, bool allowed)
 
 void NotificationPermissions::send(const QString &message, const QString &origin, int capability)
 {
-    emit engineRequest(RequestTopic, QVariantMap{
-                                         {QStringLiteral("msg"), message},
-                                         {QStringLiteral("uri"), origin},
-                                         {QStringLiteral("type"), PermissionType},
-                                         {QStringLiteral("permission"), capability},
-                                         {QStringLiteral("expireType"), ExpireNever},
-                                     });
+    emit engineRequest(EnginePermissions::requestTopic(),
+                       EnginePermissions::request(message, origin, PermissionType, capability));
 }
 
 } // namespace Salama

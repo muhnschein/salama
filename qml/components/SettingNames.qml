@@ -141,6 +141,14 @@ QtObject {
         return qsTr("%1 · %2").arg(allowedText).arg(blockedText)
     }
 
+    // How many sites have a permission decided for them, Site permissions' line.
+    function sitePermissions(sites) {
+        //: Settings' line under Site permissions when no site has a decision of its own
+        return sites === 0 ? qsTr("No exceptions")
+                             //: How many sites have a permission decided for them
+                           : qsTr("%n site(s) with exceptions", "", sites)
+    }
+
     function history(remember, clearOnClose) {
         if (!remember) {
             //: The pages visited are not kept in the history

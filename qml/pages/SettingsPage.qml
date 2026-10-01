@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Settings: a way to each subject -- the start page, search, the reader view, the cover,
-// tracking protection, notifications, the history -- on a page of its own, in headed
+// tracking protection, site permissions, the history -- on a page of its own, in headed
 // groups, as Firefox for Android arranges its settings and Jolla's own browser reaches
 // its privacy settings (docs/DECISIONS/0028-settings-pages.md, 0030-history-settings.md,
 // 0033-web-notifications.md), and last the way to the tutorial (0034-tutorial.md). Each
@@ -39,7 +39,10 @@ Page {
         pageStack.push(Qt.resolvedUrl(page))
     }
 
-    Component.onCompleted: NotificationPermissions.refresh()
+    Component.onCompleted: {
+        NotificationPermissions.refresh()
+        SitePermissions.refresh()
+    }
 
     SilicaFlickable {
         anchors.fill: parent
@@ -214,17 +217,16 @@ Page {
                 onCheckedChanged: PrivacySettings.javascript = checked
             }
 
-            // Firefox keeps the sites allowed to send notifications with the other
-            // permissions, under Privacy (docs/DECISIONS/0033-web-notifications.md).
+            // What sites may do unless decided otherwise for one, and the sites decided
+            // for: Firefox's Site permissions, with notifications one of them, where the
+            // Notifications row was (docs/DECISIONS/0039-site-permissions.md).
             SettingsEntry {
-                objectName: "notificationSettingsEntry"
-                // The platform's own for notifications.
-                iconSource: "image://theme/icon-m-notifications"
-                text: qsTr("Notifications")
-                value: settingsPage.names.notifications(NotificationPermissions.allowedCount,
-                                                        NotificationPermissions.blockedCount,
-                                                        PrivacySettings.blockNotificationRequests)
-                onClicked: settingsPage.open("NotificationSettingsPage.qml")
+                objectName: "sitePermissionsSettingsEntry"
+                // sailfish-browser's for its Permissions (apps/browser/qml/pages/SettingsPage.qml).
+                iconSource: "image://theme/icon-m-browser-permissions"
+                text: qsTr("Site permissions")
+                value: settingsPage.names.sitePermissions(SitePermissions.exceptionSiteCount)
+                onClicked: settingsPage.open("SitePermissionsPage.qml")
             }
 
             SettingsEntry {

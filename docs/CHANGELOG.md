@@ -8,6 +8,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- Settings > Site permissions, in place of Settings > Notifications: what sites may do unless decided otherwise -- notifications, pop-ups, location, camera and microphone, and cookies while tracking protection is off -- each with its exceptions, which can be added, switched and removed. Salama now asks the phone for location, camera and microphone, so sites can be given them.
+- Site details: tap the page's name at the head of the menu to see whether the connection is secure and who verified it, the certificate and the cipher, turn tracking protection off for that site alone, and decide its permissions.
+- Search engines sites offer are collected while browsing and listed under Settings > Search > Found while browsing; a tap adds one and searches with it. Added engines say where they came from and can be removed one by one, or all at once from the pulley, which leaves the three built-in ones.
 - Salama is offered in the share sheet for links: a link shared from another app opens in a new tab in the "N tabs" group, in front, starting Salama if it is not running. Plain text is not offered to Salama.
 - Settings > Appearance > Fixed toolbar: the bar stays whole while a page is scrolled.
 - Settings > Privacy > Do not track, telling sites you do not want to be tracked, and Enable JavaScript, which says what switching it off costs.
