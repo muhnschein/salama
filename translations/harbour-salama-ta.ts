@@ -120,7 +120,7 @@
     </message>
     <message>
         <source>Reader view</source>
-        <translation>வாசகர் பார்வை</translation>
+        <translation>வாசிப்பு</translation>
     </message>
     <message>
         <source>Address copied</source>
@@ -129,11 +129,11 @@
     </message>
     <message>
         <source>Find in page</source>
-        <translation>பக்கத்தில் தேடு</translation>
+        <translation>தேடு</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>கணினித் தளம்</translation>
+        <translation>கணினி தளம்</translation>
     </message>
 </context>
 <context>
@@ -1639,7 +1639,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Reader view</source>
-        <translation>வாசகர் பார்வை</translation>
+        <translation>வாசிப்பு</translation>
     </message>
     <message>
         <source>Bookmarks</source>
@@ -1659,11 +1659,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Find in page</source>
-        <translation>பக்கத்தில் தேடு</translation>
+        <translation>தேடு</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>கணினித் தளம்</translation>
+        <translation>கணினி தளம்</translation>
     </message>
 </context>
 <context>
