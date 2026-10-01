@@ -8,6 +8,7 @@
 #include "engine/EngineMessages.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/TabGroupModel.h"
+#include "tabs/ThumbnailWriter.h"
 
 #include <QColor>
 #include <QDesktopServices>
@@ -193,6 +194,8 @@ private slots:
     void tabGroupStripFades();
     void tabGroupsReorderUnderAFinger();
     void barReachUnderAFinger();
+    void barDragStartsWithoutAStutter();
+    void barStaysSlimWhileDragged();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -482,6 +485,7 @@ void tst_qmlload::pullUpToTabs()
     QObject *bar = find(QStringLiteral("navigationBar"));
     const qreal distance =
         find(QStringLiteral("browserPage"))->property("pullThreshold").toReal() + 1;
+    evaluate(bar, QStringLiteral("dragArmed()"));
     evaluate(bar, QStringLiteral("dragStarted()"));
     evaluate(bar, QStringLiteral("dragMoved(%1)").arg(distance));
     evaluate(bar, QStringLiteral("dragFinished(%1)").arg(distance));
@@ -1597,31 +1601,34 @@ void tst_qmlload::editingEndsWithTheKeyboard()
 void tst_qmlload::thumbnailCapturedOnLoad()
 {
     QObject *webView = currentWebView();
-    const int tabId = m_core->tabs()->activeTabId();
+    const auto thumbnail = [this]() {
+        return m_core->tabs()
+            ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
+            .toString();
+    };
 
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    const QString captured = webView->property("lastGrabPath").toString();
-    QVERIFY(!captured.isEmpty());
-    // Grabbed at half size: the read back and the encode land in the middle of a
-    // gesture, and the grid never draws the picture wider than half the screen.
+    QCOMPARE(webView->property("grabCount").toInt(), 1);
+    // Grabbed at half size: the read back lands in the middle of a gesture, and the
+    // grid never draws the picture wider than half the screen.
     QCOMPARE(webView->property("lastGrabSize").toSize().width(),
              int(webView->property("width").toReal() / 2));
-    QCOMPARE(m_core->tabs()
-                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
-                 .toString(),
-             captured);
+    // The picture is handed to the model to encode and write on its worker: the GUI
+    // thread never saves it, which in the grab callback was the stutter at the start
+    // of the drag that opens the grid (issue #27).
+    QVERIFY(webView->property("lastGrabPath").toString().isEmpty());
+    QTRY_VERIFY(!thumbnail().isEmpty());
+    const QString captured = thumbnail();
+    QVERIFY(QFile::exists(captured));
 
-    // A failed save leaves the previous preview in place.
+    // A grab with nothing in it leaves the previous preview in place.
     webView->setProperty("grabSaveFails", true);
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    QCOMPARE(m_core->tabs()
-                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
-                 .toString(),
-             captured);
-
-    Q_UNUSED(tabId)
+    m_core->tabs()->thumbnailWriter()->waitForDone();
+    QCoreApplication::processEvents();
+    QCOMPARE(thumbnail(), captured);
 }
 
 void tst_qmlload::faviconResolvedAfterLoad()
@@ -1808,11 +1815,12 @@ void tst_qmlload::tabGrid()
     QCOMPARE(previews.count(), 2);
 
     // Opening the grid captured the tab being left, so that cell has a preview while
-    // the one never displayed still shows its placeholder.
-    QVERIFY(!m_core->tabs()
-                 ->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::Thumbnail))
-                 .toString()
-                 .isEmpty());
+    // the one never displayed still shows its placeholder. The picture is written off
+    // the GUI thread, so it arrives a moment later.
+    QTRY_VERIFY(!m_core->tabs()
+                     ->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::Thumbnail))
+                     .toString()
+                     .isEmpty());
     QVERIFY(!findObjects(previews.at(1), QStringLiteral("tabPreviewPlaceholder"))
                  .first()
                  ->property("visible")
@@ -3167,6 +3175,124 @@ void tst_qmlload::tabGroupsReorderUnderAFinger()
     QVERIFY(list->property("contentY").toReal() > top);
     QCOMPARE(tabs->groups().at(3).id, moved);
     popPage();
+}
+
+// Issue #27: the very start of the drag up from the bar stuttered, every time. Three
+// things landed in its first frame: the deck leapt Theme.startDragDistance at once,
+// because the distance was measured from the press rather than from where the drag was
+// caught; the grid was drawn for the first time, every preview it shows uploaded in
+// that one frame; and the picture of the tab being left was taken, its PNG encoded on
+// the GUI thread. Under a real finger: the picture and the grid are seen to while the
+// finger is still down and nothing moves, and the deck then follows the finger from
+// where the drag was caught, pixel for pixel.
+void tst_qmlload::barDragStartsWithoutAStutter()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *grid = find(QStringLiteral("tabsView"));
+    QObject *webView = currentWebView();
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int x = int(gesture->width()) / 2;
+    const int onBar = int(gestureTop.y() + reach + gesture->property("strip").toReal() / 2);
+    const int inReach = int(gestureTop.y() + reach / 2);
+    const int shake = evaluate(page, QStringLiteral("Theme.startDragDistance")).toInt();
+    const qreal threshold = page->property("pullThreshold").toReal();
+    const auto offset = [page]() { return page->property("tabsOffset").toReal(); };
+    const int grabs = webView->property("grabCount").toInt();
+    QVERIFY(!grid->property("visible").toBool());
+
+    // Down: the picture is taken and the grid drawn, out of sight below the page.
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QVERIFY(grid->property("visible").toBool());
+    QCOMPARE(offset(), qreal(0));
+
+    // Up a pixel at a time until the drag is caught: nothing moves before it, and
+    // nothing leaps as it is.
+    int y = onBar;
+    while (!gesture->property("dragging").toBool()) {
+        QVERIFY(onBar - y <= shake);
+        QCOMPARE(offset(), qreal(0));
+        QTest::mouseMove(&window, QPoint(x, --y));
+    }
+    QCOMPARE(offset(), qreal(0));
+    QVERIFY(page->property("dragging").toBool());
+    // The drag that started the grab does not take another.
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+
+    // From there the deck goes where the finger goes.
+    const int caught = y;
+    for (int step = 1; step <= 10; ++step) {
+        QTest::mouseMove(&window, QPoint(x, caught - step * 4));
+        QCOMPARE(offset(), qreal(step * 4));
+    }
+    // Let go short of the threshold, measured from the same place, and it springs back.
+    QVERIFY(40 < threshold);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, caught - 40));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(offset(), qreal(0));
+    QVERIFY(!grid->property("visible").toBool());
+
+    // A press that never drags puts the grid away again: a tap in the reach, which is
+    // the page's.
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    QVERIFY(grid->property("visible").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    QVERIFY(!grid->property("visible").toBool());
+    // And so does one that turns out to be the page's drag.
+    drag(&window, QPoint(x, inReach), QPoint(x + 10 * shake, inReach));
+    QVERIFY(!grid->property("visible").toBool());
+
+    // Past the threshold from where it was caught, the grid comes up.
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    y = onBar;
+    while (!gesture->property("dragging").toBool()) {
+        QTest::mouseMove(&window, QPoint(x, --y));
+    }
+    QTest::mouseMove(&window, QPoint(x, y - int(threshold) - 1));
+    QCOMPARE(offset(), threshold + 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, y - int(threshold) - 1));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QTRY_COMPARE(offset(), page->property("fullHeight").toReal());
+    QVERIFY(grid->property("visible").toBool());
+}
+
+// Issue #27, with a page scrolled and the bar slim, as it is most of the time a page is
+// read: a drag made the bar whole as it began, so the bar grew under the finger for the
+// first fifth of a second and the engine's view was resized mid-drag -- its page laid
+// out again -- and once more as the deck sprang back. The bar stays as it is.
+void tst_qmlload::barStaysSlimWhileDragged()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *viewArea = find(QStringLiteral("viewArea"));
+    QObject *webView = currentWebView();
+    const qreal slimBar = bar->property("slimHeight").toReal();
+    webView->setProperty("chrome", false);
+    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    const qreal viewHeight = viewArea->property("height").toReal();
+
+    evaluate(bar, QStringLiteral("dragArmed()"));
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    evaluate(bar, QStringLiteral("dragMoved(10)"));
+    QVERIFY(page->property("dragging").toBool());
+    QVERIFY(page->property("barCompact").toBool());
+    QVERIFY(bar->property("compact").toBool());
+    QVERIFY(!bar->property("resizing").toBool());
+    QCOMPARE(bar->property("height").toReal(), slimBar);
+    QCOMPARE(viewArea->property("height").toReal(), viewHeight);
+
+    evaluate(bar, QStringLiteral("dragFinished(10)"));
+    QVERIFY(!page->property("dragging").toBool());
+    QVERIFY(bar->property("compact").toBool());
+    QVERIFY(!bar->property("resizing").toBool());
+    QCOMPARE(viewArea->property("height").toReal(), viewHeight);
+    webView->setProperty("chrome", true);
 }
 
 // The reach above the navigation bar lies over the foot of the page, where a player
@@ -6682,27 +6808,29 @@ void tst_qmlload::quickActionBookmarkFollows()
 void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
 {
     QObject *webView = currentWebView();
+    const auto thumbnail = [this]() {
+        return m_core->tabs()
+            ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
+            .toString();
+    };
     webView->setProperty("loading", true);
     webView->setProperty("loading", false);
-    const QString onLoad = webView->property("lastGrabPath").toString();
-    QVERIFY(!onLoad.isEmpty());
+    QTRY_VERIFY(!thumbnail().isEmpty());
+    const QString onLoad = thumbnail();
+    const int grabs = webView->property("grabCount").toInt();
 
     // Nothing is taken while the application is still the one on screen.
     QObject *page = find(QStringLiteral("browserPage"));
     QMetaObject::invokeMethod(page, "applicationStateChanged",
                               Q_ARG(QVariant, Qt::ApplicationActive));
-    QCOMPARE(webView->property("lastGrabPath").toString(), onLoad);
+    QCOMPARE(webView->property("grabCount").toInt(), grabs);
 
     // Leaving it is the cover's last chance at a current picture of this tab.
     QMetaObject::invokeMethod(page, "applicationStateChanged",
                               Q_ARG(QVariant, Qt::ApplicationInactive));
-    const QString onLeaving = webView->property("lastGrabPath").toString();
-    QVERIFY(!onLeaving.isEmpty());
-    QVERIFY(onLeaving != onLoad);
-    QCOMPARE(m_core->tabs()
-                 ->data(m_core->tabs()->index(0, 0), roleId(TabModel::Role::Thumbnail))
-                 .toString(),
-             onLeaving);
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QTRY_VERIFY(thumbnail() != onLoad);
+    QVERIFY(!thumbnail().isEmpty());
 }
 
 // Out of sight for a moment, every loaded page is put to sleep -- unless one is making

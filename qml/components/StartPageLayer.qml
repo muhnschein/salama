@@ -29,14 +29,8 @@ Loader {
             return
         }
         var tabId = TabModel.activeTabId
-        var path = TabModel.thumbnailPath(tabId)
-        if (path.length === 0) {
-            return
-        }
         item.grabToImage(function (result) {
-            if (result.saveToFile(path)) {
-                TabModel.updateThumbnail(tabId, path)
-            }
+            TabModel.storeThumbnail(tabId, result.image)
         }, Qt.size(width / 2, height / 2))
     }
 }

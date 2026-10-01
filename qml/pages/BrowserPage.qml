@@ -52,10 +52,12 @@ WebViewPage {
     // Scrolling down slims the bar to the handle and the host; scrolling back up puts
     // its controls back. The engine's own chrome gesture is the signal -- the same one
     // that used to take the whole bar off the screen -- and the view is resized with
-    // the bar, so the foot of a page clears it either way.
+    // the bar, so the foot of a page clears it either way. A drag of the deck leaves it
+    // as it is: made whole as the drag began, the bar grew under the finger for the
+    // first fifth of a second and the engine's view was resized, and its page laid out
+    // again, in the middle of the movement -- and once more as it sprang back.
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || findBar.active || dragging
-                || Settings.fixedToolbar) {
+        if (!currentView || navigationBar.editing || findBar.active || Settings.fixedToolbar) {
             return false
         }
         // undefined on an engine with no chrome gesture: then the bar stays as it is.
@@ -366,12 +368,16 @@ WebViewPage {
             onBack: browserPage.goBack()
             onReloadOrStop: browserPage.reloadOrStop()
             onShowMenu: browserMenu.show()
-            // The grid is about to show, so the picture of the tab being left is
-            // taken before the first pixel of it does.
-            onDragStarted: {
+            // The grid may be about to show: the picture of the tab being left is
+            // taken, and the grid made ready under the page, while the finger is still
+            // down and nothing moves. Both in the drag's first frame were the stutter
+            // at its start.
+            onDragArmed: {
                 browserPage.captureCurrent()
-                deck.beginDrag()
+                deck.prime()
             }
+            onDragDisarmed: deck.unprime()
+            onDragStarted: deck.beginDrag()
             onDragMoved: deck.dragTo(distance)
             onDragFinished: deck.settle(distance > deck.pullThreshold)
             onPageTouchStarted: browserPage.touchPage(position, "start")
@@ -423,8 +429,11 @@ WebViewPage {
 
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
-            // Nothing to draw while the page covers it: the engine has the screen.
-            visible: deck.tabsOffset > 0
+            // Nothing to draw while the page covers it: the engine has the screen. But
+            // drawn, out of sight below it, from the moment a finger may be about to
+            // pull it up: the first frame it is drawn in uploads every preview it shows,
+            // and that frame must not be the first of the drag.
+            visible: deck.tabsOffset > 0 || deck.primed
             onPullStarted: deck.beginDrag()
             onPulled: deck.dragTo(browserPage.height - distance)
             onPullFinished: deck.settle(distance <= deck.pullThreshold)
@@ -516,17 +525,12 @@ WebViewPage {
                 if (!isCurrent) {
                     return
                 }
-                var path = TabModel.thumbnailPath(tabId)
-                if (path.length === 0) {
-                    return
-                }
-                // Half size in each direction: the grab is a read back from the GPU
-                // and a PNG encode, both on the way into a gesture, and the grid never
-                // draws it wider than half the screen anyway.
+                // Half size in each direction: the grab is a read back from the GPU on
+                // the way into a gesture, and the grid never draws it wider than half
+                // the screen anyway. The encode and the write are the model's, off the
+                // GUI thread: here, they were the stutter at the start of the drag.
                 grabToImage(function (result) {
-                    if (result.saveToFile(path)) {
-                        TabModel.updateThumbnail(tabId, path)
-                    }
+                    TabModel.storeThumbnail(tabId, result.image)
                 }, Qt.size(width / 2, height / 2))
             }
 

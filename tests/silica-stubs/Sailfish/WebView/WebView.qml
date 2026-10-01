@@ -2,6 +2,7 @@
 // calls so tests can assert on them. Property names follow qtmozembed's
 // qmozview_defined_wrapper.h and sailfish-components-webview's WebView.qml.
 import QtQuick 2.6
+import Sailfish.Silica 1.0
 
 Item {
     id: webView
@@ -178,7 +179,9 @@ Item {
     }
 
     // Stands in for QQuickItem::grabToImage, which needs a rendering scene graph the
-    // offscreen test platform does not provide. Calls back synchronously.
+    // offscreen test platform does not provide. Calls back synchronously, with a
+    // result whose image is a plain picture of the size asked for -- or a null one,
+    // which nothing can be written from, when grabSaveFails is set.
     function grabToImage(callback, targetSize) {
         grabCount += 1
         lastGrabSize = targetSize
@@ -186,6 +189,8 @@ Item {
             return false
         }
         callback({
+                     "image": GrabStub.image(webView.grabSaveFails ? 0 : targetSize.width,
+                                             webView.grabSaveFails ? 0 : targetSize.height),
                      "saveToFile": function (path) {
                          webView.lastGrabPath = path
                          return !webView.grabSaveFails

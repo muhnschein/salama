@@ -6,11 +6,13 @@
 #include "GroupTabModel.h"
 #include "TabGroupModel.h"
 #include "TabPersistence.h"
+#include "ThumbnailWriter.h"
 
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
 #include <QUrl>
 #include <QtDebug>
 #include <algorithm>
@@ -25,6 +27,7 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     , m_groupTabs(new GroupTabModel(this))
     , m_groupModel(new TabGroupModel(this))
     , m_closedTabs(new ClosedTabModel(this, persistence))
+    , m_thumbnailWriter(new ThumbnailWriter(this))
 {
     load();
     ensureGroups();
@@ -36,6 +39,7 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     // Every group is told, there being only a handful.
     connect(this, &TabModel::recentTabsChanged, m_groupModel,
             [this]() { m_groupModel->changedAll(TabGroupModel::Role::Previews); });
+    connect(m_thumbnailWriter, &ThumbnailWriter::written, this, &TabModel::thumbnailWritten);
 }
 
 void TabModel::load()
@@ -588,6 +592,8 @@ void TabModel::showStartPage(int tabId)
         return;
     }
     Tab &tab = m_tabs[index];
+    // A picture of the page being left, still being written, is not the start page's.
+    m_pendingThumbnails.remove(tabId);
     tab.url.clear();
     tab.title.clear();
     tab.favicon.clear();
@@ -638,6 +644,35 @@ void TabModel::updateThumbnail(int tabId, const QString &path)
     notifyRow(index, Role::Thumbnail);
     persist(tab);
     emit recentTabsChanged();
+}
+
+bool TabModel::storeThumbnail(int tabId, const QVariant &image)
+{
+    const QImage picture = image.value<QImage>();
+    if (picture.isNull()) {
+        return false;
+    }
+    const QString path = thumbnailPath(tabId);
+    if (path.isEmpty()) {
+        return false;
+    }
+    m_pendingThumbnails.insert(tabId, path);
+    m_thumbnailWriter->write(tabId, picture, path);
+    return true;
+}
+
+void TabModel::thumbnailWritten(int tabId, const QString &path, bool saved)
+{
+    const bool newest = m_pendingThumbnails.value(tabId) == path;
+    if (newest) {
+        m_pendingThumbnails.remove(tabId);
+    }
+    if (saved && newest && indexOf(tabId) >= 0) {
+        updateThumbnail(tabId, path);
+    } else {
+        // Overtaken, its tab gone, or a file the encoder gave up on part way.
+        discardThumbnail(path);
+    }
 }
 
 TabModel::MediaState TabModel::mediaState(int tabId) const

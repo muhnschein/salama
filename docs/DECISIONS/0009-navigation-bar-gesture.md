@@ -38,7 +38,10 @@ checked by putting the application in a window and pressing on it
 (`tst_qmlload::barReachUnderAFinger`).
 
 The bar reports the drag as a **distance**, not as a finished gesture: `dragStarted`,
-`dragMoved(distance)`, `dragFinished(distance)`. What that distance moves, and the
+`dragMoved(distance)`, `dragFinished(distance)`, measured from where the drag was
+caught rather than where the finger went down; and `dragArmed()` as the finger goes down,
+`dragDisarmed()` if it lifts without a drag, so the page can get ready for one
+(`0045-drag-start-without-a-stutter.md`). What that distance moves, and the
 threshold that commits it, belong to the page (`0010-tab-grid-deck.md`).
 
 That distance is measured in the **window's** coordinates, through `mapToItem(null, …)`,

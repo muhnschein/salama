@@ -6,16 +6,22 @@ The tab grid shows a picture of each page. The engine offers no thumbnail API:
 
 ## Decision
 `BrowserPage` calls `QQuickItem::grabToImage` on the active `WebView` when a load
-finishes, again when the grid is opened, and again as the application stops being the
-one on screen (`Qt.application.state`), saving to a path `TabModel.thumbnailPath()`
-hands out. The third is for the cover, which is made of these pictures and is looked at
-precisely when the app has just been put away: without it a preview was only ever as
-fresh as the last load or the last visit to the grid, so a page that had been scrolled,
-or stepped through without loading, was shown on the cover as it had been before it was
-read. The model owns the files: a fresh name per capture (so a new image is never
-hidden behind a cached one), the previous file removed when the new path is reported
-back, and every file removed when its tab closes. Files live in `CacheLocation`, and
-`discardThumbnail()` refuses to delete anything outside it.
+finishes, again when a finger goes down on the bar that opens the grid, and again as the
+application stops being the one on screen (`Qt.application.state`). The third is for the
+cover, which is made of these pictures and is looked at precisely when the app has just
+been put away: without it a preview was only ever as fresh as the last load or the last
+visit to the grid, so a page that had been scrolled, or stepped through without loading,
+was shown on the cover as it had been before it was read.
+
+The grab's picture is handed to `TabModel.storeThumbnail()`, which encodes and writes it
+on a worker thread to a path `thumbnailPath()` hands out, and reports it back through
+`updateThumbnail()` once the file is complete. The encode was QML's `saveToFile()` on the
+GUI thread once, and in the first frames of the drag that opens the grid it was a
+stutter (`0045-drag-start-without-a-stutter.md`). The model owns the files: a fresh name
+per capture (so a new image is never hidden behind a cached one), the previous file
+removed when the new path is reported back, a write overtaken by a newer one or finished
+after its tab closed thrown away, and every file removed when its tab closes. Files live
+in `CacheLocation`, and `discardThumbnail()` refuses to delete anything outside it.
 
 ## Consequences
 A grab needs a rendered item, so a tab that has not been displayed this session has no

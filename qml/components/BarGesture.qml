@@ -26,6 +26,11 @@ MouseArea {
     property real pressedY: 0
     property point pressedAt
     property point lastAt
+    // Upwards from where the drag was caught, which is Theme.startDragDistance above
+    // where the finger went down: measured from the press, the deck leapt that far in
+    // the one frame the drag began on, which on device was the stutter at the start of
+    // every drag. Silica's own flickables catch a drag the same way.
+    property real caughtY: 0
     property real distance: 0
     property bool dragging: false
     property bool pressedOnBar: false
@@ -77,6 +82,10 @@ MouseArea {
         heldDown = false
         pressedOnBar = mouse.y >= reach
         pressedRegion = pressedOnBar ? bar.regionAt(mouse.x) : ""
+        // Any press may turn into the drag. Said now, while the finger is still, so
+        // that what the grid costs to show the first time is paid before anything
+        // moves, not in the drag's first frame.
+        bar.dragArmed()
     }
     // Only in the reach. On the bar a slow tap is still a tap: the event is handed
     // back, and MouseArea then raises clicked on release as though never held.
@@ -95,19 +104,21 @@ MouseArea {
         }
         if (!dragging && !pressedOnBar && !heldDown && isPageMove(pressedAt, lastAt)) {
             forwarding = true
+            bar.dragDisarmed()
             bar.pageTouchStarted(pressedAt)
             bar.pageTouchMoved(lastAt)
             return
         }
-        distance = pressedY - lastAt.y
         // Theme.startDragDistance is the movement Silica treats as a drag rather than a
         // shaky tap; past it the press belongs to the page, not a control.
-        if (!dragging && distance > Theme.startDragDistance) {
+        if (!dragging && pressedY - lastAt.y > Theme.startDragDistance) {
             dragging = true
+            caughtY = lastAt.y
             pressedRegion = ""
             bar.dragStarted()
         }
         if (dragging) {
+            distance = caughtY - lastAt.y
             bar.dragMoved(distance)
         }
     }
@@ -122,6 +133,8 @@ MouseArea {
         }
         if (dragging) {
             bar.dragFinished(distance)
+        } else if (!forwarding) {
+            bar.dragDisarmed()
         }
         forwarding = false
         pressedRegion = ""
@@ -132,6 +145,8 @@ MouseArea {
     onCanceled: {
         if (dragging) {
             bar.dragFinished(0)
+        } else if (!forwarding) {
+            bar.dragDisarmed()
         }
         if (forwarding) {
             bar.pageTouchEnded(lastAt)
