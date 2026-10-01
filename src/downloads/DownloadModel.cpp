@@ -79,8 +79,8 @@ bool resumable(const DownloadModel::Download &download)
 bool DownloadModel::Tray::operator==(const Tray &other) const
 {
     return count == other.count && failed == other.failed && paused == other.paused &&
-           progress == other.progress && names == other.names && row == other.row &&
-           status == other.status && size == other.size;
+           progress == other.progress && names == other.names && status == other.status &&
+           size == other.size;
 }
 
 DownloadModel::DownloadModel(const Storage &storage, QString directory, QObject *parent)
@@ -203,11 +203,6 @@ int DownloadModel::trayProgress() const
 QStringList DownloadModel::trayNames() const
 {
     return m_tray.names;
-}
-
-int DownloadModel::trayRow() const
-{
-    return m_tray.row;
 }
 
 int DownloadModel::trayStatus() const
@@ -439,14 +434,6 @@ int DownloadModel::rowOf(int downloadId) const
     return -1;
 }
 
-QString DownloadModel::folderUrl(int row) const
-{
-    if (row < 0 || row >= m_downloads.count() || m_downloads.at(row).path.isEmpty()) {
-        return QUrl::fromLocalFile(m_directory).toString();
-    }
-    return QUrl::fromLocalFile(QFileInfo(m_downloads.at(row).path).absolutePath()).toString();
-}
-
 QString DownloadModel::formatSize(double bytes)
 {
     static const char *const units[] = {"B", "kB", "MB", "GB", "TB"};
@@ -572,13 +559,11 @@ void DownloadModel::recount()
     Tray tray;
     int coming = 0;
     int percent = 0;
-    for (int row = 0; row < m_downloads.count(); ++row) {
-        const Download &download = m_downloads.at(row);
+    for (const Download &download : m_downloads) {
         if (download.engineId == 0 || download.status == Done || download.dismissed) {
             continue;
         }
         if (tray.count == 0) {
-            tray.row = row;
             tray.status = download.status;
             tray.size = download.size;
         }

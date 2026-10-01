@@ -4073,7 +4073,22 @@ void tst_qmlload::downloadsPage()
     QVERIFY(!shows(rows.first(), "resumeDownloadMenu"));
     QVERIFY(!shows(rows.first(), "openDownloadMenu"));
     QVERIFY(!shows(rows.first(), "deleteDownloadMenu"));
-    QVERIFY(!shows(rows.first(), "openFolderMenu"));
+    // The menu holds these and nothing else: no folder to open, which the platform will
+    // not open from inside Sailjail, and no link to copy.
+    const auto entries = [](const QObject *menu) {
+        QStringList names;
+        for (const QObject *child : menu->children()) {
+            if (child->inherits("QQuickItem")) {
+                names.append(child->objectName());
+            }
+        }
+        return names;
+    };
+    QCOMPARE(
+        entries(rows.first()->property("menu").value<QObject *>()),
+        QStringList({QStringLiteral("openDownloadMenu"), QStringLiteral("pauseDownloadMenu"),
+                     QStringLiteral("resumeDownloadMenu"), QStringLiteral("deleteDownloadMenu"),
+                     QStringLiteral("removeDownloadMenu")}));
 
     // Not yet there, a tap opens nothing.
     const UrlCatcher files(QStringLiteral("file"));
@@ -4118,16 +4133,11 @@ void tst_qmlload::downloadsPage()
     click(rows.first());
     QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(report)});
     QCOMPARE(currentPage(), page);
-    // Its menu opens it too, and the folder it is in, and copies where it came from.
+    // Its menu opens it too.
     QVERIFY(!shows(rows.first(), "pauseDownloadMenu"));
     QVERIFY(!shows(rows.first(), "resumeDownloadMenu"));
     click(part(rows.first(), "openDownloadMenu"));
     QCOMPARE(files.opened.count(), 2);
-    click(part(rows.first(), "openFolderMenu"));
-    QCOMPARE(files.opened.last(), QUrl::fromLocalFile(folder));
-    click(part(rows.first(), "copyDownloadLinkMenu"));
-    QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(),
-             QStringLiteral("https://files.example/report.pdf"));
 
     // One that failed says so in the error colour, newest first; a tap on it opens
     // nothing, and its ring tries it again.
@@ -4149,7 +4159,7 @@ void tst_qmlload::downloadsPage()
     QCOMPARE(icon(rows.first()), QUrl(QStringLiteral("image://theme/icon-m-refresh")));
     QCOMPARE(text(rows.first(), "resumeDownloadMenu"), QStringLiteral("Retry"));
     click(rows.first());
-    QCOMPARE(files.opened.count(), 3);
+    QCOMPARE(files.opened.count(), 2);
     QCOMPARE(currentPage(), page);
     click(part(rows.first(), "downloadAction"));
     QCOMPARE(engineTold(), told(QStringLiteral("retryDownload"), 2));
@@ -4185,16 +4195,15 @@ void tst_qmlload::downloadsPage()
     QCOMPARE(text(rows.first(), "downloadStatus"), QStringLiteral("File not found"));
     QVERIFY(!shows(rows.first(), "openDownloadMenu"));
     QVERIFY(!shows(rows.first(), "deleteDownloadMenu"));
-    QVERIFY(!shows(rows.first(), "openFolderMenu"));
     QCOMPARE(part(rows.first(), "downloadFileIcon")->property("opacity").toReal(),
              evaluate(scope, QStringLiteral("Theme.opacityLow")).toReal());
     const int opened = files.opened.count();
     click(rows.first());
     QCOMPARE(files.opened.count(), opened);
 
-    // The pulley opens the downloads folder, forgets the finished ones, or all of them.
-    click(find(QStringLiteral("openDownloadsFolderMenu")));
-    QCOMPARE(files.opened.last(), QUrl::fromLocalFile(folder));
+    // The pulley has one entry: it forgets the finished ones, and leaves the rest.
+    QCOMPARE(entries(find(QStringLiteral("downloadsPulley"))),
+             QStringList{QStringLiteral("clearFinishedDownloadsMenu")});
     engineSays(QStringLiteral("{msg: 'dl-start', id: 4, displayName: 'later.zip',"
                               " sourceUrl: 'https://files.example/later.zip',"
                               " targetPath: '%1/later.zip', mimeType: 'application/zip', size: 0}")
@@ -4204,14 +4213,13 @@ void tst_qmlload::downloadsPage()
     QCOMPARE(downloads->count(), 1);
     QCOMPARE(text(findAll(QStringLiteral("downloadDelegate")).first(), "downloadName"),
              QStringLiteral("later.zip"));
-    QObject *clear = find(QStringLiteral("clearDownloadsMenu"));
-    QVERIFY(clear->property("enabled").toBool());
-    click(clear);
-    // Still coming, it is paused rather than left to arrive unlisted.
+    // Removed from its menu while still coming, it is paused rather than left to arrive
+    // unlisted.
+    click(part(findAll(QStringLiteral("downloadDelegate")).first(), "removeDownloadMenu"));
     QCOMPARE(engineTold(), told(QStringLiteral("cancelDownload"), 4));
     QCOMPARE(downloads->count(), 0);
     QCOMPARE(findAll(QStringLiteral("downloadDelegate")).count(), 0);
-    QVERIFY(!clear->property("enabled").toBool());
+    QVERIFY(!find(QStringLiteral("clearFinishedDownloadsMenu"))->property("enabled").toBool());
 }
 
 // One of an earlier run is fetched again from where it came from, and the engine's start
@@ -4299,15 +4307,10 @@ void tst_qmlload::downloadBanner()
         return findObjects(banner, QLatin1String(name)).first();
     };
     const auto text = [&part](const char *name) { return part(name)->property("text").toString(); };
-    const auto lastTold = [this, scope]() {
-        return evaluate(scope, QStringLiteral("WebEngine.notifications[WebEngine.notifications"
-                                              ".length - 1].value.msg"))
-            .toString();
-    };
     QVERIFY(!banner->property("shown").toBool());
     QCOMPARE(banner->property("opacity").toReal(), 0.0);
 
-    // One download: its name, how far along, and its own button.
+    // One download: its name and how far along it is.
     engineSays(QStringLiteral("{msg: 'dl-start', id: 1, displayName: 'report.pdf',"
                               " sourceUrl: 'https://files.example/report.pdf',"
                               " targetPath: '/tmp/report.pdf', mimeType: 'application/pdf',"
@@ -4322,33 +4325,37 @@ void tst_qmlload::downloadBanner()
     QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 0.4);
     // It fades in.
     QTRY_COMPARE(banner->property("opacity").toReal(), 1.0);
-    QVERIFY(part("downloadBannerAction")->property("visible").toBool());
-    click(part("downloadBannerAction"));
-    QCOMPARE(lastTold(), QStringLiteral("cancelDownload"));
+    QVERIFY(part("downloadBannerDetail")->property("visible").toBool());
+    // No button of its own: what is done to a download is done in the list.
+    for (QObject *item : findObjects(banner, QString())) {
+        QVERIFY2(!QByteArray(item->metaObject()->className()).startsWith("IconButton"),
+                 item->metaObject()->className());
+    }
+    const QColor secondary =
+        evaluate(scope, QStringLiteral("Theme.secondaryColor")).value<QColor>();
+    const QColor error = evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>();
+    QCOMPARE(part("downloadBannerDetail")->property("color").value<QColor>(), secondary);
     engineSays(QStringLiteral("{msg: 'dl-cancel', id: 1}"));
     QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Paused · 40%"));
-    click(part("downloadBannerAction"));
-    QCOMPARE(lastTold(), QStringLiteral("retryDownload"));
     engineSays(QStringLiteral("{msg: 'dl-fail', id: 1}"));
     QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Failed"));
-    QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(),
-             evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>());
-    click(part("downloadBannerAction"));
-    QCOMPARE(lastTold(), QStringLiteral("retryDownload"));
+    QCOMPARE(part("downloadBannerDetail")->property("color").value<QColor>(), error);
+    QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(), error);
     engineSays(QStringLiteral("{msg: 'dl-start', id: 1}"));
 
-    // More: how many and how far together, their names, and what went wrong.
+    // More: how many and how far together, and no line under it -- not their names.
     engineSays(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'b.iso', size: 0}"));
     engineSays(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
     QCOMPARE(text("downloadBannerTitle"), QStringLiteral("2 download(s) · 30%"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("b.iso, report.pdf"));
-    QVERIFY(!part("downloadBannerAction")->property("visible").toBool());
+    QCOMPARE(text("downloadBannerDetail"), QString());
+    QVERIFY(!part("downloadBannerDetail")->property("visible").toBool());
     engineSays(QStringLiteral("{msg: 'dl-start', id: 3, displayName: 'c.zip', size: 0}"));
     engineSays(QStringLiteral("{msg: 'dl-fail', id: 3}"));
     engineSays(QStringLiteral("{msg: 'dl-cancel', id: 2}"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("c.zip, b.iso +1 · 1 failed · 1 paused"));
-    QCOMPARE(part("downloadBannerDetail")->property("color").value<QColor>(),
-             evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>());
+    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("3 download(s) · 30%"));
+    QVERIFY(!part("downloadBannerDetail")->property("visible").toBool());
+    QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(),
+             evaluate(scope, QStringLiteral("Theme.highlightColor")).value<QColor>());
 
     // Out of the way while the address is edited and while the grid is out.
     tapBar(QStringLiteral("address"));
@@ -4365,17 +4372,17 @@ void tst_qmlload::downloadBanner()
     QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
     popPage();
 
-    // One arriving is said for a moment, and a tap then opens its file.
+    // One arriving is said for a moment; a tap then still opens the list, never the file.
     engineSays(QStringLiteral("{msg: 'dl-done', id: 1}"));
     QVERIFY(banner->property("flashing").toBool());
     QCOMPARE(text("downloadBannerTitle"), QStringLiteral("report.pdf"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Downloaded · tap to open"));
+    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Downloaded"));
     QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 1.0);
-    QVERIFY(!part("downloadBannerAction")->property("visible").toBool());
     const UrlCatcher files(QStringLiteral("file"));
     evaluate(banner, QStringLiteral("activate()"));
-    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(QStringLiteral("/tmp/report.pdf"))});
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(files.opened.isEmpty());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    popPage();
     // Then it goes back to the rest.
     part("downloadBannerFlash")->setProperty("running", false);
     QCOMPARE(text("downloadBannerTitle"), QStringLiteral("2 download(s) · 20%"));

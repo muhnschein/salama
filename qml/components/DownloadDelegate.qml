@@ -23,7 +23,6 @@ ListItem {
     signal actionRequested()
     signal removeRequested()
     signal deleteRequested()
-    signal folderRequested()
 
     objectName: "downloadDelegate"
     width: ListView.view.width
@@ -52,17 +51,6 @@ ListItem {
                 return row.failed ? qsTr("Retry") : qsTr("Resume")
             }
             onClicked: row.actionRequested()
-        }
-        MenuItem {
-            objectName: "openFolderMenu"
-            visible: row.openable
-            text: qsTr("Open folder")
-            onClicked: row.folderRequested()
-        }
-        MenuItem {
-            objectName: "copyDownloadLinkMenu"
-            text: qsTr("Copy link")
-            onClicked: Clipboard.text = model.url
         }
         MenuItem {
             objectName: "deleteDownloadMenu"

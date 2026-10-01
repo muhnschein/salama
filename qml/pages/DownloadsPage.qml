@@ -3,8 +3,8 @@
 //
 // What pages have downloaded, newest first. Each row's ring pauses one coming and
 // resumes one paused or failed; a tap on one that has arrived opens the file with
-// whatever the platform opens that kind of file with, and its menu opens the folder it
-// is in or deletes it. The list is the browser's own, not the platform's list of
+// whatever the platform opens that kind of file with, and its menu deletes it. The
+// list is the browser's own, not the platform's list of
 // transfers, which a Harbour application may not open
 // (docs/DECISIONS/0022-downloads-list.md, 0038-download-status.md).
 import QtQuick 2.6
@@ -53,23 +53,14 @@ Page {
         }
 
         PullDownMenu {
-            MenuItem {
-                objectName: "openDownloadsFolderMenu"
-                text: qsTr("Open downloads folder")
-                onClicked: Qt.openUrlExternally(DownloadModel.folderUrl(-1))
-            }
-            // The files stay where they are; these forget that they were downloaded.
+            objectName: "downloadsPulley"
+
+            // The files stay where they are; this forgets that they were downloaded.
             MenuItem {
                 objectName: "clearFinishedDownloadsMenu"
                 text: qsTr("Clear finished")
                 enabled: DownloadModel.count > 0
                 onClicked: DownloadModel.clearFinished()
-            }
-            MenuItem {
-                objectName: "clearDownloadsMenu"
-                text: qsTr("Clear list")
-                enabled: DownloadModel.count > 0
-                onClicked: DownloadModel.clear()
             }
         }
 
@@ -79,7 +70,6 @@ Page {
             onClicked: downloadsPage.open(index, delegate.openable)
             onActionRequested: downloadsPage.act(index, model.status)
             onRemoveRequested: DownloadModel.remove(index)
-            onFolderRequested: Qt.openUrlExternally(DownloadModel.folderUrl(index))
             // Found again by its id when the time is up: rows above it may have come
             // or gone in the meantime.
             onDeleteRequested: {

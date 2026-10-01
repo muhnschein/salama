@@ -6,12 +6,13 @@
 // comes up as a download starts, and speaks for the downloads of this run that have not
 // arrived -- coming, paused or failed -- as DownloadModel's tray counts them:
 //
-//  * one: its name, how far along it is, and a button to pause, resume or retry it
-//  * more: how many, how far along together, their names and how many failed or paused
+//  * one: its name, and how far along it is, paused or failed
+//  * more: how many, and how far along together
 //
-// When one arrives it says so for a few seconds, and a tap opens the file. Otherwise a
-// tap opens the list of downloads; a swipe sideways takes it away until a download
-// starts or changes state. It goes once there is nothing left to say.
+// When one arrives it says so for a few seconds. A tap opens the list of downloads,
+// where each has its own controls, whatever the banner says; a swipe sideways takes it
+// away until a download starts or changes state. It goes once there is nothing left to
+// say.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -22,8 +23,7 @@ Item {
     // Whether the page leaves room for it: not while the address is edited, a word is
     // looked for, or the grid is out.
     property bool allowed: true
-    // The download that arrived last, said for a moment.
-    property int flashId: -1
+    // The name of the download that arrived last, said for a moment.
     property string flashName
     readonly property bool flashing: flashTimer.running
     readonly property bool shown: allowed && (flashing || DownloadModel.trayCount > 0)
@@ -34,13 +34,9 @@ Item {
         DownloadModel.dismissTray()
     }
 
-    // A tap: the file that has just arrived, or else the list.
+    // A tap: the list, never a file.
     function activate() {
-        if (flashing) {
-            Qt.openUrlExternally(DownloadModel.fileUrl(DownloadModel.rowOf(flashId)))
-        } else {
-            pageStack.push(Qt.resolvedUrl("../pages/DownloadsPage.qml"))
-        }
+        pageStack.push(Qt.resolvedUrl("../pages/DownloadsPage.qml"))
     }
 
     function title() {
@@ -55,34 +51,22 @@ Item {
                 + DownloadModel.trayProgress + "%"
     }
 
+    // The line under the title: none for several downloads.
     function detail() {
         if (flashing) {
-            //: The banner as a download arrives; a tap on it opens the file
-            return qsTr("Downloaded · tap to open")
+            //: The banner as a download arrives
+            return qsTr("Downloaded")
         }
-        if (single) {
-            if (DownloadModel.trayStatus === DownloadModel.Failed) {
-                return qsTr("Failed")
-            }
-            if (DownloadModel.trayStatus === DownloadModel.Canceled) {
-                return qsTr("Paused · %1%").arg(DownloadModel.trayProgress)
-            }
-            return says.progress(DownloadModel.traySize, DownloadModel.trayProgress)
+        if (!single) {
+            return ""
         }
-        var names = DownloadModel.trayNames
-        var line = names.slice(0, 2).join(", ")
-        if (names.length > 2) {
-            line += " +" + (names.length - 2)
+        if (DownloadModel.trayStatus === DownloadModel.Failed) {
+            return qsTr("Failed")
         }
-        if (DownloadModel.trayFailed > 0) {
-            //: How many of the downloads on the banner failed
-            line += " · " + qsTr("%n failed", "", DownloadModel.trayFailed)
+        if (DownloadModel.trayStatus === DownloadModel.Canceled) {
+            return qsTr("Paused · %1%").arg(DownloadModel.trayProgress)
         }
-        if (DownloadModel.trayPaused > 0) {
-            //: How many of the downloads on the banner are paused
-            line += " · " + qsTr("%n paused", "", DownloadModel.trayPaused)
-        }
-        return line
+        return says.progress(DownloadModel.traySize, DownloadModel.trayProgress)
     }
 
     objectName: "downloadBanner"
@@ -101,7 +85,6 @@ Item {
     Connections {
         target: DownloadModel
         onFinished: {
-            banner.flashId = downloadId
             banner.flashName = name
             flashTimer.restart()
         }
@@ -198,8 +181,8 @@ Item {
             anchors {
                 left: badge.right
                 leftMargin: Theme.paddingMedium
-                right: action.visible ? action.left : parent.right
-                rightMargin: action.visible ? 0 : Theme.paddingMedium
+                right: parent.right
+                rightMargin: Theme.paddingMedium
                 verticalCenter: parent.verticalCenter
             }
 
@@ -215,39 +198,12 @@ Item {
             Label {
                 objectName: "downloadBannerDetail"
                 width: parent.width
+                visible: text.length > 0
                 text: banner.detail()
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeExtraSmall
-                color: !banner.flashing && DownloadModel.trayFailed > 0 ? Theme.errorColor
-                                                                       : Theme.secondaryColor
-            }
-        }
-
-        // One download's own button: pause it, or resume or retry it.
-        IconButton {
-            id: action
-
-            objectName: "downloadBannerAction"
-            anchors {
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-            }
-            width: Theme.itemSizeSmall
-            height: width
-            visible: banner.single
-            icon.source: {
-                if (DownloadModel.trayStatus === DownloadModel.Running) {
-                    return "image://theme/icon-m-pause"
-                }
-                return DownloadModel.trayStatus === DownloadModel.Failed
-                        ? "image://theme/icon-m-refresh" : "image://theme/icon-m-play"
-            }
-            onClicked: {
-                if (DownloadModel.trayStatus === DownloadModel.Running) {
-                    DownloadModel.pause(DownloadModel.trayRow)
-                } else {
-                    DownloadModel.resume(DownloadModel.trayRow)
-                }
+                color: banner.single && DownloadModel.trayStatus === DownloadModel.Failed
+                       ? Theme.errorColor : Theme.secondaryColor
             }
         }
     }

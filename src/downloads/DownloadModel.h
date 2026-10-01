@@ -72,7 +72,7 @@ class DownloadModel : public QAbstractListModel
     // The downloads the browsing page's banner speaks for: the ones of this run that
     // have not arrived -- coming, paused or failed -- and have not been swiped away
     // (dismissTray()), newest first. How many, how many of those failed and how many
-    // are paused, their names, and the newest one's row and state, which is what the
+    // are paused, their names, and the newest one's state and size, which is what the
     // banner shows when it is the only one. Progress is the mean of their percentages,
     // as runningProgress is, failed ones left out.
     Q_PROPERTY(int trayCount READ trayCount NOTIFY trayChanged)
@@ -80,7 +80,6 @@ class DownloadModel : public QAbstractListModel
     Q_PROPERTY(int trayPaused READ trayPaused NOTIFY trayChanged)
     Q_PROPERTY(int trayProgress READ trayProgress NOTIFY trayChanged)
     Q_PROPERTY(QStringList trayNames READ trayNames NOTIFY trayChanged)
-    Q_PROPERTY(int trayRow READ trayRow NOTIFY trayChanged)
     Q_PROPERTY(int trayStatus READ trayStatus NOTIFY trayChanged)
     Q_PROPERTY(double traySize READ traySize NOTIFY trayChanged)
 
@@ -154,7 +153,6 @@ public:
     int trayPaused() const;
     int trayProgress() const;
     QStringList trayNames() const;
-    int trayRow() const;
     int trayStatus() const;
     double traySize() const;
     // The rows as the list shows them, newest first, for the address bar's suggestions
@@ -205,10 +203,6 @@ public:
     // The row a download is on, by the id of its own that lasts, or -1 once it has
     // gone: what a list other than this one keeps to find it again by.
     Q_INVOKABLE int rowOf(int downloadId) const;
-    // The folder a download's file is in, as a URL, or the downloads folder's for a row
-    // there is not.
-    Q_INVOKABLE QString folderUrl(int row) const;
-
     // A number of bytes as people read one: "512 B", "7.4 MB", "12 MB", in steps of
     // 1024 and with a decimal below ten, in the locale's own digits.
     Q_INVOKABLE static QString formatSize(double bytes);
@@ -252,7 +246,6 @@ private:
         int paused = 0;
         int progress = 0;
         QStringList names;
-        int row = -1;
         int status = Running;
         qint64 size = 0;
 

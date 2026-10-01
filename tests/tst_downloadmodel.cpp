@@ -49,7 +49,6 @@ private slots:
     void deleteFile();
     void deleteFileStaysInDownloads();
     void fileExists();
-    void folderUrl();
     void formatSize_data();
     void formatSize();
     void tray();
@@ -1114,7 +1113,8 @@ void tst_downloadmodel::clearFinished()
     // What is coming and what the banner says are as they were.
     QCOMPARE(runningSpy.count(), 0);
     QCOMPARE(model.trayCount(), 2);
-    QCOMPARE(model.trayRow(), 0);
+    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("d.pdf"), QStringLiteral("b.pdf")}));
+    QCOMPARE(traySpy.count(), 0);
 
     model.clearFinished();
     QCOMPARE(countSpy.count(), 5);
@@ -1239,23 +1239,6 @@ void tst_downloadmodel::fileExists()
     QCOMPARE(emptySpy.count(), 0);
 }
 
-void tst_downloadmodel::folderUrl()
-{
-    QTemporaryDir dir;
-    Storage storage(dir.path());
-    DownloadModel model(storage, dir.path());
-    const QString downloads = QUrl::fromLocalFile(dir.path()).toString();
-    QCOMPARE(model.folderUrl(-1), downloads);
-    QCOMPARE(model.folderUrl(0), downloads);
-
-    model.observe(Topic, startMessage(1, QStringLiteral("two words.pdf")));
-    QCOMPARE(QUrl(model.folderUrl(0)).toLocalFile(), QStringLiteral("/home/defaultuser/Downloads"));
-    QVariantMap nowhere = startMessage(2, QStringLiteral("x"));
-    nowhere.remove(QStringLiteral("targetPath"));
-    model.observe(Topic, nowhere);
-    QCOMPARE(model.folderUrl(0), downloads);
-}
-
 void tst_downloadmodel::formatSize_data()
 {
     QTest::addColumn<double>("bytes");
@@ -1298,14 +1281,12 @@ void tst_downloadmodel::tray()
     DownloadModel model(storage, dir.path());
     QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
     QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayRow(), -1);
     QCOMPARE(model.trayNames(), QStringList());
 
     // One, as the banner shows it alone.
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, progressMessage(1, 40.0));
     QCOMPARE(model.trayCount(), 1);
-    QCOMPARE(model.trayRow(), 0);
     QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
     QCOMPARE(model.traySize(), 2048.0);
     QCOMPARE(model.trayProgress(), 40);
@@ -1327,11 +1308,11 @@ void tst_downloadmodel::tray()
     QCOMPARE(model.trayFailed(), 1);
     QCOMPARE(model.trayProgress(), 30);
     // The newest is still the one the banner would show alone, failed or not.
-    QCOMPARE(model.trayRow(), 0);
     QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Failed));
+    QCOMPARE(model.traySize(), 2048.0);
     // Once it has gone, the next is.
     model.remove(0);
-    QCOMPARE(model.trayRow(), 0);
+    QCOMPARE(model.trayNames().value(0), QStringLiteral("b.iso"));
     QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
     QCOMPARE(model.traySize(), 0.0);
     model.observe(Topic, startMessage(3, QStringLiteral("c.zip")));
@@ -1352,19 +1333,22 @@ void tst_downloadmodel::tray()
     model.observe(Topic, progressMessage(2, 20.0));
     QCOMPARE(traySpy.count(), said);
 
-    // A row coming or going above the newest moves it.
+    // A download that comes and arrives above the rest leaves them as they were once it
+    // has, and so does its row going.
     model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
     model.observe(Topic, message(QStringLiteral("dl-done"), 4));
-    QCOMPARE(model.trayRow(), 1);
+    const int arrived = traySpy.count();
     model.remove(0);
-    QCOMPARE(model.trayRow(), 0);
+    QCOMPARE(traySpy.count(), arrived);
+    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("c.zip"), QStringLiteral("b.iso")}));
     // Forgotten, it is not spoken for; nor after the history takes it.
     model.remove(0);
     QCOMPARE(model.trayCount(), 1);
+    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("b.iso")});
     model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
     model.clearSince(0);
     QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayRow(), -1);
+    QCOMPARE(model.trayNames(), QStringList());
     QCOMPARE(model.trayProgress(), 0);
 }
 
@@ -1386,7 +1370,7 @@ void tst_downloadmodel::trayDismissed()
     QCOMPARE(model.trayCount(), 2);
     model.dismissTray();
     QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayRow(), -1);
+    QCOMPARE(model.trayNames(), QStringList());
 
     // Progress is no news.
     model.observe(Topic, progressMessage(1, 50.0));

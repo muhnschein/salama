@@ -27,16 +27,14 @@ download starts, and speaks for this run's downloads that have not arrived -- co
 paused or failed -- which `DownloadModel`'s *tray* counts:
 
 - One: its name; how much of how much and the percentage (or the percentage alone, with
-  the size unknown), "Paused · 40%" or "Failed"; Silica's ring at its start, as the menu
-  and the cover draw it; and at its end a button to pause, resume or retry it.
+  the size unknown), "Paused · 40%" or "Failed" in the error colour; and Silica's ring at
+  its start, as the menu and the cover draw it.
 - More: "3 downloads · 42%" -- the ring and the figure the mean of their percentages, as
-  the menu's ring is, failed ones left out -- over the first two names, "+N" for the rest,
-  and how many failed (the line in the error colour) and how many are paused. No button:
-  a tap opens the list, where each has its own.
-- When one arrives it says "*name* · Downloaded · tap to open" for four seconds, and a tap
-  then opens the file.
+  the menu's ring is, failed ones left out -- and no line under it: not their names.
+- When one arrives it says "*name* · Downloaded" for four seconds.
 
-A tap otherwise opens Menu > Downloads. A swipe sideways takes the banner away: the rows on
+The banner has no button. A tap on it, whatever it says, opens Menu > Downloads, never a
+file: what is done to a download is done there, where each has its own. A swipe sideways takes the banner away: the rows on
 it are marked dismissed, not stored, and come back when they change state -- paused,
 failed, started again -- or a new download starts; progress alone brings nothing back. It
 is out of the way while the address is edited, a word looked for, or the grid is out, and
@@ -51,11 +49,16 @@ under the name says "3.1 MB of 7.4 MB · 42%", "Paused · 42%", "Failed" in the 
 not found" when the file has gone since (checked as the page opens). Its menu: Open; Pause,
 or Resume / Retry, or Download again for one of an earlier run, which the engine has
 forgotten -- `addDownload` from where it came from into where it was going, its row giving
-way to the engine's new one; Open folder; Copy link; Delete file, after Silica's remorse
-timer; Remove from list. The pulley: Open downloads folder, Clear finished, Clear list.
+way to the engine's new one; Delete file, after Silica's remorse timer; Remove from list.
+The pulley: Clear finished.
 
-Removing a row, or clearing the list, pauses any download still coming first, so that
-nothing goes on arriving that no list knows of.
+There is no Open folder: `Qt.openUrlExternally` on a folder opens nothing on the device
+from inside Sailjail. No Copy link, and no Clear list: the list is cleared with the
+history, and one row at a time.
+
+Removing a row pauses a download still coming first, so that nothing goes on arriving
+that no list knows of; so does `clear()`, which clearing the history when the browser
+closes calls.
 
 **Delete file** deletes only a file that has arrived and lies, links and `..` followed,
 under the downloads folder's parent, `~/Downloads` -- where the engine saves when its own
@@ -69,12 +72,10 @@ browsing page (`tst_qmlstatic::webViewImportOnlyInBrowserPage`). The model raise
 
 ## Consequences
 A download is visible where it was started from, and can be paused, resumed, retried,
-fetched again, opened, found in the file manager and deleted from the list.
+fetched again, opened and deleted from the list.
 
 Whether a resume goes on from where it stopped is the server's: one without range
-requests starts over, and the ring with it. Whether `Qt.openUrlExternally` on a folder
-opens the file manager from inside Sailjail is a device check (`docs/TESTING.md`), as
-opening a file was (0022); if it does not, Open folder is the thing to change.
+requests starts over, and the ring with it.
 
 The banner sits over the foot of the page while it shows. A swipe puts it away.
 

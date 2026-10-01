@@ -316,11 +316,6 @@
         </translation>
     </message>
     <message>
-        <source>Downloaded · tap to open</source>
-        <extracomment>The banner as a download arrives; a tap on it opens the file</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -328,21 +323,10 @@
         <source>Paused · %1%</source>
         <translation type="unfinished"></translation>
     </message>
-    <message numerus="yes">
-        <source>%n failed</source>
-        <extracomment>How many of the downloads on the banner failed</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n paused</source>
-        <extracomment>How many of the downloads on the banner are paused</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
+    <message>
+        <source>Downloaded</source>
+        <extracomment>The banner as a download arrives</extracomment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -370,14 +354,6 @@
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -423,19 +399,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clear list</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No downloads</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open downloads folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

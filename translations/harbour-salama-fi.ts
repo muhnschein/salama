@@ -316,11 +316,6 @@
         </translation>
     </message>
     <message>
-        <source>Downloaded · tap to open</source>
-        <extracomment>The banner as a download arrives; a tap on it opens the file</extracomment>
-        <translation>Ladattu · avaa napauttamalla</translation>
-    </message>
-    <message>
         <source>Failed</source>
         <translation>Epäonnistui</translation>
     </message>
@@ -328,21 +323,10 @@
         <source>Paused · %1%</source>
         <translation>Keskeytetty · %1 %</translation>
     </message>
-    <message numerus="yes">
-        <source>%n failed</source>
-        <extracomment>How many of the downloads on the banner failed</extracomment>
-        <translation>
-            <numerusform>%n epäonnistui</numerusform>
-            <numerusform>%n epäonnistui</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n paused</source>
-        <extracomment>How many of the downloads on the banner are paused</extracomment>
-        <translation>
-            <numerusform>%n keskeytetty</numerusform>
-            <numerusform>%n keskeytetty</numerusform>
-        </translation>
+    <message>
+        <source>Downloaded</source>
+        <extracomment>The banner as a download arrives</extracomment>
+        <translation>Ladattu</translation>
     </message>
 </context>
 <context>
@@ -371,14 +355,6 @@
     <message>
         <source>Resume</source>
         <translation>Jatka</translation>
-    </message>
-    <message>
-        <source>Open folder</source>
-        <translation>Avaa kansio</translation>
-    </message>
-    <message>
-        <source>Copy link</source>
-        <translation>Kopioi linkki</translation>
     </message>
     <message>
         <source>Delete file</source>
@@ -423,20 +399,12 @@
         <translation>Lataukset</translation>
     </message>
     <message>
-        <source>Clear list</source>
-        <translation>Tyhjennä luettelo</translation>
-    </message>
-    <message>
         <source>No downloads</source>
         <translation>Ei latauksia</translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
         <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
-    </message>
-    <message>
-        <source>Open downloads folder</source>
-        <translation>Avaa latauskansio</translation>
     </message>
     <message>
         <source>Clear finished</source>
