@@ -220,6 +220,34 @@ void tst_qmlload::init()
     m_core->settings()->setTutorialShown(true);
     QVERIFY(loadWindow());
     forgetStartupMessages();
+    // DIAGNOSTIC (temporary)
+    static QElapsedTimer clock;
+    if (!clock.isValid()) {
+        clock.start();
+    }
+    qWarning("DIAG2 init t=%lld appState=%d background=%d", clock.elapsed(),
+             int(QGuiApplication::applicationState()), m_core->pageActivity()->background());
+    connect(qApp, &QGuiApplication::applicationStateChanged, m_core.data(),
+            [](Qt::ApplicationState st) {
+                qWarning("DIAG2 appStateChanged t=%lld state=%d focus=%s", clock.elapsed(), int(st),
+                         QGuiApplication::focusWindow()
+                             ? QGuiApplication::focusWindow()->metaObject()->className()
+                             : "none");
+            });
+    Core *core = m_core.data();
+    connect(core->pageActivity(), &Salama::PageActivity::backgroundChanged, core, [core]() {
+        qWarning("DIAG2 backgroundChanged t=%lld bg=%d", clock.elapsed(),
+                 core->pageActivity()->background());
+    });
+    connect(core->pageActivity(), &Salama::PageActivity::playStateChanged, core,
+            []() { qWarning("DIAG2 playStateChanged t=%lld", clock.elapsed()); });
+    connect(core->pageMedia(), &Salama::PageMedia::requested, core, [](int tab, int cmd) {
+        qWarning("DIAG2 requested t=%lld tab=%d cmd=%d", clock.elapsed(), tab, cmd);
+    });
+    connect(core->tabs(), &TabModel::activeMediaChanged, core, [core]() {
+        qWarning("DIAG2 activeMediaChanged t=%lld state=%d", clock.elapsed(),
+                 int(core->tabs()->mediaState(core->tabs()->activeTabId())));
+    });
 }
 
 // What the browser tells the engine as it starts -- it asks for the sites allowed to

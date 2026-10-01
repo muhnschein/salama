@@ -41,10 +41,10 @@ jobs:
           for i in 1 2 3 4; do
             build/tests/tst_qmlload -maxwarnings 0 > full.log 2>&1 || fails=$((fails+1))
             echo "full $i rc=$?"
-            grep -E "DIAG|^FAIL|Loc:|Totals" full.log | cut -c1-600
+            grep -E "^FAIL|Loc:|Totals" full.log | cut -c1-600; grep -B60 -A3 "^FAIL" full.log | grep -E "DIAG2|FAIL|Loc" | cut -c1-300
           done
           for i in $(seq 1 40); do
-            build/tests/tst_qmlload cover coverWithNothingToSay coverShowsDownloads coverShowsWhatPlays > sub.log 2>&1 || { fails=$((fails+1)); grep -E "DIAG|^FAIL|Loc:" sub.log | cut -c1-600; }
+            build/tests/tst_qmlload cover coverWithNothingToSay coverShowsDownloads coverShowsWhatPlays > sub.log 2>&1 || { fails=$((fails+1)); grep -E "DIAG2|^FAIL|Loc:" sub.log | cut -c1-300; }
           done
-          grep -h "DIAG never\|DIAG slow" full.log sub.log || true
+          ls -la ~/.cache ~/.config ~/.local/share 2>&1 | head -40
           echo "fails=$fails"
