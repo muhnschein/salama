@@ -22,6 +22,8 @@ Column {
     objectName: "siteSecurityHero"
     width: parent.width
     spacing: Theme.paddingMedium
+    // Clear of the page header above it, as a page's first item is.
+    topPadding: Theme.paddingLarge * 2
     bottomPadding: Theme.paddingLarge
 
     Icon {

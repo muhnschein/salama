@@ -26,18 +26,22 @@ for, or all of them, is not drawn. The words are sailfish-browser's.
 
 **Tracking protection for the site** is a switch. It adds the `trackingprotection`
 permission of the site's origin or takes it away (0039), and loads the page again, which
-is when the engine applies it. Its words say the level, "Standard, on for this site", or
-that it is off for the site. Off in Settings it is off for every site: the switch is dimmed
+is when the engine applies it. While on, its words are what to do about it: "If something
+looks broken on this site, try turning this off."; otherwise that it is off for the site. Off in Settings it is off for every site: the switch is dimmed
 and says "Off in Settings". While on, and when `blockedTrackingContent` is true, the page
 says trackers were blocked.
 
 **Permissions**, a row for each kind with what the site was given -- "Allowed",
-"Blocked" -- or, with no exception, the default marked "default". A tap offers Allow,
-Block and the third: "Always ask" where the default is to ask, which is what following it
-comes to, since the engine has no record that asks, and "Default" where it is not. The
-cookies row is shown while tracking protection is off, for every site or this one, or when
-the site has an exception to cookies. "Clear site permissions" removes every exception
-of the site, tracking protection's too, and loads the page again if that was one. An
+"Blocked", "Always ask" -- or, with none, "Follow default: " and what the default is, so
+that the line never reads as a choice of the site's own. A tap offers the same: Allow,
+Block, Always ask for the kinds a page asks for (notifications, location, camera,
+microphone), and "Follow default: Block" or whatever the default is. Always ask is the
+engine's own record for it, nsIPermissionManager's PROMPT_ACTION, 3: the site is asked
+even while the default blocks every other, which following an asking default is not.
+The cookies row is shown while tracking protection is off, for every site or this one, or
+when the site has an exception to cookies. "Clear site permissions", in the pull-down menu
+and only while the site has a choice of its own, removes every exception of the site,
+tracking protection's too, and loads the page again if that was one. An
 address that is not http or https has no origin and none of these sections.
 
 ## Consequences

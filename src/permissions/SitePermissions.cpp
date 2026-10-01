@@ -11,14 +11,14 @@ namespace Salama {
 
 namespace {
 
-using EnginePermissions::AllowAction;
-using EnginePermissions::DenyAction;
-
 const int KindCount = SitePermissions::TrackingProtection + 1;
 
-int capabilityOf(bool allowed)
+// Whether a site can be given the decision for the kind: allowed or blocked, or asked
+// each time where the kind is one a page asks for.
+bool isDecision(int kind, int decision)
 {
-    return allowed ? AllowAction : DenyAction;
+    return decision == SitePermissions::Allow || decision == SitePermissions::Block
+           || (decision == SitePermissions::Ask && SitePermissions::canAsk(kind));
 }
 
 } // namespace
@@ -90,7 +90,9 @@ QVariant SitePermissions::data(const QModelIndex &index, int role) const
     case Role::Host:
         return hostOf(exception.origin);
     case Role::Allowed:
-        return exception.allowed;
+        return exception.decision == Allow;
+    case Role::Decision:
+        return exception.decision;
     default:
         return {};
     }
@@ -103,6 +105,7 @@ QHash<int, QByteArray> SitePermissions::roleNames() const
         {roleId(Role::Origin), "origin"},
         {roleId(Role::Host), "host"},
         {roleId(Role::Allowed), "allowed"},
+        {roleId(Role::Decision), "decision"},
     };
 }
 
@@ -139,17 +142,18 @@ void SitePermissions::observe(const QString &topic, const QVariant &data)
     QVector<Exception> exceptions;
     for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
         const int kind = kindOf(permission.type);
-        const bool allowed = permission.capability == AllowAction;
+        const int decision = permission.capability;
         // Gecko's allow list has no deny: a record of one is nothing this application
-        // writes or reads as a decision.
-        if (kind < 0 || (kind == TrackingProtection && !allowed)) {
+        // writes or reads as a decision; nor is asking about what a page does unasked.
+        if (kind < 0 || (kind == TrackingProtection && decision != Allow)
+            || (decision == Ask && !canAsk(kind))) {
             continue;
         }
         const auto same = [kind, &permission](const Exception &exception) {
             return exception.kind == kind && exception.origin == permission.origin;
         };
         if (std::none_of(exceptions.cbegin(), exceptions.cend(), same)) {
-            exceptions.append({kind, permission.origin, allowed});
+            exceptions.append({kind, permission.origin, decision});
         }
     }
     beginResetModel();
@@ -164,7 +168,7 @@ int SitePermissions::decision(int kind, const QString &origin) const
     if (row < 0) {
         return Default;
     }
-    return m_exceptions.at(row).allowed ? Allow : Block;
+    return m_exceptions.at(row).decision;
 }
 
 int SitePermissions::count(int kind) const
@@ -187,7 +191,7 @@ int SitePermissions::originCount(const QString &origin) const
 
 void SitePermissions::set(int kind, const QString &origin, int decision)
 {
-    if (decision != Allow && decision != Block) {
+    if (!isDecision(kind, decision)) {
         remove(kind, origin);
         return;
     }
@@ -195,8 +199,9 @@ void SitePermissions::set(int kind, const QString &origin, int decision)
     if (site.isEmpty() || typesOf(kind).isEmpty()) {
         return;
     }
-    send(QStringLiteral("add"), kind, site, capabilityOf(decision == Allow));
-    if (put(kind, site, decision == Allow)) {
+    // The decisions are the engine's capabilities.
+    send(QStringLiteral("add"), kind, site, decision);
+    if (put(kind, site, decision)) {
         touch();
     }
     emit decided(kind, site, decision);
@@ -244,6 +249,11 @@ void SitePermissions::removeAllForOrigin(const QString &origin)
     }
 }
 
+bool SitePermissions::canAsk(int kind)
+{
+    return kind == Notifications || kind == Location || kind == Camera || kind == Microphone;
+}
+
 QString SitePermissions::originOf(const QString &url)
 {
     return EnginePermissions::originOf(url);
@@ -260,8 +270,7 @@ void SitePermissions::adopt(int kind, const QString &origin, int decision)
     if (site.isEmpty() || typesOf(kind).isEmpty()) {
         return;
     }
-    const bool changed = decision == Allow || decision == Block ? put(kind, site, decision == Allow)
-                                                                : take(kind, site);
+    const bool changed = isDecision(kind, decision) ? put(kind, site, decision) : take(kind, site);
     if (changed) {
         touch();
     }
@@ -280,21 +289,21 @@ int SitePermissions::rowOf(int kind, const QString &origin) const
     return -1;
 }
 
-bool SitePermissions::put(int kind, const QString &origin, bool allowed)
+bool SitePermissions::put(int kind, const QString &origin, int decision)
 {
     const int row = rowOf(kind, origin);
     if (row >= 0) {
-        if (m_exceptions.at(row).allowed == allowed) {
+        if (m_exceptions.at(row).decision == decision) {
             return false;
         }
-        m_exceptions[row].allowed = allowed;
+        m_exceptions[row].decision = decision;
         const QModelIndex changed = index(row);
-        emit dataChanged(changed, changed, {roleId(Role::Allowed)});
+        emit dataChanged(changed, changed, {roleId(Role::Allowed), roleId(Role::Decision)});
         return true;
     }
     const int position = m_exceptions.count();
     beginInsertRows(QModelIndex(), position, position);
-    m_exceptions.append({kind, origin, allowed});
+    m_exceptions.append({kind, origin, decision});
     endInsertRows();
     return true;
 }

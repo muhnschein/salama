@@ -72,6 +72,28 @@ Page {
         anchors.fill: parent
         contentHeight: column.height
 
+        // Only while the site has a choice of its own: an empty pulley is one to pull for
+        // nothing.
+        PullDownMenu {
+            objectName: "siteDetailsPulley"
+            visible: detailsPage.exceptions > 0
+
+            MenuItem {
+                objectName: "clearSitePermissionsMenuItem"
+                text: qsTr("Clear site permissions")
+                onClicked: {
+                    // Tracking protection comes back on with the site's other decisions, and
+                    // the page is told so as it is when the switch does it.
+                    var wasOff = SitePermissions.decision(SitePermissions.TrackingProtection,
+                                                          detailsPage.origin) === SitePermissions.Allow
+                    SitePermissions.removeAllForOrigin(detailsPage.origin)
+                    if (wasOff && detailsPage.view && detailsPage.view.reload) {
+                        detailsPage.view.reload()
+                    }
+                }
+            }
+        }
+
         Column {
             id: column
 
@@ -126,23 +148,6 @@ Page {
                     visible: modelData !== SitePermissions.Cookies || detailsPage.cookiesShown
                     kind: modelData
                     origin: detailsPage.origin
-                }
-            }
-
-            Button {
-                objectName: "clearSitePermissionsButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: detailsPage.exceptions > 0
-                text: qsTr("Clear site permissions")
-                onClicked: {
-                    // Tracking protection comes back on with the site's other decisions, and
-                    // the page is told so as it is when the switch does it.
-                    var wasOff = SitePermissions.decision(SitePermissions.TrackingProtection,
-                                                          detailsPage.origin) === SitePermissions.Allow
-                    SitePermissions.removeAllForOrigin(detailsPage.origin)
-                    if (wasOff && detailsPage.view && detailsPage.view.reload) {
-                        detailsPage.view.reload()
-                    }
                 }
             }
 

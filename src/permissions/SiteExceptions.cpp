@@ -59,10 +59,12 @@ bool SiteExceptions::lessThan(const QModelIndex &left, const QModelIndex &right)
     const auto read = [this](const QModelIndex &row, SitePermissions::Role role) {
         return sourceModel()->data(row, roleId(role));
     };
-    const bool leftAllowed = read(left, SitePermissions::Role::Allowed).toBool();
-    const bool rightAllowed = read(right, SitePermissions::Role::Allowed).toBool();
-    if (leftAllowed != rightAllowed) {
-        return leftAllowed;
+    // Allowed first, then blocked, then those asked each time: Allow, Block and Ask are
+    // 1, 2 and 3.
+    const int leftDecision = read(left, SitePermissions::Role::Decision).toInt();
+    const int rightDecision = read(right, SitePermissions::Role::Decision).toInt();
+    if (leftDecision != rightDecision) {
+        return leftDecision < rightDecision;
     }
     const QString leftHost = read(left, SitePermissions::Role::Host).toString();
     const QString rightHost = read(right, SitePermissions::Role::Host).toString();

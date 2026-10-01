@@ -74,6 +74,7 @@ private slots:
     void notificationsAreKeptInStep();
     void defaults();
     void defaultsPersist();
+    void askingEachTime();
 };
 
 void tst_sitepermissions::kindsAreTheEnginesNames()
@@ -703,6 +704,86 @@ void tst_sitepermissions::defaultsPersist()
     Salama::SettingsSections again(path);
     QCOMPARE(again.sitePermissions()->cookies(),
              int(SitePermissionSettings::CookiesBlockCrossSite));
+}
+
+// Asked each time, whatever the default: the engine's prompt record, for the kinds a page
+// asks for and no other (docs/DECISIONS/0040-site-details.md).
+void tst_sitepermissions::askingEachTime()
+{
+    QVERIFY(SitePermissions::canAsk(SitePermissions::Notifications));
+    QVERIFY(SitePermissions::canAsk(SitePermissions::Location));
+    QVERIFY(SitePermissions::canAsk(SitePermissions::Camera));
+    QVERIFY(SitePermissions::canAsk(SitePermissions::Microphone));
+    QVERIFY(!SitePermissions::canAsk(SitePermissions::Popups));
+    QVERIFY(!SitePermissions::canAsk(SitePermissions::Cookies));
+    QVERIFY(!SitePermissions::canAsk(SitePermissions::TrackingProtection));
+
+    SitePermissions permissions;
+    QCOMPARE(permissions.roleNames().value(roleId(SitePermissions::Role::Decision)),
+             QByteArray("decision"));
+    permissions.observe(Topic, QVariantList{
+                                   permission(QStringLiteral("camera"), Chat, 3),
+                                   permission(QStringLiteral("desktop-notification"), News, 3),
+                                   permission(QStringLiteral("popup"), Maps, 3),
+                                   permission(QStringLiteral("cookie"), Maps, 3),
+                                   permission(QStringLiteral("trackingprotection"), Maps, 3),
+                               });
+    QCOMPARE(permissions.rowCount(), 2);
+    QCOMPARE(permissions.decision(SitePermissions::Camera, Chat), int(SitePermissions::Ask));
+    QCOMPARE(permissions.decision(SitePermissions::Notifications, News),
+             int(SitePermissions::Ask));
+    QCOMPARE(permissions.decision(SitePermissions::Popups, Maps), int(SitePermissions::Default));
+    const QModelIndex first = permissions.index(0);
+    QCOMPARE(permissions.data(first, roleId(SitePermissions::Role::Decision)).toInt(),
+             int(SitePermissions::Ask));
+    QVERIFY(!permissions.data(first, roleId(SitePermissions::Role::Allowed)).toBool());
+
+    // Set from here: the engine is told with its prompt capability, under each name.
+    QSignalSpy toEngine(&permissions, &SitePermissions::engineRequest);
+    permissions.set(SitePermissions::Location, Maps, SitePermissions::Ask);
+    QCOMPARE(permissions.decision(SitePermissions::Location, Maps), int(SitePermissions::Ask));
+    QCOMPARE(toEngine.count(), 2);
+    for (int i = 0; i < 2; ++i) {
+        QCOMPARE(sent(toEngine, i).value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+        QCOMPARE(sent(toEngine, i).value(QStringLiteral("permission")).toInt(), 3);
+    }
+    // From allowed to asked is a change of the row, not another row.
+    permissions.set(SitePermissions::Camera, Chat, SitePermissions::Allow);
+    permissions.set(SitePermissions::Camera, Chat, SitePermissions::Ask);
+    QCOMPARE(permissions.decision(SitePermissions::Camera, Chat), int(SitePermissions::Ask));
+    QCOMPARE(permissions.rowCount(), 3);
+    // Pop-ups are not asked about: asking for them is following the default.
+    toEngine.clear();
+    permissions.set(SitePermissions::Popups, Maps, SitePermissions::Ask);
+    QCOMPARE(permissions.decision(SitePermissions::Popups, Maps), int(SitePermissions::Default));
+    QCOMPARE(sent(toEngine, 0).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+
+    // Listed after the allowed and the blocked.
+    permissions.set(SitePermissions::Camera, News, SitePermissions::Block);
+    permissions.set(SitePermissions::Camera, Maps, SitePermissions::Allow);
+    SiteExceptions camera;
+    camera.setKind(SitePermissions::Camera);
+    camera.setPermissions(&permissions);
+    camera.sort(0);
+    QCOMPARE(camera.rowCount(), 3);
+    QCOMPARE(originAt(camera, 0), Maps);
+    QCOMPARE(originAt(camera, 1), News);
+    QCOMPARE(originAt(camera, 2), Chat);
+
+    // The notifications' own list has neither allowed nor blocked of a site asked each
+    // time: read from the engine, or decided in the site's details.
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    NotificationPermissions *notifications = core.notificationPermissions();
+    notifications->observe(Topic,
+                           QVariantList{permission(QStringLiteral("desktop-notification"), News, 3),
+                                        permission(QStringLiteral("desktop-notification"), Chat, 1)});
+    QCOMPARE(notifications->rowCount(), 1);
+    QVERIFY(!notifications->isBlocked(News));
+    core.sitePermissions()->set(SitePermissions::Notifications, Chat, SitePermissions::Ask);
+    QVERIFY(!notifications->isAllowed(Chat));
+    QVERIFY(!notifications->isBlocked(Chat));
+    QCOMPARE(notifications->rowCount(), 0);
 }
 
 QTEST_GUILESS_MAIN(tst_sitepermissions)

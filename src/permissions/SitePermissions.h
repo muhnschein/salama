@@ -64,7 +64,10 @@ public:
     {
         Default = 0,
         Allow = 1,
-        Block = 2
+        Block = 2,
+        // Asked each time, whatever the default: only for a kind that asks
+        // (canAsk()). The numbers are the engine's capabilities.
+        Ask = 3
     };
     Q_ENUM(Decision)
 
@@ -73,7 +76,9 @@ public:
         Kind = Qt::UserRole + 1,
         Origin,
         Host,
-        Allowed
+        Allowed,
+        // A Decision: Allow, Block or Ask.
+        Decision
     };
 
     explicit SitePermissions(QObject *parent = nullptr);
@@ -110,6 +115,10 @@ public:
 
     // A site's origin as the engine writes it, from any address of it, and empty for an
     // address that is not an http or https one; and a site's host as a reader reads it.
+    // Whether a site can be asked about the kind each time: notifications, location,
+    // the camera and the microphone, which a page asks for; not pop-ups or cookies,
+    // which it simply does.
+    Q_INVOKABLE static bool canAsk(int kind);
     Q_INVOKABLE static QString originOf(const QString &url);
     Q_INVOKABLE static QString hostOf(const QString &origin);
 
@@ -139,12 +148,13 @@ private:
     {
         int kind = 0;
         QString origin;
-        bool allowed = false;
+        // A Decision other than Default.
+        int decision = Block;
     };
 
     int rowOf(int kind, const QString &origin) const;
     // Puts the exception in the list, and answers whether that changed it.
-    bool put(int kind, const QString &origin, bool allowed);
+    bool put(int kind, const QString &origin, int decision);
     bool take(int kind, const QString &origin);
     void send(const QString &message, int kind, const QString &origin, int capability);
     void touch();

@@ -2,11 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // One kind of permission for the one site, in its details: the kind's icon and name, and
-// under the name what the site has been given -- allowed or blocked -- or, with no
-// exception, what the default is, marked "default". A tap offers allowing, blocking, and
-// the site's following the default again: written "Always ask" where the default is to
-// ask, which is what following it comes to, and "Default" where it is not. The engine has
-// no record that says to ask, so the third is taking the record away
+// under the name what the site has been given -- allowed, blocked, or asked each time --
+// or, with no choice of its own, "Follow default: " and what the default is. A tap offers
+// the same: allowing, blocking, asking each time where the kind is one a page asks for,
+// and following the default, which takes the site's own record away
 // (docs/DECISIONS/0039-site-permissions.md, 0040-site-details.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
@@ -39,13 +38,15 @@ ListItem {
         }
 
         MenuItem {
+            objectName: "siteDecisionAsk"
+            visible: SitePermissions.canAsk(row.kind)
+            text: row.siteNames.alwaysAsk()
+            onClicked: SitePermissions.set(row.kind, row.origin, SitePermissions.Ask)
+        }
+
+        MenuItem {
             objectName: "siteDecisionDefault"
-            text: row.siteNames.defaultAsks(row.kind)
-                  //: Lets the site be asked about the permission each time it wants it
-                  ? qsTr("Always ask")
-                  //: Takes the site's own choice away, so that what is set for every site
-                  //: applies to it
-                  : qsTr("Default")
+            text: row.siteNames.followDefault(row.kind)
             onClicked: SitePermissions.remove(row.kind, row.origin)
         }
     }
@@ -84,30 +85,14 @@ ListItem {
             color: row.highlighted ? Theme.highlightColor : Theme.primaryColor
         }
 
-        Row {
+        Label {
+            objectName: "siteDecisionValue"
             width: parent.width
-            spacing: Theme.paddingMedium
-
-            Label {
-                id: value
-
-                objectName: "siteDecisionValue"
-                text: row.followsDefault ? row.siteNames.defaultName(row.kind)
-                                         : row.siteNames.decisionName(row.decision)
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.highlightColor
-            }
-
-            Label {
-                objectName: "siteDecisionDefaultMark"
-                width: Math.max(0, parent.width - value.width - parent.spacing)
-                visible: row.followsDefault
-                truncationMode: TruncationMode.Fade
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryHighlightColor
-                //: Marks a permission that is what is set for every site, rather than the site's own
-                text: qsTr("default")
-            }
+            text: row.followsDefault ? row.siteNames.followDefault(row.kind)
+                                     : row.siteNames.decisionName(row.decision)
+            truncationMode: TruncationMode.Fade
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.highlightColor
         }
     }
 }

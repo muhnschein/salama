@@ -8,7 +8,8 @@
 namespace Salama {
 
 // The exceptions of one kind of permission, as the page that lists them reads them: the
-// sites allowed first and the blocked after them, each by host, as the notifications'
+// sites allowed first, the blocked after them and those asked each time last, each by
+// host, as the notifications'
 // page lists its own (docs/DECISIONS/0039-site-permissions.md). A view of SitePermissions,
 // made in QML for each page:
 //
