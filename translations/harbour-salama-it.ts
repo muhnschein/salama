@@ -16,6 +16,14 @@
     </message>
 </context>
 <context>
+    <name>BarBanner</name>
+    <message>
+        <source>Show</source>
+        <extracomment>The banner over the navigation bar: what it is about, brought up</extracomment>
+        <translation>Mostra</translation>
+    </message>
+</context>
+<context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -548,6 +556,94 @@
             <numerusform>%1, in %n gruppo</numerusform>
             <numerusform>%1, in %n gruppi</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>LinkActions</name>
+    <message>
+        <source>New tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, brought to the front</extracomment>
+        <translation>Nuova scheda</translation>
+    </message>
+    <message>
+        <source>Background tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, left behind the one in front</extracomment>
+        <translation>In secondo piano</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation>Condividi</translation>
+    </message>
+    <message>
+        <source>Save link</source>
+        <extracomment>The link sheet&apos;s action: what the link leads to, downloaded</extracomment>
+        <translation>Salva link</translation>
+    </message>
+    <message>
+        <source>Open image</source>
+        <extracomment>The link sheet&apos;s action: the picture alone, in a new tab</extracomment>
+        <translation>Apri immagine</translation>
+    </message>
+    <message>
+        <source>Save image</source>
+        <extracomment>The link sheet&apos;s action: the picture, downloaded</extracomment>
+        <translation>Salva immagine</translation>
+    </message>
+    <message>
+        <source>Copy image link</source>
+        <extracomment>The link sheet&apos;s action: the picture&apos;s address, put on the clipboard</extracomment>
+        <translation>Copia link immagine</translation>
+    </message>
+</context>
+<context>
+    <name>LinkMenu</name>
+    <message>
+        <source>Write email</source>
+        <extracomment>The link sheet&apos;s action for an email address: the mail app, writing to it</extracomment>
+        <translation>Scrivi email</translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>The link sheet&apos;s action for a phone number</extracomment>
+        <translation>Chiama</translation>
+    </message>
+    <message>
+        <source>Send message</source>
+        <extracomment>The link sheet&apos;s action for a phone number to text</extracomment>
+        <translation>Invia messaggio</translation>
+    </message>
+    <message>
+        <source>Show on map</source>
+        <extracomment>The link sheet&apos;s action for a place: the maps app, showing it</extracomment>
+        <translation>Mostra su mappa</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <extracomment>Shown for a moment once the link sheet has put an email address, a phone number or a place on the clipboard</extracomment>
+        <translation>Copiato</translation>
+    </message>
+    <message>
+        <source>Link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a link on the clipboard</extracomment>
+        <translation>Link copiato</translation>
+    </message>
+    <message>
+        <source>Image link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a picture&apos;s address on the clipboard</extracomment>
+        <translation>Link immagine copiato</translation>
+    </message>
+</context>
+<context>
+    <name>LinkPreview</name>
+    <message>
+        <source>Hide preview</source>
+        <extracomment>The row over a link&apos;s preview, which hides it for every link</extracomment>
+        <translation>Nascondi anteprima</translation>
+    </message>
+    <message>
+        <source>Show preview</source>
+        <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
+        <translation>Mostra anteprima</translation>
     </message>
 </context>
 <context>
@@ -1502,6 +1598,19 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>The sites you visit and bookmark show up here</source>
         <translation>I siti che visiti e aggiungi ai segnalibri compaiono qui</translation>
+    </message>
+</context>
+<context>
+    <name>TabBanner</name>
+    <message>
+        <source>Opened in a new tab</source>
+        <extracomment>The banner as a link opens in a tab behind the one in front</extracomment>
+        <translation>Aperto in una nuova scheda</translation>
+    </message>
+    <message>
+        <source>%1 · in %2</source>
+        <extracomment>Under &quot;Opened in a new tab&quot;: the link&apos;s name, and the named tab group it went into</extracomment>
+        <translation>%1 · in %2</translation>
     </message>
 </context>
 <context>

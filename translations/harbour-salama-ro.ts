@@ -16,6 +16,14 @@
     </message>
 </context>
 <context>
+    <name>BarBanner</name>
+    <message>
+        <source>Show</source>
+        <extracomment>The banner over the navigation bar: what it is about, brought up</extracomment>
+        <translation>Afișează</translation>
+    </message>
+</context>
+<context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -558,6 +566,94 @@
             <numerusform>%1, în %n grupuri</numerusform>
             <numerusform>%1, în %n de grupuri</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>LinkActions</name>
+    <message>
+        <source>New tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, brought to the front</extracomment>
+        <translation>Filă nouă</translation>
+    </message>
+    <message>
+        <source>Background tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, left behind the one in front</extracomment>
+        <translation>Filă în fundal</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation>Partajează</translation>
+    </message>
+    <message>
+        <source>Save link</source>
+        <extracomment>The link sheet&apos;s action: what the link leads to, downloaded</extracomment>
+        <translation>Salvează linkul</translation>
+    </message>
+    <message>
+        <source>Open image</source>
+        <extracomment>The link sheet&apos;s action: the picture alone, in a new tab</extracomment>
+        <translation>Deschide imaginea</translation>
+    </message>
+    <message>
+        <source>Save image</source>
+        <extracomment>The link sheet&apos;s action: the picture, downloaded</extracomment>
+        <translation>Salvează imaginea</translation>
+    </message>
+    <message>
+        <source>Copy image link</source>
+        <extracomment>The link sheet&apos;s action: the picture&apos;s address, put on the clipboard</extracomment>
+        <translation>Copiază linkul imaginii</translation>
+    </message>
+</context>
+<context>
+    <name>LinkMenu</name>
+    <message>
+        <source>Write email</source>
+        <extracomment>The link sheet&apos;s action for an email address: the mail app, writing to it</extracomment>
+        <translation>Scrie un e-mail</translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>The link sheet&apos;s action for a phone number</extracomment>
+        <translation>Sună</translation>
+    </message>
+    <message>
+        <source>Send message</source>
+        <extracomment>The link sheet&apos;s action for a phone number to text</extracomment>
+        <translation>Trimite mesaj</translation>
+    </message>
+    <message>
+        <source>Show on map</source>
+        <extracomment>The link sheet&apos;s action for a place: the maps app, showing it</extracomment>
+        <translation>Vezi pe hartă</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <extracomment>Shown for a moment once the link sheet has put an email address, a phone number or a place on the clipboard</extracomment>
+        <translation>Copiat</translation>
+    </message>
+    <message>
+        <source>Link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a link on the clipboard</extracomment>
+        <translation>Link copiat</translation>
+    </message>
+    <message>
+        <source>Image link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a picture&apos;s address on the clipboard</extracomment>
+        <translation>Linkul imaginii copiat</translation>
+    </message>
+</context>
+<context>
+    <name>LinkPreview</name>
+    <message>
+        <source>Hide preview</source>
+        <extracomment>The row over a link&apos;s preview, which hides it for every link</extracomment>
+        <translation>Ascunde previzualizarea</translation>
+    </message>
+    <message>
+        <source>Show preview</source>
+        <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
+        <translation>Afișează previzualizarea</translation>
     </message>
 </context>
 <context>
@@ -1521,6 +1617,19 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>The sites you visit and bookmark show up here</source>
         <translation>Site-urile pe care le vizitezi și le marchezi apar aici</translation>
+    </message>
+</context>
+<context>
+    <name>TabBanner</name>
+    <message>
+        <source>Opened in a new tab</source>
+        <extracomment>The banner as a link opens in a tab behind the one in front</extracomment>
+        <translation>Deschis într-o filă nouă</translation>
+    </message>
+    <message>
+        <source>%1 · in %2</source>
+        <extracomment>Under &quot;Opened in a new tab&quot;: the link&apos;s name, and the named tab group it went into</extracomment>
+        <translation>%1 · în %2</translation>
     </message>
 </context>
 <context>
