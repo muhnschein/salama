@@ -265,6 +265,20 @@ bool TabModel::isExternalUrl(const QString &url)
 
 int TabModel::newTab(const QString &url)
 {
+    const int tabId = insertTab(url, QString());
+    if (tabId != 0) {
+        setActiveTab(tabId);
+    }
+    return tabId;
+}
+
+int TabModel::newTabBehind(const QString &url, const QString &title)
+{
+    return url.isEmpty() ? 0 : insertTab(url, title);
+}
+
+int TabModel::insertTab(const QString &url, const QString &title)
+{
     if (isExternalUrl(url)) {
         return 0;
     }
@@ -272,6 +286,7 @@ int TabModel::newTab(const QString &url)
     Tab tab;
     tab.id = m_nextTabId++;
     tab.url = url;
+    tab.title = title;
     tab.groupId = m_currentGroupId;
 
     const int index = m_tabs.count();
@@ -291,7 +306,6 @@ int TabModel::newTab(const QString &url)
     emit countChanged();
     emit recentTabsChanged();
     emit tabAdded(tab.id);
-    setActiveTab(tab.id);
     return tab.id;
 }
 
@@ -523,6 +537,16 @@ int TabModel::tabIdForUrl(const QString &url) const
         }
     }
     return found;
+}
+
+QString TabModel::groupNameOf(int tabId) const
+{
+    const int index = indexOf(tabId);
+    if (index < 0) {
+        return {};
+    }
+    const int group = groupIndexOf(m_tabs.at(index).groupId);
+    return group < 0 ? QString() : m_groups.at(group).name;
 }
 
 void TabModel::updateUrl(int tabId, const QString &url)

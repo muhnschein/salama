@@ -63,6 +63,7 @@ private slots:
     void notchGuardOfAnEarlierRelease_data();
     void notchGuardOfAnEarlierRelease();
     void fixedToolbar();
+    void linkPreview();
     void contentSwitches();
 };
 
@@ -77,6 +78,7 @@ void tst_settings::defaults()
     QCOMPARE(settings.general()->notchGuard(), int(Settings::NotchGuardAutomatic));
     QVERIFY(settings.general()->cutoutGuard());
     QVERIFY(!settings.general()->fixedToolbar());
+    QVERIFY(settings.general()->linkPreview());
     QVERIFY(!settings.privacy()->doNotTrack());
     QVERIFY(settings.privacy()->javascript());
     QCOMPARE(settings.searchEngines()->engineNames().count(),
@@ -976,6 +978,30 @@ void tst_settings::fixedToolbar()
     }
     Sections reloaded(path);
     QVERIFY(reloaded.general()->fixedToolbar());
+}
+
+// On unless switched off, as Safari's link preview is, and kept
+// (docs/DECISIONS/0046-link-menu.md).
+void tst_settings::linkPreview()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.general(), &Settings::linkPreviewChanged);
+        settings.general()->setLinkPreview(true);
+        QCOMPARE(spy.count(), 0);
+        settings.general()->setLinkPreview(false);
+        settings.general()->setLinkPreview(false);
+        QCOMPARE(spy.count(), 1);
+    }
+    {
+        Sections reloaded(path);
+        QVERIFY(!reloaded.general()->linkPreview());
+        reloaded.general()->setLinkPreview(true);
+    }
+    Sections again(path);
+    QVERIFY(again.general()->linkPreview());
 }
 
 // Do not track off and JavaScript on unless switched, as in sailfish-browser, and kept.

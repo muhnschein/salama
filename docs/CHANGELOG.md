@@ -8,6 +8,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- Press and hold a link or a picture: a sheet like the menu's comes up, naming the link with a button to copy it, with New tab, Background tab, Share and Save link for a page, the app's own action for an email address, a phone number, a text message or a place, and Open image, Save image and Copy image link for a picture. Background tab leaves you where you are and says where the link went, with Show. Saved files keep their own names.
+- A preview of the page a link leads to, at the top of that sheet, as Safari has: tap it to open the link; Hide preview hides it for every link until Show preview.
+- A picture pressed and held is lifted out of the page above the sheet, as large as there is room for, and can be pinched closer.
 - Settings > Site permissions, in place of Settings > Notifications: what sites may do unless decided otherwise -- notifications, pop-ups, location, camera and microphone, and cookies while tracking protection is off -- each with its exceptions, which can be added, switched and removed. Salama now asks the phone for location, camera and microphone, so sites can be given them.
 - Site details: tap the page's name at the head of the menu to see whether the connection is secure and who verified it, the certificate and the cipher, turn tracking protection off for that site alone, and decide its permissions.
 - Search engines sites offer are collected while browsing and listed under Settings > Search > Found while browsing; a tap adds one and searches with it. Added engines say where they came from and can be removed one by one, or all at once from the pulley, which leaves the three built-in ones.
@@ -29,6 +32,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Translations into every other language Sailfish OS ships in: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese, in Firefox's words for what Firefox has words for.
 
 ### Changed
+- The downloads card is now a bar on the navigation bar, the width of the screen, with Show at its end, and the page ends above it rather than under it.
 - Website colours is Preferred color scheme, with sailfish-browser's line under it saying what it is for, and its Automatic is called Match ambience.
 - Avoid the screen cutout is Notch guard, with sailfish-browser's three modes and description: Automatic, the default, lets a page written for the cutout use it and keeps every other page below it; Forced keeps every page below it; Disabled none. A switch left on becomes Forced, one left off Disabled.
 - A settings row has an icon or a switch, never both: the switches' lights stand in the column of icons.

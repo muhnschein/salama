@@ -10,6 +10,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLocale>
+#include <QMimeDatabase>
+#include <QRegularExpression>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUrl>
@@ -323,6 +325,85 @@ void DownloadModel::resume(int row)
              {QStringLiteral("from"), download.url},
              {QStringLiteral("to"), path}});
     removeRow(row);
+}
+
+namespace {
+
+// A file system takes a name of up to 255 bytes; room is left for a number.
+const int FileNameBytes = 240;
+
+// What a saved file is called: the name the address's path ends in, as it is, decoded --
+// never one made up -- with only what a file system would read as a folder, or hide,
+// taken out of it; the host's for a path that ends in none; "download" for neither. A
+// name with no ending gets the type's.
+QString savedFileName(const QUrl &url, const QString &contentType)
+{
+    static const QRegularExpression unsafe(QStringLiteral(R"([/\\\x00-\x1f\x7f])"));
+    QString name = url.fileName(QUrl::FullyDecoded);
+    name.replace(unsafe, QStringLiteral("_"));
+    while (name.startsWith(QLatin1Char('.'))) {
+        name.remove(0, 1);
+    }
+    name = name.trimmed();
+    if (name.isEmpty()) {
+        name = url.host();
+    }
+    if (name.isEmpty()) {
+        name = QStringLiteral("download");
+    }
+    if (QFileInfo(name).suffix().isEmpty() && !contentType.isEmpty()) {
+        const QString suffix = QMimeDatabase().mimeTypeForName(contentType).preferredSuffix();
+        if (!suffix.isEmpty()) {
+            name += QLatin1Char('.') + suffix;
+        }
+    }
+    // Only a name the file system would refuse is cut, from the end of what comes before
+    // its ending.
+    if (name.toUtf8().size() > FileNameBytes) {
+        const QString suffix = QFileInfo(name).suffix();
+        const QString ending = suffix.isEmpty() ? QString() : QLatin1Char('.') + suffix;
+        QString base = name.left(name.size() - ending.size());
+        while (!base.isEmpty() && (base + ending).toUtf8().size() > FileNameBytes) {
+            base.chop(1);
+        }
+        name = base + ending;
+    }
+    return name;
+}
+
+} // namespace
+
+QString DownloadModel::save(const QString &url, const QString &contentType)
+{
+    const QUrl address(url, QUrl::TolerantMode);
+    const QString scheme = address.scheme().toLower();
+    if (scheme != QLatin1String("http") && scheme != QLatin1String("https")) {
+        return {};
+    }
+    const QString path = freePath(savedFileName(address, contentType));
+    m_saved.insert(path);
+    request({{QStringLiteral("msg"), QStringLiteral("addDownload")},
+             {QStringLiteral("from"), url},
+             {QStringLiteral("to"), path}});
+    return path;
+}
+
+QString DownloadModel::freePath(const QString &name) const
+{
+    const QDir directory(m_directory);
+    const QFileInfo file(name);
+    const QString base = file.completeBaseName();
+    const QString ending = file.suffix().isEmpty() ? QString() : QLatin1Char('.') + file.suffix();
+    const auto taken = [this](const QString &path) {
+        return QFileInfo::exists(path) || m_saved.contains(path) ||
+               std::any_of(m_downloads.cbegin(), m_downloads.cend(),
+                           [&path](const Download &download) { return download.path == path; });
+    };
+    QString path = directory.filePath(name);
+    for (int number = 1; taken(path); ++number) {
+        path = directory.filePath(QStringLiteral("%1(%2)%3").arg(base).arg(number).arg(ending));
+    }
+    return path;
 }
 
 bool DownloadModel::deleteFile(int row)

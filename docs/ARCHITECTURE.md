@@ -157,6 +157,16 @@ lists what `Omnibar` finds, ranked as Firefox ranks it and learning from what is
 over a row to go to the address, when `SearchSettings.isAddress` says it is one, and a row to
 search (`DECISIONS/0027-omnibar.md`).
 
+A press held on a link or a picture comes from the engine as `Content:ContextMenu`, which
+each page's view hears (`PageLinkMenu.qml`) and `EngineMessages::linkTarget()` reads; the
+page in front's brings up `LinkMenu.qml`, the menu's sheet for the link, whose Background
+tab is `TabModel::newTabBehind()` and whose saves are `DownloadModel::save()`. Its preview
+of the page is a view the browsing page makes, drawn while the page in front is put aside
+behind a still of it: the engine draws one picture for all its views
+(`DECISIONS/0046-link-menu.md`). The banners on the bar -- the downloads', and the one
+saying where a link opened behind went -- are one bar (`BarBanner.qml`), and the page ends
+where they begin (`DECISIONS/0038-download-status.md`).
+
 Settings is a main page leading to a page each for the start page, search, the reader
 view, the cover, tracking protection, notifications and the history, each way in saying
 how its subject is set, and each page making its choices where they are laid out

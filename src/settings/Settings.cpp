@@ -13,6 +13,7 @@ const char *const RetiredCutoutGuardKey = "cutoutGuard";
 const char *const FixedToolbarKey = "fixedToolbar";
 const char *const TutorialShownKey = "tutorialShown";
 const char *const WebsiteColorsKey = "websiteColors";
+const char *const LinkPreviewKey = "linkPreview";
 
 } // namespace
 
@@ -81,6 +82,18 @@ void Settings::setTutorialShown(bool shown)
 {
     if (setFlag(TutorialShownKey, shown, false)) {
         emit tutorialShownChanged();
+    }
+}
+
+bool Settings::linkPreview() const
+{
+    return flag(LinkPreviewKey, true);
+}
+
+void Settings::setLinkPreview(bool shown)
+{
+    if (setFlag(LinkPreviewKey, shown, true)) {
+        emit linkPreviewChanged();
     }
 }
 

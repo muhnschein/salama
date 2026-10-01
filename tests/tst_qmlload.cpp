@@ -12,6 +12,7 @@
 
 #include <QColor>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFile>
 #include <QFont>
 #include <QGuiApplication>
@@ -35,6 +36,7 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QUrl>
 #include <QtTest>
 #include <algorithm>
 #include <utility>
@@ -210,6 +212,12 @@ private slots:
     void downloadAgain();
     void downloadBanner();
     void downloadBannerUnderAFinger();
+    void linkMenuOnALongPress();
+    void linkMenuActions();
+    void linkMenuForOtherApps();
+    void linkMenuForPictures();
+    void linkPreview();
+    void bannersEndThePage();
     void historyPage();
     void bookmarksPage();
     void settingsPage();
@@ -3392,8 +3400,9 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(panel->property("open").toBool());
     // The same sheet as the menu: its opaque ground, its handle at the top, and a
     // heading as Silica heads a section.
+    // The menu's, the link sheet's, this one's, and the two banners' on the bar.
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
-    QCOMPARE(grounds.count(), 2);
+    QCOMPARE(grounds.count(), 5);
     QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
     QCOMPARE(ground->property("color").value<QColor>(),
              findObjects(find(QStringLiteral("browserMenu")), QStringLiteral("sheetBackground"))
@@ -4579,16 +4588,24 @@ void tst_qmlload::downloadBanner()
                               " size: 2048}"));
     engineSays(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 40}"));
     QVERIFY(banner->property("shown").toBool());
-    // Just above the bar, wherever the bar is.
-    QCOMPARE(banner->property("y").toReal() + banner->property("height").toReal(),
-             bar->property("y").toReal());
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("report.pdf"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("819 B of 2.0 kB · 40%"));
+    QCOMPARE(text("bannerTitle"), QStringLiteral("report.pdf"));
+    QCOMPARE(text("bannerDetail"), QStringLiteral("819 B of 2.0 kB · 40%"));
     QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 0.4);
-    // It fades in.
+    // It fades in, on the bar, wherever the bar is, the banners lying one above the
+    // other and this one the lowest.
     QTRY_COMPARE(banner->property("opacity").toReal(), 1.0);
-    QVERIFY(part("downloadBannerDetail")->property("visible").toBool());
-    // No button of its own: what is done to a download is done in the list.
+    QObject *banners = find(QStringLiteral("barBanners"));
+    QCOMPARE(banners->property("y").toReal() + banners->property("height").toReal(),
+             bar->property("y").toReal());
+    QCOMPARE(banner->property("y").toReal() + banner->property("height").toReal(),
+             banners->property("height").toReal());
+    QVERIFY(part("bannerDetail")->property("visible").toBool());
+    // The whole width, on the sheets' ground, as the banner for a link opened behind is.
+    QCOMPARE(banner->property("width").toReal(), bar->property("width").toReal());
+    QCOMPARE(findObjects(banner, QStringLiteral("sheetBackground")).count(), 1);
+    // One thing to do at its end, Show, and no button besides: what is done to a download
+    // is done in the list.
+    QCOMPARE(text("bannerActionLabel"), QStringLiteral("Show"));
     for (QObject *item : findObjects(banner, QString())) {
         QVERIFY2(!QByteArray(item->metaObject()->className()).startsWith("IconButton"),
                  item->metaObject()->className());
@@ -4596,26 +4613,26 @@ void tst_qmlload::downloadBanner()
     const QColor secondary =
         evaluate(scope, QStringLiteral("Theme.secondaryColor")).value<QColor>();
     const QColor error = evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>();
-    QCOMPARE(part("downloadBannerDetail")->property("color").value<QColor>(), secondary);
+    QCOMPARE(part("bannerDetail")->property("color").value<QColor>(), secondary);
     engineSays(QStringLiteral("{msg: 'dl-cancel', id: 1}"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Paused · 40%"));
+    QCOMPARE(text("bannerDetail"), QStringLiteral("Paused · 40%"));
     engineSays(QStringLiteral("{msg: 'dl-fail', id: 1}"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Failed"));
-    QCOMPARE(part("downloadBannerDetail")->property("color").value<QColor>(), error);
+    QCOMPARE(text("bannerDetail"), QStringLiteral("Failed"));
+    QCOMPARE(part("bannerDetail")->property("color").value<QColor>(), error);
     QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(), error);
     engineSays(QStringLiteral("{msg: 'dl-start', id: 1}"));
 
     // More: how many and how far together, and no line under it -- not their names.
     engineSays(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'b.iso', size: 0}"));
     engineSays(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("2 download(s) · 30%"));
-    QCOMPARE(text("downloadBannerDetail"), QString());
-    QVERIFY(!part("downloadBannerDetail")->property("visible").toBool());
+    QCOMPARE(text("bannerTitle"), QStringLiteral("2 download(s) · 30%"));
+    QCOMPARE(text("bannerDetail"), QString());
+    QVERIFY(!part("bannerDetail")->property("visible").toBool());
     engineSays(QStringLiteral("{msg: 'dl-start', id: 3, displayName: 'c.zip', size: 0}"));
     engineSays(QStringLiteral("{msg: 'dl-fail', id: 3}"));
     engineSays(QStringLiteral("{msg: 'dl-cancel', id: 2}"));
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("3 download(s) · 30%"));
-    QVERIFY(!part("downloadBannerDetail")->property("visible").toBool());
+    QCOMPARE(text("bannerTitle"), QStringLiteral("3 download(s) · 30%"));
+    QVERIFY(!part("bannerDetail")->property("visible").toBool());
     QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(),
              evaluate(scope, QStringLiteral("Theme.highlightColor")).value<QColor>());
 
@@ -4629,16 +4646,19 @@ void tst_qmlload::downloadBanner()
     pullDownToBrowser();
     QVERIFY(banner->property("shown").toBool());
 
-    // A tap opens the list.
+    // A tap opens the list, and so does Show.
     evaluate(banner, QStringLiteral("activate()"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    popPage();
+    click(part("bannerAction"));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
     popPage();
 
     // One arriving is said for a moment; a tap then still opens the list, never the file.
     engineSays(QStringLiteral("{msg: 'dl-done', id: 1}"));
     QVERIFY(banner->property("flashing").toBool());
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("report.pdf"));
-    QCOMPARE(text("downloadBannerDetail"), QStringLiteral("Downloaded"));
+    QCOMPARE(text("bannerTitle"), QStringLiteral("report.pdf"));
+    QCOMPARE(text("bannerDetail"), QStringLiteral("Downloaded"));
     QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 1.0);
     const UrlCatcher files(QStringLiteral("file"));
     evaluate(banner, QStringLiteral("activate()"));
@@ -4647,7 +4667,7 @@ void tst_qmlload::downloadBanner()
     popPage();
     // Then it goes back to the rest.
     part("downloadBannerFlash")->setProperty("running", false);
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("2 download(s) · 20%"));
+    QCOMPARE(text("bannerTitle"), QStringLiteral("2 download(s) · 20%"));
 
     // Swiped away, it goes, until something changes.
     evaluate(banner, QStringLiteral("dismiss()"));
@@ -4656,7 +4676,7 @@ void tst_qmlload::downloadBanner()
     QVERIFY(!banner->property("shown").toBool());
     engineSays(QStringLiteral("{msg: 'dl-start', id: 2}"));
     QVERIFY(banner->property("shown").toBool());
-    QCOMPARE(text("downloadBannerTitle"), QStringLiteral("b.iso"));
+    QCOMPARE(text("bannerTitle"), QStringLiteral("b.iso"));
 
     // An arrival swiped away goes at once.
     engineSays(QStringLiteral("{msg: 'dl-done', id: 2}"));
@@ -4679,17 +4699,16 @@ void tst_qmlload::downloadBannerUnderAFinger()
     QQuickWindow &window = *host.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_COMPARE(banner->property("opacity").toReal(), 1.0);
-    QObject *card = findObjects(banner, QStringLiteral("downloadBannerCard")).first();
+    QObject *card = findObjects(banner, QStringLiteral("bannerBar")).first();
     const QPoint middle = centreOf(card);
     const int width = card->property("width").toInt();
-    // Kept clear of the button at the card's end.
+    // Kept clear of Show, at the bar's end.
     const QPoint grip = middle - QPoint(width / 4, 0);
 
     drag(&window, grip, grip + QPoint(width / 6, 0));
     QVERIFY(banner->property("shown").toBool());
-    QCOMPARE(
-        findObjects(banner, QStringLiteral("downloadBannerHandle")).first()->property("x").toReal(),
-        0.0);
+    QCOMPARE(findObjects(banner, QStringLiteral("bannerHandle")).first()->property("x").toReal(),
+             0.0);
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, grip);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
     popPage();
@@ -4698,6 +4717,593 @@ void tst_qmlload::downloadBannerUnderAFinger()
     drag(&window, grip, grip + QPoint(width / 2, 0));
     QVERIFY(!banner->property("shown").toBool());
     QCOMPARE(m_core->downloads()->trayCount(), 0);
+}
+
+namespace {
+
+// What ContextMenuHandler.js sends for a press held on the page: on a link, a picture, or
+// a picture that is a link, by the names the engine's message has
+// (docs/DECISIONS/0046-link-menu.md).
+QVariantMap heldOn(const QString &link, const QString &title = QString(),
+                   const QString &image = QString())
+{
+    QStringList types;
+    if (!image.isEmpty()) {
+        types << QStringLiteral("image");
+    }
+    if (!link.isEmpty()) {
+        types << QStringLiteral("link");
+    }
+    return {
+        {QStringLiteral("types"), types},
+        {QStringLiteral("linkURL"), link},
+        {QStringLiteral("linkTitle"), title},
+        {QStringLiteral("linkProtocol"), QUrl(link).scheme()},
+        {QStringLiteral("mediaURL"), image},
+        {QStringLiteral("contentType"), image.isEmpty() ? QString() : QStringLiteral("image/jpeg")},
+        {QStringLiteral("xPos"), 40},
+        {QStringLiteral("yPos"), 300}};
+}
+
+void holdOn(QObject *view, const QVariantMap &message)
+{
+    QMetaObject::invokeMethod(view, "recvAsyncMessage",
+                              Q_ARG(QString, QStringLiteral("Content:ContextMenu")),
+                              Q_ARG(QVariant, QVariant(message)));
+}
+
+bool shownIn(QObject *item)
+{
+    return item != nullptr && item->property("visible").toBool();
+}
+
+} // namespace
+
+// A press held on a link or a picture brings the link sheet up, and a press on anything
+// else is left to the platform; the platform's own menu for the press shows nothing
+// (docs/DECISIONS/0046-link-menu.md).
+void tst_qmlload::linkMenuOnALongPress()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    QObject *menu = find(QStringLiteral("linkMenu"));
+    QObject *view = currentWebView();
+    QVERIFY(menu != nullptr);
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(menu->property("modal").toBool());
+    QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
+
+    // The platform's opener makes its menu from what the view's provider names: a stand-in
+    // here, a file that loads, takes what the opener sets on a menu and is never up.
+    QCOMPARE(evaluate(view, QStringLiteral("popupProvider.contextMenu.type")).toString(),
+             QStringLiteral("item"));
+    const QString standIn =
+        evaluate(view, QStringLiteral("popupProvider.contextMenu.component")).toString();
+    QVERIFY2(standIn.endsWith(QLatin1String("/qml/components/PlatformMenuStandIn.qml")),
+             qPrintable(standIn));
+    QQmlComponent standInComponent(m_engine.data(), QUrl(standIn));
+    QScopedPointer<QObject> madeStandIn(standInComponent.create());
+    QVERIFY2(!madeStandIn.isNull(), qPrintable(standInComponent.errorString()));
+    for (const char *name : {"linkHref", "linkTitle", "linkProtocol", "imageSrc", "contentType",
+                             "viewId", "downloadsEnabled", "pageStack", "tabModel"}) {
+        QVERIFY2(madeStandIn->metaObject()->indexOfProperty(name) >= 0, name);
+    }
+    QVERIFY(QMetaObject::invokeMethod(madeStandIn.data(), "show"));
+    QVERIFY(!madeStandIn->property("active").toBool());
+    QVERIFY(!madeStandIn->property("visible").toBool());
+
+    // Text, a script dressed as a link, and other messages are not presses on a link.
+    holdOn(view, {{QStringLiteral("types"), QStringList{QStringLiteral("content-text")}}});
+    QVERIFY(!menu->property("open").toBool());
+    holdOn(view, heldOn(QStringLiteral("javascript:void(0)"), QStringLiteral("More")));
+    QVERIFY(!menu->property("open").toBool());
+    QMetaObject::invokeMethod(
+        view, "recvAsyncMessage", Q_ARG(QString, QStringLiteral("embed:find")),
+        Q_ARG(QVariant, QVariant(heldOn(QStringLiteral("https://a.example/")))));
+    QVERIFY(!menu->property("open").toBool());
+
+    // A link: the sheet, its head naming the link and where it goes.
+    holdOn(view, heldOn(QStringLiteral("https://www.trails.example/walks/ridge-loop"),
+                        QStringLiteral(" The ridge\n loop ")));
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(menu->property("view").value<QObject *>(), view);
+    const auto text = [this](const char *name) {
+        return find(QLatin1String(name))->property("text").toString();
+    };
+    QCOMPARE(text("linkMenuTitle"), QStringLiteral("The ridge loop"));
+    QCOMPARE(text("linkMenuAddress"), QStringLiteral("trails.example/walks/ridge-loop"));
+    QVERIFY(shownIn(find(QStringLiteral("linkMenuAddress"))));
+    QCOMPARE(text("linkMenuInitial"), QStringLiteral("T"));
+    QVERIFY(shownIn(find(QStringLiteral("linkMenuInitial"))));
+    QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
+    // The menu's sheet: its ground and its handle; and over the page above it, laid on
+    // the page rather than carried by the sheet, a dim, under the sheet.
+    QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
+    QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
+    auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
+    QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());
+    QVERIFY(overlay->z() < menu->property("z").toReal());
+    QVERIFY(overlay->property("shown").toBool());
+    QTRY_VERIFY(shownIn(find(QStringLiteral("linkMenuDim"))));
+    // The page's actions, on discs, a quarter of the sheet each; no picture's, no other
+    // application's.
+    QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
+    QVERIFY(!shownIn(find(QStringLiteral("linkAppRow"))));
+    QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
+    QVERIFY(!shownIn(
+        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    const QList<QPair<QString, QString>> actions{
+        {QStringLiteral("newTabLinkButton"), QStringLiteral("New tab")},
+        {QStringLiteral("backgroundTabLinkButton"), QStringLiteral("Background tab")},
+        {QStringLiteral("shareLinkButton"), QStringLiteral("Share")},
+        {QStringLiteral("saveLinkButton"), QStringLiteral("Save link")},
+    };
+    for (const auto &action : actions) {
+        QObject *button = find(action.first);
+        QVERIFY2(button != nullptr, qPrintable(action.first));
+        QCOMPARE(button->property("text").toString(), action.second);
+        QVERIFY2(button->property("round").toBool(), qPrintable(action.first));
+        QVERIFY2(!button->property("iconSource").toString().isEmpty(), qPrintable(action.first));
+        QCOMPARE(qobject_cast<QQuickItem *>(button)->parentItem()->objectName(),
+                 QStringLiteral("linkPageRow"));
+        QCOMPARE(button->property("width").toReal(), menu->property("width").toReal() / 4);
+    }
+
+    // A link without text of its own is named by where it goes, once.
+    holdOn(view, heldOn(QStringLiteral("https://trails.example/")));
+    QCOMPARE(text("linkMenuTitle"), QStringLiteral("trails.example"));
+    QVERIFY(!shownIn(find(QStringLiteral("linkMenuAddress"))));
+    evaluate(menu, QStringLiteral("hide()"));
+    QVERIFY(!overlay->property("shown").toBool());
+
+    // A press on a page behind the one in front is not for this sheet, and another page
+    // in front puts the sheet away.
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    QObject *front = currentWebView();
+    QVERIFY(front != view);
+    holdOn(view, heldOn(QStringLiteral("https://trails.example/")));
+    QVERIFY(!menu->property("open").toBool());
+    holdOn(front, heldOn(QStringLiteral("https://trails.example/")));
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(menu->property("view").value<QObject *>(), front);
+    tabs->activateTab(0);
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(errors.all(), QString());
+}
+
+// What the link sheet's actions do for a link to a page: a new tab in front, one behind
+// with a banner saying where it went, the share sheet, a download, the clipboard.
+void tst_qmlload::linkMenuActions()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    QObject *menu = find(QStringLiteral("linkMenu"));
+    QObject *view = currentWebView();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const int front = tabs->activeTabId();
+    const QString ridge = QStringLiteral("https://trails.example/walks/ridge-loop");
+    const QString ridgeTitle = QStringLiteral("The ridge loop");
+
+    // New tab: the link in a tab of its own, in front, after a picture of the page left.
+    const int grabs = view->property("grabCount").toInt();
+    holdOn(view, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("newTabLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->activeUrl(), ridge);
+    QVERIFY(view->property("grabCount").toInt() > grabs);
+    tabs->activateTabById(front);
+
+    // Background tab: the link in a tab behind, named by its text; the page in front stays,
+    // and a banner on the bar says where the link went.
+    QObject *banner = find(QStringLiteral("tabBanner"));
+    const auto bannerText = [banner](const char *name) {
+        return findObjects(banner, QLatin1String(name)).first()->property("text").toString();
+    };
+    QVERIFY(!banner->property("shown").toBool());
+    holdOn(view, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("backgroundTabLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->activeTabId(), front);
+    QCOMPARE(currentWebView(), view);
+    const Salama::Tab behind = tabs->tabs().last();
+    QCOMPARE(behind.url, ridge);
+    QCOMPARE(behind.title, ridgeTitle);
+    QVERIFY(banner->property("shown").toBool());
+    QCOMPARE(bannerText("bannerTitle"), QStringLiteral("Opened in a new tab"));
+    QCOMPARE(bannerText("bannerDetail"), ridgeTitle);
+    QCOMPARE(bannerText("bannerActionLabel"), QStringLiteral("Show"));
+    // Its page is not loaded until it is shown, as a restored tab's is not.
+    for (QObject *loader : findAll(QStringLiteral("webViewLoader"))) {
+        if (loader->property("tabId").toInt() == behind.id) {
+            QVERIFY(!loader->property("active").toBool());
+        }
+    }
+    // Show brings it to the front, and the banner goes.
+    click(findObjects(banner, QStringLiteral("bannerAction")).first());
+    QCOMPARE(tabs->activeTabId(), behind.id);
+    QCOMPARE(currentWebView()->property("url").toString(), ridge);
+    QVERIFY(!banner->property("shown").toBool());
+    tabs->activateTabById(front);
+    // Left alone, it goes after a few seconds; swiped, at once.
+    holdOn(view, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("backgroundTabLinkButton")));
+    QVERIFY(banner->property("shown").toBool());
+    findObjects(banner, QStringLiteral("tabBannerTimer")).first()->setProperty("running", false);
+    QVERIFY(!banner->property("shown").toBool());
+    holdOn(view, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("backgroundTabLinkButton")));
+    QVERIFY(banner->property("shown").toBool());
+    QMetaObject::invokeMethod(banner, "dismissed");
+    QVERIFY(!banner->property("shown").toBool());
+    // In a group with a name, the name is said too; a link without text is named by
+    // where it goes.
+    const int reading = tabs->addGroup(QStringLiteral("Reading"));
+    tabs->newTab(QStringLiteral("https://trails.example/"));
+    QObject *readingView = currentWebView();
+    holdOn(readingView, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("backgroundTabLinkButton")));
+    QCOMPARE(tabs->tabs().last().groupId, reading);
+    QCOMPARE(bannerText("bannerDetail"), QStringLiteral("The ridge loop · in Reading"));
+    holdOn(readingView, heldOn(QStringLiteral("https://trails.example/maps")));
+    click(find(QStringLiteral("backgroundTabLinkButton")));
+    QCOMPARE(bannerText("bannerDetail"), QStringLiteral("trails.example/maps · in Reading"));
+    QCOMPARE(tabs->tabs().last().title, QString());
+
+    // Share: the link, as the menu shares the page.
+    QObject *share = find(QStringLiteral("linkShareAction"));
+    holdOn(readingView, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("shareLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(share->property("triggerCount").toInt(), 1);
+    QCOMPARE(share->property("mimeType").toString(), QStringLiteral("text/x-url"));
+    const QVariantMap resource = share->property("resources").toList().first().toMap();
+    QCOMPARE(resource.value(QStringLiteral("status")).toString(), ridge);
+    QCOMPARE(resource.value(QStringLiteral("linkTitle")).toString(), ridgeTitle);
+
+    // Save link: the engine is asked for it, into the downloads folder, under its own name.
+    evaluate(scope, QStringLiteral("WebEngine.notifications = []"));
+    const QString map = QStringLiteral("https://files.example/maps/ridge-loop.pdf?v=2");
+    holdOn(readingView, heldOn(map, QStringLiteral("The map")));
+    click(find(QStringLiteral("saveLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    const QVariantList sent = evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+    QCOMPARE(sent.count(), 1);
+    QCOMPARE(sent.first().toMap().value(QStringLiteral("topic")).toString(),
+             QStringLiteral("embedui:download"));
+    QCOMPARE(
+        sent.first().toMap().value(QStringLiteral("value")).toMap(),
+        QVariantMap(
+            {{QStringLiteral("msg"), QStringLiteral("addDownload")},
+             {QStringLiteral("from"), map},
+             {QStringLiteral("to"),
+              QDir(m_core->downloads()->directory()).filePath(QStringLiteral("ridge-loop.pdf"))}}));
+
+    // The head's copy button: the link on the clipboard, and a word that it is.
+    QObject *notice = find(QStringLiteral("linkCopiedNotice"));
+    holdOn(readingView, heldOn(ridge, ridgeTitle));
+    click(find(QStringLiteral("copyLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(), ridge);
+    QCOMPARE(notice->property("shownCount").toInt(), 1);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Link copied"));
+    QCOMPARE(errors.all(), QString());
+}
+
+// A link another application takes: that application's action, and Share, and no tab
+// or preview; the head shows and copies the mailbox or the number without its scheme.
+void tst_qmlload::linkMenuForOtherApps()
+{
+    ScriptErrors errors;
+    QObject *menu = find(QStringLiteral("linkMenu"));
+    QObject *view = currentWebView();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    QObject *app = find(QStringLiteral("appLinkButton"));
+    const QList<QStringList> links{
+        {QStringLiteral("mailto:walks@trails.example"), QStringLiteral("Write email"),
+         QStringLiteral("image://theme/icon-m-mail"), QStringLiteral("walks@trails.example")},
+        {QStringLiteral("tel:+358401234567"), QStringLiteral("Call"),
+         QStringLiteral("image://theme/icon-m-call"), QStringLiteral("+358401234567")},
+        {QStringLiteral("sms:+358401234567"), QStringLiteral("Send message"),
+         QStringLiteral("image://theme/icon-m-sms"), QStringLiteral("+358401234567")},
+        {QStringLiteral("geo:60.17,24.94"), QStringLiteral("Show on map"),
+         QStringLiteral("image://theme/icon-m-location"), QStringLiteral("60.17,24.94")},
+    };
+    for (const QStringList &link : links) {
+        holdOn(view, heldOn(link.at(0), QStringLiteral("Write to us")));
+        QVERIFY2(menu->property("open").toBool(), qPrintable(link.at(0)));
+        QVERIFY(shownIn(find(QStringLiteral("linkAppRow"))));
+        QVERIFY(!shownIn(find(QStringLiteral("linkPageRow"))));
+        QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
+        QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+        QCOMPARE(app->property("text").toString(), link.at(1));
+        QCOMPARE(app->property("iconSource").toString(), link.at(2));
+        QVERIFY(shownIn(find(QStringLiteral("linkMenuAppIcon"))));
+        QCOMPARE(find(QStringLiteral("linkMenuAppIcon"))->property("source").toString(),
+                 link.at(2));
+        QCOMPARE(find(QStringLiteral("linkMenuAddress"))->property("text").toString(), link.at(3));
+        QCOMPARE(find(QStringLiteral("shareAppLinkButton"))->property("text").toString(),
+                 QStringLiteral("Share"));
+        evaluate(menu, QStringLiteral("hide()"));
+    }
+
+    // The action hands the link to its application; no tab is made for it.
+    const UrlCatcher mail(QStringLiteral("mailto"));
+    holdOn(view, heldOn(QStringLiteral("mailto:walks@trails.example")));
+    click(app);
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(mail.opened, QList<QUrl>{QUrl(QStringLiteral("mailto:walks@trails.example"))});
+    QCOMPARE(m_core->tabs()->count(), 1);
+
+    // Copied, the mailbox alone.
+    holdOn(view, heldOn(QStringLiteral("mailto:walks@trails.example")));
+    click(find(QStringLiteral("copyLinkButton")));
+    QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(),
+             QStringLiteral("walks@trails.example"));
+    QCOMPARE(find(QStringLiteral("linkCopiedNotice"))->property("shownText").toString(),
+             QStringLiteral("Copied"));
+
+    // Shared, the link as it is.
+    holdOn(view, heldOn(QStringLiteral("tel:+358401234567")));
+    click(find(QStringLiteral("shareAppLinkButton")));
+    QCOMPARE(find(QStringLiteral("linkShareAction"))
+                 ->property("resources")
+                 .toList()
+                 .first()
+                 .toMap()
+                 .value(QStringLiteral("status"))
+                 .toString(),
+             QStringLiteral("tel:+358401234567"));
+    QCOMPARE(errors.all(), QString());
+}
+
+// A picture: lifted out of the page above the sheet, where it can be pinched closer, with
+// its own row of actions after the link's, and no page preview.
+void tst_qmlload::linkMenuForPictures()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    QObject *menu = find(QStringLiteral("linkMenu"));
+    QObject *view = currentWebView();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const QString photo = QStringLiteral("https://cdn.example/photos/ridge.jpg");
+    const QString mapLink = QStringLiteral("https://trails.example/maps/ridge");
+
+    // A picture that is a link: both rows, the menu's line between them, no preview.
+    holdOn(view, heldOn(mapLink, QString(), photo));
+    QVERIFY(menu->property("open").toBool());
+    QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
+    QVERIFY(shownIn(find(QStringLiteral("linkImageRow"))));
+    QVERIFY(shownIn(
+        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(view->property("active").toBool());
+    // The head shows the picture on its tile and the link under it.
+    QCOMPARE(find(QStringLiteral("linkMenuThumbnail"))->property("source").toString(), photo);
+    QCOMPARE(find(QStringLiteral("linkMenuTitle"))->property("text").toString(),
+             QStringLiteral("trails.example/maps/ridge"));
+    // Lifted above the sheet: the room from under the cutout to the sheet, the picture
+    // as wide as the screen and pinched closer from its middle.
+    QObject *page = find(QStringLiteral("browserPage"));
+    auto *area = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuPictureArea")));
+    QObject *picture = find(QStringLiteral("linkMenuPicture"));
+    QCOMPARE(picture->property("source").toString(), photo);
+    QCOMPARE(area->y(), page->property("pageCutoutInset").toReal());
+    QCOMPARE(area->y() + area->height(),
+             page->property("height").toReal() - menu->property("height").toReal());
+    QCOMPARE(picture->property("width").toReal(), page->property("width").toReal());
+    QCOMPARE(picture->property("fillMode").toInt(), 1); // Image.PreserveAspectFit
+    QObject *pinch = find(QStringLiteral("linkMenuPinch"));
+    QCOMPARE(evaluate(pinch, QStringLiteral("pinch.target === parent.children[0]")).toBool(), true);
+    QCOMPARE(evaluate(pinch, QStringLiteral("pinch.maximumScale")).toReal(), 4.0);
+    QCOMPARE(evaluate(pinch, QStringLiteral("pinch.minimumScale")).toReal(), 1.0);
+    // A picture pinched closer starts the next one at its own size.
+    picture->setProperty("scale", 2.5);
+    holdOn(view, heldOn(QString(), QString(), QStringLiteral("https://cdn.example/b.jpg")));
+    QCOMPARE(picture->property("scale").toReal(), 1.0);
+
+    // A picture alone: its row only, named by its address.
+    QVERIFY(!shownIn(find(QStringLiteral("linkPageRow"))));
+    QVERIFY(shownIn(find(QStringLiteral("linkImageRow"))));
+    QVERIFY(!shownIn(
+        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    QCOMPARE(find(QStringLiteral("linkMenuTitle"))->property("text").toString(),
+             QStringLiteral("cdn.example/b.jpg"));
+    const QList<QPair<QString, QString>> actions{
+        {QStringLiteral("openImageButton"), QStringLiteral("Open image")},
+        {QStringLiteral("saveImageButton"), QStringLiteral("Save image")},
+        {QStringLiteral("copyImageLinkButton"), QStringLiteral("Copy image link")},
+    };
+    for (const auto &action : actions) {
+        QObject *button = find(action.first);
+        QCOMPARE(button->property("text").toString(), action.second);
+        QVERIFY(button->property("round").toBool());
+        QVERIFY(!button->property("iconSource").toString().isEmpty());
+    }
+    // Copied from the head, the picture's address.
+    click(find(QStringLiteral("copyLinkButton")));
+    QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(),
+             QStringLiteral("https://cdn.example/b.jpg"));
+    QCOMPARE(find(QStringLiteral("linkCopiedNotice"))->property("shownText").toString(),
+             QStringLiteral("Image link copied"));
+
+    // Open image: the picture alone, in a tab in front.
+    holdOn(view, heldOn(mapLink, QString(), photo));
+    click(find(QStringLiteral("openImageButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->activeUrl(), photo);
+    view = currentWebView();
+    // Save image: downloaded under its own name.
+    evaluate(scope, QStringLiteral("WebEngine.notifications = []"));
+    holdOn(view, heldOn(mapLink, QString(), photo));
+    click(find(QStringLiteral("saveImageButton")));
+    const QVariantList sent = evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+    QCOMPARE(sent.count(), 1);
+    const QVariantMap asked = sent.first().toMap().value(QStringLiteral("value")).toMap();
+    QCOMPARE(asked.value(QStringLiteral("from")).toString(), photo);
+    QCOMPARE(asked.value(QStringLiteral("to")).toString(),
+             QDir(m_core->downloads()->directory()).filePath(QStringLiteral("ridge.jpg")));
+    // Copy image link: its address, said so.
+    holdOn(view, heldOn(mapLink, QString(), photo));
+    click(find(QStringLiteral("copyImageLinkButton")));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(), photo);
+    QCOMPARE(find(QStringLiteral("linkCopiedNotice"))->property("shownText").toString(),
+             QStringLiteral("Image link copied"));
+    // Gone with the sheet.
+    QVERIFY(!find(QStringLiteral("linkMenuOverlay"))->property("shown").toBool());
+    QCOMPARE(errors.all(), QString());
+}
+
+// The page a link leads to, previewed in the sheet as Safari's link preview is: shown for
+// every link until hidden, and hidden for every link until shown again. The engine draws
+// one picture, so the page in front is put aside, a still of it in its place, while the
+// preview is drawn.
+void tst_qmlload::linkPreview()
+{
+    ScriptErrors errors;
+    TabModel *tabs = m_core->tabs();
+    QObject *menu = find(QStringLiteral("linkMenu"));
+    QObject *view = currentWebView();
+    QObject *page = find(QStringLiteral("browserPage"));
+    QVERIFY(m_core->settings()->linkPreview());
+    QVERIFY(view->property("active").toBool());
+    const QString ridge = QStringLiteral("https://trails.example/walks/ridge-loop");
+
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    QObject *toggle = find(QStringLiteral("linkPreviewToggleLabel"));
+    QObject *loader = find(QStringLiteral("linkPreviewLoader"));
+    QObject *still = find(QStringLiteral("linkMenuStill"));
+    QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(shownIn(find(QStringLiteral("linkPreviewFrame"))));
+    QCOMPARE(toggle->property("text").toString(), QStringLiteral("Hide preview"));
+    QVERIFY(menu->property("previewShown").toBool());
+    // The page the link leads to, in the frame.
+    QVERIFY(loader->property("active").toBool());
+    auto *preview = loader->property("item").value<QObject *>();
+    QVERIFY(preview != nullptr);
+    QCOMPARE(preview->objectName(), QStringLiteral("linkPreviewView"));
+    QCOMPARE(preview->property("url").toString(), ridge);
+    // The page in front put aside, and a still of it where it was.
+    QVERIFY(!view->property("active").toBool());
+    QVERIFY(!view->property("visible").toBool());
+    QTRY_VERIFY(shownIn(still));
+    QCOMPARE(still->property("source").toString(),
+             QStringLiteral("image://grab/%1").arg(view->property("grabCount").toInt()));
+    QCOMPARE(still->property("y").toReal(), page->property("pageCutoutInset").toReal());
+    QCOMPARE(still->property("height").toReal(), view->property("height").toReal());
+    QCOMPARE(still->property("width").toReal(), view->property("width").toReal());
+    // Taken at the page's own size: it stands where the page was.
+    QCOMPARE(view->property("lastGrabSize").toSizeF(),
+             QSizeF(view->property("width").toReal(), view->property("height").toReal()));
+
+    // A tap on the preview opens the link where the page was, and the page is back.
+    evaluate(find(QStringLiteral("linkPreviewTap")), QStringLiteral("clicked(null)"));
+    QVERIFY(!menu->property("open").toBool());
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(!loader->property("active").toBool());
+    QCOMPARE(view->property("url").toString(), ridge);
+    QCOMPARE(tabs->count(), 1);
+    QVERIFY(view->property("active").toBool());
+    QVERIFY(view->property("visible").toBool());
+    QVERIFY(!shownIn(still));
+
+    // Hidden, it stays hidden, for every link and across restarts: it is a setting.
+    holdOn(view, heldOn(QStringLiteral("https://trails.example/other"), QStringLiteral("Other")));
+    QVERIFY(menu->property("previewShown").toBool());
+    click(find(QStringLiteral("linkPreviewToggle")));
+    QVERIFY(menu->property("open").toBool());
+    QVERIFY(!m_core->settings()->linkPreview());
+    QCOMPARE(toggle->property("text").toString(), QStringLiteral("Show preview"));
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(!loader->property("active").toBool());
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreviewFrame"))));
+    QVERIFY(view->property("active").toBool());
+    QVERIFY(view->property("visible").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(!menu->property("previewShown").toBool());
+    click(find(QStringLiteral("linkPreviewToggle")));
+    QVERIFY(m_core->settings()->linkPreview());
+    QVERIFY(menu->property("previewShown").toBool());
+    QVERIFY(loader->property("active").toBool());
+
+    // Put away, the preview goes with the sheet, and its still.
+    evaluate(menu, QStringLiteral("hide()"));
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(!loader->property("active").toBool());
+    QVERIFY(menu->property("pageStill").isNull() ||
+            menu->property("pageStill").value<QObject *>() == nullptr);
+    QVERIFY(view->property("active").toBool());
+
+    // A page that cannot be pictured is not put aside: nothing would stand in its place.
+    view->setProperty("grabFails", true);
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(view->property("active").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    view->setProperty("grabFails", false);
+
+    // Not offered while the page in front plays: put aside, it would be paused.
+    tabs->setMediaState(tabs->activeTabId(), TabModel::MediaPlaying);
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(!menu->property("previewShown").toBool());
+    QVERIFY(view->property("active").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    tabs->setMediaState(tabs->activeTabId(), TabModel::NoMedia);
+    QCOMPARE(errors.all(), QString());
+}
+
+// The page ends where the banners on the bar begin, with one of them up or two, and has
+// its room back when they go: a banner never lies over the foot of a page.
+void tst_qmlload::bannersEndThePage()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *viewArea = find(QStringLiteral("viewArea"));
+    QObject *banners = find(QStringLiteral("barBanners"));
+    QObject *downloads = find(QStringLiteral("downloadBanner"));
+    QObject *opened = find(QStringLiteral("tabBanner"));
+    QObject *webView = currentWebView();
+    const qreal pageHeight = page->property("height").toReal();
+    const qreal inset = page->property("pageCutoutInset").toReal();
+    const qreal fullBar = bar->property("height").toReal();
+    const auto pageEnd = [viewArea]() {
+        return viewArea->property("y").toReal() + viewArea->property("height").toReal();
+    };
+    QCOMPARE(banners->property("height").toReal(), 0.0);
+    QCOMPARE(pageEnd(), pageHeight - fullBar);
+
+    evaluate(viewArea, QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
+                                      " id: 1, displayName: 'a.pdf', size: 0})"));
+    QTRY_VERIFY(downloads->property("visible").toBool());
+    const qreal one = downloads->property("height").toReal();
+    QVERIFY(one > 0);
+    QCOMPARE(banners->property("height").toReal(), one);
+    QCOMPARE(pageEnd(), banners->property("y").toReal());
+    QCOMPARE(pageEnd(), pageHeight - fullBar - one);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - one - inset);
+
+    const int behind =
+        m_core->tabs()->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
+    evaluate(banners, QStringLiteral("tabOpened(%1, 'B')").arg(behind));
+    QTRY_VERIFY(opened->property("visible").toBool());
+    QCOMPARE(banners->property("height").toReal(), 2 * one);
+    QCOMPARE(pageEnd(), banners->property("y").toReal());
+    QCOMPARE(banners->property("y").toReal() + 2 * one, bar->property("y").toReal());
+
+    // Gone, the page has its room back.
+    evaluate(opened, QStringLiteral("dismiss()"));
+    evaluate(downloads, QStringLiteral("dismiss()"));
+    QTRY_VERIFY(!opened->property("visible").toBool());
+    QTRY_VERIFY(!downloads->property("visible").toBool());
+    QCOMPARE(banners->property("height").toReal(), 0.0);
+    QCOMPARE(pageEnd(), pageHeight - fullBar);
 }
 
 void tst_qmlload::historyPage()

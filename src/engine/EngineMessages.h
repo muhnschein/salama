@@ -27,6 +27,7 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString findMessage READ findMessage CONSTANT)
     Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
     Q_PROPERTY(QString searchOfferedMessage READ searchOfferedMessage CONSTANT)
+    Q_PROPERTY(QString contextMenuMessage READ contextMenuMessage CONSTANT)
 
 public:
     explicit EngineMessages(QObject *parent = nullptr);
@@ -107,6 +108,30 @@ public:
     // The message is {engine: {title, href}, url: the page's address}. All three are
     // there, and empty, for a message that says nothing of the kind.
     Q_INVOKABLE static QVariantMap searchOffered(const QVariant &data);
+
+    // A press held on the page: embedlite-components' jsscripts/ContextMenuHandler.js
+    // sends this for every one, with what is under the finger -- {types, linkURL,
+    // linkTitle, linkProtocol, mediaURL, contentType, ...}, types holding "link" for a
+    // link and "image" for a picture. The platform's WebView listens for it already, and
+    // so it is heard without asking (import/webview/WebView.qml in
+    // sailfish-components-webview) (docs/DECISIONS/0046-link-menu.md).
+    QString contextMenuMessage() const;
+
+    // What the link sheet needs of that message, every key there whatever it says:
+    //  * link: the address of the link pressed, or empty -- for no link, and for a
+    //    javascript: one, which is a script to run rather than a place to go;
+    //  * kind: "page" for a link that opens in a tab, "app" for one another
+    //    application takes (mailto:, tel:, sms:, geo:, TabModel::isExternalUrl), and
+    //    empty for no link;
+    //  * scheme: the link's, in lower case;
+    //  * title: the link's text, as one line;
+    //  * image: the address of the picture pressed, an http or https one, or empty;
+    //  * contentType: the picture's type, as the engine's cache has it;
+    //  * address: what the sheet shows under the title -- for a link to a page its
+    //    host, without www, and the path and query after it; for another application's
+    //    the address without its scheme (the mailbox, the number); with no link, the
+    //    picture's, the same way.
+    Q_INVOKABLE static QVariantMap linkTarget(const QVariant &data);
 
     // What to send for a search: the text; whether to go on to the next match of it
     // rather than start over; and which way. An empty text is the message that ends
