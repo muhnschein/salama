@@ -1,56 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fi">
+<TS version="2.1" language="el">
 <context>
     <name>AddressField</name>
     <message>
         <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <translation>Αναζήτηση ή εισαγωγή διεύθυνσης</translation>
     </message>
 </context>
 <context>
     <name>AddressLabel</name>
     <message>
         <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <translation>Αναζήτηση ή εισαγωγή διεύθυνσης</translation>
     </message>
 </context>
 <context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Άνοιγμα σε νέα καρτέλα</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Muokkaa</translation>
+        <translation>Επεξεργασία</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Αφαίρεση</translation>
     </message>
     <message>
         <source>Removing bookmark</source>
-        <translation>Poistetaan kirjanmerkki</translation>
+        <translation>Αφαίρεση σελιδοδείκτη σε εξέλιξη</translation>
     </message>
 </context>
 <context>
     <name>BookmarkEditDialog</name>
     <message>
         <source>Edit bookmark</source>
-        <translation>Muokkaa kirjanmerkkiä</translation>
+        <translation>Επεξεργασία σελιδοδείκτη</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Tallenna</translation>
+        <translation>Αποθήκευση</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation>Otsikko</translation>
+        <translation>Τίτλος</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Osoite</translation>
+        <translation>Διεύθυνση</translation>
     </message>
 </context>
 <context>
@@ -58,190 +58,190 @@
     <message>
         <source>Choose a bookmark</source>
         <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
-        <translation>Valitse kirjanmerkki</translation>
+        <translation>Επιλογή σελιδοδείκτη</translation>
     </message>
     <message>
         <source>Search bookmarks</source>
-        <translation>Hae kirjanmerkeistä</translation>
+        <translation>Αναζήτηση σελιδοδεικτών</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation>Ei osumia</translation>
+        <translation>Δεν βρέθηκαν αποτελέσματα</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation>Ei kirjanmerkkejä</translation>
+        <translation>Δεν υπάρχουν σελιδοδείκτες</translation>
     </message>
 </context>
 <context>
     <name>BookmarksPage</name>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Bookmark current page</source>
-        <translation>Lisää nykyinen sivu kirjanmerkkeihin</translation>
+        <translation>Προσθήκη τρέχουσας σελίδας στους σελιδοδείκτες</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation>Ei kirjanmerkkejä</translation>
+        <translation>Δεν υπάρχουν σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Pull down to bookmark the current page</source>
-        <translation>Vedä alas lisätäksesi nykyisen sivun kirjanmerkkeihin</translation>
+        <translation>Τραβήξτε προς τα κάτω για να προσθέσετε την τρέχουσα σελίδα στους σελιδοδείκτες</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
     <message>
         <source>Share</source>
-        <translation>Jaa</translation>
+        <translation>Κοινή χρήση</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Ρυθμίσεις</translation>
     </message>
     <message>
         <source>Bookmark</source>
-        <translation>Kirjanmerkki</translation>
+        <translation>Σελιδοδείκτης</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Ανάγνωση</translation>
     </message>
     <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
-        <translation>Osoite kopioitu</translation>
+        <translation>Η διεύθυνση αντιγράφηκε</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Εύρεση</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>PC-versio</translation>
+        <translation>Υπολογιστής</translation>
     </message>
 </context>
 <context>
     <name>ClearDataDialog</name>
     <message>
         <source>Clear browsing data</source>
-        <translation>Poista selaustiedot</translation>
+        <translation>Απαλοιφή δεδομένων περιήγησης</translation>
     </message>
     <message>
         <source>Clear</source>
         <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
-        <translation>Poista</translation>
+        <translation>Απαλοιφή</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Ανοικτές καρτέλες</translation>
     </message>
     <message>
         <source>Cookies and site data</source>
-        <translation>Evästeet ja sivustotiedot</translation>
+        <translation>Cookie και δεδομένα ιστοτόπων</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation>Välimuisti</translation>
+        <translation>Προσωρινή μνήμη</translation>
     </message>
     <message>
         <source>Time range</source>
-        <translation>Aikaväli</translation>
+        <translation>Χρονικό διάστημα</translation>
     </message>
     <message>
         <source>Open tabs, cookies, site data and the cache are cleared whole</source>
-        <translation>Avoimet välilehdet, evästeet, sivustotiedot ja välimuisti poistetaan kokonaan</translation>
+        <translation>Οι ανοικτές καρτέλες, τα cookie, τα δεδομένα ιστοτόπων και η προσωρινή μνήμη απαλείφονται εξ ολοκλήρου</translation>
     </message>
     <message>
         <source>Last hour</source>
-        <translation>Viimeinen tunti</translation>
+        <translation>Τελευταία ώρα</translation>
     </message>
     <message>
         <source>Last two hours</source>
-        <translation>Viimeiset kaksi tuntia</translation>
+        <translation>Τελευταίες δύο ώρες</translation>
     </message>
     <message>
         <source>Last four hours</source>
-        <translation>Viimeiset neljä tuntia</translation>
+        <translation>Τελευταίες τέσσερις ώρες</translation>
     </message>
     <message>
         <source>Today</source>
-        <translation>Tänään</translation>
+        <translation>Σήμερα</translation>
     </message>
     <message>
         <source>Everything</source>
-        <translation>Kaikki</translation>
+        <translation>Όλα</translation>
     </message>
     <message>
         <source>Browsing and download history</source>
-        <translation>Selaus- ja lataushistoria</translation>
+        <translation>Ιστορικό περιήγησης και λήψεων</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>Pages of the history that clearing takes</extracomment>
         <translation>
-            <numerusform>%n sivu</numerusform>
-            <numerusform>%n sivua</numerusform>
+            <numerusform>%n σελίδα</numerusform>
+            <numerusform>%n σελίδες</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n download(s)</source>
         <extracomment>Rows of the list of downloads that clearing takes</extracomment>
         <translation>
-            <numerusform>%n lataus</numerusform>
-            <numerusform>%n latausta</numerusform>
+            <numerusform>%n λήψη</numerusform>
+            <numerusform>%n λήψεις</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n closed tab(s)</source>
         <extracomment>Recently closed tabs that clearing takes</extracomment>
         <translation>
-            <numerusform>%n suljettu välilehti</numerusform>
-            <numerusform>%n suljettua välilehteä</numerusform>
+            <numerusform>%n κλεισμένη καρτέλα</numerusform>
+            <numerusform>%n κλεισμένες καρτέλες</numerusform>
         </translation>
     </message>
     <message>
         <source>%1, %2 and %3</source>
         <extracomment>Three amounts cleared: &quot;342 pages, 18 downloads and 6 closed tabs&quot;</extracomment>
-        <translation>%1, %2 ja %3</translation>
+        <translation>%1, %2 και %3</translation>
     </message>
     <message>
         <source>%1 and %2</source>
         <extracomment>Two amounts cleared: &quot;342 pages and 18 downloads&quot;</extracomment>
-        <translation>%1 ja %2</translation>
+        <translation>%1 και %2</translation>
     </message>
     <message>
         <source>Nothing from this time</source>
         <extracomment>The history holds nothing from the time range chosen</extracomment>
-        <translation>Ei mitään tältä ajalta</translation>
+        <translation>Τίποτα από αυτό το διάστημα</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s), in every group</source>
         <extracomment>How many tabs clearing the open tabs closes</extracomment>
         <translation>
-            <numerusform>%n välilehti, kaikista ryhmistä</numerusform>
-            <numerusform>%n välilehteä, kaikista ryhmistä</numerusform>
+            <numerusform>%n καρτέλα, σε όλες τις ομάδες</numerusform>
+            <numerusform>%n καρτέλες, σε όλες τις ομάδες</numerusform>
         </translation>
     </message>
     <message>
         <source>Signs you out of most sites</source>
         <extracomment>What clearing the cookies does</extracomment>
-        <translation>Kirjaa sinut ulos useimmilta sivustoilta</translation>
+        <translation>Σας αποσυνδέει από τους περισσότερους ιστοτόπους</translation>
     </message>
 </context>
 <context>
@@ -249,7 +249,7 @@
     <message>
         <source>Downloading</source>
         <extracomment>On the cover, over the ring that shows how far the downloads have come</extracomment>
-        <translation>Ladataan</translation>
+        <translation>Γίνεται λήψη</translation>
     </message>
     <message>
         <source>%</source>
@@ -260,8 +260,8 @@
         <source>%n file(s)</source>
         <extracomment>How many downloads are coming, on the cover, under their progress</extracomment>
         <translation>
-            <numerusform>%n tiedosto</numerusform>
-            <numerusform>%n tiedostoa</numerusform>
+            <numerusform>%n αρχείο</numerusform>
+            <numerusform>%n αρχεία</numerusform>
         </translation>
     </message>
 </context>
@@ -270,12 +270,12 @@
     <message>
         <source>Playing</source>
         <extracomment>On the cover, of what the tab in front plays</extracomment>
-        <translation>Toistetaan</translation>
+        <translation>Παίζει</translation>
     </message>
     <message>
         <source>Paused</source>
         <extracomment>On the cover, of what the tab in front has muted or paused</extracomment>
-        <translation>Tauolla</translation>
+        <translation>Σε παύση</translation>
     </message>
     <message>
         <source>%1 · %2</source>
@@ -287,22 +287,22 @@
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>
-        <translation>Kansi</translation>
+        <translation>Εξώφυλλο</translation>
     </message>
     <message>
         <source>Quick action</source>
         <extracomment>The one action offered on the cover on the home screen</extracomment>
-        <translation>Pikatoiminto</translation>
+        <translation>Γρήγορη ενέργεια</translation>
     </message>
     <message>
         <source>The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.</source>
         <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. The mute button is the playing tab&apos;s own.</extracomment>
-        <translation>Kotinäkymän kansi tarjoaa yhden toiminnon. Kun välilehti soittaa, sen mykistyspainike on sen vieressä.</translation>
+        <translation>Το εξώφυλλο στην αρχική οθόνη προσφέρει μία ενέργεια. Όσο μια καρτέλα αναπαράγει ήχο, το κουμπί σίγασής της βρίσκεται δίπλα.</translation>
     </message>
     <message>
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
-        <translation>Sen kuvake kannessa</translation>
+        <translation>Το εικονίδιό του στο εξώφυλλο</translation>
     </message>
 </context>
 <context>
@@ -311,54 +311,54 @@
         <source>%n download(s)</source>
         <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
         <translation>
-            <numerusform>%n lataus</numerusform>
-            <numerusform>%n latausta</numerusform>
+            <numerusform>%n λήψη</numerusform>
+            <numerusform>%n λήψεις</numerusform>
         </translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Απέτυχε</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
-        <translation>Keskeytetty · %1 %</translation>
+        <translation>Σε παύση · %1%</translation>
     </message>
     <message>
         <source>Downloaded</source>
         <extracomment>The banner as a download arrives</extracomment>
-        <translation>Ladattu</translation>
+        <translation>Η λήψη ολοκληρώθηκε</translation>
     </message>
 </context>
 <context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
-        <translation>Poista luettelosta</translation>
+        <translation>Αφαίρεση από τη λίστα</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Avaa</translation>
+        <translation>Άνοιγμα</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>Keskeytä</translation>
+        <translation>Παύση</translation>
     </message>
     <message>
         <source>Download again</source>
         <extracomment>Fetch again a download the engine has forgotten, from the start</extracomment>
-        <translation>Lataa uudelleen</translation>
+        <translation>Λήψη ξανά</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation>Yritä uudelleen</translation>
+        <translation>Επανάληψη</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation>Jatka</translation>
+        <translation>Συνέχιση</translation>
     </message>
     <message>
         <source>Delete file</source>
-        <translation>Poista tiedosto</translation>
+        <translation>Διαγραφή αρχείου</translation>
     </message>
 </context>
 <context>
@@ -366,61 +366,61 @@
     <message>
         <source>%1 of %2 · %3%</source>
         <extracomment>A download&apos;s progress: &quot;3.1 MB of 7.4 MB · 42%&quot;</extracomment>
-        <translation>%1 / %2 · %3 %</translation>
+        <translation>%1 από %2 · %3%</translation>
     </message>
     <message>
         <source>Downloading, %1%</source>
-        <translation>Ladataan, %1 %</translation>
+        <translation>Γίνεται λήψη, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Απέτυχε</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
         <extracomment>A download stopped part way, which can go on: &quot;Paused · 42%&quot;</extracomment>
-        <translation>Keskeytetty · %1 %</translation>
+        <translation>Σε παύση · %1%</translation>
     </message>
     <message>
         <source>Stopped</source>
         <extracomment>A download stopped in an earlier run, which can only start over</extracomment>
-        <translation>Pysäytetty</translation>
+        <translation>Διακόπηκε</translation>
     </message>
     <message>
         <source>File not found</source>
         <extracomment>A download whose file has been deleted or moved since</extracomment>
-        <translation>Tiedostoa ei löydy</translation>
+        <translation>Το αρχείο δεν βρέθηκε</translation>
     </message>
 </context>
 <context>
     <name>DownloadsPage</name>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message>
         <source>No downloads</source>
-        <translation>Ei latauksia</translation>
+        <translation>Δεν υπάρχουν λήψεις</translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
-        <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
+        <translation>Τα αρχεία που λαμβάνονται από σελίδες εμφανίζονται εδώ</translation>
     </message>
     <message>
         <source>Clear finished</source>
-        <translation>Tyhjennä valmiit</translation>
+        <translation>Απαλοιφή ολοκληρωμένων</translation>
     </message>
     <message>
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
-        <translation>Poistetaan</translation>
+        <translation>Διαγραφή σε εξέλιξη</translation>
     </message>
 </context>
 <context>
     <name>FindBar</name>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Εύρεση στη σελίδα</translation>
     </message>
 </context>
 <context>
@@ -428,125 +428,125 @@
     <message>
         <source>Forget</source>
         <extracomment>Drops an offered search engine from the list, without adding it</extracomment>
-        <translation>Unohda</translation>
+        <translation>Απόρριψη</translation>
     </message>
     <message>
         <source>%1 · Tap to add</source>
         <extracomment>Under an offered search engine: the site that offered it. %1 is its host</extracomment>
-        <translation>%1 · Lisää napauttamalla</translation>
+        <translation>%1 · Πατήστε για προσθήκη</translation>
     </message>
 </context>
 <context>
     <name>HistoryDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Άνοιγμα σε νέα καρτέλα</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Αφαίρεση</translation>
     </message>
 </context>
 <context>
     <name>HistoryPage</name>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Search history</source>
-        <translation>Hae historiasta</translation>
+        <translation>Αναζήτηση ιστορικού</translation>
     </message>
     <message>
         <source>Clear history</source>
-        <translation>Tyhjennä historia</translation>
+        <translation>Απαλοιφή ιστορικού</translation>
     </message>
     <message>
         <source>Clearing history</source>
-        <translation>Tyhjennetään historia</translation>
+        <translation>Απαλοιφή ιστορικού σε εξέλιξη</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation>Ei osumia</translation>
+        <translation>Δεν βρέθηκαν αποτελέσματα</translation>
     </message>
     <message>
         <source>No history yet</source>
-        <translation>Ei vielä historiaa</translation>
+        <translation>Δεν υπάρχει ακόμη ιστορικό</translation>
     </message>
 </context>
 <context>
     <name>HistorySettingsPage</name>
     <message>
         <source>Clearing browsing data</source>
-        <translation>Poistetaan selaustiedot</translation>
+        <translation>Απαλοιφή δεδομένων περιήγησης σε εξέλιξη</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Remember browsing history</source>
-        <translation>Muista selaushistoria</translation>
+        <translation>Διατήρηση ιστορικού περιήγησης</translation>
     </message>
     <message>
         <source>Clear history when closed</source>
-        <translation>Poista historia suljettaessa</translation>
+        <translation>Απαλοιφή ιστορικού κατά το κλείσιμο</translation>
     </message>
     <message>
         <source>Clear browsing data</source>
-        <translation>Poista selaustiedot</translation>
+        <translation>Απαλοιφή δεδομένων περιήγησης</translation>
     </message>
     <message>
         <source>With it, the list of downloads and the recently closed tabs</source>
-        <translation>Sen mukana latausluettelo ja äskettäin suljetut välilehdet</translation>
+        <translation>Μαζί του, η λίστα λήψεων και οι πρόσφατα κλεισμένες καρτέλες</translation>
     </message>
     <message>
         <source>Kept on this phone</source>
         <extracomment>What browsing has left on the phone, counted</extracomment>
-        <translation>Tallessa tässä puhelimessa</translation>
+        <translation>Αποθηκευμένα σε αυτό το τηλέφωνο</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>How many pages the history keeps</extracomment>
         <translation>
-            <numerusform>%n sivu</numerusform>
-            <numerusform>%n sivua</numerusform>
+            <numerusform>%n σελίδα</numerusform>
+            <numerusform>%n σελίδες</numerusform>
         </translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message numerus="yes">
         <source>%n file(s)</source>
         <extracomment>How many downloads the list of them keeps</extracomment>
         <translation>
-            <numerusform>%n tiedosto</numerusform>
-            <numerusform>%n tiedostoa</numerusform>
+            <numerusform>%n αρχείο</numerusform>
+            <numerusform>%n αρχεία</numerusform>
         </translation>
     </message>
     <message>
         <source>Recently closed</source>
-        <translation>Äskettäin suljetut</translation>
+        <translation>Πρόσφατα κλεισμένες</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <extracomment>How many closed tabs can be opened again</extracomment>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Ανοικτές καρτέλες</translation>
     </message>
     <message numerus="yes">
         <source>%1, in %n group(s)</source>
         <extracomment>How many tabs are open, and in how many groups: &quot;17, in 5 groups&quot;</extracomment>
         <translation>
-            <numerusform>%1, %n ryhmässä</numerusform>
-            <numerusform>%1, %n ryhmässä</numerusform>
+            <numerusform>%1, σε %n ομάδα</numerusform>
+            <numerusform>%1, σε %n ομάδες</numerusform>
         </translation>
     </message>
 </context>
@@ -555,7 +555,7 @@
     <message>
         <source>Start page</source>
         <extracomment>The head of the browser&apos;s menu on the start page, where there is no page</extracomment>
-        <translation>Aloitussivu</translation>
+        <translation>Αρχική σελίδα</translation>
     </message>
 </context>
 <context>
@@ -563,93 +563,93 @@
     <message>
         <source>Allow</source>
         <extracomment>Lets the site send notifications from now on</extracomment>
-        <translation>Salli</translation>
+        <translation>Αποδοχή</translation>
     </message>
     <message>
         <source>Not now</source>
         <extracomment>Refuses the site this time; it may ask again when the page is next loaded</extracomment>
-        <translation>Ei nyt</translation>
+        <translation>Όχι τώρα</translation>
     </message>
     <message>
         <source>Allow %1 to send notifications?</source>
         <extracomment>%1 is the site asking, its host alone</extracomment>
-        <translation>Sallitaanko sivuston %1 lähettää ilmoituksia?</translation>
+        <translation>Να επιτρέπεται στο %1 η αποστολή ειδοποιήσεων;</translation>
     </message>
     <message>
         <source>They show up with the phone&apos;s other notifications while the site is open in a tab</source>
-        <translation>Ne näkyvät puhelimen muiden ilmoitusten joukossa, kun sivusto on auki välilehdessä</translation>
+        <translation>Εμφανίζονται μαζί με τις υπόλοιπες ειδοποιήσεις του τηλεφώνου, όσο ο ιστότοπος είναι ανοικτός σε μια καρτέλα</translation>
     </message>
     <message>
         <source>Always block</source>
         <extracomment>Refuses the site for good: it cannot ask again</extracomment>
-        <translation>Estä aina</translation>
+        <translation>Πάντα φραγή</translation>
     </message>
 </context>
 <context>
     <name>NotificationSettingsPage</name>
     <message>
         <source>Notifications</source>
-        <translation>Ilmoitukset</translation>
+        <translation>Ειδοποιήσεις</translation>
     </message>
     <message>
         <source>Block</source>
-        <translation>Estä</translation>
+        <translation>Φραγή</translation>
     </message>
     <message>
         <source>Allow</source>
-        <translation>Salli</translation>
+        <translation>Αποδοχή</translation>
     </message>
     <message>
         <source>Allowed</source>
-        <translation>Sallittu</translation>
+        <translation>Επιτρέπονται</translation>
     </message>
     <message>
         <source>Blocked</source>
-        <translation>Estetty</translation>
+        <translation>Αποκλείονται</translation>
     </message>
     <message>
         <source>No sites</source>
-        <translation>Ei sivustoja</translation>
+        <translation>Δεν υπάρχουν ιστότοποι</translation>
     </message>
     <message>
         <source>Sites you allow to send notifications, or block, are listed here</source>
-        <translation>Sivustot, joiden ilmoitukset sallit tai estät, näkyvät tässä</translation>
+        <translation>Οι ιστότοποι στους οποίους επιτρέπετε ή απαγορεύετε την αποστολή ειδοποιήσεων εμφανίζονται εδώ</translation>
     </message>
     <message>
         <source>Sites can ask</source>
         <extracomment>Whether sites not yet allowed or blocked may ask to send notifications</extracomment>
-        <translation>Sivustot voivat kysyä</translation>
+        <translation>Οι ιστότοποι μπορούν να ρωτούν</translation>
     </message>
     <message>
         <source>Forget this site</source>
         <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
-        <translation>Unohda tämä sivusto</translation>
+        <translation>Αφαίρεση αυτού του ιστοτόπου</translation>
     </message>
     <message>
         <source>A site you forget asks again the next time it wants to send one.</source>
         <extracomment>Under the sites allowed and blocked from sending notifications</extracomment>
-        <translation>Unohdettu sivusto kysyy uudelleen, kun se seuraavan kerran haluaa lähettää ilmoituksen.</translation>
+        <translation>Ένας ιστότοπος που αφαιρείτε ρωτά ξανά την επόμενη φορά που θα θέλει να στείλει ειδοποίηση.</translation>
     </message>
 </context>
 <context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
-        <translation>Ladataan, %1 %</translation>
+        <translation>Γίνεται λήψη, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Απέτυχε</translation>
     </message>
     <message>
         <source>Cancelled</source>
-        <translation>Peruttu</translation>
+        <translation>Ακυρώθηκε</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
     <message>
@@ -659,12 +659,12 @@
     </message>
     <message>
         <source>Switch to tab</source>
-        <translation>Siirry välilehteen</translation>
+        <translation>Εναλλαγή σε καρτέλα</translation>
     </message>
     <message>
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
-        <translation>Siirry välilehteen ryhmässä %1</translation>
+        <translation>Εναλλαγή σε καρτέλα στην ομάδα «%1»</translation>
     </message>
 </context>
 <context>
@@ -672,12 +672,12 @@
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation>Siirry osoitteeseen %1</translation>
+        <translation>Μετάβαση σε %1</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation>Hae ”%2” hakukoneella %1</translation>
+        <translation>Αναζήτηση «%2» με %1</translation>
     </message>
 </context>
 <context>
@@ -685,41 +685,41 @@
     <message>
         <source>example.com</source>
         <extracomment>The made-up site a sample article in the reader view&apos;s preview is from</extracomment>
-        <translation>esimerkki.fi</translation>
+        <translation>example.com</translation>
     </message>
     <message>
         <source>Just the article</source>
         <extracomment>The heading of the sample article in the reader view&apos;s preview</extracomment>
-        <translation>Pelkkä artikkeli</translation>
+        <translation>Μόνο το άρθρο</translation>
     </message>
     <message>
         <source>The reader view keeps a page&apos;s words and pictures and leaves out everything around them, set in the colours, the typeface and the size chosen above.</source>
         <extracomment>The sample article in the reader view&apos;s preview</extracomment>
-        <translation>Lukunäkymä säilyttää sivun tekstin ja kuvat ja jättää pois kaiken niiden ympäriltä, ladottuna yllä valituilla väreillä, kirjasintyypillä ja koolla.</translation>
+        <translation>Η προβολή ανάγνωσης κρατά το κείμενο και τις εικόνες μιας σελίδας και παραλείπει ό,τι υπάρχει γύρω τους, με τα χρώματα, τη γραμματοσειρά και το μέγεθος που επιλέχθηκαν παραπάνω.</translation>
     </message>
 </context>
 <context>
     <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Προβολή ανάγνωσης</translation>
     </message>
     <message>
         <source>Colours</source>
-        <translation>Värit</translation>
+        <translation>Χρώματα</translation>
     </message>
     <message>
         <source>Typeface</source>
-        <translation>Kirjasin</translation>
+        <translation>Γραμματοσειρά</translation>
     </message>
     <message>
         <source>Text size</source>
-        <translation>Tekstin koko</translation>
+        <translation>Μέγεθος κειμένου</translation>
     </message>
     <message>
         <source>Aa</source>
         <extracomment>A sample of text in each of the reader view&apos;s typefaces</extracomment>
-        <translation>Aa</translation>
+        <translation>Αα</translation>
     </message>
 </context>
 <context>
@@ -727,18 +727,18 @@
     <message>
         <source>Aa</source>
         <extracomment>A sample of text, a capital and a small letter, drawn in each of the reader view&apos;s colours to choose from</extracomment>
-        <translation>Aa</translation>
+        <translation>Αα</translation>
     </message>
 </context>
 <context>
     <name>RecentlyClosedPanel</name>
     <message>
         <source>Recently closed</source>
-        <translation>Äskettäin suljetut</translation>
+        <translation>Πρόσφατα κλεισμένες</translation>
     </message>
     <message>
         <source>Nothing closed recently</source>
-        <translation>Ei äskettäin suljettuja välilehtiä</translation>
+        <translation>Καμία πρόσφατα κλεισμένη καρτέλα</translation>
     </message>
 </context>
 <context>
@@ -747,16 +747,16 @@
         <source>%1 hour(s)</source>
         <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
         <translation>
-            <numerusform>%1 tunti</numerusform>
-            <numerusform>%1 tuntia</numerusform>
+            <numerusform>%1 ώρα</numerusform>
+            <numerusform>%1 ώρες</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 minute(s)</source>
         <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
         <translation>
-            <numerusform>%1 minuutti</numerusform>
-            <numerusform>%1 minuuttia</numerusform>
+            <numerusform>%1 λεπτό</numerusform>
+            <numerusform>%1 λεπτά</numerusform>
         </translation>
     </message>
 </context>
@@ -765,70 +765,70 @@
     <message>
         <source>Remove</source>
         <extracomment>Takes an engine that was added while browsing out of the list</extracomment>
-        <translation>Poista</translation>
+        <translation>Αφαίρεση</translation>
     </message>
 </context>
 <context>
     <name>SearchEngineInstaller</name>
     <message>
         <source>%1 search added</source>
-        <translation>Haku %1 lisätty</translation>
+        <translation>Προστέθηκε η αναζήτηση %1</translation>
     </message>
     <message>
         <source>Could not add %1</source>
-        <translation>Hakua %1 ei voitu lisätä</translation>
+        <translation>Δεν ήταν δυνατή η προσθήκη της αναζήτησης %1</translation>
     </message>
 </context>
 <context>
     <name>SearchSettingsPage</name>
     <message>
         <source>Search</source>
-        <translation>Haku</translation>
+        <translation>Αναζήτηση</translation>
     </message>
     <message>
         <source>Search engine</source>
-        <translation>Hakukone</translation>
+        <translation>Μηχανή αναζήτησης</translation>
     </message>
     <message>
         <source>Address bar suggestions</source>
-        <translation>Osoiterivin ehdotukset</translation>
+        <translation>Προτάσεις γραμμής διευθύνσεων</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Ανοικτές καρτέλες</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message>
         <source>Remove added search engines</source>
-        <translation>Poista lisätyt hakukoneet</translation>
+        <translation>Αφαίρεση μηχανών αναζήτησης που προστέθηκαν</translation>
     </message>
     <message>
         <source>Removing added search engines</source>
-        <translation>Poistetaan lisätyt hakukoneet</translation>
+        <translation>Αφαιρούνται οι μηχανές αναζήτησης που προστέθηκαν</translation>
     </message>
     <message>
         <source>Added from %1</source>
         <extracomment>Under a search engine that was added while browsing. %1 is the site that offered it</extracomment>
-        <translation>Lisätty sivustolta %1</translation>
+        <translation>Προστέθηκε από %1</translation>
     </message>
     <message>
         <source>Found while browsing</source>
-        <translation>Löydetty selatessa</translation>
+        <translation>Βρέθηκαν κατά την περιήγηση</translation>
     </message>
     <message>
         <source>Sites can offer their search. Tap one to add it and search with it.</source>
-        <translation>Sivustot voivat tarjota hakuaan. Napauta yhtä lisätäksesi sen ja hakeaksesi sillä.</translation>
+        <translation>Οι ιστότοποι μπορούν να προσφέρουν τη δική τους αναζήτηση. Πατήστε σε μία για να την προσθέσετε και να κάνετε αναζήτηση με αυτήν.</translation>
     </message>
 </context>
 <context>
@@ -836,48 +836,48 @@
     <message>
         <source>Blank page</source>
         <extracomment>What a new tab shows: the start page&apos;s sections, or nothing</extracomment>
-        <translation>Tyhjä sivu</translation>
+        <translation>Κενή σελίδα</translation>
     </message>
     <message>
         <source>Your sites</source>
-        <translation>Sivustosi</translation>
+        <translation>Οι ιστότοποί σας</translation>
     </message>
     <message>
         <source>Automatic</source>
         <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
-        <translation>Automaattinen</translation>
+        <translation>Αυτόματο</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>Vaalea</translation>
+        <translation>Ανοιχτό</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation>Tumma</translation>
+        <translation>Σκούρο</translation>
     </message>
     <message>
         <source>Sepia</source>
-        <translation>Seepia</translation>
+        <translation>Σέπια</translation>
     </message>
     <message>
         <source>Ambience</source>
         <extracomment>The reader view set as a Sailfish page is, in the ambience&apos;s colours</extracomment>
-        <translation>Ambienssi</translation>
+        <translation>Ατμόσφαιρα</translation>
     </message>
     <message>
         <source>Serif</source>
-        <translation>Päätteellinen</translation>
+        <translation>Serif</translation>
     </message>
     <message>
         <source>Sans serif</source>
-        <translation>Pääteviivaton</translation>
+        <translation>Sans serif</translation>
     </message>
     <message>
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
-        <translation>%1 %</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>%1 · %2 · %3</source>
@@ -887,37 +887,37 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>None</source>
         <extracomment>The cover has no quick action</extracomment>
-        <translation>Ei mitään</translation>
+        <translation>Καμία</translation>
     </message>
     <message>
         <source>Search</source>
         <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
-        <translation>Haku</translation>
+        <translation>Αναζήτηση</translation>
     </message>
     <message>
         <source>Bookmarks</source>
         <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Open a bookmark</source>
         <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
-        <translation>Avaa kirjanmerkki</translation>
+        <translation>Άνοιγμα σελιδοδείκτη</translation>
     </message>
     <message>
         <source>Downloads</source>
         <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message>
         <source>History</source>
         <extracomment>A quick action on the cover: the history</extracomment>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Deleted bookmark</source>
         <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
-        <translation>Poistettu kirjanmerkki</translation>
+        <translation>Διαγραμμένος σελιδοδείκτης</translation>
     </message>
     <message>
         <source>%1 · %2</source>
@@ -927,105 +927,105 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Off</source>
         <extracomment>Tracking protection is off</extracomment>
-        <translation>Pois</translation>
+        <translation>Ανενεργή</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation>Tavallinen</translation>
+        <translation>Τυπική</translation>
     </message>
     <message>
         <source>Strict</source>
-        <translation>Tiukka</translation>
+        <translation>Αυστηρή</translation>
     </message>
     <message>
         <source>Sites can follow you from one to another</source>
-        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
+        <translation>Οι ιστότοποι μπορούν να σας παρακολουθούν από τον έναν στον άλλο</translation>
     </message>
     <message>
         <source>Stops sites following you with cookies</source>
-        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
+        <translation>Εμποδίζει τους ιστοτόπους να σας παρακολουθούν με cookie</translation>
     </message>
     <message>
         <source>Stops more tracking, and can break some sites</source>
-        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+        <translation>Αποτρέπει περισσότερη καταγραφή και μπορεί να προκαλέσει δυσλειτουργία σε ορισμένους ιστοτόπους</translation>
     </message>
     <message>
         <source>Sites cannot ask</source>
-        <translation>Sivustot eivät voi kysyä</translation>
+        <translation>Οι ιστότοποι δεν μπορούν να ρωτούν</translation>
     </message>
     <message>
         <source>Sites can ask</source>
-        <translation>Sivustot voivat kysyä</translation>
+        <translation>Οι ιστότοποι μπορούν να ρωτούν</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) allowed</source>
         <extracomment>How many sites may send notifications</extracomment>
         <translation>
-            <numerusform>%n sivusto sallittu</numerusform>
-            <numerusform>%n sivustoa sallittu</numerusform>
+            <numerusform>%n επιτρεπόμενος ιστότοπος</numerusform>
+            <numerusform>%n επιτρεπόμενοι ιστότοποι</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n blocked</source>
         <extracomment>How many sites may not send notifications</extracomment>
         <translation>
-            <numerusform>%n estetty</numerusform>
-            <numerusform>%n estetty</numerusform>
+            <numerusform>%n αποκλεισμένος</numerusform>
+            <numerusform>%n αποκλεισμένοι</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) blocked</source>
         <extracomment>How many sites may not send notifications, with none allowed</extracomment>
         <translation>
-            <numerusform>%n sivusto estetty</numerusform>
-            <numerusform>%n sivustoa estetty</numerusform>
+            <numerusform>%n αποκλεισμένος ιστότοπος</numerusform>
+            <numerusform>%n αποκλεισμένοι ιστότοποι</numerusform>
         </translation>
     </message>
     <message>
         <source>Not remembered</source>
         <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Ei muisteta</translation>
+        <translation>Δεν διατηρείται</translation>
     </message>
     <message>
         <source>Cleared when closed</source>
         <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Tyhjennetään suljettaessa</translation>
+        <translation>Απαλείφεται κατά το κλείσιμο</translation>
     </message>
     <message>
         <source>Remembered</source>
-        <translation>Muistetaan</translation>
+        <translation>Διατηρείται</translation>
     </message>
     <message>
         <source>No quick action</source>
         <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Ei pikatoimintoa</translation>
+        <translation>Χωρίς γρήγορη ενέργεια</translation>
     </message>
     <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
-        <translation>Ambienssin mukaan</translation>
+        <translation>Όπως η ατμόσφαιρα</translation>
     </message>
     <message>
         <source>Forced</source>
         <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Pakotettu</translation>
+        <translation>Αναγκαστικό</translation>
     </message>
     <message>
         <source>Disabled</source>
         <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Pois käytöstä</translation>
+        <translation>Απενεργοποιημένο</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Χωρίς εξαιρέσεις</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) with exceptions</source>
         <extracomment>How many sites have a permission decided for them</extracomment>
         <translation>
-            <numerusform>%n sivustolla poikkeuksia</numerusform>
-            <numerusform>%n sivustolla poikkeuksia</numerusform>
+            <numerusform>%n ιστότοπος με εξαιρέσεις</numerusform>
+            <numerusform>%n ιστότοποι με εξαιρέσεις</numerusform>
         </translation>
     </message>
 </context>
@@ -1033,99 +1033,99 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Ρυθμίσεις</translation>
     </message>
     <message>
         <source>Cover</source>
-        <translation>Kansi</translation>
+        <translation>Εξώφυλλο</translation>
     </message>
     <message>
         <source>Privacy</source>
-        <translation>Yksityisyys</translation>
+        <translation>Απόρρητο</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Προβολή ανάγνωσης</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>Haku</translation>
+        <translation>Αναζήτηση</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation>Ulkoasu</translation>
+        <translation>Εμφάνιση</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Αρχική σελίδα</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Ohje</translation>
+        <translation>Βοήθεια</translation>
     </message>
     <message>
         <source>Tutorial</source>
-        <translation>Opastus</translation>
+        <translation>Οδηγός εκμάθησης</translation>
     </message>
     <message>
         <source>Browsing</source>
-        <translation>Selaus</translation>
+        <translation>Περιήγηση</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Προστασία από καταγραφή</translation>
     </message>
     <message>
         <source>Preferred color scheme</source>
-        <translation>Ensisijainen värimaailma</translation>
+        <translation>Προτιμώμενο σύνολο χρωμάτων</translation>
     </message>
     <message>
         <source>The website style to use when available</source>
-        <translation>Sivuston tyyli, jota käytetään, kun sellainen on</translation>
+        <translation>Το στιλ ιστοτόπου που θα χρησιμοποιείται, όταν είναι διαθέσιμο</translation>
     </message>
     <message>
         <source>Notch guard</source>
-        <translation>Loven suoja</translation>
+        <translation>Αποφυγή εγκοπής</translation>
     </message>
     <message>
         <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Pitää sivuston sisällön poissa näytön loven alta. Automaattinen antaa siihen sovitettujen sivustojen käyttää loven aluetta ja pitää sisällön silti näkyvissä.</translation>
+        <translation>Κρατά το περιεχόμενο των ιστοτόπων μακριά από την εγκοπή της οθόνης. Η επιλογή «Αυτόματο» επιτρέπει στους προσαρμοσμένους ιστοτόπους να χρησιμοποιούν την περιοχή της εγκοπής, διατηρώντας το περιεχόμενο ορατό.</translation>
     </message>
     <message>
         <source>Fixed toolbar</source>
-        <translation>Kiinteä työkalupalkki</translation>
+        <translation>Σταθερή γραμμή εργαλείων</translation>
     </message>
     <message>
         <source>Always show the bottom toolbar</source>
-        <translation>Näytä alapalkki aina</translation>
+        <translation>Πάντα εμφάνιση της κάτω γραμμής εργαλείων</translation>
     </message>
     <message>
         <source>Do not track</source>
-        <translation>Älä seuraa</translation>
+        <translation>Αποτροπή καταγραφής</translation>
     </message>
     <message>
         <source>Tell sites that I do not want to be tracked</source>
-        <translation>Kerro sivustoille, etten halua tulla seuratuksi</translation>
+        <translation>Ενημέρωση των ιστοτόπων ότι δεν θέλω να καταγράφομαι</translation>
     </message>
     <message>
         <source>Enable JavaScript</source>
-        <translation>Ota JavaScript käyttöön</translation>
+        <translation>Ενεργοποίηση JavaScript</translation>
     </message>
     <message>
         <source>Allowed (recommended)</source>
-        <translation>Sallittu (suositeltu)</translation>
+        <translation>Επιτρέπεται (προτείνεται)</translation>
     </message>
     <message>
         <source>Blocked, some sites may not work correctly</source>
-        <translation>Estetty, jotkin sivustot eivät ehkä toimi oikein</translation>
+        <translation>Αποκλείεται, ορισμένοι ιστότοποι ενδέχεται να μη λειτουργούν σωστά</translation>
     </message>
     <message>
         <source>Site permissions</source>
-        <translation>Sivustojen luvat</translation>
+        <translation>Δικαιώματα ιστοτόπων</translation>
     </message>
 </context>
 <context>
@@ -1133,61 +1133,61 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>d MMM yyyy</source>
         <extracomment>How a certificate&apos;s last day is written, as Qt reads a date format: &quot;14 Dec 2026&quot;</extracomment>
-        <translation>d.M.yyyy</translation>
+        <translation>d MMM yyyy</translation>
     </message>
     <message>
         <source>Connection</source>
         <extracomment>Heading over what is known of a site&apos;s connection</extracomment>
-        <translation>Yhteys</translation>
+        <translation>Σύνδεση</translation>
     </message>
     <message>
         <source>Issued to</source>
         <extracomment>Whom a site&apos;s certificate was issued to</extracomment>
-        <translation>Myönnetty</translation>
+        <translation>Εκδόθηκε για</translation>
     </message>
     <message>
         <source>Verified by</source>
         <extracomment>Who issued a site&apos;s certificate</extracomment>
-        <translation>Varmentaja</translation>
+        <translation>Επαλήθευση από</translation>
     </message>
     <message>
         <source>Valid until</source>
         <extracomment>The last day a site&apos;s certificate is good</extracomment>
-        <translation>Voimassa</translation>
+        <translation>Ισχύει έως</translation>
     </message>
     <message>
         <source>Protocol</source>
         <extracomment>The protocol the connection to a site uses</extracomment>
-        <translation>Protokolla</translation>
+        <translation>Πρωτόκολλο</translation>
     </message>
     <message>
         <source>Cipher suite</source>
         <extracomment>The cipher suite the connection to a site uses</extracomment>
-        <translation>Salausmenetelmä</translation>
+        <translation>Σουίτα κρυπτογράφησης</translation>
     </message>
 </context>
 <context>
     <name>SiteDetailsPage</name>
     <message>
         <source>The certificate has expired or is not yet valid</source>
-        <translation>Varmenne on vanhentunut tai ei ole vielä voimassa</translation>
+        <translation>Το πιστοποιητικό έχει λήξει ή δεν ισχύει ακόμη</translation>
     </message>
     <message>
         <source>The certificate is for another site</source>
-        <translation>Varmenne on toiselle sivustolle</translation>
+        <translation>Το πιστοποιητικό αφορά άλλον ιστότοπο</translation>
     </message>
     <message>
         <source>The certificate is not trusted</source>
-        <translation>Varmenteeseen ei luoteta</translation>
+        <translation>Το πιστοποιητικό δεν είναι αξιόπιστο</translation>
     </message>
     <message>
         <source>Permissions</source>
         <extracomment>Heading over what the site may do</extracomment>
-        <translation>Luvat</translation>
+        <translation>Δικαιώματα</translation>
     </message>
     <message>
         <source>Clear site permissions</source>
-        <translation>Tyhjennä sivuston luvat</translation>
+        <translation>Απαλοιφή δικαιωμάτων ιστοτόπου</translation>
     </message>
 </context>
 <context>
@@ -1195,15 +1195,15 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Add</source>
         <extracomment>Accept button of the dialog that adds a site to the exceptions</extracomment>
-        <translation>Lisää</translation>
+        <translation>Προσθήκη</translation>
     </message>
     <message>
         <source>Address of the site</source>
-        <translation>Sivuston osoite</translation>
+        <translation>Διεύθυνση του ιστοτόπου</translation>
     </message>
     <message>
         <source>Must begin with http:// or https://</source>
-        <translation>Alun on oltava http:// tai https://</translation>
+        <translation>Πρέπει να ξεκινά με http:// ή https://</translation>
     </message>
 </context>
 <context>
@@ -1211,7 +1211,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Remove</source>
         <extracomment>Takes the site&apos;s exception away: it follows the default again</extracomment>
-        <translation>Poista</translation>
+        <translation>Αφαίρεση</translation>
     </message>
 </context>
 <context>
@@ -1219,139 +1219,139 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Exceptions</source>
         <extracomment>Under the title of the list of sites tracking protection is off for</extracomment>
-        <translation>Poikkeukset</translation>
+        <translation>Εξαιρέσεις</translation>
     </message>
     <message>
         <source>Exceptions · default: %1</source>
         <extracomment>Under the title of a list of exceptions to a permission; %1 is what it is for every other site</extracomment>
-        <translation>Poikkeukset · oletus: %1</translation>
+        <translation>Εξαιρέσεις · προεπιλογή: %1</translation>
     </message>
     <message>
         <source>Add a site</source>
-        <translation>Lisää sivusto</translation>
+        <translation>Προσθήκη ιστοτόπου</translation>
     </message>
     <message>
         <source>Remove all exceptions</source>
-        <translation>Poista kaikki poikkeukset</translation>
+        <translation>Αφαίρεση όλων των εξαιρέσεων</translation>
     </message>
     <message>
         <source>Removing exceptions</source>
         <extracomment>Said while the exceptions are about to be removed</extracomment>
-        <translation>Poistetaan poikkeukset</translation>
+        <translation>Αφαίρεση εξαιρέσεων σε εξέλιξη</translation>
     </message>
     <message>
         <source>Tracking protection off</source>
-        <translation>Seurannan esto pois</translation>
+        <translation>Προστασία από καταγραφή ανενεργή</translation>
     </message>
     <message>
         <source>A site you remove follows the default again.</source>
         <extracomment>Under the sites that are an exception to a permission</extracomment>
-        <translation>Poistamasi sivusto noudattaa taas oletusta.</translation>
+        <translation>Ένας ιστότοπος που αφαιρείτε ακολουθεί ξανά την προεπιλογή.</translation>
     </message>
     <message>
         <source>No exceptions</source>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Δεν υπάρχουν εξαιρέσεις</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionNames</name>
     <message>
         <source>Notifications</source>
-        <translation>Ilmoitukset</translation>
+        <translation>Ειδοποιήσεις</translation>
     </message>
     <message>
         <source>Pop-ups</source>
         <extracomment>Windows a page opens of its own accord</extracomment>
-        <translation>Ponnahdusikkunat</translation>
+        <translation>Αναδυόμενα παράθυρα</translation>
     </message>
     <message>
         <source>Cookies</source>
-        <translation>Evästeet</translation>
+        <translation>Cookie</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation>Sijainti</translation>
+        <translation>Τοποθεσία</translation>
     </message>
     <message>
         <source>Camera</source>
-        <translation>Kamera</translation>
+        <translation>Κάμερα</translation>
     </message>
     <message>
         <source>Microphone</source>
-        <translation>Mikrofoni</translation>
+        <translation>Μικρόφωνο</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Προστασία από καταγραφή</translation>
     </message>
     <message>
         <source>Allow</source>
         <extracomment>A site may do it</extracomment>
-        <translation>Salli</translation>
+        <translation>Αποδοχή</translation>
     </message>
     <message>
         <source>Block</source>
         <extracomment>A site may not do it</extracomment>
-        <translation>Estä</translation>
+        <translation>Φραγή</translation>
     </message>
     <message>
         <source>Ask</source>
         <extracomment>A site is asked about it each time it wants to</extracomment>
-        <translation>Kysy</translation>
+        <translation>Ερώτηση</translation>
     </message>
     <message>
         <source>Allow all</source>
         <extracomment>Every site&apos;s cookies are accepted</extracomment>
-        <translation>Salli kaikki</translation>
+        <translation>Αποδοχή όλων</translation>
     </message>
     <message>
         <source>Block cross-site</source>
         <extracomment>Cookies a site sets from inside another site&apos;s page are refused</extracomment>
-        <translation>Estä sivustojen väliset</translation>
+        <translation>Φραγή μεταξύ ιστοτόπων</translation>
     </message>
     <message>
         <source>Block all</source>
         <extracomment>No site&apos;s cookies are accepted</extracomment>
-        <translation>Estä kaikki</translation>
+        <translation>Φραγή όλων</translation>
     </message>
     <message>
         <source>Allowed</source>
         <extracomment>A site has been allowed it</extracomment>
-        <translation>Sallittu</translation>
+        <translation>Επιτρέπεται</translation>
     </message>
     <message>
         <source>Blocked</source>
         <extracomment>A site has been blocked from it</extracomment>
-        <translation>Estetty</translation>
+        <translation>Αποκλείεται</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Under a kind of permission, when no site has been given an exception to it</extracomment>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Χωρίς εξαιρέσεις</translation>
     </message>
     <message numerus="yes">
         <source>%n exception(s)</source>
         <translation>
-            <numerusform>%n poikkeus</numerusform>
-            <numerusform>%n poikkeusta</numerusform>
+            <numerusform>%n εξαίρεση</numerusform>
+            <numerusform>%n εξαιρέσεις</numerusform>
         </translation>
     </message>
     <message>
         <source>Always ask</source>
         <extracomment>A site is asked about it each time it wants it, whatever is set for every site</extracomment>
-        <translation>Kysy aina</translation>
+        <translation>Πάντα ερώτηση</translation>
     </message>
     <message>
         <source>Follow default: %1</source>
         <extracomment>A site has no choice of its own and does what every site does; %1 is that</extracomment>
-        <translation>Noudata oletusta: %1</translation>
+        <translation>Χρήση προεπιλογής: %1</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionRow</name>
     <message>
         <source>Show exceptions</source>
-        <translation>Näytä poikkeukset</translation>
+        <translation>Εμφάνιση εξαιρέσεων</translation>
     </message>
 </context>
 <context>
@@ -1359,31 +1359,31 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <extracomment>Settings page: what sites may do</extracomment>
-        <translation>Sivustojen luvat</translation>
+        <translation>Δικαιώματα ιστοτόπων</translation>
     </message>
     <message>
         <source>What sites may do unless you decided otherwise for a site. Tap one to change it or see the exceptions.</source>
-        <translation>Mitä sivustot saavat tehdä, ellet ole päättänyt sivustolle toisin. Napauta yhtä muuttaaksesi sitä tai nähdäksesi poikkeukset.</translation>
+        <translation>Τι μπορούν να κάνουν οι ιστότοποι, εκτός αν έχετε αποφασίσει διαφορετικά για κάποιον ιστότοπο. Πατήστε σε ένα δικαίωμα για να το αλλάξετε ή να δείτε τις εξαιρέσεις.</translation>
     </message>
     <message>
         <source>Shown while tracking protection is off · %1</source>
         <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Näkyy, kun seurannan esto on pois · %1</translation>
+        <translation>Εμφανίζεται όσο η προστασία από καταγραφή είναι ανενεργή · %1</translation>
     </message>
     <message>
         <source>Turned off for some sites</source>
-        <translation>Pois päältä joillakin sivustoilla</translation>
+        <translation>Απενεργοποιημένη για ορισμένους ιστοτόπους</translation>
     </message>
     <message numerus="yes">
         <source>Off for %n site(s)</source>
         <translation>
-            <numerusform>Pois %n sivustolla</numerusform>
-            <numerusform>Pois %n sivustolla</numerusform>
+            <numerusform>Ανενεργή για %n ιστότοπο</numerusform>
+            <numerusform>Ανενεργή για %n ιστοτόπους</numerusform>
         </translation>
     </message>
     <message>
         <source>Turned off from a site’s details</source>
-        <translation>Kytketty pois sivuston tiedoista</translation>
+        <translation>Απενεργοποιείται από τις λεπτομέρειες ενός ιστοτόπου</translation>
     </message>
 </context>
 <context>
@@ -1391,21 +1391,21 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Connection is secure</source>
         <extracomment>The connection to the site is encrypted and its certificate in order</extracomment>
-        <translation>Yhteys on suojattu</translation>
+        <translation>Η σύνδεση είναι ασφαλής</translation>
     </message>
     <message>
         <source>Connection is not secure</source>
         <extracomment>Either no encryption is in use, or the connection is broken in some way</extracomment>
-        <translation>Yhteys ei ole suojattu</translation>
+        <translation>Η σύνδεση δεν είναι ασφαλής</translation>
     </message>
     <message>
         <source>Verified by %1</source>
         <extracomment>Under &quot;Connection is secure&quot;; %1 is who issued the site&apos;s certificate</extracomment>
-        <translation>Varmentaja: %1</translation>
+        <translation>Επαλήθευση από %1</translation>
     </message>
     <message>
         <source>Do not enter personal data, passwords, card details on this site</source>
-        <translation>Älä anna tällä sivustolla henkilötietoja, salasanoja tai korttitietoja</translation>
+        <translation>Μην εισάγετε προσωπικά δεδομένα, κωδικούς πρόσβασης ή στοιχεία καρτών σε αυτόν τον ιστότοπο</translation>
     </message>
 </context>
 <context>
@@ -1413,121 +1413,121 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Off in Settings</source>
         <extracomment>The site&apos;s details, under the tracking protection switch: it is off for every site</extracomment>
-        <translation>Pois päältä asetuksissa</translation>
+        <translation>Ανενεργή στις Ρυθμίσεις</translation>
     </message>
     <message>
         <source>Off for this site. Turn it on to block trackers here again.</source>
-        <translation>Pois päältä tällä sivustolla. Kytke päälle estääksesi seurannan täällä taas.</translation>
+        <translation>Ανενεργή για αυτόν τον ιστότοπο. Ενεργοποιήστε την για να αποκλείονται ξανά οι ιχνηλάτες εδώ.</translation>
     </message>
     <message>
         <source>Trackers were blocked on this page</source>
-        <translation>Tällä sivulla estettiin seurantaa</translation>
+        <translation>Αποκλείστηκαν ιχνηλάτες σε αυτή τη σελίδα</translation>
     </message>
     <message>
         <source>If something looks broken on this site, try turning this off.</source>
         <extracomment>The site&apos;s details, under the tracking protection switch while it is on</extracomment>
-        <translation>Jos jokin näyttää rikkinäiseltä tällä sivustolla, kokeile kytkeä tämä pois.</translation>
+        <translation>Αν κάτι δεν φαίνεται σωστά σε αυτόν τον ιστότοπο, δοκιμάστε να την απενεργοποιήσετε.</translation>
     </message>
 </context>
 <context>
     <name>StartPagePreview</name>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Συχνές επισκέψεις</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Πρόσφατες επισκέψεις</translation>
     </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Αρχική σελίδα</translation>
     </message>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Συχνές επισκέψεις</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Πρόσφατες επισκέψεις</translation>
     </message>
     <message>
         <source>Sections</source>
         <extracomment>The parts of the start page, each switched on or off</extracomment>
-        <translation>Osiot</translation>
+        <translation>Ενότητες</translation>
     </message>
     <message>
         <source>Preview</source>
         <extracomment>Over a picture of what a new tab will show</extracomment>
-        <translation>Esikatselu</translation>
+        <translation>Προεπισκόπηση</translation>
     </message>
 </context>
 <context>
     <name>StartPageView</name>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Συχνές επισκέψεις</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Πρόσφατες επισκέψεις</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Άνοιγμα σε νέα καρτέλα</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Αφαίρεση</translation>
     </message>
     <message>
         <source>Nothing here yet</source>
-        <translation>Täällä ei ole vielä mitään</translation>
+        <translation>Δεν υπάρχει τίποτα εδώ ακόμη</translation>
     </message>
     <message>
         <source>The sites you visit and bookmark show up here</source>
-        <translation>Sivustot, joilla käyt ja joita lisäät kirjanmerkkeihin, näkyvät tässä</translation>
+        <translation>Οι ιστότοποι που επισκέπτεστε και προσθέτετε στους σελιδοδείκτες εμφανίζονται εδώ</translation>
     </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>
     <message>
         <source>Rename</source>
-        <translation>Nimeä uudelleen</translation>
+        <translation>Μετονομασία</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Poista</translation>
+        <translation>Διαγραφή</translation>
     </message>
     <message>
         <source>Deleting tab group</source>
-        <translation>Poistetaan välilehtiryhmä</translation>
+        <translation>Διαγραφή ομάδας καρτελών σε εξέλιξη</translation>
     </message>
     <message>
         <source>Ungroup</source>
         <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
-        <translation>Pura ryhmä</translation>
+        <translation>Κατάργηση ομαδοποίησης</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
 </context>
@@ -1535,24 +1535,24 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupDialog</name>
     <message>
         <source>Rename tab group</source>
-        <translation>Nimeä välilehtiryhmä uudelleen</translation>
+        <translation>Μετονομασία ομάδας καρτελών</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation>Uusi välilehtiryhmä</translation>
+        <translation>Νέα ομάδα καρτελών</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Tallenna</translation>
+        <translation>Αποθήκευση</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nimi</translation>
+        <translation>Όνομα</translation>
     </message>
     <message>
         <source>Create</source>
         <extracomment>Accepts the dialog that makes a new tab group</extracomment>
-        <translation>Luo</translation>
+        <translation>Δημιουργία</translation>
     </message>
 </context>
 <context>
@@ -1560,8 +1560,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
 </context>
@@ -1569,22 +1569,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupsPage</name>
     <message>
         <source>Tab groups</source>
-        <translation>Välilehtiryhmät</translation>
+        <translation>Ομάδες καρτελών</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation>Uusi välilehtiryhmä</translation>
+        <translation>Νέα ομάδα καρτελών</translation>
     </message>
 </context>
 <context>
     <name>TabPreview</name>
     <message>
         <source>No preview</source>
-        <translation>Ei esikatselua</translation>
+        <translation>Χωρίς προεπισκόπηση</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Αρχική σελίδα</translation>
     </message>
 </context>
 <context>
@@ -1592,8 +1592,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
 </context>
@@ -1601,69 +1601,69 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabsView</name>
     <message>
         <source>No tabs in this group</source>
-        <translation>Ryhmässä ei ole välilehtiä</translation>
+        <translation>Δεν υπάρχουν καρτέλες σε αυτή την ομάδα</translation>
     </message>
     <message>
         <source>Open one with the button below</source>
-        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+        <translation>Ανοίξτε μία με το κουμπί παρακάτω</translation>
     </message>
     <message>
         <source>Search tabs</source>
-        <translation>Hae välilehdistä</translation>
+        <translation>Αναζήτηση καρτελών</translation>
     </message>
     <message>
         <source>No matching tabs</source>
-        <translation>Ei osuvia välilehtiä</translation>
+        <translation>Καμία καρτέλα δεν ταιριάζει</translation>
     </message>
 </context>
 <context>
     <name>TrackingSettingsPage</name>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Προστασία από καταγραφή</translation>
     </message>
     <message>
         <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS:n selainmoottori ei vielä osaa kaikkea, mitä Firefox tässä tekee, joten osa seurannasta voi yhä päästä läpi. Salama ottaa käyttöön kaiken suojan, joka moottorissa on.</translation>
+        <translation>Η μηχανή ιστού του Sailfish OS δεν μπορεί ακόμη να κάνει όλα όσα κάνει εδώ το Firefox, οπότε ορισμένοι ιχνηλάτες ενδέχεται να περνούν ακόμη. Το Salama ενεργοποιεί κάθε προστασία που διαθέτει η μηχανή.</translation>
     </message>
 </context>
 <context>
     <name>TutorialMenu</name>
     <message>
         <source>Bookmark</source>
-        <translation>Kirjanmerkki</translation>
+        <translation>Σελιδοδείκτης</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation>Jaa</translation>
+        <translation>Κοινή χρήση</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Ανάγνωση</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>Ιστορικό</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Λήψεις</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Ρυθμίσεις</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Εύρεση</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>PC-versio</translation>
+        <translation>Υπολογιστής</translation>
     </message>
 </context>
 <context>
@@ -1671,12 +1671,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation>Siirry osoitteeseen %1</translation>
+        <translation>Μετάβαση σε %1</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation>Hae ”%2” hakukoneella %1</translation>
+        <translation>Αναζήτηση «%2» με %1</translation>
     </message>
 </context>
 <context>
@@ -1684,91 +1684,91 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Close tutorial</source>
         <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
-        <translation>Sulje opastus</translation>
+        <translation>Κλείσιμο οδηγού</translation>
     </message>
     <message>
         <source>Pull down to return to the page.</source>
         <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
-        <translation>Palaa sivulle vetämällä alas.</translation>
+        <translation>Τραβήξτε προς τα κάτω για να επιστρέψετε στη σελίδα.</translation>
     </message>
     <message>
         <source>Continue</source>
         <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
-        <translation>Jatka</translation>
+        <translation>Συνέχεια</translation>
     </message>
     <message>
         <source>Web browser for Sailfish OS</source>
         <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Verkkoselain Sailfish OS:lle</translation>
+        <translation>Πρόγραμμα περιήγησης για το Sailfish OS</translation>
     </message>
     <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
-        <translation>Aloita opastus</translation>
+        <translation>Έναρξη οδηγού</translation>
     </message>
     <message>
         <source>Skip</source>
         <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
-        <translation>Ohita</translation>
+        <translation>Παράλειψη</translation>
     </message>
     <message>
         <source>Tutorial complete</source>
-        <translation>Opastus on valmis</translation>
+        <translation>Ο οδηγός ολοκληρώθηκε</translation>
     </message>
     <message>
         <source>Tap the address bar to open a website or search.</source>
         <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
-        <translation>Avaa verkkosivusto tai hae napauttamalla osoitepalkkia.</translation>
+        <translation>Πατήστε τη γραμμή διευθύνσεων για να ανοίξετε έναν ιστότοπο ή να κάνετε αναζήτηση.</translation>
     </message>
     <message>
         <source>Type an address or a search. Matching tabs, bookmarks and history appear above the bar.</source>
         <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
-        <translation>Kirjoita osoite tai hakusanat. Osuvat välilehdet, kirjanmerkit ja historia näkyvät palkin yläpuolella.</translation>
+        <translation>Πληκτρολογήστε μια διεύθυνση ή έναν όρο αναζήτησης. Οι καρτέλες, οι σελιδοδείκτες και το ιστορικό που ταιριάζουν εμφανίζονται πάνω από τη γραμμή.</translation>
     </message>
     <message>
         <source>Tap the menu button.</source>
-        <translation>Napauta valikkopainiketta.</translation>
+        <translation>Πατήστε το κουμπί του μενού.</translation>
     </message>
     <message>
         <source>The menu has actions for this page and the browser. Tap outside it to close it.</source>
-        <translation>Valikossa on toimintoja tälle sivulle ja selaimelle. Sulje se napauttamalla sen ulkopuolelle.</translation>
+        <translation>Το μενού έχει ενέργειες για αυτή τη σελίδα και για το πρόγραμμα περιήγησης. Πατήστε έξω από αυτό για να το κλείσετε.</translation>
     </message>
     <message>
         <source>Drag the bar up to see your tabs.</source>
         <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation>Näet välilehtesi vetämällä palkkia ylös.</translation>
+        <translation>Σύρετε τη γραμμή προς τα πάνω για να δείτε τις καρτέλες σας.</translation>
     </message>
     <message>
         <source>Swipe a tab left to close it.</source>
-        <translation>Sulje välilehti pyyhkäisemällä sitä vasemmalle.</translation>
+        <translation>Σύρετε μια καρτέλα προς τα αριστερά για να την κλείσετε.</translation>
     </message>
     <message>
         <source>Hold a tab, then drag it to a new position.</source>
-        <translation>Pidä välilehteä painettuna ja vedä se uuteen paikkaan.</translation>
+        <translation>Κρατήστε πατημένη μια καρτέλα και, στη συνέχεια, σύρετέ τη σε νέα θέση.</translation>
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
         <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
-        <translation>Pidä välilehteä painettuna ja pudota se ryhmän nimen päälle siirtääksesi sen ryhmään.</translation>
+        <translation>Κρατήστε πατημένη μια καρτέλα και, στη συνέχεια, αφήστε τη σε ένα όνομα ομάδας για να τη μετακινήσετε εκεί.</translation>
     </message>
     <message>
         <source>Address bar</source>
         <extracomment>What the tutorial covers: the address bar</extracomment>
-        <translation>Osoitepalkki</translation>
+        <translation>Γραμμή διευθύνσεων</translation>
     </message>
     <message>
         <source>Menu</source>
         <extracomment>What the tutorial covers: the menu</extracomment>
-        <translation>Valikko</translation>
+        <translation>Μενού</translation>
     </message>
     <message>
         <source>Tabs</source>
         <extracomment>What the tutorial covers: the tabs and the grid of them</extracomment>
-        <translation>Välilehdet</translation>
+        <translation>Καρτέλες</translation>
     </message>
     <message>
         <source>You can open it again from Settings.</source>
-        <translation>Voit avata sen uudelleen asetuksista.</translation>
+        <translation>Μπορείτε να τον ανοίξετε ξανά από τις Ρυθμίσεις.</translation>
     </message>
 </context>
 <context>
@@ -1776,14 +1776,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n καρτέλα</numerusform>
+            <numerusform>%n καρτέλες</numerusform>
         </translation>
     </message>
     <message>
         <source>Work</source>
         <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
-        <translation>Työ</translation>
+        <translation>Εργασία</translation>
     </message>
 </context>
 </TS>

@@ -26,6 +26,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Tab groups can be put in order: drag a group by the bars at the end of its row. The "N tabs" group stays first.
 - Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
 - Swedish translation.
+- Translations into every other language Sailfish OS ships in: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese, in Firefox's words for what Firefox has words for.
 
 ### Changed
 - Website colours is Preferred color scheme, with sailfish-browser's line under it saying what it is for, and its Automatic is called Match ambience.
@@ -50,6 +51,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [0.8.0] - 2026-09-26
 
 ### Fixed
+- Counts in English, and in any language Salama has no translation for, read "1 page" and "3 pages" rather than "3 page(s)": the English catalog that says so was never loaded.
 - Uploading a file lists the phone's images, videos, music and documents in the picker, rather than empty pages that left File system the only way to a file. The application now holds Sailjail's `MediaIndexing` permission, which the picker's lists are searched through, and `Videos` and `Music`, the folders those two list.
 - A player's controls just above the navigation bar work: a tap there, or a drag sideways or down -- along a seek bar -- goes to the page, while a drag upwards from there still opens the grid.
 - Pages play sound. The application now holds Sailjail's `Audio` permission, without which the platform keeps it out of the sound system altogether.

@@ -1,56 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fi">
+<TS version="2.1" language="bg">
 <context>
     <name>AddressField</name>
     <message>
         <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <translation>Търсене или въвеждане на адрес</translation>
     </message>
 </context>
 <context>
     <name>AddressLabel</name>
     <message>
         <source>Search or enter address</source>
-        <translation>Hae tai kirjoita osoite</translation>
+        <translation>Търсене или въвеждане на адрес</translation>
     </message>
 </context>
 <context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Отваряне в нов раздел</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Muokkaa</translation>
+        <translation>Редактиране</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Премахване</translation>
     </message>
     <message>
         <source>Removing bookmark</source>
-        <translation>Poistetaan kirjanmerkki</translation>
+        <translation>Отметката се премахва</translation>
     </message>
 </context>
 <context>
     <name>BookmarkEditDialog</name>
     <message>
         <source>Edit bookmark</source>
-        <translation>Muokkaa kirjanmerkkiä</translation>
+        <translation>Редактиране на отметка</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Tallenna</translation>
+        <translation>Запазване</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation>Otsikko</translation>
+        <translation>Заглавие</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Osoite</translation>
+        <translation>Адрес</translation>
     </message>
 </context>
 <context>
@@ -58,190 +58,190 @@
     <message>
         <source>Choose a bookmark</source>
         <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
-        <translation>Valitse kirjanmerkki</translation>
+        <translation>Изберете отметка</translation>
     </message>
     <message>
         <source>Search bookmarks</source>
-        <translation>Hae kirjanmerkeistä</translation>
+        <translation>Търсене в отметките</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation>Ei osumia</translation>
+        <translation>Няма съвпадения</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation>Ei kirjanmerkkejä</translation>
+        <translation>Няма отметки</translation>
     </message>
 </context>
 <context>
     <name>BookmarksPage</name>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>Bookmark current page</source>
-        <translation>Lisää nykyinen sivu kirjanmerkkeihin</translation>
+        <translation>Отмятане на текущата страница</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation>Ei kirjanmerkkejä</translation>
+        <translation>Няма отметки</translation>
     </message>
     <message>
         <source>Pull down to bookmark the current page</source>
-        <translation>Vedä alas lisätäksesi nykyisen sivun kirjanmerkkeihin</translation>
+        <translation>Дръпнете надолу, за да отметнете текущата страница</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
     <message>
         <source>Share</source>
-        <translation>Jaa</translation>
+        <translation>Споделяне</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Настройки</translation>
     </message>
     <message>
         <source>Bookmark</source>
-        <translation>Kirjanmerkki</translation>
+        <translation>Отмятане</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Четене</translation>
     </message>
     <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
-        <translation>Osoite kopioitu</translation>
+        <translation>Адресът е копиран</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Намиране</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>PC-versio</translation>
+        <translation>ПК версия</translation>
     </message>
 </context>
 <context>
     <name>ClearDataDialog</name>
     <message>
         <source>Clear browsing data</source>
-        <translation>Poista selaustiedot</translation>
+        <translation>Изчистване на данни от разглеждане</translation>
     </message>
     <message>
         <source>Clear</source>
         <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
-        <translation>Poista</translation>
+        <translation>Изчистване</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Отворени раздели</translation>
     </message>
     <message>
         <source>Cookies and site data</source>
-        <translation>Evästeet ja sivustotiedot</translation>
+        <translation>Бисквитки и данни на сайтове</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation>Välimuisti</translation>
+        <translation>Буфер</translation>
     </message>
     <message>
         <source>Time range</source>
-        <translation>Aikaväli</translation>
+        <translation>Времеви обхват</translation>
     </message>
     <message>
         <source>Open tabs, cookies, site data and the cache are cleared whole</source>
-        <translation>Avoimet välilehdet, evästeet, sivustotiedot ja välimuisti poistetaan kokonaan</translation>
+        <translation>Отворените раздели, бисквитките, данните на сайтовете и буферът се изчистват изцяло</translation>
     </message>
     <message>
         <source>Last hour</source>
-        <translation>Viimeinen tunti</translation>
+        <translation>Последния час</translation>
     </message>
     <message>
         <source>Last two hours</source>
-        <translation>Viimeiset kaksi tuntia</translation>
+        <translation>Последните два часа</translation>
     </message>
     <message>
         <source>Last four hours</source>
-        <translation>Viimeiset neljä tuntia</translation>
+        <translation>Последните четири часа</translation>
     </message>
     <message>
         <source>Today</source>
-        <translation>Tänään</translation>
+        <translation>Днес</translation>
     </message>
     <message>
         <source>Everything</source>
-        <translation>Kaikki</translation>
+        <translation>Всичко</translation>
     </message>
     <message>
         <source>Browsing and download history</source>
-        <translation>Selaus- ja lataushistoria</translation>
+        <translation>История на разглеждане и изтегляния</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>Pages of the history that clearing takes</extracomment>
         <translation>
-            <numerusform>%n sivu</numerusform>
-            <numerusform>%n sivua</numerusform>
+            <numerusform>%n страница</numerusform>
+            <numerusform>%n страници</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n download(s)</source>
         <extracomment>Rows of the list of downloads that clearing takes</extracomment>
         <translation>
-            <numerusform>%n lataus</numerusform>
-            <numerusform>%n latausta</numerusform>
+            <numerusform>%n изтегляне</numerusform>
+            <numerusform>%n изтегляния</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n closed tab(s)</source>
         <extracomment>Recently closed tabs that clearing takes</extracomment>
         <translation>
-            <numerusform>%n suljettu välilehti</numerusform>
-            <numerusform>%n suljettua välilehteä</numerusform>
+            <numerusform>%n затворен раздел</numerusform>
+            <numerusform>%n затворени раздела</numerusform>
         </translation>
     </message>
     <message>
         <source>%1, %2 and %3</source>
         <extracomment>Three amounts cleared: &quot;342 pages, 18 downloads and 6 closed tabs&quot;</extracomment>
-        <translation>%1, %2 ja %3</translation>
+        <translation>%1, %2 и %3</translation>
     </message>
     <message>
         <source>%1 and %2</source>
         <extracomment>Two amounts cleared: &quot;342 pages and 18 downloads&quot;</extracomment>
-        <translation>%1 ja %2</translation>
+        <translation>%1 и %2</translation>
     </message>
     <message>
         <source>Nothing from this time</source>
         <extracomment>The history holds nothing from the time range chosen</extracomment>
-        <translation>Ei mitään tältä ajalta</translation>
+        <translation>Нищо от този период</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s), in every group</source>
         <extracomment>How many tabs clearing the open tabs closes</extracomment>
         <translation>
-            <numerusform>%n välilehti, kaikista ryhmistä</numerusform>
-            <numerusform>%n välilehteä, kaikista ryhmistä</numerusform>
+            <numerusform>%n раздел, във всички групи</numerusform>
+            <numerusform>%n раздела, във всички групи</numerusform>
         </translation>
     </message>
     <message>
         <source>Signs you out of most sites</source>
         <extracomment>What clearing the cookies does</extracomment>
-        <translation>Kirjaa sinut ulos useimmilta sivustoilta</translation>
+        <translation>Ще бъдете отписани от повечето сайтове</translation>
     </message>
 </context>
 <context>
@@ -249,7 +249,7 @@
     <message>
         <source>Downloading</source>
         <extracomment>On the cover, over the ring that shows how far the downloads have come</extracomment>
-        <translation>Ladataan</translation>
+        <translation>Изтегляне</translation>
     </message>
     <message>
         <source>%</source>
@@ -260,8 +260,8 @@
         <source>%n file(s)</source>
         <extracomment>How many downloads are coming, on the cover, under their progress</extracomment>
         <translation>
-            <numerusform>%n tiedosto</numerusform>
-            <numerusform>%n tiedostoa</numerusform>
+            <numerusform>%n файл</numerusform>
+            <numerusform>%n файла</numerusform>
         </translation>
     </message>
 </context>
@@ -270,12 +270,12 @@
     <message>
         <source>Playing</source>
         <extracomment>On the cover, of what the tab in front plays</extracomment>
-        <translation>Toistetaan</translation>
+        <translation>Звучи</translation>
     </message>
     <message>
         <source>Paused</source>
         <extracomment>On the cover, of what the tab in front has muted or paused</extracomment>
-        <translation>Tauolla</translation>
+        <translation>На пауза</translation>
     </message>
     <message>
         <source>%1 · %2</source>
@@ -287,22 +287,22 @@
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>
-        <translation>Kansi</translation>
+        <translation>Корица</translation>
     </message>
     <message>
         <source>Quick action</source>
         <extracomment>The one action offered on the cover on the home screen</extracomment>
-        <translation>Pikatoiminto</translation>
+        <translation>Бързо действие</translation>
     </message>
     <message>
         <source>The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.</source>
         <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. The mute button is the playing tab&apos;s own.</extracomment>
-        <translation>Kotinäkymän kansi tarjoaa yhden toiminnon. Kun välilehti soittaa, sen mykistyspainike on sen vieressä.</translation>
+        <translation>Корицата на началния екран предлага едно действие. Докато в раздел нещо се възпроизвежда, до действието стои бутонът за заглушаване на раздела.</translation>
     </message>
     <message>
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
-        <translation>Sen kuvake kannessa</translation>
+        <translation>Иконката му на корицата</translation>
     </message>
 </context>
 <context>
@@ -311,54 +311,54 @@
         <source>%n download(s)</source>
         <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
         <translation>
-            <numerusform>%n lataus</numerusform>
-            <numerusform>%n latausta</numerusform>
+            <numerusform>%n изтегляне</numerusform>
+            <numerusform>%n изтегляния</numerusform>
         </translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Грешка при изтегляне</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
-        <translation>Keskeytetty · %1 %</translation>
+        <translation>На пауза · %1%</translation>
     </message>
     <message>
         <source>Downloaded</source>
         <extracomment>The banner as a download arrives</extracomment>
-        <translation>Ladattu</translation>
+        <translation>Изтеглено</translation>
     </message>
 </context>
 <context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
-        <translation>Poista luettelosta</translation>
+        <translation>Премахване от списъка</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Avaa</translation>
+        <translation>Отваряне</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>Keskeytä</translation>
+        <translation>Пауза</translation>
     </message>
     <message>
         <source>Download again</source>
         <extracomment>Fetch again a download the engine has forgotten, from the start</extracomment>
-        <translation>Lataa uudelleen</translation>
+        <translation>Повторно изтегляне</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation>Yritä uudelleen</translation>
+        <translation>Повторен опит</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation>Jatka</translation>
+        <translation>Продължаване</translation>
     </message>
     <message>
         <source>Delete file</source>
-        <translation>Poista tiedosto</translation>
+        <translation>Изтриване на файла</translation>
     </message>
 </context>
 <context>
@@ -366,61 +366,61 @@
     <message>
         <source>%1 of %2 · %3%</source>
         <extracomment>A download&apos;s progress: &quot;3.1 MB of 7.4 MB · 42%&quot;</extracomment>
-        <translation>%1 / %2 · %3 %</translation>
+        <translation>%1 от %2 · %3%</translation>
     </message>
     <message>
         <source>Downloading, %1%</source>
-        <translation>Ladataan, %1 %</translation>
+        <translation>Изтегляне, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Грешка при изтегляне</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
         <extracomment>A download stopped part way, which can go on: &quot;Paused · 42%&quot;</extracomment>
-        <translation>Keskeytetty · %1 %</translation>
+        <translation>На пауза · %1%</translation>
     </message>
     <message>
         <source>Stopped</source>
         <extracomment>A download stopped in an earlier run, which can only start over</extracomment>
-        <translation>Pysäytetty</translation>
+        <translation>Спряно</translation>
     </message>
     <message>
         <source>File not found</source>
         <extracomment>A download whose file has been deleted or moved since</extracomment>
-        <translation>Tiedostoa ei löydy</translation>
+        <translation>Файлът не е намерен</translation>
     </message>
 </context>
 <context>
     <name>DownloadsPage</name>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message>
         <source>No downloads</source>
-        <translation>Ei latauksia</translation>
+        <translation>Няма изтегляния</translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
-        <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
+        <translation>Тук са изброени файловете, изтеглени от страници</translation>
     </message>
     <message>
         <source>Clear finished</source>
-        <translation>Tyhjennä valmiit</translation>
+        <translation>Изчистване на завършените</translation>
     </message>
     <message>
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
-        <translation>Poistetaan</translation>
+        <translation>Изтрива се</translation>
     </message>
 </context>
 <context>
     <name>FindBar</name>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Търсене в страницата</translation>
     </message>
 </context>
 <context>
@@ -428,125 +428,125 @@
     <message>
         <source>Forget</source>
         <extracomment>Drops an offered search engine from the list, without adding it</extracomment>
-        <translation>Unohda</translation>
+        <translation>Забравяне</translation>
     </message>
     <message>
         <source>%1 · Tap to add</source>
         <extracomment>Under an offered search engine: the site that offered it. %1 is its host</extracomment>
-        <translation>%1 · Lisää napauttamalla</translation>
+        <translation>%1 · Докоснете, за да добавите</translation>
     </message>
 </context>
 <context>
     <name>HistoryDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Отваряне в нов раздел</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Премахване</translation>
     </message>
 </context>
 <context>
     <name>HistoryPage</name>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Search history</source>
-        <translation>Hae historiasta</translation>
+        <translation>Търсене в историята</translation>
     </message>
     <message>
         <source>Clear history</source>
-        <translation>Tyhjennä historia</translation>
+        <translation>Изчистване на историята</translation>
     </message>
     <message>
         <source>Clearing history</source>
-        <translation>Tyhjennetään historia</translation>
+        <translation>Историята се изчиства</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation>Ei osumia</translation>
+        <translation>Няма съвпадения</translation>
     </message>
     <message>
         <source>No history yet</source>
-        <translation>Ei vielä historiaa</translation>
+        <translation>Все още няма история</translation>
     </message>
 </context>
 <context>
     <name>HistorySettingsPage</name>
     <message>
         <source>Clearing browsing data</source>
-        <translation>Poistetaan selaustiedot</translation>
+        <translation>Данните от разглеждане се изчистват</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Remember browsing history</source>
-        <translation>Muista selaushistoria</translation>
+        <translation>Запомняне на историята на разглеждане</translation>
     </message>
     <message>
         <source>Clear history when closed</source>
-        <translation>Poista historia suljettaessa</translation>
+        <translation>Изчистване на историята при затваряне</translation>
     </message>
     <message>
         <source>Clear browsing data</source>
-        <translation>Poista selaustiedot</translation>
+        <translation>Изчистване на данни от разглеждане</translation>
     </message>
     <message>
         <source>With it, the list of downloads and the recently closed tabs</source>
-        <translation>Sen mukana latausluettelo ja äskettäin suljetut välilehdet</translation>
+        <translation>Заедно с нея — списъкът с изтегляния и последно затворените раздели</translation>
     </message>
     <message>
         <source>Kept on this phone</source>
         <extracomment>What browsing has left on the phone, counted</extracomment>
-        <translation>Tallessa tässä puhelimessa</translation>
+        <translation>Съхранено на този телефон</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>How many pages the history keeps</extracomment>
         <translation>
-            <numerusform>%n sivu</numerusform>
-            <numerusform>%n sivua</numerusform>
+            <numerusform>%n страница</numerusform>
+            <numerusform>%n страници</numerusform>
         </translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message numerus="yes">
         <source>%n file(s)</source>
         <extracomment>How many downloads the list of them keeps</extracomment>
         <translation>
-            <numerusform>%n tiedosto</numerusform>
-            <numerusform>%n tiedostoa</numerusform>
+            <numerusform>%n файл</numerusform>
+            <numerusform>%n файла</numerusform>
         </translation>
     </message>
     <message>
         <source>Recently closed</source>
-        <translation>Äskettäin suljetut</translation>
+        <translation>Последно затворени</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <extracomment>How many closed tabs can be opened again</extracomment>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Отворени раздели</translation>
     </message>
     <message numerus="yes">
         <source>%1, in %n group(s)</source>
         <extracomment>How many tabs are open, and in how many groups: &quot;17, in 5 groups&quot;</extracomment>
         <translation>
-            <numerusform>%1, %n ryhmässä</numerusform>
-            <numerusform>%1, %n ryhmässä</numerusform>
+            <numerusform>%1, в %n група</numerusform>
+            <numerusform>%1, в %n групи</numerusform>
         </translation>
     </message>
 </context>
@@ -555,7 +555,7 @@
     <message>
         <source>Start page</source>
         <extracomment>The head of the browser&apos;s menu on the start page, where there is no page</extracomment>
-        <translation>Aloitussivu</translation>
+        <translation>Начална страница</translation>
     </message>
 </context>
 <context>
@@ -563,93 +563,93 @@
     <message>
         <source>Allow</source>
         <extracomment>Lets the site send notifications from now on</extracomment>
-        <translation>Salli</translation>
+        <translation>Разрешаване</translation>
     </message>
     <message>
         <source>Not now</source>
         <extracomment>Refuses the site this time; it may ask again when the page is next loaded</extracomment>
-        <translation>Ei nyt</translation>
+        <translation>Не сега</translation>
     </message>
     <message>
         <source>Allow %1 to send notifications?</source>
         <extracomment>%1 is the site asking, its host alone</extracomment>
-        <translation>Sallitaanko sivuston %1 lähettää ilmoituksia?</translation>
+        <translation>Да се разреши ли на %1 да изпраща известия?</translation>
     </message>
     <message>
         <source>They show up with the phone&apos;s other notifications while the site is open in a tab</source>
-        <translation>Ne näkyvät puhelimen muiden ilmoitusten joukossa, kun sivusto on auki välilehdessä</translation>
+        <translation>Те се показват сред другите известия на телефона, докато сайтът е отворен в раздел</translation>
     </message>
     <message>
         <source>Always block</source>
         <extracomment>Refuses the site for good: it cannot ask again</extracomment>
-        <translation>Estä aina</translation>
+        <translation>Забраняване завинаги</translation>
     </message>
 </context>
 <context>
     <name>NotificationSettingsPage</name>
     <message>
         <source>Notifications</source>
-        <translation>Ilmoitukset</translation>
+        <translation>Известия</translation>
     </message>
     <message>
         <source>Block</source>
-        <translation>Estä</translation>
+        <translation>Забраняване</translation>
     </message>
     <message>
         <source>Allow</source>
-        <translation>Salli</translation>
+        <translation>Разрешаване</translation>
     </message>
     <message>
         <source>Allowed</source>
-        <translation>Sallittu</translation>
+        <translation>Разрешени</translation>
     </message>
     <message>
         <source>Blocked</source>
-        <translation>Estetty</translation>
+        <translation>Забранени</translation>
     </message>
     <message>
         <source>No sites</source>
-        <translation>Ei sivustoja</translation>
+        <translation>Няма сайтове</translation>
     </message>
     <message>
         <source>Sites you allow to send notifications, or block, are listed here</source>
-        <translation>Sivustot, joiden ilmoitukset sallit tai estät, näkyvät tässä</translation>
+        <translation>Тук са изброени сайтовете, на които сте разрешили или забранили да изпращат известия</translation>
     </message>
     <message>
         <source>Sites can ask</source>
         <extracomment>Whether sites not yet allowed or blocked may ask to send notifications</extracomment>
-        <translation>Sivustot voivat kysyä</translation>
+        <translation>Сайтовете могат да питат</translation>
     </message>
     <message>
         <source>Forget this site</source>
         <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
-        <translation>Unohda tämä sivusto</translation>
+        <translation>Забравяне на сайта</translation>
     </message>
     <message>
         <source>A site you forget asks again the next time it wants to send one.</source>
         <extracomment>Under the sites allowed and blocked from sending notifications</extracomment>
-        <translation>Unohdettu sivusto kysyy uudelleen, kun se seuraavan kerran haluaa lähettää ilmoituksen.</translation>
+        <translation>Забравеният сайт ще пита отново следващия път, когато поиска да изпрати известие.</translation>
     </message>
 </context>
 <context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
-        <translation>Ladataan, %1 %</translation>
+        <translation>Изтегляне, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation>Epäonnistui</translation>
+        <translation>Грешка при изтегляне</translation>
     </message>
     <message>
         <source>Cancelled</source>
-        <translation>Peruttu</translation>
+        <translation>Отменено</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
     <message>
@@ -659,12 +659,12 @@
     </message>
     <message>
         <source>Switch to tab</source>
-        <translation>Siirry välilehteen</translation>
+        <translation>Превключване към раздел</translation>
     </message>
     <message>
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
-        <translation>Siirry välilehteen ryhmässä %1</translation>
+        <translation>Превключване към раздел в групата „%1“</translation>
     </message>
 </context>
 <context>
@@ -672,12 +672,12 @@
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation>Siirry osoitteeseen %1</translation>
+        <translation>Отваряне на %1</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation>Hae ”%2” hakukoneella %1</translation>
+        <translation>Търсене на „%2“ чрез %1</translation>
     </message>
 </context>
 <context>
@@ -685,41 +685,41 @@
     <message>
         <source>example.com</source>
         <extracomment>The made-up site a sample article in the reader view&apos;s preview is from</extracomment>
-        <translation>esimerkki.fi</translation>
+        <translation>example.com</translation>
     </message>
     <message>
         <source>Just the article</source>
         <extracomment>The heading of the sample article in the reader view&apos;s preview</extracomment>
-        <translation>Pelkkä artikkeli</translation>
+        <translation>Само статията</translation>
     </message>
     <message>
         <source>The reader view keeps a page&apos;s words and pictures and leaves out everything around them, set in the colours, the typeface and the size chosen above.</source>
         <extracomment>The sample article in the reader view&apos;s preview</extracomment>
-        <translation>Lukunäkymä säilyttää sivun tekstin ja kuvat ja jättää pois kaiken niiden ympäriltä, ladottuna yllä valituilla väreillä, kirjasintyypillä ja koolla.</translation>
+        <translation>Изгледът за четене запазва текста и изображенията на страницата и премахва всичко около тях, като ги показва в цветовете, шрифта и размера, избрани по-горе.</translation>
     </message>
 </context>
 <context>
     <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Изглед за четене</translation>
     </message>
     <message>
         <source>Colours</source>
-        <translation>Värit</translation>
+        <translation>Цветове</translation>
     </message>
     <message>
         <source>Typeface</source>
-        <translation>Kirjasin</translation>
+        <translation>Шрифт</translation>
     </message>
     <message>
         <source>Text size</source>
-        <translation>Tekstin koko</translation>
+        <translation>Размер на шрифта</translation>
     </message>
     <message>
         <source>Aa</source>
         <extracomment>A sample of text in each of the reader view&apos;s typefaces</extracomment>
-        <translation>Aa</translation>
+        <translation>Аа</translation>
     </message>
 </context>
 <context>
@@ -727,18 +727,18 @@
     <message>
         <source>Aa</source>
         <extracomment>A sample of text, a capital and a small letter, drawn in each of the reader view&apos;s colours to choose from</extracomment>
-        <translation>Aa</translation>
+        <translation>Аа</translation>
     </message>
 </context>
 <context>
     <name>RecentlyClosedPanel</name>
     <message>
         <source>Recently closed</source>
-        <translation>Äskettäin suljetut</translation>
+        <translation>Последно затворени</translation>
     </message>
     <message>
         <source>Nothing closed recently</source>
-        <translation>Ei äskettäin suljettuja välilehtiä</translation>
+        <translation>Наскоро нищо не е затваряно</translation>
     </message>
 </context>
 <context>
@@ -747,16 +747,16 @@
         <source>%1 hour(s)</source>
         <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
         <translation>
-            <numerusform>%1 tunti</numerusform>
-            <numerusform>%1 tuntia</numerusform>
+            <numerusform>%1 час</numerusform>
+            <numerusform>%1 часа</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 minute(s)</source>
         <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
         <translation>
-            <numerusform>%1 minuutti</numerusform>
-            <numerusform>%1 minuuttia</numerusform>
+            <numerusform>%1 минута</numerusform>
+            <numerusform>%1 минути</numerusform>
         </translation>
     </message>
 </context>
@@ -765,70 +765,70 @@
     <message>
         <source>Remove</source>
         <extracomment>Takes an engine that was added while browsing out of the list</extracomment>
-        <translation>Poista</translation>
+        <translation>Премахване</translation>
     </message>
 </context>
 <context>
     <name>SearchEngineInstaller</name>
     <message>
         <source>%1 search added</source>
-        <translation>Haku %1 lisätty</translation>
+        <translation>Търсачката %1 е добавена</translation>
     </message>
     <message>
         <source>Could not add %1</source>
-        <translation>Hakua %1 ei voitu lisätä</translation>
+        <translation>Търсачката %1 не можа да бъде добавена</translation>
     </message>
 </context>
 <context>
     <name>SearchSettingsPage</name>
     <message>
         <source>Search</source>
-        <translation>Haku</translation>
+        <translation>Търсене</translation>
     </message>
     <message>
         <source>Search engine</source>
-        <translation>Hakukone</translation>
+        <translation>Търсачка</translation>
     </message>
     <message>
         <source>Address bar suggestions</source>
-        <translation>Osoiterivin ehdotukset</translation>
+        <translation>Предложения в адресната лента</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation>Avoimet välilehdet</translation>
+        <translation>Отворени раздели</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message>
         <source>Remove added search engines</source>
-        <translation>Poista lisätyt hakukoneet</translation>
+        <translation>Премахване на добавените търсачки</translation>
     </message>
     <message>
         <source>Removing added search engines</source>
-        <translation>Poistetaan lisätyt hakukoneet</translation>
+        <translation>Добавените търсачки се премахват</translation>
     </message>
     <message>
         <source>Added from %1</source>
         <extracomment>Under a search engine that was added while browsing. %1 is the site that offered it</extracomment>
-        <translation>Lisätty sivustolta %1</translation>
+        <translation>Добавена от %1</translation>
     </message>
     <message>
         <source>Found while browsing</source>
-        <translation>Löydetty selatessa</translation>
+        <translation>Открити при разглеждане</translation>
     </message>
     <message>
         <source>Sites can offer their search. Tap one to add it and search with it.</source>
-        <translation>Sivustot voivat tarjota hakuaan. Napauta yhtä lisätäksesi sen ja hakeaksesi sillä.</translation>
+        <translation>Сайтовете могат да предлагат свои търсачки. Докоснете някоя, за да я добавите и да търсите с нея.</translation>
     </message>
 </context>
 <context>
@@ -836,48 +836,48 @@
     <message>
         <source>Blank page</source>
         <extracomment>What a new tab shows: the start page&apos;s sections, or nothing</extracomment>
-        <translation>Tyhjä sivu</translation>
+        <translation>Празна страница</translation>
     </message>
     <message>
         <source>Your sites</source>
-        <translation>Sivustosi</translation>
+        <translation>Вашите сайтове</translation>
     </message>
     <message>
         <source>Automatic</source>
         <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
-        <translation>Automaattinen</translation>
+        <translation>Авто</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>Vaalea</translation>
+        <translation>Светла</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation>Tumma</translation>
+        <translation>Тъмна</translation>
     </message>
     <message>
         <source>Sepia</source>
-        <translation>Seepia</translation>
+        <translation>Сепия</translation>
     </message>
     <message>
         <source>Ambience</source>
         <extracomment>The reader view set as a Sailfish page is, in the ambience&apos;s colours</extracomment>
-        <translation>Ambienssi</translation>
+        <translation>Атмосфера</translation>
     </message>
     <message>
         <source>Serif</source>
-        <translation>Päätteellinen</translation>
+        <translation>Серифен</translation>
     </message>
     <message>
         <source>Sans serif</source>
-        <translation>Pääteviivaton</translation>
+        <translation>Безсерифен</translation>
     </message>
     <message>
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
-        <translation>%1 %</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>%1 · %2 · %3</source>
@@ -887,37 +887,37 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>None</source>
         <extracomment>The cover has no quick action</extracomment>
-        <translation>Ei mitään</translation>
+        <translation>Няма</translation>
     </message>
     <message>
         <source>Search</source>
         <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
-        <translation>Haku</translation>
+        <translation>Търсене</translation>
     </message>
     <message>
         <source>Bookmarks</source>
         <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>Open a bookmark</source>
         <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
-        <translation>Avaa kirjanmerkki</translation>
+        <translation>Отваряне на отметка</translation>
     </message>
     <message>
         <source>Downloads</source>
         <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message>
         <source>History</source>
         <extracomment>A quick action on the cover: the history</extracomment>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Deleted bookmark</source>
         <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
-        <translation>Poistettu kirjanmerkki</translation>
+        <translation>Изтрита отметка</translation>
     </message>
     <message>
         <source>%1 · %2</source>
@@ -927,105 +927,105 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Off</source>
         <extracomment>Tracking protection is off</extracomment>
-        <translation>Pois</translation>
+        <translation>Изключена</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation>Tavallinen</translation>
+        <translation>Стандартна</translation>
     </message>
     <message>
         <source>Strict</source>
-        <translation>Tiukka</translation>
+        <translation>Строга</translation>
     </message>
     <message>
         <source>Sites can follow you from one to another</source>
-        <translation>Sivustot voivat seurata sinua sivustolta toiselle</translation>
+        <translation>Сайтовете могат да ви следят, докато преминавате от един към друг</translation>
     </message>
     <message>
         <source>Stops sites following you with cookies</source>
-        <translation>Estää sivustoja seuraamasta sinua evästeillä</translation>
+        <translation>Спира сайтовете да ви следят чрез бисквитки</translation>
     </message>
     <message>
         <source>Stops more tracking, and can break some sites</source>
-        <translation>Estää enemmän seurantaa, mutta voi rikkoa joitakin sivustoja</translation>
+        <translation>Спира повече проследяване, но може да наруши работата на някои сайтове</translation>
     </message>
     <message>
         <source>Sites cannot ask</source>
-        <translation>Sivustot eivät voi kysyä</translation>
+        <translation>Сайтовете не могат да питат</translation>
     </message>
     <message>
         <source>Sites can ask</source>
-        <translation>Sivustot voivat kysyä</translation>
+        <translation>Сайтовете могат да питат</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) allowed</source>
         <extracomment>How many sites may send notifications</extracomment>
         <translation>
-            <numerusform>%n sivusto sallittu</numerusform>
-            <numerusform>%n sivustoa sallittu</numerusform>
+            <numerusform>%n разрешен сайт</numerusform>
+            <numerusform>%n разрешени сайта</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n blocked</source>
         <extracomment>How many sites may not send notifications</extracomment>
         <translation>
-            <numerusform>%n estetty</numerusform>
-            <numerusform>%n estetty</numerusform>
+            <numerusform>%n забранен</numerusform>
+            <numerusform>%n забранени</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) blocked</source>
         <extracomment>How many sites may not send notifications, with none allowed</extracomment>
         <translation>
-            <numerusform>%n sivusto estetty</numerusform>
-            <numerusform>%n sivustoa estetty</numerusform>
+            <numerusform>%n забранен сайт</numerusform>
+            <numerusform>%n забранени сайта</numerusform>
         </translation>
     </message>
     <message>
         <source>Not remembered</source>
         <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Ei muisteta</translation>
+        <translation>Не се запомня</translation>
     </message>
     <message>
         <source>Cleared when closed</source>
         <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Tyhjennetään suljettaessa</translation>
+        <translation>Изчиства се при затваряне</translation>
     </message>
     <message>
         <source>Remembered</source>
-        <translation>Muistetaan</translation>
+        <translation>Запомня се</translation>
     </message>
     <message>
         <source>No quick action</source>
         <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Ei pikatoimintoa</translation>
+        <translation>Без бързо действие</translation>
     </message>
     <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
-        <translation>Ambienssin mukaan</translation>
+        <translation>Според атмосферата</translation>
     </message>
     <message>
         <source>Forced</source>
         <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Pakotettu</translation>
+        <translation>Принудително</translation>
     </message>
     <message>
         <source>Disabled</source>
         <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Pois käytöstä</translation>
+        <translation>Изключено</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Няма изключения</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) with exceptions</source>
         <extracomment>How many sites have a permission decided for them</extracomment>
         <translation>
-            <numerusform>%n sivustolla poikkeuksia</numerusform>
-            <numerusform>%n sivustolla poikkeuksia</numerusform>
+            <numerusform>%n сайт с изключения</numerusform>
+            <numerusform>%n сайта с изключения</numerusform>
         </translation>
     </message>
 </context>
@@ -1033,99 +1033,99 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Настройки</translation>
     </message>
     <message>
         <source>Cover</source>
-        <translation>Kansi</translation>
+        <translation>Корица</translation>
     </message>
     <message>
         <source>Privacy</source>
-        <translation>Yksityisyys</translation>
+        <translation>Поверителност</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Изглед за четене</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>Haku</translation>
+        <translation>Търсене</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation>Ulkoasu</translation>
+        <translation>Външен вид</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Начална страница</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Ohje</translation>
+        <translation>Помощ</translation>
     </message>
     <message>
         <source>Tutorial</source>
-        <translation>Opastus</translation>
+        <translation>Обучение</translation>
     </message>
     <message>
         <source>Browsing</source>
-        <translation>Selaus</translation>
+        <translation>Разглеждане</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Защита от проследяване</translation>
     </message>
     <message>
         <source>Preferred color scheme</source>
-        <translation>Ensisijainen värimaailma</translation>
+        <translation>Предпочитана цветова схема</translation>
     </message>
     <message>
         <source>The website style to use when available</source>
-        <translation>Sivuston tyyli, jota käytetään, kun sellainen on</translation>
+        <translation>Стилът на сайтовете, който да се използва, когато е наличен</translation>
     </message>
     <message>
         <source>Notch guard</source>
-        <translation>Loven suoja</translation>
+        <translation>Отстъп от изреза</translation>
     </message>
     <message>
         <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Pitää sivuston sisällön poissa näytön loven alta. Automaattinen antaa siihen sovitettujen sivustojen käyttää loven aluetta ja pitää sisällön silti näkyvissä.</translation>
+        <translation>Държи съдържанието на сайтовете далеч от изреза на екрана. „Авто“ позволява на пригодените сайтове да използват областта на изреза, като съдържанието остава видимо.</translation>
     </message>
     <message>
         <source>Fixed toolbar</source>
-        <translation>Kiinteä työkalupalkki</translation>
+        <translation>Фиксирана лента с инструменти</translation>
     </message>
     <message>
         <source>Always show the bottom toolbar</source>
-        <translation>Näytä alapalkki aina</translation>
+        <translation>Постоянно показване на долната лента с инструменти</translation>
     </message>
     <message>
         <source>Do not track</source>
-        <translation>Älä seuraa</translation>
+        <translation>Не проследявай</translation>
     </message>
     <message>
         <source>Tell sites that I do not want to be tracked</source>
-        <translation>Kerro sivustoille, etten halua tulla seuratuksi</translation>
+        <translation>Съобщаване на сайтовете, че не искам проследяване</translation>
     </message>
     <message>
         <source>Enable JavaScript</source>
-        <translation>Ota JavaScript käyttöön</translation>
+        <translation>Включване на JavaScript</translation>
     </message>
     <message>
         <source>Allowed (recommended)</source>
-        <translation>Sallittu (suositeltu)</translation>
+        <translation>Разрешено (препоръчително)</translation>
     </message>
     <message>
         <source>Blocked, some sites may not work correctly</source>
-        <translation>Estetty, jotkin sivustot eivät ehkä toimi oikein</translation>
+        <translation>Забранено, някои сайтове може да не работят правилно</translation>
     </message>
     <message>
         <source>Site permissions</source>
-        <translation>Sivustojen luvat</translation>
+        <translation>Права на сайтовете</translation>
     </message>
 </context>
 <context>
@@ -1133,61 +1133,61 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>d MMM yyyy</source>
         <extracomment>How a certificate&apos;s last day is written, as Qt reads a date format: &quot;14 Dec 2026&quot;</extracomment>
-        <translation>d.M.yyyy</translation>
+        <translation>dd.MM.yyyy &apos;г.&apos;</translation>
     </message>
     <message>
         <source>Connection</source>
         <extracomment>Heading over what is known of a site&apos;s connection</extracomment>
-        <translation>Yhteys</translation>
+        <translation>Връзка</translation>
     </message>
     <message>
         <source>Issued to</source>
         <extracomment>Whom a site&apos;s certificate was issued to</extracomment>
-        <translation>Myönnetty</translation>
+        <translation>Издаден на</translation>
     </message>
     <message>
         <source>Verified by</source>
         <extracomment>Who issued a site&apos;s certificate</extracomment>
-        <translation>Varmentaja</translation>
+        <translation>Проверен от</translation>
     </message>
     <message>
         <source>Valid until</source>
         <extracomment>The last day a site&apos;s certificate is good</extracomment>
-        <translation>Voimassa</translation>
+        <translation>Валиден до</translation>
     </message>
     <message>
         <source>Protocol</source>
         <extracomment>The protocol the connection to a site uses</extracomment>
-        <translation>Protokolla</translation>
+        <translation>Протокол</translation>
     </message>
     <message>
         <source>Cipher suite</source>
         <extracomment>The cipher suite the connection to a site uses</extracomment>
-        <translation>Salausmenetelmä</translation>
+        <translation>Набор шифри</translation>
     </message>
 </context>
 <context>
     <name>SiteDetailsPage</name>
     <message>
         <source>The certificate has expired or is not yet valid</source>
-        <translation>Varmenne on vanhentunut tai ei ole vielä voimassa</translation>
+        <translation>Сертификатът е изтекъл или още не е валиден</translation>
     </message>
     <message>
         <source>The certificate is for another site</source>
-        <translation>Varmenne on toiselle sivustolle</translation>
+        <translation>Сертификатът е за друг сайт</translation>
     </message>
     <message>
         <source>The certificate is not trusted</source>
-        <translation>Varmenteeseen ei luoteta</translation>
+        <translation>Сертификатът не е доверен</translation>
     </message>
     <message>
         <source>Permissions</source>
         <extracomment>Heading over what the site may do</extracomment>
-        <translation>Luvat</translation>
+        <translation>Права</translation>
     </message>
     <message>
         <source>Clear site permissions</source>
-        <translation>Tyhjennä sivuston luvat</translation>
+        <translation>Изчистване на правата на сайта</translation>
     </message>
 </context>
 <context>
@@ -1195,15 +1195,15 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Add</source>
         <extracomment>Accept button of the dialog that adds a site to the exceptions</extracomment>
-        <translation>Lisää</translation>
+        <translation>Добавяне</translation>
     </message>
     <message>
         <source>Address of the site</source>
-        <translation>Sivuston osoite</translation>
+        <translation>Адрес на сайта</translation>
     </message>
     <message>
         <source>Must begin with http:// or https://</source>
-        <translation>Alun on oltava http:// tai https://</translation>
+        <translation>Трябва да започва с http:// или https://</translation>
     </message>
 </context>
 <context>
@@ -1211,7 +1211,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Remove</source>
         <extracomment>Takes the site&apos;s exception away: it follows the default again</extracomment>
-        <translation>Poista</translation>
+        <translation>Премахване</translation>
     </message>
 </context>
 <context>
@@ -1219,139 +1219,139 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Exceptions</source>
         <extracomment>Under the title of the list of sites tracking protection is off for</extracomment>
-        <translation>Poikkeukset</translation>
+        <translation>Изключения</translation>
     </message>
     <message>
         <source>Exceptions · default: %1</source>
         <extracomment>Under the title of a list of exceptions to a permission; %1 is what it is for every other site</extracomment>
-        <translation>Poikkeukset · oletus: %1</translation>
+        <translation>Изключения · по подразбиране: %1</translation>
     </message>
     <message>
         <source>Add a site</source>
-        <translation>Lisää sivusto</translation>
+        <translation>Добавяне на сайт</translation>
     </message>
     <message>
         <source>Remove all exceptions</source>
-        <translation>Poista kaikki poikkeukset</translation>
+        <translation>Премахване на всички изключения</translation>
     </message>
     <message>
         <source>Removing exceptions</source>
         <extracomment>Said while the exceptions are about to be removed</extracomment>
-        <translation>Poistetaan poikkeukset</translation>
+        <translation>Изключенията се премахват</translation>
     </message>
     <message>
         <source>Tracking protection off</source>
-        <translation>Seurannan esto pois</translation>
+        <translation>Защитата от проследяване е изключена</translation>
     </message>
     <message>
         <source>A site you remove follows the default again.</source>
         <extracomment>Under the sites that are an exception to a permission</extracomment>
-        <translation>Poistamasi sivusto noudattaa taas oletusta.</translation>
+        <translation>Премахнатият сайт отново следва настройката по подразбиране.</translation>
     </message>
     <message>
         <source>No exceptions</source>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Няма изключения</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionNames</name>
     <message>
         <source>Notifications</source>
-        <translation>Ilmoitukset</translation>
+        <translation>Известия</translation>
     </message>
     <message>
         <source>Pop-ups</source>
         <extracomment>Windows a page opens of its own accord</extracomment>
-        <translation>Ponnahdusikkunat</translation>
+        <translation>Изскачащи прозорци</translation>
     </message>
     <message>
         <source>Cookies</source>
-        <translation>Evästeet</translation>
+        <translation>Бисквитки</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation>Sijainti</translation>
+        <translation>Местоположение</translation>
     </message>
     <message>
         <source>Camera</source>
-        <translation>Kamera</translation>
+        <translation>Камера</translation>
     </message>
     <message>
         <source>Microphone</source>
-        <translation>Mikrofoni</translation>
+        <translation>Микрофон</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Защита от проследяване</translation>
     </message>
     <message>
         <source>Allow</source>
         <extracomment>A site may do it</extracomment>
-        <translation>Salli</translation>
+        <translation>Разрешаване</translation>
     </message>
     <message>
         <source>Block</source>
         <extracomment>A site may not do it</extracomment>
-        <translation>Estä</translation>
+        <translation>Забраняване</translation>
     </message>
     <message>
         <source>Ask</source>
         <extracomment>A site is asked about it each time it wants to</extracomment>
-        <translation>Kysy</translation>
+        <translation>Питане</translation>
     </message>
     <message>
         <source>Allow all</source>
         <extracomment>Every site&apos;s cookies are accepted</extracomment>
-        <translation>Salli kaikki</translation>
+        <translation>Разрешаване на всички</translation>
     </message>
     <message>
         <source>Block cross-site</source>
         <extracomment>Cookies a site sets from inside another site&apos;s page are refused</extracomment>
-        <translation>Estä sivustojen väliset</translation>
+        <translation>Забраняване между сайтове</translation>
     </message>
     <message>
         <source>Block all</source>
         <extracomment>No site&apos;s cookies are accepted</extracomment>
-        <translation>Estä kaikki</translation>
+        <translation>Забраняване на всички</translation>
     </message>
     <message>
         <source>Allowed</source>
         <extracomment>A site has been allowed it</extracomment>
-        <translation>Sallittu</translation>
+        <translation>Разрешено</translation>
     </message>
     <message>
         <source>Blocked</source>
         <extracomment>A site has been blocked from it</extracomment>
-        <translation>Estetty</translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Under a kind of permission, when no site has been given an exception to it</extracomment>
-        <translation>Ei poikkeuksia</translation>
+        <translation>Няма изключения</translation>
     </message>
     <message numerus="yes">
         <source>%n exception(s)</source>
         <translation>
-            <numerusform>%n poikkeus</numerusform>
-            <numerusform>%n poikkeusta</numerusform>
+            <numerusform>%n изключение</numerusform>
+            <numerusform>%n изключения</numerusform>
         </translation>
     </message>
     <message>
         <source>Always ask</source>
         <extracomment>A site is asked about it each time it wants it, whatever is set for every site</extracomment>
-        <translation>Kysy aina</translation>
+        <translation>Винаги да пита</translation>
     </message>
     <message>
         <source>Follow default: %1</source>
         <extracomment>A site has no choice of its own and does what every site does; %1 is that</extracomment>
-        <translation>Noudata oletusta: %1</translation>
+        <translation>Както по подразбиране: %1</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionRow</name>
     <message>
         <source>Show exceptions</source>
-        <translation>Näytä poikkeukset</translation>
+        <translation>Показване на изключенията</translation>
     </message>
 </context>
 <context>
@@ -1359,31 +1359,31 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <extracomment>Settings page: what sites may do</extracomment>
-        <translation>Sivustojen luvat</translation>
+        <translation>Права на сайтовете</translation>
     </message>
     <message>
         <source>What sites may do unless you decided otherwise for a site. Tap one to change it or see the exceptions.</source>
-        <translation>Mitä sivustot saavat tehdä, ellet ole päättänyt sivustolle toisin. Napauta yhtä muuttaaksesi sitä tai nähdäksesi poikkeukset.</translation>
+        <translation>Какво могат да правят сайтовете, освен ако не сте решили друго за даден сайт. Докоснете някое право, за да го промените или да видите изключенията.</translation>
     </message>
     <message>
         <source>Shown while tracking protection is off · %1</source>
         <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Näkyy, kun seurannan esto on pois · %1</translation>
+        <translation>Показва се, докато защитата от проследяване е изключена · %1</translation>
     </message>
     <message>
         <source>Turned off for some sites</source>
-        <translation>Pois päältä joillakin sivustoilla</translation>
+        <translation>Изключена за някои сайтове</translation>
     </message>
     <message numerus="yes">
         <source>Off for %n site(s)</source>
         <translation>
-            <numerusform>Pois %n sivustolla</numerusform>
-            <numerusform>Pois %n sivustolla</numerusform>
+            <numerusform>Изключена за %n сайт</numerusform>
+            <numerusform>Изключена за %n сайта</numerusform>
         </translation>
     </message>
     <message>
         <source>Turned off from a site’s details</source>
-        <translation>Kytketty pois sivuston tiedoista</translation>
+        <translation>Изключва се от подробностите за сайта</translation>
     </message>
 </context>
 <context>
@@ -1391,21 +1391,21 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Connection is secure</source>
         <extracomment>The connection to the site is encrypted and its certificate in order</extracomment>
-        <translation>Yhteys on suojattu</translation>
+        <translation>Връзката е защитена</translation>
     </message>
     <message>
         <source>Connection is not secure</source>
         <extracomment>Either no encryption is in use, or the connection is broken in some way</extracomment>
-        <translation>Yhteys ei ole suojattu</translation>
+        <translation>Връзката не е защитена</translation>
     </message>
     <message>
         <source>Verified by %1</source>
         <extracomment>Under &quot;Connection is secure&quot;; %1 is who issued the site&apos;s certificate</extracomment>
-        <translation>Varmentaja: %1</translation>
+        <translation>Проверено от %1</translation>
     </message>
     <message>
         <source>Do not enter personal data, passwords, card details on this site</source>
-        <translation>Älä anna tällä sivustolla henkilötietoja, salasanoja tai korttitietoja</translation>
+        <translation>Не въвеждайте лични данни, пароли и данни за карти на този сайт</translation>
     </message>
 </context>
 <context>
@@ -1413,121 +1413,121 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Off in Settings</source>
         <extracomment>The site&apos;s details, under the tracking protection switch: it is off for every site</extracomment>
-        <translation>Pois päältä asetuksissa</translation>
+        <translation>Изключена в Настройки</translation>
     </message>
     <message>
         <source>Off for this site. Turn it on to block trackers here again.</source>
-        <translation>Pois päältä tällä sivustolla. Kytke päälle estääksesi seurannan täällä taas.</translation>
+        <translation>Изключена за този сайт. Включете я, за да блокирате отново тракерите тук.</translation>
     </message>
     <message>
         <source>Trackers were blocked on this page</source>
-        <translation>Tällä sivulla estettiin seurantaa</translation>
+        <translation>На тази страница бяха блокирани тракери</translation>
     </message>
     <message>
         <source>If something looks broken on this site, try turning this off.</source>
         <extracomment>The site&apos;s details, under the tracking protection switch while it is on</extracomment>
-        <translation>Jos jokin näyttää rikkinäiseltä tällä sivustolla, kokeile kytkeä tämä pois.</translation>
+        <translation>Ако нещо изглежда повредено на този сайт, опитайте да изключите защитата.</translation>
     </message>
 </context>
 <context>
     <name>StartPagePreview</name>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Често посещавани</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Наскоро посетени</translation>
     </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Начална страница</translation>
     </message>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Често посещавани</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Наскоро посетени</translation>
     </message>
     <message>
         <source>Sections</source>
         <extracomment>The parts of the start page, each switched on or off</extracomment>
-        <translation>Osiot</translation>
+        <translation>Секции</translation>
     </message>
     <message>
         <source>Preview</source>
         <extracomment>Over a picture of what a new tab will show</extracomment>
-        <translation>Esikatselu</translation>
+        <translation>Преглед</translation>
     </message>
 </context>
 <context>
     <name>StartPageView</name>
     <message>
         <source>Frequently visited</source>
-        <translation>Usein vieraillut</translation>
+        <translation>Често посещавани</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation>Viimeksi vieraillut</translation>
+        <translation>Наскоро посетени</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation>Avaa uudessa välilehdessä</translation>
+        <translation>Отваряне в нов раздел</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Poista</translation>
+        <translation>Премахване</translation>
     </message>
     <message>
         <source>Nothing here yet</source>
-        <translation>Täällä ei ole vielä mitään</translation>
+        <translation>Все още няма нищо тук</translation>
     </message>
     <message>
         <source>The sites you visit and bookmark show up here</source>
-        <translation>Sivustot, joilla käyt ja joita lisäät kirjanmerkkeihin, näkyvät tässä</translation>
+        <translation>Тук се появяват сайтовете, които посещавате и отмятате</translation>
     </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>
     <message>
         <source>Rename</source>
-        <translation>Nimeä uudelleen</translation>
+        <translation>Преименуване</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Poista</translation>
+        <translation>Изтриване</translation>
     </message>
     <message>
         <source>Deleting tab group</source>
-        <translation>Poistetaan välilehtiryhmä</translation>
+        <translation>Групата раздели се изтрива</translation>
     </message>
     <message>
         <source>Ungroup</source>
         <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
-        <translation>Pura ryhmä</translation>
+        <translation>Разгрупиране</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
 </context>
@@ -1535,24 +1535,24 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupDialog</name>
     <message>
         <source>Rename tab group</source>
-        <translation>Nimeä välilehtiryhmä uudelleen</translation>
+        <translation>Преименуване на групата раздели</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation>Uusi välilehtiryhmä</translation>
+        <translation>Нова група раздели</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Tallenna</translation>
+        <translation>Запазване</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nimi</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>Create</source>
         <extracomment>Accepts the dialog that makes a new tab group</extracomment>
-        <translation>Luo</translation>
+        <translation>Създаване</translation>
     </message>
 </context>
 <context>
@@ -1560,8 +1560,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
 </context>
@@ -1569,22 +1569,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupsPage</name>
     <message>
         <source>Tab groups</source>
-        <translation>Välilehtiryhmät</translation>
+        <translation>Групи раздели</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation>Uusi välilehtiryhmä</translation>
+        <translation>Нова група раздели</translation>
     </message>
 </context>
 <context>
     <name>TabPreview</name>
     <message>
         <source>No preview</source>
-        <translation>Ei esikatselua</translation>
+        <translation>Няма преглед</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation>Aloitussivu</translation>
+        <translation>Начална страница</translation>
     </message>
 </context>
 <context>
@@ -1592,8 +1592,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
 </context>
@@ -1601,69 +1601,69 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabsView</name>
     <message>
         <source>No tabs in this group</source>
-        <translation>Ryhmässä ei ole välilehtiä</translation>
+        <translation>Няма раздели в тази група</translation>
     </message>
     <message>
         <source>Open one with the button below</source>
-        <translation>Avaa välilehti alla olevalla painikkeella</translation>
+        <translation>Отворете раздел с бутона по-долу</translation>
     </message>
     <message>
         <source>Search tabs</source>
-        <translation>Hae välilehdistä</translation>
+        <translation>Търсене в разделите</translation>
     </message>
     <message>
         <source>No matching tabs</source>
-        <translation>Ei osuvia välilehtiä</translation>
+        <translation>Няма съвпадащи раздели</translation>
     </message>
 </context>
 <context>
     <name>TrackingSettingsPage</name>
     <message>
         <source>Tracking protection</source>
-        <translation>Seurannan esto</translation>
+        <translation>Защита от проследяване</translation>
     </message>
     <message>
         <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS:n selainmoottori ei vielä osaa kaikkea, mitä Firefox tässä tekee, joten osa seurannasta voi yhä päästä läpi. Salama ottaa käyttöön kaiken suojan, joka moottorissa on.</translation>
+        <translation>Уеб двигателят на Sailfish OS все още не може да прави всичко, което Firefox прави тук, затова някои тракери може да се промъкнат. Salama включва всички защити, които двигателят има.</translation>
     </message>
 </context>
 <context>
     <name>TutorialMenu</name>
     <message>
         <source>Bookmark</source>
-        <translation>Kirjanmerkki</translation>
+        <translation>Отмятане</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation>Jaa</translation>
+        <translation>Споделяне</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Lukunäkymä</translation>
+        <translation>Четене</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation>Kirjanmerkit</translation>
+        <translation>Отметки</translation>
     </message>
     <message>
         <source>History</source>
-        <translation>Historia</translation>
+        <translation>История</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation>Lataukset</translation>
+        <translation>Изтегляния</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Asetukset</translation>
+        <translation>Настройки</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Etsi sivulta</translation>
+        <translation>Намиране</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>PC-versio</translation>
+        <translation>ПК версия</translation>
     </message>
 </context>
 <context>
@@ -1671,12 +1671,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation>Siirry osoitteeseen %1</translation>
+        <translation>Отваряне на %1</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation>Hae ”%2” hakukoneella %1</translation>
+        <translation>Търсене на „%2“ чрез %1</translation>
     </message>
 </context>
 <context>
@@ -1684,91 +1684,91 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Close tutorial</source>
         <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
-        <translation>Sulje opastus</translation>
+        <translation>Затваряне на обучението</translation>
     </message>
     <message>
         <source>Pull down to return to the page.</source>
         <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
-        <translation>Palaa sivulle vetämällä alas.</translation>
+        <translation>Дръпнете надолу, за да се върнете към страницата.</translation>
     </message>
     <message>
         <source>Continue</source>
         <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
-        <translation>Jatka</translation>
+        <translation>Продължаване</translation>
     </message>
     <message>
         <source>Web browser for Sailfish OS</source>
         <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Verkkoselain Sailfish OS:lle</translation>
+        <translation>Уеб браузър за Sailfish OS</translation>
     </message>
     <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
-        <translation>Aloita opastus</translation>
+        <translation>Започване на обучението</translation>
     </message>
     <message>
         <source>Skip</source>
         <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
-        <translation>Ohita</translation>
+        <translation>Пропускане</translation>
     </message>
     <message>
         <source>Tutorial complete</source>
-        <translation>Opastus on valmis</translation>
+        <translation>Обучението завърши</translation>
     </message>
     <message>
         <source>Tap the address bar to open a website or search.</source>
         <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
-        <translation>Avaa verkkosivusto tai hae napauttamalla osoitepalkkia.</translation>
+        <translation>Докоснете адресната лента, за да отворите сайт или да търсите.</translation>
     </message>
     <message>
         <source>Type an address or a search. Matching tabs, bookmarks and history appear above the bar.</source>
         <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
-        <translation>Kirjoita osoite tai hakusanat. Osuvat välilehdet, kirjanmerkit ja historia näkyvät palkin yläpuolella.</translation>
+        <translation>Въведете адрес или заявка за търсене. Съвпадащите раздели, отметки и история се появяват над лентата.</translation>
     </message>
     <message>
         <source>Tap the menu button.</source>
-        <translation>Napauta valikkopainiketta.</translation>
+        <translation>Докоснете бутона на менюто.</translation>
     </message>
     <message>
         <source>The menu has actions for this page and the browser. Tap outside it to close it.</source>
-        <translation>Valikossa on toimintoja tälle sivulle ja selaimelle. Sulje se napauttamalla sen ulkopuolelle.</translation>
+        <translation>Менюто има действия за тази страница и за браузъра. Докоснете извън него, за да го затворите.</translation>
     </message>
     <message>
         <source>Drag the bar up to see your tabs.</source>
         <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation>Näet välilehtesi vetämällä palkkia ylös.</translation>
+        <translation>Плъзнете лентата нагоре, за да видите разделите си.</translation>
     </message>
     <message>
         <source>Swipe a tab left to close it.</source>
-        <translation>Sulje välilehti pyyhkäisemällä sitä vasemmalle.</translation>
+        <translation>Плъзнете раздел наляво, за да го затворите.</translation>
     </message>
     <message>
         <source>Hold a tab, then drag it to a new position.</source>
-        <translation>Pidä välilehteä painettuna ja vedä se uuteen paikkaan.</translation>
+        <translation>Задръжте раздел, после го провлачете на ново място.</translation>
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
         <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
-        <translation>Pidä välilehteä painettuna ja pudota se ryhmän nimen päälle siirtääksesi sen ryhmään.</translation>
+        <translation>Задръжте раздел, после го пуснете върху име на група, за да го преместите там.</translation>
     </message>
     <message>
         <source>Address bar</source>
         <extracomment>What the tutorial covers: the address bar</extracomment>
-        <translation>Osoitepalkki</translation>
+        <translation>Адресна лента</translation>
     </message>
     <message>
         <source>Menu</source>
         <extracomment>What the tutorial covers: the menu</extracomment>
-        <translation>Valikko</translation>
+        <translation>Меню</translation>
     </message>
     <message>
         <source>Tabs</source>
         <extracomment>What the tutorial covers: the tabs and the grid of them</extracomment>
-        <translation>Välilehdet</translation>
+        <translation>Раздели</translation>
     </message>
     <message>
         <source>You can open it again from Settings.</source>
-        <translation>Voit avata sen uudelleen asetuksista.</translation>
+        <translation>Можете да го отворите отново от Настройки.</translation>
     </message>
 </context>
 <context>
@@ -1776,14 +1776,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
-            <numerusform>%n välilehti</numerusform>
-            <numerusform>%n välilehteä</numerusform>
+            <numerusform>%n раздел</numerusform>
+            <numerusform>%n раздела</numerusform>
         </translation>
     </message>
     <message>
         <source>Work</source>
         <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
-        <translation>Työ</translation>
+        <translation>Работа</translation>
     </message>
 </context>
 </TS>

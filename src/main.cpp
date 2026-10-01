@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "Core.h"
 #include "QmlTypes.h"
+#include "Translations.h"
 
 #include <QGuiApplication>
 #include <QLocale>
@@ -17,10 +18,9 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     QGuiApplication::setApplicationVersion(QStringLiteral(SALAMA_VERSION));
 
     QTranslator translator;
-    const QString translationDir =
-        SailfishApp::pathTo(QStringLiteral("translations")).toLocalFile();
-    if (translator.load(QLocale(), QStringLiteral("harbour-salama"), QStringLiteral("-"),
-                        translationDir)) {
+    if (Salama::loadTranslations(
+            translator, QLocale(),
+            SailfishApp::pathTo(QStringLiteral("translations")).toLocalFile())) {
         QGuiApplication::installTranslator(&translator);
     }
 
