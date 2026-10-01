@@ -120,7 +120,7 @@
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Режим читання</translation>
+        <translation>Читання</translation>
     </message>
     <message>
         <source>Address copied</source>
@@ -133,7 +133,7 @@
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Версія для ПК</translation>
+        <translation>ПК-версія</translation>
     </message>
 </context>
 <context>
@@ -1661,7 +1661,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Режим читання</translation>
+        <translation>Читання</translation>
     </message>
     <message>
         <source>Bookmarks</source>
@@ -1685,7 +1685,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Версія для ПК</translation>
+        <translation>ПК-версія</translation>
     </message>
 </context>
 <context>

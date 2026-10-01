@@ -120,7 +120,7 @@
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Режим чтения</translation>
+        <translation>Чтение</translation>
     </message>
     <message>
         <source>Address copied</source>
@@ -1661,7 +1661,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Reader view</source>
-        <translation>Режим чтения</translation>
+        <translation>Чтение</translation>
     </message>
     <message>
         <source>Bookmarks</source>
