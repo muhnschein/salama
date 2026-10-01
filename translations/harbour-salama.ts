@@ -306,9 +306,90 @@
     </message>
 </context>
 <context>
+    <name>DownloadBanner</name>
+    <message numerus="yes">
+        <source>%n download(s)</source>
+        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n download</numerusform>
+            <numerusform>%n downloads</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Downloaded · tap to open</source>
+        <extracomment>The banner as a download arrives; a tap on it opens the file</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused · %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n failed</source>
+        <extracomment>How many of the downloads on the banner failed</extracomment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n paused</source>
+        <extracomment>How many of the downloads on the banner are paused</extracomment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download again</source>
+        <extracomment>Fetch again a download the engine has forgotten, from the start</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DownloadText</name>
+    <message>
+        <source>%1 of %2 · %3%</source>
+        <extracomment>A download&apos;s progress: &quot;3.1 MB of 7.4 MB · 42%&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -320,7 +401,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancelled</source>
+        <source>Paused · %1%</source>
+        <extracomment>A download stopped part way, which can go on: &quot;Paused · 42%&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <extracomment>A download stopped in an earlier run, which can only start over</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File not found</source>
+        <extracomment>A download whose file has been deleted or moved since</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -340,6 +432,19 @@
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open downloads folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting</source>
+        <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

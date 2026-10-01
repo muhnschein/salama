@@ -7,7 +7,9 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUrl>
@@ -20,6 +22,7 @@ namespace Salama {
 namespace {
 
 const QString Topic = QStringLiteral("embed:download");
+const QString RequestTopic = QStringLiteral("embedui:download");
 
 bool run(QSqlQuery &query)
 {
@@ -63,7 +66,22 @@ bool recountRunning(const QList<DownloadModel::Download> &downloads, int &count,
     return true;
 }
 
+// Whether a row is one the engine still has and has not finished: what pausing and
+// resuming go on from.
+bool resumable(const DownloadModel::Download &download)
+{
+    return download.engineId != 0 &&
+           (download.status == DownloadModel::Failed || download.status == DownloadModel::Canceled);
+}
+
 } // namespace
+
+bool DownloadModel::Tray::operator==(const Tray &other) const
+{
+    return count == other.count && failed == other.failed && paused == other.paused &&
+           progress == other.progress && names == other.names && row == other.row &&
+           status == other.status && size == other.size;
+}
 
 DownloadModel::DownloadModel(const Storage &storage, QString directory, QObject *parent)
     : QAbstractListModel(parent)
@@ -110,6 +128,11 @@ QVariant DownloadModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(download.status);
     case Role::Started:
         return download.started;
+    case Role::Resumable:
+        return resumable(download);
+    case Role::FileExists:
+        return download.status == Done && !download.path.isEmpty() &&
+               QFileInfo::exists(download.path);
     default:
         return {};
     }
@@ -127,6 +150,8 @@ QHash<int, QByteArray> DownloadModel::roleNames() const
         {roleId(Role::Progress), QByteArrayLiteral("progress")},
         {roleId(Role::Status), QByteArrayLiteral("status")},
         {roleId(Role::Started), QByteArrayLiteral("started")},
+        {roleId(Role::Resumable), QByteArrayLiteral("resumable")},
+        {roleId(Role::FileExists), QByteArrayLiteral("fileExists")},
     };
 }
 
@@ -153,6 +178,46 @@ int DownloadModel::runningCount() const
 int DownloadModel::runningProgress() const
 {
     return m_runningProgress;
+}
+
+int DownloadModel::trayCount() const
+{
+    return m_tray.count;
+}
+
+int DownloadModel::trayFailed() const
+{
+    return m_tray.failed;
+}
+
+int DownloadModel::trayPaused() const
+{
+    return m_tray.paused;
+}
+
+int DownloadModel::trayProgress() const
+{
+    return m_tray.progress;
+}
+
+QStringList DownloadModel::trayNames() const
+{
+    return m_tray.names;
+}
+
+int DownloadModel::trayRow() const
+{
+    return m_tray.row;
+}
+
+int DownloadModel::trayStatus() const
+{
+    return m_tray.status;
+}
+
+double DownloadModel::traySize() const
+{
+    return double(m_tray.size);
 }
 
 const QList<DownloadModel::Download> &DownloadModel::downloads() const
@@ -201,16 +266,113 @@ void DownloadModel::remove(int row)
     if (row < 0 || row >= m_downloads.count()) {
         return;
     }
-    const int id = m_downloads.at(row).id;
-    beginRemoveRows(QModelIndex(), row, row);
-    m_downloads.removeAt(row);
-    endRemoveRows();
-    erase(id);
-    emit countChanged();
-    // One still coming may be forgotten; the engine goes on with it, unheard.
-    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
-        emit runningChanged();
+    pause(row);
+    removeRow(row);
+}
+
+void DownloadModel::clearFinished()
+{
+    const int before = m_downloads.count();
+    for (int row = m_downloads.count() - 1; row >= 0; --row) {
+        if (m_downloads.at(row).status != Done) {
+            continue;
+        }
+        const int id = m_downloads.at(row).id;
+        beginRemoveRows(QModelIndex(), row, row);
+        m_downloads.removeAt(row);
+        endRemoveRows();
+        erase(id);
     }
+    if (m_downloads.count() != before) {
+        emit countChanged();
+        recount();
+    }
+}
+
+void DownloadModel::pause(int row)
+{
+    if (row < 0 || row >= m_downloads.count()) {
+        return;
+    }
+    const Download &download = m_downloads.at(row);
+    if (download.status != Running || download.engineId == 0) {
+        return;
+    }
+    // The row says Paused when the engine says it has stopped (dl-cancel), not before.
+    request({{QStringLiteral("msg"), QStringLiteral("cancelDownload")},
+             {QStringLiteral("id"), download.engineId}});
+}
+
+void DownloadModel::resume(int row)
+{
+    if (row < 0 || row >= m_downloads.count()) {
+        return;
+    }
+    const Download &download = m_downloads.at(row);
+    if (download.status != Failed && download.status != Canceled) {
+        return;
+    }
+    if (download.engineId != 0) {
+        request({{QStringLiteral("msg"), QStringLiteral("retryDownload")},
+                 {QStringLiteral("id"), download.engineId}});
+        return;
+    }
+    // One of an earlier run: the engine has forgotten it, and fetches it anew. Its
+    // dl-start makes the row that stands for it now.
+    if (download.url.isEmpty()) {
+        return;
+    }
+    const QString path =
+        download.path.isEmpty() ? QDir(m_directory).filePath(download.name) : download.path;
+    request({{QStringLiteral("msg"), QStringLiteral("addDownload")},
+             {QStringLiteral("from"), download.url},
+             {QStringLiteral("to"), path}});
+    removeRow(row);
+}
+
+bool DownloadModel::deleteFile(int row)
+{
+    if (row < 0 || row >= m_downloads.count()) {
+        return false;
+    }
+    const Download &download = m_downloads.at(row);
+    if (download.status != Done || download.path.isEmpty()) {
+        return false;
+    }
+    const QFileInfo file(download.path);
+    if (file.exists()) {
+        // Where the file really is, links and ".." followed, under where it may be.
+        const QString root = QFileInfo(QFileInfo(m_directory).absolutePath()).canonicalFilePath();
+        const QString real = file.canonicalFilePath();
+        if (root.isEmpty() || !real.startsWith(root + QLatin1Char('/'))) {
+            qWarning() << "DownloadModel: not deleting" << download.path;
+            return false;
+        }
+        if (!QFile::remove(real)) {
+            qWarning() << "DownloadModel: cannot delete" << real;
+            return false;
+        }
+    }
+    removeRow(row);
+    return true;
+}
+
+void DownloadModel::refreshFiles()
+{
+    if (m_downloads.isEmpty()) {
+        return;
+    }
+    emit dataChanged(index(0, 0), index(m_downloads.count() - 1, 0), {roleId(Role::FileExists)});
+}
+
+void DownloadModel::dismissTray()
+{
+    for (Download &download : m_downloads) {
+        if (download.engineId != 0 && download.status != Done) {
+            download.dismissed = true;
+        }
+    }
+    recount();
 }
 
 void DownloadModel::clearSince(double since)
@@ -229,6 +391,7 @@ void DownloadModel::clearSince(double since)
     }
     if (m_downloads.count() != before) {
         emit countChanged();
+        recount();
     }
 }
 
@@ -245,6 +408,9 @@ void DownloadModel::clear()
     if (m_downloads.isEmpty()) {
         return;
     }
+    for (int row = 0; row < m_downloads.count(); ++row) {
+        pause(row);
+    }
     beginRemoveRows(QModelIndex(), 0, m_downloads.count() - 1);
     m_downloads.clear();
     endRemoveRows();
@@ -252,9 +418,7 @@ void DownloadModel::clear()
     query.prepare(QStringLiteral("DELETE FROM download"));
     run(query);
     emit countChanged();
-    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
-        emit runningChanged();
-    }
+    recount();
 }
 
 QString DownloadModel::fileUrl(int row) const
@@ -273,6 +437,32 @@ int DownloadModel::rowOf(int downloadId) const
         }
     }
     return -1;
+}
+
+QString DownloadModel::folderUrl(int row) const
+{
+    if (row < 0 || row >= m_downloads.count() || m_downloads.at(row).path.isEmpty()) {
+        return QUrl::fromLocalFile(m_directory).toString();
+    }
+    return QUrl::fromLocalFile(QFileInfo(m_downloads.at(row).path).absolutePath()).toString();
+}
+
+QString DownloadModel::formatSize(double bytes)
+{
+    static const char *const units[] = {"B", "kB", "MB", "GB", "TB"};
+    const int last = int(sizeof(units) / sizeof(units[0])) - 1;
+    double value = qIsFinite(bytes) ? std::max(0.0, bytes) : 0.0;
+    int unit = 0;
+    while (value >= 1024 && unit < last) {
+        value /= 1024;
+        ++unit;
+    }
+    // A size reads as one number: "1023 B", never "1,023 B".
+    QLocale locale;
+    locale.setNumberOptions(QLocale::OmitGroupSeparator);
+    const QString number = unit == 0 ? locale.toString(qRound64(value))
+                                     : locale.toString(value, 'f', value < 10 ? 1 : 0);
+    return number + QLatin1Char(' ') + QLatin1String(units[unit]);
 }
 
 void DownloadModel::start(int engineId, const QVariantMap &message)
@@ -303,9 +493,7 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     if (m_downloads.count() != before) {
         emit countChanged();
     }
-    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
-        emit runningChanged();
-    }
+    recount();
 }
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
@@ -330,9 +518,10 @@ void DownloadModel::finish(int row, const QString &path)
 {
     Download &download = m_downloads[row];
     QVector<int> roles;
-    if (download.status != Done) {
+    const bool arrived = download.status != Done;
+    if (arrived) {
         download.status = Done;
-        roles.append(roleId(Role::Status));
+        roles.append({roleId(Role::Status), roleId(Role::Resumable), roleId(Role::FileExists)});
     }
     if (download.progress != 100) {
         download.progress = 100;
@@ -346,6 +535,11 @@ void DownloadModel::finish(int row, const QString &path)
         return;
     }
     store(download);
+    // Said before the row's change, so that the banner has the name before the row
+    // leaves what it shows.
+    if (arrived) {
+        emit finished(download.id, download.name);
+    }
     changed(row, roles);
 }
 
@@ -356,8 +550,10 @@ void DownloadModel::setStatus(int row, Status status)
         return;
     }
     download.status = status;
+    // A change of state is news again, swiped away or not.
+    download.dismissed = false;
     store(download);
-    changed(row, {roleId(Role::Status)});
+    changed(row, {roleId(Role::Status), roleId(Role::Resumable)});
 }
 
 void DownloadModel::changed(int row, const QVector<int> &roles)
@@ -365,9 +561,61 @@ void DownloadModel::changed(int row, const QVector<int> &roles)
     const QModelIndex modelIndex = index(row, 0);
     emit dataChanged(modelIndex, modelIndex, roles);
     // Every change to a row's status or progress comes through here.
+    recount();
+}
+
+void DownloadModel::recount()
+{
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    Tray tray;
+    int coming = 0;
+    int percent = 0;
+    for (int row = 0; row < m_downloads.count(); ++row) {
+        const Download &download = m_downloads.at(row);
+        if (download.engineId == 0 || download.status == Done || download.dismissed) {
+            continue;
+        }
+        if (tray.count == 0) {
+            tray.row = row;
+            tray.status = download.status;
+            tray.size = download.size;
+        }
+        ++tray.count;
+        tray.names.append(download.name);
+        if (download.status == Failed) {
+            ++tray.failed;
+            continue;
+        }
+        if (download.status == Canceled) {
+            ++tray.paused;
+        }
+        ++coming;
+        percent += download.progress;
+    }
+    tray.progress = coming > 0 ? qRound(double(percent) / coming) : 0;
+    if (tray == m_tray) {
+        return;
+    }
+    m_tray = tray;
+    emit trayChanged();
+}
+
+void DownloadModel::request(const QVariantMap &data)
+{
+    emit engineRequest(RequestTopic, data);
+}
+
+void DownloadModel::removeRow(int row)
+{
+    const int id = m_downloads.at(row).id;
+    beginRemoveRows(QModelIndex(), row, row);
+    m_downloads.removeAt(row);
+    endRemoveRows();
+    erase(id);
+    emit countChanged();
+    recount();
 }
 
 void DownloadModel::dropOldest()

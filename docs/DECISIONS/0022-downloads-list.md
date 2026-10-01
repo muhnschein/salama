@@ -31,11 +31,12 @@ all; the files are left where they are, since the list is not the only thing tha
 them.
 
 ## Consequences
-There is no cancelling or retrying from the list. The engine takes both
+There was no cancelling or retrying from the list. The engine takes both
 (`cancelDownload` and `retryDownload` on `embedui:download`), but saying so goes through
 `WebEngine`, which `docs/ARCHITECTURE.md` keeps to the browsing page and Settings
-(`tst_qmlstatic::webViewImportOnlyInBrowserPage` holds it there); it is a later change,
-not a refusal.
+(`tst_qmlstatic::webViewImportOnlyInBrowserPage` holds it there). 0038 adds them, through
+the browsing page, along with a banner on the page, a ring on each row in place of the
+line, and deleting a file with its row.
 
 The files land in `~/Downloads/Salama` (0025), which the `Downloads` permission already
 opens (`docs/HARBOUR.md`). Whether `Qt.openUrlExternally` hands a file on from inside

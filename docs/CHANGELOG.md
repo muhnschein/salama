@@ -8,6 +8,8 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- Downloads say how they are going on the page they were started from: a card just above the bar with the file's name, how much of how much has come, and a button to pause, resume or retry it; with several, how many, how far along together and whether any failed or are paused. When one arrives the card says so for a few seconds and a tap opens the file; otherwise a tap opens Downloads, and a swipe puts the card away until something changes.
+- Downloads can be paused, resumed and retried, and one from before the app was last closed fetched again. A row's menu opens the folder the file is in, copies the link and deletes the file with its row; the pulley opens the downloads folder and clears the finished ones.
 - A new cover: where you were -- the site and title of the tab in front -- over the app's bolt drawn as faint dots in the ambience's colour. While something downloads, a ring fills as it goes, with the percentage in it; while the tab in front plays, the cover shows what plays, with its cover art or the video's picture when the page gives one, and says whether it plays or is paused. With no tab open, the dotted bolt alone. Nothing on it moves, and the quick action and the mute stay along its foot.
 - Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
 - The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic; a reader who had it chosen gets the new look, and one who chose Light, Sepia or Dark keeps it.
@@ -18,6 +20,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
 
 ### Changed
+- Each download in Downloads wears a ring at its start, filled as far as it has come, with pause, play or retry in it, in place of the line along its foot, and the icon of its kind once it has arrived; failed ones say so in red, and one whose file has gone says "File not found". Removing a download still coming, or clearing the list, stops it.
 - Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
 - Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; and the cover's quick action six rows, each with the glyph it wears on the cover, under a picture of the cover wearing it.
 - Lines under settings that said their names again are gone; the ones left say what the name does not.
