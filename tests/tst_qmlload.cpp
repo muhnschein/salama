@@ -32,6 +32,7 @@
 #include <QSqlQuery>
 #include <QStyleHints>
 #include <QTemporaryDir>
+#include <QElapsedTimer>
 #include <QtTest>
 #include <algorithm>
 #include <utility>
@@ -5720,6 +5721,39 @@ void tst_qmlload::coverShowsWhatPlays()
     said.artwork =
         QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/art/logo.png")).toString();
     tabs->setMediaMetadata(front, said);
+    {
+        // DIAGNOSTIC (temporary): how the artwork load goes, sampled.
+        QElapsedTimer t;
+        t.start();
+        const auto dump = [&](const char *when) {
+            QObject *art = coverPart(coverItem, QStringLiteral("coverMediaArtwork"));
+            QObject *med = coverPart(coverItem, QStringLiteral("coverMedia"));
+            qWarning("DIAG %s t=%lld status=%d progress=%f source=%s sourceSize=%dx%d "
+                     "pictured=%d mediaVisible=%d frameVisible=%d coverView=%s state=%d "
+                     "artwork=%s running=%d",
+                     when, t.elapsed(), art->property("status").toInt(),
+                     art->property("progress").toReal(),
+                     qPrintable(art->property("source").toUrl().toString()),
+                     art->property("sourceSize").toSize().width(),
+                     art->property("sourceSize").toSize().height(),
+                     med->property("pictured").toBool(), med->property("visible").toBool(),
+                     shown(coverItem, QStringLiteral("coverMediaFrame")),
+                     qPrintable(coverView(coverItem)), int(tabs->mediaState(front)),
+                     qPrintable(tabs->activeMediaArtwork()),
+                     m_core->downloads()->runningCount());
+        };
+        dump("start");
+        while (!shown(coverItem, QStringLiteral("coverMediaFrame")) && t.elapsed() < 30000) {
+            QTest::qWait(50);
+            if (t.elapsed() > 4000 && t.elapsed() < 4100) {
+                dump("slow");
+            }
+        }
+        dump(shown(coverItem, QStringLiteral("coverMediaFrame")) ? "shown" : "never");
+        if (t.elapsed() > 1000) {
+            QFAIL("DIAG artwork took over a second");
+        }
+    }
     QTRY_VERIFY(shown(coverItem, QStringLiteral("coverMediaFrame")));
     QVERIFY(!shown(coverItem, QStringLiteral("coverMediaPlain")));
     QVERIFY(!shown(coverItem, QStringLiteral("coverHalftone")));
