@@ -31,6 +31,8 @@
 #include <QSet>
 #include <QSqlQuery>
 #include <QStyleHints>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <algorithm>
@@ -59,6 +61,63 @@ const char *const ChatSite = "https://chat.example";
 const char *const FirstPage = "https://www.qwant.com/";
 
 } // namespace
+
+// A site's OpenSearch descriptions, served from the loopback: what the page fetches with
+// XMLHttpRequest when an engine found while browsing is tapped. Anything not in `pages`
+// is a 404 with an HTML page, which is what a description's address often is by the time
+// someone taps it.
+class DescriptionServer : public QObject
+{
+public:
+    explicit DescriptionServer(QMap<QString, QByteArray> pages)
+        : m_pages(std::move(pages))
+    {
+        m_listening = m_server.listen(QHostAddress::LocalHost);
+        connect(&m_server, &QTcpServer::newConnection, this, [this]() { accept(); });
+    }
+
+    bool isListening() const
+    {
+        return m_listening;
+    }
+
+    QString url(const QString &path) const
+    {
+        return QStringLiteral("http://127.0.0.1:%1%2").arg(m_server.serverPort()).arg(path);
+    }
+
+    int requests() const
+    {
+        return m_requests;
+    }
+
+private:
+    void accept()
+    {
+        while (QTcpSocket *socket = m_server.nextPendingConnection()) {
+            connect(socket, &QTcpSocket::readyRead, this, [this, socket]() { answer(socket); });
+            connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
+        }
+    }
+
+    void answer(QTcpSocket *socket)
+    {
+        const QList<QByteArray> line = socket->readAll().split(' ');
+        ++m_requests;
+        const QString path = line.count() > 1 ? QString::fromLatin1(line.at(1)) : QString();
+        const bool found = m_pages.contains(path);
+        const QByteArray body = found ? m_pages.value(path) : QByteArray("<html>Not found</html>");
+        socket->write(QByteArray(found ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 404 Not Found\r\n") +
+                      "Content-Type: text/xml\r\nConnection: close\r\nContent-Length: " +
+                      QByteArray::number(body.size()) + "\r\n\r\n" + body);
+        socket->disconnectFromHost();
+    }
+
+    QTcpServer m_server;
+    QMap<QString, QByteArray> m_pages;
+    bool m_listening = false;
+    int m_requests = 0;
+};
 
 // Takes the addresses Qt.openUrlExternally is handed for one scheme, in place of the
 // platform, which a test has no business starting.
@@ -150,6 +209,9 @@ private slots:
     void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
+    void searchEnginesFound();
+    void searchEnginesAdd();
+    void searchEnginesRemove();
     void readerSettingsPage();
     void trackingSettingsPage();
     void historySettingsPage();
@@ -5042,16 +5104,28 @@ void tst_qmlload::searchSettingsPage()
         {QStringLiteral("omnibarHistorySwitch"), &SearchSettings::omnibarHistory},
         {QStringLiteral("omnibarDownloadsSwitch"), &SearchSettings::omnibarDownloads},
     };
+    // Each engine is a row, and the engines found while browsing are a section of their
+    // own, there and hidden while there are none; the pull-down menu, which would remove
+    // them, is hidden with nothing to remove.
     QStringList layout{QStringLiteral("#Search engine")};
     for (int i = 0; i < engines.count(); ++i) {
-        layout.append(QStringLiteral("searchEngineChoice"));
+        layout.append(QStringLiteral("searchEngineRow"));
     }
     layout += QStringList{
-        QStringLiteral("#Address bar suggestions"), QStringLiteral("omnibarTabsSwitch"),
-        QStringLiteral("omnibarBookmarksSwitch"),   QStringLiteral("omnibarHistorySwitch"),
-        QStringLiteral("omnibarDownloadsSwitch"),
+        QStringLiteral("foundSearchEngines"),   QStringLiteral("#Address bar suggestions"),
+        QStringLiteral("omnibarTabsSwitch"),    QStringLiteral("omnibarBookmarksSwitch"),
+        QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch"),
     };
-    QCOMPARE(columnOf(choices.first()), layout);
+    QCOMPARE(columnOf(findAll(QStringLiteral("searchEngineRow")).first()), layout);
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+    for (QObject *row : findAll(QStringLiteral("searchEngineRow"))) {
+        QVERIFY(findObjects(row, QStringLiteral("searchEngineChoice"))
+                    .first()
+                    ->property("description")
+                    .toString()
+                    .isEmpty());
+    }
     for (const auto &source : sources) {
         QObject *toggle = find(source.first);
         QVERIFY2(!toggle->property("text").toString().isEmpty(), qPrintable(source.first));
@@ -5067,6 +5141,234 @@ void tst_qmlload::searchSettingsPage()
         toggle->setProperty("checked", true);
         QVERIFY((settings->*source.second)());
     }
+}
+
+namespace {
+
+// What ContentLinkHandler.jsm sends for a page that has a search of its own: the title and
+// address of the description, and the page's own address.
+void offerSearch(QObject *view, const QString &title, const QString &href, const QString &page,
+                 const QString &name = QStringLiteral("Link:AddSearch"))
+{
+    const QVariantMap engine{{QStringLiteral("title"), title}, {QStringLiteral("href"), href}};
+    const QVariantMap data{{QStringLiteral("engine"), engine}, {QStringLiteral("url"), page}};
+    QMetaObject::invokeMethod(view, "recvAsyncMessage", Q_ARG(QString, name),
+                              Q_ARG(QVariant, data));
+}
+
+QStringList foundTitles(const SearchSettings *search)
+{
+    QStringList found;
+    for (const QVariant &entry : search->foundEngines()) {
+        found.append(entry.toMap().value(QStringLiteral("title")).toString());
+    }
+    return found;
+}
+
+// A site's descriptions: two that are, and an error page where a third should be.
+QMap<QString, QByteArray> descriptions()
+{
+    return {{QStringLiteral("/find.xml"),
+             QByteArray("<OpenSearchDescription><ShortName>Find</ShortName>"
+                        "<Url type=\"text/html\" template=\"https://find.example/search?q="
+                        "{searchTerms}\"/></OpenSearchDescription>")},
+            {QStringLiteral("/third.xml"),
+             QByteArray("<OpenSearchDescription><ShortName>Third</ShortName>"
+                        "<Url type=\"text/html\" template=\"https://third.example/?q="
+                        "{searchTerms}\"/></OpenSearchDescription>")},
+            {QStringLiteral("/broken.xml"), QByteArray("<html><body>Sign in")}};
+}
+
+QObject *choiceIn(QObject *row)
+{
+    return findObjects(row, QStringLiteral("searchEngineChoice")).first();
+}
+
+} // namespace
+
+// Search engines found while browsing (docs/DECISIONS/0041-search-engines-found.md): a
+// page that offers one is heard on every view and the offer kept, once, and only on the
+// message that says so; Settings > Search lists what is kept.
+void tst_qmlload::searchEnginesFound()
+{
+    SearchSettings *search = m_core->searchSettings();
+    QObject *view = currentWebView();
+    QVERIFY(view->property("messageListeners")
+                .toStringList()
+                .contains(QStringLiteral("Link:AddSearch")));
+
+    offerSearch(view, QStringLiteral("Find"), QStringLiteral("https://find.example/find.xml"),
+                QStringLiteral("https://www.find.example/page"));
+    offerSearch(view, QStringLiteral("Broken"), QStringLiteral("https://broken.example/o.xml"),
+                QStringLiteral("https://broken.example/"));
+    offerSearch(view, QStringLiteral("Find"), QStringLiteral("https://find.example/find.xml"),
+                QStringLiteral("https://www.find.example/other"));
+    offerSearch(view, QStringLiteral("Qwant"), QStringLiteral("https://qwant.example/o.xml"),
+                QStringLiteral("https://qwant.example/"));
+    offerSearch(view, QStringLiteral("Quiet"), QStringLiteral("https://quiet.example/o.xml"),
+                QStringLiteral("https://quiet.example/"), QStringLiteral("embed:find"));
+    QCOMPARE(foundTitles(search), (QStringList{QStringLiteral("Find"), QStringLiteral("Broken")}));
+    QCOMPARE(search->foundEngines().first().toMap().value(QStringLiteral("host")).toString(),
+             QStringLiteral("find.example"));
+    QCOMPARE(search->engineNames().count(), 3);
+
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
+
+    // A section of its own, with what to do with it, and a row each: the add icon, the
+    // name, and under it the site and what a tap does.
+    QVERIFY(find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QCOMPARE(find(QStringLiteral("foundSearchEnginesHint"))->property("text").toString(),
+             QStringLiteral("Sites can offer their search. Tap one to add it and search with it."));
+    QVERIFY(find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+    const QList<QObject *> found = findAll(QStringLiteral("foundSearchEngine"));
+    QCOMPARE(found.count(), 2);
+    QCOMPARE(textIn(found.first(), QStringLiteral("foundSearchEngineName")),
+             QStringLiteral("Find"));
+    QCOMPARE(textIn(found.first(), QStringLiteral("foundSearchEngineHost")),
+             QStringLiteral("find.example · Tap to add"));
+    QCOMPARE(findObjects(found.first(), QStringLiteral("foundSearchEngineIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-add"));
+    QCOMPARE(findAll(QStringLiteral("searchEngineRow")).count(), 3);
+
+    // Forgotten from its menu, which takes the section away with the last of them.
+    click(findObjects(found.last(), QStringLiteral("foundSearchEngineForget")).first());
+    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Find")});
+    QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
+    click(findObjects(findAll(QStringLiteral("foundSearchEngine")).first(),
+                      QStringLiteral("foundSearchEngineForget"))
+              .first());
+    QVERIFY(search->foundEngines().isEmpty());
+    QVERIFY(findAll(QStringLiteral("foundSearchEngine")).isEmpty());
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+}
+
+// A tap on an engine found fetches its description with the page's own XMLHttpRequest,
+// from a server on the loopback, and reads it: the engine is added, chosen, no longer on
+// offer, and said to be; or it is not, and stays.
+void tst_qmlload::searchEnginesAdd()
+{
+    SearchSettings *search = m_core->searchSettings();
+    QObject *view = currentWebView();
+    DescriptionServer server(descriptions());
+    QVERIFY(server.isListening());
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://www.find.example/page"));
+    offerSearch(view, QStringLiteral("Broken"), server.url(QStringLiteral("/broken.xml")),
+                QStringLiteral("https://broken.example/"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+
+    QObject *notice = find(QStringLiteral("searchEngineNotice"));
+    QCOMPARE(notice->property("shownCount").toInt(), 0);
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 1);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Find search added"));
+    QCOMPARE(server.requests(), 1);
+    QCOMPARE(search->engineNames().last(), QStringLiteral("Find"));
+    QCOMPARE(search->engineIndex(), 3);
+    QCOMPARE(search->searchUrl(QStringLiteral("a b")),
+             QStringLiteral("https://find.example/search?q=a%20b"));
+    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
+
+    // Listed with the others, built-in first, the site it came from under it, and lit as
+    // the one in use; the built-in ones have no such line.
+    const QList<QObject *> rows = findAll(QStringLiteral("searchEngineRow"));
+    QCOMPARE(rows.count(), 4);
+    QCOMPARE(choiceIn(rows.last())->property("text").toString(), QStringLiteral("Find"));
+    QCOMPARE(choiceIn(rows.last())->property("description").toString(),
+             QStringLiteral("Added from find.example"));
+    QVERIFY(choiceIn(rows.last())->property("checked").toBool());
+    QVERIFY(!choiceIn(rows.first())->property("checked").toBool());
+    QVERIFY(choiceIn(rows.first())->property("description").toString().isEmpty());
+
+    // One that is not a description is not added, and stays to be tried or forgotten.
+    const QList<QObject *> found = findAll(QStringLiteral("foundSearchEngine"));
+    click(found.first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 2);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Could not add Broken"));
+    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(search->engineNames().count(), 4);
+    QCOMPARE(search->engineIndex(), 3);
+
+    // A second tap while the first is on its way is not a second fetch.
+    const int requests = server.requests();
+    click(found.first());
+    click(found.first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 3);
+    QCOMPARE(server.requests(), requests + 1);
+    QTest::qWait(50);
+    QCOMPARE(notice->property("shownCount").toInt(), 3);
+}
+
+// An added engine is removed from a menu opened by pressing and holding it, or with every
+// other from the pull-down menu, after its remorse; the first built-in engine is the one
+// in use if the one removed was.
+void tst_qmlload::searchEnginesRemove()
+{
+    SearchSettings *search = m_core->searchSettings();
+    QObject *view = currentWebView();
+    DescriptionServer server(descriptions());
+    QVERIFY(server.isListening());
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://find.example/"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(search->addedCount(), 1);
+    QObject *remove = find(QStringLiteral("removeAddedEnginesMenu"));
+    QVERIFY(remove->property("visible").toBool());
+
+    // A built-in engine has no menu to open, an added one has.
+    QList<QObject *> rows = findAll(QStringLiteral("searchEngineRow"));
+    QMetaObject::invokeMethod(choiceIn(rows.first()), "pressAndHold");
+    QVERIFY(!rows.first()->property("menuOpen").toBool());
+    QMetaObject::invokeMethod(choiceIn(rows.last()), "pressAndHold");
+    QVERIFY(rows.last()->property("menuOpen").toBool());
+    click(findObjects(rows.last(), QStringLiteral("searchEngineRemove")).first());
+    QCOMPARE(search->engineNames().count(), 3);
+    QCOMPARE(search->engineIndex(), 0);
+    rows = findAll(QStringLiteral("searchEngineRow"));
+    QCOMPARE(rows.count(), 3);
+    QVERIFY(choiceIn(rows.first())->property("checked").toBool());
+    QVERIFY(!remove->property("visible").toBool());
+
+    // What was added and what was found, gone together.
+    offerSearch(view, QStringLiteral("Third"), server.url(QStringLiteral("/third.xml")),
+                QStringLiteral("https://third.example/"));
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://find.example/"));
+    QVERIFY(remove->property("visible").toBool());
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(search->addedCount(), 1);
+    QCOMPARE(search->engineNames().last(), QStringLiteral("Third"));
+    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Find")});
+    const int remorses = evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt();
+    click(remove);
+    QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt(), remorses + 1);
+    QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Removing added search engines"));
+    QCOMPARE(search->engineNames().count(), 3);
+    QVERIFY(search->foundEngines().isEmpty());
+    QCOMPARE(search->engineIndex(), 0);
+    QVERIFY(!remove->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+
+    // The main page's line follows the engine in use, an added one as any.
+    offerSearch(view, QStringLiteral("Third"), server.url(QStringLiteral("/third.xml")),
+                QStringLiteral("https://third.example/"));
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(search->engineNames().last(), QStringLiteral("Third"));
+    popPage();
+    QCOMPARE(
+        textIn(find(QStringLiteral("searchSettingsEntry")), QStringLiteral("settingsEntryValue")),
+        QStringLiteral("Third"));
 }
 
 // The reader view's look: each colour a square painted as the reader view will be and

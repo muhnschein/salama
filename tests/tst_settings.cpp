@@ -884,7 +884,9 @@ void tst_settings::isSearchUrl()
 {
     QFETCH(QString, url);
     QFETCH(bool, search);
-    QCOMPARE(SearchSettings::isSearchUrl(url), search);
+    QTemporaryDir dir;
+    Sections settings(dir.path() + QStringLiteral("/salama.conf"));
+    QCOMPARE(settings.search()->isSearchUrl(url), search);
 }
 
 // sailfish-browser's three notch guard modes, stored as chosen; one out of range is

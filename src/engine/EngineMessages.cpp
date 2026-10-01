@@ -4,6 +4,7 @@
 
 #include "EngineData.h"
 #include "settings/PrivacySettings.h"
+#include "settings/SearchSettings.h"
 #include "settings/Settings.h"
 
 #include <QColor>
@@ -216,6 +217,28 @@ QString EngineMessages::findMessage() const
 QString EngineMessages::findResultMessage() const
 {
     return QStringLiteral("embed:find");
+}
+
+QString EngineMessages::searchOfferedMessage() const
+{
+    return QStringLiteral("Link:AddSearch");
+}
+
+QVariantMap EngineMessages::searchOffered(const QVariant &data)
+{
+    const QVariantMap message = data.toMap();
+    const QVariantMap engine = message.value(QStringLiteral("engine")).toMap();
+    const QString href = engine.value(QStringLiteral("href")).toString();
+    // The page's host rather than the description's: a site may keep its descriptions on
+    // another, and it is the page that was being read.
+    const QUrl page(message.value(QStringLiteral("url")).toString(), QUrl::TolerantMode);
+    const QString host =
+        SearchSettings::displayAddress(page.host().isEmpty() ? href : page.toString());
+    return {
+        {QStringLiteral("title"), engine.value(QStringLiteral("title")).toString()},
+        {QStringLiteral("href"), href},
+        {QStringLiteral("host"), host},
+    };
 }
 
 QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool backwards) const

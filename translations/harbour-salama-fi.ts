@@ -424,6 +424,19 @@
     </message>
 </context>
 <context>
+    <name>FoundSearchEngine</name>
+    <message>
+        <source>Forget</source>
+        <extracomment>Drops an offered search engine from the list, without adding it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · Tap to add</source>
+        <extracomment>Under an offered search engine: the site that offered it. %1 is its host</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HistoryDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -748,6 +761,25 @@
     </message>
 </context>
 <context>
+    <name>SearchEngineChoice</name>
+    <message>
+        <source>Remove</source>
+        <extracomment>Takes an engine that was added while browsing out of the list</extracomment>
+        <translation type="unfinished">Poista</translation>
+    </message>
+</context>
+<context>
+    <name>SearchEngineInstaller</name>
+    <message>
+        <source>%1 search added</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not add %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SearchSettingsPage</name>
     <message>
         <source>Search</source>
@@ -776,6 +808,27 @@
     <message>
         <source>Downloads</source>
         <translation>Lataukset</translation>
+    </message>
+    <message>
+        <source>Remove added search engines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing added search engines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Added from %1</source>
+        <extracomment>Under a search engine that was added while browsing. %1 is the site that offered it</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Found while browsing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sites can offer their search. Tap one to add it and search with it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

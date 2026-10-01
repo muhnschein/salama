@@ -26,6 +26,7 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString viewportScript READ viewportScript CONSTANT)
     Q_PROPERTY(QString findMessage READ findMessage CONSTANT)
     Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
+    Q_PROPERTY(QString searchOfferedMessage READ searchOfferedMessage CONSTANT)
 
 public:
     explicit EngineMessages(QObject *parent = nullptr);
@@ -91,6 +92,21 @@ public:
     // one Finder per page.
     QString findMessage() const;
     QString findResultMessage() const;
+
+    // A page that says it has a search of its own: <link rel="search"
+    // type="application/opensearchdescription+xml">, which embedlite-components'
+    // jsscripts/ContentLinkHandler.jsm tells the application of with this message, once
+    // for each document and only for a link with a title and an http, https or ftp
+    // address. sailfish-browser registers it with addMessageListener and adds the
+    // engine to its list as it arrives (apps/qtmozembed/declarativewebpage.cpp,
+    // apps/shared/WebView.qml).
+    QString searchOfferedMessage() const;
+
+    // What the message says, as {title, href, host}: the title the page gave the search,
+    // the address of its OpenSearch description, and the host of the page that offered it.
+    // The message is {engine: {title, href}, url: the page's address}. All three are
+    // there, and empty, for a message that says nothing of the kind.
+    Q_INVOKABLE static QVariantMap searchOffered(const QVariant &data);
 
     // What to send for a search: the text; whether to go on to the next match of it
     // rather than start over; and which way. An empty text is the message that ends

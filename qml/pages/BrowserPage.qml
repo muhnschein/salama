@@ -538,6 +538,8 @@ WebViewPage {
             property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
             // Whether it asked for the screen's cutout (docs/DECISIONS/0043-notch-guard-modes.md).
             property PageViewport viewport: PageViewport { view: webView }
+            // The searches the page offers, kept for Settings > Search (docs/DECISIONS/0041-search-engines-found.md).
+            property PageSearchLink searches: PageSearchLink { view: webView }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

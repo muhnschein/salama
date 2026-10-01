@@ -26,9 +26,10 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-StartPage::StartPage(const Storage &storage, QObject *parent)
+StartPage::StartPage(const Storage &storage, const SearchSettings &search, QObject *parent)
     : QObject(parent)
     , m_db(storage.database())
+    , m_search(search)
 {
     refresh();
 }
@@ -88,7 +89,7 @@ QList<Site> StartPage::readHistory(const QString &order, int limit, bool onePerS
     QSet<QString> seen;
     while (sites.count() < limit && query.next()) {
         const Site site = siteAt(query);
-        if (SearchSettings::isSearchUrl(site.url)) {
+        if (m_search.isSearchUrl(site.url)) {
             continue;
         }
         if (onePerSite) {
