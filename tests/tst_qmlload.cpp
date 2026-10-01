@@ -162,6 +162,7 @@ private slots:
     void cleanup();
 
     void rootWindowLoads();
+    void startsQuiet();
     void firstStartShowsTheStartPage();
     void startPage();
     void addressBarNavigates();
@@ -287,10 +288,20 @@ void tst_qmlload::init()
     // restored with one tab does. A first start opens the start page instead
     // (firstStartShowsTheStartPage()), with the tutorial over it (tutorialOnFirstStart()),
     // which the rest have seen.
+    // Opening it brings a tab to the front, and a moment later PageMedia asks the pages
+    // what they play. That question is let through and answered here, before the test:
+    // left pending, it came due in whichever test was slow enough to reach it, and the
+    // stub page's answer -- nothing plays -- undid what the test had set playing.
+    QSignalSpy pagesAsked(m_core->pageMedia(), &Salama::PageMedia::requested);
     m_core->tabs()->newTab(QLatin1String(FirstPage));
     m_core->settings()->setTutorialShown(true);
     QVERIFY(loadWindow());
     forgetStartupMessages();
+    QTRY_VERIFY(!pagesAsked.isEmpty());
+    QObject *view = currentWebView();
+    view->setProperty("scripts", QStringList());
+    view->setProperty("lastScript", QString());
+    view->setProperty("activeWhenRun", QVariantList());
 }
 
 // What the browser tells the engine as it starts -- it asks for the sites allowed to
@@ -583,6 +594,25 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("qwant.com"));
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
+}
+
+// A test starts with nothing of the start still to come, however slowly it then runs: a
+// runner that took longer than PageMedia's delay before setting something playing saw
+// the pages asked anyway, and the stub page's answer put the tab back to nothing playing
+// (coverShowsWhatPlays() and mediaControls() failed on CI that way).
+void tst_qmlload::startsQuiet()
+{
+    Salama::PageMedia *media = m_core->pageMedia();
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    // As a loaded runner would: nothing is handled for longer than the delay.
+    QTest::qSleep(media->queryDelay() * 2);
+    tabs->setMediaState(front, TabModel::MediaPlaying);
+    QSignalSpy asked(media, &Salama::PageMedia::requested);
+    QTest::qWait(media->queryDelay() * 2);
+    QVERIFY(asked.isEmpty());
+    QCOMPARE(tabs->mediaState(front), TabModel::MediaPlaying);
+    QVERIFY(currentWebView()->property("scripts").toStringList().isEmpty());
 }
 
 // A first start opens one tab, on the start page: no view, no visit, and a bar that
