@@ -4204,13 +4204,16 @@ void tst_qmlload::downloadBar()
     const auto send = [this, scope](const QString &message) {
         evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
     };
-    const auto start = [send](int id, const QString &name) {
+    // Files go to a folder of the test's own, where one can be made to have arrived.
+    const QString folder = m_dir->path();
+    const auto start = [send, folder](int id, const QString &name) {
         send(QStringLiteral("{msg: 'dl-start', id: %1, displayName: '%2',"
-                            " sourceUrl: 'https://files.example/%2', targetPath: '/tmp/%2',"
+                            " sourceUrl: 'https://files.example/%2', targetPath: '%3/%2',"
                             " mimeType: 'application/pdf', size: 2048}")
                  .arg(id)
-                 .arg(name));
+                 .arg(name, folder));
     };
+    const QString b = folder + QStringLiteral("/b.pdf");
     QObject *bar = find(QStringLiteral("downloadBar"));
     const auto shown = [bar]() { return bar->property("enabled").toBool(); };
     const auto text = [bar](const char *name) {
@@ -4261,24 +4264,23 @@ void tst_qmlload::downloadBar()
 
     // Arrived, it is back to say so, with Open, for a while.
     const UrlCatcher files(QStringLiteral("file"));
-    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '/tmp/b.pdf'}"));
+    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '%1'}").arg(b));
     QVERIFY(shown());
     QCOMPARE(text("downloadBarStatus"), QStringLiteral("Downloaded"));
     // Open is offered only for a file that is there.
     QCOMPARE(bar->property("action").toString(), QStringLiteral("close"));
-    QFile b(QStringLiteral("/tmp/b.pdf"));
-    QVERIFY(b.open(QIODevice::WriteOnly));
-    b.close();
-    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '/tmp/b.pdf'}"));
+    QFile file(b);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.close();
+    send(QStringLiteral("{msg: 'dl-done', id: 2, targetPath: '%1'}").arg(b));
     send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 60}"));
     QCOMPARE(bar->property("action").toString(), QStringLiteral("open"));
     QCOMPARE(text("downloadBarActionLabel"), QStringLiteral("Open"));
     QVERIFY(timer->property("running").toBool());
     QCOMPARE(timer->property("interval").toInt(), 5000);
     click(action);
-    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(QStringLiteral("/tmp/b.pdf"))});
+    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(b)});
     QVERIFY(!shown());
-    QVERIFY(QFile::remove(QStringLiteral("/tmp/b.pdf")));
 
     // How one it does not name ends is not its to say.
     send(QStringLiteral("{msg: 'dl-fail', id: 1}"));

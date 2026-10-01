@@ -789,8 +789,7 @@ void tst_downloadmodel::clear()
     // nothing to stop it by.
     model.clearEnded();
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(),
-             QStringLiteral("c.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("c.pdf"));
     QCOMPARE(countSpy.count(), 4);
     QCOMPARE(rowsInDatabase(storage), 1);
     // Nothing more to take: nothing said.

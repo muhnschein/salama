@@ -114,7 +114,7 @@ QString kindOfExtension(const QString &name)
 QString kindOfType(const QString &mimeType)
 {
     const QString type = mimeType.toLower();
-    const QString major = type.section(QLatin1Char('/'), 0, 0);
+    QString major = type.section(QLatin1Char('/'), 0, 0);
     if (type == QLatin1String("application/pdf")) {
         return QStringLiteral("pdf");
     }
