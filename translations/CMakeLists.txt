@@ -7,11 +7,10 @@ if(NOT LRELEASE_EXECUTABLE)
     message(FATAL_ERROR "lrelease not found; install qt5-qttools-linguist")
 endif()
 
-set(TS_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama.ts
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-fi.ts
-    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-sv.ts
-)
+# Every catalog in this directory: harbour-salama.ts, the English source catalog, which
+# compiles to the fallback a language without its own is served, and one
+# harbour-salama-<lang>.ts per language. A new language is a new file, not a new line here.
+file(GLOB TS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama*.ts)
 
 set(QM_FILES)
 foreach(ts ${TS_FILES})

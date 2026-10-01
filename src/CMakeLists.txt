@@ -5,6 +5,8 @@ add_library(salama-core STATIC
     ModelRoles.h
     QmlTypes.cpp
     QmlTypes.h
+    Translations.cpp
+    Translations.h
     bookmarks/BookmarkModel.cpp
     bookmarks/BookmarkModel.h
     downloads/DownloadModel.cpp

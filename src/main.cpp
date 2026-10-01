@@ -2,12 +2,12 @@
 // Copyright (c) 2026 salama contributors
 #include "Core.h"
 #include "QmlTypes.h"
+#include "Translations.h"
 
 #include <QGuiApplication>
 #include <QLocale>
 #include <QQuickView>
 #include <QScopedPointer>
-#include <QTranslator>
 #include <sailfishapp.h>
 
 // Exported so the Silica booster can dlopen() the binary and call main().
@@ -16,13 +16,8 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
     QGuiApplication::setApplicationVersion(QStringLiteral(SALAMA_VERSION));
 
-    QTranslator translator;
-    const QString translationDir =
-        SailfishApp::pathTo(QStringLiteral("translations")).toLocalFile();
-    if (translator.load(QLocale(), QStringLiteral("harbour-salama"), QStringLiteral("-"),
-                        translationDir)) {
-        QGuiApplication::installTranslator(&translator);
-    }
+    Salama::installTranslations(app.data(), QLocale(),
+                                SailfishApp::pathTo(QStringLiteral("translations")).toLocalFile());
 
     Salama::Core core(Salama::Storage::defaultDataDirectory(),
                       Salama::Storage::defaultConfigFilePath(),

@@ -54,17 +54,23 @@ if have shellcheck; then
     shellcheck --severity=style "${scripts[@]}" || fail shellcheck ci/ "shellcheck reported findings"
 fi
 
-# 4. Translations compile and are current
+# 4. Translations compile cleanly and are current
 TS_SOURCE=$ROOT/translations/harbour-salama.ts
 sources_of() { # catalogue
     local ts=$1
     grep -o '<source>[^<]*</source>' "$ts" | sort -u
     return 0
 }
+# Compiled as the RPM compiles them, and every warning counts: a plural form too few or a
+# stray tag is a warning to lrelease and a string in English on the phone.
 if have lrelease; then
     tmp=$(mktemp -d)
     for ts in "$ROOT"/translations/*.ts; do
-        lrelease -silent "$ts" -qm "$tmp/$(basename "${ts%.ts}").qm" || fail translations "translations/$(basename "$ts")" "lrelease failed"
+        if ! out=$(lrelease -silent "$ts" -qm "$tmp/$(basename "${ts%.ts}").qm" 2>&1); then
+            fail translations "translations/$(basename "$ts")" "lrelease failed: $out"
+        elif grep -qi warning <<<"$out"; then
+            fail translations "translations/$(basename "$ts")" "lrelease warns: $out"
+        fi
     done
     rm -rf "$tmp"
 fi
@@ -72,13 +78,20 @@ for ts in "$ROOT"/translations/*.ts; do
     [[ $ts == "$TS_SOURCE" ]] && continue
     diff -q <(sources_of "$TS_SOURCE") <(sources_of "$ts") >/dev/null || fail translations "translations/$(basename "$ts")" "source strings differ from harbour-salama.ts; run 'make translations'"
 done
+# Current: regenerated from the source as `make translations` regenerates them, every
+# catalog comes out exactly as committed. A qsTr() added without that is a string missing
+# from forty languages, invisible until someone reads the app in one of them.
 if have lupdate; then
     tmp=$(mktemp -d)
-    cp "$TS_SOURCE" "$tmp/current.ts"
-    # As `make translations` runs it: the application's own sources, not the page scripts
-    # src/reader/reader.qrc compiles in.
-    (cd "$ROOT" && lupdate -silent -no-obsolete -locations none -extensions cpp,h,qml qml src -ts "$tmp/current.ts")
-    diff -q <(sources_of "$TS_SOURCE") <(sources_of "$tmp/current.ts") >/dev/null || fail translations translations/harbour-salama.ts "catalog is stale; run 'make translations' and commit"
+    cp "$ROOT"/translations/*.ts "$tmp/"
+    # The application's own sources, not the page scripts src/reader/reader.qrc compiles in.
+    if (cd "$ROOT" && lupdate -silent -no-obsolete -locations none -extensions cpp,h,qml qml src -ts "$tmp"/*.ts >/dev/null 2>&1); then
+        for ts in "$ROOT"/translations/*.ts; do
+            cmp -s "$ts" "$tmp/$(basename "$ts")" || fail translations "translations/$(basename "$ts")" "catalog is stale; run 'make translations' and commit"
+        done
+    else
+        fail translations translations/ "lupdate failed"
+    fi
     rm -rf "$tmp"
 fi
 

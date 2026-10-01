@@ -63,9 +63,14 @@ foreach(test
     tst_core
     tst_qmlload
     tst_qmlstatic
+    tst_translations
 )
     salama_add_test(${test})
 endforeach()
 # The load tests serve OpenSearch descriptions from the loopback (tst_qmlload.cpp).
 target_link_libraries(tst_qmlload PRIVATE Qt5::Network)
 add_dependencies(tst_qmlload silicastubsplugin)
+# The catalogs as the RPM installs them, compiled by translations/CMakeLists.txt.
+target_compile_definitions(tst_translations PRIVATE
+    SALAMA_TRANSLATIONS_DIR="${CMAKE_BINARY_DIR}/translations")
+add_dependencies(tst_translations translations)

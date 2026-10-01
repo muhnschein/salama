@@ -9,7 +9,7 @@ CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DSALAMA_COVERAGE=ON
 COVERAGE_MIN ?= 80
 
 CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
-TS_FILES := translations/harbour-salama.ts translations/harbour-salama-fi.ts translations/harbour-salama-sv.ts
+TS_FILES := $(sort $(wildcard translations/harbour-salama*.ts))
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
         harbour-check harbour-selftest sonar-selftest sonar-reports lint check \
@@ -89,6 +89,17 @@ check: lint build test coverage tidy
 # into Mozilla's Readability, which has no strings of ours and syntax its parser rejects.
 LUPDATE_EXTENSIONS := cpp,h,qml
 
+# Regenerates every catalog from the source in one run, so a string added to the source shows
+# up unfinished in every language at once. To add a language, write its header to
+# translations/harbour-salama-<lang>.ts and run this; lupdate fills in every string, with as
+# many plural forms as the language has:
+#
+#     <?xml version="1.0" encoding="utf-8"?>
+#     <!DOCTYPE TS>
+#     <TS version="2.1" language="<lang>"></TS>
+#
+# <lang> is what QTranslator matches against the reader's locale: `de` serves every German
+# locale, `pt_BR` only Brazil's. docs/TRANSLATING.md says how a catalog is filled.
 translations:
 	lupdate -no-obsolete -locations none -extensions $(LUPDATE_EXTENSIONS) qml src -ts $(TS_FILES)
 

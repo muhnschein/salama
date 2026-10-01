@@ -20,7 +20,7 @@ Harbour rule. Host Qt is 5.15 while the device has Qt 5.6: the static QML tests 
 |---|---|---|
 | `fmt` | clang-format, `.clang-format` | any drift (`make fmt-apply` fixes) |
 | `qml-lint` | `ci/qml-lint.sh` | qmllint, console calls, pixel counts, Qt 5.6 syntax, untranslated strings, >400 lines |
-| `packaging-lint` | `ci/packaging-lint.sh` | spec, desktop entry, shellcheck, translations compile and current, docs references |
+| `packaging-lint` | `ci/packaging-lint.sh` | spec, desktop entry, shellcheck, translations compile without a warning and are current, docs references |
 | `harbour-check` | `ci/harbour-check.sh` | any Harbour rule not waived |
 | `harbour-selftest` | `ci/harbour-check-selftest.sh` | the checker missing a broken rule |
 | `build` | CMake, `-Wall -Wextra -Wpedantic -Werror` | warnings |
@@ -39,7 +39,8 @@ Missing tools are SKIP locally and failures in CI (`PACKAGING_LINT_STRICT=1`).
 3. Static QML tests (`tests/tst_qmlstatic.cpp`): `Sailfish.WebView` only where §5 allows,
    every `model.<role>` bound by a delegate exists on its model, every singleton member
    referenced exists in C++.
-4. Packaging checks (`ci/packaging-lint.sh`).
+4. Packaging checks (`ci/packaging-lint.sh`), and the catalogs' completeness
+   (`tests/tst_translations.cpp`, `docs/TRANSLATING.md`).
 5. Device smoke test (`TESTING.md`).
 
 ## Coverage
