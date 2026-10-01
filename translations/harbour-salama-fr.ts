@@ -582,17 +582,17 @@
     <message>
         <source>Open image</source>
         <extracomment>The link sheet&apos;s action: the picture alone, in a new tab</extracomment>
-        <translation>Ouvrir l'image</translation>
+        <translation>Ouvrir l&apos;image</translation>
     </message>
     <message>
         <source>Save image</source>
         <extracomment>The link sheet&apos;s action: the picture, downloaded</extracomment>
-        <translation>Enregistrer l'image</translation>
+        <translation>Enregistrer l&apos;image</translation>
     </message>
     <message>
         <source>Copy image link</source>
         <extracomment>The link sheet&apos;s action: the picture&apos;s address, put on the clipboard</extracomment>
-        <translation>Copier le lien de l'image</translation>
+        <translation>Copier le lien de l&apos;image</translation>
     </message>
 </context>
 <context>
@@ -630,7 +630,7 @@
     <message>
         <source>Image link copied</source>
         <extracomment>Shown for a moment once the link sheet has put a picture&apos;s address on the clipboard</extracomment>
-        <translation>Lien de l'image copié</translation>
+        <translation>Lien de l&apos;image copié</translation>
     </message>
 </context>
 <context>
@@ -638,12 +638,12 @@
     <message>
         <source>Hide preview</source>
         <extracomment>The row over a link&apos;s preview, which hides it for every link</extracomment>
-        <translation>Masquer l'aperçu</translation>
+        <translation>Masquer l&apos;aperçu</translation>
     </message>
     <message>
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
-        <translation>Afficher l'aperçu</translation>
+        <translation>Afficher l&apos;aperçu</translation>
     </message>
 </context>
 <context>
