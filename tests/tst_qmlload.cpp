@@ -32,7 +32,6 @@
 #include <QSqlQuery>
 #include <QStyleHints>
 #include <QTemporaryDir>
-#include <QElapsedTimer>
 #include <QtTest>
 #include <algorithm>
 #include <utility>
@@ -102,6 +101,7 @@ private slots:
     void cleanup();
 
     void rootWindowLoads();
+    void startsQuiet();
     void firstStartShowsTheStartPage();
     void startPage();
     void addressBarNavigates();
@@ -216,38 +216,20 @@ void tst_qmlload::init()
     // restored with one tab does. A first start opens the start page instead
     // (firstStartShowsTheStartPage()), with the tutorial over it (tutorialOnFirstStart()),
     // which the rest have seen.
+    // Opening it brings a tab to the front, and a moment later PageMedia asks the pages
+    // what they play. That question is let through and answered here, before the test:
+    // left pending, it came due in whichever test was slow enough to reach it, and the
+    // stub page's answer -- nothing plays -- undid what the test had set playing.
+    QSignalSpy pagesAsked(m_core->pageMedia(), &Salama::PageMedia::requested);
     m_core->tabs()->newTab(QLatin1String(FirstPage));
     m_core->settings()->setTutorialShown(true);
     QVERIFY(loadWindow());
     forgetStartupMessages();
-    // DIAGNOSTIC (temporary)
-    static QElapsedTimer clock;
-    if (!clock.isValid()) {
-        clock.start();
-    }
-    qWarning("DIAG2 init t=%lld appState=%d background=%d", clock.elapsed(),
-             int(QGuiApplication::applicationState()), m_core->pageActivity()->background());
-    connect(qApp, &QGuiApplication::applicationStateChanged, m_core.data(),
-            [](Qt::ApplicationState st) {
-                qWarning("DIAG2 appStateChanged t=%lld state=%d focus=%s", clock.elapsed(), int(st),
-                         QGuiApplication::focusWindow()
-                             ? QGuiApplication::focusWindow()->metaObject()->className()
-                             : "none");
-            });
-    Core *core = m_core.data();
-    connect(core->pageActivity(), &Salama::PageActivity::backgroundChanged, core, [core]() {
-        qWarning("DIAG2 backgroundChanged t=%lld bg=%d", clock.elapsed(),
-                 core->pageActivity()->background());
-    });
-    connect(core->pageActivity(), &Salama::PageActivity::playStateChanged, core,
-            []() { qWarning("DIAG2 playStateChanged t=%lld", clock.elapsed()); });
-    connect(core->pageMedia(), &Salama::PageMedia::requested, core, [](int tab, int cmd) {
-        qWarning("DIAG2 requested t=%lld tab=%d cmd=%d", clock.elapsed(), tab, cmd);
-    });
-    connect(core->tabs(), &TabModel::activeMediaChanged, core, [core]() {
-        qWarning("DIAG2 activeMediaChanged t=%lld state=%d", clock.elapsed(),
-                 int(core->tabs()->mediaState(core->tabs()->activeTabId())));
-    });
+    QTRY_VERIFY(!pagesAsked.isEmpty());
+    QObject *view = currentWebView();
+    view->setProperty("scripts", QStringList());
+    view->setProperty("lastScript", QString());
+    view->setProperty("activeWhenRun", QVariantList());
 }
 
 // What the browser tells the engine as it starts -- it asks for the sites allowed to
@@ -531,6 +513,25 @@ void tst_qmlload::rootWindowLoads()
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("qwant.com"));
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
+}
+
+// A test starts with nothing of the start still to come, however slowly it then runs: a
+// runner that took longer than PageMedia's delay before setting something playing saw
+// the pages asked anyway, and the stub page's answer put the tab back to nothing playing
+// (coverShowsWhatPlays() and mediaControls() failed on CI that way).
+void tst_qmlload::startsQuiet()
+{
+    Salama::PageMedia *media = m_core->pageMedia();
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    // As a loaded runner would: nothing is handled for longer than the delay.
+    QTest::qSleep(media->queryDelay() * 2);
+    tabs->setMediaState(front, TabModel::MediaPlaying);
+    QSignalSpy asked(media, &Salama::PageMedia::requested);
+    QTest::qWait(media->queryDelay() * 2);
+    QVERIFY(asked.isEmpty());
+    QCOMPARE(tabs->mediaState(front), TabModel::MediaPlaying);
+    QVERIFY(currentWebView()->property("scripts").toStringList().isEmpty());
 }
 
 // A first start opens one tab, on the start page: no view, no visit, and a bar that
@@ -5749,39 +5750,6 @@ void tst_qmlload::coverShowsWhatPlays()
     said.artwork =
         QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/art/logo.png")).toString();
     tabs->setMediaMetadata(front, said);
-    {
-        // DIAGNOSTIC (temporary): how the artwork load goes, sampled.
-        QElapsedTimer t;
-        t.start();
-        const auto dump = [&](const char *when) {
-            QObject *art = coverPart(coverItem, QStringLiteral("coverMediaArtwork"));
-            QObject *med = coverPart(coverItem, QStringLiteral("coverMedia"));
-            qWarning("DIAG %s t=%lld status=%d progress=%f source=%s sourceSize=%dx%d "
-                     "pictured=%d mediaVisible=%d frameVisible=%d coverView=%s state=%d "
-                     "artwork=%s running=%d",
-                     when, t.elapsed(), art->property("status").toInt(),
-                     art->property("progress").toReal(),
-                     qPrintable(art->property("source").toUrl().toString()),
-                     art->property("sourceSize").toSize().width(),
-                     art->property("sourceSize").toSize().height(),
-                     med->property("pictured").toBool(), med->property("visible").toBool(),
-                     shown(coverItem, QStringLiteral("coverMediaFrame")),
-                     qPrintable(coverView(coverItem)), int(tabs->mediaState(front)),
-                     qPrintable(tabs->activeMediaArtwork()),
-                     m_core->downloads()->runningCount());
-        };
-        dump("start");
-        while (!shown(coverItem, QStringLiteral("coverMediaFrame")) && t.elapsed() < 30000) {
-            QTest::qWait(50);
-            if (t.elapsed() > 4000 && t.elapsed() < 4100) {
-                dump("slow");
-            }
-        }
-        dump(shown(coverItem, QStringLiteral("coverMediaFrame")) ? "shown" : "never");
-        if (t.elapsed() > 1000) {
-            QFAIL("DIAG artwork took over a second");
-        }
-    }
     QTRY_VERIFY(shown(coverItem, QStringLiteral("coverMediaFrame")));
     QVERIFY(!shown(coverItem, QStringLiteral("coverMediaPlain")));
     QVERIFY(!shown(coverItem, QStringLiteral("coverHalftone")));
