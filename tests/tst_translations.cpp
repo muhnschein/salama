@@ -235,10 +235,13 @@ void tst_translations::readersLanguageIsInstalled_data()
 
     QTest::newRow("a language's own") << QStringLiteral("fi_FI") << QStringLiteral("fi");
     QTest::newRow("any country of it") << QStringLiteral("de_AT") << QStringLiteral("de");
-    // Brazil's catalog, not Portugal's, though both are Portuguese.
-    QTest::newRow("a country's own") << QStringLiteral("pt_BR") << QStringLiteral("pt_BR");
+    // Taiwan's catalog, not Hong Kong's, though both are Traditional Chinese. Brazil's
+    // cannot be a row: a QLocale made from "pt_BR" names plain "pt" first, Portuguese
+    // being Brazil's by Qt's likely subtags, where the phone's own locale -- read from
+    // LANG, as main() gets it -- names "pt-BR" first.
+    QTest::newRow("a country's own") << QStringLiteral("zh_TW") << QStringLiteral("zh_TW");
+    QTest::newRow("another country's") << QStringLiteral("zh_HK") << QStringLiteral("zh_HK");
     QTest::newRow("Portugal's") << QStringLiteral("pt_PT") << QStringLiteral("pt");
-    QTest::newRow("Hong Kong's") << QStringLiteral("zh_HK") << QStringLiteral("zh_HK");
 }
 
 void tst_translations::readersLanguageIsInstalled()
