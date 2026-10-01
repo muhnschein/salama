@@ -52,6 +52,7 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   reader/      Reader: the reader view, and Firefox's style sheet for it
   notifications/
                NotificationPermissions, WebNotifications: the pages' notifications
+  share/       ShareReceiver: links shared to the browser from the share sheet
 third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
@@ -74,6 +75,7 @@ Reuse policy:
 - Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
 - Address bar (URL/search), configurable search engine, with suggestions from the open tabs, bookmarks, history and downloads as it is typed into
 - Back, forward, reload, stop, share (`Sailfish.Share`)
+- A target in the share sheet for links alone, opening them in a new tab (`docs/DECISIONS/0042-share-target.md`)
 - History and bookmarks (SQLite) with management UI
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page

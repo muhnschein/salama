@@ -791,7 +791,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Pages are drawn light or dark as the ambience is
+        <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>Automaattinen</translation>
@@ -947,16 +947,27 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
         <translation>Ei pikatoimintoa</translation>
     </message>
+    <message>
+        <source>Match ambience</source>
+        <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
+        <translation>Ambienssin mukaan</translation>
+    </message>
+    <message>
+        <source>Forced</source>
+        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
+        <translation>Pakotettu</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
+        <translation>Pois käytöstä</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
         <translation>Asetukset</translation>
-    </message>
-    <message>
-        <source>Avoid the screen cutout</source>
-        <translation>Vältä näytön lovea</translation>
     </message>
     <message>
         <source>Cover</source>
@@ -1003,12 +1014,52 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Selaus</translation>
     </message>
     <message>
-        <source>Website colours</source>
-        <translation>Sivustojen värit</translation>
-    </message>
-    <message>
         <source>Tracking protection</source>
         <translation>Seurannan esto</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>Ensisijainen värimaailma</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>Sivuston tyyli, jota käytetään, kun sellainen on</translation>
+    </message>
+    <message>
+        <source>Notch guard</source>
+        <translation>Loven suoja</translation>
+    </message>
+    <message>
+        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
+        <translation>Pitää sivuston sisällön poissa näytön loven alta. Automaattinen antaa siihen sovitettujen sivustojen käyttää loven aluetta ja pitää sisällön silti näkyvissä.</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>Kiinteä työkalupalkki</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>Näytä alapalkki aina</translation>
+    </message>
+    <message>
+        <source>Do not track</source>
+        <translation>Älä seuraa</translation>
+    </message>
+    <message>
+        <source>Tell sites that I do not want to be tracked</source>
+        <translation>Kerro sivustoille, etten halua tulla seuratuksi</translation>
+    </message>
+    <message>
+        <source>Enable JavaScript</source>
+        <translation>Ota JavaScript käyttöön</translation>
+    </message>
+    <message>
+        <source>Allowed (recommended)</source>
+        <translation>Sallittu (suositeltu)</translation>
+    </message>
+    <message>
+        <source>Blocked, some sites may not work correctly</source>
+        <translation>Estetty, jotkin sivustot eivät ehkä toimi oikein</translation>
     </message>
 </context>
 <context>
@@ -1203,6 +1254,10 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Tracking protection</source>
         <translation>Seurannan esto</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Sailfish OS:n selainmoottori ei vielä osaa kaikkea, mitä Firefox tässä tekee, joten osa seurannasta voi yhä päästä läpi. Salama ottaa käyttöön kaiken suojan, joka moottorissa on.</translation>
     </message>
 </context>
 <context>

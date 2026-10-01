@@ -791,7 +791,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Pages are drawn light or dark as the ambience is
+        <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation type="unfinished"></translation>
@@ -947,15 +947,26 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Match ambience</source>
+        <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forced</source>
+        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Avoid the screen cutout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1003,11 +1014,51 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Website colours</source>
+        <source>Tracking protection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tracking protection</source>
+        <source>Preferred color scheme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notch guard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do not track</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tell sites that I do not want to be tracked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable JavaScript</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allowed (recommended)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Blocked, some sites may not work correctly</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1202,6 +1253,10 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TrackingSettingsPage</name>
     <message>
         <source>Tracking protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
