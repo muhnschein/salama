@@ -129,11 +129,11 @@
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Najdi na strani</translation>
+        <translation>Najdi</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Namizna stran</translation>
+        <translation>Za namizja</translation>
     </message>
 </context>
 <context>
@@ -1703,11 +1703,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Najdi na strani</translation>
+        <translation>Najdi</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Namizna stran</translation>
+        <translation>Za namizja</translation>
     </message>
 </context>
 <context>

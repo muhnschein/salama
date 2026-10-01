@@ -129,7 +129,7 @@
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Tìm trong trang</translation>
+        <translation>Tìm</translation>
     </message>
     <message>
         <source>Desktop site</source>
@@ -851,7 +851,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Ambience</source>
         <extracomment>The reader view set as a Sailfish page is, in the ambience&apos;s colours</extracomment>
-        <translation>Chủ đề hệ thống</translation>
+        <translation>Chủ đề</translation>
     </message>
     <message>
         <source>Serif</source>
@@ -1637,7 +1637,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Find in page</source>
-        <translation>Tìm trong trang</translation>
+        <translation>Tìm</translation>
     </message>
     <message>
         <source>Desktop site</source>
