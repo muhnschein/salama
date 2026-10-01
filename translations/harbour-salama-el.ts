@@ -851,11 +851,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Light</source>
-        <translation>Ανοιχτόχρωμο</translation>
+        <translation>Ανοιχτό</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation>Σκουρόχρωμο</translation>
+        <translation>Σκούρο</translation>
     </message>
     <message>
         <source>Sepia</source>

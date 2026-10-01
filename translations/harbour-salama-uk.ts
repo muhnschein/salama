@@ -860,7 +860,7 @@
         <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
-        <translation>Автоматично</translation>
+        <translation>Авто</translation>
     </message>
     <message>
         <source>Light</source>
@@ -1110,7 +1110,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Не дає вмісту сайтів заходити під виріз екрана. У режимі «Автоматично» адаптовані сайти можуть використовувати область вирізу, а вміст залишається видимим.</translation>
+        <translation>Не дає вмісту сайтів заходити під виріз екрана. У режимі «Авто» адаптовані сайти можуть використовувати область вирізу, а вміст залишається видимим.</translation>
     </message>
     <message>
         <source>Fixed toolbar</source>
