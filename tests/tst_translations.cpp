@@ -13,7 +13,7 @@
 #include <QXmlStreamReader>
 #include <QtTest>
 
-using Salama::installTranslations;
+using Salama::loadTranslations;
 
 namespace {
 
@@ -132,16 +132,21 @@ private:
     {
         return QStringLiteral(SALAMA_TRANSLATIONS_DIR);
     }
-    QTranslator *m_installed = nullptr;
+    // Loads the catalog for `locale` from `directory` and installs it, as main() does.
+    bool install(const QString &locale, const QString &directory = qmDir());
+
+    QTranslator m_translator;
 };
+
+bool tst_translations::install(const QString &locale, const QString &directory)
+{
+    return loadTranslations(m_translator, QLocale(locale), directory) &&
+           QCoreApplication::installTranslator(&m_translator);
+}
 
 void tst_translations::cleanup()
 {
-    if (m_installed) {
-        QCoreApplication::removeTranslator(m_installed);
-        delete m_installed;
-        m_installed = nullptr;
-    }
+    QCoreApplication::removeTranslator(&m_translator);
 }
 
 void tst_translations::everySailfishLanguageHasACatalog()
@@ -249,8 +254,7 @@ void tst_translations::readersLanguageIsInstalled()
     QFETCH(QString, locale);
     QFETCH(QString, catalog);
 
-    m_installed = installTranslations(QCoreApplication::instance(), QLocale(locale), qmDir());
-    QVERIFY2(m_installed, qPrintable(QStringLiteral("nothing installed from ") + qmDir()));
+    QVERIFY2(install(locale), qPrintable(QStringLiteral("nothing installed from ") + qmDir()));
 
     // Every string of the catalog, as the reader of that language is shown it.
     const Catalog expected =
@@ -268,9 +272,7 @@ void tst_translations::readersLanguageIsInstalled()
 
 void tst_translations::pluralsAreCountedByTheLanguagesRule()
 {
-    m_installed = installTranslations(QCoreApplication::instance(),
-                                      QLocale(QStringLiteral("pl_PL")), qmDir());
-    QVERIFY(m_installed);
+    QVERIFY(install(QStringLiteral("pl_PL")));
     const Catalog polish = readCatalog(sourceDir() + QStringLiteral("/harbour-salama-pl.ts"));
     const Message pages =
         find(polish, QStringLiteral("ClearDataDialog"), QStringLiteral("%n page(s)"));
@@ -288,18 +290,19 @@ void tst_translations::pluralsAreCountedByTheLanguagesRule()
 
 void tst_translations::languageWithoutACatalogGetsEnglish()
 {
-    m_installed = installTranslations(QCoreApplication::instance(),
-                                      QLocale(QStringLiteral("ja_JP")), qmDir());
-    QVERIFY2(m_installed, "the English source catalog was not installed as the fallback");
+    QVERIFY2(install(QStringLiteral("ja_JP")),
+             "the English source catalog was not installed as the fallback");
     QCOMPARE(QCoreApplication::translate("ClearDataDialog", "%n page(s)", nullptr, 1),
              QStringLiteral("1 page"));
     QCOMPARE(QCoreApplication::translate("ClearDataDialog", "%n page(s)", nullptr, 3),
              QStringLiteral("3 pages"));
     QCOMPARE(QCoreApplication::translate("BrowserMenu", "Settings"), QStringLiteral("Settings"));
 
-    // And with no catalogs at all, nothing is installed, and nothing claims to be.
-    QVERIFY(!installTranslations(QCoreApplication::instance(), QLocale(QStringLiteral("ja_JP")),
-                                 QDir::tempPath() + QStringLiteral("/no-such-salama-catalogs")));
+    // And with no catalogs at all, nothing is loaded, and nothing claims to be.
+    QTranslator none;
+    QVERIFY(!loadTranslations(none, QLocale(QStringLiteral("ja_JP")),
+                              QDir::tempPath() + QStringLiteral("/no-such-salama-catalogs")));
+    QVERIFY(none.isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_translations)

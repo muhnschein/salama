@@ -10,7 +10,7 @@ Turkish, Ukrainian and Vietnamese. English is the source.
 ## How a reader gets their language
 
 `translations/harbour-salama-<lang>.ts` compiles to `harbour-salama-<lang>.qm`, installed
-under `share/harbour-salama/translations`. At start-up `Salama::installTranslations`
+under `share/harbour-salama/translations`. At start-up `Salama::loadTranslations`
 (`src/Translations.h`) loads the one for the locale the system starts the app under, which
 is the reader's Language setting: `harbour-salama-pt_BR.qm` for Brazil, `-pt.qm` for
 Portugal, `-de.qm` for every German locale. A language with no catalog of its own gets
