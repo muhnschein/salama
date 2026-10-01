@@ -58,6 +58,7 @@ private slots:
     void themeColor_data();
     void themeColor();
     void findRequest();
+    void searchOffered();
     void findFound_data();
     void findFound();
     void trackingProtectionNamesTheSamePreferences();
@@ -86,6 +87,46 @@ void tst_enginemessages::constants()
     // Find in page: what embedhelper.js listens for, and what it answers on.
     QCOMPARE(messages.findMessage(), QStringLiteral("embedui:find"));
     QCOMPARE(messages.findResultMessage(), QStringLiteral("embed:find"));
+}
+
+// What ContentLinkHandler.jsm sends for a page that has a search of its own, and what is
+// made of it: the title and the address of the description, and the page's host.
+void tst_enginemessages::searchOffered()
+{
+    EngineMessages messages;
+    QCOMPARE(messages.searchOfferedMessage(), QStringLiteral("Link:AddSearch"));
+
+    const QVariantMap engine{
+        {QStringLiteral("title"), QStringLiteral("Find")},
+        {QStringLiteral("href"), QStringLiteral("https://cdn.example/os.xml")}};
+    const QVariantMap offered = EngineMessages::searchOffered(
+        QVariantMap{{QStringLiteral("engine"), engine},
+                    {QStringLiteral("url"), QStringLiteral("https://www.find.example/page?x=1")}});
+    QCOMPARE(offered.value(QStringLiteral("title")).toString(), QStringLiteral("Find"));
+    QCOMPARE(offered.value(QStringLiteral("href")).toString(),
+             QStringLiteral("https://cdn.example/os.xml"));
+    // The page's, not the description's, and without "www.".
+    QCOMPARE(offered.value(QStringLiteral("host")).toString(), QStringLiteral("find.example"));
+    QCOMPARE(offered.count(), 3);
+
+    // A page with no address to speak of is offered by the host the description is on.
+    const QVariantMap unplaced = EngineMessages::searchOffered(
+        QVariantMap{{QStringLiteral("engine"), engine},
+                    {QStringLiteral("url"), QStringLiteral("about:blank")}});
+    QCOMPARE(unplaced.value(QStringLiteral("host")).toString(), QStringLiteral("cdn.example"));
+    QCOMPARE(EngineMessages::searchOffered(QVariantMap{{QStringLiteral("engine"), engine}})
+                 .value(QStringLiteral("host"))
+                 .toString(),
+             QStringLiteral("cdn.example"));
+
+    // Anything else says nothing, and has all three in it all the same.
+    for (const QVariant &data : {QVariant(), QVariant(QStringLiteral("text")), QVariant(42),
+                                 QVariant(QVariantMap{{QStringLiteral("engine"), 7}})}) {
+        const QVariantMap nothing = EngineMessages::searchOffered(data);
+        QCOMPARE(nothing.count(), 3);
+        QVERIFY(nothing.value(QStringLiteral("title")).toString().isEmpty());
+        QVERIFY(nothing.value(QStringLiteral("href")).toString().isEmpty());
+    }
 }
 
 // The three fields embedhelper.js reads off the message, by the names it reads them by.

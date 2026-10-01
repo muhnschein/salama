@@ -10,4 +10,5 @@ Item {
     property bool busy: false
 
     signal clicked()
+    signal pressAndHold()
 }

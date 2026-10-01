@@ -550,6 +550,8 @@ WebViewPage {
             // What the page plays, and its notifications (docs/DECISIONS/0026-media-controls.md, 0033).
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
             property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
+            // The searches the page offers, kept for Settings > Search (docs/DECISIONS/0041-search-engines-found.md).
+            property PageSearchLink searches: PageSearchLink { view: webView }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

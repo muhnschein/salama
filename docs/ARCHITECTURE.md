@@ -45,7 +45,10 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
 - The settings, one section per settings page, each a QML singleton over the one
   settings file (`DECISIONS/0028-settings-pages.md`): `SearchSettings` -- the search
-  engine, the sources the address bar suggests from, and the address-bar heuristics;
+  engine, the engines added from what sites offered while they were browsed, the sources
+  the address bar suggests from, and the address-bar heuristics
+  (`DECISIONS/0041-search-engines-found.md`; `search/OpenSearch` reads a site's
+  description);
   `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
   quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
   notification requests; `StartPageSettings` -- what the start page shows; and
@@ -174,6 +177,12 @@ download         id PK, name, url, path, mime, size, status, started (ms since e
 input_history    (input, url) PK, use_count, used (ms since epoch)  -- the omnibar's learning
 setting          name PK, value          -- activeTabId, currentGroupId
 ```
+
+The settings file holds the switches and choices as plain keys, and two lists as JSON arrays
+in a string, since a record has no place in an INI key: `searchEnginesAdded`, the engines
+added from what sites offered (`key`, `name`, `template` with `{searchTerms}`, `host`), and
+`searchEnginesFound`, the offers not yet taken up (`title`, `href`, `host`)
+(`DECISIONS/0041-search-engines-found.md`). `searchEngine` names the engine in use by key.
 
 History is capped at 2000 rows (pruned on open) and the model shows the newest 500.
 Queries run on the UI thread; sizes are bounded, so no worker thread
