@@ -20,7 +20,9 @@ The offset comes from one of two places, never both:
 * `dragging` is true while a finger is on it, and the offset is whatever the finger
   says: the bar's `dragMoved(distance)` going up, the grid's `pulled(distance)` coming
   back down. The deck tracks the finger from the first `Theme.startDragDistance` of
-  movement, so the gesture is visibly caught long before it commits.
+  movement, so the gesture is visibly caught long before it commits -- from where it
+  was caught, without leaping that first distance, and with the grid already drawn out
+  of sight since the finger went down (`0045-drag-start-without-a-stutter.md`).
 * otherwise the offset is a binding on `tabsOpen`, and a `Behavior` carries it there.
 
 `tabsOpen` is the settled answer and flips the moment a gesture commits; `tabsOffset` is

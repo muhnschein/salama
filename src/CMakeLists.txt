@@ -79,6 +79,8 @@ add_library(salama-core STATIC
     tabs/TabPersistence.h
     tabs/TabSearchModel.cpp
     tabs/TabSearchModel.h
+    tabs/ThumbnailWriter.cpp
+    tabs/ThumbnailWriter.h
 )
 target_include_directories(salama-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # The reader view's scripts and style sheet, compiled in (src/reader/reader.qrc).

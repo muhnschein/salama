@@ -27,6 +27,9 @@ Item {
     property bool dragging: false
     property real dragOffset: 0
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
+    // A finger is down where a drag that raises the deck may start, and the grid is to
+    // be ready for it before it does. Ends with the gesture.
+    property bool primed: false
 
     // The tallest the page has been. Resizing the engine's view mid-animation left the
     // content stretched until it finished; the deck keeps its height and lets the
@@ -76,6 +79,17 @@ Item {
         dragging = true
     }
 
+    function prime() {
+        primed = true
+    }
+
+    // A finger that never dragged.
+    function unprime() {
+        if (!dragging) {
+            primed = false
+        }
+    }
+
     function dragTo(offset) {
         dragOffset = Math.max(0, Math.min(fullHeight, offset))
     }
@@ -85,6 +99,7 @@ Item {
         deckSpring.enabled = true
         tabsOpen = open
         dragging = false
+        primed = false
     }
 
     Item {

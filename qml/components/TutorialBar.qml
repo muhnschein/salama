@@ -19,6 +19,8 @@ Item {
     id: tutorialBar
 
     // What BarGesture raises on the bar it is the gesture of.
+    signal dragArmed()
+    signal dragDisarmed()
     signal dragStarted()
     signal dragMoved(real distance)
     signal dragFinished(real distance)

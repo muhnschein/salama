@@ -17,6 +17,7 @@
 #include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QVariant>
 
 namespace Salama {
 
@@ -24,6 +25,7 @@ class ClosedTabModel;
 class GroupTabModel;
 class TabGroupModel;
 class TabPersistence;
+class ThumbnailWriter;
 
 // Every open tab, in one list, whatever group it is in: the browsing page keeps one
 // view per row of this model, so a tab changing group must not be a row removed and
@@ -171,6 +173,15 @@ public:
     // updateThumbnail(). Empty when previews are off.
     Q_INVOKABLE QString thumbnailPath(int tabId);
     Q_INVOKABLE void updateThumbnail(int tabId, const QString &path);
+    // A grabbed picture, the image of a QQuickItemGrabResult, written to a fresh
+    // thumbnailPath() away from the GUI thread and handed to updateThumbnail() once it
+    // is on disk. A write overtaken by a later one for the same tab, or finished after
+    // its tab has closed, is thrown away. False when nothing will be written.
+    Q_INVOKABLE bool storeThumbnail(int tabId, const QVariant &image);
+    ThumbnailWriter *thumbnailWriter() const
+    {
+        return m_thumbnailWriter;
+    }
 
     // What a page is playing, as PageMedia reads it from the page, and whether its tab
     // is muted. A tab whose page is not kept loaded plays nothing.
@@ -275,6 +286,7 @@ private:
     void notifyRow(int index, Role role);
     void persist(const Tab &tab) const;
     void discardThumbnail(const QString &path) const;
+    void thumbnailWritten(int tabId, const QString &path, bool saved);
 
     TabPersistence *m_persistence;
     QString m_thumbnailDirectory;
@@ -298,6 +310,9 @@ private:
     // counter cannot be turned around by a clock that steps backwards.
     qint64 m_activationClock = 0;
     int m_thumbnailCounter = 0;
+    ThumbnailWriter *m_thumbnailWriter;
+    // The newest write asked for, per tab, until it has finished.
+    QHash<int, QString> m_pendingThumbnails;
 };
 
 } // namespace Salama

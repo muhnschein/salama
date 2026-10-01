@@ -73,14 +73,15 @@ Item {
     signal back()
     signal reloadOrStop()
     signal showMenu()
-    // Upward drag, in pixels from where the finger went down. Negative means it has
-    // come back below its own starting point.
+    // A finger is down, and may drag; and it went without dragging. Then the upward
+    // drag, in pixels from where it was caught, negative once back below that.
+    signal dragArmed()
+    signal dragDisarmed()
     signal dragStarted()
     signal dragMoved(real distance)
     signal dragFinished(real distance)
-    // A touch in the reach above the bar that turned out to be the page's: a tap, or a
-    // drag any way but up. Points are in the window's coordinates; the page hands them
-    // to the engine.
+    // A touch in the reach that turned out to be the page's: a tap, or a drag any way
+    // but up. Points are in the window's coordinates; the page hands them on.
     signal pageTouchStarted(point position)
     signal pageTouchMoved(point position)
     signal pageTouchEnded(point position)
@@ -250,9 +251,8 @@ Item {
         color: Theme.highlightDimmerColor
     }
 
-    // Where the drag starts, drawn: on the line between the bar and the page, which
-    // is where the finger is aiming, and inside the reach the handler covers above
-    // the bar.
+    // Where the drag starts, drawn: on the line between the bar and the page, where
+    // the finger aims, and inside the reach the handler covers above the bar.
     DragHandle {
         objectName: "barDragHandle"
         x: (navigationBar.width - width) / 2

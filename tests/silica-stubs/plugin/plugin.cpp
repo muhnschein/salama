@@ -33,6 +33,24 @@ public:
     }
 };
 
+// What the WebView stub's grabToImage() hands back as a grab result's image: QML has no
+// way to make a QImage of its own. Size zero is a null image.
+class GrabStub : public QObject
+{
+    Q_OBJECT
+
+public:
+    Q_INVOKABLE QVariant image(int width, int height) const
+    {
+        if (width <= 0 || height <= 0) {
+            return QVariant::fromValue(QImage());
+        }
+        QImage picture(width, height, QImage::Format_ARGB32_Premultiplied);
+        picture.fill(Qt::darkCyan);
+        return QVariant::fromValue(picture);
+    }
+};
+
 class SilicaStubsPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -53,6 +71,9 @@ public:
         qmlRegisterUncreatableType<FocusBehavior>(uri, 1, 0, "FocusBehavior", reason);
         qmlRegisterUncreatableType<PageStackAction>(uri, 1, 0, "PageStackAction", reason);
         qmlRegisterUncreatableType<TouchInteraction>(uri, 1, 0, "TouchInteraction", reason);
+        qmlRegisterSingletonType<GrabStub>(
+            uri, 1, 0, "GrabStub",
+            [](QQmlEngine *, QJSEngine *) -> QObject * { return new GrabStub; });
     }
 
     void initializeEngine(QQmlEngine *engine, const char *uri) override

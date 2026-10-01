@@ -7,12 +7,16 @@
 #include "tabs/TabModel.h"
 #include "tabs/TabPersistence.h"
 #include "tabs/TabSearchModel.h"
+#include "tabs/ThumbnailWriter.h"
 
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
+#include <QImageReader>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QThread>
 #include <QtTest>
 #include <algorithm>
 
@@ -44,6 +48,8 @@ private slots:
     void thumbnailsAreCapturedPerTab();
     void thumbnailsFollowTabLifetime();
     void thumbnailsAreOptional();
+    void thumbnailsAreWrittenOffTheGuiThread();
+    void staleThumbnailWritesAreDiscarded();
     void recentThumbnailsFollowTheFront();
     void recentOrderSurvivesARestart();
     void thereIsAlwaysAGroup();
@@ -562,6 +568,79 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
     model.updateThumbnail(a, outside);
     model.updateThumbnail(a, model.thumbnailPath(a));
     QVERIFY(QFile::exists(outside));
+}
+
+// A grabbed picture is encoded and written by a worker, never by the GUI thread: the
+// encode of a picture half the screen in each direction, done in QML's grab callback,
+// was the stutter at the start of the drag that opens the grid (issue #27).
+void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
+{
+    QTemporaryDir dir;
+    TabModel model(nullptr, dir.path() + QStringLiteral("/previews"));
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    QThread *writtenOn = nullptr;
+    connect(
+        model.thumbnailWriter(), &Salama::ThumbnailWriter::written, this,
+        [&writtenOn]() { writtenOn = QThread::currentThread(); }, Qt::DirectConnection);
+
+    QImage picture(270, 600, QImage::Format_ARGB32_Premultiplied);
+    picture.fill(Qt::darkCyan);
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
+    // Nothing is told before the file is complete, and that is never within the call.
+    QVERIFY(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
+    QTRY_VERIFY(!role(model, 0, roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
+    QVERIFY(writtenOn != nullptr);
+    QVERIFY(writtenOn != QThread::currentThread());
+
+    const QString path = role(model, 0, roleId(TabModel::Role::Thumbnail)).toString();
+    QCOMPARE(QFileInfo(path).absolutePath(),
+             QDir(dir.path() + QStringLiteral("/previews")).absolutePath());
+    QImageReader reader(path);
+    QCOMPARE(reader.format(), QByteArrayLiteral("png"));
+    QCOMPARE(reader.size(), picture.size());
+
+    // Nothing to write, or nowhere to write it: nothing is asked of the worker.
+    QVERIFY(!model.storeThumbnail(a, QVariant::fromValue(QImage())));
+    QVERIFY(!model.storeThumbnail(a, QVariant()));
+    QVERIFY(!model.storeThumbnail(4242, QVariant::fromValue(picture)));
+    TabModel noPreviews(nullptr, QString());
+    QVERIFY(!noPreviews.storeThumbnail(noPreviews.newTab(QStringLiteral("https://b.example/")),
+                                       QVariant::fromValue(picture)));
+}
+
+// Writes finish after the fact: one overtaken by a newer picture of the same tab, or
+// finished after its tab has closed or gone back to the start page, leaves no file and
+// changes nothing.
+void tst_tabmodel::staleThumbnailWritesAreDiscarded()
+{
+    QTemporaryDir dir;
+    const QString previews = dir.path() + QStringLiteral("/previews");
+    TabModel model(nullptr, previews);
+    const int a = model.newTab(QStringLiteral("https://a.example/"));
+    const int b = model.newTab(QStringLiteral("https://b.example/"));
+    QImage picture(32, 64, QImage::Format_ARGB32_Premultiplied);
+    picture.fill(Qt::darkCyan);
+    const auto files = [&previews]() { return QDir(previews).entryList(QDir::Files); };
+
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
+    QVERIFY(model.storeThumbnail(b, QVariant::fromValue(picture)));
+    model.closeTab(model.indexOf(b));
+    model.thumbnailWriter()->waitForDone();
+    QCoreApplication::processEvents();
+    QCOMPARE(files().count(), 1);
+    const QString kept =
+        role(model, model.indexOf(a), roleId(TabModel::Role::Thumbnail)).toString();
+    QCOMPARE(QFileInfo(kept).fileName(), files().first());
+
+    // A tab back on its start page is not given the picture of the page it left.
+    const int c = model.newTab(QStringLiteral("https://c.example/"));
+    QVERIFY(model.storeThumbnail(c, QVariant::fromValue(picture)));
+    model.showStartPage(c);
+    model.thumbnailWriter()->waitForDone();
+    QCoreApplication::processEvents();
+    QVERIFY(role(model, model.indexOf(c), roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
+    QCOMPARE(files().count(), 1);
 }
 
 void tst_tabmodel::thumbnailsFollowTabLifetime()
