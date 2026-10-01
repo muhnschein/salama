@@ -101,6 +101,28 @@ ApplicationWindow {
         onTabRequested: window.showNotifiedTab(tabId)
     }
 
+    // A link shared to the browser from another application's share sheet: a new tab in
+    // the default group, in front, with the browsing page brought up from under whatever
+    // was over it (docs/DECISIONS/0042-share-target.md).
+    function openSharedLink(url) {
+        var page = pageStack.find(function (candidate) {
+            return candidate.objectName === "browserPage"
+        })
+        if (page) {
+            pageStack.pop(page)
+            page.uncover()
+        }
+        TabModel.newTabInDefaultGroup(url)
+        activate()
+    }
+
+    Connections {
+        target: ShareReceiver
+        onLinkShared: window.openSharedLink(url)
+    }
+
+    Component.onCompleted: ShareReceiver.setReady()
+
     // The tutorial, over the browsing page, until it has come up once: on the first
     // start, and on the first start of a build that has it, with its first card to start
     // it or skip it. It counts as shown as it comes up, so one skipped or left by back is

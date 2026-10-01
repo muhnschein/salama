@@ -31,6 +31,8 @@
 #include <QSet>
 #include <QSqlQuery>
 #include <QStyleHints>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <algorithm>
@@ -44,8 +46,11 @@ using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
 using Salama::Reader;
 using Salama::ReaderSettings;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Settings;
+using Salama::SitePermissions;
+using Salama::SitePermissionSettings;
 using Salama::StartPageSettings;
 using Salama::TabModel;
 using Salama::WebNotifications;
@@ -59,6 +64,63 @@ const char *const ChatSite = "https://chat.example";
 const char *const FirstPage = "https://www.qwant.com/";
 
 } // namespace
+
+// A site's OpenSearch descriptions, served from the loopback: what the page fetches with
+// XMLHttpRequest when an engine found while browsing is tapped. Anything not in `pages`
+// is a 404 with an HTML page, which is what a description's address often is by the time
+// someone taps it.
+class DescriptionServer : public QObject
+{
+public:
+    explicit DescriptionServer(QMap<QString, QByteArray> pages)
+        : m_pages(std::move(pages))
+    {
+        m_listening = m_server.listen(QHostAddress::LocalHost);
+        connect(&m_server, &QTcpServer::newConnection, this, [this]() { accept(); });
+    }
+
+    bool isListening() const
+    {
+        return m_listening;
+    }
+
+    QString url(const QString &path) const
+    {
+        return QStringLiteral("http://127.0.0.1:%1%2").arg(m_server.serverPort()).arg(path);
+    }
+
+    int requests() const
+    {
+        return m_requests;
+    }
+
+private:
+    void accept()
+    {
+        while (QTcpSocket *socket = m_server.nextPendingConnection()) {
+            connect(socket, &QTcpSocket::readyRead, this, [this, socket]() { answer(socket); });
+            connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
+        }
+    }
+
+    void answer(QTcpSocket *socket)
+    {
+        const QList<QByteArray> line = socket->readAll().split(' ');
+        ++m_requests;
+        const QString path = line.count() > 1 ? QString::fromLatin1(line.at(1)) : QString();
+        const bool found = m_pages.contains(path);
+        const QByteArray body = found ? m_pages.value(path) : QByteArray("<html>Not found</html>");
+        socket->write(QByteArray(found ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 404 Not Found\r\n") +
+                      "Content-Type: text/xml\r\nConnection: close\r\nContent-Length: " +
+                      QByteArray::number(body.size()) + "\r\n\r\n" + body);
+        socket->disconnectFromHost();
+    }
+
+    QTcpServer m_server;
+    QMap<QString, QByteArray> m_pages;
+    bool m_listening = false;
+    int m_requests = 0;
+};
 
 // Takes the addresses Qt.openUrlExternally is handed for one scheme, in place of the
 // platform, which a test has no business starting.
@@ -148,8 +210,12 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
+    void searchEnginesFound();
+    void searchEnginesAdd();
+    void searchEnginesRemove();
     void readerSettingsPage();
     void trackingSettingsPage();
     void historySettingsPage();
@@ -170,6 +236,14 @@ private slots:
     void webNotifications();
     void notificationPermissions();
     void notificationSettingsPage();
+    void sitePermissionsPage();
+    void sitePermissionsCookiesAndWaysOn();
+    void siteExceptionsPage();
+    void siteExceptionsAskEachTime();
+    void menuHeadOpensSiteDetails();
+    void siteDetailsConnection();
+    void siteDetailsTrackingProtection();
+    void siteDetailsPermissions();
     void tutorialOnFirstStart();
     void tutorial();
     void tutorialGrid();
@@ -497,8 +571,17 @@ void tst_qmlload::rootWindowLoads()
         takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
                       .first()
                       .toMap()));
-    const QVariantList standard =
-        EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStandard);
+    // Do not track off and JavaScript on, as sailfish-browser starts.
+    for (const QVariant &content : EngineMessages::contentPreferences(false, true)) {
+        QVERIFY(takeGiven(content.toMap()));
+    }
+    // And the defaults of Site permissions: pop-ups blocked, the rest asked.
+    for (const QVariant &preference :
+         EngineMessages::sitePermissionPreferences(false, false, false, false)) {
+        QVERIFY(takeGiven(preference.toMap()));
+    }
+    const QVariantList standard = EngineMessages::trackingProtectionPreferences(
+        PrivacySettings::TrackingProtectionStandard, SitePermissionSettings::CookiesBlockCrossSite);
     QCOMPARE(given.count(), standard.count());
     for (int i = 0; i < given.count(); ++i) {
         QCOMPARE(given.at(i).toMap().value(QStringLiteral("key")),
@@ -596,6 +679,13 @@ void tst_qmlload::startPage()
     QCOMPARE(m_core->history()->count(), 1);
     QVERIFY(bar->property("canGoBack").toBool());
     QVERIFY(find(QStringLiteral("reloadButton"))->property("opacity").toReal() == 1);
+    // Stop, while the page loads, is sailfish-browser's plain cross, not a cross on a disc.
+    view->setProperty("loading", true);
+    QCOMPARE(find(QStringLiteral("reloadButton"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-reset")));
+    view->setProperty("loading", false);
+    QCOMPARE(find(QStringLiteral("reloadButton"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-refresh")));
 
     // Further on in the page, back is the page's; from its first page, the start page.
     view->setProperty("canGoBack", true);
@@ -880,7 +970,7 @@ void tst_qmlload::omnibar()
     QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
     QVERIFY(searchAction->property("visible").toBool());
     const QString engine =
-        m_core->searchSettings()->engineNames().at(m_core->searchSettings()->engineIndex());
+        m_core->searchEngines()->engineNames().at(m_core->searchSettings()->engineIndex());
     QCOMPARE(textIn(searchAction, QStringLiteral("omnibarActionTitle")),
              QStringLiteral("Search %1 for “forest”").arg(engine));
     QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
@@ -1555,6 +1645,22 @@ void tst_qmlload::faviconResolvedAfterLoad()
     QCOMPARE(webView->property("pageThemeColor").toString(), QStringLiteral("#123456"));
     QCOMPARE(find(QStringLiteral("cutoutBand"))->property("color").value<QColor>(),
              QColor(QStringLiteral("#123456")));
+
+    // And whether it asked for the whole screen, cutout and all, which Automatic gives
+    // it; a page that says nothing of it is kept below the cutout.
+    QVERIFY(webView->property("scripts").toStringList().contains(
+        m_core->engineMessages()->viewportScript()));
+    auto *viewport = webView->property("viewport").value<QObject *>();
+    QVERIFY(viewport != nullptr);
+    QVERIFY(!viewport->property("coversCutout").toBool());
+    webView->setProperty("scriptResult", QStringLiteral("width=device-width, viewport-fit=cover"));
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QVERIFY(viewport->property("coversCutout").toBool());
+    QCOMPARE(find(QStringLiteral("browserPage"))->property("pageCutoutInset").toReal(), qreal(0));
+    webView->setProperty("loading", true);
+    QVERIFY(!viewport->property("coversCutout").toBool());
+    webView->setProperty("loading", false);
 
     webView->setProperty("scriptFails", true);
     webView->setProperty("loading", true);
@@ -4611,10 +4717,13 @@ void tst_qmlload::settingsPage()
         QStringLiteral("readerSettingsEntry"),
         QStringLiteral("coverSettingsEntry"),
         QStringLiteral("websiteColorsCombo"),
-        QStringLiteral("cutoutGuardSwitch"),
+        QStringLiteral("notchGuardCombo"),
+        QStringLiteral("fixedToolbarSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("trackingSettingsEntry"),
-        QStringLiteral("notificationSettingsEntry"),
+        QStringLiteral("doNotTrackSwitch"),
+        QStringLiteral("javascriptSwitch"),
+        QStringLiteral("sitePermissionsSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
         QStringLiteral("#Help"),
         QStringLiteral("tutorialSettingsEntry"),
@@ -4643,8 +4752,9 @@ void tst_qmlload::settingsPage()
          QStringLiteral("coverSettingsPage"), QStringLiteral("Search")},
         {QStringLiteral("trackingSettingsEntry"), QStringLiteral("icon-m-device-lock"),
          QStringLiteral("trackingSettingsPage"), QStringLiteral("Standard")},
-        {QStringLiteral("notificationSettingsEntry"), QStringLiteral("icon-m-notifications"),
-         QStringLiteral("notificationSettingsPage"), QStringLiteral("Sites can ask")},
+        {QStringLiteral("sitePermissionsSettingsEntry"),
+         QStringLiteral("icon-m-browser-permissions"), QStringLiteral("sitePermissionsPage"),
+         QStringLiteral("No exceptions")},
         {QStringLiteral("historySettingsEntry"), QStringLiteral("icon-m-history"),
          QStringLiteral("historySettingsPage"), QStringLiteral("Remembered")},
         {QStringLiteral("tutorialSettingsEntry"), QStringLiteral("icon-m-gesture"),
@@ -4688,7 +4798,7 @@ void tst_qmlload::settingsPage()
     const QList<InPlace> inPlace{
         {QStringLiteral("websiteColorsCombo"), QStringLiteral("settingsComboBoxIcon"),
          QStringLiteral("icon-m-night")},
-        {QStringLiteral("cutoutGuardSwitch"), QStringLiteral("settingsSwitchIcon"),
+        {QStringLiteral("notchGuardCombo"), QStringLiteral("settingsComboBoxIcon"),
          QStringLiteral("icon-m-display")},
     };
     for (const InPlace &setting : inPlace) {
@@ -4731,7 +4841,7 @@ void tst_qmlload::settingsPage()
     QCOMPARE(valueOf(QStringLiteral("startPageSettingsEntry")), QStringLiteral("Blank page"));
     m_core->searchSettings()->setEngineIndex(1);
     QCOMPARE(valueOf(QStringLiteral("searchSettingsEntry")),
-             m_core->searchSettings()->engineNames().at(1));
+             m_core->searchEngines()->engineNames().at(1));
     m_core->readerSettings()->setColors(ReaderSettings::Sepia);
     m_core->readerSettings()->setTypeface(ReaderSettings::Serif);
     m_core->readerSettings()->setTextSize(ReaderSettings::TextSizeMax);
@@ -4747,21 +4857,19 @@ void tst_qmlload::settingsPage()
     QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("Yle Uutiset"));
     m_core->privacySettings()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(valueOf(QStringLiteral("trackingSettingsEntry")), QStringLiteral("Strict"));
-    m_core->privacySettings()->setBlockNotificationRequests(true);
-    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
-             QStringLiteral("Sites cannot ask"));
+    // Site permissions counts the sites decided for, whichever permission it was: a
+    // notification answer is one, and kept in step with the notifications' own list.
     NotificationPermissions *sites = m_core->notificationPermissions();
     sites->setAllowed(QStringLiteral("https://mastodon.social"), true);
-    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
-             QStringLiteral("1 site(s) allowed"));
+    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
+             QStringLiteral("1 site(s) with exceptions"));
     sites->setAllowed(QStringLiteral("https://app.element.io"), true);
     sites->setAllowed(QStringLiteral("https://www.iltalehti.fi"), false);
-    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
-             QStringLiteral("2 site(s) allowed · 1 blocked"));
+    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
+             QStringLiteral("3 site(s) with exceptions"));
     sites->setAllowed(QStringLiteral("https://mastodon.social"), false);
-    sites->setAllowed(QStringLiteral("https://app.element.io"), false);
-    QCOMPARE(valueOf(QStringLiteral("notificationSettingsEntry")),
-             QStringLiteral("3 site(s) blocked"));
+    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
+             QStringLiteral("3 site(s) with exceptions"));
     m_core->privacySettings()->setClearHistoryOnClose(true);
     QCOMPARE(valueOf(QStringLiteral("historySettingsEntry")),
              QStringLiteral("Cleared when closed"));
@@ -4793,18 +4901,114 @@ void tst_qmlload::settingsPage()
     QCOMPARE(lastDark(), 1);
     colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+}
 
-    // The cutout guard is on until it is turned off here, and the page answers. Its name
-    // says what it does, and nothing under it says it again.
-    QObject *cutoutSwitch = find(QStringLiteral("cutoutGuardSwitch"));
-    QVERIFY(cutoutSwitch->property("description").toString().isEmpty());
-    QVERIFY(cutoutSwitch->property("checked").toBool());
-    cutoutSwitch->setProperty("checked", false);
+// Appearance and Privacy's rows from sailfish-browser, in its words, and what each does
+// to the browsing page and the engine (docs/DECISIONS/0043-notch-guard-modes.md,
+// 0044-sailfish-browser-settings.md).
+void tst_qmlload::sailfishBrowserSettings()
+{
+    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
+    // A row has an icon or a switch, never both: each switch's light stands centred on
+    // the column of icons, where sailfish-browser centres its own.
+    const qreal switchMargin =
+        evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
+                                      " + Math.round((Theme.iconSizeMedium"
+                                      " - Theme.itemSizeExtraSmall) / 2)"))
+            .toReal();
+    for (const QString &name :
+         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("doNotTrackSwitch"),
+          QStringLiteral("javascriptSwitch")}) {
+        QObject *control = find(name);
+        QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
+                 qPrintable(name));
+        QCOMPARE(control->property("leftMargin").toReal(), switchMargin);
+        QVERIFY2(!control->property("description").toString().isEmpty(), qPrintable(name));
+    }
+
+    // The colour scheme and the notch guard in sailfish-browser's words, which say what
+    // each is for.
+    QCOMPARE(colors->property("label").toString(), QStringLiteral("Preferred color scheme"));
+    QCOMPARE(colors->property("description").toString(),
+             QStringLiteral("The website style to use when available"));
+    QCOMPARE(evaluate(page, QStringLiteral("names.websiteColors(Settings.WebsiteColorsAutomatic)"))
+                 .toString(),
+             QStringLiteral("Match ambience"));
+
+    // The notch guard: Automatic until changed, and the browsing page answers each mode.
+    // Automatic keeps a page below the cutout unless it asked for the whole screen;
+    // Forced keeps every page below it; Disabled none. The grid's head row keeps out of
+    // it unless the guard is disabled (docs/DECISIONS/0013-screen-cutout.md).
+    QObject *guard = find(QStringLiteral("notchGuardCombo"));
+    QCOMPARE(guard->property("label").toString(), QStringLiteral("Notch guard"));
+    QVERIFY(guard->property("description")
+                .toString()
+                .startsWith(QStringLiteral("Keeps website content away from the screen notch.")));
+    QCOMPARE(guard->property("currentIndex").toInt(), int(Settings::NotchGuardAutomatic));
+    QObject *browser = find(QStringLiteral("browserPage"));
+    QObject *webView = currentWebView();
+    const qreal cutout = browser->property("cutoutHeight").toReal();
+    QVERIFY(cutout > 0);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    auto *viewport = webView->property("viewport").value<QObject *>();
+    viewport->setProperty("coversCutout", true);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    // Such a page is told where the cutout is, through the platform's safe area, which
+    // a page kept below it is not.
+    QVERIFY(webView->property("safeAreaTop").toReal() > 0);
+    QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), cutout);
+    guard->setProperty("currentIndex", int(Settings::NotchGuardForced));
+    QCOMPARE(m_core->settings()->notchGuard(), int(Settings::NotchGuardForced));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    QCOMPARE(webView->property("safeAreaTop").toReal(), qreal(0));
+    guard->setProperty("currentIndex", int(Settings::NotchGuardDisabled));
     QVERIFY(!m_core->settings()->cutoutGuard());
-    QCOMPARE(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("cutoutInset").toReal(), qreal(0));
     QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), qreal(0));
-    cutoutSwitch->setProperty("checked", true);
-    QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
+    viewport->setProperty("coversCutout", false);
+    guard->setProperty("currentIndex", int(Settings::NotchGuardAutomatic));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+
+    // Fixed toolbar: the bar stays whole while a page is scrolled.
+    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
+    QVERIFY(!toolbar->property("checked").toBool());
+    toolbar->setProperty("checked", true);
+    QVERIFY(m_core->settings()->fixedToolbar());
+    webView->setProperty("chrome", false);
+    QVERIFY(!browser->property("barCompact").toBool());
+    toolbar->setProperty("checked", false);
+    QVERIFY(browser->property("barCompact").toBool());
+    webView->setProperty("chrome", true);
+
+    // Do not track and JavaScript reach the engine as they change, through the browsing
+    // page; JavaScript's line says what switching it off costs.
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    auto lastPreference = [&](const QString &name) {
+        const QVariantList given =
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = given.count() - 1; i >= 0; --i) {
+            if (given.at(i).toMap().value(QStringLiteral("key")).toString() == name) {
+                return given.at(i).toMap().value(QStringLiteral("value"));
+            }
+        }
+        return QVariant();
+    };
+    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
+    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(true));
+    QObject *doNotTrack = find(QStringLiteral("doNotTrackSwitch"));
+    doNotTrack->setProperty("checked", true);
+    QVERIFY(m_core->privacySettings()->doNotTrack());
+    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(true));
+    QObject *javascript = find(QStringLiteral("javascriptSwitch"));
+    QCOMPARE(javascript->property("description").toString(),
+             QStringLiteral("Allowed (recommended)"));
+    javascript->setProperty("checked", false);
+    QVERIFY(!m_core->privacySettings()->javascript());
+    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(false));
+    QCOMPARE(javascript->property("description").toString(),
+             QStringLiteral("Blocked, some sites may not work correctly"));
 }
 
 // Start page: what it shows, the sections or a blank page, both on the page at once and
@@ -4918,7 +5122,7 @@ void tst_qmlload::searchSettingsPage()
     SearchSettings *settings = m_core->searchSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("searchSettingsEntry"));
-    const QStringList engines = settings->engineNames();
+    const QStringList engines = m_core->searchEngines()->engineNames();
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
 
@@ -4945,16 +5149,28 @@ void tst_qmlload::searchSettingsPage()
         {QStringLiteral("omnibarHistorySwitch"), &SearchSettings::omnibarHistory},
         {QStringLiteral("omnibarDownloadsSwitch"), &SearchSettings::omnibarDownloads},
     };
+    // Each engine is a row, and the engines found while browsing are a section of their
+    // own, there and hidden while there are none; the pull-down menu, which would remove
+    // them, is hidden with nothing to remove.
     QStringList layout{QStringLiteral("#Search engine")};
     for (int i = 0; i < engines.count(); ++i) {
-        layout.append(QStringLiteral("searchEngineChoice"));
+        layout.append(QStringLiteral("searchEngineRow"));
     }
     layout += QStringList{
-        QStringLiteral("#Address bar suggestions"), QStringLiteral("omnibarTabsSwitch"),
-        QStringLiteral("omnibarBookmarksSwitch"),   QStringLiteral("omnibarHistorySwitch"),
-        QStringLiteral("omnibarDownloadsSwitch"),
+        QStringLiteral("foundSearchEngines"),   QStringLiteral("#Address bar suggestions"),
+        QStringLiteral("omnibarTabsSwitch"),    QStringLiteral("omnibarBookmarksSwitch"),
+        QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch"),
     };
-    QCOMPARE(columnOf(choices.first()), layout);
+    QCOMPARE(columnOf(findAll(QStringLiteral("searchEngineRow")).first()), layout);
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
+    for (QObject *row : findAll(QStringLiteral("searchEngineRow"))) {
+        QVERIFY(findObjects(row, QStringLiteral("searchEngineChoice"))
+                    .first()
+                    ->property("description")
+                    .toString()
+                    .isEmpty());
+    }
     for (const auto &source : sources) {
         QObject *toggle = find(source.first);
         QVERIFY2(!toggle->property("text").toString().isEmpty(), qPrintable(source.first));
@@ -4970,6 +5186,236 @@ void tst_qmlload::searchSettingsPage()
         toggle->setProperty("checked", true);
         QVERIFY((settings->*source.second)());
     }
+}
+
+namespace {
+
+// What ContentLinkHandler.jsm sends for a page that has a search of its own: the title and
+// address of the description, and the page's own address.
+void offerSearch(QObject *view, const QString &title, const QString &href, const QString &page,
+                 const QString &name = QStringLiteral("Link:AddSearch"))
+{
+    const QVariantMap engine{{QStringLiteral("title"), title}, {QStringLiteral("href"), href}};
+    const QVariantMap data{{QStringLiteral("engine"), engine}, {QStringLiteral("url"), page}};
+    QMetaObject::invokeMethod(view, "recvAsyncMessage", Q_ARG(QString, name),
+                              Q_ARG(QVariant, data));
+}
+
+QStringList foundTitles(const SearchEngines *list)
+{
+    QStringList found;
+    for (const QVariant &entry : list->foundEngines()) {
+        found.append(entry.toMap().value(QStringLiteral("title")).toString());
+    }
+    return found;
+}
+
+// A site's descriptions: two that are, and an error page where a third should be.
+QMap<QString, QByteArray> descriptions()
+{
+    return {{QStringLiteral("/find.xml"),
+             QByteArray("<OpenSearchDescription><ShortName>Find</ShortName>"
+                        "<Url type=\"text/html\" template=\"https://find.example/search?q="
+                        "{searchTerms}\"/></OpenSearchDescription>")},
+            {QStringLiteral("/third.xml"),
+             QByteArray("<OpenSearchDescription><ShortName>Third</ShortName>"
+                        "<Url type=\"text/html\" template=\"https://third.example/?q="
+                        "{searchTerms}\"/></OpenSearchDescription>")},
+            {QStringLiteral("/broken.xml"), QByteArray("<html><body>Sign in")}};
+}
+
+QObject *choiceIn(QObject *row)
+{
+    return findObjects(row, QStringLiteral("searchEngineChoice")).first();
+}
+
+} // namespace
+
+// Search engines found while browsing (docs/DECISIONS/0041-search-engines-found.md): a
+// page that offers one is heard on every view and the offer kept, once, and only on the
+// message that says so; Settings > Search lists what is kept.
+void tst_qmlload::searchEnginesFound()
+{
+    SearchEngines *list = m_core->searchEngines();
+    QObject *view = currentWebView();
+    QVERIFY(view->property("messageListeners")
+                .toStringList()
+                .contains(QStringLiteral("Link:AddSearch")));
+
+    offerSearch(view, QStringLiteral("Find"), QStringLiteral("https://find.example/find.xml"),
+                QStringLiteral("https://www.find.example/page"));
+    offerSearch(view, QStringLiteral("Broken"), QStringLiteral("https://broken.example/o.xml"),
+                QStringLiteral("https://broken.example/"));
+    offerSearch(view, QStringLiteral("Find"), QStringLiteral("https://find.example/find.xml"),
+                QStringLiteral("https://www.find.example/other"));
+    offerSearch(view, QStringLiteral("Qwant"), QStringLiteral("https://qwant.example/o.xml"),
+                QStringLiteral("https://qwant.example/"));
+    offerSearch(view, QStringLiteral("Quiet"), QStringLiteral("https://quiet.example/o.xml"),
+                QStringLiteral("https://quiet.example/"), QStringLiteral("embed:find"));
+    QCOMPARE(foundTitles(list), (QStringList{QStringLiteral("Find"), QStringLiteral("Broken")}));
+    QCOMPARE(list->foundEngines().first().toMap().value(QStringLiteral("host")).toString(),
+             QStringLiteral("find.example"));
+    QCOMPARE(list->engineNames().count(), 3);
+
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
+
+    // A section of its own, with what to do with it, and a row each: the add icon, the
+    // name, and under it the site and what a tap does.
+    QVERIFY(find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QCOMPARE(find(QStringLiteral("foundSearchEnginesHint"))->property("text").toString(),
+             QStringLiteral("Sites can offer their search. Tap one to add it and search with it."));
+    QVERIFY(find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
+    const QList<QObject *> found = findAll(QStringLiteral("foundSearchEngine"));
+    QCOMPARE(found.count(), 2);
+    QCOMPARE(textIn(found.first(), QStringLiteral("foundSearchEngineName")),
+             QStringLiteral("Find"));
+    QCOMPARE(textIn(found.first(), QStringLiteral("foundSearchEngineHost")),
+             QStringLiteral("find.example · Tap to add"));
+    QCOMPARE(findObjects(found.first(), QStringLiteral("foundSearchEngineIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-add"));
+    QCOMPARE(findAll(QStringLiteral("searchEngineRow")).count(), 3);
+
+    // Forgotten from its menu, which takes the section away with the last of them.
+    click(findObjects(found.last(), QStringLiteral("foundSearchEngineForget")).first());
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Find")});
+    QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
+    click(findObjects(findAll(QStringLiteral("foundSearchEngine")).first(),
+                      QStringLiteral("foundSearchEngineForget"))
+              .first());
+    QVERIFY(list->foundEngines().isEmpty());
+    QVERIFY(findAll(QStringLiteral("foundSearchEngine")).isEmpty());
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
+}
+
+// A tap on an engine found fetches its description with the page's own XMLHttpRequest,
+// from a server on the loopback, and reads it: the engine is added, chosen, no longer on
+// offer, and said to be; or it is not, and stays.
+void tst_qmlload::searchEnginesAdd()
+{
+    SearchSettings *search = m_core->searchSettings();
+    SearchEngines *list = m_core->searchEngines();
+    QObject *view = currentWebView();
+    DescriptionServer server(descriptions());
+    QVERIFY(server.isListening());
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://www.find.example/page"));
+    offerSearch(view, QStringLiteral("Broken"), server.url(QStringLiteral("/broken.xml")),
+                QStringLiteral("https://broken.example/"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+
+    QObject *notice = find(QStringLiteral("searchEngineNotice"));
+    QCOMPARE(notice->property("shownCount").toInt(), 0);
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 1);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Find search added"));
+    QCOMPARE(server.requests(), 1);
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Find"));
+    QCOMPARE(search->engineIndex(), 3);
+    QCOMPARE(search->searchUrl(QStringLiteral("a b")),
+             QStringLiteral("https://find.example/search?q=a%20b"));
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
+
+    // Listed with the others, built-in first, the site it came from under it, and lit as
+    // the one in use; the built-in ones have no such line.
+    const QList<QObject *> rows = findAll(QStringLiteral("searchEngineRow"));
+    QCOMPARE(rows.count(), 4);
+    QCOMPARE(choiceIn(rows.last())->property("text").toString(), QStringLiteral("Find"));
+    QCOMPARE(choiceIn(rows.last())->property("description").toString(),
+             QStringLiteral("Added from find.example"));
+    QVERIFY(choiceIn(rows.last())->property("checked").toBool());
+    QVERIFY(!choiceIn(rows.first())->property("checked").toBool());
+    QVERIFY(choiceIn(rows.first())->property("description").toString().isEmpty());
+
+    // One that is not a description is not added, and stays to be tried or forgotten.
+    const QList<QObject *> found = findAll(QStringLiteral("foundSearchEngine"));
+    click(found.first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 2);
+    QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Could not add Broken"));
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(list->engineNames().count(), 4);
+    QCOMPARE(search->engineIndex(), 3);
+
+    // A second tap while the first is on its way is not a second fetch.
+    const int requests = server.requests();
+    click(found.first());
+    click(found.first());
+    QTRY_COMPARE(notice->property("shownCount").toInt(), 3);
+    QCOMPARE(server.requests(), requests + 1);
+    QTest::qWait(50);
+    QCOMPARE(notice->property("shownCount").toInt(), 3);
+}
+
+// An added engine is removed from a menu opened by pressing and holding it, or with every
+// other from the pull-down menu, after its remorse; the first built-in engine is the one
+// in use if the one removed was.
+void tst_qmlload::searchEnginesRemove()
+{
+    SearchSettings *search = m_core->searchSettings();
+    SearchEngines *list = m_core->searchEngines();
+    QObject *view = currentWebView();
+    DescriptionServer server(descriptions());
+    QVERIFY(server.isListening());
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://find.example/"));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(list->addedCount(), 1);
+    QObject *remove = find(QStringLiteral("removeAddedEnginesMenu"));
+    QVERIFY(remove->property("visible").toBool());
+
+    // A built-in engine has no menu to open, an added one has.
+    QList<QObject *> rows = findAll(QStringLiteral("searchEngineRow"));
+    QMetaObject::invokeMethod(choiceIn(rows.first()), "pressAndHold");
+    QVERIFY(!rows.first()->property("menuOpen").toBool());
+    QMetaObject::invokeMethod(choiceIn(rows.last()), "pressAndHold");
+    QVERIFY(rows.last()->property("menuOpen").toBool());
+    click(findObjects(rows.last(), QStringLiteral("searchEngineRemove")).first());
+    QCOMPARE(list->engineNames().count(), 3);
+    QCOMPARE(search->engineIndex(), 0);
+    rows = findAll(QStringLiteral("searchEngineRow"));
+    QCOMPARE(rows.count(), 3);
+    QVERIFY(choiceIn(rows.first())->property("checked").toBool());
+    QVERIFY(!remove->property("visible").toBool());
+
+    // What was added and what was found, gone together.
+    offerSearch(view, QStringLiteral("Third"), server.url(QStringLiteral("/third.xml")),
+                QStringLiteral("https://third.example/"));
+    offerSearch(view, QStringLiteral("Find"), server.url(QStringLiteral("/find.xml")),
+                QStringLiteral("https://find.example/"));
+    QVERIFY(remove->property("visible").toBool());
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(list->addedCount(), 1);
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Third"));
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Find")});
+    const int remorses = evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt();
+    click(remove);
+    QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt(), remorses + 1);
+    QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Removing added search engines"));
+    QCOMPARE(list->engineNames().count(), 3);
+    QVERIFY(list->foundEngines().isEmpty());
+    QCOMPARE(search->engineIndex(), 0);
+    QVERIFY(!remove->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
+
+    // The main page's line follows the engine in use, an added one as any.
+    offerSearch(view, QStringLiteral("Third"), server.url(QStringLiteral("/third.xml")),
+                QStringLiteral("https://third.example/"));
+    click(findAll(QStringLiteral("foundSearchEngine")).first());
+    QTRY_COMPARE(list->engineNames().last(), QStringLiteral("Third"));
+    popPage();
+    QCOMPARE(
+        textIn(find(QStringLiteral("searchSettingsEntry")), QStringLiteral("settingsEntryValue")),
+        QStringLiteral("Third"));
 }
 
 // The reader view's look: each colour a square painted as the reader view will be and
@@ -5133,8 +5579,8 @@ void tst_qmlload::trackingSettingsPage()
              int(PrivacySettings::TrackingProtectionStrict));
     QVERIFY(levels.at(PrivacySettings::TrackingProtectionStrict)->property("checked").toBool());
     QVERIFY(!levels.at(PrivacySettings::TrackingProtectionStandard)->property("checked").toBool());
-    const QVariantList strict =
-        EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStrict);
+    const QVariantList strict = EngineMessages::trackingProtectionPreferences(
+        PrivacySettings::TrackingProtectionStrict, SitePermissionSettings::CookiesBlockCrossSite);
     const QVariantList preferences =
         evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
     QCOMPARE(preferences.count(), given + strict.count());
@@ -5155,8 +5601,14 @@ void tst_qmlload::trackingSettingsPage()
              given + 2 * strict.count());
 
     // Tracking protection is all there is here: clearing has a page of its own.
+    // Under the levels, once, what none of them can promise.
     const QString choice = QStringLiteral("trackingProtectionChoice");
-    QCOMPARE(columnOf(levels.first()), (QStringList{choice, choice, choice}));
+    QCOMPARE(columnOf(levels.first()),
+             (QStringList{choice, choice, choice, QStringLiteral("trackingProtectionLimits")}));
+    QVERIFY(find(QStringLiteral("trackingProtectionLimits"))
+                ->property("text")
+                .toString()
+                .contains(QStringLiteral("some trackers may still get through")));
 }
 
 // History: whether pages are kept, and whether they go as the browser closes, each a
@@ -6994,8 +7446,11 @@ void tst_qmlload::notificationSettingsPage()
                               : sent.last().toMap().value(QStringLiteral("value")).toMap();
     };
 
+    // Settings > Site permissions > Notifications, where the Notifications row was.
     openMenuItem(QStringLiteral("settingsMenuButton"));
-    click(find(QStringLiteral("notificationSettingsEntry")));
+    click(find(QStringLiteral("sitePermissionsSettingsEntry")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("sitePermissionsPage"));
+    click(find(QStringLiteral("notificationsPermissionRow")));
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("notificationSettingsPage"));
     // Opened, it asks the engine for what it keeps.
@@ -7069,6 +7524,1018 @@ void tst_qmlload::notificationSettingsPage()
     // Nothing left: the page says what it will list.
     permissions->remove(QLatin1String(ChatSite));
     QVERIFY(findAll(QStringLiteral("notificationSite")).isEmpty());
+}
+
+namespace {
+
+// The engine's list of permissions, as qtmozembed hands it over.
+QString permissionList(const QList<QStringList> &entries)
+{
+    QStringList items;
+    for (const QStringList &entry : entries) {
+        items.append(QStringLiteral("{type: '%1', uri: '%2', capability: %3, expireType: 0}")
+                         .arg(entry.at(0), entry.at(1), entry.at(2)));
+    }
+    return QStringLiteral("WebEngine.recvObserve('embed:perms:all', [%1])")
+        .arg(items.join(QLatin1Char(',')));
+}
+
+} // namespace
+
+// Settings > Site permissions: a row for each kind with how it is set and how many sites
+// are an exception to it, a tap to change the default or go to the exceptions, the
+// cookies only while tracking protection is off or a site has an exception to them, and
+// the sites tracking protection is off for under a heading of their own. Every choice is
+// written as it is made, and reaches the engine (docs/DECISIONS/0039-site-permissions.md).
+void tst_qmlload::sitePermissionsPage()
+{
+    SitePermissionSettings *defaults = m_core->sitePermissionSettings();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    // What the engine was last given for a preference, or an invalid value if never.
+    const auto given = [this, scope](const char *key) {
+        const QVariantList all =
+            evaluate(scope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = all.count() - 1; i >= 0; --i) {
+            if (all.at(i).toMap().value(QStringLiteral("key")).toString() == QLatin1String(key)) {
+                return all.at(i).toMap().value(QStringLiteral("value"));
+            }
+        }
+        return QVariant();
+    };
+    evaluate(scope,
+             QStringLiteral("pageStack.push('%1')")
+                 .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
+                                          QStringLiteral("/qml/pages/SitePermissionsPage.qml"))
+                          .toString()));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("sitePermissionsPage"));
+    // Opened, it asks the engine for what it keeps.
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("get-all"));
+
+    // What the page says of itself, and the rows in the order Settings lists the kinds.
+    QCOMPARE(find(QStringLiteral("sitePermissionsHint"))->property("text").toString(),
+             QStringLiteral("What sites may do unless you decided otherwise for a site. Tap one "
+                            "to change it or see the exceptions."));
+    const auto row = [this](const char *name) { return find(QLatin1String(name)); };
+    const auto value = [&row](const char *name) {
+        return textOf(row(name), "sitePermissionValue");
+    };
+    const auto description = [&row](const char *name) {
+        return textOf(row(name), "sitePermissionDescription");
+    };
+    QCOMPARE(textOf(row("notificationsPermissionRow"), "sitePermissionName"),
+             QStringLiteral("Notifications"));
+    QCOMPARE(textOf(row("popupsPermissionRow"), "sitePermissionName"), QStringLiteral("Pop-ups"));
+    QCOMPARE(textOf(row("locationPermissionRow"), "sitePermissionName"),
+             QStringLiteral("Location"));
+    QCOMPARE(textOf(row("cameraPermissionRow"), "sitePermissionName"), QStringLiteral("Camera"));
+    QCOMPARE(textOf(row("microphonePermissionRow"), "sitePermissionName"),
+             QStringLiteral("Microphone"));
+    QCOMPARE(findObjects(row("popupsPermissionRow"), QStringLiteral("sitePermissionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-browser-popup"));
+    QCOMPARE(findObjects(row("notificationsPermissionRow"), QStringLiteral("sitePermissionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-notifications"));
+    QCOMPARE(findObjects(row("locationPermissionRow"), QStringLiteral("sitePermissionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-browser-location"));
+
+    // As Firefox has them: pop-ups blocked, the rest asked, and nothing an exception.
+    QCOMPARE(value("notificationsPermissionRow"), QStringLiteral("Ask"));
+    QCOMPARE(value("popupsPermissionRow"), QStringLiteral("Block"));
+    QCOMPARE(value("locationPermissionRow"), QStringLiteral("Ask"));
+    QCOMPARE(value("cameraPermissionRow"), QStringLiteral("Ask"));
+    QCOMPARE(value("microphonePermissionRow"), QStringLiteral("Ask"));
+    for (const char *name :
+         {"notificationsPermissionRow", "popupsPermissionRow", "locationPermissionRow",
+          "cameraPermissionRow", "microphonePermissionRow"}) {
+        QCOMPARE(description(name), QStringLiteral("No exceptions"));
+    }
+    // Cookies are tracking protection's while it is on (Standard), and nothing is turned
+    // off for any site.
+    QVERIFY(!shownIn(page, "cookiesPermissionRow"));
+    QVERIFY(!shownIn(page, "trackingExceptionsSection"));
+    QVERIFY(!shownIn(page, "trackingPermissionRow"));
+
+    // The engine's list: the notifications' counts come from their own model, the others
+    // from the site permissions.
+    evaluate(
+        scope,
+        permissionList(
+            {{QStringLiteral("desktop-notification"), QStringLiteral("https://a.example"),
+              QStringLiteral("1")},
+             {QStringLiteral("desktop-notification"), QStringLiteral("https://b.example"),
+              QStringLiteral("1")},
+             {QStringLiteral("desktop-notification"), QStringLiteral("https://c.example"),
+              QStringLiteral("2")},
+             {QStringLiteral("popup"), QStringLiteral("https://op.example"), QStringLiteral("1")},
+             {QStringLiteral("camera"), QStringLiteral("https://cam.example"), QStringLiteral("2")},
+             {QStringLiteral("camera"), QStringLiteral("https://cam2.example"),
+              QStringLiteral("1")},
+             {QStringLiteral("trackingprotection"), QStringLiteral("https://tp.example"),
+              QStringLiteral("1")}}));
+    QCOMPARE(description("notificationsPermissionRow"),
+             QStringLiteral("2 site(s) allowed · 1 blocked"));
+    QCOMPARE(description("popupsPermissionRow"), QStringLiteral("1 exception(s)"));
+    QCOMPARE(description("cameraPermissionRow"), QStringLiteral("2 exception(s)"));
+    QCOMPARE(description("locationPermissionRow"), QStringLiteral("No exceptions"));
+    QVERIFY(shownIn(page, "trackingExceptionsSection"));
+    QVERIFY(shownIn(page, "trackingPermissionRow"));
+    QCOMPARE(value("trackingPermissionRow"), QStringLiteral("Off for 1 site(s)"));
+    QCOMPARE(description("trackingPermissionRow"),
+             QStringLiteral("Turned off from a site’s details"));
+
+    // The choices of a default: pop-ups allowed or blocked, written as they are made, and
+    // the engine given the preference.
+    QObject *popups = row("popupsPermissionRow");
+    const QList<QObject *> popupChoices =
+        findObjects(popups, QStringLiteral("sitePermissionChoice"));
+    QCOMPARE(popupChoices.count(), 2);
+    QCOMPARE(popupChoices.at(0)->property("text").toString(), QStringLiteral("Allow"));
+    QCOMPARE(popupChoices.at(1)->property("text").toString(), QStringLiteral("Block"));
+    QCOMPARE(findObjects(popups, QStringLiteral("sitePermissionShowExceptions"))
+                 .first()
+                 ->property("text")
+                 .toString(),
+             QStringLiteral("Show exceptions"));
+    click(popups);
+    QVERIFY(popups->property("menuOpen").toBool());
+    click(popupChoices.at(0));
+    QVERIFY(defaults->popupsAllowed());
+    QCOMPARE(value("popupsPermissionRow"), QStringLiteral("Allow"));
+    QCOMPARE(given("dom.disable_open_during_load"), QVariant(false));
+    click(popupChoices.at(1));
+    QVERIFY(!defaults->popupsAllowed());
+    QCOMPARE(given("dom.disable_open_during_load"), QVariant(true));
+
+    // Location, camera and microphone are asked about or refused outright, each alone.
+    const QList<QObject *> cameraChoices =
+        findObjects(row("cameraPermissionRow"), QStringLiteral("sitePermissionChoice"));
+    QCOMPARE(cameraChoices.at(0)->property("text").toString(), QStringLiteral("Ask"));
+    QCOMPARE(cameraChoices.at(1)->property("text").toString(), QStringLiteral("Block"));
+    click(cameraChoices.at(1));
+    QVERIFY(defaults->cameraBlocked());
+    QVERIFY(!defaults->locationBlocked());
+    QVERIFY(!defaults->microphoneBlocked());
+    QCOMPARE(value("cameraPermissionRow"), QStringLiteral("Block"));
+    QCOMPARE(value("locationPermissionRow"), QStringLiteral("Ask"));
+    QCOMPARE(given("permissions.default.camera"), QVariant(2));
+    QCOMPARE(given("permissions.default.microphone"), QVariant(0));
+    QCOMPARE(given("permissions.default.geo"), QVariant(0));
+    click(findObjects(row("locationPermissionRow"), QStringLiteral("sitePermissionChoice")).at(1));
+    click(
+        findObjects(row("microphonePermissionRow"), QStringLiteral("sitePermissionChoice")).at(1));
+    QVERIFY(defaults->locationBlocked());
+    QVERIFY(defaults->microphoneBlocked());
+    QCOMPARE(given("permissions.default.geo"), QVariant(2));
+    QCOMPARE(given("permissions.default.geolocation"), QVariant(2));
+    QCOMPARE(given("permissions.default.microphone"), QVariant(2));
+    click(cameraChoices.at(0));
+    QVERIFY(!defaults->cameraBlocked());
+    QCOMPARE(given("permissions.default.camera"), QVariant(0));
+}
+
+// The cookies on Settings > Site permissions are tracking protection's while it is on:
+// the row comes with it off, or with a site that has an exception to them, and what is
+// chosen there is the engine's cookie behaviour while tracking protection is off. The
+// rows with no choices to make are ways on (docs/DECISIONS/0039-site-permissions.md).
+void tst_qmlload::sitePermissionsCookiesAndWaysOn()
+{
+    SitePermissionSettings *defaults = m_core->sitePermissionSettings();
+    PrivacySettings *privacy = m_core->privacySettings();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    evaluate(scope,
+             QStringLiteral("pageStack.push('%1')")
+                 .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
+                                          QStringLiteral("/qml/pages/SitePermissionsPage.qml"))
+                          .toString()));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("sitePermissionsPage"));
+    const auto row = [this](const char *name) { return find(QLatin1String(name)); };
+    const auto value = [&row](const char *name) {
+        return textOf(row(name), "sitePermissionValue");
+    };
+    const auto description = [&row](const char *name) {
+        return textOf(row(name), "sitePermissionDescription");
+    };
+
+    // The cookies row comes with tracking protection off, with the choices of three, and
+    // says why it is there; the choice is what the engine's cookie behaviour is while it
+    // is off.
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionOff);
+    QVERIFY(shownIn(page, "cookiesPermissionRow"));
+    QCOMPARE(textOf(row("cookiesPermissionRow"), "sitePermissionName"), QStringLiteral("Cookies"));
+    QCOMPARE(value("cookiesPermissionRow"), QStringLiteral("Block cross-site"));
+    QCOMPARE(description("cookiesPermissionRow"),
+             QStringLiteral("Shown while tracking protection is off · No exceptions"));
+    QCOMPARE(findObjects(row("cookiesPermissionRow"), QStringLiteral("sitePermissionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-browser-cookies"));
+    const QList<QObject *> cookieChoices =
+        findObjects(row("cookiesPermissionRow"), QStringLiteral("sitePermissionChoice"));
+    QCOMPARE(cookieChoices.count(), 3);
+    QCOMPARE(cookieChoices.at(0)->property("text").toString(), QStringLiteral("Allow all"));
+    QCOMPARE(cookieChoices.at(1)->property("text").toString(), QStringLiteral("Block cross-site"));
+    QCOMPARE(cookieChoices.at(2)->property("text").toString(), QStringLiteral("Block all"));
+    const auto cookieBehavior = [this, scope]() {
+        const QVariantList given =
+            evaluate(scope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = given.count() - 1; i >= 0; --i) {
+            if (given.at(i).toMap().value(QStringLiteral("key")).toString() ==
+                QLatin1String("network.cookie.cookieBehavior")) {
+                return given.at(i).toMap().value(QStringLiteral("value")).toInt();
+            }
+        }
+        return -1;
+    };
+    QCOMPARE(cookieBehavior(), 1);
+    click(cookieChoices.at(2));
+    QCOMPARE(defaults->cookies(), int(SitePermissionSettings::CookiesBlockAll));
+    QCOMPARE(value("cookiesPermissionRow"), QStringLiteral("Block all"));
+    QCOMPARE(cookieBehavior(), 2);
+    click(cookieChoices.at(0));
+    QCOMPARE(cookieBehavior(), 0);
+    // Standard is Firefox's: its own cookie behaviour, whatever was chosen.
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStandard);
+    QCOMPARE(cookieBehavior(), 5);
+    QVERIFY(!shownIn(page, "cookiesPermissionRow"));
+    // A site with an exception to cookies brings the row back, and its count.
+    evaluate(scope, permissionList({{QStringLiteral("cookie"), QStringLiteral("https://c.example"),
+                                     QStringLiteral("1")}}));
+    QVERIFY(shownIn(page, "cookiesPermissionRow"));
+    QCOMPARE(description("cookiesPermissionRow"), QStringLiteral("1 exception(s)"));
+
+    // A tap with no choices to make is a way on: the notifications' page, and the sites
+    // tracking protection was turned off for; the menu's last item goes to the
+    // exceptions of the row's kind.
+    evaluate(scope, permissionList({{QStringLiteral("trackingprotection"),
+                                     QStringLiteral("https://tp.example"), QStringLiteral("1")},
+                                    {QStringLiteral("popup"), QStringLiteral("https://op.example"),
+                                     QStringLiteral("1")}}));
+    click(row("notificationsPermissionRow"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("notificationSettingsPage"));
+    popPage();
+    click(row("trackingPermissionRow"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteExceptionsPage"));
+    QCOMPARE(currentPage()->property("kind").toInt(), int(SitePermissions::TrackingProtection));
+    popPage();
+    click(findObjects(row("popupsPermissionRow"), QStringLiteral("sitePermissionShowExceptions"))
+              .first());
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteExceptionsPage"));
+    QCOMPARE(currentPage()->property("kind").toInt(), int(SitePermissions::Popups));
+    popPage();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("sitePermissionsPage"));
+}
+
+// The exceptions to one kind of permission: the allowed under a heading and the blocked
+// under another, each with a menu to change it or remove it, and the pull-down menu that
+// adds a site by its address and removes them all (0039-site-permissions.md).
+void tst_qmlload::siteExceptionsPage()
+{
+    SitePermissions *sites = m_core->sitePermissions();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    const auto openPage = [this, scope](int kind) {
+        evaluate(scope,
+                 QStringLiteral("pageStack.push('%1', {kind: %2})")
+                     .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
+                                              QStringLiteral("/qml/pages/SiteExceptionsPage.qml"))
+                              .toString())
+                     .arg(kind));
+        return currentPage();
+    };
+    QObject *page = openPage(SitePermissions::Popups);
+    QCOMPARE(page->objectName(), QStringLiteral("siteExceptionsPage"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("get-all"));
+    // Nothing yet: the page says so, and has no footer to say what removing does.
+    QVERIFY(findAll(QStringLiteral("siteException")).isEmpty());
+    QVERIFY(!shownIn(page, "siteExceptionsFooter"));
+    QVERIFY(!shownIn(page, "removeAllMenuItem"));
+    QCOMPARE(textOf(page, "addSiteMenuItem"), QStringLiteral("Add a site"));
+    QCOMPARE(textOf(page, "removeAllMenuItem"), QStringLiteral("Remove all exceptions"));
+
+    // Header by kind: what it is for every other site, as default.
+    QCOMPARE(evaluate(page, QStringLiteral("siteNames.defaultName(kind)")).toString(),
+             QStringLiteral("Block"));
+
+    evaluate(
+        scope,
+        permissionList(
+            {{QStringLiteral("popup"), QStringLiteral("https://vr.example"), QStringLiteral("2")},
+             {QStringLiteral("popup"), QStringLiteral("https://op.example"), QStringLiteral("1")},
+             {QStringLiteral("cookie"), QStringLiteral("https://other.example"),
+              QStringLiteral("1")},
+             {QStringLiteral("popup"), QStringLiteral("https://iltalehti.example"),
+              QStringLiteral("2")}}));
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("siteException")));
+    QCOMPARE(rows.count(), 3);
+    // Allowed first, and each group by host; the cookies' site is another page's.
+    QCOMPARE(textOf(rows.at(0), "siteExceptionHost"), QStringLiteral("op.example"));
+    QCOMPARE(textOf(rows.at(1), "siteExceptionHost"), QStringLiteral("iltalehti.example"));
+    QCOMPARE(textOf(rows.at(2), "siteExceptionHost"), QStringLiteral("vr.example"));
+    // Each row offers the decisions it has not got; pop-ups are not asked about.
+    const auto offered = [](QObject *row) {
+        QStringList texts;
+        for (const char *name : {"siteExceptionAllow", "siteExceptionBlock", "siteExceptionAsk"}) {
+            if (shownIn(row, name)) {
+                texts.append(textOf(row, name));
+            }
+        }
+        return texts;
+    };
+    QCOMPARE(offered(rows.at(0)), QStringList{QStringLiteral("Block")});
+    QCOMPARE(offered(rows.at(1)), QStringList{QStringLiteral("Allow")});
+    QCOMPARE(textOf(rows.at(0), "siteExceptionRemove"), QStringLiteral("Remove"));
+    QCOMPARE(rows.at(0)->property("decision").toInt(), int(SitePermissions::Allow));
+    QCOMPARE(rows.at(1)->property("decision").toInt(), int(SitePermissions::Block));
+    QObject *list = find(QStringLiteral("siteExceptionList"));
+    QCOMPARE(evaluate(list, QStringLiteral("section.property")).toString(),
+             QStringLiteral("decision"));
+    QStringList headings;
+    for (QObject *heading : findAll(QStringLiteral("siteExceptionSection"))) {
+        headings.append(heading->property("text").toString());
+    }
+    headings.sort();
+    QCOMPARE(headings, (QStringList{QStringLiteral("Allowed"), QStringLiteral("Blocked")}));
+    QCOMPARE(find(QStringLiteral("siteExceptionsFooter"))->property("text").toString(),
+             QStringLiteral("A site you remove follows the default again."));
+    QVERIFY(shownIn(page, "removeAllMenuItem"));
+
+    // Blocked from the menu: the engine told, and the row moves under the other heading.
+    click(findObjects(rows.at(0), QStringLiteral("siteExceptionBlock")).first());
+    QCOMPARE(sites->decision(SitePermissions::Popups, QStringLiteral("https://op.example")),
+             int(SitePermissions::Block));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(), QStringLiteral("popup"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 2);
+    rows = byRow(findAll(QStringLiteral("siteException")));
+    QCOMPARE(rows.count(), 3);
+    for (QObject *row : rows) {
+        QCOMPARE(row->property("decision").toInt(), int(SitePermissions::Block));
+    }
+    QCOMPARE(textOf(rows.at(0), "siteExceptionHost"), QStringLiteral("iltalehti.example"));
+    // Removed: it follows the default again, and the page of another kind does not see it.
+    click(findObjects(rows.at(1), QStringLiteral("siteExceptionRemove")).first());
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("uri")).toString(),
+             QStringLiteral("https://op.example"));
+    QCOMPARE(findAll(QStringLiteral("siteException")).count(), 2);
+
+    // Adding a site: its address has to begin as an origin does, and the choice is
+    // allowing or blocking it.
+    click(find(QStringLiteral("addSiteMenuItem")));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("siteExceptionDialog"));
+    QObject *address = find(QStringLiteral("siteExceptionAddress"));
+    QCOMPARE(address->property("text").toString(), QStringLiteral("https://"));
+    QVERIFY(!address->property("errorHighlight").toBool());
+    QVERIFY(!dialog->property("canAccept").toBool());
+    address->setProperty("text", QStringLiteral("ftp://files.example"));
+    QVERIFY(address->property("errorHighlight").toBool());
+    QCOMPARE(address->property("label").toString(),
+             QStringLiteral("Must begin with http:// or https://"));
+    QVERIFY(!dialog->property("canAccept").toBool());
+    address->setProperty("text", QStringLiteral("https://New.Example/path"));
+    QVERIFY(!address->property("errorHighlight").toBool());
+    QCOMPARE(dialog->property("origin").toString(), QStringLiteral("https://new.example"));
+    QVERIFY(dialog->property("canAccept").toBool());
+    QObject *decision = find(QStringLiteral("siteExceptionDecision"));
+    QVERIFY(shownIn(dialog, "siteExceptionDecision"));
+    QCOMPARE(decision->property("label").toString(), QStringLiteral("Pop-ups"));
+    decision->setProperty("currentIndex", 1);
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(sites->decision(SitePermissions::Popups, QStringLiteral("https://new.example")),
+             int(SitePermissions::Block));
+    QCOMPARE(lastToEngine().value(QStringLiteral("uri")).toString(),
+             QStringLiteral("https://new.example"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 2);
+    popPage();
+    QCOMPARE(findAll(QStringLiteral("siteException")).count(), 3);
+
+    // Allowed is the default choice of the dialog, as Silica's combo box starts at its
+    // first item; a site of the dialog that is not one is not added.
+    click(find(QStringLiteral("addSiteMenuItem")));
+    dialog = currentPage();
+    find(QStringLiteral("siteExceptionAddress"))
+        ->setProperty("text", QStringLiteral("https://ok.example"));
+    find(QStringLiteral("siteExceptionDecision"))->setProperty("currentIndex", 0);
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(sites->decision(SitePermissions::Popups, QStringLiteral("https://ok.example")),
+             int(SitePermissions::Allow));
+    popPage();
+    click(find(QStringLiteral("addSiteMenuItem")));
+    dialog = currentPage();
+    find(QStringLiteral("siteExceptionAddress"))->setProperty("text", QStringLiteral("nonsense"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(sites->count(SitePermissions::Popups), 4);
+    popPage();
+
+    // Removing them all, after the remorse: every site of the kind, and no other kind's.
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupCount")).toInt(), 0);
+    click(find(QStringLiteral("removeAllMenuItem")));
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupCount")).toInt(), 1);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Removing exceptions"));
+    QCOMPARE(sites->count(SitePermissions::Popups), 0);
+    QCOMPARE(sites->count(SitePermissions::Cookies), 1);
+    QVERIFY(findAll(QStringLiteral("siteException")).isEmpty());
+    QVERIFY(!shownIn(page, "siteExceptionsFooter"));
+    popPage();
+
+    // Tracking protection's list is the sites it is off for: one heading, no blocking,
+    // nothing to change but taking a site off the list.
+    sites->observe(
+        QStringLiteral("embed:perms:all"),
+        QVariantList{QVariantMap{{QStringLiteral("type"), QStringLiteral("trackingprotection")},
+                                 {QStringLiteral("uri"), QStringLiteral("https://tp.example")},
+                                 {QStringLiteral("capability"), 1},
+                                 {QStringLiteral("expireType"), 0}}});
+    page = openPage(SitePermissions::TrackingProtection);
+    rows = findAll(QStringLiteral("siteException"));
+    QCOMPARE(rows.count(), 1);
+    QVERIFY(offered(rows.first()).isEmpty());
+    QVERIFY(shownIn(rows.first(), "siteExceptionRemove"));
+    QCOMPARE(textOf(page, "siteExceptionSection"), QStringLiteral("Tracking protection off"));
+    click(findObjects(rows.first(), QStringLiteral("siteExceptionRemove")).first());
+    QCOMPARE(sites->count(SitePermissions::TrackingProtection), 0);
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
+             QStringLiteral("trackingprotection"));
+    // Adding one is allowing it, with no choice to make.
+    click(find(QStringLiteral("addSiteMenuItem")));
+    dialog = currentPage();
+    QVERIFY(!shownIn(dialog, "siteExceptionDecision"));
+    find(QStringLiteral("siteExceptionAddress"))
+        ->setProperty("text", QStringLiteral("https://tp2.example"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(
+        sites->decision(SitePermissions::TrackingProtection, QStringLiteral("https://tp2.example")),
+        int(SitePermissions::Allow));
+}
+
+// A kind a page asks for: its exceptions page lists the sites asked each time under a
+// heading of their own, and asking is one of each row's choices and the add dialog's
+// (docs/DECISIONS/0040-site-details.md).
+void tst_qmlload::siteExceptionsAskEachTime()
+{
+    SitePermissions *sites = m_core->sitePermissions();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    const auto openPage = [this, scope](int kind) {
+        evaluate(scope,
+                 QStringLiteral("pageStack.push('%1', {kind: %2})")
+                     .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
+                                              QStringLiteral("/qml/pages/SiteExceptionsPage.qml"))
+                              .toString())
+                     .arg(kind));
+        return currentPage();
+    };
+    sites->observe(
+        QStringLiteral("embed:perms:all"),
+        QVariantList{QVariantMap{{QStringLiteral("type"), QStringLiteral("geo")},
+                                 {QStringLiteral("uri"), QStringLiteral("https://ask.example")},
+                                 {QStringLiteral("capability"), 3},
+                                 {QStringLiteral("expireType"), 0}},
+                     QVariantMap{{QStringLiteral("type"), QStringLiteral("geo")},
+                                 {QStringLiteral("uri"), QStringLiteral("https://map.example")},
+                                 {QStringLiteral("capability"), 1},
+                                 {QStringLiteral("expireType"), 0}}});
+    openPage(SitePermissions::Location);
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("siteException")));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(textOf(rows.at(0), "siteExceptionHost"), QStringLiteral("map.example"));
+    QCOMPARE(textOf(rows.at(1), "siteExceptionHost"), QStringLiteral("ask.example"));
+    QCOMPARE(textOf(rows.at(0), "siteExceptionAsk"), QStringLiteral("Always ask"));
+    QVERIFY(!shownIn(rows.at(1), "siteExceptionAsk"));
+    QVERIFY(shownIn(rows.at(1), "siteExceptionAllow"));
+    QVERIFY(shownIn(rows.at(1), "siteExceptionBlock"));
+    QStringList askHeadings;
+    for (QObject *heading : findAll(QStringLiteral("siteExceptionSection"))) {
+        askHeadings.append(heading->property("text").toString());
+    }
+    askHeadings.sort();
+    QCOMPARE(askHeadings, (QStringList{QStringLiteral("Allowed"), QStringLiteral("Always ask")}));
+    click(findObjects(rows.at(0), QStringLiteral("siteExceptionAsk")).first());
+    QCOMPARE(sites->decision(SitePermissions::Location, QStringLiteral("https://map.example")),
+             int(SitePermissions::Ask));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 3);
+    // Added from the pulley, the third choice is asking each time.
+    click(find(QStringLiteral("addSiteMenuItem")));
+    QObject *askDialog = currentPage();
+    QVERIFY(shownIn(askDialog, "siteExceptionAskChoice"));
+    find(QStringLiteral("siteExceptionAddress"))
+        ->setProperty("text", QStringLiteral("https://new.example"));
+    find(QStringLiteral("siteExceptionDecision"))->setProperty("currentIndex", 2);
+    QMetaObject::invokeMethod(askDialog, "accept");
+    QCOMPARE(sites->decision(SitePermissions::Location, QStringLiteral("https://new.example")),
+             int(SitePermissions::Ask));
+    // The dialog, and the page under it.
+    evaluate(scope, QStringLiteral("pageStack.pop(null, PageStackAction.Immediate)"));
+    evaluate(scope, QStringLiteral("pageStack.pop(null, PageStackAction.Immediate)"));
+}
+
+// The head of the menu sheet is the way to the site's details, which the chevron after
+// the title says is there; the copy button at its right keeps its own tap, and on the
+// start page, where there is no site, there is no way in
+// (docs/DECISIONS/0040-site-details.md).
+void tst_qmlload::menuHeadOpensSiteDetails()
+{
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(), QStringLiteral("Qwant"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QVERIFY(shownIn(menu, "menuHeaderChevron"));
+    QCOMPARE(findObjects(menu, QStringLiteral("menuHeaderChevron"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-right"));
+    QVERIFY(findObjects(menu, QStringLiteral("menuHeaderDetails"))
+                .first()
+                ->property("enabled")
+                .toBool());
+
+    // The copy button at the right of the head is not a tap on the head.
+    click(find(QStringLiteral("copyAddressButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(!menu->property("open").toBool());
+
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("menuHeaderDetails")));
+    QObject *details = currentPage();
+    QCOMPARE(details->objectName(), QStringLiteral("siteDetailsPage"));
+    QVERIFY(!menu->property("open").toBool());
+    // What the sheet's head had: the page, and the view that shows it.
+    QCOMPARE(details->property("url").toString(), QLatin1String(FirstPage));
+    QCOMPARE(details->property("title").toString(), QStringLiteral("Qwant"));
+    QCOMPARE(details->property("view").value<QObject *>(), currentWebView());
+    popPage();
+
+    // The start page has no site: nothing to open, and no chevron to say there is.
+    m_core->tabs()->newTab(QString());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(!shownIn(menu, "menuHeaderChevron"));
+    QVERIFY(!findObjects(menu, QStringLiteral("menuHeaderDetails"))
+                 .first()
+                 ->property("enabled")
+                 .toBool());
+}
+
+// A site's details: whether the connection is secure and whose certificate says so, and
+// what the engine tells of the certificate (docs/DECISIONS/0040-site-details.md).
+void tst_qmlload::siteDetailsConnection()
+{
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto security = [this]() {
+        return currentWebView()->property("security").value<QObject *>();
+    };
+    const auto open = [this]() {
+        tapBar(QStringLiteral("menu"));
+        click(find(QStringLiteral("menuHeaderDetails")));
+        return currentPage();
+    };
+    const auto icon = [](QObject *page, const char *property) {
+        return findObjects(page, QStringLiteral("siteSecurityIcon")).first()->property(property);
+    };
+    m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(),
+                                QStringLiteral("Qwant, the search engine"));
+
+    // What the engine says of the certificate.
+    security()->setProperty("issuerDisplayName", QStringLiteral("Let's Encrypt (R11)"));
+    security()->setProperty("subjectDisplayName", QStringLiteral("www.qwant.com"));
+    security()->setProperty("expiryDate", QDateTime(QDate(2026, 12, 14), QTime(12, 0)));
+    security()->setProperty("protocolVersion", 4);
+    security()->setProperty("cipherName", QStringLiteral("TLS_AES_128_GCM_SHA256"));
+    QObject *page = open();
+    QCOMPARE(page->objectName(), QStringLiteral("siteDetailsPage"));
+    // Asked of the engine, as the notifications' page asks.
+    const QVariantList sent = evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+    QCOMPARE(
+        sent.last().toMap().value(QStringLiteral("value")).toMap().value(QStringLiteral("msg")),
+        QVariant(QStringLiteral("get-all")));
+    QCOMPARE(page->property("origin").toString(), QStringLiteral("https://www.qwant.com"));
+
+    // Secure: the padlock, and who vouches for it.
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
+    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("Verified by Let's Encrypt (R11)"));
+    QCOMPARE(icon(page, "source").toString(), QStringLiteral("image://theme/icon-m-device-lock"));
+    QVERIFY(!shownIn(page, "siteSecurityWarning"));
+    const auto detail = [page](const char *name, const char *property) {
+        return findObjects(page, QLatin1String(name)).first()->property(property).toString();
+    };
+    QVERIFY(shownIn(page, "siteConnectionDetails"));
+    QCOMPARE(detail("siteIssuedTo", "label"), QStringLiteral("Issued to"));
+    QCOMPARE(detail("siteIssuedTo", "value"), QStringLiteral("www.qwant.com"));
+    QCOMPARE(detail("siteVerifiedBy", "label"), QStringLiteral("Verified by"));
+    QCOMPARE(detail("siteVerifiedBy", "value"), QStringLiteral("Let's Encrypt (R11)"));
+    QCOMPARE(detail("siteValidUntil", "label"), QStringLiteral("Valid until"));
+    QCOMPARE(detail("siteValidUntil", "value"), QStringLiteral("14 Dec 2026"));
+    QCOMPARE(detail("siteProtocol", "label"), QStringLiteral("Protocol"));
+    QCOMPARE(detail("siteProtocol", "value"), QStringLiteral("TLS 1.3"));
+    QCOMPARE(detail("siteCipherSuite", "label"), QStringLiteral("Cipher suite"));
+    QCOMPARE(detail("siteCipherSuite", "value"), QStringLiteral("TLS_AES_128_GCM_SHA256"));
+
+    // A line the engine has nothing for is not drawn; with nothing at all, nor is the
+    // heading.
+    security()->setProperty("cipherName", QString());
+    security()->setProperty("protocolVersion", -1);
+    QVERIFY(!shownIn(page, "siteCipherSuite"));
+    QVERIFY(!shownIn(page, "siteProtocol"));
+    QVERIFY(shownIn(page, "siteValidUntil"));
+    security()->setProperty("protocolVersion", 3);
+    QCOMPARE(detail("siteProtocol", "value"), QStringLiteral("TLS 1.2"));
+    security()->setProperty("protocolVersion", 0);
+    QCOMPARE(detail("siteProtocol", "value"), QStringLiteral("SSL 3.0"));
+    security()->setProperty("protocolVersion", -1);
+    security()->setProperty("expiryDate", QVariant());
+    security()->setProperty("subjectDisplayName", QString());
+    security()->setProperty("issuerDisplayName", QString());
+    QVERIFY(!shownIn(page, "siteIssuedTo"));
+    QVERIFY(!shownIn(page, "siteValidUntil"));
+    QVERIFY(!shownIn(page, "siteConnectionDetails"));
+    // Verified by nobody: the title alone.
+    QVERIFY(!shownIn(page, "siteSecurityDetail"));
+    security()->setProperty("issuerDisplayName", QStringLiteral("Let's Encrypt (R11)"));
+    security()->setProperty("subjectDisplayName", QStringLiteral("www.qwant.com"));
+
+    // Broken: the warning in the error colour, the reason, and what not to do on the site.
+    const QColor error = evaluate(page, QStringLiteral("Theme.errorColor")).value<QColor>();
+    security()->setProperty("allGood", false);
+    security()->setProperty("notValidAtThisTime", true);
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is not secure"));
+    QCOMPARE(textOf(page, "siteSecurityDetail"),
+             QStringLiteral("The certificate has expired or is not yet valid"));
+    QCOMPARE(icon(page, "source").toString(), QStringLiteral("image://theme/icon-m-warning"));
+    QCOMPARE(icon(page, "color").value<QColor>(), error);
+    QCOMPARE(findObjects(page, QStringLiteral("siteSecurityTitle"))
+                 .first()
+                 ->property("color")
+                 .value<QColor>(),
+             error);
+    QCOMPARE(textOf(page, "siteSecurityWarning"),
+             QStringLiteral("Do not enter personal data, passwords, card details on this site"));
+    QVERIFY(shownIn(page, "siteSecurityWarning"));
+    // The certificate is still described.
+    QVERIFY(shownIn(page, "siteConnectionDetails"));
+    // The most to the point of the reasons first.
+    security()->setProperty("domainMismatch", true);
+    QCOMPARE(textOf(page, "siteSecurityDetail"),
+             QStringLiteral("The certificate has expired or is not yet valid"));
+    security()->setProperty("notValidAtThisTime", false);
+    QCOMPARE(textOf(page, "siteSecurityDetail"),
+             QStringLiteral("The certificate is for another site"));
+    security()->setProperty("domainMismatch", false);
+    security()->setProperty("untrusted", true);
+    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("The certificate is not trusted"));
+    // The engine unhappy for none of the reasons it has: not secure, and no reason made up.
+    security()->setProperty("untrusted", false);
+    QVERIFY(!shownIn(page, "siteSecurityDetail"));
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is not secure"));
+    // No verdict yet is no warning, as the bar's padlock has it.
+    security()->setProperty("validState", false);
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
+    security()->setProperty("validState", true);
+    security()->setProperty("allGood", true);
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
+    popPage();
+
+    // Plain http: not secure, and no certificate to describe, whatever the engine says.
+    typeAddress(QStringLiteral("http://plain.example/"));
+    QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("http://plain.example/"));
+    page = open();
+    QCOMPARE(page->objectName(), QStringLiteral("siteDetailsPage"));
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is not secure"));
+    QVERIFY(!shownIn(page, "siteSecurityDetail"));
+    QVERIFY(shownIn(page, "siteSecurityWarning"));
+    QCOMPARE(icon(page, "source").toString(), QStringLiteral("image://theme/icon-m-warning"));
+    QVERIFY(!shownIn(page, "siteConnectionDetails"));
+    // A site all the same: its permissions are drawn, for its own origin.
+    QCOMPARE(page->property("origin").toString(), QStringLiteral("http://plain.example"));
+    QCOMPARE(findAll(QStringLiteral("siteDecisionRow")).count(), 6);
+    popPage();
+
+    // An engine with no security to ask, or a view gone since the page was opened: drawn
+    // as the padlock in the bar is, with nothing of the certificate, and nothing amiss.
+    typeAddress(QStringLiteral("https://secure.example/"));
+    currentWebView()->setProperty("security", QVariant::fromValue<QObject *>(nullptr));
+    page = open();
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
+    QVERIFY(!shownIn(page, "siteSecurityDetail"));
+    QVERIFY(!shownIn(page, "siteConnectionDetails"));
+    QVERIFY(!shownIn(page, "siteTrackersBlocked"));
+    QVERIFY(!page->property("tlsBroken").toBool());
+    page->setProperty("view", QVariant::fromValue<QObject *>(nullptr));
+    QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
+    QVERIFY(!shownIn(page, "siteConnectionDetails"));
+    popPage();
+}
+
+// Tracking protection for the one site: a switch that adds the site to the engine's
+// allow list or takes it off, loading the page again; and off in Settings, off for every
+// site, and said so (docs/DECISIONS/0040-site-details.md).
+void tst_qmlload::siteDetailsTrackingProtection()
+{
+    SitePermissions *sites = m_core->sitePermissions();
+    PrivacySettings *privacy = m_core->privacySettings();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const QString site = QStringLiteral("https://www.qwant.com");
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    const auto reloads = [this]() {
+        return currentWebView()->property("calls").toStringList().count(QStringLiteral("reload"));
+    };
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("menuHeaderDetails")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("siteDetailsPage"));
+    QObject *toggle = find(QStringLiteral("siteTrackingSwitch"));
+    QCOMPARE(toggle->property("text").toString(), QStringLiteral("Tracking protection"));
+    QVERIFY(!toggle->property("automaticCheck").toBool());
+
+    // On, at either level: one line on what to do if the site looks broken.
+    QVERIFY(toggle->property("checked").toBool());
+    QVERIFY(toggle->property("enabled").toBool());
+    const QString onLine =
+        QStringLiteral("If something looks broken on this site, try turning this off.");
+    QCOMPARE(toggle->property("description").toString(), onLine);
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
+    QCOMPARE(toggle->property("description").toString(), onLine);
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStandard);
+
+    // The engine blocked trackers on the page: said while it is on.
+    auto *security = currentWebView()->property("security").value<QObject *>();
+    QVERIFY(!shownIn(page, "siteTrackersBlocked"));
+    security->setProperty("blockedTrackingContent", true);
+    QVERIFY(shownIn(page, "siteTrackersBlocked"));
+    QCOMPARE(textOf(page, "siteTrackersBlocked"),
+             QStringLiteral("Trackers were blocked on this page"));
+
+    // Turned off for the site: the allow list of the site's origin, and the page loaded
+    // again, which is where the engine applies it.
+    const int before = reloads();
+    click(toggle);
+    QCOMPARE(sites->decision(SitePermissions::TrackingProtection, site),
+             int(SitePermissions::Allow));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
+             QStringLiteral("trackingprotection"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("uri")).toString(), site);
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 1);
+    QCOMPARE(reloads(), before + 1);
+    QVERIFY(!toggle->property("checked").toBool());
+    QVERIFY(toggle->property("enabled").toBool());
+    QCOMPARE(toggle->property("description").toString(),
+             QStringLiteral("Off for this site. Turn it on to block trackers here again."));
+    // Nothing was blocked while it was off.
+    QVERIFY(!shownIn(page, "siteTrackersBlocked"));
+    // The site is on the page of the sites it is off for.
+    QCOMPARE(sites->count(SitePermissions::TrackingProtection), 1);
+
+    // And on again: the allow list entry goes, and the page is loaded again.
+    click(toggle);
+    QCOMPARE(sites->decision(SitePermissions::TrackingProtection, site),
+             int(SitePermissions::Default));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
+             QStringLiteral("trackingprotection"));
+    QCOMPARE(reloads(), before + 2);
+    QVERIFY(toggle->property("checked").toBool());
+    QVERIFY(shownIn(page, "siteTrackersBlocked"));
+
+    // Off in Settings it is off for every site: the switch is off, dimmed, and says why.
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionOff);
+    QVERIFY(!toggle->property("checked").toBool());
+    QVERIFY(!toggle->property("enabled").toBool());
+    QCOMPARE(toggle->property("description").toString(), QStringLiteral("Off in Settings"));
+    QVERIFY(!shownIn(page, "siteTrackersBlocked"));
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStandard);
+    QVERIFY(toggle->property("checked").toBool());
+
+    // A view gone since the page was opened is not reloaded, and the change is made all the same.
+    page->setProperty("view", QVariant::fromValue<QObject *>(nullptr));
+    click(find(QStringLiteral("siteTrackingSwitch")));
+    QCOMPARE(sites->decision(SitePermissions::TrackingProtection, site),
+             int(SitePermissions::Allow));
+    QCOMPARE(reloads(), before + 2);
+}
+
+// What the site has been given, one row a kind, each changed where it is; the cookies
+// only while tracking protection is off, for every site or this one, or when the site
+// has an exception to them; and the button that clears them all (0040-site-details.md).
+void tst_qmlload::siteDetailsPermissions()
+{
+    SitePermissions *sites = m_core->sitePermissions();
+    PrivacySettings *privacy = m_core->privacySettings();
+    SitePermissionSettings *defaults = m_core->sitePermissionSettings();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const QString site = QStringLiteral("https://www.qwant.com");
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    const auto reloads = [this]() {
+        return currentWebView()->property("calls").toStringList().count(QStringLiteral("reload"));
+    };
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("menuHeaderDetails")));
+    QObject *page = currentPage();
+    const auto row = [this](int kind) -> QObject * {
+        for (QObject *candidate : findAll(QStringLiteral("siteDecisionRow"))) {
+            if (candidate->property("kind").toInt() == kind) {
+                return candidate;
+            }
+        }
+        return nullptr;
+    };
+    const auto rowShown = [&row](int kind) {
+        return qobject_cast<QQuickItem *>(row(kind))->isVisible();
+    };
+    const auto value = [&row](int kind) { return textOf(row(kind), "siteDecisionValue"); };
+    // A row following the default says so, and what the default is.
+    const auto marked = [&value](int kind) {
+        return value(kind).startsWith(QStringLiteral("Follow default: "));
+    };
+    const auto pulley = [this]() { return find(QStringLiteral("siteDetailsPulley")); };
+    const auto pulleyShown = [&pulley]() {
+        return qobject_cast<QQuickItem *>(pulley())->isVisible();
+    };
+
+    // One row for each kind, in the order Settings lists them, over the section's heading;
+    // the cookies are tracking protection's while it is on.
+    QCOMPARE(textOf(page, "sitePermissionsSection"), QStringLiteral("Permissions"));
+    QCOMPARE(textOf(page, "siteTrackingSection"), QStringLiteral("Tracking protection"));
+    QCOMPARE(findAll(QStringLiteral("siteDecisionRow")).count(), 6);
+    QStringList names;
+    for (QObject *candidate : byRow(findAll(QStringLiteral("siteDecisionRow")))) {
+        names.append(textOf(candidate, "siteDecisionName"));
+    }
+    QCOMPARE(names, (QStringList{QStringLiteral("Notifications"), QStringLiteral("Pop-ups"),
+                                 QStringLiteral("Cookies"), QStringLiteral("Location"),
+                                 QStringLiteral("Camera"), QStringLiteral("Microphone")}));
+    QCOMPARE(findObjects(row(SitePermissions::Camera), QStringLiteral("siteDecisionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-browser-camera"));
+    QVERIFY(!rowShown(SitePermissions::Cookies));
+    for (int kind : {int(SitePermissions::Notifications), int(SitePermissions::Popups),
+                     int(SitePermissions::Location), int(SitePermissions::Camera),
+                     int(SitePermissions::Microphone)}) {
+        QVERIFY(rowShown(kind));
+        QVERIFY(marked(kind));
+    }
+    QCOMPARE(value(SitePermissions::Notifications), QStringLiteral("Follow default: Ask"));
+    QCOMPARE(value(SitePermissions::Popups), QStringLiteral("Follow default: Block"));
+    QCOMPARE(value(SitePermissions::Location), QStringLiteral("Follow default: Ask"));
+    // Nothing to clear, so no pulley to pull for nothing.
+    QVERIFY(!pulleyShown());
+    // The padlock stands clear of the page header.
+    QCOMPARE(find(QStringLiteral("siteSecurityHero"))->property("topPadding").toReal(),
+             evaluate(page, QStringLiteral("Theme.paddingLarge * 2")).toReal());
+
+    // The choices: allowing, blocking, asking each time where a page asks for it, and
+    // following the default, which says what that is.
+    const auto choices = [&row](int kind) {
+        QStringList texts;
+        for (const char *name :
+             {"siteDecisionAllow", "siteDecisionBlock", "siteDecisionAsk", "siteDecisionDefault"}) {
+            if (shownIn(row(kind), name)) {
+                texts.append(textOf(row(kind), name));
+            }
+        }
+        return texts;
+    };
+    QCOMPARE(choices(SitePermissions::Notifications),
+             (QStringList{QStringLiteral("Allow"), QStringLiteral("Block"),
+                          QStringLiteral("Always ask"), QStringLiteral("Follow default: Ask")}));
+    QCOMPARE(choices(SitePermissions::Location),
+             (QStringList{QStringLiteral("Allow"), QStringLiteral("Block"),
+                          QStringLiteral("Always ask"), QStringLiteral("Follow default: Ask")}));
+    QCOMPARE(choices(SitePermissions::Popups),
+             (QStringList{QStringLiteral("Allow"), QStringLiteral("Block"),
+                          QStringLiteral("Follow default: Block")}));
+    defaults->setCameraBlocked(true);
+    QCOMPARE(textOf(row(SitePermissions::Camera), "siteDecisionDefault"),
+             QStringLiteral("Follow default: Block"));
+    QCOMPARE(value(SitePermissions::Camera), QStringLiteral("Follow default: Block"));
+
+    // Asked each time, whatever the default: the engine's prompt record, which a blocked
+    // default does not override.
+    click(findObjects(row(SitePermissions::Camera), QStringLiteral("siteDecisionAsk")).first());
+    QCOMPARE(sites->decision(SitePermissions::Camera, site), int(SitePermissions::Ask));
+    QCOMPARE(value(SitePermissions::Camera), QStringLiteral("Always ask"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(), QStringLiteral("camera"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 3);
+    click(findObjects(row(SitePermissions::Camera), QStringLiteral("siteDecisionDefault")).first());
+    QCOMPARE(sites->decision(SitePermissions::Camera, site), int(SitePermissions::Default));
+    defaults->setCameraBlocked(false);
+    QCOMPARE(textOf(row(SitePermissions::Camera), "siteDecisionDefault"),
+             QStringLiteral("Follow default: Ask"));
+
+    click(row(SitePermissions::Notifications));
+    QVERIFY(row(SitePermissions::Notifications)->property("menuOpen").toBool());
+    click(findObjects(row(SitePermissions::Notifications), QStringLiteral("siteDecisionAllow"))
+              .first());
+    QCOMPARE(sites->decision(SitePermissions::Notifications, site), int(SitePermissions::Allow));
+    QCOMPARE(value(SitePermissions::Notifications), QStringLiteral("Allowed"));
+    QVERIFY(!marked(SitePermissions::Notifications));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
+             QStringLiteral("desktop-notification"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 1);
+    // The notifications' own model has it, as it is what the page asks.
+    QVERIFY(m_core->notificationPermissions()->isAllowed(site));
+
+    click(findObjects(row(SitePermissions::Location), QStringLiteral("siteDecisionBlock")).first());
+    QCOMPARE(value(SitePermissions::Location), QStringLiteral("Blocked"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("permission")).toInt(), 2);
+    click(findObjects(row(SitePermissions::Popups), QStringLiteral("siteDecisionAllow")).first());
+    QCOMPARE(value(SitePermissions::Popups), QStringLiteral("Allowed"));
+    QVERIFY(!marked(SitePermissions::Popups));
+    QVERIFY(marked(SitePermissions::Camera));
+
+    // Following the default again takes the exception away.
+    click(findObjects(row(SitePermissions::Popups), QStringLiteral("siteDecisionDefault")).first());
+    QCOMPARE(sites->decision(SitePermissions::Popups, site), int(SitePermissions::Default));
+    QCOMPARE(value(SitePermissions::Popups), QStringLiteral("Follow default: Block"));
+    QVERIFY(marked(SitePermissions::Popups));
+    QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(), QStringLiteral("popup"));
+
+    // With some, the pulley's item to clear them, which clears this site's and no other's.
+    sites->set(SitePermissions::Camera, QStringLiteral("https://other.example"),
+               SitePermissions::Block);
+    QVERIFY(pulleyShown());
+    QVERIFY(find(QStringLiteral("clearSitePermissionsButton")) == nullptr);
+    QCOMPARE(textOf(page, "clearSitePermissionsMenuItem"),
+             QStringLiteral("Clear site permissions"));
+    const int before = reloads();
+    click(find(QStringLiteral("clearSitePermissionsMenuItem")));
+    QCOMPARE(sites->originCount(site), 0);
+    QCOMPARE(sites->originCount(QStringLiteral("https://other.example")), 1);
+    QCOMPARE(value(SitePermissions::Notifications), QStringLiteral("Follow default: Ask"));
+    QVERIFY(marked(SitePermissions::Notifications));
+    QVERIFY(!pulleyShown());
+    QVERIFY(!m_core->notificationPermissions()->isAllowed(site));
+    // Tracking protection was not among them: nothing to load again.
+    QCOMPARE(reloads(), before);
+
+    // The cookies: a site that has an exception to them has the row; so does every site
+    // while tracking protection is off.
+    sites->set(SitePermissions::Cookies, site, SitePermissions::Block);
+    QVERIFY(rowShown(SitePermissions::Cookies));
+    QCOMPARE(value(SitePermissions::Cookies), QStringLiteral("Blocked"));
+    QCOMPARE(textOf(row(SitePermissions::Cookies), "siteDecisionDefault"),
+             QStringLiteral("Follow default: Block cross-site"));
+    QVERIFY(!shownIn(row(SitePermissions::Cookies), "siteDecisionAsk"));
+    sites->remove(SitePermissions::Cookies, site);
+    QVERIFY(!rowShown(SitePermissions::Cookies));
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionOff);
+    QVERIFY(rowShown(SitePermissions::Cookies));
+    QCOMPARE(value(SitePermissions::Cookies), QStringLiteral("Follow default: Block cross-site"));
+    QVERIFY(marked(SitePermissions::Cookies));
+    privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStandard);
+    QVERIFY(!rowShown(SitePermissions::Cookies));
+    // Off for this site alone is enough, and clearing the site's permissions turns it on
+    // again, as the switch would, loading the page again.
+    click(find(QStringLiteral("siteTrackingSwitch")));
+    QVERIFY(rowShown(SitePermissions::Cookies));
+    QVERIFY(pulleyShown());
+    const int afterSwitch = reloads();
+    click(find(QStringLiteral("clearSitePermissionsMenuItem")));
+    QVERIFY(!rowShown(SitePermissions::Cookies));
+    QCOMPARE(reloads(), afterSwitch + 1);
+    QVERIFY(find(QStringLiteral("siteTrackingSwitch"))->property("checked").toBool());
 }
 
 QTEST_MAIN(tst_qmlload)
@@ -7249,7 +8716,7 @@ void tst_qmlload::tutorial()
         find(QStringLiteral("tutorialSearchAction"))->property("title").toString();
     QVERIFY(go.contains(typed));
     QVERIFY(search.contains(typed));
-    QVERIFY(search.contains(m_core->searchSettings()->engineNames().first()));
+    QVERIFY(search.contains(m_core->searchEngines()->engineNames().first()));
     QVERIFY(!tapping());
     QVERIFY(!moving());
     QVERIFY(page->property("saying").toBool());

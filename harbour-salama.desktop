@@ -7,8 +7,21 @@ Comment[fi]=Verkkoselain
 Icon=harbour-salama
 Exec=harbour-salama
 X-Nemo-Application-Type=silica-qt5
+# What the share sheet offers when a link is shared from another application: this
+# browser, for links alone. text/x-url is what a link is shared as; plain text is not
+# offered here, even text holding an address. The share sheet calls the method's object,
+# /share/link, at the service ExecDBus below starts the browser under
+# (src/share/ShareReceiver.h, docs/DECISIONS/0042-share-target.md).
+X-Share-Methods=link
+
+[X-Share Method link]
+Description=Open in Salama
+Description[fi]=Avaa Salamassa
+Capabilities=text/x-url
+SupportsMultipleFiles=no
 
 [X-Sailjail]
-Permissions=Internet;WebView;Audio;Downloads;Pictures;Videos;Music;Documents;MediaIndexing
+Permissions=Internet;WebView;Audio;Downloads;Pictures;Videos;Music;Documents;MediaIndexing;Location;Camera;Microphone
 OrganizationName=io.github.muhnschein
 ApplicationName=salama
+ExecDBus=harbour-salama

@@ -6,7 +6,11 @@ namespace Salama {
 
 namespace {
 
-const char *const CutoutGuardKey = "cutoutGuard";
+const char *const NotchGuardKey = "notchGuard";
+// The switch the notch guard was before it had three modes: on kept every page below the
+// cutout, which is Forced, and off kept none, which is Disabled.
+const char *const RetiredCutoutGuardKey = "cutoutGuard";
+const char *const FixedToolbarKey = "fixedToolbar";
 const char *const TutorialShownKey = "tutorialShown";
 const char *const WebsiteColorsKey = "websiteColors";
 
@@ -15,17 +19,42 @@ const char *const WebsiteColorsKey = "websiteColors";
 Settings::Settings(QSettings &file, QObject *parent)
     : SettingsSection(file, parent)
 {
+    const QVariant retired = value(RetiredCutoutGuardKey);
+    if (retired.isValid()) {
+        if (!value(NotchGuardKey).isValid()) {
+            setValue(NotchGuardKey, retired.toBool() ? NotchGuardForced : NotchGuardDisabled);
+        }
+        remove(RetiredCutoutGuardKey);
+    }
+}
+
+int Settings::notchGuard() const
+{
+    return choice(NotchGuardKey, NotchGuardAutomatic, NotchGuardAutomatic, NotchGuardDisabled);
+}
+
+void Settings::setNotchGuard(int guard)
+{
+    if (setChoice(NotchGuardKey, guard, NotchGuardAutomatic, NotchGuardAutomatic,
+                  NotchGuardDisabled)) {
+        emit notchGuardChanged();
+    }
 }
 
 bool Settings::cutoutGuard() const
 {
-    return flag(CutoutGuardKey);
+    return notchGuard() != NotchGuardDisabled;
 }
 
-void Settings::setCutoutGuard(bool cutoutGuard)
+bool Settings::fixedToolbar() const
 {
-    if (setFlag(CutoutGuardKey, cutoutGuard)) {
-        emit cutoutGuardChanged();
+    return flag(FixedToolbarKey, false);
+}
+
+void Settings::setFixedToolbar(bool fixed)
+{
+    if (setFlag(FixedToolbarKey, fixed, false)) {
+        emit fixedToolbarChanged();
     }
 }
 

@@ -43,21 +43,19 @@ WebViewPage {
                                                      || navigationBar.resizing
                                                      ? navigationBar.slimHeight : barHeight)
 
-    // What the display's own cutout takes at the top of the screen, and how much of
-    // it this application keeps out of. Silica reports the cutout's whole rectangle,
-    // and it is read as y plus height because a cutout need not start at the very top
-    // -- sailfish-browser reads the same pair (docs/DECISIONS/0013-screen-cutout.md).
-    readonly property real cutoutHeight: Screen.topCutout
-                                         ? Math.max(0, Screen.topCutout.y + Screen.topCutout.height)
-                                         : 0
-    readonly property real cutoutInset: Settings.cutoutGuard ? cutoutHeight : 0
+    // The display's cutout, and how much of it the page and the rest keep out of.
+    readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
+    readonly property real cutoutHeight: cutout.height
+    readonly property real cutoutInset: cutout.inset
+    readonly property real pageCutoutInset: cutout.pageInset
 
     // Scrolling down slims the bar to the handle and the host; scrolling back up puts
     // its controls back. The engine's own chrome gesture is the signal -- the same one
     // that used to take the whole bar off the screen -- and the view is resized with
     // the bar, so the foot of a page clears it either way.
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || findBar.active || dragging) {
+        if (!currentView || navigationBar.editing || findBar.active || dragging
+                || Settings.fixedToolbar) {
             return false
         }
         // undefined on an engine with no chrome gesture: then the bar stays as it is.
@@ -307,7 +305,7 @@ WebViewPage {
         Rectangle {
             objectName: "cutoutBand"
             width: parent.width
-            height: browserPage.cutoutInset
+            height: browserPage.pageCutoutInset
             color: browserPage.currentView
                    && browserPage.currentView.pageThemeColor.length > 0
                    ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
@@ -325,8 +323,8 @@ WebViewPage {
                 left: parent.left
                 right: parent.right
             }
-            y: browserPage.cutoutInset
-            height: browserPage.viewHeight - browserPage.cutoutInset
+            y: browserPage.pageCutoutInset
+            height: browserPage.viewHeight - browserPage.pageCutoutInset
 
             // One WebView per tab shown this session; restored tabs stay unloaded
             // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
@@ -459,36 +457,10 @@ WebViewPage {
                         || browserPage.status === PageStatus.Deactivating)
             downloadsEnabled: true
 
-            // The engine's chrome gesture is what tells the bar which way a page is
-            // being scrolled. The threshold is how far it must be scrolled before the
-            // engine decides; its default is zero, which flips on the first pixel of
-            // every drag. It is a constant rather than the bar's own height, which
-            // changes when the bar answers it.
-            //
-            // Through Binding rather than as properties of their own, because they
-            // belong to the engine's view -- a build without them should cost a
-            // warning in the log, not a page that fails to load.
-            Binding {
-                target: webView
-                property: "chromeGestureEnabled"
-                value: true
-            }
-
-            Binding {
-                target: webView
-                property: "chromeGestureThreshold"
-                value: Theme.itemSizeLarge
-            }
-
-            // The platform's WebView hands the engine a safe area for the cutout, so
-            // that a page written for one can lay itself out around it. With the view
-            // already below the cutout there is nothing left for a page to avoid, and
-            // a page that did would be avoiding it twice.
-            Binding {
-                target: webView
-                property: "safeAreaTop"
-                value: 0
-                when: browserPage.cutoutInset > 0
+            // The chrome gesture the bar reads, and the safe area for the cutout.
+            property ViewChrome viewChrome: ViewChrome {
+                view: webView
+                cutoutInset: browserPage.pageCutoutInset
             }
 
             // What the page asks the browser to dress itself in, or nothing. Read
@@ -564,6 +536,10 @@ WebViewPage {
             // What the page plays, and its notifications (docs/DECISIONS/0026-media-controls.md, 0033).
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
             property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
+            // Whether it asked for the screen's cutout (docs/DECISIONS/0043-notch-guard-modes.md).
+            property PageViewport viewport: PageViewport { view: webView }
+            // The searches the page offers, kept for Settings > Search (docs/DECISIONS/0041-search-engines-found.md).
+            property PageSearchLink searches: PageSearchLink { view: webView }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

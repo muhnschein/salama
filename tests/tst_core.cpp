@@ -26,6 +26,7 @@ private slots:
     void historyNotRemembered();
     void clearsOnClose();
     void wiresHistoryAndBookmarksToTheStartPage();
+    void wiresAddedEnginesToTheStartPage();
 };
 
 void tst_core::wiresTabsToHistory()
@@ -267,6 +268,29 @@ void tst_core::wiresHistoryAndBookmarksToTheStartPage()
     core.history()->removeUrl(QStringLiteral("https://a.example/"));
     QCOMPARE(start->topSites()->count(), 0);
     QCOMPARE(start->recentPages()->count(), 0);
+}
+
+// A page of results of an engine added while browsing is a search and not a site visited,
+// from the moment the engine is added, with no visit to prompt the start page to look
+// again (docs/DECISIONS/0041-search-engines-found.md).
+void tst_core::wiresAddedEnginesToTheStartPage()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    const int id = core.tabs()->newTab(QString());
+    core.tabs()->updateUrl(id, QStringLiteral("https://find.example/results?query=forest"));
+    QCOMPARE(core.startPage()->topSites()->count(), 1);
+
+    const QString href = QStringLiteral("https://find.example/opensearch.xml");
+    QVERIFY(core.searchEngines()->offerEngine(QStringLiteral("Find"), href, QString()));
+    QVERIFY(core.searchEngines()->addFoundEngine(
+        href, QStringLiteral("<OpenSearchDescription><ShortName>Find</ShortName>"
+                             "<Url type=\"text/html\" template=\"https://find.example/results?"
+                             "query={searchTerms}\"/></OpenSearchDescription>")));
+    QCOMPARE(core.startPage()->topSites()->count(), 0);
+
+    core.searchEngines()->removeAddedEngines();
+    QCOMPARE(core.startPage()->topSites()->count(), 1);
 }
 
 QTEST_GUILESS_MAIN(tst_core)

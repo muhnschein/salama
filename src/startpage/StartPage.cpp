@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "StartPage.h"
 
+#include "search/SearchEngines.h"
 #include "settings/SearchSettings.h"
 #include "storage/Storage.h"
 
@@ -26,9 +27,10 @@ bool run(QSqlQuery &query)
 
 } // namespace
 
-StartPage::StartPage(const Storage &storage, QObject *parent)
+StartPage::StartPage(const Storage &storage, const SearchEngines &engines, QObject *parent)
     : QObject(parent)
     , m_db(storage.database())
+    , m_engines(engines)
 {
     refresh();
 }
@@ -88,7 +90,7 @@ QList<Site> StartPage::readHistory(const QString &order, int limit, bool onePerS
     QSet<QString> seen;
     while (sites.count() < limit && query.next()) {
         const Site site = siteAt(query);
-        if (SearchSettings::isSearchUrl(site.url)) {
+        if (m_engines.isSearchUrl(site.url)) {
             continue;
         }
         if (onePerSite) {

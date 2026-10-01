@@ -11,7 +11,10 @@
 //    A tap on one, or its going, is WebNotifications' to answer;
 //  * the question a page asks before it may, put while the page is the one on the
 //    screen;
-//  * the sites allowed and blocked, which the engine keeps, and whether others may ask.
+//  * the sites allowed and blocked, which the engine keeps, and whether others may ask;
+//  * the engine's permissions of every other kind, whose list SitePermissions keeps as
+//    this does the notifications' (docs/DECISIONS/0039-site-permissions.md): this is the
+//    one place the engine's answers come in, and both models read them.
 //
 // Made by the browsing page alone, whose page it asks over, and which is the one that
 // has the engine: it imports Sailfish.WebEngine for the permissions, as that page does
@@ -127,7 +130,10 @@ QtObject {
 
     property Connections engine: Connections {
         target: WebEngine
-        onRecvObserve: NotificationPermissions.observe(message, data)
+        onRecvObserve: {
+            NotificationPermissions.observe(message, data)
+            SitePermissions.observe(message, data)
+        }
     }
 
     property Connections settings: Connections {
@@ -139,6 +145,7 @@ QtObject {
         // Connected here rather than by a Connections, so that it is before the first
         // request, which nothing would carry otherwise.
         NotificationPermissions.engineRequest.connect(center.tellEngine)
+        SitePermissions.engineRequest.connect(center.tellEngine)
         WebEngine.addObserver(NotificationPermissions.topic)
         NotificationPermissions.refresh()
         applyRequests()

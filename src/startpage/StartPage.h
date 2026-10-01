@@ -12,6 +12,7 @@ class QSqlQuery;
 
 namespace Salama {
 
+class SearchEngines;
 class Storage;
 
 // What a tab with no address shows, in place of a home page: the lists Firefox's home
@@ -34,7 +35,8 @@ public:
     static const int BookmarkLimit = 8;
     static const int RecentPageLimit = 5;
 
-    explicit StartPage(const Storage &storage, QObject *parent = nullptr);
+    // `engines` says which pages are results, and is read for as long as the page lives.
+    StartPage(const Storage &storage, const SearchEngines &engines, QObject *parent = nullptr);
 
     SiteListModel *topSites();
     SiteListModel *bookmarks();
@@ -56,6 +58,7 @@ private:
     static Site siteAt(const QSqlQuery &query);
 
     QSqlDatabase m_db;
+    const SearchEngines &m_engines;
     SiteListModel m_topSites;
     SiteListModel m_bookmarks;
     SiteListModel m_recentPages;

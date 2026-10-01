@@ -4,6 +4,7 @@
 #include "downloads/DownloadModel.h"
 #include "history/HistoryModel.h"
 #include "omnibar/OmnibarModel.h"
+#include "search/SearchEngines.h"
 #include "settings/PrivacySettings.h"
 #include "settings/SearchSettings.h"
 #include "storage/Storage.h"
@@ -21,6 +22,7 @@ using Salama::DownloadModel;
 using Salama::HistoryModel;
 using Salama::OmnibarModel;
 using Salama::PrivacySettings;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Storage;
 using Salama::TabModel;
@@ -68,7 +70,8 @@ struct Sources
     HistoryModel history{storage};
     DownloadModel downloads{storage, dir.path()};
     QSettings file{dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat};
-    SearchSettings search{file};
+    SearchEngines engines{file};
+    SearchSettings search{file, engines};
     PrivacySettings privacy{file};
     OmnibarModel omnibar{&tabs, &bookmarks, &history, &downloads, &search, &privacy};
 };

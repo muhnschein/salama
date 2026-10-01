@@ -28,6 +28,12 @@ class PrivacySettings : public SettingsSection
     // notifications (docs/DECISIONS/0033-web-notifications.md).
     Q_PROPERTY(bool blockNotificationRequests READ blockNotificationRequests WRITE
                    setBlockNotificationRequests NOTIFY blockNotificationRequestsChanged)
+    // Whether sites are told the reader does not want to be tracked, off unless switched
+    // on, and whether pages run their scripts, on unless switched off: sailfish-browser's
+    // Do not track and Enable JavaScript, under its Privacy as here. What each asks of
+    // the engine is EngineMessages::contentPreferences().
+    Q_PROPERTY(bool doNotTrack READ doNotTrack WRITE setDoNotTrack NOTIFY doNotTrackChanged)
+    Q_PROPERTY(bool javascript READ javascript WRITE setJavascript NOTIFY javascriptChanged)
 
 public:
     // Firefox's Enhanced Tracking Protection categories, less protection first, with
@@ -57,11 +63,18 @@ public:
     bool blockNotificationRequests() const;
     void setBlockNotificationRequests(bool on);
 
+    bool doNotTrack() const;
+    void setDoNotTrack(bool on);
+    bool javascript() const;
+    void setJavascript(bool on);
+
 signals:
     void trackingProtectionChanged();
     void rememberHistoryChanged();
     void clearHistoryOnCloseChanged();
     void blockNotificationRequestsChanged();
+    void doNotTrackChanged();
+    void javascriptChanged();
 };
 
 } // namespace Salama

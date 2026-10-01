@@ -8,6 +8,13 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- Settings > Site permissions, in place of Settings > Notifications: what sites may do unless decided otherwise -- notifications, pop-ups, location, camera and microphone, and cookies while tracking protection is off -- each with its exceptions, which can be added, switched and removed. Salama now asks the phone for location, camera and microphone, so sites can be given them.
+- Site details: tap the page's name at the head of the menu to see whether the connection is secure and who verified it, the certificate and the cipher, turn tracking protection off for that site alone, and decide its permissions.
+- Search engines sites offer are collected while browsing and listed under Settings > Search > Found while browsing; a tap adds one and searches with it. Added engines say where they came from and can be removed one by one, or all at once from the pulley, which leaves the three built-in ones.
+- Salama is offered in the share sheet for links: a link shared from another app opens in a new tab in the "N tabs" group, in front, starting Salama if it is not running. Plain text is not offered to Salama.
+- Settings > Appearance > Fixed toolbar: the bar stays whole while a page is scrolled.
+- Settings > Privacy > Do not track, telling sites you do not want to be tracked, and Enable JavaScript, which says what switching it off costs.
+- Settings > Tracking protection ends with two sentences on what the phone's web engine cannot do yet.
 - Downloads say how they are going on the page they were started from: a card just above the bar with the file's name and how much of how much has come, paused or failed; with several, how many and how far along together. When one arrives the card says so for a few seconds. A tap on it opens Downloads, and a swipe puts it away until something changes.
 - Downloads can be paused, resumed and retried, and one from before the app was last closed fetched again. A row's menu deletes the file with its row; the pulley clears the finished ones, and Clear list is gone.
 - A new cover: where you were -- the site and title of the tab in front -- over the app's bolt drawn as faint dots in the ambience's colour. While something downloads, a ring fills as it goes, with the percentage in it; while the tab in front plays, the cover shows what plays, with its cover art or the video's picture when the page gives one, and says whether it plays or is paused. With no tab open, the dotted bolt alone. Nothing on it moves, and the quick action and the mute stay along its foot.
@@ -20,6 +27,10 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
 
 ### Changed
+- Website colours is Preferred color scheme, with sailfish-browser's line under it saying what it is for, and its Automatic is called Match ambience.
+- Avoid the screen cutout is Notch guard, with sailfish-browser's three modes and description: Automatic, the default, lets a page written for the cutout use it and keeps every other page below it; Forced keeps every page below it; Disabled none. A switch left on becomes Forced, one left off Disabled.
+- A settings row has an icon or a switch, never both: the switches' lights stand in the column of icons.
+- While a page loads, stop is a plain cross, as in sailfish-browser.
 - Each download in Downloads wears a ring at its start, filled as far as it has come, with pause, play or retry in it, in place of the line along its foot, and the icon of its kind once it has arrived; failed ones say so in red, and one whose file has gone says "File not found". Removing a download still coming, or clearing the list, stops it.
 - Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
 - Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; and the cover's quick action six rows, each with the glyph it wears on the cover, under a picture of the cover wearing it.

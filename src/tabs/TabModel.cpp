@@ -291,6 +291,15 @@ int TabModel::newTab(const QString &url)
     return tab.id;
 }
 
+int TabModel::newTabInDefaultGroup(const QString &url)
+{
+    if (isExternalUrl(url)) {
+        return 0;
+    }
+    setCurrentGroupId(defaultGroupId());
+    return newTab(url);
+}
+
 void TabModel::activateTab(int index)
 {
     if (m_tabs.isEmpty()) {

@@ -33,9 +33,12 @@ using Salama::PageMedia;
 using Salama::PrivacySettings;
 using Salama::Reader;
 using Salama::ReaderSettings;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Settings;
 using Salama::SiteListModel;
+using Salama::SitePermissions;
+using Salama::SitePermissionSettings;
 using Salama::StartPage;
 using Salama::StartPageSettings;
 using Salama::Storage;
@@ -162,12 +165,14 @@ void tst_qmlstatic::delegateRolesExist()
     BookmarkModel bookmarks(storage);
     DownloadModel downloads(storage, dir.path());
     QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
-    SearchSettings searchSettings(file);
+    SearchEngines searchEngines(file);
+    SearchSettings searchSettings(file, searchEngines);
     PrivacySettings privacySettings(file);
     OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &searchSettings,
                          &privacySettings);
     SiteListModel sites;
     NotificationPermissions notificationSites;
+    SitePermissions sitePermissions;
 
     // Which model backs the `model.` references in each file. The grid's rows come
     // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
@@ -194,6 +199,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/StartPageView.qml"), roleSet(sites)},
         {QStringLiteral("components/StartPagePreview.qml"), roleSet(sites)},
         {QStringLiteral("pages/NotificationSettingsPage.qml"), roleSet(notificationSites)},
+        {QStringLiteral("pages/SiteExceptionsPage.qml"), roleSet(sitePermissions)},
     };
 
     const QRegularExpression reference(QStringLiteral("\\bmodel\\.([A-Za-z_][A-Za-z0-9_]*)"));
@@ -228,6 +234,7 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("DownloadModel"), metaMembers(&DownloadModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
+        {QStringLiteral("SearchEngines"), metaMembers(&SearchEngines::staticMetaObject)},
         {QStringLiteral("SearchSettings"), metaMembers(&SearchSettings::staticMetaObject)},
         {QStringLiteral("ReaderSettings"), metaMembers(&ReaderSettings::staticMetaObject)},
         {QStringLiteral("CoverSettings"), metaMembers(&CoverSettings::staticMetaObject)},
@@ -242,14 +249,17 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("NotificationPermissions"),
          metaMembers(&NotificationPermissions::staticMetaObject)},
         {QStringLiteral("WebNotifications"), metaMembers(&WebNotifications::staticMetaObject)},
+        {QStringLiteral("SitePermissions"), metaMembers(&SitePermissions::staticMetaObject)},
+        {QStringLiteral("SitePermissionSettings"),
+         metaMembers(&SitePermissionSettings::staticMetaObject)},
     };
-    const QRegularExpression reference(
-        QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|DownloadModel|Settings|SearchSettings|ReaderSettings|"
-                       "CoverSettings|PrivacySettings|StartPageSettings|Omnibar|EngineMessages|"
-                       "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
-                       "WebNotifications)\\."
-                       "([A-Za-z_][A-Za-z0-9_]*)"));
+    const QRegularExpression reference(QStringLiteral(
+        "\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
+        "BookmarkModel|DownloadModel|Settings|SearchEngines|SearchSettings|ReaderSettings|"
+        "CoverSettings|PrivacySettings|StartPageSettings|Omnibar|EngineMessages|"
+        "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
+        "WebNotifications|SitePermissions|SitePermissionSettings)\\."
+        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;
     for (const QString &file : qmlFiles()) {

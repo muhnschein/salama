@@ -1,5 +1,5 @@
 # Host test suite. Everything here runs without a device, an SDK, or network.
-find_package(Qt5 5.6 REQUIRED COMPONENTS Test Gui Quick)
+find_package(Qt5 5.6 REQUIRED COMPONENTS Test Gui Quick Network)
 
 # --- Stub QML modules ---------------------------------------------------------------
 # The QML stubs are copied into the build tree so they sit next to the compiled plugin
@@ -49,11 +49,15 @@ foreach(test
     tst_downloadmodel
     tst_settings
     tst_searchwords
+    tst_opensearch
+    tst_searchengines
     tst_omnibarmodel
     tst_enginemessages
     tst_pageactivity
     tst_pagemedia
     tst_webnotifications
+    tst_sharereceiver
+    tst_sitepermissions
     tst_reader
     tst_startpage
     tst_core
@@ -62,4 +66,6 @@ foreach(test
 )
     salama_add_test(${test})
 endforeach()
+# The load tests serve OpenSearch descriptions from the loopback (tst_qmlload.cpp).
+target_link_libraries(tst_qmlload PRIVATE Qt5::Network)
 add_dependencies(tst_qmlload silicastubsplugin)

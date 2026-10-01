@@ -51,6 +51,26 @@ Page {
                     onClicked: PrivacySettings.trackingProtection = modelData
                 }
             }
+
+            // What the levels cannot promise, said once and plainly: the engine on the
+            // phone has only part of Firefox's protection, and lists of trackers to block
+            // reach it on no engine yet (docs/DECISIONS/0023-tracking-protection.md).
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge * 2
+            }
+
+            Label {
+                objectName: "trackingProtectionLimits"
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                wrapMode: Text.Wrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                text: qsTr("The web engine on Sailfish OS can’t yet do everything Firefox does "
+                           + "here, so some trackers may still get through. Salama turns on "
+                           + "every protection the engine has.")
+            }
         }
 
         VerticalScrollDecorator {}

@@ -59,6 +59,11 @@ private slots:
     void websiteColors();
     void isSearchUrl_data();
     void isSearchUrl();
+    void notchGuard();
+    void notchGuardOfAnEarlierRelease_data();
+    void notchGuardOfAnEarlierRelease();
+    void fixedToolbar();
+    void contentSwitches();
 };
 
 void tst_settings::defaults()
@@ -67,18 +72,23 @@ void tst_settings::defaults()
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.search()->engine(), SearchSettings::defaultEngine());
     QCOMPARE(settings.search()->engineIndex(), 0);
-    // On unless it is turned off: a camera cutout over the first line of a page is
-    // not a design decision (docs/DECISIONS/0013-screen-cutout.md).
+    // Automatic unless it is changed, as sailfish-browser's: a camera cutout over the
+    // first line of a page is not a design decision (docs/DECISIONS/0013-screen-cutout.md).
+    QCOMPARE(settings.general()->notchGuard(), int(Settings::NotchGuardAutomatic));
     QVERIFY(settings.general()->cutoutGuard());
-    QCOMPARE(settings.search()->engineNames().count(), settings.search()->engineKeys().count());
-    QCOMPARE(settings.search()->engineNames().first(), QStringLiteral("Qwant"));
-    QVERIFY(settings.search()->engineNames().contains(QStringLiteral("Ecosia")));
+    QVERIFY(!settings.general()->fixedToolbar());
+    QVERIFY(!settings.privacy()->doNotTrack());
+    QVERIFY(settings.privacy()->javascript());
+    QCOMPARE(settings.searchEngines()->engineNames().count(),
+             settings.searchEngines()->engineKeys().count());
+    QCOMPARE(settings.searchEngines()->engineNames().first(), QStringLiteral("Qwant"));
+    QVERIFY(settings.searchEngines()->engineNames().contains(QStringLiteral("Ecosia")));
     // Removed by choice, and the list is the whole set on offer.
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("google")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("bing")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("duckduckgo")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("wikipedia")));
-    QVERIFY(settings.search()->engineKeys().contains(QStringLiteral("startpage")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("google")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("bing")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("duckduckgo")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("wikipedia")));
+    QVERIFY(settings.searchEngines()->engineKeys().contains(QStringLiteral("startpage")));
 }
 
 void tst_settings::persistsValues()
@@ -87,14 +97,15 @@ void tst_settings::persistsValues()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QSignalSpy cutoutSpy(settings.general(), &Settings::cutoutGuardChanged);
+        QSignalSpy guardSpy(settings.general(), &Settings::notchGuardChanged);
 
-        settings.general()->setCutoutGuard(false);
-        settings.general()->setCutoutGuard(false);
-        QCOMPARE(cutoutSpy.count(), 1);
+        settings.general()->setNotchGuard(Settings::NotchGuardDisabled);
+        settings.general()->setNotchGuard(Settings::NotchGuardDisabled);
+        QCOMPARE(guardSpy.count(), 1);
         settings.search()->setEngine(QStringLiteral("startpage"));
     }
     Sections reloaded(path);
+    QCOMPARE(reloaded.general()->notchGuard(), int(Settings::NotchGuardDisabled));
     QVERIFY(!reloaded.general()->cutoutGuard());
     QCOMPARE(reloaded.search()->engine(), QStringLiteral("startpage"));
 }
@@ -788,7 +799,8 @@ void tst_settings::retiresTheHomePage()
     }
     QSettings file(path, QSettings::IniFormat);
     QVERIFY(!file.contains(QStringLiteral("homePage")));
-    QVERIFY(file.contains(QStringLiteral("cutoutGuard")));
+    // The switch is read into the notch guard and goes with it; the rest stays.
+    QVERIFY(file.contains(QStringLiteral("notchGuard")));
 }
 
 // The tutorial comes up by itself until it has been shown once, and stays shown
@@ -849,10 +861,10 @@ void tst_settings::isSearchUrl_data()
 
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    for (int i = 0; i < settings.search()->engineKeys().count(); ++i) {
+    for (int i = 0; i < settings.searchEngines()->engineKeys().count(); ++i) {
         settings.search()->setEngineIndex(i);
         const QString results = settings.search()->searchUrl(QStringLiteral("sailfish os"));
-        QTest::newRow(qPrintable(settings.search()->engineKeys().at(i))) << results << true;
+        QTest::newRow(qPrintable(settings.searchEngines()->engineKeys().at(i))) << results << true;
     }
     // As the engines themselves hand the results on: with parameters of their own ahead
     // of the words, and with or without "www.".
@@ -873,7 +885,118 @@ void tst_settings::isSearchUrl()
 {
     QFETCH(QString, url);
     QFETCH(bool, search);
-    QCOMPARE(SearchSettings::isSearchUrl(url), search);
+    QTemporaryDir dir;
+    Sections settings(dir.path() + QStringLiteral("/salama.conf"));
+    QCOMPARE(settings.searchEngines()->isSearchUrl(url), search);
+}
+
+// sailfish-browser's three notch guard modes, stored as chosen; one out of range is
+// refused, and whether anything keeps out of the cutout at all follows the mode
+// (docs/DECISIONS/0013-screen-cutout.md).
+void tst_settings::notchGuard()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.general(), &Settings::notchGuardChanged);
+        settings.general()->setNotchGuard(Settings::NotchGuardForced);
+        QCOMPARE(spy.count(), 1);
+        QVERIFY(settings.general()->cutoutGuard());
+        settings.general()->setNotchGuard(3);
+        settings.general()->setNotchGuard(-1);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(settings.general()->notchGuard(), int(Settings::NotchGuardForced));
+    }
+    Sections reloaded(path);
+    QCOMPARE(reloaded.general()->notchGuard(), int(Settings::NotchGuardForced));
+    {
+        QSettings file(path, QSettings::IniFormat);
+        file.setValue(QStringLiteral("notchGuard"), 7);
+    }
+    Sections edited(path);
+    QCOMPARE(edited.general()->notchGuard(), int(Settings::NotchGuardAutomatic));
+}
+
+void tst_settings::notchGuardOfAnEarlierRelease_data()
+{
+    QTest::addColumn<QVariant>("cutoutGuard");
+    QTest::addColumn<QVariant>("notchGuard");
+    QTest::addColumn<int>("expected");
+
+    // The switch an earlier release kept: on kept every page below the cutout, off none.
+    QTest::newRow("switched on") << QVariant(true) << QVariant() << int(Settings::NotchGuardForced);
+    QTest::newRow("switched off") << QVariant(false) << QVariant()
+                                  << int(Settings::NotchGuardDisabled);
+    QTest::newRow("never switched")
+        << QVariant() << QVariant() << int(Settings::NotchGuardAutomatic);
+    // A mode already chosen is not overwritten by a switch left behind.
+    QTest::newRow("both") << QVariant(false) << QVariant(int(Settings::NotchGuardAutomatic))
+                          << int(Settings::NotchGuardAutomatic);
+}
+
+void tst_settings::notchGuardOfAnEarlierRelease()
+{
+    QFETCH(QVariant, cutoutGuard);
+    QFETCH(QVariant, notchGuard);
+    QFETCH(int, expected);
+
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        QSettings old(path, QSettings::IniFormat);
+        if (cutoutGuard.isValid()) {
+            old.setValue(QStringLiteral("cutoutGuard"), cutoutGuard);
+        }
+        if (notchGuard.isValid()) {
+            old.setValue(QStringLiteral("notchGuard"), notchGuard);
+        }
+    }
+    {
+        Sections settings(path);
+        QCOMPARE(settings.general()->notchGuard(), expected);
+    }
+    QSettings file(path, QSettings::IniFormat);
+    QVERIFY(!file.contains(QStringLiteral("cutoutGuard")));
+    Sections reloaded(path);
+    QCOMPARE(reloaded.general()->notchGuard(), expected);
+}
+
+// Off unless switched on, and kept (docs/DECISIONS/0009-navigation-bar-gesture.md).
+void tst_settings::fixedToolbar()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.general(), &Settings::fixedToolbarChanged);
+        settings.general()->setFixedToolbar(true);
+        settings.general()->setFixedToolbar(true);
+        QCOMPARE(spy.count(), 1);
+    }
+    Sections reloaded(path);
+    QVERIFY(reloaded.general()->fixedToolbar());
+}
+
+// Do not track off and JavaScript on unless switched, as in sailfish-browser, and kept.
+void tst_settings::contentSwitches()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy trackSpy(settings.privacy(), &PrivacySettings::doNotTrackChanged);
+        QSignalSpy scriptSpy(settings.privacy(), &PrivacySettings::javascriptChanged);
+        settings.privacy()->setDoNotTrack(true);
+        settings.privacy()->setDoNotTrack(true);
+        settings.privacy()->setJavascript(false);
+        settings.privacy()->setJavascript(false);
+        QCOMPARE(trackSpy.count(), 1);
+        QCOMPARE(scriptSpy.count(), 1);
+    }
+    Sections reloaded(path);
+    QVERIFY(reloaded.privacy()->doNotTrack());
+    QVERIFY(!reloaded.privacy()->javascript());
 }
 
 QTEST_GUILESS_MAIN(tst_settings)

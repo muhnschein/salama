@@ -23,7 +23,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
                 m_settings.privacy())
     , m_pageMedia(&m_tabs)
     , m_reader(*m_settings.reader())
-    , m_startPage(m_storage)
+    , m_startPage(m_storage, *m_settings.searchEngines())
     , m_webNotifications(&m_notificationPermissions,
                          Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
@@ -46,9 +46,27 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
         connect(source, &QAbstractItemModel::rowsRemoved, &m_startPage, &StartPage::refresh);
         connect(source, &QAbstractItemModel::dataChanged, &m_startPage, &StartPage::refresh);
     }
+    // An engine added or removed changes which pages are searches and which are sites
+    // (docs/DECISIONS/0041-search-engines-found.md).
+    connect(m_settings.searchEngines(), &SearchEngines::enginesChanged, &m_startPage,
+            &StartPage::refresh);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
+
+    // The notifications' permission is kept by two models, the notifications' own and
+    // the site permissions' (docs/DECISIONS/0039-site-permissions.md); each takes in what
+    // the other decided, which the engine has been told of already.
+    connect(&m_sitePermissions, &SitePermissions::decided, &m_notificationPermissions,
+            [this](int kind, const QString &origin, int decision) {
+                if (kind == SitePermissions::Notifications) {
+                    m_notificationPermissions.adopt(origin, decision);
+                }
+            });
+    connect(&m_notificationPermissions, &NotificationPermissions::decided, &m_sitePermissions,
+            [this](const QString &origin, int capability) {
+                m_sitePermissions.adopt(SitePermissions::Notifications, origin, capability);
+            });
 
     // Five pages stay loaded, as in Jolla's browser.
     m_tabs.setLiveTabLimit(TabModel::LiveTabLimit);
@@ -107,6 +125,11 @@ Settings *Core::settings()
     return m_settings.general();
 }
 
+SearchEngines *Core::searchEngines()
+{
+    return m_settings.searchEngines();
+}
+
 SearchSettings *Core::searchSettings()
 {
     return m_settings.search();
@@ -130,6 +153,11 @@ PrivacySettings *Core::privacySettings()
 StartPageSettings *Core::startPageSettings()
 {
     return m_settings.startPage();
+}
+
+SitePermissionSettings *Core::sitePermissionSettings()
+{
+    return m_settings.sitePermissions();
 }
 
 OmnibarModel *Core::omnibar()
@@ -162,9 +190,19 @@ StartPage *Core::startPage()
     return &m_startPage;
 }
 
+ShareReceiver *Core::shareReceiver()
+{
+    return &m_shareReceiver;
+}
+
 NotificationPermissions *Core::notificationPermissions()
 {
     return &m_notificationPermissions;
+}
+
+SitePermissions *Core::sitePermissions()
+{
+    return &m_sitePermissions;
 }
 
 WebNotifications *Core::webNotifications()

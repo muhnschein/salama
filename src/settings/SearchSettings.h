@@ -5,19 +5,25 @@
 #include "SettingsSection.h"
 
 #include <QString>
-#include <QStringList>
 
 namespace Salama {
 
-// Settings > Search: the search engine, and the sources the address bar's suggestions
-// are drawn from. Also owns the address-bar heuristics, because what typed text means
-// depends on the search engine.
+class SearchEngines;
+
+// Settings > Search: the search engine in use, and the sources the address bar's
+// suggestions are drawn from. Also owns the address-bar heuristics, because what typed
+// text means depends on the search engine.
+//
+// Which engines there are to choose from -- the built-in ones and those added from what
+// sites offered -- is SearchEngines', which this borrows
+// (docs/DECISIONS/0041-search-engines-found.md): an engine it adds becomes the one in
+// use, and the first built-in one takes the place of an engine it removes from under the
+// choice.
 class SearchSettings : public SettingsSection
 {
     Q_OBJECT
     Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged)
     Q_PROPERTY(int engineIndex READ engineIndex WRITE setEngineIndex NOTIFY engineChanged)
-    Q_PROPERTY(QStringList engineNames READ engineNames CONSTANT)
     // Which sources the address bar's suggestions are drawn from, each on unless it is
     // switched off (docs/DECISIONS/0027-omnibar.md).
     Q_PROPERTY(bool omnibarTabs READ omnibarTabs WRITE setOmnibarTabs NOTIFY omnibarTabsChanged)
@@ -29,14 +35,14 @@ class SearchSettings : public SettingsSection
                    omnibarDownloadsChanged)
 
 public:
-    explicit SearchSettings(QSettings &file, QObject *parent = nullptr);
+    // The engines are borrowed: whoever owns the sections makes them first, and they
+    // outlive this.
+    SearchSettings(QSettings &file, SearchEngines &engines, QObject *parent = nullptr);
 
     QString engine() const;
     void setEngine(const QString &key);
     int engineIndex() const;
     void setEngineIndex(int index);
-    QStringList engineNames() const;
-    QStringList engineKeys() const;
     static QString defaultEngine();
 
     bool omnibarTabs() const;
@@ -49,9 +55,6 @@ public:
     void setOmnibarDownloads(bool on);
 
     Q_INVOKABLE QString searchUrl(const QString &query) const;
-    // Whether the url is a page of results from one of the search engines on offer:
-    // a search is something done, not a site visited (src/startpage/StartPage.h).
-    static bool isSearchUrl(const QString &url);
     // Typed address-bar text: a URL as-is, a host with a scheme added, or a search.
     Q_INVOKABLE QString urlForInput(const QString &input) const;
     // Whether typed text is an address rather than words: true exactly when
@@ -61,6 +64,7 @@ public:
     Q_INVOKABLE static QString displayAddress(const QString &url);
 
 signals:
+    // The engine in use changed, or where it is in the list of engines did.
     void engineChanged();
     void omnibarTabsChanged();
     void omnibarBookmarksChanged();
@@ -70,6 +74,16 @@ signals:
 private:
     // Trimmed text as an address, or empty when it is words to search for.
     static QString addressFor(const QString &text);
+
+    // An offer was taken up as the engine with this key: the engine in use from now on.
+    // Not said here; engineChanged() goes with the change of the list that follows.
+    void chooseAdded(const QString &key);
+    // After the engines were added to or removed from: written over the choice if it was
+    // the engine that went, so that the file never names an engine that is not in it,
+    // and said, since where the engine in use is in the list may have moved.
+    void enginesWereChanged();
+
+    SearchEngines &m_engines;
 };
 
 } // namespace Salama

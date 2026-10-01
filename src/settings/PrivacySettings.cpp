@@ -10,6 +10,8 @@ const char *const TrackingProtectionKey = "trackingProtection";
 const char *const RememberHistoryKey = "rememberHistory";
 const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
 const char *const BlockNotificationRequestsKey = "blockNotificationRequests";
+const char *const DoNotTrackKey = "doNotTrack";
+const char *const JavascriptKey = "javascript";
 
 } // namespace
 
@@ -65,6 +67,30 @@ void PrivacySettings::setBlockNotificationRequests(bool on)
 {
     if (setFlag(BlockNotificationRequestsKey, on, false)) {
         emit blockNotificationRequestsChanged();
+    }
+}
+
+bool PrivacySettings::doNotTrack() const
+{
+    return flag(DoNotTrackKey, false);
+}
+
+void PrivacySettings::setDoNotTrack(bool on)
+{
+    if (setFlag(DoNotTrackKey, on, false)) {
+        emit doNotTrackChanged();
+    }
+}
+
+bool PrivacySettings::javascript() const
+{
+    return flag(JavascriptKey);
+}
+
+void PrivacySettings::setJavascript(bool on)
+{
+    if (setFlag(JavascriptKey, on)) {
+        emit javascriptChanged();
     }
 }
 

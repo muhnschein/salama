@@ -13,6 +13,8 @@ add_library(salama-core STATIC
     engine/EngineData.h
     engine/EngineMessages.cpp
     engine/EngineMessages.h
+    engine/EnginePermissions.cpp
+    engine/EnginePermissions.h
     engine/PageActivity.cpp
     engine/PageActivity.h
     engine/PageMedia.cpp
@@ -25,9 +27,17 @@ add_library(salama-core STATIC
     notifications/WebNotifications.h
     omnibar/OmnibarModel.cpp
     omnibar/OmnibarModel.h
+    permissions/SiteExceptions.cpp
+    permissions/SiteExceptions.h
+    permissions/SitePermissions.cpp
+    permissions/SitePermissions.h
     reader/Reader.cpp
     reader/Reader.h
     reader/reader.qrc
+    search/OpenSearch.cpp
+    search/OpenSearch.h
+    search/SearchEngines.cpp
+    search/SearchEngines.h
     search/SearchWords.cpp
     search/SearchWords.h
     settings/CoverSettings.cpp
@@ -44,8 +54,12 @@ add_library(salama-core STATIC
     settings/SettingsSection.h
     settings/SettingsSections.cpp
     settings/SettingsSections.h
+    settings/SitePermissionSettings.cpp
+    settings/SitePermissionSettings.h
     settings/StartPageSettings.cpp
     settings/StartPageSettings.h
+    share/ShareReceiver.cpp
+    share/ShareReceiver.h
     startpage/SiteListModel.cpp
     startpage/SiteListModel.h
     startpage/StartPage.cpp
@@ -71,7 +85,8 @@ target_include_directories(salama-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(salama-core PROPERTIES AUTORCC ON)
 # Gui, for QColor: a page's theme-color is a CSS colour, and reading one is what
 # QColor is for (src/engine/EngineMessages.cpp).
-target_link_libraries(salama-core PUBLIC Qt5::Core Qt5::Gui Qt5::Qml Qt5::Sql)
+# DBus, for the share sheet's call with a shared link (src/share/ShareReceiver.h).
+target_link_libraries(salama-core PUBLIC Qt5::Core Qt5::DBus Qt5::Gui Qt5::Qml Qt5::Sql)
 target_compile_definitions(salama-core PUBLIC
     QT_NO_CAST_FROM_ASCII
     QT_NO_CAST_TO_ASCII

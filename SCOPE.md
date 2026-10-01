@@ -52,6 +52,8 @@ src/           C++ core. QObject / QAbstractListModel types exposed to QML.
   reader/      Reader: the reader view, and Firefox's style sheet for it
   notifications/
                NotificationPermissions, WebNotifications: the pages' notifications
+  permissions/ SitePermissions, SiteExceptions: what each site may do
+  share/       ShareReceiver: links shared to the browser from the share sheet
 third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
@@ -74,19 +76,21 @@ Reuse policy:
 - Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
 - Address bar (URL/search), configurable search engine, with suggestions from the open tabs, bookmarks, history and downloads as it is typed into
 - Back, forward, reload, stop, share (`Sailfish.Share`)
+- A target in the share sheet for links alone, opening them in a new tab (`docs/DECISIONS/0042-share-target.md`)
 - History and bookmarks (SQLite) with management UI
 - Downloads through the platform download plumbing, listed in the browser
 - Find in page
 - Reader view, as Firefox's: Readability and its style sheet
 - Web notifications, as Firefox's: a site asks, the answer is kept in the engine's permissions, and what it shows is the platform's notification
-- Settings: a main page leading to a page each for the start page, search (engine, suggestion sources), reader view, cover, privacy (tracking protection level), notifications (the sites allowed and blocked, blocking new requests) and history (remembering, clearing on close, clear data), with the screen cutout switch on it; a page's desktop version from the menu
+- Settings: a main page leading to a page each for the start page, search (engine, the engines sites offer while browsing, suggestion sources), reader view, cover, privacy (tracking protection level), site permissions (notifications, pop-ups, location, camera, microphone, and cookies while tracking protection is off; the sites decided for) and history (remembering, clearing on close, clear data), with sailfish-browser's colour scheme, notch guard, fixed toolbar, Do not track and JavaScript on it; a page's desktop version from the menu
+- Site details from the menu's head: the connection and its certificate, tracking protection and the permissions for that site
 - Cover: where the reader was, the downloads' progress, or what the tab in front plays, over the icon's bolt as faint dots, and one quick action chosen in Settings beside the playing tab's mute
 - Tutorial: the address bar, the menu, the tab grid's gesture and closing, moving and grouping tabs, taught as Sailfish's own Tutorial teaches its gestures, on the first start behind a card to start or skip it, and from Settings
 - `sfdk check -s harbour` passes on the built `aarch64` RPM
 
 ### Phase 2
 - Bookmark folders, HTML import/export
-- Site-permission overview, per-site data clearing
+- Per-site data clearing
 - Password saving via Sailfish Secrets, within WebView API limits
 - Landscape layout
 

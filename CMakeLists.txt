@@ -18,7 +18,7 @@ option(SALAMA_COVERAGE "Instrument with gcov" OFF)
 option(SALAMA_REQUIRE_SAILFISHAPP "Fail instead of falling back to the host stub" OFF)
 set(SALAMA_VERSION "${PROJECT_VERSION}" CACHE STRING "Version stamped into the binary")
 
-find_package(Qt5 5.6 REQUIRED COMPONENTS Core Gui Qml Quick Sql)
+find_package(Qt5 5.6 REQUIRED COMPONENTS Core DBus Gui Qml Quick Sql)
 
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 if(SALAMA_COVERAGE)

@@ -27,8 +27,11 @@ Item {
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // What the platform's own WebView hands the engine for the display's cutout, so
-    // that a page written for one can lay itself out around it.
-    property real safeAreaTop: 90
+    // that a page written for one can lay itself out around it. A binding, as the
+    // platform's is (import/webview/WebView.qml binds it to the cutout): a Binding that
+    // lets go of it puts back a binding, and on Qt 5.15 only a binding.
+    property real cutoutSafeAreaTop: 90
+    property real safeAreaTop: cutoutSafeAreaTop
     property real safeAreaRight: 0
     property real safeAreaBottom: 0
     property real safeAreaLeft: 0
@@ -40,6 +43,17 @@ Item {
     property QtObject security: QtObject {
         property bool validState: true
         property bool allGood: true
+        // What the details of a site read of a certificate.
+        property bool domainMismatch: false
+        property bool notValidAtThisTime: false
+        property bool untrusted: false
+        property bool blockedTrackingContent: false
+        property string subjectDisplayName: ""
+        property string issuerDisplayName: ""
+        property var expiryDate: null
+        // QMozSecurity::TLS_VERSION: -1 is none, 4 is TLS 1.3.
+        property int protocolVersion: -1
+        property string cipherName: ""
     }
 
     // Test hooks

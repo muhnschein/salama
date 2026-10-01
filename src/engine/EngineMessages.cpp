@@ -4,12 +4,15 @@
 
 #include "EngineData.h"
 #include "settings/PrivacySettings.h"
+#include "settings/SearchSettings.h"
 #include "settings/Settings.h"
+#include "settings/SitePermissionSettings.h"
 
 #include <QColor>
 #include <QRegularExpression>
 #include <QUrl>
 #include <QVector>
+#include <cstring>
 
 namespace Salama {
 
@@ -23,6 +26,11 @@ bool isWebScheme(const QString &scheme)
 // nsITypeAheadFind's answers that mean the text is on the page.
 const int FindFound = 0;
 const int FindWrapped = 2;
+
+// The preference that says which cookies are accepted, which is two settings' at once:
+// tracking protection's while it is on, and Site permissions' while it is off
+// (docs/DECISIONS/0039-site-permissions.md).
+const char *const CookieBehavior = "network.cookie.cookieBehavior";
 
 // One engine preference, and its value at each level of PrivacySettings::TrackingProtection.
 struct TrackingPreference
@@ -59,9 +67,10 @@ const QVector<TrackingPreference> &trackingPreferences()
                        "major-exceptions");
 
     static const QVector<TrackingPreference> preferences{
-        // "cookieBehavior5": BEHAVIOR_PARTITION_FOREIGN, Total Cookie Protection; 0 is
-        // BEHAVIOR_ACCEPT (netwerk/cookie/nsICookieService.idl).
-        {"network.cookie.cookieBehavior", 0, 5, 5},
+        // "cookieBehavior5": BEHAVIOR_PARTITION_FOREIGN, Total Cookie Protection
+        // (netwerk/cookie/nsICookieService.idl). At Off, the reader's own choice of
+        // cookies stands in for the 0 here (trackingProtectionPreferences()).
+        {CookieBehavior, 0, 5, 5},
         {"privacy.trackingprotection.content.annotation.enabled", false, true, true},
         {"privacy.trackingprotection.content.annotation.engines", QString(), standardAnnotation,
          strictAnnotation},
@@ -134,6 +143,20 @@ QString EngineMessages::themeColorScript() const
                           " return meta && meta.content ? String(meta.content) : '';");
 }
 
+QString EngineMessages::viewportScript() const
+{
+    return QStringLiteral(" var meta = document.querySelector('meta[name=\"viewport\"]');"
+                          " return meta && meta.content ? String(meta.content) : '';");
+}
+
+bool EngineMessages::coversCutout(const QString &viewport)
+{
+    const QRegularExpression cover(
+        QStringLiteral("(^|[,;])\\s*viewport-fit\\s*=\\s*cover\\s*($|[,;])"),
+        QRegularExpression::CaseInsensitiveOption);
+    return cover.match(viewport).hasMatch();
+}
+
 QString EngineMessages::themeColor(const QString &value)
 {
     const QString text = value.trimmed();
@@ -204,6 +227,28 @@ QString EngineMessages::findResultMessage() const
     return QStringLiteral("embed:find");
 }
 
+QString EngineMessages::searchOfferedMessage() const
+{
+    return QStringLiteral("Link:AddSearch");
+}
+
+QVariantMap EngineMessages::searchOffered(const QVariant &data)
+{
+    const QVariantMap message = data.toMap();
+    const QVariantMap engine = message.value(QStringLiteral("engine")).toMap();
+    const QString href = engine.value(QStringLiteral("href")).toString();
+    // The page's host rather than the description's: a site may keep its descriptions on
+    // another, and it is the page that was being read.
+    const QUrl page(message.value(QStringLiteral("url")).toString(), QUrl::TolerantMode);
+    const QString host =
+        SearchSettings::displayAddress(page.host().isEmpty() ? href : page.toString());
+    return {
+        {QStringLiteral("title"), engine.value(QStringLiteral("title")).toString()},
+        {QStringLiteral("href"), href},
+        {QStringLiteral("host"), host},
+    };
+}
+
 QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool backwards) const
 {
     return {
@@ -223,13 +268,18 @@ bool EngineMessages::findFound(const QVariant &data)
     return value == FindFound || value == FindWrapped;
 }
 
-QVariantList EngineMessages::trackingProtectionPreferences(int level)
+QVariantList EngineMessages::trackingProtectionPreferences(int level, int cookies)
 {
+    // A choice out of range is the default, as SitePermissionSettings reads one back.
+    const bool known = cookies >= SitePermissionSettings::CookiesAllowAll &&
+                       cookies <= SitePermissionSettings::CookiesBlockAll;
+    const int behavior = known ? cookies : int(SitePermissionSettings::CookiesBlockCrossSite);
     QVariantList list;
     for (const TrackingPreference &preference : trackingPreferences()) {
         QVariant value = preference.standard;
         if (level == PrivacySettings::TrackingProtectionOff) {
-            value = preference.off;
+            value = std::strcmp(preference.name, CookieBehavior) == 0 ? QVariant(behavior)
+                                                                      : preference.off;
         } else if (level == PrivacySettings::TrackingProtectionStrict) {
             value = preference.strict;
         }
@@ -239,6 +289,32 @@ QVariantList EngineMessages::trackingProtectionPreferences(int level)
         });
     }
     return list;
+}
+
+QVariantList EngineMessages::sitePermissionPreferences(bool popupsAllowed, bool locationBlocked,
+                                                       bool cameraBlocked, bool microphoneBlocked)
+{
+    // A permission's default is nsIPermissionManager's capability for a site with none of
+    // its own: 0 asks, and 2 denies without asking (netwerk PermissionManager reads
+    // "permissions.default.<type>"). A location has two names in the engine's use, and
+    // both are given (SitePermissions::typesOf()).
+    const auto asking = [](const char *name, bool blocked) {
+        return QVariantMap{
+            {QStringLiteral("name"), QLatin1String(name)},
+            {QStringLiteral("value"), blocked ? 2 : 0},
+        };
+    };
+    return {
+        // dom.disable_open_during_load is Firefox's "Block pop-up windows".
+        QVariantMap{
+            {QStringLiteral("name"), QStringLiteral("dom.disable_open_during_load")},
+            {QStringLiteral("value"), !popupsAllowed},
+        },
+        asking("permissions.default.geo", locationBlocked),
+        asking("permissions.default.geolocation", locationBlocked),
+        asking("permissions.default.camera", cameraBlocked),
+        asking("permissions.default.microphone", microphoneBlocked),
+    };
 }
 
 QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbience)
@@ -253,6 +329,15 @@ QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbien
         {QStringLiteral("name"), QStringLiteral("ui.systemUsesDarkTheme")},
         {QStringLiteral("value"), dark ? 1 : 0},
     }};
+}
+
+QVariantList EngineMessages::contentPreferences(bool doNotTrack, bool javascript)
+{
+    return {
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("privacy.donottrackheader.enabled")},
+                    {QStringLiteral("value"), doNotTrack}},
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("javascript.enabled")},
+                    {QStringLiteral("value"), javascript}}};
 }
 
 } // namespace Salama

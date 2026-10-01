@@ -2,13 +2,12 @@
 // Copyright (c) 2026 salama contributors
 #include "SearchSettings.h"
 
+#include "search/OpenSearch.h"
+#include "search/SearchEngines.h"
+
 #include <QHostAddress>
-#include <QPair>
 #include <QRegularExpression>
 #include <QUrl>
-#include <QUrlQuery>
-#include <QVector>
-#include <algorithm>
 
 namespace Salama {
 
@@ -19,70 +18,6 @@ const char *const OmnibarTabsKey = "omnibarTabs";
 const char *const OmnibarBookmarksKey = "omnibarBookmarks";
 const char *const OmnibarHistoryKey = "omnibarHistory";
 const char *const OmnibarDownloadsKey = "omnibarDownloads";
-// What stands in for the words searched for when a search engine's address template
-// is read as an address.
-const char *const SearchTermsMarker = "searchTerms";
-
-struct SearchEngine
-{
-    const char *key;
-    const char *name;
-    const char *urlTemplate;
-};
-
-const QVector<SearchEngine> &searchEngines()
-{
-    static const QVector<SearchEngine> engines{
-        {"qwant", "Qwant", "https://www.qwant.com/?q=%1"},
-        {"ecosia", "Ecosia", "https://www.ecosia.org/search?q=%1"},
-        {"startpage", "Startpage", "https://www.startpage.com/do/search?q=%1"},
-    };
-    return engines;
-}
-
-QString withoutWww(const QString &host)
-{
-    return host.startsWith(QLatin1String("www.")) ? host.mid(4) : host;
-}
-
-// Where each engine's results are: its host without "www.", its path, and the parameter
-// that carries the words searched for.
-struct SearchResults
-{
-    QString host;
-    QString path;
-    QString parameter;
-};
-
-const QVector<SearchResults> &searchResults()
-{
-    static const QVector<SearchResults> pages = [] {
-        QVector<SearchResults> read;
-        for (const SearchEngine &engine : searchEngines()) {
-            const QUrl results(QString::fromLatin1(engine.urlTemplate)
-                                   .arg(QString::fromLatin1(SearchTermsMarker)));
-            for (const QPair<QString, QString> &item : QUrlQuery(results).queryItems()) {
-                if (item.second == QLatin1String(SearchTermsMarker)) {
-                    read.append(
-                        SearchResults{withoutWww(results.host()), results.path(), item.first});
-                }
-            }
-        }
-        return read;
-    }();
-    return pages;
-}
-
-int indexOfEngine(const QString &key)
-{
-    const QVector<SearchEngine> &engines = searchEngines();
-    for (int i = 0; i < engines.count(); ++i) {
-        if (QLatin1String(engines.at(i).key) == key) {
-            return i;
-        }
-    }
-    return -1;
-}
 
 bool isNavigableScheme(const QString &scheme)
 {
@@ -98,25 +33,28 @@ bool isLocalHost(const QString &host)
 
 } // namespace
 
-SearchSettings::SearchSettings(QSettings &file, QObject *parent)
+SearchSettings::SearchSettings(QSettings &file, SearchEngines &engines, QObject *parent)
     : SettingsSection(file, parent)
+    , m_engines(engines)
 {
+    connect(&m_engines, &SearchEngines::engineAdded, this, &SearchSettings::chooseAdded);
+    connect(&m_engines, &SearchEngines::enginesChanged, this, &SearchSettings::enginesWereChanged);
 }
 
 QString SearchSettings::defaultEngine()
 {
-    return QLatin1String(searchEngines().first().key);
+    return defaultSearchEngine();
 }
 
 QString SearchSettings::engine() const
 {
     const QString key = value(SearchEngineKey).toString();
-    return indexOfEngine(key) >= 0 ? key : defaultEngine();
+    return m_engines.indexOf(key) >= 0 ? key : defaultEngine();
 }
 
 void SearchSettings::setEngine(const QString &key)
 {
-    if (indexOfEngine(key) < 0 || key == engine()) {
+    if (m_engines.indexOf(key) < 0 || key == engine()) {
         return;
     }
     setValue(SearchEngineKey, key);
@@ -125,33 +63,33 @@ void SearchSettings::setEngine(const QString &key)
 
 int SearchSettings::engineIndex() const
 {
-    return indexOfEngine(engine());
+    return m_engines.indexOf(engine());
 }
 
 void SearchSettings::setEngineIndex(int index)
 {
-    if (index < 0 || index >= searchEngines().count()) {
+    if (index < 0 || index >= m_engines.count()) {
         return;
     }
-    setEngine(QLatin1String(searchEngines().at(index).key));
+    setEngine(m_engines.keyAt(index));
 }
 
-QStringList SearchSettings::engineNames() const
+void SearchSettings::chooseAdded(const QString &key)
 {
-    QStringList names;
-    for (const SearchEngine &offered : searchEngines()) {
-        names.append(QLatin1String(offered.name));
+    if (m_engines.indexOf(key) >= 0) {
+        setValue(SearchEngineKey, key);
     }
-    return names;
 }
 
-QStringList SearchSettings::engineKeys() const
+// Written rather than left to engine()'s fallback, so that the file never names an
+// engine that is not in it.
+void SearchSettings::enginesWereChanged()
 {
-    QStringList keys;
-    for (const SearchEngine &offered : searchEngines()) {
-        keys.append(QLatin1String(offered.key));
+    const QString chosen = value(SearchEngineKey).toString();
+    if (!chosen.isEmpty() && m_engines.indexOf(chosen) < 0) {
+        setValue(SearchEngineKey, defaultEngine());
     }
-    return keys;
+    emit engineChanged();
 }
 
 bool SearchSettings::omnibarTabs() const
@@ -204,23 +142,7 @@ void SearchSettings::setOmnibarDownloads(bool on)
 
 QString SearchSettings::searchUrl(const QString &query) const
 {
-    const QString encoded = QString::fromLatin1(QUrl::toPercentEncoding(query.trimmed()));
-    return QString::fromLatin1(searchEngines().at(engineIndex()).urlTemplate).arg(encoded);
-}
-
-// The engine's host and path, and its words in the parameter the template puts them in.
-// Not the template's text up to the words: an engine is free to add parameters of its
-// own ahead of them as it redirects, and to drop "www.". The start page asks this of
-// every page in the history, so the templates are read once.
-bool SearchSettings::isSearchUrl(const QString &url)
-{
-    const QUrl page(url, QUrl::TolerantMode);
-    const QString host = withoutWww(page.host());
-    const QVector<SearchResults> &pages = searchResults();
-    return std::any_of(pages.cbegin(), pages.cend(), [&](const SearchResults &results) {
-        return host == results.host && page.path() == results.path &&
-               QUrlQuery(page).hasQueryItem(results.parameter);
-    });
+    return OpenSearch::fill(m_engines.templateAt(engineIndex()), query);
 }
 
 // What the bar shows when the address is not being edited: the host, without the

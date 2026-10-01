@@ -7,7 +7,9 @@
 #include "ReaderSettings.h"
 #include "SearchSettings.h"
 #include "Settings.h"
+#include "SitePermissionSettings.h"
 #include "StartPageSettings.h"
+#include "search/SearchEngines.h"
 
 #include <QSettings>
 #include <QString>
@@ -22,21 +24,26 @@ public:
     explicit SettingsSections(const QString &filePath);
 
     Settings *general();
+    SearchEngines *searchEngines();
     SearchSettings *search();
     ReaderSettings *reader();
     CoverSettings *cover();
     PrivacySettings *privacy();
     StartPageSettings *startPage();
+    SitePermissionSettings *sitePermissions();
 
 private:
     // First, so that it is made before the sections that borrow it and goes after them.
     QSettings m_file;
     Settings m_general;
+    // Before the search settings, which choose among its engines.
+    SearchEngines m_searchEngines;
     SearchSettings m_search;
     ReaderSettings m_reader;
     CoverSettings m_cover;
     PrivacySettings m_privacy;
     StartPageSettings m_startPage;
+    SitePermissionSettings m_sitePermissions;
 };
 
 } // namespace Salama

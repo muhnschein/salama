@@ -11,8 +11,10 @@
 #include "notifications/NotificationPermissions.h"
 #include "notifications/WebNotifications.h"
 #include "omnibar/OmnibarModel.h"
+#include "permissions/SitePermissions.h"
 #include "reader/Reader.h"
 #include "settings/SettingsSections.h"
+#include "share/ShareReceiver.h"
 #include "startpage/StartPage.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
@@ -41,11 +43,13 @@ public:
     BookmarkModel *bookmarks();
     DownloadModel *downloads();
     Settings *settings();
+    SearchEngines *searchEngines();
     SearchSettings *searchSettings();
     ReaderSettings *readerSettings();
     CoverSettings *coverSettings();
     PrivacySettings *privacySettings();
     StartPageSettings *startPageSettings();
+    SitePermissionSettings *sitePermissionSettings();
     OmnibarModel *omnibar();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
@@ -53,7 +57,9 @@ public:
     Reader *reader();
     StartPage *startPage();
     NotificationPermissions *notificationPermissions();
+    SitePermissions *sitePermissions();
     WebNotifications *webNotifications();
+    ShareReceiver *shareReceiver();
 
     // What is set to go as the browser closes -- the history, the list of downloads and
     // the recently closed tabs, with PrivacySettings::clearHistoryOnClose -- goes: main() calls
@@ -78,8 +84,10 @@ private:
     Reader m_reader;
     StartPage m_startPage;
     NotificationPermissions m_notificationPermissions;
+    SitePermissions m_sitePermissions;
     // After the permissions, which it reads.
     WebNotifications m_webNotifications;
+    ShareReceiver m_shareReceiver;
 };
 
 } // namespace Salama
