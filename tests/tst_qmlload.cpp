@@ -239,6 +239,7 @@ private slots:
     void sitePermissionsPage();
     void sitePermissionsCookiesAndWaysOn();
     void siteExceptionsPage();
+    void siteExceptionsAskEachTime();
     void menuHeadOpensSiteDetails();
     void siteDetailsConnection();
     void siteDetailsTrackingProtection();
@@ -7853,12 +7854,17 @@ void tst_qmlload::siteExceptionsPage()
     QCOMPARE(textOf(rows.at(1), "siteExceptionHost"), QStringLiteral("iltalehti.example"));
     QCOMPARE(textOf(rows.at(2), "siteExceptionHost"), QStringLiteral("vr.example"));
     // Each row offers the decisions it has not got; pop-ups are not asked about.
-    QVERIFY(!shownIn(rows.at(0), "siteExceptionAllow"));
-    QCOMPARE(textOf(rows.at(0), "siteExceptionBlock"), QStringLiteral("Block"));
-    QCOMPARE(textOf(rows.at(1), "siteExceptionAllow"), QStringLiteral("Allow"));
-    QVERIFY(!shownIn(rows.at(1), "siteExceptionBlock"));
-    QVERIFY(!shownIn(rows.at(0), "siteExceptionAsk"));
-    QVERIFY(!shownIn(rows.at(1), "siteExceptionAsk"));
+    const auto offered = [](QObject *row) {
+        QStringList texts;
+        for (const char *name : {"siteExceptionAllow", "siteExceptionBlock", "siteExceptionAsk"}) {
+            if (shownIn(row, name)) {
+                texts.append(textOf(row, name));
+            }
+        }
+        return texts;
+    };
+    QCOMPARE(offered(rows.at(0)), QStringList{QStringLiteral("Block")});
+    QCOMPARE(offered(rows.at(1)), QStringList{QStringLiteral("Allow")});
     QCOMPARE(textOf(rows.at(0), "siteExceptionRemove"), QStringLiteral("Remove"));
     QCOMPARE(rows.at(0)->property("decision").toInt(), int(SitePermissions::Allow));
     QCOMPARE(rows.at(1)->property("decision").toInt(), int(SitePermissions::Block));
@@ -7956,8 +7962,58 @@ void tst_qmlload::siteExceptionsPage()
     QVERIFY(!shownIn(page, "siteExceptionsFooter"));
     popPage();
 
-    // A kind a page asks for has a third heading, for the sites asked each time, and
-    // each row offers asking among the decisions it has not got.
+    // Tracking protection's list is the sites it is off for: one heading, no blocking,
+    // nothing to change but taking a site off the list.
+    sites->observe(
+        QStringLiteral("embed:perms:all"),
+        QVariantList{QVariantMap{{QStringLiteral("type"), QStringLiteral("trackingprotection")},
+                                 {QStringLiteral("uri"), QStringLiteral("https://tp.example")},
+                                 {QStringLiteral("capability"), 1},
+                                 {QStringLiteral("expireType"), 0}}});
+    page = openPage(SitePermissions::TrackingProtection);
+    rows = findAll(QStringLiteral("siteException"));
+    QCOMPARE(rows.count(), 1);
+    QVERIFY(offered(rows.first()).isEmpty());
+    QVERIFY(shownIn(rows.first(), "siteExceptionRemove"));
+    QCOMPARE(textOf(page, "siteExceptionSection"), QStringLiteral("Tracking protection off"));
+    click(findObjects(rows.first(), QStringLiteral("siteExceptionRemove")).first());
+    QCOMPARE(sites->count(SitePermissions::TrackingProtection), 0);
+    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
+             QStringLiteral("trackingprotection"));
+    // Adding one is allowing it, with no choice to make.
+    click(find(QStringLiteral("addSiteMenuItem")));
+    dialog = currentPage();
+    QVERIFY(!shownIn(dialog, "siteExceptionDecision"));
+    find(QStringLiteral("siteExceptionAddress"))
+        ->setProperty("text", QStringLiteral("https://tp2.example"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    QCOMPARE(
+        sites->decision(SitePermissions::TrackingProtection, QStringLiteral("https://tp2.example")),
+        int(SitePermissions::Allow));
+}
+
+// A kind a page asks for: its exceptions page lists the sites asked each time under a
+// heading of their own, and asking is one of each row's choices and the add dialog's
+// (docs/DECISIONS/0040-site-details.md).
+void tst_qmlload::siteExceptionsAskEachTime()
+{
+    SitePermissions *sites = m_core->sitePermissions();
+    QObject *scope = find(QStringLiteral("viewArea"));
+    const auto lastToEngine = [this, scope]() {
+        const QVariantList sent =
+            evaluate(scope, QStringLiteral("WebEngine.notifications")).toList();
+        return sent.isEmpty() ? QVariantMap()
+                              : sent.last().toMap().value(QStringLiteral("value")).toMap();
+    };
+    const auto openPage = [this, scope](int kind) {
+        evaluate(scope,
+                 QStringLiteral("pageStack.push('%1', {kind: %2})")
+                     .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
+                                              QStringLiteral("/qml/pages/SiteExceptionsPage.qml"))
+                              .toString())
+                     .arg(kind));
+        return currentPage();
+    };
     sites->observe(
         QStringLiteral("embed:perms:all"),
         QVariantList{QVariantMap{{QStringLiteral("type"), QStringLiteral("geo")},
@@ -7968,8 +8024,8 @@ void tst_qmlload::siteExceptionsPage()
                                  {QStringLiteral("uri"), QStringLiteral("https://map.example")},
                                  {QStringLiteral("capability"), 1},
                                  {QStringLiteral("expireType"), 0}}});
-    page = openPage(SitePermissions::Location);
-    rows = byRow(findAll(QStringLiteral("siteException")));
+    openPage(SitePermissions::Location);
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("siteException")));
     QCOMPARE(rows.count(), 2);
     QCOMPARE(textOf(rows.at(0), "siteExceptionHost"), QStringLiteral("map.example"));
     QCOMPARE(textOf(rows.at(1), "siteExceptionHost"), QStringLiteral("ask.example"));
@@ -8000,37 +8056,6 @@ void tst_qmlload::siteExceptionsPage()
     // The dialog, and the page under it.
     evaluate(scope, QStringLiteral("pageStack.pop(null, PageStackAction.Immediate)"));
     evaluate(scope, QStringLiteral("pageStack.pop(null, PageStackAction.Immediate)"));
-
-    // Tracking protection's list is the sites it is off for: one heading, no blocking,
-    // nothing to change but taking a site off the list.
-    sites->observe(
-        QStringLiteral("embed:perms:all"),
-        QVariantList{QVariantMap{{QStringLiteral("type"), QStringLiteral("trackingprotection")},
-                                 {QStringLiteral("uri"), QStringLiteral("https://tp.example")},
-                                 {QStringLiteral("capability"), 1},
-                                 {QStringLiteral("expireType"), 0}}});
-    page = openPage(SitePermissions::TrackingProtection);
-    rows = findAll(QStringLiteral("siteException"));
-    QCOMPARE(rows.count(), 1);
-    QVERIFY(!shownIn(rows.first(), "siteExceptionAllow"));
-    QVERIFY(!shownIn(rows.first(), "siteExceptionBlock"));
-    QVERIFY(!shownIn(rows.first(), "siteExceptionAsk"));
-    QVERIFY(shownIn(rows.first(), "siteExceptionRemove"));
-    QCOMPARE(textOf(page, "siteExceptionSection"), QStringLiteral("Tracking protection off"));
-    click(findObjects(rows.first(), QStringLiteral("siteExceptionRemove")).first());
-    QCOMPARE(sites->count(SitePermissions::TrackingProtection), 0);
-    QCOMPARE(lastToEngine().value(QStringLiteral("type")).toString(),
-             QStringLiteral("trackingprotection"));
-    // Adding one is allowing it, with no choice to make.
-    click(find(QStringLiteral("addSiteMenuItem")));
-    dialog = currentPage();
-    QVERIFY(!shownIn(dialog, "siteExceptionDecision"));
-    find(QStringLiteral("siteExceptionAddress"))
-        ->setProperty("text", QStringLiteral("https://tp2.example"));
-    QMetaObject::invokeMethod(dialog, "accept");
-    QCOMPARE(
-        sites->decision(SitePermissions::TrackingProtection, QStringLiteral("https://tp2.example")),
-        int(SitePermissions::Allow));
 }
 
 // The head of the menu sheet is the way to the site's details, which the chevron after
