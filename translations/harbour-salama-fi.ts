@@ -133,7 +133,7 @@
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Työpöytäsivusto</translation>
+        <translation>PC-versio</translation>
     </message>
 </context>
 <context>
@@ -1663,7 +1663,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Työpöytäsivusto</translation>
+        <translation>PC-versio</translation>
     </message>
 </context>
 <context>
