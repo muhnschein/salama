@@ -33,7 +33,6 @@ public:
     }
 
 public slots:
-    // NOLINTNEXTLINE(readability-make-member-function-const): an exported slot
     void share(const QVariantMap &arguments)
     {
         m_receiver->receive(arguments);
@@ -101,10 +100,10 @@ QString ShareReceiver::sharedUrl(const QVariantMap &arguments)
         const QVariantList nested = first.toList();
         first = nested.isEmpty() ? QVariant() : unwrap(nested.first());
     }
-    const QVariantMap resource = first.toMap();
-    QString text = resource.value(QStringLiteral("status")).toString().trimmed();
+    const QVariantMap resource = unwrap(first).toMap();
+    QString text = unwrap(resource.value(QStringLiteral("status"))).toString().trimmed();
     if (text.isEmpty()) {
-        const QVariant data = resource.value(QStringLiteral("data"));
+        const QVariant data = unwrap(resource.value(QStringLiteral("data")));
         text = (data.type() == QVariant::ByteArray ? QString::fromUtf8(data.toByteArray())
                                                    : data.toString())
                    .trimmed();
@@ -125,25 +124,14 @@ QVariant ShareReceiver::unwrap(const QVariant &value)
     }
     const auto argument = value.value<QDBusArgument>();
     switch (argument.currentType()) {
-    case QDBusArgument::ArrayType: {
-        QVariantList list;
-        for (const QVariant &item : qdbus_cast<QVariantList>(argument)) {
-            list.append(unwrap(item));
-        }
-        return list;
-    }
-    case QDBusArgument::MapType: {
-        QVariantMap map;
-        const auto raw = qdbus_cast<QVariantMap>(argument);
-        for (auto it = raw.constBegin(); it != raw.constEnd(); ++it) {
-            map.insert(it.key(), unwrap(it.value()));
-        }
-        return map;
-    }
+    case QDBusArgument::ArrayType:
+        return qdbus_cast<QVariantList>(argument);
+    case QDBusArgument::MapType:
+        return qdbus_cast<QVariantMap>(argument);
     case QDBusArgument::VariantType: {
         QVariant inner;
         argument >> inner;
-        return unwrap(inner);
+        return inner;
     }
     default:
         return argument.asVariant();

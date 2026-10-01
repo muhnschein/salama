@@ -147,6 +147,7 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
     void readerSettingsPage();
@@ -1541,7 +1542,7 @@ void tst_qmlload::faviconResolvedAfterLoad()
     // it; a page that says nothing of it is kept below the cutout.
     QVERIFY(webView->property("scripts").toStringList().contains(
         m_core->engineMessages()->viewportScript()));
-    QObject *viewport = webView->property("viewport").value<QObject *>();
+    auto *viewport = webView->property("viewport").value<QObject *>();
     QVERIFY(viewport != nullptr);
     QVERIFY(!viewport->property("coversCutout").toBool());
     webView->setProperty("scriptResult", QStringLiteral("width=device-width, viewport-fit=cover"));
@@ -4705,23 +4706,6 @@ void tst_qmlload::settingsPage()
         control->setProperty("highlighted", false);
     }
 
-    // A row has an icon or a switch, never both: each switch's light stands centred on
-    // the column of icons, where sailfish-browser centres its own.
-    const qreal switchMargin =
-        evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
-                                      " + Math.round((Theme.iconSizeMedium"
-                                      " - Theme.itemSizeExtraSmall) / 2)"))
-            .toReal();
-    for (const QString &name :
-         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("doNotTrackSwitch"),
-          QStringLiteral("javascriptSwitch")}) {
-        QObject *control = find(name);
-        QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
-                 qPrintable(name));
-        QCOMPARE(control->property("leftMargin").toReal(), switchMargin);
-        QVERIFY2(!control->property("description").toString().isEmpty(), qPrintable(name));
-    }
-
     // Lit while it is pressed, as Silica's rows are: the name in the highlight colour,
     // and the value under it in the secondary highlight until then.
     QObject *search = find(QStringLiteral("searchSettingsEntry"));
@@ -4810,6 +4794,31 @@ void tst_qmlload::settingsPage()
     QCOMPARE(lastDark(), 1);
     colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+}
+
+// Appearance and Privacy's rows from sailfish-browser, in its words, and what each does
+// to the browsing page and the engine (docs/DECISIONS/0043-notch-guard-modes.md,
+// 0044-sailfish-browser-settings.md).
+void tst_qmlload::sailfishBrowserSettings()
+{
+    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
+    // A row has an icon or a switch, never both: each switch's light stands centred on
+    // the column of icons, where sailfish-browser centres its own.
+    const qreal switchMargin =
+        evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
+                                      " + Math.round((Theme.iconSizeMedium"
+                                      " - Theme.itemSizeExtraSmall) / 2)"))
+            .toReal();
+    for (const QString &name :
+         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("doNotTrackSwitch"),
+          QStringLiteral("javascriptSwitch")}) {
+        QObject *control = find(name);
+        QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
+                 qPrintable(name));
+        QCOMPARE(control->property("leftMargin").toReal(), switchMargin);
+        QVERIFY2(!control->property("description").toString().isEmpty(), qPrintable(name));
+    }
 
     // The colour scheme and the notch guard in sailfish-browser's words, which say what
     // each is for.
@@ -4835,7 +4844,7 @@ void tst_qmlload::settingsPage()
     const qreal cutout = browser->property("cutoutHeight").toReal();
     QVERIFY(cutout > 0);
     QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
-    QObject *viewport = webView->property("viewport").value<QObject *>();
+    auto *viewport = webView->property("viewport").value<QObject *>();
     viewport->setProperty("coversCutout", true);
     QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
     // Such a page is told where the cutout is, through the platform's safe area, which
@@ -4868,7 +4877,7 @@ void tst_qmlload::settingsPage()
 
     // Do not track and JavaScript reach the engine as they change, through the browsing
     // page; JavaScript's line says what switching it off costs.
-    pageScope = find(QStringLiteral("viewArea"));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
     auto lastPreference = [&](const QString &name) {
         const QVariantList given =
             evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();

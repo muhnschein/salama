@@ -47,7 +47,8 @@ public:
     static QString sharedUrl(const QVariantMap &arguments);
 
     // Qt's D-Bus reading of a{sv} leaves a nested container as a QDBusArgument rather
-    // than a list or a map; this reads it all the way down.
+    // than a list or a map; this reads one level of it, and the reader takes the call's
+    // known shape a level at a time.
     static QVariant unwrap(const QVariant &value);
 
 signals:

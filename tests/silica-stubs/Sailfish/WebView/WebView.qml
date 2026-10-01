@@ -27,8 +27,11 @@ Item {
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // What the platform's own WebView hands the engine for the display's cutout, so
-    // that a page written for one can lay itself out around it.
-    property real safeAreaTop: 90
+    // that a page written for one can lay itself out around it. A binding, as the
+    // platform's is (import/webview/WebView.qml binds it to the cutout): a Binding that
+    // lets go of it puts back a binding, and on Qt 5.15 only a binding.
+    property real cutoutSafeAreaTop: 90
+    property real safeAreaTop: cutoutSafeAreaTop
     property real safeAreaRight: 0
     property real safeAreaBottom: 0
     property real safeAreaLeft: 0
