@@ -9,7 +9,7 @@ CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DSALAMA_COVERAGE=ON
 COVERAGE_MIN ?= 80
 
 CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
-TS_FILES := translations/harbour-salama.ts translations/harbour-salama-fi.ts
+TS_FILES := translations/harbour-salama.ts translations/harbour-salama-fi.ts translations/harbour-salama-sv.ts
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
         harbour-check harbour-selftest sonar-selftest sonar-reports lint check \

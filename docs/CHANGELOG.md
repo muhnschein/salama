@@ -25,6 +25,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - The menu names the page it acts on -- its icon, title, padlock and host -- with a button to copy its address, and says "Start page" on the start page, where the page's actions are dimmed. While a download is coming, the menu's Downloads wears a ring that fills as it goes.
 - Tab groups can be put in order: drag a group by the bars at the end of its row. The "N tabs" group stays first.
 - Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
+- Swedish translation.
 
 ### Changed
 - Website colours is Preferred color scheme, with sailfish-browser's line under it saying what it is for, and its Automatic is called Match ambience.
