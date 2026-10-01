@@ -79,32 +79,32 @@ private slots:
 
 void tst_sitepermissions::kindsAreTheEnginesNames()
 {
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Notifications),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Notifications),
              QStringList{QStringLiteral("desktop-notification")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Popups),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Popups),
              QStringList{QStringLiteral("popup")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Cookies),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Cookies),
              QStringList{QStringLiteral("cookie")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Camera),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Camera),
              QStringList{QStringLiteral("camera")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Microphone),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Microphone),
              QStringList{QStringLiteral("microphone")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::TrackingProtection),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::TrackingProtection),
              QStringList{QStringLiteral("trackingprotection")});
-    QCOMPARE(SitePermissions::typesOf(SitePermissions::Location),
+    QCOMPARE(Salama::permissionTypesOf(SitePermissions::Location),
              (QStringList{QStringLiteral("geolocation"), QStringLiteral("geo")}));
-    QVERIFY(SitePermissions::typesOf(99).isEmpty());
-    QVERIFY(SitePermissions::typesOf(-1).isEmpty());
+    QVERIFY(Salama::permissionTypesOf(99).isEmpty());
+    QVERIFY(Salama::permissionTypesOf(-1).isEmpty());
 
     // Every name leads back to its kind, and a name that is none leads nowhere.
     for (int kind = SitePermissions::Notifications; kind <= SitePermissions::TrackingProtection;
          ++kind) {
-        for (const QString &type : SitePermissions::typesOf(kind)) {
-            QCOMPARE(SitePermissions::kindOf(type), kind);
+        for (const QString &type : Salama::permissionTypesOf(kind)) {
+            QCOMPARE(Salama::permissionKindOf(type), kind);
         }
     }
-    QCOMPARE(SitePermissions::kindOf(QStringLiteral("camera ")), -1);
-    QCOMPARE(SitePermissions::kindOf(QStringLiteral("storage-access")), -1);
+    QCOMPARE(Salama::permissionKindOf(QStringLiteral("camera ")), -1);
+    QCOMPARE(Salama::permissionKindOf(QStringLiteral("storage-access")), -1);
 
     SitePermissions permissions;
     const QHash<int, QByteArray> roles = permissions.roleNames();
@@ -258,7 +258,7 @@ void tst_sitepermissions::askedBySiteAndKind()
 
     QCOMPARE(SitePermissions::originOf(QStringLiteral("https://News.Example:443/a")), News);
     QVERIFY(SitePermissions::originOf(QStringLiteral("ftp://news.example")).isEmpty());
-    QCOMPARE(SitePermissions::hostOf(News), QStringLiteral("news.example"));
+    QCOMPARE(Salama::EnginePermissions::hostOf(News), QStringLiteral("news.example"));
 }
 
 // Every change is the engine's own message, as ContentPermissionManager.js reads it,

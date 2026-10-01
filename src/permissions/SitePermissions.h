@@ -12,6 +12,13 @@
 
 namespace Salama {
 
+// The engine's names for a SitePermissions::Kind, which a reader never sees: the one for
+// most, and for a location both of the ones in use (the .cpp says which and why). Empty
+// for a number that is no kind.
+QStringList permissionTypesOf(int kind);
+// The kind a name of the engine's is for, or -1 for one that is none of them.
+int permissionKindOf(const QString &type);
+
 // What a reader decided for a site that differs from what sites may do unless told
 // otherwise: its exceptions (docs/DECISIONS/0039-site-permissions.md). Allowed or
 // blocked, one for each kind of permission and each site; a site with none of a kind
@@ -120,19 +127,11 @@ public:
     // which it simply does.
     Q_INVOKABLE static bool canAsk(int kind);
     Q_INVOKABLE static QString originOf(const QString &url);
-    Q_INVOKABLE static QString hostOf(const QString &origin);
 
     // A decision made elsewhere in this application, about a kind that has a model of its
     // own, that the engine has already been told of: taken in without telling the engine
     // again, and without saying it was decided from here (NotificationPermissions).
     void adopt(int kind, const QString &origin, int decision);
-
-    // The engine's names for a kind, which a reader never sees: the one for most, and for
-    // a location both of the ones in use (the .cpp says which and why). Empty for a
-    // number that is no kind.
-    static QStringList typesOf(int kind);
-    // The kind a name of the engine's is for, or -1 for one that is none of them.
-    static int kindOf(const QString &type);
 
 signals:
     // Something in the list changed.

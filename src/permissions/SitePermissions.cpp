@@ -31,32 +31,32 @@ bool isDecision(int kind, int decision)
 // Which of them the engine reads cannot be seen from here, so both are written, and
 // either is read. "trackingprotection" is Gecko's content blocking allow list: a site
 // with it allowed has tracking protection off.
-QStringList SitePermissions::typesOf(int kind)
+QStringList permissionTypesOf(int kind)
 {
     switch (kind) {
-    case Notifications:
+    case SitePermissions::Notifications:
         return {QStringLiteral("desktop-notification")};
-    case Popups:
+    case SitePermissions::Popups:
         return {QStringLiteral("popup")};
-    case Cookies:
+    case SitePermissions::Cookies:
         return {QStringLiteral("cookie")};
-    case Location:
+    case SitePermissions::Location:
         return {QStringLiteral("geolocation"), QStringLiteral("geo")};
-    case Camera:
+    case SitePermissions::Camera:
         return {QStringLiteral("camera")};
-    case Microphone:
+    case SitePermissions::Microphone:
         return {QStringLiteral("microphone")};
-    case TrackingProtection:
+    case SitePermissions::TrackingProtection:
         return {QStringLiteral("trackingprotection")};
     default:
         return {};
     }
 }
 
-int SitePermissions::kindOf(const QString &type)
+int permissionKindOf(const QString &type)
 {
     for (int kind = 0; kind < KindCount; ++kind) {
-        if (typesOf(kind).contains(type)) {
+        if (permissionTypesOf(kind).contains(type)) {
             return kind;
         }
     }
@@ -88,7 +88,7 @@ QVariant SitePermissions::data(const QModelIndex &index, int role) const
     case Role::Origin:
         return exception.origin;
     case Role::Host:
-        return hostOf(exception.origin);
+        return EnginePermissions::hostOf(exception.origin);
     case Role::Allowed:
         return exception.decision == Allow;
     case Role::Decision:
@@ -139,7 +139,7 @@ void SitePermissions::observe(const QString &topic, const QVariant &data)
     }
     QVector<Exception> exceptions;
     for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
-        const int kind = kindOf(permission.type);
+        const int kind = permissionKindOf(permission.type);
         const int decision = permission.capability;
         // Gecko's allow list has no deny: a record of one is nothing this application
         // writes or reads as a decision; nor is asking about what a page does unasked.
@@ -194,7 +194,7 @@ void SitePermissions::set(int kind, const QString &origin, int decision)
         return;
     }
     const QString site = originOf(origin);
-    if (site.isEmpty() || typesOf(kind).isEmpty()) {
+    if (site.isEmpty() || permissionTypesOf(kind).isEmpty()) {
         return;
     }
     // The decisions are the engine's capabilities.
@@ -208,7 +208,7 @@ void SitePermissions::set(int kind, const QString &origin, int decision)
 void SitePermissions::remove(int kind, const QString &origin)
 {
     const QString site = originOf(origin);
-    if (site.isEmpty() || typesOf(kind).isEmpty()) {
+    if (site.isEmpty() || permissionTypesOf(kind).isEmpty()) {
         return;
     }
     // Sent whether or not the list holds it: the engine may hold what was written since
@@ -257,15 +257,10 @@ QString SitePermissions::originOf(const QString &url)
     return EnginePermissions::originOf(url);
 }
 
-QString SitePermissions::hostOf(const QString &origin)
-{
-    return EnginePermissions::hostOf(origin);
-}
-
 void SitePermissions::adopt(int kind, const QString &origin, int decision)
 {
     const QString site = originOf(origin);
-    if (site.isEmpty() || typesOf(kind).isEmpty()) {
+    if (site.isEmpty() || permissionTypesOf(kind).isEmpty()) {
         return;
     }
     const bool changed = isDecision(kind, decision) ? put(kind, site, decision) : take(kind, site);
@@ -320,7 +315,7 @@ bool SitePermissions::take(int kind, const QString &origin)
 
 void SitePermissions::send(const QString &message, int kind, const QString &origin, int capability)
 {
-    for (const QString &type : typesOf(kind)) {
+    for (const QString &type : permissionTypesOf(kind)) {
         emit engineRequest(EnginePermissions::requestTopic(),
                            EnginePermissions::request(message, origin, type, capability));
     }
