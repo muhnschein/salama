@@ -456,12 +456,7 @@ WebViewPage {
         id: linkMenu
 
         topInset: browserPage.pageCutoutInset
-        previewView: Component {
-            WebView {
-                objectName: "linkPreviewView"
-                url: linkMenu.target.link
-            }
-        }
+        previewView: Component { WebView { objectName: "linkPreviewView"; url: linkMenu.target.link } }
         onOpenRequested: browserPage.openChosen(url, inNewTab)
         onOpenedBehind: banners.tabOpened(tabId, title)
     }
