@@ -306,6 +306,37 @@
     </message>
 </context>
 <context>
+    <name>DownloadBar</name>
+    <message>
+        <source>%1 downloads, %2%</source>
+        <translation>%1 latausta, %2 %</translation>
+    </message>
+    <message>
+        <source>%1% of %2</source>
+        <translation>%1 % / %2</translation>
+    </message>
+    <message>
+        <source>Downloading, %1%</source>
+        <translation>Ladataan, %1 %</translation>
+    </message>
+    <message>
+        <source>Downloaded</source>
+        <translation>Ladattu</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Epäonnistui</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Avaa</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Yritä uudelleen</translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -320,8 +351,59 @@
         <translation>Epäonnistui</translation>
     </message>
     <message>
-        <source>Cancelled</source>
-        <translation>Peruttu</translation>
+        <source>Stop</source>
+        <translation>Pysäytä</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Yritä uudelleen</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Avaa</translation>
+    </message>
+    <message>
+        <source>Copy link</source>
+        <translation>Kopioi linkki</translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation>Poista tiedosto</translation>
+    </message>
+    <message>
+        <source>Deleting file</source>
+        <translation>Poistetaan tiedostoa</translation>
+    </message>
+    <message>
+        <source>%1% of %2</source>
+        <translation>%1 % / %2</translation>
+    </message>
+    <message>
+        <source>Failed, tap to retry</source>
+        <translation>Epäonnistui, yritä uudelleen napauttamalla</translation>
+    </message>
+    <message>
+        <source>Stopped, tap to retry</source>
+        <translation>Pysäytetty, yritä uudelleen napauttamalla</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>Pysäytetty</translation>
+    </message>
+    <message>
+        <source>Moved or deleted</source>
+        <translation>Siirretty tai poistettu</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotifier</name>
+    <message>
+        <source>Download finished</source>
+        <translation>Lataus valmis</translation>
+    </message>
+    <message>
+        <source>Download failed</source>
+        <translation>Lataus epäonnistui</translation>
     </message>
 </context>
 <context>
@@ -341,6 +423,10 @@
     <message>
         <source>Files downloaded from pages are listed here</source>
         <translation>Sivuilta ladatut tiedostot näkyvät tässä</translation>
+    </message>
+    <message>
+        <source>Open folder</source>
+        <translation>Avaa kansio</translation>
     </message>
 </context>
 <context>
@@ -555,10 +641,6 @@
         <source>Failed</source>
         <translation>Epäonnistui</translation>
     </message>
-    <message>
-        <source>Cancelled</source>
-        <translation>Peruttu</translation>
-    </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation>
@@ -579,6 +661,10 @@
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
         <translation>Siirry välilehteen ryhmässä %1</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>Pysäytetty</translation>
     </message>
 </context>
 <context>

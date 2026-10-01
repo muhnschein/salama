@@ -306,6 +306,37 @@
     </message>
 </context>
 <context>
+    <name>DownloadBar</name>
+    <message>
+        <source>%1 downloads, %2%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading, %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -320,7 +351,58 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancelled</source>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed, tap to retry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped, tap to retry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moved or deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotifier</name>
+    <message>
+        <source>Download finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download failed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -340,6 +422,10 @@
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -555,10 +641,6 @@
         <source>Failed</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Cancelled</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
@@ -578,6 +660,10 @@
     <message>
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

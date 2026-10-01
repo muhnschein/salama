@@ -3,6 +3,7 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
+import "components"
 import "pages"
 
 ApplicationWindow {
@@ -99,6 +100,24 @@ ApplicationWindow {
     Connections {
         target: WebNotifications
         onTabRequested: window.showNotifiedTab(tabId)
+    }
+
+    // A notification of a download that failed was tapped: the list of downloads, over
+    // the browsing page, and the browser with it (docs/DECISIONS/0038-download-controls.md).
+    function showDownloads() {
+        var page = pageStack.find(function (candidate) {
+            return candidate.objectName === "browserPage"
+        })
+        if (page) {
+            pageStack.pop(page)
+            page.uncover()
+        }
+        pageStack.push(Qt.resolvedUrl("pages/DownloadsPage.qml"))
+        activate()
+    }
+
+    property DownloadNotifier downloadNotifier: DownloadNotifier {
+        onDownloadsRequested: window.showDownloads()
     }
 
     // The tutorial, over the browsing page, until it has come up once: on the first

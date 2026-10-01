@@ -252,6 +252,12 @@ WebViewPage {
         }
     }
 
+    // Stop a download, fetch one again: only this page can tell the engine (0038).
+    Connections {
+        target: DownloadModel
+        onEngineRequest: WebEngine.notifyObservers(topic, data)
+    }
+
     Timer {
         id: trimTimer
 
@@ -380,6 +386,15 @@ WebViewPage {
 
             anchors.fill: navigationBar
             view: browserPage.currentView
+        }
+
+        // A download, just above the bar (0038); after it, so a press is its own.
+        DownloadBar {
+            x: Theme.paddingMedium
+            width: parent.width - 2 * x
+            y: navigationBar.y - height - Theme.paddingMedium
+            covered: navigationBar.editing || findBar.active || browserMenu.open
+                     || deck.tabsOpen || deck.dragging
         }
 
         // The pane above the bar while the address is edited into something to look

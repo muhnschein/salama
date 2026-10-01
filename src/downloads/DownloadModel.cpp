@@ -7,12 +7,15 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUrl>
 #include <QtDebug>
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 namespace Salama {
@@ -20,6 +23,8 @@ namespace Salama {
 namespace {
 
 const QString Topic = QStringLiteral("embed:download");
+// What EmbedliteDownloadManager.js observes for what it is told back.
+const QString CommandTopic = QStringLiteral("embedui:download");
 
 bool run(QSqlQuery &query)
 {
@@ -39,6 +44,121 @@ int rowForEngineId(const QList<DownloadModel::Download> &downloads, int engineId
         }
     }
     return -1;
+}
+
+// The row asked for again with addDownload that a dl-start for a new id is, by where
+// the file goes, or -1.
+int rowRefetching(const QList<DownloadModel::Download> &downloads, const QString &path)
+{
+    for (int row = 0; row < downloads.count(); ++row) {
+        const DownloadModel::Download &download = downloads.at(row);
+        if (download.refetching && !path.isEmpty() && download.path == path) {
+            return row;
+        }
+    }
+    return -1;
+}
+
+// The kind of file a name's extension says, in the words iconFor() answers in, or empty.
+QString kindOfExtension(const QString &name)
+{
+    static const QHash<QString, QString> kinds = {
+        {QStringLiteral("pdf"), QStringLiteral("pdf")},
+        {QStringLiteral("jpg"), QStringLiteral("image")},
+        {QStringLiteral("jpeg"), QStringLiteral("image")},
+        {QStringLiteral("png"), QStringLiteral("image")},
+        {QStringLiteral("gif"), QStringLiteral("image")},
+        {QStringLiteral("webp"), QStringLiteral("image")},
+        {QStringLiteral("svg"), QStringLiteral("image")},
+        {QStringLiteral("heic"), QStringLiteral("image")},
+        {QStringLiteral("mp3"), QStringLiteral("audio")},
+        {QStringLiteral("ogg"), QStringLiteral("audio")},
+        {QStringLiteral("opus"), QStringLiteral("audio")},
+        {QStringLiteral("flac"), QStringLiteral("audio")},
+        {QStringLiteral("wav"), QStringLiteral("audio")},
+        {QStringLiteral("m4a"), QStringLiteral("audio")},
+        {QStringLiteral("mp4"), QStringLiteral("video")},
+        {QStringLiteral("webm"), QStringLiteral("video")},
+        {QStringLiteral("mkv"), QStringLiteral("video")},
+        {QStringLiteral("mov"), QStringLiteral("video")},
+        {QStringLiteral("apk"), QStringLiteral("apk")},
+        {QStringLiteral("rpm"), QStringLiteral("rpm")},
+        {QStringLiteral("vcf"), QStringLiteral("vcard")},
+        {QStringLiteral("csv"), QStringLiteral("spreadsheet")},
+        {QStringLiteral("ods"), QStringLiteral("spreadsheet")},
+        {QStringLiteral("xls"), QStringLiteral("spreadsheet")},
+        {QStringLiteral("xlsx"), QStringLiteral("spreadsheet")},
+        {QStringLiteral("odp"), QStringLiteral("presentation")},
+        {QStringLiteral("ppt"), QStringLiteral("presentation")},
+        {QStringLiteral("pptx"), QStringLiteral("presentation")},
+        {QStringLiteral("zip"), QStringLiteral("archive-folder")},
+        {QStringLiteral("tar"), QStringLiteral("archive-folder")},
+        {QStringLiteral("gz"), QStringLiteral("archive-folder")},
+        {QStringLiteral("tgz"), QStringLiteral("archive-folder")},
+        {QStringLiteral("bz2"), QStringLiteral("archive-folder")},
+        {QStringLiteral("xz"), QStringLiteral("archive-folder")},
+        {QStringLiteral("7z"), QStringLiteral("archive-folder")},
+        {QStringLiteral("rar"), QStringLiteral("archive-folder")},
+        {QStringLiteral("txt"), QStringLiteral("document")},
+        {QStringLiteral("md"), QStringLiteral("document")},
+        {QStringLiteral("rtf"), QStringLiteral("document")},
+        {QStringLiteral("odt"), QStringLiteral("document")},
+        {QStringLiteral("doc"), QStringLiteral("document")},
+        {QStringLiteral("docx"), QStringLiteral("document")},
+        {QStringLiteral("epub"), QStringLiteral("document")},
+    };
+    return kinds.value(QFileInfo(name).suffix().toLower());
+}
+
+// The kind of file a MIME type says, or empty when it says nothing useful.
+QString kindOfType(const QString &mimeType)
+{
+    const QString type = mimeType.toLower();
+    const QString major = type.section(QLatin1Char('/'), 0, 0);
+    if (type == QLatin1String("application/pdf")) {
+        return QStringLiteral("pdf");
+    }
+    if (major == QLatin1String("image") || major == QLatin1String("audio") ||
+        major == QLatin1String("video")) {
+        return major;
+    }
+    if (type == QLatin1String("application/vnd.android.package-archive")) {
+        return QStringLiteral("apk");
+    }
+    if (type == QLatin1String("application/x-rpm")) {
+        return QStringLiteral("rpm");
+    }
+    if (type == QLatin1String("text/vcard") || type == QLatin1String("text/x-vcard")) {
+        return QStringLiteral("vcard");
+    }
+    if (type.contains(QLatin1String("spreadsheet")) || type.contains(QLatin1String("ms-excel")) ||
+        type == QLatin1String("text/csv")) {
+        return QStringLiteral("spreadsheet");
+    }
+    if (type.contains(QLatin1String("presentation")) ||
+        type.contains(QLatin1String("ms-powerpoint"))) {
+        return QStringLiteral("presentation");
+    }
+    static const QStringList archives = {
+        QStringLiteral("application/zip"),
+        QStringLiteral("application/x-tar"),
+        QStringLiteral("application/gzip"),
+        QStringLiteral("application/x-gzip"),
+        QStringLiteral("application/x-bzip2"),
+        QStringLiteral("application/x-xz"),
+        QStringLiteral("application/x-7z-compressed"),
+        QStringLiteral("application/vnd.rar"),
+        QStringLiteral("application/x-rar-compressed"),
+    };
+    if (archives.contains(type)) {
+        return QStringLiteral("archive-folder");
+    }
+    if (major == QLatin1String("text") || type.contains(QLatin1String("wordprocessing")) ||
+        type == QLatin1String("application/msword") || type == QLatin1String("application/rtf") ||
+        type == QLatin1String("application/epub+zip")) {
+        return QStringLiteral("document");
+    }
+    return {};
 }
 
 // Counts the downloads still coming again, and how far along they are together, into
@@ -110,6 +230,13 @@ QVariant DownloadModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(download.status);
     case Role::Started:
         return download.started;
+    case Role::Retryable:
+        return canRetry(download);
+    case Role::FileExists:
+        return download.status == Done && !download.path.isEmpty() &&
+               QFileInfo(download.path).isFile();
+    case Role::Icon:
+        return iconFor(download.mimeType, download.name);
     default:
         return {};
     }
@@ -127,6 +254,9 @@ QHash<int, QByteArray> DownloadModel::roleNames() const
         {roleId(Role::Progress), QByteArrayLiteral("progress")},
         {roleId(Role::Status), QByteArrayLiteral("status")},
         {roleId(Role::Started), QByteArrayLiteral("started")},
+        {roleId(Role::Retryable), QByteArrayLiteral("retryable")},
+        {roleId(Role::FileExists), QByteArrayLiteral("fileExists")},
+        {roleId(Role::Icon), QByteArrayLiteral("icon")},
     };
 }
 
@@ -143,6 +273,11 @@ QString DownloadModel::topic() const
 QString DownloadModel::directory() const
 {
     return m_directory;
+}
+
+QString DownloadModel::directoryUrl() const
+{
+    return QUrl::fromLocalFile(m_directory).toString();
 }
 
 int DownloadModel::runningCount() const
@@ -173,12 +308,19 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
     const QString msg = message.value(QStringLiteral("msg")).toString();
     const int row = rowForEngineId(m_downloads, engineId);
     if (msg == QLatin1String("dl-start")) {
-        // A download the engine starts again -- retried after it failed, or resumed
-        // after it was canceled -- keeps its id, and its row.
-        if (row < 0) {
-            start(engineId, message);
+        // A download the engine starts again -- retried after it failed, or after it
+        // was stopped -- keeps its id, and its row. One fetched anew for a row from an
+        // earlier run has a new id, and goes where that row's file went.
+        if (row >= 0) {
+            restart(row, engineId);
+            return;
+        }
+        const int refetched =
+            rowRefetching(m_downloads, message.value(QStringLiteral("targetPath")).toString());
+        if (refetched >= 0) {
+            restart(refetched, engineId);
         } else {
-            setStatus(row, Running);
+            start(engineId, message);
         }
         return;
     }
@@ -242,19 +384,7 @@ int DownloadModel::countSince(double since) const
 
 void DownloadModel::clear()
 {
-    if (m_downloads.isEmpty()) {
-        return;
-    }
-    beginRemoveRows(QModelIndex(), 0, m_downloads.count() - 1);
-    m_downloads.clear();
-    endRemoveRows();
-    QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM download"));
-    run(query);
-    emit countChanged();
-    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
-        emit runningChanged();
-    }
+    clearSince(std::numeric_limits<double>::lowest());
 }
 
 QString DownloadModel::fileUrl(int row) const
@@ -273,6 +403,108 @@ int DownloadModel::rowOf(int downloadId) const
         }
     }
     return -1;
+}
+
+QVariantMap DownloadModel::details(int downloadId) const
+{
+    const int row = rowOf(downloadId);
+    if (row < 0) {
+        return {};
+    }
+    QVariantMap roles;
+    const QHash<int, QByteArray> names = roleNames();
+    for (auto it = names.cbegin(); it != names.cend(); ++it) {
+        roles.insert(QString::fromLatin1(it.value()), data(index(row, 0), it.key()));
+    }
+    return roles;
+}
+
+void DownloadModel::stop(int row)
+{
+    if (row < 0 || row >= m_downloads.count()) {
+        return;
+    }
+    const Download &download = m_downloads.at(row);
+    if (download.status != Running || download.engineId == 0) {
+        return;
+    }
+    emit engineRequest(CommandTopic, QVariantMap{
+                                         {QStringLiteral("msg"), QStringLiteral("cancelDownload")},
+                                         {QStringLiteral("id"), download.engineId},
+                                     });
+}
+
+void DownloadModel::retry(int row)
+{
+    if (row < 0 || row >= m_downloads.count() || !canRetry(m_downloads.at(row))) {
+        return;
+    }
+    Download &download = m_downloads[row];
+    if (download.engineId != 0) {
+        emit engineRequest(CommandTopic,
+                           QVariantMap{
+                               {QStringLiteral("msg"), QStringLiteral("retryDownload")},
+                               {QStringLiteral("id"), download.engineId},
+                           });
+        return;
+    }
+    download.refetching = true;
+    emit engineRequest(CommandTopic, QVariantMap{
+                                         {QStringLiteral("msg"), QStringLiteral("addDownload")},
+                                         {QStringLiteral("from"), download.url},
+                                         {QStringLiteral("to"), download.path},
+                                     });
+}
+
+bool DownloadModel::deleteFile(int row)
+{
+    if (row < 0 || row >= m_downloads.count()) {
+        return false;
+    }
+    const QString path = m_downloads.at(row).path;
+    // The engine stops writing it, and takes away what it had written.
+    stop(row);
+    if (!path.isEmpty() && QFileInfo(path).isFile() && !QFile::remove(path)) {
+        qWarning() << "DownloadModel: cannot delete" << path;
+        return false;
+    }
+    remove(row);
+    return true;
+}
+
+void DownloadModel::refresh()
+{
+    if (m_downloads.isEmpty()) {
+        return;
+    }
+    emit dataChanged(index(0, 0), index(m_downloads.count() - 1, 0), {roleId(Role::FileExists)});
+}
+
+bool DownloadModel::canRetry(const Download &download)
+{
+    if (download.status != Failed && download.status != Canceled) {
+        return false;
+    }
+    if (download.engineId != 0) {
+        return true;
+    }
+    // Forgotten by the engine, it can only be fetched again from an address that still
+    // means something without the page that started it: not a blob: or data: URL.
+    const QString scheme = QUrl(download.url).scheme();
+    return !download.path.isEmpty() &&
+           (scheme == QLatin1String("http") || scheme == QLatin1String("https"));
+}
+
+QString DownloadModel::iconFor(const QString &mimeType, const QString &name)
+{
+    QString kind = kindOfType(mimeType);
+    if (kind.isEmpty()) {
+        kind = kindOfExtension(name);
+    }
+    if (kind.isEmpty()) {
+        kind = QStringLiteral("other");
+    }
+    return QStringLiteral("image://theme/icon-m-file-") + kind;
 }
 
 void DownloadModel::start(int engineId, const QVariantMap &message)
@@ -306,6 +538,27 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
+    emit downloadStarted(download.id);
+}
+
+void DownloadModel::restart(int row, int engineId)
+{
+    Download &download = m_downloads[row];
+    download.engineId = engineId;
+    download.refetching = false;
+    if (download.status == Running) {
+        return;
+    }
+    // From the start: the engine kept nothing of the file when it stopped.
+    download.status = Running;
+    QVector<int> roles{roleId(Role::Status)};
+    if (download.progress != 0) {
+        download.progress = 0;
+        roles.append(roleId(Role::Progress));
+    }
+    store(download);
+    changed(row, roles);
+    emit downloadStarted(download.id);
 }
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
@@ -345,8 +598,12 @@ void DownloadModel::finish(int row, const QString &path)
     if (roles.isEmpty()) {
         return;
     }
+    const bool arrived = roles.contains(roleId(Role::Status));
     store(download);
     changed(row, roles);
+    if (arrived) {
+        emit downloadEnded(download.id, Done);
+    }
 }
 
 void DownloadModel::setStatus(int row, Status status)
@@ -358,12 +615,24 @@ void DownloadModel::setStatus(int row, Status status)
     download.status = status;
     store(download);
     changed(row, {roleId(Role::Status)});
+    emit downloadEnded(download.id, status);
 }
 
 void DownloadModel::changed(int row, const QVector<int> &roles)
 {
+    // What is worked out of a row changes with what it is worked out of: whether it can
+    // be fetched again with its status, and whether its file is there with that and its
+    // path.
+    QVector<int> all = roles;
+    const bool status = roles.contains(roleId(Role::Status));
+    if (status) {
+        all.append(roleId(Role::Retryable));
+    }
+    if (status || roles.contains(roleId(Role::Path))) {
+        all.append(roleId(Role::FileExists));
+    }
     const QModelIndex modelIndex = index(row, 0);
-    emit dataChanged(modelIndex, modelIndex, roles);
+    emit dataChanged(modelIndex, modelIndex, all);
     // Every change to a row's status or progress comes through here.
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();

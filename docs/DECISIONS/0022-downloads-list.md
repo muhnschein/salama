@@ -31,6 +31,9 @@ all; the files are left where they are, since the list is not the only thing tha
 them.
 
 ## Consequences
+*Revised* (0038): the list stops, retries and deletes, opens the folder, and the bar over
+the browsing page says what downloads; what follows was so until then.
+
 There is no cancelling or retrying from the list. The engine takes both
 (`cancelDownload` and `retryDownload` on `embedui:download`), but saying so goes through
 `WebEngine`, which `docs/ARCHITECTURE.md` keeps to the browsing page and Settings

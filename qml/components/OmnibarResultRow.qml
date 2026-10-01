@@ -39,7 +39,7 @@ ListItem {
         if (model.downloadStatus === DownloadModel.Failed) {
             return qsTr("Failed")
         }
-        return model.downloadStatus === DownloadModel.Canceled ? qsTr("Cancelled") : ""
+        return model.downloadStatus === DownloadModel.Canceled ? qsTr("Stopped") : ""
     }
     // The second line: where a tap leads. A tab in another group than the grid's says
     // which, by the name the strip gives the group; a download, the site it came from

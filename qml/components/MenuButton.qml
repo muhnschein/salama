@@ -61,18 +61,11 @@ BackgroundItem {
                                   : Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
             }
 
-            // Silica's own ring, at half the width it draws itself at, and its track in
-            // the faint primary colour the discs are in.
-            ProgressCircle {
+            DownloadRing {
                 objectName: "menuButtonProgress"
                 anchors.centerIn: parent
-                width: Theme.iconSizeMedium
-                height: width
                 visible: button.busy
                 value: button.progress
-                progressColor: Theme.highlightColor
-                backgroundColor: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
-                borderWidth: Theme.paddingSmall / 2
             }
 
             Icon {

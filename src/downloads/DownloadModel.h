@@ -40,6 +40,13 @@ class Storage;
 // The id is the engine's, counted from 1 each time the engine starts, so it names a
 // download only for as long as this process runs; the rows carry an id of their own,
 // which lasts. A dl-start for an id already seen is the same download started again.
+//
+// What the engine is told back goes on topic "embedui:download", which the same file
+// observes: "cancelDownload" {id} and "retryDownload" {id} for a download of this run,
+// and "addDownload" {from, to} to fetch a file anew. The engine is not this model's to
+// reach -- WebEngine is the browsing page's (docs/ARCHITECTURE.md) -- so the model says
+// what to send with engineRequest(), and the browsing page sends it
+// (docs/DECISIONS/0038-download-controls.md).
 class DownloadModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -48,6 +55,8 @@ class DownloadModel : public QAbstractListModel
     Q_PROPERTY(QString topic READ topic CONSTANT)
     // The folder the engine is told to save into, for WebEngineSettings.downloadDir.
     Q_PROPERTY(QString directory READ directory CONSTANT)
+    // The same folder as a URL, for opening it in the file manager.
+    Q_PROPERTY(QString directoryUrl READ directoryUrl CONSTANT)
     // How many downloads are still coming, and how far along they are together, as a
     // percentage: what the ring round the menu's Downloads says at a glance
     // (docs/DECISIONS/0021-menu-sheet.md). Together is the mean of their percentages,
@@ -78,7 +87,14 @@ public:
         Size,
         Progress,
         Status,
-        Started
+        Started,
+        // A failed or stopped download can be fetched again (canRetry()).
+        Retryable,
+        // The file is where the engine saved it: a download that arrived, and has not
+        // been moved or deleted since.
+        FileExists,
+        // The theme's icon for the kind of file it is (iconFor()).
+        Icon
     };
 
     // The oldest go beyond this many, from the list and from the database.
@@ -99,6 +115,9 @@ public:
         Status status = Running;
         // Milliseconds since the epoch.
         qint64 started = 0;
+        // Asked for again with addDownload, and waiting for the engine to start it:
+        // the dl-start that does names a new id, and this row's path (observe()).
+        bool refetching = false;
     };
 
     // The directory is made here, parents and all, if it is missing: the engine saves
@@ -113,6 +132,7 @@ public:
     int count() const;
     QString topic() const;
     QString directory() const;
+    QString directoryUrl() const;
     int runningCount() const;
     int runningProgress() const;
     // The rows as the list shows them, newest first, for the address bar's suggestions
@@ -125,7 +145,8 @@ public:
     // percentage that is not a number as the engine sends one (engine/EngineData.h).
     Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
 
-    // Forget rows. The files stay where they are.
+    // Forget rows. The files stay where they are. clear() leaves the downloads still
+    // coming, which would otherwise go on with nothing left to stop them by.
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void clear();
     // The rows of downloads started at or after a time, in milliseconds since the
@@ -141,13 +162,41 @@ public:
     // The row a download is on, by the id of its own that lasts, or -1 once it has
     // gone: what a list other than this one keeps to find it again by.
     Q_INVOKABLE int rowOf(int downloadId) const;
+    // A download's roles by name, as a delegate reads them, by the id that lasts, or
+    // nothing once it has gone: for what shows one download outside the list.
+    Q_INVOKABLE QVariantMap details(int downloadId) const;
+
+    // Stop a download still coming. The engine drops what it has of the file, and says
+    // dl-cancel; there is no pausing one (docs/DECISIONS/0038-download-controls.md).
+    Q_INVOKABLE void stop(int row);
+    // Fetch a failed or stopped download again, from the start. One of this run the
+    // engine still has, and starts again as it was asked for; one from an earlier run
+    // it has forgotten, and is asked to fetch from where it came from to where it went.
+    Q_INVOKABLE void retry(int row);
+    // Delete the file and forget the row; one still coming is stopped first. False,
+    // with the row kept, when there is a file and it could not be deleted.
+    Q_INVOKABLE bool deleteFile(int row);
+    // The files may have been moved or deleted while the list was not looked at.
+    Q_INVOKABLE void refresh();
+
+    static bool canRetry(const Download &download);
+    // "image://theme/icon-m-file-…" for a type, as the platform's file manager shows
+    // one; by the name's extension when the type says nothing useful.
+    static QString iconFor(const QString &mimeType, const QString &name);
 
 signals:
     void countChanged();
     void runningChanged();
+    // A download started, or started again; one ended -- arrived, failed or stopped --
+    // with the Status it ended in. By the id that lasts.
+    void downloadStarted(int downloadId);
+    void downloadEnded(int downloadId, int status);
+    // What the engine is to be told, for WebEngine.notifyObservers().
+    void engineRequest(const QString &topic, const QVariant &data);
 
 private:
     void start(int engineId, const QVariantMap &message);
+    void restart(int row, int engineId);
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);
     void setStatus(int row, Status status);

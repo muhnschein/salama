@@ -42,7 +42,11 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   notifications (`DECISIONS/0022-downloads-list.md`), how many are still coming and how
   far along they are together, which the menu's Downloads rings its icon with
   (`DECISIONS/0021-menu-sheet.md`), and the folder the engine saves them to,
-  `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`).
+  `~/Downloads/Salama` (`DECISIONS/0025-downloads-folder.md`). What the engine is to be
+  told -- stop one, fetch one again -- it emits as `engineRequest`, which the browsing
+  page sends on, and how each download starts and ends as `downloadStarted` and
+  `downloadEnded`, for the bar over the page and the notifications
+  (`DECISIONS/0038-download-controls.md`).
 - The settings, one section per settings page, each a QML singleton over the one
   settings file (`DECISIONS/0028-settings-pages.md`): `SearchSettings` -- the search
   engine, the sources the address bar suggests from, and the address-bar heuristics;

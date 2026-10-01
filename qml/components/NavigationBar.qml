@@ -295,6 +295,15 @@ Item {
         highlighted: gestureArea.pressedRegion === "menu"
     }
 
+    // While anything downloads, the menu's ring round the button too (0038).
+    DownloadRing {
+        objectName: "menuDownloadProgress"
+        anchors.centerIn: menuIcon
+        opacity: menuIcon.opacity
+        visible: DownloadModel.runningCount > 0 && menuIcon.visible
+        value: DownloadModel.runningProgress / 100
+    }
+
     Icon {
         id: reloadIcon
 
