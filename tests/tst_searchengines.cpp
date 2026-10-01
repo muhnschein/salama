@@ -535,11 +535,10 @@ void tst_searchengines::lookupsByIndex()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchEngines *list = settings.searchEngines();
-    QCOMPARE(SearchEngines::defaultKey(), QStringLiteral("qwant"));
-    QCOMPARE(SearchEngines::withoutWww(QStringLiteral("www.find.example")),
+    QCOMPARE(Salama::defaultSearchEngine(), QStringLiteral("qwant"));
+    QCOMPARE(Salama::withoutWww(QStringLiteral("www.find.example")),
              QStringLiteral("find.example"));
-    QCOMPARE(SearchEngines::withoutWww(QStringLiteral("find.example")),
-             QStringLiteral("find.example"));
+    QCOMPARE(Salama::withoutWww(QStringLiteral("find.example")), QStringLiteral("find.example"));
     QCOMPARE(list->count(), 3);
     QCOMPARE(list->indexOf(QStringLiteral("startpage")), 2);
     QCOMPARE(list->indexOf(QStringLiteral("added-find")), -1);

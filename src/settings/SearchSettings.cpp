@@ -43,7 +43,7 @@ SearchSettings::SearchSettings(QSettings &file, SearchEngines &engines, QObject 
 
 QString SearchSettings::defaultEngine()
 {
-    return SearchEngines::defaultKey();
+    return defaultSearchEngine();
 }
 
 QString SearchSettings::engine() const
@@ -160,7 +160,7 @@ QString SearchSettings::displayAddress(const QString &url)
 {
     const QUrl parsed(url, QUrl::TolerantMode);
     const QString host = parsed.host();
-    return host.isEmpty() ? url : SearchEngines::withoutWww(host);
+    return host.isEmpty() ? url : withoutWww(host);
 }
 
 QString SearchSettings::addressFor(const QString &text)

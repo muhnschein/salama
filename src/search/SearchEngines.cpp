@@ -84,6 +84,35 @@ QString jsonOf(const QJsonArray &records)
     return QString::fromUtf8(QJsonDocument(records).toJson(QJsonDocument::Compact));
 }
 
+// Where an engine's results are: its host without "www.", and either its path and the
+// parameter that carries the words, or -- when the template has the words in the path --
+// what stands before them and after them. False for an address that says neither, and
+// for one that would take in every page of its site ("https://example.org/{searchTerms}").
+bool readResults(const QString &urlTemplate, SearchEngines::Results &results)
+{
+    QString probed = urlTemplate;
+    probed.replace(OpenSearch::marker(), QLatin1String(SearchTermsWord));
+    const QUrl page(probed, QUrl::TolerantMode);
+    results.host = withoutWww(page.host());
+    results.path = page.path();
+    if (results.host.isEmpty()) {
+        return false;
+    }
+    for (const QPair<QString, QString> &item : QUrlQuery(page).queryItems()) {
+        if (item.second == QLatin1String(SearchTermsWord)) {
+            results.parameter = item.first;
+            return true;
+        }
+    }
+    const int at = results.path.indexOf(QLatin1String(SearchTermsWord));
+    if (at <= 1) {
+        return false;
+    }
+    results.pathSuffix = results.path.mid(at + QLatin1String(SearchTermsWord).size());
+    results.path = results.path.left(at);
+    return true;
+}
+
 } // namespace
 
 SearchEngines::SearchEngines(QSettings &file, QObject *parent)
@@ -92,12 +121,12 @@ SearchEngines::SearchEngines(QSettings &file, QObject *parent)
     readStored();
 }
 
-QString SearchEngines::defaultKey()
+QString defaultSearchEngine()
 {
     return QLatin1String(builtInEngines().first().key);
 }
 
-QString SearchEngines::withoutWww(const QString &host)
+QString withoutWww(const QString &host)
 {
     return host.startsWith(QLatin1String("www.")) ? host.mid(4) : host;
 }
@@ -128,7 +157,7 @@ void SearchEngines::readStored()
     rebuildResults();
 }
 
-void SearchEngines::storeAdded()
+void SearchEngines::store()
 {
     QJsonArray records;
     for (const Engine &engine : m_added) {
@@ -142,20 +171,17 @@ void SearchEngines::storeAdded()
     } else {
         setValue(AddedEnginesKey, jsonOf(records));
     }
-}
 
-void SearchEngines::storeFound()
-{
-    QJsonArray records;
+    QJsonArray offers;
     for (const Found &offer : m_found) {
-        records.append(QJsonObject{{QStringLiteral("title"), offer.title},
-                                   {QStringLiteral("href"), offer.href},
-                                   {QStringLiteral("host"), offer.host}});
+        offers.append(QJsonObject{{QStringLiteral("title"), offer.title},
+                                  {QStringLiteral("href"), offer.href},
+                                  {QStringLiteral("host"), offer.host}});
     }
-    if (records.isEmpty()) {
+    if (offers.isEmpty()) {
         remove(FoundEnginesKey);
     } else {
-        setValue(FoundEnginesKey, jsonOf(records));
+        setValue(FoundEnginesKey, jsonOf(offers));
     }
 }
 
@@ -280,7 +306,7 @@ bool SearchEngines::offerEngine(const QString &title, const QString &href, const
     }
     const QString site = host.trimmed();
     m_found.append(Found{name, address, site.isEmpty() ? withoutWww(url.host()) : site});
-    storeFound();
+    store();
     emit foundChanged();
     return true;
 }
@@ -302,8 +328,7 @@ bool SearchEngines::addFoundEngine(const QString &href, const QString &descripti
     const Engine added{uniqueKey(name), name, read.urlTemplate, offer->host};
     m_added.append(added);
     m_found.remove(static_cast<int>(offer - m_found.cbegin()));
-    storeAdded();
-    storeFound();
+    store();
     emit engineAdded(added.key);
     enginesWereChanged();
     emit foundChanged();
@@ -315,7 +340,7 @@ void SearchEngines::forgetFoundEngine(const QString &href)
     for (int i = 0; i < m_found.count(); ++i) {
         if (m_found.at(i).href == href.trimmed()) {
             m_found.remove(i);
-            storeFound();
+            store();
             emit foundChanged();
             return;
         }
@@ -329,7 +354,7 @@ void SearchEngines::removeAddedEngine(const QString &key)
             continue;
         }
         m_added.remove(i);
-        storeAdded();
+        store();
         enginesWereChanged();
         return;
     }
@@ -341,8 +366,7 @@ void SearchEngines::removeAddedEngines()
     const bool hadFound = !m_found.isEmpty();
     m_added.clear();
     m_found.clear();
-    storeAdded();
-    storeFound();
+    store();
     if (hadAdded) {
         enginesWereChanged();
     }
@@ -355,35 +379,6 @@ void SearchEngines::enginesWereChanged()
 {
     rebuildResults();
     emit enginesChanged();
-}
-
-// Where an engine's results are: its host without "www.", and either its path and the
-// parameter that carries the words, or -- when the template has the words in the path --
-// what stands before them and after them. False for an address that says neither, and
-// for one that would take in every page of its site ("https://example.org/{searchTerms}").
-bool SearchEngines::readResults(const QString &urlTemplate, Results &results)
-{
-    QString probed = urlTemplate;
-    probed.replace(OpenSearch::marker(), QLatin1String(SearchTermsWord));
-    const QUrl page(probed, QUrl::TolerantMode);
-    results.host = withoutWww(page.host());
-    results.path = page.path();
-    if (results.host.isEmpty()) {
-        return false;
-    }
-    for (const QPair<QString, QString> &item : QUrlQuery(page).queryItems()) {
-        if (item.second == QLatin1String(SearchTermsWord)) {
-            results.parameter = item.first;
-            return true;
-        }
-    }
-    const int at = results.path.indexOf(QLatin1String(SearchTermsWord));
-    if (at <= 1) {
-        return false;
-    }
-    results.pathSuffix = results.path.mid(at + QLatin1String(SearchTermsWord).size());
-    results.path = results.path.left(at);
-    return true;
 }
 
 // The asking is of every page in the history, so what each engine's results look like

@@ -11,6 +11,11 @@
 
 namespace Salama {
 
+// The key of the engine in use until another is chosen: the first built-in one.
+QString defaultSearchEngine();
+// A host without its "www.", which is how sites are told apart here.
+QString withoutWww(const QString &host);
+
 // The search engines the address bar can search with: the three built in and the ones
 // added from what sites offered as the pages were browsed. Each page says, through the
 // engine, that it has a search (offerEngine()), the offers are kept until one is taken up
@@ -40,10 +45,18 @@ public:
     int addedCount() const;
     QVariantList foundEngines() const;
 
-    // The key of the engine in use until another is chosen: the first built-in one.
-    static QString defaultKey();
-    // A host without its "www.", which is how sites are told apart here.
-    static QString withoutWww(const QString &host);
+    // Where an engine's pages of results are, as isSearchUrl() asks; read from
+    // each engine's address once, as the engines change.
+    struct Results
+    {
+        QString host;
+        // The path of a page of results, or the part of it before the words when the
+        // words are in the path itself.
+        QString path;
+        // The query parameter that carries the words, empty when they are in the path.
+        QString parameter;
+        QString pathSuffix;
+    };
 
     // Where an engine is in the list, or -1 for a key that is none; and what the engine
     // at an index in it is called by, and searches with. The index is one of count().
@@ -98,26 +111,13 @@ private:
         QString host;
     };
 
-    // Where an engine's pages of results are, as isSearchUrl() asks.
-    struct Results
-    {
-        QString host;
-        // The path of a page of results, or the part of it before the words when the
-        // words are in the path itself.
-        QString path;
-        // The query parameter that carries the words, empty when they are in the path.
-        QString parameter;
-        QString pathSuffix;
-    };
-
-    static bool readResults(const QString &urlTemplate, Results &results);
     void rebuildResults();
     QVector<Engine> engines() const;
     bool hasEngineNamed(const QString &name) const;
     QString uniqueKey(const QString &name) const;
     void readStored();
-    void storeAdded();
-    void storeFound();
+    // The added engines and the offers, as they are now, to the file.
+    void store();
     // After the engines were added to or removed from: results of each read again, and
     // said.
     void enginesWereChanged();
