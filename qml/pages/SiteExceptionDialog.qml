@@ -27,9 +27,11 @@ Dialog {
 
     objectName: "siteExceptionDialog"
     canAccept: origin.length > 0
+    // The menu's choices in its order: Allow, Block, and Always ask for a kind that asks.
     onAccepted: SitePermissions.set(kind, origin,
-                                    !listOnly && decision.currentIndex === 1
-                                    ? SitePermissions.Block : SitePermissions.Allow)
+                                    listOnly ? SitePermissions.Allow
+                                             : [SitePermissions.Allow, SitePermissions.Block,
+                                                SitePermissions.Ask][decision.currentIndex])
 
     Column {
         width: parent.width
@@ -65,6 +67,12 @@ Dialog {
 
                 MenuItem {
                     text: dialog.siteNames.block()
+                }
+
+                MenuItem {
+                    objectName: "siteExceptionAskChoice"
+                    visible: SitePermissions.canAsk(dialog.kind)
+                    text: dialog.siteNames.alwaysAsk()
                 }
             }
         }

@@ -73,12 +73,13 @@ Page {
             }
         }
 
-        // The model lists the allowed first and the blocked after them.
-        section.property: "allowed"
+        // The model lists the allowed first, the blocked after them, and those asked each
+        // time last.
+        section.property: "decision"
         section.delegate: SectionHeader {
             objectName: "siteExceptionSection"
             text: exceptionsPage.listOnly ? qsTr("Tracking protection off")
-                                          : section === "true" ? qsTr("Allowed") : qsTr("Blocked")
+                                          : exceptionsPage.siteNames.decisionName(Number(section))
         }
 
         delegate: SiteExceptionItem {
@@ -89,7 +90,7 @@ Page {
             // Held apart from the row, which a change in the menu may remove or move.
             origin: model.origin
             host: model.host
-            allowed: model.allowed
+            decision: model.decision
         }
 
         footer: Label {

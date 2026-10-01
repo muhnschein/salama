@@ -22,7 +22,6 @@ Column {
     property Item view
     // The engine blocked trackers on the page; its QMozSecurity says so, if it has one.
     property bool blockedTrackers: false
-    property SettingNames names: SettingNames {}
     property SitePermissionNames siteNames: SitePermissionNames {}
     readonly property bool offInSettings:
         PrivacySettings.trackingProtection === PrivacySettings.TrackingProtectionOff
@@ -50,10 +49,8 @@ Column {
             if (tracking.offForSite) {
                 return qsTr("Off for this site. Turn it on to block trackers here again.")
             }
-            //: The site's details, under the tracking protection switch; %1 is the level, Standard
-            //: or Strict
-            return qsTr("%1, on for this site. If something on it looks broken, try turning it off.")
-                   .arg(tracking.names.trackingProtection(PrivacySettings.trackingProtection))
+            //: The site's details, under the tracking protection switch while it is on
+            return qsTr("If something looks broken on this site, try turning this off.")
         }
         onClicked: {
             if (tracking.isOn) {

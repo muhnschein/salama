@@ -17,20 +17,36 @@ ListItem {
     property int kind
     property string origin
     property string host
-    property bool allowed
+    // A SitePermissions Decision.
+    property int decision
     // Tracking protection has no blocking: a site is on its list because it is off for
     // the site, and all there is to do with it is to take it off.
     property bool listOnly: false
+    property SitePermissionNames siteNames: SitePermissionNames {}
 
     contentHeight: Theme.itemSizeSmall
     menu: ContextMenu {
+        // The decisions the site has not got, to move it under another heading.
         MenuItem {
-            objectName: "siteExceptionToggle"
-            visible: !site.listOnly
-            text: site.allowed ? qsTr("Block") : qsTr("Allow")
-            onClicked: SitePermissions.set(site.kind, site.origin,
-                                           site.allowed ? SitePermissions.Block
-                                                        : SitePermissions.Allow)
+            objectName: "siteExceptionAllow"
+            visible: !site.listOnly && site.decision !== SitePermissions.Allow
+            text: site.siteNames.allow()
+            onClicked: SitePermissions.set(site.kind, site.origin, SitePermissions.Allow)
+        }
+
+        MenuItem {
+            objectName: "siteExceptionBlock"
+            visible: !site.listOnly && site.decision !== SitePermissions.Block
+            text: site.siteNames.block()
+            onClicked: SitePermissions.set(site.kind, site.origin, SitePermissions.Block)
+        }
+
+        MenuItem {
+            objectName: "siteExceptionAsk"
+            visible: !site.listOnly && SitePermissions.canAsk(site.kind)
+                     && site.decision !== SitePermissions.Ask
+            text: site.siteNames.alwaysAsk()
+            onClicked: SitePermissions.set(site.kind, site.origin, SitePermissions.Ask)
         }
 
         MenuItem {

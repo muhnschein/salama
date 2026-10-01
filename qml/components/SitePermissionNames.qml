@@ -99,25 +99,23 @@ QtObject {
         return ""
     }
 
-    // Whether what a kind is set to for the sites with no exception is to be asked: the
-    // one choice a site cannot be given of its own, since a site with no record is what
-    // asking is.
-    function defaultAsks(kind) {
-        switch (kind) {
-        case SitePermissions.Notifications:
-            return !PrivacySettings.blockNotificationRequests
-        case SitePermissions.Location:
-            return !SitePermissionSettings.locationBlocked
-        case SitePermissions.Camera:
-            return !SitePermissionSettings.cameraBlocked
-        case SitePermissions.Microphone:
-            return !SitePermissionSettings.microphoneBlocked
-        }
-        return false
+    function alwaysAsk() {
+        //: A site is asked about it each time it wants it, whatever is set for every site
+        return qsTr("Always ask")
     }
 
-    // What a site was given, as the details of one say it.
+    // A site's following what is set for every site, and what that is: "Follow default: Ask".
+    function followDefault(kind) {
+        //: A site has no choice of its own and does what every site does; %1 is that
+        return qsTr("Follow default: %1").arg(defaultName(kind))
+    }
+
+    // What a site was given, as the details of one say it and its heading in a list of
+    // exceptions.
     function decisionName(decision) {
+        if (decision === SitePermissions.Ask) {
+            return alwaysAsk()
+        }
         return decision === SitePermissions.Allow
                 //: A site has been allowed it
                 ? qsTr("Allowed")

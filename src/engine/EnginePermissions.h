@@ -27,6 +27,9 @@ namespace EnginePermissions {
 // nsIPermissionManager's capabilities and expiry types.
 constexpr int AllowAction = 1;
 constexpr int DenyAction = 2;
+// nsIPermissionManager's PROMPT_ACTION: the site is asked each time, whatever the
+// default for the permission is.
+constexpr int PromptAction = 3;
 constexpr int ExpireNever = 0;
 
 // What ContentPermissionManager.js listens on, and answers on.
