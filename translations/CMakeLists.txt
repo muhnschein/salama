@@ -10,6 +10,7 @@ endif()
 set(TS_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama.ts
     ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-fi.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/harbour-salama-sv.ts
 )
 
 set(QM_FILES)

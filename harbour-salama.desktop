@@ -2,8 +2,10 @@
 Type=Application
 Name=Salama
 Name[fi]=Salama
+Name[sv]=Salama
 Comment=Web browser
 Comment[fi]=Verkkoselain
+Comment[sv]=Webbläsare
 Icon=harbour-salama
 Exec=harbour-salama
 X-Nemo-Application-Type=silica-qt5
@@ -17,6 +19,7 @@ X-Share-Methods=link
 [X-Share Method link]
 Description=Open in Salama
 Description[fi]=Avaa Salamassa
+Description[sv]=Öppna i Salama
 Capabilities=text/x-url
 SupportsMultipleFiles=no
 
