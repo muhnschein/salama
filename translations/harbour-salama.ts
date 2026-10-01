@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="en">
+<TS version="2.1" language="">
 <context>
     <name>AddressField</name>
     <message>
@@ -128,11 +128,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Find in page</source>
+        <source>Search on page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Desktop site</source>
+        <source>Desktop version</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -195,24 +195,24 @@
         <source>%n page(s)</source>
         <extracomment>Pages of the history that clearing takes</extracomment>
         <translation type="unfinished">
-            <numerusform>%n page</numerusform>
-            <numerusform>%n pages</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n download(s)</source>
         <extracomment>Rows of the list of downloads that clearing takes</extracomment>
-        <translation type="unfinished">
-            <numerusform>%n download</numerusform>
-            <numerusform>%n downloads</numerusform>
+        <translation>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n closed tab(s)</source>
         <extracomment>Recently closed tabs that clearing takes</extracomment>
         <translation type="unfinished">
-            <numerusform>%n closed tab</numerusform>
-            <numerusform>%n closed tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -234,8 +234,8 @@
         <source>%n tab(s), in every group</source>
         <extracomment>How many tabs clearing the open tabs closes</extracomment>
         <translation type="unfinished">
-            <numerusform>%n tab, in every group</numerusform>
-            <numerusform>%n tabs, in every group</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -260,8 +260,8 @@
         <source>%n file(s)</source>
         <extracomment>How many downloads are coming, on the cover, under their progress</extracomment>
         <translation type="unfinished">
-            <numerusform>%n file</numerusform>
-            <numerusform>%n files</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -399,6 +399,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+
         <source>No downloads</source>
         <translation type="unfinished"></translation>
     </message>
@@ -496,8 +497,8 @@
         <source>%n page(s)</source>
         <extracomment>How many pages the history keeps</extracomment>
         <translation type="unfinished">
-            <numerusform>%n page</numerusform>
-            <numerusform>%n pages</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -508,8 +509,8 @@
         <source>%n file(s)</source>
         <extracomment>How many downloads the list of them keeps</extracomment>
         <translation type="unfinished">
-            <numerusform>%n file</numerusform>
-            <numerusform>%n files</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -520,8 +521,8 @@
         <source>%n tab(s)</source>
         <extracomment>How many closed tabs can be opened again</extracomment>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -532,8 +533,8 @@
         <source>%1, in %n group(s)</source>
         <extracomment>How many tabs are open, and in how many groups: &quot;17, in 5 groups&quot;</extracomment>
         <translation type="unfinished">
-            <numerusform>%1, in %n group</numerusform>
-            <numerusform>%1, in %n groups</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -635,8 +636,8 @@
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -734,16 +735,16 @@
         <source>%1 hour(s)</source>
         <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
         <translation type="unfinished">
-            <numerusform>%1 hour</numerusform>
-            <numerusform>%1 hours</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 minute(s)</source>
         <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
         <translation type="unfinished">
-            <numerusform>%1 minute</numerusform>
-            <numerusform>%1 minutes</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -908,24 +909,24 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%n site(s) allowed</source>
         <extracomment>How many sites may send notifications</extracomment>
         <translation type="unfinished">
-            <numerusform>%n site allowed</numerusform>
-            <numerusform>%n sites allowed</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n blocked</source>
         <extracomment>How many sites may not send notifications</extracomment>
         <translation type="unfinished">
-            <numerusform>%n blocked</numerusform>
-            <numerusform>%n blocked</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) blocked</source>
         <extracomment>How many sites may not send notifications, with none allowed</extracomment>
         <translation type="unfinished">
-            <numerusform>%n site blocked</numerusform>
-            <numerusform>%n sites blocked</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1108,8 +1109,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -1142,8 +1143,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -1174,8 +1175,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -1294,38 +1295,38 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tap the address bar to open a website or search.</source>
+        <source>The address bar opens websites and searches the web. Tap it.</source>
         <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Type an address or a search. Matching tabs, bookmarks and history appear above the bar.</source>
+        <source>Type an address to open a website, or type words to search the web. Matching tabs, bookmarks and history are listed above the bar.</source>
         <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Tap the menu button.</source>
+        <source>Tap the menu button to open the menu.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The menu has actions for this page and the browser. Tap outside it to close it.</source>
+        <source>The menu contains actions for this page and for the browser. Tap outside the menu to close it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Drag the bar up to see your tabs.</source>
+        <source>Drag the bar up to show your tabs.</source>
         <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Swipe a tab left to close it.</source>
+        <source>Swipe a tab to the left to close it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hold a tab, then drag it to a new position.</source>
+        <source>Press and hold a tab, then drag it to another position.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hold a tab, then drop it on a group name to move it there.</source>
+        <source>Press and hold a tab, then drag it onto a group name to move it to that group.</source>
         <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -1345,7 +1346,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You can open it again from Settings.</source>
+        <source>You can open the tutorial again in Settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1354,8 +1355,8 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message numerus="yes">
         <source>%n tab(s)</source>
         <translation type="unfinished">
-            <numerusform>%n tab</numerusform>
-            <numerusform>%n tabs</numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
