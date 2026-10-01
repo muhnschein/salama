@@ -55,7 +55,7 @@ Page {
                 objectName: "clearDownloadsMenu"
                 text: qsTr("Clear list")
                 enabled: DownloadModel.count > DownloadModel.runningCount
-                onClicked: DownloadModel.clear()
+                onClicked: DownloadModel.clearEnded()
             }
         }
 

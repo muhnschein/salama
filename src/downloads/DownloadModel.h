@@ -145,10 +145,12 @@ public:
     // percentage that is not a number as the engine sends one (engine/EngineData.h).
     Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
 
-    // Forget rows. The files stay where they are. clear() leaves the downloads still
-    // coming, which would otherwise go on with nothing left to stop them by.
+    // Forget rows. The files stay where they are. clear() forgets every one, as clearing
+    // the history on close does; clearEnded() leaves those still coming, which would
+    // otherwise go on with nothing left to stop them by: what the list's pulley does.
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void clear();
+    Q_INVOKABLE void clearEnded();
     // The rows of downloads started at or after a time, in milliseconds since the
     // epoch, as HistoryModel::clearSince() takes it, but for any still coming: what
     // clearing the history takes of the list of downloads.

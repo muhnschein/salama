@@ -356,8 +356,8 @@ void tst_downloadmodel::running()
     model.observe(Topic, message(QStringLiteral("dl-cancel"), 2));
     QCOMPARE(model.runningCount(), 0);
 
-    // Forgotten while it is coming, it is not counted. Clearing the list leaves the
-    // downloads still coming, and they still count.
+    // Forgotten while it is coming, it is not counted. Clearing what has ended leaves
+    // the downloads still coming, and they still count; clearing everything does not.
     model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
     model.observe(Topic, progressMessage(3, 10.0));
     QCOMPARE(model.runningCount(), 1);
@@ -367,10 +367,10 @@ void tst_downloadmodel::running()
     model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
     model.observe(Topic, progressMessage(4, 70.0));
     QCOMPARE(model.runningProgress(), 70);
-    model.clear();
+    model.clearEnded();
     QCOMPARE(model.runningCount(), 1);
     QCOMPARE(model.runningProgress(), 70);
-    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
+    model.clear();
     QCOMPARE(model.runningCount(), 0);
     QCOMPARE(model.runningProgress(), 0);
 
@@ -776,6 +776,7 @@ void tst_downloadmodel::clear()
     DownloadModel model(storage, dir.path());
     QSignalSpy countSpy(&model, &DownloadModel::countChanged);
     model.clear();
+    model.clearEnded();
     QCOMPARE(countSpy.count(), 0);
 
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
@@ -784,20 +785,25 @@ void tst_downloadmodel::clear()
     model.observe(Topic, message(QStringLiteral("dl-done"), 1));
     model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
     QCOMPARE(countSpy.count(), 3);
-    // The one still coming stays: forgotten, it would go on with nothing to stop it by.
-    model.clear();
+    // What has ended goes; the one still coming stays, which forgotten would go on with
+    // nothing to stop it by.
+    model.clearEnded();
     QCOMPARE(model.count(), 1);
-    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(), QStringLiteral("c.pdf"));
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Name)).toString(),
+             QStringLiteral("c.pdf"));
     QCOMPARE(countSpy.count(), 4);
     QCOMPARE(rowsInDatabase(storage), 1);
     // Nothing more to take: nothing said.
-    model.clear();
+    model.clearEnded();
     QCOMPARE(countSpy.count(), 4);
 
-    model.observe(Topic, message(QStringLiteral("dl-done"), 3));
+    // Clearing everything, as the history is cleared on close, takes that one too.
+    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
     model.clear();
     QCOMPARE(model.count(), 0);
-    QCOMPARE(countSpy.count(), 5);
+    QCOMPARE(model.runningCount(), 0);
+    QCOMPARE(countSpy.count(), 6);
     QCOMPARE(rowsInDatabase(storage), 0);
 
     DownloadModel reloaded(storage, dir.path());

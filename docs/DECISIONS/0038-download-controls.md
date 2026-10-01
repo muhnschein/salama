@@ -48,7 +48,8 @@ there and fetches again one that failed or was stopped; the circle stops one com
 row's menu has Stop, Retry, Open, Copy link, Delete file -- the file and the row, after a
 remorse -- and Remove from list, each where it applies. The pulley has Open folder and
 Clear list; clearing leaves what is still coming, which would otherwise go on with nothing
-left to stop it by.
+left to stop it by (`clearEnded()`). Clearing the history when the browser closes still
+takes every row (`clear()`): the engine stops with the browser, and nothing is left coming.
 
 **The words are Stop and Retry**, not Pause and Resume: the engine keeps nothing of a file
 it stops, and a Resume that starts from nothing would say what does not happen. A download

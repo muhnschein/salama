@@ -384,6 +384,23 @@ int DownloadModel::countSince(double since) const
 
 void DownloadModel::clear()
 {
+    if (m_downloads.isEmpty()) {
+        return;
+    }
+    beginRemoveRows(QModelIndex(), 0, m_downloads.count() - 1);
+    m_downloads.clear();
+    endRemoveRows();
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("DELETE FROM download"));
+    run(query);
+    emit countChanged();
+    if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
+        emit runningChanged();
+    }
+}
+
+void DownloadModel::clearEnded()
+{
     clearSince(std::numeric_limits<double>::lowest());
 }
 
