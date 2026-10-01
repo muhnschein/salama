@@ -133,7 +133,7 @@
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Komp. svetainė</translation>
+        <translation>Kompiuteriui</translation>
     </message>
 </context>
 <context>
@@ -1685,7 +1685,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Desktop site</source>
-        <translation>Komp. svetainė</translation>
+        <translation>Kompiuteriui</translation>
     </message>
 </context>
 <context>
