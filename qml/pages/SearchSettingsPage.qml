@@ -33,10 +33,14 @@ Page {
         // Every engine added while browsing and every offer, gone at once, after the
         // remorse a list kept for a while deserves; the first built-in engine searches
         // if the one in use was one of them.
+        // Only while there is something to remove: a pulley with nothing in it is one to
+        // pull for nothing.
         PullDownMenu {
+            objectName: "searchSettingsPulley"
+            visible: SearchEngines.addedCount > 0 || SearchEngines.foundEngines.length > 0
+
             MenuItem {
                 objectName: "removeAddedEnginesMenu"
-                visible: SearchEngines.addedCount > 0 || SearchEngines.foundEngines.length > 0
                 text: qsTr("Remove added search engines")
                 onClicked: Remorse.popupAction(searchSettingsPage,
                                                qsTr("Removing added search engines"),

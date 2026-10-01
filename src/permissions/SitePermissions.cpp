@@ -17,8 +17,8 @@ const int KindCount = SitePermissions::TrackingProtection + 1;
 // each time where the kind is one a page asks for.
 bool isDecision(int kind, int decision)
 {
-    return decision == SitePermissions::Allow || decision == SitePermissions::Block
-           || (decision == SitePermissions::Ask && SitePermissions::canAsk(kind));
+    return decision == SitePermissions::Allow || decision == SitePermissions::Block ||
+           (decision == SitePermissions::Ask && SitePermissions::canAsk(kind));
 }
 
 } // namespace
@@ -101,10 +101,8 @@ QVariant SitePermissions::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> SitePermissions::roleNames() const
 {
     return {
-        {roleId(Role::Kind), "kind"},
-        {roleId(Role::Origin), "origin"},
-        {roleId(Role::Host), "host"},
-        {roleId(Role::Allowed), "allowed"},
+        {roleId(Role::Kind), "kind"},         {roleId(Role::Origin), "origin"},
+        {roleId(Role::Host), "host"},         {roleId(Role::Allowed), "allowed"},
         {roleId(Role::Decision), "decision"},
     };
 }
@@ -145,8 +143,8 @@ void SitePermissions::observe(const QString &topic, const QVariant &data)
         const int decision = permission.capability;
         // Gecko's allow list has no deny: a record of one is nothing this application
         // writes or reads as a decision; nor is asking about what a page does unasked.
-        if (kind < 0 || (kind == TrackingProtection && decision != Allow)
-            || (decision == Ask && !canAsk(kind))) {
+        if (kind < 0 || (kind == TrackingProtection && decision != Allow) ||
+            (decision == Ask && !canAsk(kind))) {
             continue;
         }
         const auto same = [kind, &permission](const Exception &exception) {

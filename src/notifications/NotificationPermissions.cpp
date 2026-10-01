@@ -103,8 +103,8 @@ void NotificationPermissions::observe(const QString &topic, const QVariant &data
     QVector<Site> sites;
     for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
         // A site to be asked each time is neither allowed nor blocked: it is not listed.
-        if (permission.type != PermissionType
-            || (permission.capability != AllowAction && permission.capability != DenyAction)) {
+        if (permission.type != PermissionType ||
+            (permission.capability != AllowAction && permission.capability != DenyAction)) {
             continue;
         }
         const QString &origin = permission.origin;

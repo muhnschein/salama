@@ -39,7 +39,8 @@ QVector<Entry> parse(const QVariant &data)
         const int action = EngineData::isNumber(capability) ? capability.toInt() : 0;
         const QString origin = originOf(
             permission.value(QStringLiteral("uri")).toString().section(QLatin1Char('^'), 0, 0));
-        if (origin.isEmpty() || (action != AllowAction && action != DenyAction && action != PromptAction)) {
+        if (origin.isEmpty() ||
+            (action != AllowAction && action != DenyAction && action != PromptAction)) {
             continue;
         }
         entries.append({permission.value(QStringLiteral("type")).toString(), origin, action});

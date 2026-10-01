@@ -5162,7 +5162,7 @@ void tst_qmlload::searchSettingsPage()
     };
     QCOMPARE(columnOf(findAll(QStringLiteral("searchEngineRow")).first()), layout);
     QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
-    QVERIFY(!find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
     for (QObject *row : findAll(QStringLiteral("searchEngineRow"))) {
         QVERIFY(findObjects(row, QStringLiteral("searchEngineChoice"))
                     .first()
@@ -5265,7 +5265,7 @@ void tst_qmlload::searchEnginesFound()
     QVERIFY(find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
     QCOMPARE(find(QStringLiteral("foundSearchEnginesHint"))->property("text").toString(),
              QStringLiteral("Sites can offer their search. Tap one to add it and search with it."));
-    QVERIFY(find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+    QVERIFY(find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
     const QList<QObject *> found = findAll(QStringLiteral("foundSearchEngine"));
     QCOMPARE(found.count(), 2);
     QCOMPARE(textIn(found.first(), QStringLiteral("foundSearchEngineName")),
@@ -5289,7 +5289,7 @@ void tst_qmlload::searchEnginesFound()
     QVERIFY(list->foundEngines().isEmpty());
     QVERIFY(findAll(QStringLiteral("foundSearchEngine")).isEmpty());
     QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
-    QVERIFY(!find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
+    QVERIFY(!find(QStringLiteral("searchSettingsPulley"))->property("visible").toBool());
 }
 
 // A tap on an engine found fetches its description with the page's own XMLHttpRequest,
@@ -8472,7 +8472,8 @@ void tst_qmlload::siteDetailsPermissions()
                SitePermissions::Block);
     QVERIFY(pulleyShown());
     QVERIFY(find(QStringLiteral("clearSitePermissionsButton")) == nullptr);
-    QCOMPARE(textOf(page, "clearSitePermissionsMenuItem"), QStringLiteral("Clear site permissions"));
+    QCOMPARE(textOf(page, "clearSitePermissionsMenuItem"),
+             QStringLiteral("Clear site permissions"));
     const int before = reloads();
     click(find(QStringLiteral("clearSitePermissionsMenuItem")));
     QCOMPARE(sites->originCount(site), 0);

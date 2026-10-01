@@ -1167,24 +1167,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
-    <name>SiteDecisionRow</name>
-    <message>
-        <source>Always ask</source>
-        <extracomment>Lets the site be asked about the permission each time it wants it</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <extracomment>Takes the site&apos;s own choice away, so that what is set for every site applies to it</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>default</source>
-        <extracomment>Marks a permission that is what is set for every site, rather than the site&apos;s own</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>SiteDetailsPage</name>
     <message>
         <source>The certificate has expired or is not yet valid</source>
@@ -1227,14 +1209,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>SiteExceptionItem</name>
     <message>
-        <source>Block</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Allow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Remove</source>
         <extracomment>Takes the site&apos;s exception away: it follows the default again</extracomment>
         <translation type="unfinished"></translation>
@@ -1267,14 +1241,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Tracking protection off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Allowed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Blocked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1370,6 +1336,16 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n exceptions</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Always ask</source>
+        <extracomment>A site is asked about it each time it wants it, whatever is set for every site</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Follow default: %1</source>
+        <extracomment>A site has no choice of its own and does what every site does; %1 is that</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SitePermissionRow</name>
@@ -1444,12 +1420,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1, on for this site. If something on it looks broken, try turning it off.</source>
-        <extracomment>The site&apos;s details, under the tracking protection switch; %1 is the level, Standard or Strict</extracomment>
+        <source>Trackers were blocked on this page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Trackers were blocked on this page</source>
+        <source>If something looks broken on this site, try turning this off.</source>
+        <extracomment>The site&apos;s details, under the tracking protection switch while it is on</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>

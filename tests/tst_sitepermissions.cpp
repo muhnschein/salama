@@ -730,8 +730,7 @@ void tst_sitepermissions::askingEachTime()
                                });
     QCOMPARE(permissions.rowCount(), 2);
     QCOMPARE(permissions.decision(SitePermissions::Camera, Chat), int(SitePermissions::Ask));
-    QCOMPARE(permissions.decision(SitePermissions::Notifications, News),
-             int(SitePermissions::Ask));
+    QCOMPARE(permissions.decision(SitePermissions::Notifications, News), int(SitePermissions::Ask));
     QCOMPARE(permissions.decision(SitePermissions::Popups, Maps), int(SitePermissions::Default));
     const QModelIndex first = permissions.index(0);
     QCOMPARE(permissions.data(first, roleId(SitePermissions::Role::Decision)).toInt(),
@@ -775,9 +774,9 @@ void tst_sitepermissions::askingEachTime()
     QTemporaryDir dir;
     Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
     NotificationPermissions *notifications = core.notificationPermissions();
-    notifications->observe(Topic,
-                           QVariantList{permission(QStringLiteral("desktop-notification"), News, 3),
-                                        permission(QStringLiteral("desktop-notification"), Chat, 1)});
+    notifications->observe(
+        Topic, QVariantList{permission(QStringLiteral("desktop-notification"), News, 3),
+                            permission(QStringLiteral("desktop-notification"), Chat, 1)});
     QCOMPARE(notifications->rowCount(), 1);
     QVERIFY(!notifications->isBlocked(News));
     core.sitePermissions()->set(SitePermissions::Notifications, Chat, SitePermissions::Ask);
