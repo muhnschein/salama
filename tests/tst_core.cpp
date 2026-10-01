@@ -282,14 +282,14 @@ void tst_core::wiresAddedEnginesToTheStartPage()
     QCOMPARE(core.startPage()->topSites()->count(), 1);
 
     const QString href = QStringLiteral("https://find.example/opensearch.xml");
-    QVERIFY(core.searchSettings()->offerEngine(QStringLiteral("Find"), href, QString()));
-    QVERIFY(core.searchSettings()->addFoundEngine(
+    QVERIFY(core.searchEngines()->offerEngine(QStringLiteral("Find"), href, QString()));
+    QVERIFY(core.searchEngines()->addFoundEngine(
         href, QStringLiteral("<OpenSearchDescription><ShortName>Find</ShortName>"
                              "<Url type=\"text/html\" template=\"https://find.example/results?"
                              "query={searchTerms}\"/></OpenSearchDescription>")));
     QCOMPARE(core.startPage()->topSites()->count(), 0);
 
-    core.searchSettings()->removeAddedEngines();
+    core.searchEngines()->removeAddedEngines();
     QCOMPARE(core.startPage()->topSites()->count(), 1);
 }
 

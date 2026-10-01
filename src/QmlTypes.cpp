@@ -76,6 +76,11 @@ QObject *settingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
     return keepOwnership(registeredCore()->settings());
 }
 
+QObject *searchEnginesProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->searchEngines());
+}
+
 QObject *searchSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->searchSettings());
@@ -178,6 +183,8 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<DownloadModel>(ModuleUri, 1, 0, "DownloadModel",
                                             &downloadModelProvider);
     qmlRegisterSingletonType<Settings>(ModuleUri, 1, 0, "Settings", &settingsProvider);
+    qmlRegisterSingletonType<SearchEngines>(ModuleUri, 1, 0, "SearchEngines",
+                                            &searchEnginesProvider);
     qmlRegisterSingletonType<SearchSettings>(ModuleUri, 1, 0, "SearchSettings",
                                              &searchSettingsProvider);
     qmlRegisterSingletonType<ReaderSettings>(ModuleUri, 1, 0, "ReaderSettings",

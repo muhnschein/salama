@@ -83,7 +83,7 @@ Page {
                 // (apps/browser/qml/pages/SettingsPage.qml:117).
                 iconSource: "image://theme/icon-m-search"
                 text: qsTr("Search")
-                value: SearchSettings.engineNames[SearchSettings.engineIndex] || ""
+                value: SearchEngines.engineNames[SearchSettings.engineIndex] || ""
                 onClicked: settingsPage.open("SearchSettingsPage.qml")
             }
 

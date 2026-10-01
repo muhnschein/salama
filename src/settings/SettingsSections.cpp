@@ -7,7 +7,8 @@ namespace Salama {
 SettingsSections::SettingsSections(const QString &filePath)
     : m_file(filePath, QSettings::IniFormat)
     , m_general(m_file)
-    , m_search(m_file)
+    , m_searchEngines(m_file)
+    , m_search(m_file, m_searchEngines)
     , m_reader(m_file)
     , m_cover(m_file)
     , m_privacy(m_file)
@@ -19,6 +20,11 @@ SettingsSections::SettingsSections(const QString &filePath)
 Settings *SettingsSections::general()
 {
     return &m_general;
+}
+
+SearchEngines *SettingsSections::searchEngines()
+{
+    return &m_searchEngines;
 }
 
 SearchSettings *SettingsSections::search()

@@ -33,6 +33,7 @@ using Salama::PageMedia;
 using Salama::PrivacySettings;
 using Salama::Reader;
 using Salama::ReaderSettings;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Settings;
 using Salama::SiteListModel;
@@ -164,7 +165,8 @@ void tst_qmlstatic::delegateRolesExist()
     BookmarkModel bookmarks(storage);
     DownloadModel downloads(storage, dir.path());
     QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
-    SearchSettings searchSettings(file);
+    SearchEngines searchEngines(file);
+    SearchSettings searchSettings(file, searchEngines);
     PrivacySettings privacySettings(file);
     OmnibarModel omnibar(&tabs, &bookmarks, &history, &downloads, &searchSettings,
                          &privacySettings);
@@ -232,6 +234,7 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("BookmarkModel"), metaMembers(&BookmarkModel::staticMetaObject)},
         {QStringLiteral("DownloadModel"), metaMembers(&DownloadModel::staticMetaObject)},
         {QStringLiteral("Settings"), metaMembers(&Settings::staticMetaObject)},
+        {QStringLiteral("SearchEngines"), metaMembers(&SearchEngines::staticMetaObject)},
         {QStringLiteral("SearchSettings"), metaMembers(&SearchSettings::staticMetaObject)},
         {QStringLiteral("ReaderSettings"), metaMembers(&ReaderSettings::staticMetaObject)},
         {QStringLiteral("CoverSettings"), metaMembers(&CoverSettings::staticMetaObject)},
@@ -250,13 +253,13 @@ void tst_qmlstatic::singletonMembersExist()
         {QStringLiteral("SitePermissionSettings"),
          metaMembers(&SitePermissionSettings::staticMetaObject)},
     };
-    const QRegularExpression reference(
-        QStringLiteral("\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
-                       "BookmarkModel|DownloadModel|Settings|SearchSettings|ReaderSettings|"
-                       "CoverSettings|PrivacySettings|StartPageSettings|Omnibar|EngineMessages|"
-                       "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
-                       "WebNotifications|SitePermissions|SitePermissionSettings)\\."
-                       "([A-Za-z_][A-Za-z0-9_]*)"));
+    const QRegularExpression reference(QStringLiteral(
+        "\\b(TabModel|GroupTabs|TabGroups|TabSearch|ClosedTabs|HistoryModel|"
+        "BookmarkModel|DownloadModel|Settings|SearchEngines|SearchSettings|ReaderSettings|"
+        "CoverSettings|PrivacySettings|StartPageSettings|Omnibar|EngineMessages|"
+        "PageActivity|PageMedia|Reader|StartPage|NotificationPermissions|"
+        "WebNotifications|SitePermissions|SitePermissionSettings)\\."
+        "([A-Za-z_][A-Za-z0-9_]*)"));
 
     int checked = 0;
     for (const QString &file : qmlFiles()) {

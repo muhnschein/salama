@@ -36,12 +36,12 @@ Page {
         PullDownMenu {
             MenuItem {
                 objectName: "removeAddedEnginesMenu"
-                visible: SearchSettings.addedCount > 0 || SearchSettings.foundEngines.length > 0
+                visible: SearchEngines.addedCount > 0 || SearchEngines.foundEngines.length > 0
                 text: qsTr("Remove added search engines")
                 onClicked: Remorse.popupAction(searchSettingsPage,
                                                qsTr("Removing added search engines"),
                                                function () {
-                                                   SearchSettings.removeAddedEngines()
+                                                   SearchEngines.removeAddedEngines()
                                                })
             }
         }
@@ -60,11 +60,11 @@ Page {
             }
 
             Repeater {
-                model: SearchSettings.engineNames
+                model: SearchEngines.engineNames
 
                 SearchEngineChoice {
                     // The site an added engine came from; empty for a built-in one.
-                    readonly property string host: SearchSettings.engineHosts[index] || ""
+                    readonly property string host: SearchEngines.engineHosts[index] || ""
 
                     text: modelData
                     //: Under a search engine that was added while browsing. %1 is the site that offered it
@@ -72,7 +72,7 @@ Page {
                     removable: host.length > 0
                     checked: SearchSettings.engineIndex === index
                     onChosen: SearchSettings.engineIndex = index
-                    onRemoveRequested: SearchSettings.removeAddedEngine(SearchSettings.engineKeys[index])
+                    onRemoveRequested: SearchEngines.removeAddedEngine(SearchEngines.engineKeys[index])
                 }
             }
 
@@ -80,7 +80,7 @@ Page {
             Column {
                 objectName: "foundSearchEngines"
                 width: parent.width
-                visible: SearchSettings.foundEngines.length > 0
+                visible: SearchEngines.foundEngines.length > 0
 
                 SectionHeader {
                     text: qsTr("Found while browsing")
@@ -98,13 +98,13 @@ Page {
                 }
 
                 Repeater {
-                    model: SearchSettings.foundEngines
+                    model: SearchEngines.foundEngines
 
                     FoundSearchEngine {
                         title: modelData.title
                         host: modelData.host
                         onAddRequested: installer.install(modelData.title, modelData.href)
-                        onForgetRequested: SearchSettings.forgetFoundEngine(modelData.href)
+                        onForgetRequested: SearchEngines.forgetFoundEngine(modelData.href)
                     }
                 }
             }

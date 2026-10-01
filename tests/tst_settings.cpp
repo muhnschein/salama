@@ -79,15 +79,16 @@ void tst_settings::defaults()
     QVERIFY(!settings.general()->fixedToolbar());
     QVERIFY(!settings.privacy()->doNotTrack());
     QVERIFY(settings.privacy()->javascript());
-    QCOMPARE(settings.search()->engineNames().count(), settings.search()->engineKeys().count());
-    QCOMPARE(settings.search()->engineNames().first(), QStringLiteral("Qwant"));
-    QVERIFY(settings.search()->engineNames().contains(QStringLiteral("Ecosia")));
+    QCOMPARE(settings.searchEngines()->engineNames().count(),
+             settings.searchEngines()->engineKeys().count());
+    QCOMPARE(settings.searchEngines()->engineNames().first(), QStringLiteral("Qwant"));
+    QVERIFY(settings.searchEngines()->engineNames().contains(QStringLiteral("Ecosia")));
     // Removed by choice, and the list is the whole set on offer.
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("google")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("bing")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("duckduckgo")));
-    QVERIFY(!settings.search()->engineKeys().contains(QStringLiteral("wikipedia")));
-    QVERIFY(settings.search()->engineKeys().contains(QStringLiteral("startpage")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("google")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("bing")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("duckduckgo")));
+    QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("wikipedia")));
+    QVERIFY(settings.searchEngines()->engineKeys().contains(QStringLiteral("startpage")));
 }
 
 void tst_settings::persistsValues()
@@ -860,10 +861,10 @@ void tst_settings::isSearchUrl_data()
 
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    for (int i = 0; i < settings.search()->engineKeys().count(); ++i) {
+    for (int i = 0; i < settings.searchEngines()->engineKeys().count(); ++i) {
         settings.search()->setEngineIndex(i);
         const QString results = settings.search()->searchUrl(QStringLiteral("sailfish os"));
-        QTest::newRow(qPrintable(settings.search()->engineKeys().at(i))) << results << true;
+        QTest::newRow(qPrintable(settings.searchEngines()->engineKeys().at(i))) << results << true;
     }
     // As the engines themselves hand the results on: with parameters of their own ahead
     // of the words, and with or without "www.".
@@ -886,7 +887,7 @@ void tst_settings::isSearchUrl()
     QFETCH(bool, search);
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    QCOMPARE(settings.search()->isSearchUrl(url), search);
+    QCOMPARE(settings.searchEngines()->isSearchUrl(url), search);
 }
 
 // sailfish-browser's three notch guard modes, stored as chosen; one out of range is

@@ -43,6 +43,7 @@ public:
     BookmarkModel *bookmarks();
     DownloadModel *downloads();
     Settings *settings();
+    SearchEngines *searchEngines();
     SearchSettings *searchSettings();
     ReaderSettings *readerSettings();
     CoverSettings *coverSettings();

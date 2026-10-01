@@ -48,10 +48,11 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   the browsing page to hand to `WebEngine` (`DECISIONS/0038-download-status.md`).
 - The settings, one section per settings page, each a QML singleton over the one
   settings file (`DECISIONS/0028-settings-pages.md`): `SearchSettings` -- the search
-  engine, the engines added from what sites offered while they were browsed, the sources
-  the address bar suggests from, and the address-bar heuristics
-  (`DECISIONS/0041-search-engines-found.md`; `search/OpenSearch` reads a site's
-  description);
+  engine in use, the sources the address bar suggests from, and the address-bar
+  heuristics; `SearchEngines` (in `src/search/`) -- the engines there are
+  to choose from, the built-in ones and those added from what sites offered while they
+  were browsed (`DECISIONS/0041-search-engines-found.md`; `search/OpenSearch` reads a
+  site's description);
   `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
   quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
   notification requests, Do not track and JavaScript; `StartPageSettings` -- what the

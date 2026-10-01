@@ -23,7 +23,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
                 m_settings.privacy())
     , m_pageMedia(&m_tabs)
     , m_reader(*m_settings.reader())
-    , m_startPage(m_storage, *m_settings.search())
+    , m_startPage(m_storage, *m_settings.searchEngines())
     , m_webNotifications(&m_notificationPermissions,
                          Storage::defaultCacheDirectory() + QStringLiteral("/notifications"))
 {
@@ -48,7 +48,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     }
     // An engine added or removed changes which pages are searches and which are sites
     // (docs/DECISIONS/0041-search-engines-found.md).
-    connect(m_settings.search(), &SearchSettings::enginesChanged, &m_startPage,
+    connect(m_settings.searchEngines(), &SearchEngines::enginesChanged, &m_startPage,
             &StartPage::refresh);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
@@ -123,6 +123,11 @@ DownloadModel *Core::downloads()
 Settings *Core::settings()
 {
     return m_settings.general();
+}
+
+SearchEngines *Core::searchEngines()
+{
+    return m_settings.searchEngines();
 }
 
 SearchSettings *Core::searchSettings()

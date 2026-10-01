@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
+#include "search/SearchEngines.h"
 #include "settings/SearchSettings.h"
 #include "settings/SettingsSections.h"
 
@@ -8,6 +9,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Sections = Salama::SettingsSections;
 
@@ -39,12 +41,12 @@ QString seekDescription()
 }
 
 // Offers the two sites' searches, as pages of theirs would.
-void offerBoth(SearchSettings *search)
+void offerBoth(SearchEngines *list)
 {
-    QVERIFY(search->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref),
-                                QStringLiteral("find.example")));
-    QVERIFY(search->offerEngine(QStringLiteral("Seek"), QLatin1String(SeekHref),
-                                QStringLiteral("seek.example")));
+    QVERIFY(list->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref),
+                              QStringLiteral("find.example")));
+    QVERIFY(list->offerEngine(QStringLiteral("Seek"), QLatin1String(SeekHref),
+                              QStringLiteral("seek.example")));
 }
 
 QStringList titlesOf(const QVariantList &offers)
@@ -82,6 +84,9 @@ private slots:
     void resetKeepsABuiltInChoice();
     void resetOfNothingSaysNothing();
     void indexFollowsTheList();
+    void lookupsByIndex();
+    void anAddedEngineIsChosen();
+    void anEngineAddedUnderAnUnknownKeyIsNotChosen();
     void storedGarbageIsPassedOver();
     void searchPagesOfAddedEngines();
     void typedTextWithAnAddedEngine();
@@ -91,31 +96,31 @@ void tst_searchengines::builtInOnly()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    SearchSettings *search = settings.search();
-    QCOMPARE(search->engineNames(), QStringList({QStringLiteral("Qwant"), QStringLiteral("Ecosia"),
-                                                 QStringLiteral("Startpage")}));
-    QCOMPARE(search->engineKeys(), QStringList({QStringLiteral("qwant"), QStringLiteral("ecosia"),
-                                                QStringLiteral("startpage")}));
-    QCOMPARE(search->engineHosts(), QStringList({QString(), QString(), QString()}));
-    QCOMPARE(search->addedCount(), 0);
-    QVERIFY(search->foundEngines().isEmpty());
+    SearchEngines *list = settings.searchEngines();
+    QCOMPARE(list->engineNames(), QStringList({QStringLiteral("Qwant"), QStringLiteral("Ecosia"),
+                                               QStringLiteral("Startpage")}));
+    QCOMPARE(list->engineKeys(), QStringList({QStringLiteral("qwant"), QStringLiteral("ecosia"),
+                                              QStringLiteral("startpage")}));
+    QCOMPARE(list->engineHosts(), QStringList({QString(), QString(), QString()}));
+    QCOMPARE(list->addedCount(), 0);
+    QVERIFY(list->foundEngines().isEmpty());
 }
 
 void tst_searchengines::offersAreKept()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    SearchSettings *search = settings.search();
-    QSignalSpy found(search, &SearchSettings::foundChanged);
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    SearchEngines *list = settings.searchEngines();
+    QSignalSpy found(list, &SearchEngines::foundChanged);
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
 
-    offerBoth(search);
+    offerBoth(list);
     QCOMPARE(found.count(), 2);
     // An offer is not an engine: nothing in the list or in the choice moved.
     QCOMPARE(engines.count(), 0);
-    QCOMPARE(search->engineNames().count(), 3);
+    QCOMPARE(list->engineNames().count(), 3);
 
-    const QVariantList offers = search->foundEngines();
+    const QVariantList offers = list->foundEngines();
     QCOMPARE(titlesOf(offers), QStringList({QStringLiteral("Find"), QStringLiteral("Seek")}));
     QCOMPARE(offers.first().toMap().value(QStringLiteral("href")).toString(),
              QLatin1String(FindHref));
@@ -156,19 +161,19 @@ void tst_searchengines::offersAreNotKeptTwice()
     QFETCH(bool, kept);
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    SearchSettings *search = settings.search();
-    QVERIFY(search->offerEngine(QStringLiteral("Added"), QStringLiteral("https://added.example/o"),
-                                QString()));
-    QVERIFY(search->addFoundEngine(
+    SearchEngines *list = settings.searchEngines();
+    QVERIFY(list->offerEngine(QStringLiteral("Added"), QStringLiteral("https://added.example/o"),
+                              QString()));
+    QVERIFY(list->addFoundEngine(
         QStringLiteral("https://added.example/o"),
         description(QStringLiteral("Added"),
                     QStringLiteral("https://added.example/?q={searchTerms}"))));
-    QVERIFY(search->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
+    QVERIFY(list->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
 
-    QSignalSpy found(search, &SearchSettings::foundChanged);
-    QCOMPARE(search->offerEngine(title, href, QString()), kept);
+    QSignalSpy found(list, &SearchEngines::foundChanged);
+    QCOMPARE(list->offerEngine(title, href, QString()), kept);
     QCOMPARE(found.count(), kept ? 1 : 0);
-    QCOMPARE(search->foundEngines().count(), kept ? 2 : 1);
+    QCOMPARE(list->foundEngines().count(), kept ? 2 : 1);
 }
 
 void tst_searchengines::offersArePersisted()
@@ -177,13 +182,13 @@ void tst_searchengines::offersArePersisted()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QVERIFY(settings.search()->offerEngine(QStringLiteral("Find, \"Seek\" & co"),
-                                               QLatin1String(FindHref), QString()));
-        QVERIFY(settings.search()->offerEngine(QStringLiteral("Seek"), QLatin1String(SeekHref),
-                                               QStringLiteral("seek.example")));
+        QVERIFY(settings.searchEngines()->offerEngine(QStringLiteral("Find, \"Seek\" & co"),
+                                                      QLatin1String(FindHref), QString()));
+        QVERIFY(settings.searchEngines()->offerEngine(
+            QStringLiteral("Seek"), QLatin1String(SeekHref), QStringLiteral("seek.example")));
     }
     Sections again(path);
-    const QVariantList offers = again.search()->foundEngines();
+    const QVariantList offers = again.searchEngines()->foundEngines();
     QCOMPARE(titlesOf(offers),
              QStringList({QStringLiteral("Find, \"Seek\" & co"), QStringLiteral("Seek")}));
     // No host given: the description's, without "www.".
@@ -192,8 +197,8 @@ void tst_searchengines::offersArePersisted()
     QCOMPARE(offers.last().toMap().value(QStringLiteral("host")).toString(),
              QStringLiteral("seek.example"));
     // And what was kept is not kept again.
-    QVERIFY(!again.search()->offerEngine(QStringLiteral("seek"),
-                                         QStringLiteral("https://x.example/"), QString()));
+    QVERIFY(!again.searchEngines()->offerEngine(QStringLiteral("seek"),
+                                                QStringLiteral("https://x.example/"), QString()));
 }
 
 void tst_searchengines::forgettingAnOffer()
@@ -201,24 +206,24 @@ void tst_searchengines::forgettingAnOffer()
     QTemporaryDir dir;
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     Sections settings(path);
-    SearchSettings *search = settings.search();
-    offerBoth(search);
-    QSignalSpy found(search, &SearchSettings::foundChanged);
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QSignalSpy found(list, &SearchEngines::foundChanged);
 
-    search->forgetFoundEngine(QStringLiteral("https://nothing.example/"));
+    list->forgetFoundEngine(QStringLiteral("https://nothing.example/"));
     QCOMPARE(found.count(), 0);
-    search->forgetFoundEngine(QLatin1String(FindHref));
+    list->forgetFoundEngine(QLatin1String(FindHref));
     QCOMPARE(found.count(), 1);
-    QCOMPARE(titlesOf(search->foundEngines()), QStringList{QStringLiteral("Seek")});
-    QCOMPARE(titlesOf(Sections(path).search()->foundEngines()),
+    QCOMPARE(titlesOf(list->foundEngines()), QStringList{QStringLiteral("Seek")});
+    QCOMPARE(titlesOf(Sections(path).searchEngines()->foundEngines()),
              QStringList{QStringLiteral("Seek")});
 
     // Forgotten, it may be offered again: the site may still have it.
-    QVERIFY(search->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
-    search->forgetFoundEngine(QLatin1String(FindHref));
-    search->forgetFoundEngine(QLatin1String(SeekHref));
-    QVERIFY(search->foundEngines().isEmpty());
-    QVERIFY(Sections(path).search()->foundEngines().isEmpty());
+    QVERIFY(list->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
+    list->forgetFoundEngine(QLatin1String(FindHref));
+    list->forgetFoundEngine(QLatin1String(SeekHref));
+    QVERIFY(list->foundEngines().isEmpty());
+    QVERIFY(Sections(path).searchEngines()->foundEngines().isEmpty());
 }
 
 void tst_searchengines::addingAnEngine()
@@ -226,33 +231,34 @@ void tst_searchengines::addingAnEngine()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
-    QSignalSpy found(search, &SearchSettings::foundChanged);
+    QSignalSpy found(list, &SearchEngines::foundChanged);
 
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
     QCOMPARE(engines.count(), 1);
     QCOMPARE(chosen.count(), 1);
     QCOMPARE(found.count(), 1);
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Find"));
-    QCOMPARE(search->engineNames().count(), 4);
-    QCOMPARE(search->engineHosts(),
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Find"));
+    QCOMPARE(list->engineNames().count(), 4);
+    QCOMPARE(list->engineHosts(),
              QStringList({QString(), QString(), QString(), QStringLiteral("find.example")}));
-    QCOMPARE(search->addedCount(), 1);
+    QCOMPARE(list->addedCount(), 1);
     // Taken up: no longer an offer, and the engine in use.
-    QCOMPARE(titlesOf(search->foundEngines()), QStringList{QStringLiteral("Seek")});
+    QCOMPARE(titlesOf(list->foundEngines()), QStringList{QStringLiteral("Seek")});
     QCOMPARE(search->engineIndex(), 3);
-    QCOMPARE(search->engine(), search->engineKeys().last());
-    QCOMPARE(search->engineNames().at(search->engineIndex()), QStringLiteral("Find"));
+    QCOMPARE(search->engine(), list->engineKeys().last());
+    QCOMPARE(list->engineNames().at(search->engineIndex()), QStringLiteral("Find"));
     QCOMPARE(search->searchUrl(QStringLiteral("sailfish os")),
              QStringLiteral("https://find.example/results?query=sailfish%20os"));
 
     // The name is the description's, not the page's title.
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Seek"));
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Seek"));
     QCOMPARE(search->engineIndex(), 4);
-    QVERIFY(search->foundEngines().isEmpty());
+    QVERIFY(list->foundEngines().isEmpty());
 }
 
 void tst_searchengines::addingFails_data()
@@ -282,18 +288,19 @@ void tst_searchengines::addingFails()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    QVERIFY(search->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    SearchEngines *list = settings.searchEngines();
+    QVERIFY(list->offerEngine(QStringLiteral("Find"), QLatin1String(FindHref), QString()));
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
-    QSignalSpy found(search, &SearchSettings::foundChanged);
+    QSignalSpy found(list, &SearchEngines::foundChanged);
 
-    QVERIFY(!search->addFoundEngine(href, text));
+    QVERIFY(!list->addFoundEngine(href, text));
     // Nothing moved: the offer stays, and the engine in use is as it was.
     QCOMPARE(engines.count() + chosen.count() + found.count(), 0);
-    QCOMPARE(search->engineNames().count(), 3);
-    QCOMPARE(search->addedCount(), 0);
+    QCOMPARE(list->engineNames().count(), 3);
+    QCOMPARE(list->addedCount(), 0);
     QCOMPARE(search->engine(), SearchSettings::defaultEngine());
-    QCOMPARE(titlesOf(search->foundEngines()), QStringList{QStringLiteral("Find")});
+    QCOMPARE(titlesOf(list->foundEngines()), QStringList{QStringLiteral("Find")});
 }
 
 void tst_searchengines::addedEnginesArePersisted()
@@ -302,19 +309,21 @@ void tst_searchengines::addedEnginesArePersisted()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        offerBoth(settings.search());
-        QVERIFY(settings.search()->addFoundEngine(QLatin1String(FindHref), findDescription()));
+        offerBoth(settings.searchEngines());
+        QVERIFY(
+            settings.searchEngines()->addFoundEngine(QLatin1String(FindHref), findDescription()));
     }
     Sections again(path);
     SearchSettings *search = again.search();
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Find"));
-    QCOMPARE(search->engineHosts().last(), QStringLiteral("find.example"));
+    SearchEngines *list = again.searchEngines();
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Find"));
+    QCOMPARE(list->engineHosts().last(), QStringLiteral("find.example"));
     // Still the engine in use, and still the one that searches.
     QCOMPARE(search->engineIndex(), 3);
     QCOMPARE(search->searchUrl(QStringLiteral("a b")),
              QStringLiteral("https://find.example/results?query=a%20b"));
-    QCOMPARE(titlesOf(search->foundEngines()), QStringList{QStringLiteral("Seek")});
-    QCOMPARE(search->addedCount(), 1);
+    QCOMPARE(titlesOf(list->foundEngines()), QStringList{QStringLiteral("Seek")});
+    QCOMPARE(list->addedCount(), 1);
 }
 
 void tst_searchengines::addedEnginesUseTheirTemplates()
@@ -322,15 +331,16 @@ void tst_searchengines::addedEnginesUseTheirTemplates()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
     QCOMPARE(search->searchUrl(QStringLiteral(" 100% a&b ")),
              QStringLiteral("https://www.seek.example/look/100%25%20a%26b/"));
     // A built-in engine is as it was.
     search->setEngineIndex(1);
     QCOMPARE(search->searchUrl(QStringLiteral("a")),
              QStringLiteral("https://www.ecosia.org/search?q=a"));
-    search->setEngine(search->engineKeys().last());
+    search->setEngine(list->engineKeys().last());
     QCOMPARE(search->searchUrl(QStringLiteral("a")),
              QStringLiteral("https://www.seek.example/look/a/"));
 }
@@ -340,16 +350,17 @@ void tst_searchengines::keysAreUnique()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
+    SearchEngines *list = settings.searchEngines();
     const QStringList names{QStringLiteral("A B"), QStringLiteral("A-B"), QStringLiteral("A.B"),
                             QStringLiteral("???")};
     for (int i = 0; i < names.count(); ++i) {
         const QString href = QStringLiteral("https://site%1.example/o.xml").arg(i);
-        QVERIFY(search->offerEngine(names.at(i), href, QString()));
-        QVERIFY(search->addFoundEngine(
+        QVERIFY(list->offerEngine(names.at(i), href, QString()));
+        QVERIFY(list->addFoundEngine(
             href, description(names.at(i),
                               QStringLiteral("https://site%1.example/?q={searchTerms}").arg(i))));
     }
-    QStringList keys = search->engineKeys();
+    QStringList keys = list->engineKeys();
     QCOMPARE(keys.count(), 7);
     QCOMPARE(keys.removeDuplicates(), 0);
     // Each is the one chosen when it is chosen, whatever the others are named.
@@ -365,23 +376,24 @@ void tst_searchengines::removingTheEngineInUse()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     Sections settings(path);
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
     const QString key = search->engine();
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
 
-    search->removeAddedEngine(key);
+    list->removeAddedEngine(key);
     QCOMPARE(engines.count(), 1);
     QCOMPARE(chosen.count(), 1);
-    QCOMPARE(search->engineNames().count(), 3);
-    QCOMPARE(search->addedCount(), 0);
+    QCOMPARE(list->engineNames().count(), 3);
+    QCOMPARE(list->addedCount(), 0);
     // The first built-in engine takes its place, here and in the file.
     QCOMPARE(search->engine(), SearchSettings::defaultEngine());
     QCOMPARE(search->engineIndex(), 0);
     QCOMPARE(QSettings(path, QSettings::IniFormat).value(QStringLiteral("searchEngine")).toString(),
              SearchSettings::defaultEngine());
-    QCOMPARE(Sections(path).search()->engineNames().count(), 3);
+    QCOMPARE(Sections(path).searchEngines()->engineNames().count(), 3);
     QCOMPARE(search->searchUrl(QStringLiteral("a")), QStringLiteral("https://www.qwant.com/?q=a"));
 }
 
@@ -390,23 +402,24 @@ void tst_searchengines::removingAnotherEngine()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
     const QString find = search->engine();
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
     const QString seek = search->engine();
 
     // The one in use is Seek; removing Find, which comes before it, moves where it is in
     // the list and nothing else.
-    search->removeAddedEngine(find);
+    list->removeAddedEngine(find);
     QCOMPARE(search->engine(), seek);
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Seek"));
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Seek"));
     QCOMPARE(search->engineIndex(), 3);
-    QCOMPARE(search->addedCount(), 1);
+    QCOMPARE(list->addedCount(), 1);
 
     search->setEngineIndex(2);
-    search->removeAddedEngine(seek);
-    QCOMPARE(search->engineKeys().count(), 3);
+    list->removeAddedEngine(seek);
+    QCOMPARE(list->engineKeys().count(), 3);
     QCOMPARE(search->engine(), QStringLiteral("startpage"));
 }
 
@@ -414,13 +427,13 @@ void tst_searchengines::removingWhatCannotBeRemoved()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    SearchSettings *search = settings.search();
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
-    search->removeAddedEngine(QStringLiteral("qwant"));
-    search->removeAddedEngine(QStringLiteral("added-nothing"));
-    search->removeAddedEngine(QString());
+    SearchEngines *list = settings.searchEngines();
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
+    list->removeAddedEngine(QStringLiteral("qwant"));
+    list->removeAddedEngine(QStringLiteral("added-nothing"));
+    list->removeAddedEngine(QString());
     QCOMPARE(engines.count(), 0);
-    QCOMPARE(search->engineNames().count(), 3);
+    QCOMPARE(list->engineNames().count(), 3);
 }
 
 void tst_searchengines::resetFallsBack()
@@ -429,28 +442,29 @@ void tst_searchengines::resetFallsBack()
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     Sections settings(path);
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
-    QVERIFY(search->offerEngine(QStringLiteral("Third"), QStringLiteral("https://third.example/o"),
-                                QString()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QVERIFY(list->offerEngine(QStringLiteral("Third"), QStringLiteral("https://third.example/o"),
+                              QString()));
     QCOMPARE(search->engineIndex(), 3);
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
-    QSignalSpy found(search, &SearchSettings::foundChanged);
+    QSignalSpy found(list, &SearchEngines::foundChanged);
 
-    search->removeAddedEngines();
+    list->removeAddedEngines();
     QCOMPARE(engines.count(), 1);
     QCOMPARE(chosen.count(), 1);
     QCOMPARE(found.count(), 1);
-    QCOMPARE(search->engineNames().count(), 3);
-    QVERIFY(search->foundEngines().isEmpty());
-    QCOMPARE(search->addedCount(), 0);
+    QCOMPARE(list->engineNames().count(), 3);
+    QVERIFY(list->foundEngines().isEmpty());
+    QCOMPARE(list->addedCount(), 0);
     QCOMPARE(search->engine(), SearchSettings::defaultEngine());
     QCOMPARE(search->engineIndex(), 0);
     // Nothing of it is left in the file either.
     Sections again(path);
-    QCOMPARE(again.search()->engineNames().count(), 3);
-    QVERIFY(again.search()->foundEngines().isEmpty());
+    QCOMPARE(again.searchEngines()->engineNames().count(), 3);
+    QVERIFY(again.searchEngines()->foundEngines().isEmpty());
     QCOMPARE(QSettings(path, QSettings::IniFormat).value(QStringLiteral("searchEngine")).toString(),
              SearchSettings::defaultEngine());
     QVERIFY(!QSettings(path, QSettings::IniFormat).contains(QStringLiteral("searchEnginesAdded")));
@@ -462,15 +476,16 @@ void tst_searchengines::resetKeepsABuiltInChoice()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
     search->setEngine(QStringLiteral("startpage"));
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
 
-    search->removeAddedEngines();
+    list->removeAddedEngines();
     QCOMPARE(search->engine(), QStringLiteral("startpage"));
-    QCOMPARE(search->engineNames().count(), 3);
-    QVERIFY(search->foundEngines().isEmpty());
+    QCOMPARE(list->engineNames().count(), 3);
+    QVERIFY(list->foundEngines().isEmpty());
     // The list changed, so what is where in it is said again, and the choice is as it was.
     QCOMPARE(search->engineIndex(), 2);
 }
@@ -480,16 +495,17 @@ void tst_searchengines::resetOfNothingSaysNothing()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    QSignalSpy engines(search, &SearchSettings::enginesChanged);
+    SearchEngines *list = settings.searchEngines();
+    QSignalSpy engines(list, &SearchEngines::enginesChanged);
     QSignalSpy chosen(search, &SearchSettings::engineChanged);
-    QSignalSpy found(search, &SearchSettings::foundChanged);
-    search->removeAddedEngines();
+    QSignalSpy found(list, &SearchEngines::foundChanged);
+    list->removeAddedEngines();
     QCOMPARE(engines.count() + chosen.count() + found.count(), 0);
 
     // Offers alone: forgotten, and the engines are not said to have changed.
-    offerBoth(search);
+    offerBoth(list);
     found.clear();
-    search->removeAddedEngines();
+    list->removeAddedEngines();
     QCOMPARE(found.count(), 1);
     QCOMPARE(engines.count() + chosen.count(), 0);
 }
@@ -499,16 +515,100 @@ void tst_searchengines::indexFollowsTheList()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
     QCOMPARE(search->engineIndex(), 4);
     search->setEngineIndex(5);
     QCOMPARE(search->engineIndex(), 4);
     search->setEngineIndex(3);
-    QCOMPARE(search->engineNames().at(search->engineIndex()), QStringLiteral("Find"));
+    QCOMPARE(list->engineNames().at(search->engineIndex()), QStringLiteral("Find"));
     search->setEngineIndex(0);
     QCOMPARE(search->engine(), QStringLiteral("qwant"));
+}
+
+// What SearchSettings asks of the list: where a key is, and the key and the address of
+// the engine at an index.
+void tst_searchengines::lookupsByIndex()
+{
+    QTemporaryDir dir;
+    Sections settings(dir.path() + QStringLiteral("/salama.conf"));
+    SearchEngines *list = settings.searchEngines();
+    QCOMPARE(SearchEngines::defaultKey(), QStringLiteral("qwant"));
+    QCOMPARE(SearchEngines::withoutWww(QStringLiteral("www.find.example")),
+             QStringLiteral("find.example"));
+    QCOMPARE(SearchEngines::withoutWww(QStringLiteral("find.example")),
+             QStringLiteral("find.example"));
+    QCOMPARE(list->count(), 3);
+    QCOMPARE(list->indexOf(QStringLiteral("startpage")), 2);
+    QCOMPARE(list->indexOf(QStringLiteral("added-find")), -1);
+    QCOMPARE(list->keyAt(1), QStringLiteral("ecosia"));
+    QCOMPARE(list->templateAt(1), QStringLiteral("https://www.ecosia.org/search?q={searchTerms}"));
+
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QCOMPARE(list->count(), 4);
+    QCOMPARE(list->indexOf(QStringLiteral("added-find")), 3);
+    QCOMPARE(list->keyAt(3), QStringLiteral("added-find"));
+    QCOMPARE(list->templateAt(3),
+             QStringLiteral("https://find.example/results?query={searchTerms}"));
+    list->removeAddedEngine(QStringLiteral("added-find"));
+    QCOMPARE(list->count(), 3);
+    QCOMPARE(list->indexOf(QStringLiteral("added-find")), -1);
+}
+
+// An engine taken up is said before the list is said to have changed, so that the engine
+// in use is the new one by the time anything asks where it is in the list; and the
+// search settings choose it on that word alone.
+void tst_searchengines::anAddedEngineIsChosen()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    Sections settings(path);
+    SearchSettings *search = settings.search();
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QStringList chosenAtTheTime;
+    QObject::connect(list, &SearchEngines::enginesChanged,
+                     [&]() { chosenAtTheTime.append(search->engine()); });
+    QSignalSpy added(list, &SearchEngines::engineAdded);
+    QSignalSpy chosen(search, &SearchSettings::engineChanged);
+
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QCOMPARE(added.count(), 1);
+    QCOMPARE(added.first().first().toString(), QStringLiteral("added-find"));
+    QCOMPARE(search->engine(), QStringLiteral("added-find"));
+    QCOMPARE(chosen.count(), 1);
+    QCOMPARE(chosenAtTheTime, QStringList{QStringLiteral("added-find")});
+    QCOMPARE(QSettings(path, QSettings::IniFormat).value(QStringLiteral("searchEngine")).toString(),
+             QStringLiteral("added-find"));
+
+    // Another engine chosen, the next one added is chosen over it.
+    search->setEngine(QStringLiteral("ecosia"));
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    QCOMPARE(added.count(), 2);
+    QCOMPARE(search->engine(), QStringLiteral("added-seek"));
+
+    // An offer that is not taken up says nothing, and chooses nothing.
+    QVERIFY(list->offerEngine(QStringLiteral("Third"), QStringLiteral("https://third.example/o"),
+                              QString()));
+    QVERIFY(!list->addFoundEngine(QStringLiteral("https://third.example/o"), QString()));
+    QCOMPARE(added.count(), 2);
+    QCOMPARE(search->engine(), QStringLiteral("added-seek"));
+}
+
+void tst_searchengines::anEngineAddedUnderAnUnknownKeyIsNotChosen()
+{
+    QTemporaryDir dir;
+    Sections settings(dir.path() + QStringLiteral("/salama.conf"));
+    SearchSettings *search = settings.search();
+    SearchEngines *list = settings.searchEngines();
+    QSignalSpy chosen(search, &SearchSettings::engineChanged);
+
+    emit list->engineAdded(QStringLiteral("added-nothing"));
+    QCOMPARE(search->engine(), SearchSettings::defaultEngine());
+    QCOMPARE(chosen.count(), 0);
 }
 
 // The file is one a user can edit: records that are no engine, offers with no address,
@@ -546,9 +646,10 @@ void tst_searchengines::storedGarbageIsPassedOver()
     }
     Sections settings(path);
     SearchSettings *search = settings.search();
-    QCOMPARE(search->engineNames().mid(3), QStringList{QStringLiteral("Ok")});
+    SearchEngines *list = settings.searchEngines();
+    QCOMPARE(list->engineNames().mid(3), QStringList{QStringLiteral("Ok")});
     QCOMPARE(search->engine(), QStringLiteral("added-ok"));
-    QCOMPARE(titlesOf(search->foundEngines()), QStringList{QStringLiteral("Fine")});
+    QCOMPARE(titlesOf(list->foundEngines()), QStringList{QStringLiteral("Fine")});
 
     {
         QSettings file(path, QSettings::IniFormat);
@@ -556,8 +657,8 @@ void tst_searchengines::storedGarbageIsPassedOver()
         file.setValue(QStringLiteral("searchEnginesFound"), QStringLiteral("{\"title\":\"x\"}"));
     }
     Sections broken(path);
-    QCOMPARE(broken.search()->engineNames().count(), 3);
-    QVERIFY(broken.search()->foundEngines().isEmpty());
+    QCOMPARE(broken.searchEngines()->engineNames().count(), 3);
+    QVERIFY(broken.searchEngines()->foundEngines().isEmpty());
     // The engine it names is gone, so the first built-in one is the engine.
     QCOMPARE(broken.search()->engine(), SearchSettings::defaultEngine());
 }
@@ -569,42 +670,42 @@ void tst_searchengines::searchPagesOfAddedEngines()
 {
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
-    SearchSettings *search = settings.search();
+    SearchEngines *list = settings.searchEngines();
     const QString find = QStringLiteral("https://find.example/results?query=forest");
     const QString seek = QStringLiteral("https://seek.example/look/forest/");
-    QVERIFY(!search->isSearchUrl(find));
-    QVERIFY(!search->isSearchUrl(seek));
+    QVERIFY(!list->isSearchUrl(find));
+    QVERIFY(!list->isSearchUrl(seek));
 
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(FindHref), findDescription()));
-    QVERIFY(search->isSearchUrl(find));
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(FindHref), findDescription()));
+    QVERIFY(list->isSearchUrl(find));
     // With a parameter of its own ahead of the words, and with or without "www.".
-    QVERIFY(search->isSearchUrl(QStringLiteral("https://www.find.example/results?x=1&query=a")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://find.example/results")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://find.example/other?query=forest")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://find.example/")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://elsewhere.example/results?query=a")));
-    QVERIFY(!search->isSearchUrl(seek));
+    QVERIFY(list->isSearchUrl(QStringLiteral("https://www.find.example/results?x=1&query=a")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://find.example/results")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://find.example/other?query=forest")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://find.example/")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://elsewhere.example/results?query=a")));
+    QVERIFY(!list->isSearchUrl(seek));
 
     // Words in the path: what stands before them and after them is what makes the page
     // a search, and the front page of the site is not.
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
-    QVERIFY(search->isSearchUrl(seek));
-    QVERIFY(search->isSearchUrl(QStringLiteral("https://www.seek.example/look/two%20words/")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://seek.example/look/")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://seek.example/look/forest")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://seek.example/")));
-    QVERIFY(search->isSearchUrl(find));
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    QVERIFY(list->isSearchUrl(seek));
+    QVERIFY(list->isSearchUrl(QStringLiteral("https://www.seek.example/look/two%20words/")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://seek.example/look/")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://seek.example/look/forest")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://seek.example/")));
+    QVERIFY(list->isSearchUrl(find));
 
     // The built-in ones are as they were.
-    QVERIFY(search->isSearchUrl(QStringLiteral("https://www.qwant.com/?q=a")));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://www.qwant.com/")));
+    QVERIFY(list->isSearchUrl(QStringLiteral("https://www.qwant.com/?q=a")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://www.qwant.com/")));
 
     // And once removed, they are sites again.
-    search->removeAddedEngines();
-    QVERIFY(!search->isSearchUrl(find));
-    QVERIFY(!search->isSearchUrl(seek));
-    QVERIFY(search->isSearchUrl(QStringLiteral("https://www.qwant.com/?q=a")));
+    list->removeAddedEngines();
+    QVERIFY(!list->isSearchUrl(find));
+    QVERIFY(!list->isSearchUrl(seek));
+    QVERIFY(list->isSearchUrl(QStringLiteral("https://www.qwant.com/?q=a")));
 }
 
 // What is typed is searched for with the engine in use, added or not, and what is an
@@ -616,8 +717,9 @@ void tst_searchengines::typedTextWithAnAddedEngine()
     QTemporaryDir dir;
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     SearchSettings *search = settings.search();
-    offerBoth(search);
-    QVERIFY(search->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
+    SearchEngines *list = settings.searchEngines();
+    offerBoth(list);
+    QVERIFY(list->addFoundEngine(QLatin1String(SeekHref), seekDescription()));
     QCOMPARE(search->urlForInput(QStringLiteral("forest fires")),
              QStringLiteral("https://www.seek.example/look/forest%20fires/"));
     QVERIFY(!search->isAddress(QStringLiteral("forest fires")));
@@ -625,11 +727,11 @@ void tst_searchengines::typedTextWithAnAddedEngine()
              QStringLiteral("https://example.org/page"));
     QVERIFY(search->isAddress(QStringLiteral("example.org/page")));
 
-    QVERIFY(search->addFoundEngine(
+    QVERIFY(list->addFoundEngine(
         QLatin1String(FindHref),
         description(QStringLiteral("Find"), QStringLiteral("https://find.example/{searchTerms}"))));
     QCOMPARE(search->urlForInput(QStringLiteral("a")), QStringLiteral("https://find.example/a"));
-    QVERIFY(!search->isSearchUrl(QStringLiteral("https://find.example/anything")));
+    QVERIFY(!list->isSearchUrl(QStringLiteral("https://find.example/anything")));
 }
 
 QTEST_GUILESS_MAIN(tst_searchengines)

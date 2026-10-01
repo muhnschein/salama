@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "bookmarks/BookmarkModel.h"
 #include "history/HistoryModel.h"
+#include "search/SearchEngines.h"
 #include "settings/SearchSettings.h"
 #include "startpage/SiteListModel.h"
 #include "startpage/StartPage.h"
@@ -14,6 +15,7 @@
 
 using Salama::BookmarkModel;
 using Salama::HistoryModel;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Site;
 using Salama::SiteListModel;
@@ -47,17 +49,19 @@ QStringList urls(const SiteListModel &model)
     return list;
 }
 
-// The built-in search engines over a settings file of their own, which is what a
-// start page reads to tell a page of results from a site.
+// The built-in search engines, and the one in use, over a settings file of their own,
+// which is what a start page reads to tell a page of results from a site.
 struct Engines
 {
     explicit Engines(const QString &directory)
         : file(directory + QStringLiteral("/salama.conf"), QSettings::IniFormat)
-        , settings(file)
+        , list(file)
+        , settings(file, list)
     {
     }
 
     QSettings file;
+    SearchEngines list;
     SearchSettings settings;
 };
 
@@ -151,7 +155,7 @@ void tst_startpage::topSitesAreOnePerSite()
                           QStringLiteral("https://a.example/icon.png"));
 
     Engines engines(dir.path());
-    StartPage start(storage, engines.settings);
+    StartPage start(storage, engines.list);
     const SiteListModel &top = *start.topSites();
     QCOMPARE(urls(top), QStringList({QStringLiteral("https://a.example/"),
                                      QStringLiteral("https://www.b.example/news"),
@@ -185,7 +189,7 @@ void tst_startpage::searchesAreNotVisits()
     visit(history, settings.searchUrl(QStringLiteral("again")), 3);
     visit(history, QStringLiteral("https://a.example/"), 1);
 
-    StartPage start(storage, settings);
+    StartPage start(storage, engines.list);
     QCOMPARE(urls(*start.topSites()), QStringList{QStringLiteral("https://a.example/")});
     QCOMPARE(urls(*start.recentPages()), QStringList{QStringLiteral("https://a.example/")});
 }
@@ -202,12 +206,12 @@ void tst_startpage::addedEnginesAreSearchesToo()
     visit(history, QStringLiteral("https://find.example/results?query=forest"), 2);
     visit(history, QStringLiteral("https://a.example/"), 1);
 
-    StartPage start(storage, engines.settings);
+    StartPage start(storage, engines.list);
     QCOMPARE(start.recentPages()->count(), 2);
 
-    QVERIFY(engines.settings.offerEngine(
+    QVERIFY(engines.list.offerEngine(
         QStringLiteral("Find"), QStringLiteral("https://find.example/opensearch.xml"), QString()));
-    QVERIFY(engines.settings.addFoundEngine(
+    QVERIFY(engines.list.addFoundEngine(
         QStringLiteral("https://find.example/opensearch.xml"),
         QStringLiteral("<OpenSearchDescription><ShortName>Find</ShortName>"
                        "<Url type=\"text/html\" template=\"https://find.example/results?query="
@@ -227,7 +231,7 @@ void tst_startpage::recentPagesNewestFirst()
     visit(history, QStringLiteral("https://a.example/two"), 1);
 
     Engines engines(dir.path());
-    StartPage start(storage, engines.settings);
+    StartPage start(storage, engines.list);
     QCOMPARE(urls(*start.recentPages()), QStringList({QStringLiteral("https://a.example/two"),
                                                       QStringLiteral("https://b.example/"),
                                                       QStringLiteral("https://a.example/one")}));
@@ -246,7 +250,7 @@ void tst_startpage::bookmarksInTheirOrder()
     bookmarks.add(QStringLiteral("https://a.example/"), QStringLiteral("A"));
 
     Engines engines(dir.path());
-    StartPage start(storage, engines.settings);
+    StartPage start(storage, engines.list);
     const SiteListModel &marked = *start.bookmarks();
     QCOMPARE(urls(marked), QStringList({QStringLiteral("https://b.example/"),
                                         QStringLiteral("https://a.example/")}));
@@ -273,7 +277,7 @@ void tst_startpage::listsAreShort()
     }
 
     Engines engines(dir.path());
-    StartPage start(storage, engines.settings);
+    StartPage start(storage, engines.list);
     QCOMPARE(start.topSites()->count(), int(StartPage::TopSiteLimit));
     QCOMPARE(start.bookmarks()->count(), int(StartPage::BookmarkLimit));
     QCOMPARE(start.recentPages()->count(), int(StartPage::RecentPageLimit));

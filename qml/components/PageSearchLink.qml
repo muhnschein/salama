@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Between one page and SearchSettings: a page that says it has a search of its own --
+// Between one page and SearchEngines: a page that says it has a search of its own --
 // <link rel="search"> to an OpenSearch description -- is heard here, and its offer is
 // kept, to be taken up from Settings > Search or never (docs/DECISIONS/0041-search-engines-found.md).
 // sailfish-browser does the same for every page that is not private, and adds the engine
@@ -24,7 +24,7 @@ QtObject {
         onRecvAsyncMessage: {
             if (message === EngineMessages.searchOfferedMessage) {
                 var offer = EngineMessages.searchOffered(data)
-                SearchSettings.offerEngine(offer.title, offer.href, offer.host)
+                SearchEngines.offerEngine(offer.title, offer.href, offer.host)
             }
         }
     }

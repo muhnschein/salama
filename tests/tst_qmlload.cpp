@@ -46,6 +46,7 @@ using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
 using Salama::Reader;
 using Salama::ReaderSettings;
+using Salama::SearchEngines;
 using Salama::SearchSettings;
 using Salama::Settings;
 using Salama::SitePermissions;
@@ -968,7 +969,7 @@ void tst_qmlload::omnibar()
     QCOMPARE(gesture->property("height").toReal(), bar->property("height").toReal());
     QVERIFY(searchAction->property("visible").toBool());
     const QString engine =
-        m_core->searchSettings()->engineNames().at(m_core->searchSettings()->engineIndex());
+        m_core->searchEngines()->engineNames().at(m_core->searchSettings()->engineIndex());
     QCOMPARE(textIn(searchAction, QStringLiteral("omnibarActionTitle")),
              QStringLiteral("Search %1 for “forest”").arg(engine));
     QVERIFY(!find(QStringLiteral("omnibarGoAction"))->property("visible").toBool());
@@ -4839,7 +4840,7 @@ void tst_qmlload::settingsPage()
     QCOMPARE(valueOf(QStringLiteral("startPageSettingsEntry")), QStringLiteral("Blank page"));
     m_core->searchSettings()->setEngineIndex(1);
     QCOMPARE(valueOf(QStringLiteral("searchSettingsEntry")),
-             m_core->searchSettings()->engineNames().at(1));
+             m_core->searchEngines()->engineNames().at(1));
     m_core->readerSettings()->setColors(ReaderSettings::Sepia);
     m_core->readerSettings()->setTypeface(ReaderSettings::Serif);
     m_core->readerSettings()->setTextSize(ReaderSettings::TextSizeMax);
@@ -5120,7 +5121,7 @@ void tst_qmlload::searchSettingsPage()
     SearchSettings *settings = m_core->searchSettings();
     openMenuItem(QStringLiteral("settingsMenuButton"));
     QObject *entry = find(QStringLiteral("searchSettingsEntry"));
-    const QStringList engines = settings->engineNames();
+    const QStringList engines = m_core->searchEngines()->engineNames();
     click(entry);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("searchSettingsPage"));
 
@@ -5199,10 +5200,10 @@ void offerSearch(QObject *view, const QString &title, const QString &href, const
                               Q_ARG(QVariant, data));
 }
 
-QStringList foundTitles(const SearchSettings *search)
+QStringList foundTitles(const SearchEngines *list)
 {
     QStringList found;
-    for (const QVariant &entry : search->foundEngines()) {
+    for (const QVariant &entry : list->foundEngines()) {
         found.append(entry.toMap().value(QStringLiteral("title")).toString());
     }
     return found;
@@ -5234,7 +5235,7 @@ QObject *choiceIn(QObject *row)
 // message that says so; Settings > Search lists what is kept.
 void tst_qmlload::searchEnginesFound()
 {
-    SearchSettings *search = m_core->searchSettings();
+    SearchEngines *list = m_core->searchEngines();
     QObject *view = currentWebView();
     QVERIFY(view->property("messageListeners")
                 .toStringList()
@@ -5250,10 +5251,10 @@ void tst_qmlload::searchEnginesFound()
                 QStringLiteral("https://qwant.example/"));
     offerSearch(view, QStringLiteral("Quiet"), QStringLiteral("https://quiet.example/o.xml"),
                 QStringLiteral("https://quiet.example/"), QStringLiteral("embed:find"));
-    QCOMPARE(foundTitles(search), (QStringList{QStringLiteral("Find"), QStringLiteral("Broken")}));
-    QCOMPARE(search->foundEngines().first().toMap().value(QStringLiteral("host")).toString(),
+    QCOMPARE(foundTitles(list), (QStringList{QStringLiteral("Find"), QStringLiteral("Broken")}));
+    QCOMPARE(list->foundEngines().first().toMap().value(QStringLiteral("host")).toString(),
              QStringLiteral("find.example"));
-    QCOMPARE(search->engineNames().count(), 3);
+    QCOMPARE(list->engineNames().count(), 3);
 
     openMenuItem(QStringLiteral("settingsMenuButton"));
     click(find(QStringLiteral("searchSettingsEntry")));
@@ -5280,12 +5281,12 @@ void tst_qmlload::searchEnginesFound()
 
     // Forgotten from its menu, which takes the section away with the last of them.
     click(findObjects(found.last(), QStringLiteral("foundSearchEngineForget")).first());
-    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Find")});
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Find")});
     QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
     click(findObjects(findAll(QStringLiteral("foundSearchEngine")).first(),
                       QStringLiteral("foundSearchEngineForget"))
               .first());
-    QVERIFY(search->foundEngines().isEmpty());
+    QVERIFY(list->foundEngines().isEmpty());
     QVERIFY(findAll(QStringLiteral("foundSearchEngine")).isEmpty());
     QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("removeAddedEnginesMenu"))->property("visible").toBool());
@@ -5297,6 +5298,7 @@ void tst_qmlload::searchEnginesFound()
 void tst_qmlload::searchEnginesAdd()
 {
     SearchSettings *search = m_core->searchSettings();
+    SearchEngines *list = m_core->searchEngines();
     QObject *view = currentWebView();
     DescriptionServer server(descriptions());
     QVERIFY(server.isListening());
@@ -5313,11 +5315,11 @@ void tst_qmlload::searchEnginesAdd()
     QTRY_COMPARE(notice->property("shownCount").toInt(), 1);
     QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Find search added"));
     QCOMPARE(server.requests(), 1);
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Find"));
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Find"));
     QCOMPARE(search->engineIndex(), 3);
     QCOMPARE(search->searchUrl(QStringLiteral("a b")),
              QStringLiteral("https://find.example/search?q=a%20b"));
-    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Broken")});
     QCOMPARE(findAll(QStringLiteral("foundSearchEngine")).count(), 1);
 
     // Listed with the others, built-in first, the site it came from under it, and lit as
@@ -5336,8 +5338,8 @@ void tst_qmlload::searchEnginesAdd()
     click(found.first());
     QTRY_COMPARE(notice->property("shownCount").toInt(), 2);
     QCOMPARE(notice->property("shownText").toString(), QStringLiteral("Could not add Broken"));
-    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Broken")});
-    QCOMPARE(search->engineNames().count(), 4);
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Broken")});
+    QCOMPARE(list->engineNames().count(), 4);
     QCOMPARE(search->engineIndex(), 3);
 
     // A second tap while the first is on its way is not a second fetch.
@@ -5356,6 +5358,7 @@ void tst_qmlload::searchEnginesAdd()
 void tst_qmlload::searchEnginesRemove()
 {
     SearchSettings *search = m_core->searchSettings();
+    SearchEngines *list = m_core->searchEngines();
     QObject *view = currentWebView();
     DescriptionServer server(descriptions());
     QVERIFY(server.isListening());
@@ -5364,7 +5367,7 @@ void tst_qmlload::searchEnginesRemove()
     openMenuItem(QStringLiteral("settingsMenuButton"));
     click(find(QStringLiteral("searchSettingsEntry")));
     click(findAll(QStringLiteral("foundSearchEngine")).first());
-    QTRY_COMPARE(search->addedCount(), 1);
+    QTRY_COMPARE(list->addedCount(), 1);
     QObject *remove = find(QStringLiteral("removeAddedEnginesMenu"));
     QVERIFY(remove->property("visible").toBool());
 
@@ -5375,7 +5378,7 @@ void tst_qmlload::searchEnginesRemove()
     QMetaObject::invokeMethod(choiceIn(rows.last()), "pressAndHold");
     QVERIFY(rows.last()->property("menuOpen").toBool());
     click(findObjects(rows.last(), QStringLiteral("searchEngineRemove")).first());
-    QCOMPARE(search->engineNames().count(), 3);
+    QCOMPARE(list->engineNames().count(), 3);
     QCOMPARE(search->engineIndex(), 0);
     rows = findAll(QStringLiteral("searchEngineRow"));
     QCOMPARE(rows.count(), 3);
@@ -5389,16 +5392,16 @@ void tst_qmlload::searchEnginesRemove()
                 QStringLiteral("https://find.example/"));
     QVERIFY(remove->property("visible").toBool());
     click(findAll(QStringLiteral("foundSearchEngine")).first());
-    QTRY_COMPARE(search->addedCount(), 1);
-    QCOMPARE(search->engineNames().last(), QStringLiteral("Third"));
-    QCOMPARE(foundTitles(search), QStringList{QStringLiteral("Find")});
+    QTRY_COMPARE(list->addedCount(), 1);
+    QCOMPARE(list->engineNames().last(), QStringLiteral("Third"));
+    QCOMPARE(foundTitles(list), QStringList{QStringLiteral("Find")});
     const int remorses = evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt();
     click(remove);
     QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupCount")).toInt(), remorses + 1);
     QCOMPARE(evaluate(currentPage(), QStringLiteral("Remorse.popupText")).toString(),
              QStringLiteral("Removing added search engines"));
-    QCOMPARE(search->engineNames().count(), 3);
-    QVERIFY(search->foundEngines().isEmpty());
+    QCOMPARE(list->engineNames().count(), 3);
+    QVERIFY(list->foundEngines().isEmpty());
     QCOMPARE(search->engineIndex(), 0);
     QVERIFY(!remove->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("foundSearchEngines"))->property("visible").toBool());
@@ -5407,7 +5410,7 @@ void tst_qmlload::searchEnginesRemove()
     offerSearch(view, QStringLiteral("Third"), server.url(QStringLiteral("/third.xml")),
                 QStringLiteral("https://third.example/"));
     click(findAll(QStringLiteral("foundSearchEngine")).first());
-    QTRY_COMPARE(search->engineNames().last(), QStringLiteral("Third"));
+    QTRY_COMPARE(list->engineNames().last(), QStringLiteral("Third"));
     popPage();
     QCOMPARE(
         textIn(find(QStringLiteral("searchSettingsEntry")), QStringLiteral("settingsEntryValue")),
@@ -8612,7 +8615,7 @@ void tst_qmlload::tutorial()
         find(QStringLiteral("tutorialSearchAction"))->property("title").toString();
     QVERIFY(go.contains(typed));
     QVERIFY(search.contains(typed));
-    QVERIFY(search.contains(m_core->searchSettings()->engineNames().first()));
+    QVERIFY(search.contains(m_core->searchEngines()->engineNames().first()));
     QVERIFY(!tapping());
     QVERIFY(!moving());
     QVERIFY(page->property("saying").toBool());

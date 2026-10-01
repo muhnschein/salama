@@ -36,6 +36,8 @@ add_library(salama-core STATIC
     reader/reader.qrc
     search/OpenSearch.cpp
     search/OpenSearch.h
+    search/SearchEngines.cpp
+    search/SearchEngines.h
     search/SearchWords.cpp
     search/SearchWords.h
     settings/CoverSettings.cpp

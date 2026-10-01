@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Takes up a search engine a site offered: fetches its OpenSearch description, hands the
-// text to SearchSettings, which reads it and adds the engine, and says how it went in a
+// text to SearchEngines, which reads it and adds the engine, and says how it went in a
 // Silica Notice, as sailfish-browser says a search was added (apps/browser/qml/pages/
 // SettingsPage.qml). The fetch is QML's own XMLHttpRequest, which is Qt's network access
 // and needs no module Harbour does not allow; the reading is C++'s (src/search/
@@ -32,7 +32,7 @@ Item {
                 return
             }
             delete installer.fetching[href]
-            var added = SearchSettings.addFoundEngine(href, request.responseText)
+            var added = SearchEngines.addFoundEngine(href, request.responseText)
             notice.text = added ? qsTr("%1 search added").arg(title)
                                 : qsTr("Could not add %1").arg(title)
             notice.show()

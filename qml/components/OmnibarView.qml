@@ -35,7 +35,7 @@ Item {
     readonly property string typed: text.trim()
     // Where Enter would go, when what is typed is an address rather than words.
     readonly property string address: SearchSettings.isAddress(typed) ? SearchSettings.urlForInput(typed) : ""
-    readonly property string engineName: SearchSettings.engineNames[SearchSettings.engineIndex]
+    readonly property string engineName: SearchEngines.engineNames[SearchSettings.engineIndex]
 
     signal goRequested(string url)
     signal searchRequested(string url)
