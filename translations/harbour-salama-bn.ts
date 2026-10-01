@@ -5,52 +5,52 @@
     <name>AddressField</name>
     <message>
         <source>Search or enter address</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান করুন বা ঠিকানা লিখুন</translation>
     </message>
 </context>
 <context>
     <name>AddressLabel</name>
     <message>
         <source>Search or enter address</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান করুন বা ঠিকানা লিখুন</translation>
     </message>
 </context>
 <context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>নতুন ট্যাবে খুলুন</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্পাদনা করুন</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>সরান</translation>
     </message>
     <message>
         <source>Removing bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক সরানো হচ্ছে</translation>
     </message>
 </context>
 <context>
     <name>BookmarkEditDialog</name>
     <message>
         <source>Edit bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক সম্পাদনা করুন</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>সংরক্ষণ</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>শিরোনাম</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>ঠিকানা</translation>
     </message>
 </context>
 <context>
@@ -58,190 +58,190 @@
     <message>
         <source>Choose a bookmark</source>
         <extracomment>Over the list of bookmarks, when picking the one the cover&apos;s quick action opens</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>একটি বুকমার্ক বেছে নিন</translation>
     </message>
     <message>
         <source>Search bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক অনুসন্ধান করুন</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো মিল নেই</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো বুকমার্ক নেই</translation>
     </message>
 </context>
 <context>
     <name>BookmarksPage</name>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>Bookmark current page</source>
-        <translation type="unfinished"></translation>
+        <translation>বর্তমান পাতা বুকমার্ক করুন</translation>
     </message>
     <message>
         <source>No bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো বুকমার্ক নেই</translation>
     </message>
     <message>
         <source>Pull down to bookmark the current page</source>
-        <translation type="unfinished"></translation>
+        <translation>বর্তমান পাতা বুকমার্ক করতে নিচে টানুন</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>শেয়ার করুন</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>সেটিংস</translation>
     </message>
     <message>
         <source>Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক করুন</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
+        <translation>রিডার ভিউ</translation>
     </message>
     <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ঠিকানা কপি করা হয়েছে</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation type="unfinished"></translation>
+        <translation>পাতায় খুঁজুন</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation type="unfinished"></translation>
+        <translation>ডেস্কটপ সাইট</translation>
     </message>
 </context>
 <context>
     <name>ClearDataDialog</name>
     <message>
         <source>Clear browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং ডেটা মুছুন</translation>
     </message>
     <message>
         <source>Clear</source>
         <extracomment>Accepts the dialog, clearing what is switched on</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মুছুন</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>খোলা ট্যাব</translation>
     </message>
     <message>
         <source>Cookies and site data</source>
-        <translation type="unfinished"></translation>
+        <translation>কুকি ও সাইট ডেটা</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>ক্যাশ</translation>
     </message>
     <message>
         <source>Time range</source>
-        <translation type="unfinished"></translation>
+        <translation>সময়ের পরিসর</translation>
     </message>
     <message>
         <source>Open tabs, cookies, site data and the cache are cleared whole</source>
-        <translation type="unfinished"></translation>
+        <translation>খোলা ট্যাব, কুকি, সাইট ডেটা ও ক্যাশ সম্পূর্ণ মুছে ফেলা হয়</translation>
     </message>
     <message>
         <source>Last hour</source>
-        <translation type="unfinished"></translation>
+        <translation>গত এক ঘণ্টা</translation>
     </message>
     <message>
         <source>Last two hours</source>
-        <translation type="unfinished"></translation>
+        <translation>গত দুই ঘণ্টা</translation>
     </message>
     <message>
         <source>Last four hours</source>
-        <translation type="unfinished"></translation>
+        <translation>গত চার ঘণ্টা</translation>
     </message>
     <message>
         <source>Today</source>
-        <translation type="unfinished"></translation>
+        <translation>আজ</translation>
     </message>
     <message>
         <source>Everything</source>
-        <translation type="unfinished"></translation>
+        <translation>সব</translation>
     </message>
     <message>
         <source>Browsing and download history</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং ও ডাউনলোডের ইতিহাস</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>Pages of the history that clearing takes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n পাতা</numerusform>
+            <numerusform>%n পাতা</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n download(s)</source>
         <extracomment>Rows of the list of downloads that clearing takes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ডাউনলোড</numerusform>
+            <numerusform>%n ডাউনলোড</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n closed tab(s)</source>
         <extracomment>Recently closed tabs that clearing takes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n বন্ধ করা ট্যাব</numerusform>
+            <numerusform>%n বন্ধ করা ট্যাব</numerusform>
         </translation>
     </message>
     <message>
         <source>%1, %2 and %3</source>
         <extracomment>Three amounts cleared: &quot;342 pages, 18 downloads and 6 closed tabs&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2 ও %3</translation>
     </message>
     <message>
         <source>%1 and %2</source>
         <extracomment>Two amounts cleared: &quot;342 pages and 18 downloads&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ও %2</translation>
     </message>
     <message>
         <source>Nothing from this time</source>
         <extracomment>The history holds nothing from the time range chosen</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এই সময়ের কিছু নেই</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s), in every group</source>
         <extracomment>How many tabs clearing the open tabs closes</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব, সব গ্রুপে</numerusform>
+            <numerusform>%n ট্যাব, সব গ্রুপে</numerusform>
         </translation>
     </message>
     <message>
         <source>Signs you out of most sites</source>
         <extracomment>What clearing the cookies does</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বেশিরভাগ সাইট থেকে আপনাকে লগ আউট করে দেয়</translation>
     </message>
 </context>
 <context>
@@ -249,19 +249,19 @@
     <message>
         <source>Downloading</source>
         <extracomment>On the cover, over the ring that shows how far the downloads have come</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড হচ্ছে</translation>
     </message>
     <message>
         <source>%</source>
         <extracomment>The unit after the downloads&apos; progress on the cover, set smaller than the number: &quot;64%&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%</translation>
     </message>
     <message numerus="yes">
         <source>%n file(s)</source>
         <extracomment>How many downloads are coming, on the cover, under their progress</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ফাইল</numerusform>
+            <numerusform>%n ফাইল</numerusform>
         </translation>
     </message>
 </context>
@@ -270,39 +270,39 @@
     <message>
         <source>Playing</source>
         <extracomment>On the cover, of what the tab in front plays</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>চলছে</translation>
     </message>
     <message>
         <source>Paused</source>
         <extracomment>On the cover, of what the tab in front has muted or paused</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বিরতিতে</translation>
     </message>
     <message>
         <source>%1 · %2</source>
         <extracomment>On the cover, whether what the tab in front plays is heard, and the site: &quot;Playing · yle.fi&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2</translation>
     </message>
 </context>
 <context>
     <name>CoverSettingsPage</name>
     <message>
         <source>Cover</source>
-        <translation type="unfinished"></translation>
+        <translation>কভার</translation>
     </message>
     <message>
         <source>Quick action</source>
         <extracomment>The one action offered on the cover on the home screen</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>দ্রুত অ্যাকশন</translation>
     </message>
     <message>
         <source>The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.</source>
         <extracomment>The cover is the app&apos;s picture on the Sailfish home screen while it runs in the background; a quick action is an icon on it that a tap does something with. The mute button is the playing tab&apos;s own.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>হোম স্ক্রিনের কভারে একটি অ্যাকশন থাকে। কোনো ট্যাবে কিছু চলার সময় সেই ট্যাবের মিউট বোতাম অ্যাকশনের পাশে থাকে।</translation>
     </message>
     <message>
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কভারে এর আইকন</translation>
     </message>
 </context>
 <context>
@@ -310,55 +310,55 @@
     <message numerus="yes">
         <source>%n download(s)</source>
         <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ডাউনলোড</numerusform>
+            <numerusform>%n ডাউনলোড</numerusform>
         </translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্যর্থ</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>বিরতিতে · %1%</translation>
     </message>
     <message>
         <source>Downloaded</source>
         <extracomment>The banner as a download arrives</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড হয়েছে</translation>
     </message>
 </context>
 <context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
-        <translation type="unfinished"></translation>
+        <translation>তালিকা থেকে সরান</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>খুলুন</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>বিরতি দিন</translation>
     </message>
     <message>
         <source>Download again</source>
         <extracomment>Fetch again a download the engine has forgotten, from the start</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>আবার ডাউনলোড করুন</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished"></translation>
+        <translation>আবার চেষ্টা করুন</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>পুনরায় শুরু করুন</translation>
     </message>
     <message>
         <source>Delete file</source>
-        <translation type="unfinished"></translation>
+        <translation>ফাইল মুছুন</translation>
     </message>
 </context>
 <context>
@@ -366,61 +366,61 @@
     <message>
         <source>%1 of %2 · %3%</source>
         <extracomment>A download&apos;s progress: &quot;3.1 MB of 7.4 MB · 42%&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%2-এর মধ্যে %1 · %3%</translation>
     </message>
     <message>
         <source>Downloading, %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড হচ্ছে, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্যর্থ</translation>
     </message>
     <message>
         <source>Paused · %1%</source>
         <extracomment>A download stopped part way, which can go on: &quot;Paused · 42%&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বিরতিতে · %1%</translation>
     </message>
     <message>
         <source>Stopped</source>
         <extracomment>A download stopped in an earlier run, which can only start over</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>থেমে গেছে</translation>
     </message>
     <message>
         <source>File not found</source>
         <extracomment>A download whose file has been deleted or moved since</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ফাইল পাওয়া যায়নি</translation>
     </message>
 </context>
 <context>
     <name>DownloadsPage</name>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message>
         <source>No downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো ডাউনলোড নেই</translation>
     </message>
     <message>
         <source>Files downloaded from pages are listed here</source>
-        <translation type="unfinished"></translation>
+        <translation>পাতা থেকে ডাউনলোড করা ফাইল এখানে তালিকায় দেখা যাবে</translation>
     </message>
     <message>
         <source>Clear finished</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্পন্নগুলি মুছুন</translation>
     </message>
     <message>
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মোছা হচ্ছে</translation>
     </message>
 </context>
 <context>
     <name>FindBar</name>
     <message>
         <source>Find in page</source>
-        <translation type="unfinished"></translation>
+        <translation>পাতায় খুঁজুন</translation>
     </message>
 </context>
 <context>
@@ -428,125 +428,125 @@
     <message>
         <source>Forget</source>
         <extracomment>Drops an offered search engine from the list, without adding it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ভুলে যান</translation>
     </message>
     <message>
         <source>%1 · Tap to add</source>
         <extracomment>Under an offered search engine: the site that offered it. %1 is its host</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · যোগ করতে ট্যাপ করুন</translation>
     </message>
 </context>
 <context>
     <name>HistoryDelegate</name>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>নতুন ট্যাবে খুলুন</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>সরান</translation>
     </message>
 </context>
 <context>
     <name>HistoryPage</name>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Search history</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস অনুসন্ধান করুন</translation>
     </message>
     <message>
         <source>Clear history</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস মুছুন</translation>
     </message>
     <message>
         <source>Clearing history</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস মোছা হচ্ছে</translation>
     </message>
     <message>
         <source>No matches</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো মিল নেই</translation>
     </message>
     <message>
         <source>No history yet</source>
-        <translation type="unfinished"></translation>
+        <translation>এখনও কোনো ইতিহাস নেই</translation>
     </message>
 </context>
 <context>
     <name>HistorySettingsPage</name>
     <message>
         <source>Clearing browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং ডেটা মোছা হচ্ছে</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Remember browsing history</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং ইতিহাস মনে রাখুন</translation>
     </message>
     <message>
         <source>Clear history when closed</source>
-        <translation type="unfinished"></translation>
+        <translation>বন্ধ করার সময় ইতিহাস মুছুন</translation>
     </message>
     <message>
         <source>Clear browsing data</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং ডেটা মুছুন</translation>
     </message>
     <message>
         <source>With it, the list of downloads and the recently closed tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>এর সঙ্গে ডাউনলোডের তালিকা ও সম্প্রতি বন্ধ করা ট্যাবও</translation>
     </message>
     <message>
         <source>Kept on this phone</source>
         <extracomment>What browsing has left on the phone, counted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এই ফোনে রাখা আছে</translation>
     </message>
     <message numerus="yes">
         <source>%n page(s)</source>
         <extracomment>How many pages the history keeps</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n পাতা</numerusform>
+            <numerusform>%n পাতা</numerusform>
         </translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message numerus="yes">
         <source>%n file(s)</source>
         <extracomment>How many downloads the list of them keeps</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ফাইল</numerusform>
+            <numerusform>%n ফাইল</numerusform>
         </translation>
     </message>
     <message>
         <source>Recently closed</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি বন্ধ করা</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
         <extracomment>How many closed tabs can be opened again</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>খোলা ট্যাব</translation>
     </message>
     <message numerus="yes">
         <source>%1, in %n group(s)</source>
         <extracomment>How many tabs are open, and in how many groups: &quot;17, in 5 groups&quot;</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1, %n গ্রুপে</numerusform>
+            <numerusform>%1, %n গ্রুপে</numerusform>
         </translation>
     </message>
 </context>
@@ -555,7 +555,7 @@
     <message>
         <source>Start page</source>
         <extracomment>The head of the browser&apos;s menu on the start page, where there is no page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>শুরুর পাতা</translation>
     </message>
 </context>
 <context>
@@ -563,108 +563,108 @@
     <message>
         <source>Allow</source>
         <extracomment>Lets the site send notifications from now on</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অনুমতি দিন</translation>
     </message>
     <message>
         <source>Not now</source>
         <extracomment>Refuses the site this time; it may ask again when the page is next loaded</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এখন নয়</translation>
     </message>
     <message>
         <source>Allow %1 to send notifications?</source>
         <extracomment>%1 is the site asking, its host alone</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-কে বিজ্ঞপ্তি পাঠানোর অনুমতি দেবেন?</translation>
     </message>
     <message>
         <source>They show up with the phone&apos;s other notifications while the site is open in a tab</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটটি কোনো ট্যাবে খোলা থাকলে এগুলি ফোনের অন্যান্য বিজ্ঞপ্তির সঙ্গে দেখা যায়</translation>
     </message>
     <message>
         <source>Always block</source>
         <extracomment>Refuses the site for good: it cannot ask again</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সবসময় ব্লক করুন</translation>
     </message>
 </context>
 <context>
     <name>NotificationSettingsPage</name>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>বিজ্ঞপ্তি</translation>
     </message>
     <message>
         <source>Block</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্লক করুন</translation>
     </message>
     <message>
         <source>Allow</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুমতি দিন</translation>
     </message>
     <message>
         <source>Allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুমোদিত</translation>
     </message>
     <message>
         <source>Blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্লক করা</translation>
     </message>
     <message>
         <source>No sites</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো সাইট নেই</translation>
     </message>
     <message>
         <source>Sites you allow to send notifications, or block, are listed here</source>
-        <translation type="unfinished"></translation>
+        <translation>যে সাইটগুলিকে আপনি বিজ্ঞপ্তি পাঠানোর অনুমতি দেন বা ব্লক করেন, সেগুলি এখানে তালিকায় দেখা যাবে</translation>
     </message>
     <message>
         <source>Sites can ask</source>
         <extracomment>Whether sites not yet allowed or blocked may ask to send notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলি জিজ্ঞাসা করতে পারে</translation>
     </message>
     <message>
         <source>Forget this site</source>
         <extracomment>Forgets the site&apos;s permission: it asks again when it next wants to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এই সাইটটি ভুলে যান</translation>
     </message>
     <message>
         <source>A site you forget asks again the next time it wants to send one.</source>
         <extracomment>Under the sites allowed and blocked from sending notifications</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>আপনি যে সাইটটি ভুলে যাবেন, সেটি পরের বার বিজ্ঞপ্তি পাঠাতে চাইলে আবার জিজ্ঞাসা করবে।</translation>
     </message>
 </context>
 <context>
     <name>OmnibarResultRow</name>
     <message>
         <source>Downloading, %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড হচ্ছে, %1%</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্যর্থ</translation>
     </message>
     <message>
         <source>Cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>বাতিল করা হয়েছে</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
     <message>
         <source>%1 · %2</source>
         <extracomment>Under a download the address bar found: its site, and how it is going</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2</translation>
     </message>
     <message>
         <source>Switch to tab</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাবে সুইচ করুন</translation>
     </message>
     <message>
         <source>Switch to tab in %1</source>
         <extracomment>An open tab the address bar found, in another group than the one shown: %1 is the group&apos;s name, or how many tabs it has when it has none</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-এর ট্যাবে সুইচ করুন</translation>
     </message>
 </context>
 <context>
@@ -672,12 +672,12 @@
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-এ যান</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-এ “%2” অনুসন্ধান করুন</translation>
     </message>
 </context>
 <context>
@@ -685,41 +685,41 @@
     <message>
         <source>example.com</source>
         <extracomment>The made-up site a sample article in the reader view&apos;s preview is from</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>example.com</translation>
     </message>
     <message>
         <source>Just the article</source>
         <extracomment>The heading of the sample article in the reader view&apos;s preview</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>শুধু নিবন্ধটি</translation>
     </message>
     <message>
         <source>The reader view keeps a page&apos;s words and pictures and leaves out everything around them, set in the colours, the typeface and the size chosen above.</source>
         <extracomment>The sample article in the reader view&apos;s preview</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>রিডার ভিউ পাতার লেখা ও ছবি রাখে এবং তার চারপাশের সবকিছু বাদ দেয়, উপরে বেছে নেওয়া রঙ, ফন্ট ও আকারে সাজিয়ে।</translation>
     </message>
 </context>
 <context>
     <name>ReaderSettingsPage</name>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
+        <translation>রিডার ভিউ</translation>
     </message>
     <message>
         <source>Colours</source>
-        <translation type="unfinished"></translation>
+        <translation>রঙ</translation>
     </message>
     <message>
         <source>Typeface</source>
-        <translation type="unfinished"></translation>
+        <translation>ফন্ট</translation>
     </message>
     <message>
         <source>Text size</source>
-        <translation type="unfinished"></translation>
+        <translation>লেখার আকার</translation>
     </message>
     <message>
         <source>Aa</source>
         <extracomment>A sample of text in each of the reader view&apos;s typefaces</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aa</translation>
     </message>
 </context>
 <context>
@@ -727,18 +727,18 @@
     <message>
         <source>Aa</source>
         <extracomment>A sample of text, a capital and a small letter, drawn in each of the reader view&apos;s colours to choose from</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Aa</translation>
     </message>
 </context>
 <context>
     <name>RecentlyClosedPanel</name>
     <message>
         <source>Recently closed</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি বন্ধ করা</translation>
     </message>
     <message>
         <source>Nothing closed recently</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি কিছু বন্ধ করা হয়নি</translation>
     </message>
 </context>
 <context>
@@ -746,17 +746,17 @@
     <message numerus="yes">
         <source>%1 hour(s)</source>
         <extracomment>How long an article takes to read: a number of hours, or a range of them.</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 ঘণ্টা</numerusform>
+            <numerusform>%1 ঘণ্টা</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 minute(s)</source>
         <extracomment>How long an article takes to read: a number of minutes, or a range of them.</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 মিনিট</numerusform>
+            <numerusform>%1 মিনিট</numerusform>
         </translation>
     </message>
 </context>
@@ -765,70 +765,70 @@
     <message>
         <source>Remove</source>
         <extracomment>Takes an engine that was added while browsing out of the list</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সরান</translation>
     </message>
 </context>
 <context>
     <name>SearchEngineInstaller</name>
     <message>
         <source>%1 search added</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান ইঞ্জিন %1 যোগ করা হয়েছে</translation>
     </message>
     <message>
         <source>Could not add %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 যোগ করা যায়নি</translation>
     </message>
 </context>
 <context>
     <name>SearchSettingsPage</name>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান</translation>
     </message>
     <message>
         <source>Search engine</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান ইঞ্জিন</translation>
     </message>
     <message>
         <source>Address bar suggestions</source>
-        <translation type="unfinished"></translation>
+        <translation>ঠিকানা বারের পরামর্শ</translation>
     </message>
     <message>
         <source>Open tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>খোলা ট্যাব</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message>
         <source>Remove added search engines</source>
-        <translation type="unfinished"></translation>
+        <translation>যোগ করা অনুসন্ধান ইঞ্জিন সরান</translation>
     </message>
     <message>
         <source>Removing added search engines</source>
-        <translation type="unfinished"></translation>
+        <translation>যোগ করা অনুসন্ধান ইঞ্জিন সরানো হচ্ছে</translation>
     </message>
     <message>
         <source>Added from %1</source>
         <extracomment>Under a search engine that was added while browsing. %1 is the site that offered it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 থেকে যোগ করা হয়েছে</translation>
     </message>
     <message>
         <source>Found while browsing</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজ করার সময় পাওয়া</translation>
     </message>
     <message>
         <source>Sites can offer their search. Tap one to add it and search with it.</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলি তাদের নিজস্ব অনুসন্ধান দিতে পারে। যোগ করে সেটি দিয়ে অনুসন্ধান করতে একটিতে ট্যাপ করুন।</translation>
     </message>
 </context>
 <context>
@@ -836,196 +836,196 @@
     <message>
         <source>Blank page</source>
         <extracomment>What a new tab shows: the start page&apos;s sections, or nothing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ফাঁকা পাতা</translation>
     </message>
     <message>
         <source>Your sites</source>
-        <translation type="unfinished"></translation>
+        <translation>আপনার সাইট</translation>
     </message>
     <message>
         <source>Automatic</source>
         <extracomment>Notch guard mode that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>স্বয়ংক্রিয়</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>হালকা</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>গাঢ়</translation>
     </message>
     <message>
         <source>Sepia</source>
-        <translation type="unfinished"></translation>
+        <translation>সেপিয়া</translation>
     </message>
     <message>
         <source>Ambience</source>
         <extracomment>The reader view set as a Sailfish page is, in the ambience&apos;s colours</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অ্যাম্বিয়েন্স</translation>
     </message>
     <message>
         <source>Serif</source>
-        <translation type="unfinished"></translation>
+        <translation>সেরিফ</translation>
     </message>
     <message>
         <source>Sans serif</source>
-        <translation type="unfinished"></translation>
+        <translation>সান্স-সেরিফ</translation>
     </message>
     <message>
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>%1 · %2 · %3</source>
         <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
         <extracomment>The cover has no quick action</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কোনোটি নয়</translation>
     </message>
     <message>
         <source>Search</source>
         <extracomment>A quick action on the cover: the address bar, opened for a new tab</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান</translation>
     </message>
     <message>
         <source>Bookmarks</source>
         <extracomment>A quick action on the cover: the list of bookmarks</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>Open a bookmark</source>
         <extracomment>A quick action on the cover: one bookmark&apos;s page, picked on the next page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>একটি বুকমার্ক খুলুন</translation>
     </message>
     <message>
         <source>Downloads</source>
         <extracomment>A quick action on the cover: the list of downloads</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message>
         <source>History</source>
         <extracomment>A quick action on the cover: the history</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Deleted bookmark</source>
         <extracomment>The cover&apos;s quick action opens a bookmark that has since been deleted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মুছে ফেলা বুকমার্ক</translation>
     </message>
     <message>
         <source>%1 · %2</source>
         <extracomment>&quot;2 sites allowed · 1 blocked&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 · %2</translation>
     </message>
     <message>
         <source>Off</source>
         <extracomment>Tracking protection is off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বন্ধ</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>প্রমিত</translation>
     </message>
     <message>
         <source>Strict</source>
-        <translation type="unfinished"></translation>
+        <translation>কঠোর</translation>
     </message>
     <message>
         <source>Sites can follow you from one to another</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলি এক সাইট থেকে আরেক সাইটে আপনাকে অনুসরণ করতে পারে</translation>
     </message>
     <message>
         <source>Stops sites following you with cookies</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলিকে কুকি দিয়ে আপনাকে অনুসরণ করতে দেয় না</translation>
     </message>
     <message>
         <source>Stops more tracking, and can break some sites</source>
-        <translation type="unfinished"></translation>
+        <translation>আরও বেশি ট্র্যাকিং আটকায়, এবং কিছু সাইট ঠিকমতো কাজ না-ও করতে পারে</translation>
     </message>
     <message>
         <source>Sites cannot ask</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলি জিজ্ঞাসা করতে পারে না</translation>
     </message>
     <message>
         <source>Sites can ask</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলি জিজ্ঞাসা করতে পারে</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) allowed</source>
         <extracomment>How many sites may send notifications</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n সাইট অনুমোদিত</numerusform>
+            <numerusform>%n সাইট অনুমোদিত</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n blocked</source>
         <extracomment>How many sites may not send notifications</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%nটি ব্লক করা</numerusform>
+            <numerusform>%nটি ব্লক করা</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) blocked</source>
         <extracomment>How many sites may not send notifications, with none allowed</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n সাইট ব্লক করা</numerusform>
+            <numerusform>%n সাইট ব্লক করা</numerusform>
         </translation>
     </message>
     <message>
         <source>Not remembered</source>
         <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মনে রাখা হয় না</translation>
     </message>
     <message>
         <source>Cleared when closed</source>
         <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বন্ধ করার সময় মুছে ফেলা হয়</translation>
     </message>
     <message>
         <source>Remembered</source>
-        <translation type="unfinished"></translation>
+        <translation>মনে রাখা হয়</translation>
     </message>
     <message>
         <source>No quick action</source>
         <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কোনো দ্রুত অ্যাকশন নেই</translation>
     </message>
     <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অ্যাম্বিয়েন্স অনুযায়ী</translation>
     </message>
     <message>
         <source>Forced</source>
         <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বাধ্যতামূলক</translation>
     </message>
     <message>
         <source>Disabled</source>
         <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>নিষ্ক্রিয়</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কোনো ব্যতিক্রম নেই</translation>
     </message>
     <message numerus="yes">
         <source>%n site(s) with exceptions</source>
         <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>ব্যতিক্রমসহ %n সাইট</numerusform>
+            <numerusform>ব্যতিক্রমসহ %n সাইট</numerusform>
         </translation>
     </message>
 </context>
@@ -1033,99 +1033,99 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>SettingsPage</name>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>সেটিংস</translation>
     </message>
     <message>
         <source>Cover</source>
-        <translation type="unfinished"></translation>
+        <translation>কভার</translation>
     </message>
     <message>
         <source>Privacy</source>
-        <translation type="unfinished"></translation>
+        <translation>গোপনীয়তা</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
+        <translation>রিডার ভিউ</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুসন্ধান</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>অবয়ব</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation type="unfinished"></translation>
+        <translation>শুরুর পাতা</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>সহায়তা</translation>
     </message>
     <message>
         <source>Tutorial</source>
-        <translation type="unfinished"></translation>
+        <translation>টিউটোরিয়াল</translation>
     </message>
     <message>
         <source>Browsing</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্রাউজিং</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাকিং সুরক্ষা</translation>
     </message>
     <message>
         <source>Preferred color scheme</source>
-        <translation type="unfinished"></translation>
+        <translation>পছন্দের রঙের স্কিম</translation>
     </message>
     <message>
         <source>The website style to use when available</source>
-        <translation type="unfinished"></translation>
+        <translation>উপলব্ধ থাকলে ওয়েবসাইটের যে স্টাইল ব্যবহার করা হবে</translation>
     </message>
     <message>
         <source>Notch guard</source>
-        <translation type="unfinished"></translation>
+        <translation>নচ সুরক্ষা</translation>
     </message>
     <message>
         <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation type="unfinished"></translation>
+        <translation>ওয়েবসাইটের কন্টেন্ট স্ক্রিনের নচ থেকে দূরে রাখে। স্বয়ংক্রিয় মোডে উপযোগী করে তৈরি ওয়েবসাইটগুলি নচের জায়গা ব্যবহার করতে পারে, তবে কন্টেন্ট পরিষ্কার দেখা যায়।</translation>
     </message>
     <message>
         <source>Fixed toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>স্থির টুলবার</translation>
     </message>
     <message>
         <source>Always show the bottom toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>নিচের টুলবার সবসময় দেখান</translation>
     </message>
     <message>
         <source>Do not track</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাক করবেন না</translation>
     </message>
     <message>
         <source>Tell sites that I do not want to be tracked</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটগুলিকে জানান যে আমি ট্র্যাক হতে চাই না</translation>
     </message>
     <message>
         <source>Enable JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>JavaScript চালু করুন</translation>
     </message>
     <message>
         <source>Allowed (recommended)</source>
-        <translation type="unfinished"></translation>
+        <translation>অনুমোদিত (প্রস্তাবিত)</translation>
     </message>
     <message>
         <source>Blocked, some sites may not work correctly</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্লক করা, কিছু সাইট ঠিকমতো কাজ না-ও করতে পারে</translation>
     </message>
     <message>
         <source>Site permissions</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটের অনুমতি</translation>
     </message>
 </context>
 <context>
@@ -1133,61 +1133,61 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>d MMM yyyy</source>
         <extracomment>How a certificate&apos;s last day is written, as Qt reads a date format: &quot;14 Dec 2026&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>d MMM yyyy</translation>
     </message>
     <message>
         <source>Connection</source>
         <extracomment>Heading over what is known of a site&apos;s connection</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সংযোগ</translation>
     </message>
     <message>
         <source>Issued to</source>
         <extracomment>Whom a site&apos;s certificate was issued to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>যাকে ইস্যু করা হয়েছে</translation>
     </message>
     <message>
         <source>Verified by</source>
         <extracomment>Who issued a site&apos;s certificate</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>যাচাইকারী</translation>
     </message>
     <message>
         <source>Valid until</source>
         <extracomment>The last day a site&apos;s certificate is good</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মেয়াদ শেষ</translation>
     </message>
     <message>
         <source>Protocol</source>
         <extracomment>The protocol the connection to a site uses</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>প্রোটোকল</translation>
     </message>
     <message>
         <source>Cipher suite</source>
         <extracomment>The cipher suite the connection to a site uses</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সাইফার স্যুট</translation>
     </message>
 </context>
 <context>
     <name>SiteDetailsPage</name>
     <message>
         <source>The certificate has expired or is not yet valid</source>
-        <translation type="unfinished"></translation>
+        <translation>সার্টিফিকেটের মেয়াদ শেষ হয়ে গেছে বা এটি এখনও বৈধ নয়</translation>
     </message>
     <message>
         <source>The certificate is for another site</source>
-        <translation type="unfinished"></translation>
+        <translation>সার্টিফিকেটটি অন্য একটি সাইটের জন্য</translation>
     </message>
     <message>
         <source>The certificate is not trusted</source>
-        <translation type="unfinished"></translation>
+        <translation>সার্টিফিকেটটি বিশ্বস্ত নয়</translation>
     </message>
     <message>
         <source>Permissions</source>
         <extracomment>Heading over what the site may do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অনুমতি</translation>
     </message>
     <message>
         <source>Clear site permissions</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটের অনুমতি মুছুন</translation>
     </message>
 </context>
 <context>
@@ -1195,15 +1195,15 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Add</source>
         <extracomment>Accept button of the dialog that adds a site to the exceptions</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>যোগ করুন</translation>
     </message>
     <message>
         <source>Address of the site</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটের ঠিকানা</translation>
     </message>
     <message>
         <source>Must begin with http:// or https://</source>
-        <translation type="unfinished"></translation>
+        <translation>http:// বা https:// দিয়ে শুরু হতে হবে</translation>
     </message>
 </context>
 <context>
@@ -1211,7 +1211,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Remove</source>
         <extracomment>Takes the site&apos;s exception away: it follows the default again</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সরান</translation>
     </message>
 </context>
 <context>
@@ -1219,139 +1219,139 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Exceptions</source>
         <extracomment>Under the title of the list of sites tracking protection is off for</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ব্যতিক্রম</translation>
     </message>
     <message>
         <source>Exceptions · default: %1</source>
         <extracomment>Under the title of a list of exceptions to a permission; %1 is what it is for every other site</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ব্যতিক্রম · ডিফল্ট: %1</translation>
     </message>
     <message>
         <source>Add a site</source>
-        <translation type="unfinished"></translation>
+        <translation>একটি সাইট যোগ করুন</translation>
     </message>
     <message>
         <source>Remove all exceptions</source>
-        <translation type="unfinished"></translation>
+        <translation>সব ব্যতিক্রম সরান</translation>
     </message>
     <message>
         <source>Removing exceptions</source>
         <extracomment>Said while the exceptions are about to be removed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ব্যতিক্রম সরানো হচ্ছে</translation>
     </message>
     <message>
         <source>Tracking protection off</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাকিং সুরক্ষা বন্ধ</translation>
     </message>
     <message>
         <source>A site you remove follows the default again.</source>
         <extracomment>Under the sites that are an exception to a permission</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>আপনি যে সাইটটি সরাবেন, সেটি আবার ডিফল্ট অনুসরণ করবে।</translation>
     </message>
     <message>
         <source>No exceptions</source>
-        <translation type="unfinished"></translation>
+        <translation>কোনো ব্যতিক্রম নেই</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionNames</name>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>বিজ্ঞপ্তি</translation>
     </message>
     <message>
         <source>Pop-ups</source>
         <extracomment>Windows a page opens of its own accord</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>পপ-আপ</translation>
     </message>
     <message>
         <source>Cookies</source>
-        <translation type="unfinished"></translation>
+        <translation>কুকি</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation type="unfinished"></translation>
+        <translation>অবস্থান</translation>
     </message>
     <message>
         <source>Camera</source>
-        <translation type="unfinished"></translation>
+        <translation>ক্যামেরা</translation>
     </message>
     <message>
         <source>Microphone</source>
-        <translation type="unfinished"></translation>
+        <translation>মাইক্রোফোন</translation>
     </message>
     <message>
         <source>Tracking protection</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাকিং সুরক্ষা</translation>
     </message>
     <message>
         <source>Allow</source>
         <extracomment>A site may do it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অনুমতি দিন</translation>
     </message>
     <message>
         <source>Block</source>
         <extracomment>A site may not do it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ব্লক করুন</translation>
     </message>
     <message>
         <source>Ask</source>
         <extracomment>A site is asked about it each time it wants to</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>জিজ্ঞাসা করুন</translation>
     </message>
     <message>
         <source>Allow all</source>
         <extracomment>Every site&apos;s cookies are accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সবগুলির অনুমতি দিন</translation>
     </message>
     <message>
         <source>Block cross-site</source>
         <extracomment>Cookies a site sets from inside another site&apos;s page are refused</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ক্রস-সাইট ব্লক করুন</translation>
     </message>
     <message>
         <source>Block all</source>
         <extracomment>No site&apos;s cookies are accepted</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সবগুলি ব্লক করুন</translation>
     </message>
     <message>
         <source>Allowed</source>
         <extracomment>A site has been allowed it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>অনুমোদিত</translation>
     </message>
     <message>
         <source>Blocked</source>
         <extracomment>A site has been blocked from it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ব্লক করা</translation>
     </message>
     <message>
         <source>No exceptions</source>
         <extracomment>Under a kind of permission, when no site has been given an exception to it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কোনো ব্যতিক্রম নেই</translation>
     </message>
     <message numerus="yes">
         <source>%n exception(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ব্যতিক্রম</numerusform>
+            <numerusform>%n ব্যতিক্রম</numerusform>
         </translation>
     </message>
     <message>
         <source>Always ask</source>
         <extracomment>A site is asked about it each time it wants it, whatever is set for every site</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সবসময় জিজ্ঞাসা করুন</translation>
     </message>
     <message>
         <source>Follow default: %1</source>
         <extracomment>A site has no choice of its own and does what every site does; %1 is that</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ডিফল্ট অনুসরণ করুন: %1</translation>
     </message>
 </context>
 <context>
     <name>SitePermissionRow</name>
     <message>
         <source>Show exceptions</source>
-        <translation type="unfinished"></translation>
+        <translation>ব্যতিক্রম দেখান</translation>
     </message>
 </context>
 <context>
@@ -1359,31 +1359,31 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <extracomment>Settings page: what sites may do</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সাইটের অনুমতি</translation>
     </message>
     <message>
         <source>What sites may do unless you decided otherwise for a site. Tap one to change it or see the exceptions.</source>
-        <translation type="unfinished"></translation>
+        <translation>আপনি কোনো সাইটের জন্য আলাদা সিদ্ধান্ত না নিলে সাইটগুলি কী করতে পারে। পরিবর্তন করতে বা ব্যতিক্রম দেখতে একটিতে ট্যাপ করুন।</translation>
     </message>
     <message>
         <source>Shown while tracking protection is off · %1</source>
         <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাকিং সুরক্ষা বন্ধ থাকলে দেখানো হয় · %1</translation>
     </message>
     <message>
         <source>Turned off for some sites</source>
-        <translation type="unfinished"></translation>
+        <translation>কিছু সাইটের জন্য বন্ধ করা হয়েছে</translation>
     </message>
     <message numerus="yes">
         <source>Off for %n site(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n সাইটের জন্য বন্ধ</numerusform>
+            <numerusform>%n সাইটের জন্য বন্ধ</numerusform>
         </translation>
     </message>
     <message>
         <source>Turned off from a site’s details</source>
-        <translation type="unfinished"></translation>
+        <translation>সাইটের তথ্য থেকে বন্ধ করা হয়</translation>
     </message>
 </context>
 <context>
@@ -1391,21 +1391,21 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Connection is secure</source>
         <extracomment>The connection to the site is encrypted and its certificate in order</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সংযোগ সুরক্ষিত</translation>
     </message>
     <message>
         <source>Connection is not secure</source>
         <extracomment>Either no encryption is in use, or the connection is broken in some way</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সংযোগ নিরাপদ নয়</translation>
     </message>
     <message>
         <source>Verified by %1</source>
         <extracomment>Under &quot;Connection is secure&quot;; %1 is who issued the site&apos;s certificate</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>যাচাইকারী: %1</translation>
     </message>
     <message>
         <source>Do not enter personal data, passwords, card details on this site</source>
-        <translation type="unfinished"></translation>
+        <translation>এই সাইটে ব্যক্তিগত তথ্য, পাসওয়ার্ড, কার্ডের বিবরণ দেবেন না</translation>
     </message>
 </context>
 <context>
@@ -1413,121 +1413,121 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Off in Settings</source>
         <extracomment>The site&apos;s details, under the tracking protection switch: it is off for every site</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>সেটিংসে বন্ধ</translation>
     </message>
     <message>
         <source>Off for this site. Turn it on to block trackers here again.</source>
-        <translation type="unfinished"></translation>
+        <translation>এই সাইটের জন্য বন্ধ। এখানে আবার ট্র্যাকার ব্লক করতে এটি চালু করুন।</translation>
     </message>
     <message>
         <source>Trackers were blocked on this page</source>
-        <translation type="unfinished"></translation>
+        <translation>এই পাতায় ট্র্যাকার ব্লক করা হয়েছে</translation>
     </message>
     <message>
         <source>If something looks broken on this site, try turning this off.</source>
         <extracomment>The site&apos;s details, under the tracking protection switch while it is on</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এই সাইটে কিছু ভাঙা মনে হলে এটি বন্ধ করে দেখুন।</translation>
     </message>
 </context>
 <context>
     <name>StartPagePreview</name>
     <message>
         <source>Frequently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>প্রায়ই দেখা</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি দেখা</translation>
     </message>
 </context>
 <context>
     <name>StartPageSettingsPage</name>
     <message>
         <source>Start page</source>
-        <translation type="unfinished"></translation>
+        <translation>শুরুর পাতা</translation>
     </message>
     <message>
         <source>Frequently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>প্রায়ই দেখা</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি দেখা</translation>
     </message>
     <message>
         <source>Sections</source>
         <extracomment>The parts of the start page, each switched on or off</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>বিভাগ</translation>
     </message>
     <message>
         <source>Preview</source>
         <extracomment>Over a picture of what a new tab will show</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>প্রাকদর্শন</translation>
     </message>
 </context>
 <context>
     <name>StartPageView</name>
     <message>
         <source>Frequently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>প্রায়ই দেখা</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>Recently visited</source>
-        <translation type="unfinished"></translation>
+        <translation>সম্প্রতি দেখা</translation>
     </message>
     <message>
         <source>Open in new tab</source>
-        <translation type="unfinished"></translation>
+        <translation>নতুন ট্যাবে খুলুন</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>সরান</translation>
     </message>
     <message>
         <source>Nothing here yet</source>
-        <translation type="unfinished"></translation>
+        <translation>এখানে এখনও কিছু নেই</translation>
     </message>
     <message>
         <source>The sites you visit and bookmark show up here</source>
-        <translation type="unfinished"></translation>
+        <translation>আপনি যে সাইটগুলি দেখেন ও বুকমার্ক করেন, সেগুলি এখানে দেখা যাবে</translation>
     </message>
 </context>
 <context>
     <name>TabGroupDelegate</name>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>নাম পরিবর্তন করুন</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>মুছুন</translation>
     </message>
     <message>
         <source>Deleting tab group</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাব গ্রুপ মোছা হচ্ছে</translation>
     </message>
     <message>
         <source>Ungroup</source>
         <extracomment>Removes the tab group and keeps its tabs open, in the first group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>গ্রুপ ভেঙে দিন</translation>
     </message>
     <message numerus="yes">
         <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
 </context>
@@ -1535,33 +1535,33 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupDialog</name>
     <message>
         <source>Rename tab group</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাব গ্রুপের নাম পরিবর্তন করুন</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation type="unfinished"></translation>
+        <translation>নতুন ট্যাব গ্রুপ</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>সংরক্ষণ</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>নাম</translation>
     </message>
     <message>
         <source>Create</source>
         <extracomment>Accepts the dialog that makes a new tab group</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>তৈরি করুন</translation>
     </message>
 </context>
 <context>
     <name>TabGroupStrip</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
 </context>
@@ -1569,31 +1569,31 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabGroupsPage</name>
     <message>
         <source>Tab groups</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাব গ্রুপ</translation>
     </message>
     <message>
         <source>New tab group</source>
-        <translation type="unfinished"></translation>
+        <translation>নতুন ট্যাব গ্রুপ</translation>
     </message>
 </context>
 <context>
     <name>TabPreview</name>
     <message>
         <source>No preview</source>
-        <translation type="unfinished"></translation>
+        <translation>প্রাকদর্শন নেই</translation>
     </message>
     <message>
         <source>Start page</source>
-        <translation type="unfinished"></translation>
+        <translation>শুরুর পাতা</translation>
     </message>
 </context>
 <context>
     <name>TabSearchDelegate</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
 </context>
@@ -1601,69 +1601,69 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TabsView</name>
     <message>
         <source>No tabs in this group</source>
-        <translation type="unfinished"></translation>
+        <translation>এই গ্রুপে কোনো ট্যাব নেই</translation>
     </message>
     <message>
         <source>Open one with the button below</source>
-        <translation type="unfinished"></translation>
+        <translation>নিচের বোতাম দিয়ে একটি খুলুন</translation>
     </message>
     <message>
         <source>Search tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাব অনুসন্ধান করুন</translation>
     </message>
     <message>
         <source>No matching tabs</source>
-        <translation type="unfinished"></translation>
+        <translation>মেলে এমন কোনো ট্যাব নেই</translation>
     </message>
 </context>
 <context>
     <name>TrackingSettingsPage</name>
     <message>
         <source>Tracking protection</source>
-        <translation type="unfinished"></translation>
+        <translation>ট্র্যাকিং সুরক্ষা</translation>
     </message>
     <message>
         <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sailfish OS-এর ওয়েব ইঞ্জিন এখানে Firefox যা করে তার সবকিছু এখনও করতে পারে না, তাই কিছু ট্র্যাকার তবুও ঢুকে পড়তে পারে। Salama ইঞ্জিনের সব সুরক্ষা চালু করে।</translation>
     </message>
 </context>
 <context>
     <name>TutorialMenu</name>
     <message>
         <source>Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক করুন</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="unfinished"></translation>
+        <translation>শেয়ার করুন</translation>
     </message>
     <message>
         <source>Reader view</source>
-        <translation type="unfinished"></translation>
+        <translation>রিডার ভিউ</translation>
     </message>
     <message>
         <source>Bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>বুকমার্ক</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>ইতিহাস</translation>
     </message>
     <message>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>ডাউনলোড</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>সেটিংস</translation>
     </message>
     <message>
         <source>Find in page</source>
-        <translation type="unfinished"></translation>
+        <translation>পাতায় খুঁজুন</translation>
     </message>
     <message>
         <source>Desktop site</source>
-        <translation type="unfinished"></translation>
+        <translation>ডেস্কটপ সাইট</translation>
     </message>
 </context>
 <context>
@@ -1671,12 +1671,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Go to %1</source>
         <extracomment>The row above the address bar that opens what was typed as an address</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-এ যান</translation>
     </message>
     <message>
         <source>Search %1 for “%2”</source>
         <extracomment>The row above the address bar that searches the web: %1 is the search engine&apos;s name, %2 what was typed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-এ “%2” অনুসন্ধান করুন</translation>
     </message>
 </context>
 <context>
@@ -1684,106 +1684,106 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Close tutorial</source>
         <extracomment>Leaves the tutorial, for where it was opened from</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>টিউটোরিয়াল বন্ধ করুন</translation>
     </message>
     <message>
         <source>Pull down to return to the page.</source>
         <extracomment>The grid of tabs is pulled down past its top to bring the page back</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>পাতায় ফিরে যেতে নিচে টানুন।</translation>
     </message>
     <message>
         <source>Continue</source>
         <extracomment>Goes on to the tutorial&apos;s next step</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>চালিয়ে যান</translation>
     </message>
     <message>
         <source>Web browser for Sailfish OS</source>
         <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sailfish OS-এর জন্য ওয়েব ব্রাউজার</translation>
     </message>
     <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>টিউটোরিয়াল শুরু করুন</translation>
     </message>
     <message>
         <source>Skip</source>
         <extracomment>Leaves the tutorial from its first card, for the browser</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>এড়িয়ে যান</translation>
     </message>
     <message>
         <source>Tutorial complete</source>
-        <translation type="unfinished"></translation>
+        <translation>টিউটোরিয়াল সম্পূর্ণ</translation>
     </message>
     <message>
         <source>Tap the address bar to open a website or search.</source>
         <extracomment>The tutorial&apos;s first step: the address bar at the foot of the screen</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কোনো ওয়েবসাইট খুলতে বা অনুসন্ধান করতে ঠিকানা বারে ট্যাপ করুন।</translation>
     </message>
     <message>
         <source>Type an address or a search. Matching tabs, bookmarks and history appear above the bar.</source>
         <extracomment>The tutorial shows the address bar being edited, with a row to go to an address and a row to search above it</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>একটি ঠিকানা বা অনুসন্ধান লিখুন। মিলে যাওয়া ট্যাব, বুকমার্ক ও ইতিহাস বারের উপরে দেখা যায়।</translation>
     </message>
     <message>
         <source>Tap the menu button.</source>
-        <translation type="unfinished"></translation>
+        <translation>মেনু বোতামে ট্যাপ করুন।</translation>
     </message>
     <message>
         <source>The menu has actions for this page and the browser. Tap outside it to close it.</source>
-        <translation type="unfinished"></translation>
+        <translation>মেনুতে এই পাতা ও ব্রাউজারের জন্য অ্যাকশন আছে। বন্ধ করতে এর বাইরে ট্যাপ করুন।</translation>
     </message>
     <message>
         <source>Drag the bar up to see your tabs.</source>
         <extracomment>The navigation bar at the foot of the screen is dragged upwards, and the grid of open tabs comes up from under the page</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>আপনার ট্যাবগুলি দেখতে বারটি উপরে টেনে আনুন।</translation>
     </message>
     <message>
         <source>Swipe a tab left to close it.</source>
-        <translation type="unfinished"></translation>
+        <translation>বন্ধ করতে একটি ট্যাব বাঁ দিকে সোয়াইপ করুন।</translation>
     </message>
     <message>
         <source>Hold a tab, then drag it to a new position.</source>
-        <translation type="unfinished"></translation>
+        <translation>একটি ট্যাব ধরে রাখুন, তারপর নতুন জায়গায় টেনে নিয়ে যান।</translation>
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
         <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>একটি ট্যাব ধরে রাখুন, তারপর কোনো গ্রুপে সরাতে সেটিকে সেই গ্রুপের নামের উপর ছেড়ে দিন।</translation>
     </message>
     <message>
         <source>Address bar</source>
         <extracomment>What the tutorial covers: the address bar</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ঠিকানা বার</translation>
     </message>
     <message>
         <source>Menu</source>
         <extracomment>What the tutorial covers: the menu</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>মেনু</translation>
     </message>
     <message>
         <source>Tabs</source>
         <extracomment>What the tutorial covers: the tabs and the grid of them</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ট্যাব</translation>
     </message>
     <message>
         <source>You can open it again from Settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>আপনি সেটিংস থেকে এটি আবার খুলতে পারেন।</translation>
     </message>
 </context>
 <context>
     <name>TutorialStrip</name>
     <message numerus="yes">
         <source>%n tab(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ট্যাব</numerusform>
+            <numerusform>%n ট্যাব</numerusform>
         </translation>
     </message>
     <message>
         <source>Work</source>
         <extracomment>The name of the made-up tab group the tutorial moves a tab into</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>কাজ</translation>
     </message>
 </context>
 </TS>
