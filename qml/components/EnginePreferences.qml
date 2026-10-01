@@ -2,8 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // What the settings ask of the engine through its preferences: the tracking protection
-// level (docs/DECISIONS/0023-tracking-protection.md) and the colours pages are asked to
-// draw themselves in (0035-website-colours.md). Given as the browsing page is made, which
+// level (docs/DECISIONS/0023-tracking-protection.md), the cookies accepted while it is
+// off and what sites may do unless told otherwise (0039-site-permissions.md), and the
+// colours pages are asked to draw themselves in (0035-website-colours.md). Given as the
+// browsing page is made, which
 // the engine keeps until it is up, and again whenever a setting changes -- or, for pages
 // drawn as the ambience is, the ambience.
 //
@@ -29,8 +31,18 @@ QtObject {
         }
     }
 
+    // The cookies are tracking protection's own preference while it is on, and the
+    // reader's choice while it is off, so a change of either gives them again.
     function applyTrackingProtection() {
-        give(EngineMessages.trackingProtectionPreferences(PrivacySettings.trackingProtection))
+        give(EngineMessages.trackingProtectionPreferences(PrivacySettings.trackingProtection,
+                                                          SitePermissionSettings.cookies))
+    }
+
+    function applySitePermissions() {
+        give(EngineMessages.sitePermissionPreferences(SitePermissionSettings.popupsAllowed,
+                                                      SitePermissionSettings.locationBlocked,
+                                                      SitePermissionSettings.cameraBlocked,
+                                                      SitePermissionSettings.microphoneBlocked))
     }
 
     function applyWebsiteColors() {
@@ -48,6 +60,15 @@ QtObject {
         onTrackingProtectionChanged: preferences.applyTrackingProtection()
     }
 
+    property Connections sites: Connections {
+        target: SitePermissionSettings
+        onCookiesChanged: preferences.applyTrackingProtection()
+        onPopupsAllowedChanged: preferences.applySitePermissions()
+        onLocationBlockedChanged: preferences.applySitePermissions()
+        onCameraBlockedChanged: preferences.applySitePermissions()
+        onMicrophoneBlockedChanged: preferences.applySitePermissions()
+    }
+
     property Connections general: Connections {
         target: Settings
         onWebsiteColorsChanged: preferences.applyWebsiteColors()
@@ -55,6 +76,7 @@ QtObject {
 
     Component.onCompleted: {
         applyTrackingProtection()
+        applySitePermissions()
         applyWebsiteColors()
     }
 }

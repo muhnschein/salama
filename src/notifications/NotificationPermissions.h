@@ -21,11 +21,8 @@ namespace Salama {
 // `navigator.permissions` read them as they are, with nothing of this application in
 // the way. The engine is reached as the platform's Sailfish.WebView.Controls
 // PermissionManager reaches it, over the observer topics embedlite-components'
-// jscomps/ContentPermissionManager.js answers: "embedui:perms" with a message, `add`,
-// `remove` or `get-all`, and every permission the engine holds back on
-// "embed:perms:all" as `[{type, uri, capability, expireType}]`, the uri being the
-// principal's origin. A capability is nsIPermissionManager's: 1 allow, 2 deny; an
-// expiry 0 never, 1 with the session.
+// jscomps/ContentPermissionManager.js answers (engine/EnginePermissions.h, which
+// SitePermissions shares, for the topics, the capabilities and how the list is read).
 //
 // This model is the list the engine holds, as last read, with what was set from here
 // since. It lists what was decided for good: a decision that lasts the session is the
@@ -83,6 +80,13 @@ public:
     // when they are asked about (netwerk PermissionManager, "permissions.default.").
     Q_INVOKABLE static QVariantMap defaultPreference(bool blockRequests);
 
+    // A decision made elsewhere in this application, about this permission, that the
+    // engine has already been told of: the model takes it in without telling the engine
+    // again, and without saying it was decided from here. 1 allows, 2 blocks, and
+    // anything else forgets the site (SitePermissions, which sets the permission of any
+    // kind from a page's own details).
+    void adopt(const QString &origin, int capability);
+
     // The platform answered a request the page made of the engine itself, rather than
     // of this browser, and denied it for the session: Sailfish.WebView.Popups'
     // PopupOpener.qml refuses every permission but a location's, and
@@ -104,6 +108,9 @@ signals:
     void countChanged();
     // A site was added, removed, allowed or blocked.
     void sitesChanged();
+    // A site was allowed, blocked (capability 1, 2) or forgotten (0) from here, and the
+    // engine told, which is what SitePermissions follows.
+    void decided(const QString &origin, int capability);
     // Something for the engine, for WebEngine.notifyObservers().
     void engineRequest(const QString &topic, const QVariant &payload);
 
@@ -118,6 +125,7 @@ private:
     // Where a site goes in the list as it is ordered.
     int positionOf(const QString &origin, bool allowed) const;
     void put(const QString &origin, bool allowed);
+    void take(int row);
     void send(const QString &message, const QString &origin, int capability);
 
     // The allowed first and the blocked after them, as Settings lists them under a

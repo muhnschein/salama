@@ -13,6 +13,8 @@ add_library(salama-core STATIC
     engine/EngineData.h
     engine/EngineMessages.cpp
     engine/EngineMessages.h
+    engine/EnginePermissions.cpp
+    engine/EnginePermissions.h
     engine/PageActivity.cpp
     engine/PageActivity.h
     engine/PageMedia.cpp
@@ -25,6 +27,10 @@ add_library(salama-core STATIC
     notifications/WebNotifications.h
     omnibar/OmnibarModel.cpp
     omnibar/OmnibarModel.h
+    permissions/SiteExceptions.cpp
+    permissions/SiteExceptions.h
+    permissions/SitePermissions.cpp
+    permissions/SitePermissions.h
     reader/Reader.cpp
     reader/Reader.h
     reader/reader.qrc
@@ -44,6 +50,8 @@ add_library(salama-core STATIC
     settings/SettingsSection.h
     settings/SettingsSections.cpp
     settings/SettingsSections.h
+    settings/SitePermissionSettings.cpp
+    settings/SitePermissionSettings.h
     settings/StartPageSettings.cpp
     settings/StartPageSettings.h
     startpage/SiteListModel.cpp

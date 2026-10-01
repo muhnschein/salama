@@ -40,6 +40,17 @@ Item {
     property QtObject security: QtObject {
         property bool validState: true
         property bool allGood: true
+        // What the details of a site read of a certificate.
+        property bool domainMismatch: false
+        property bool notValidAtThisTime: false
+        property bool untrusted: false
+        property bool blockedTrackingContent: false
+        property string subjectDisplayName: ""
+        property string issuerDisplayName: ""
+        property var expiryDate: null
+        // QMozSecurity::TLS_VERSION: -1 is none, 4 is TLS 1.3.
+        property int protocolVersion: -1
+        property string cipherName: ""
     }
 
     // Test hooks

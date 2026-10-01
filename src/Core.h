@@ -11,6 +11,7 @@
 #include "notifications/NotificationPermissions.h"
 #include "notifications/WebNotifications.h"
 #include "omnibar/OmnibarModel.h"
+#include "permissions/SitePermissions.h"
 #include "reader/Reader.h"
 #include "settings/SettingsSections.h"
 #include "startpage/StartPage.h"
@@ -46,6 +47,7 @@ public:
     CoverSettings *coverSettings();
     PrivacySettings *privacySettings();
     StartPageSettings *startPageSettings();
+    SitePermissionSettings *sitePermissionSettings();
     OmnibarModel *omnibar();
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
@@ -53,6 +55,7 @@ public:
     Reader *reader();
     StartPage *startPage();
     NotificationPermissions *notificationPermissions();
+    SitePermissions *sitePermissions();
     WebNotifications *webNotifications();
 
     // What is set to go as the browser closes -- the history, the list of downloads and
@@ -78,6 +81,7 @@ private:
     Reader m_reader;
     StartPage m_startPage;
     NotificationPermissions m_notificationPermissions;
+    SitePermissions m_sitePermissions;
     // After the permissions, which it reads.
     WebNotifications m_webNotifications;
 };

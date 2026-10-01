@@ -7,6 +7,7 @@
 #include "ReaderSettings.h"
 #include "SearchSettings.h"
 #include "Settings.h"
+#include "SitePermissionSettings.h"
 #include "StartPageSettings.h"
 
 #include <QSettings>
@@ -27,6 +28,7 @@ public:
     CoverSettings *cover();
     PrivacySettings *privacy();
     StartPageSettings *startPage();
+    SitePermissionSettings *sitePermissions();
 
 private:
     // First, so that it is made before the sections that borrow it and goes after them.
@@ -37,6 +39,7 @@ private:
     CoverSettings m_cover;
     PrivacySettings m_privacy;
     StartPageSettings m_startPage;
+    SitePermissionSettings m_sitePermissions;
 };
 
 } // namespace Salama

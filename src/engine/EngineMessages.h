@@ -101,7 +101,23 @@ public:
     // engine's defaults, and a level out of range is Standard. Trackers are blocked
     // through the content classifier, the one list-driven path this embedding keeps
     // fed (docs/DECISIONS/0023-tracking-protection.md).
-    Q_INVOKABLE static QVariantList trackingProtectionPreferences(int level);
+    //
+    // Cookies are the one preference with two owners: at Standard and Strict it is the
+    // level's, and at Off it is the reader's own choice, a SitePermissionSettings::Cookies
+    // value, so that turning tracking protection off lets the choice of what cookies to
+    // accept take its place (docs/DECISIONS/0039-site-permissions.md). A choice out of
+    // range is Block cross-site.
+    Q_INVOKABLE static QVariantList trackingProtectionPreferences(int level, int cookies);
+
+    // What the engine is told for the defaults of Site permissions, in the same
+    // {name, value} form: whether a page may open a window of its own accord, and
+    // whether a site that has not been given or refused a location, the camera or the
+    // microphone is asked or refused outright (docs/DECISIONS/0039-site-permissions.md).
+    // The notifications' default is NotificationPermissions::defaultPreference().
+    Q_INVOKABLE static QVariantList sitePermissionPreferences(bool popupsAllowed,
+                                                              bool locationBlocked,
+                                                              bool cameraBlocked,
+                                                              bool microphoneBlocked);
 
     // What the engine is told for a Settings::WebsiteColors choice, in the same
     // {name, value} form: whether the system it draws for uses a dark theme, which is

@@ -3,6 +3,7 @@
 #include "QmlTypes.h"
 
 #include "Core.h"
+#include "permissions/SiteExceptions.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
 #include "tabs/TabGroupModel.h"
@@ -100,6 +101,16 @@ QObject *startPageSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*script
     return keepOwnership(registeredCore()->startPageSettings());
 }
 
+QObject *sitePermissionSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->sitePermissionSettings());
+}
+
+QObject *sitePermissionsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->sitePermissions());
+}
+
 QObject *omnibarProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->omnibar());
@@ -172,6 +183,8 @@ void registerQmlTypes(Core *core)
                                               &privacySettingsProvider);
     qmlRegisterSingletonType<StartPageSettings>(ModuleUri, 1, 0, "StartPageSettings",
                                                 &startPageSettingsProvider);
+    qmlRegisterSingletonType<SitePermissionSettings>(ModuleUri, 1, 0, "SitePermissionSettings",
+                                                     &sitePermissionSettingsProvider);
     qmlRegisterSingletonType<OmnibarModel>(ModuleUri, 1, 0, "Omnibar", &omnibarProvider);
     qmlRegisterSingletonType<EngineMessages>(ModuleUri, 1, 0, "EngineMessages",
                                              &engineMessagesProvider);
@@ -183,6 +196,10 @@ void registerQmlTypes(Core *core)
                                                       &notificationPermissionsProvider);
     qmlRegisterSingletonType<WebNotifications>(ModuleUri, 1, 0, "WebNotifications",
                                                &webNotificationsProvider);
+    qmlRegisterSingletonType<SitePermissions>(ModuleUri, 1, 0, "SitePermissions",
+                                              &sitePermissionsProvider);
+    // One kind's exceptions, made in QML by each page that lists them.
+    qmlRegisterType<SiteExceptions>(ModuleUri, 1, 0, "SiteExceptions");
     // The start page's lists, reached as its properties and never made in QML.
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));

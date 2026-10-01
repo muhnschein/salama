@@ -3,7 +3,8 @@
 //
 // What the menu button on the navigation bar brings up: an opaque sheet that comes up
 // from under the bar. Its head names the page in front -- icon, title, padlock and host
-// -- with a button to copy its address; under it the page's five actions in one row,
+// -- with a button to copy its address, and a tap on the rest of it opens the page's site
+// details (docs/DECISIONS/0040-site-details.md); under it the page's five actions in one row,
 // each an icon on a disc with its name under it, and after a line the browser's four.
 // A tap on one does it and puts the sheet away; a tap outside it puts it away alone,
 // and so does pulling it back down. The same DockedPanel, on the same ground, the
@@ -63,6 +64,19 @@ DockedPanel {
     function openPage(page) {
         hide()
         pageStack.push(Qt.resolvedUrl("../pages/" + page))
+    }
+
+    // The site of the page in front, on a page of its own: the connection, tracking
+    // protection and what the site may do (docs/DECISIONS/0040-site-details.md). It is
+    // given the view to read the connection from and to load again, which it reads
+    // through bindings that cope with its being gone.
+    function openSiteDetails() {
+        hide()
+        pageStack.push(Qt.resolvedUrl("../pages/SiteDetailsPage.qml"), {
+                           "url": TabModel.activeUrl,
+                           "title": TabModel.activeTitle,
+                           "view": menu.view
+                       })
     }
 
     // The sheet goes down with the pull and back up as a short one springs back. Not
@@ -157,6 +171,7 @@ DockedPanel {
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
                 tlsBroken: menu.tlsBroken
+                onDetailsRequested: menu.openSiteDetails()
                 onCopyRequested: {
                     menu.hide()
                     Clipboard.text = TabModel.activeUrl
