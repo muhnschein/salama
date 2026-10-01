@@ -719,7 +719,7 @@
     <message>
         <source>Aa</source>
         <extracomment>A sample of text in each of the reader view&apos;s typefaces</extracomment>
-        <translation>அஆ</translation>
+        <translation>Aa</translation>
     </message>
 </context>
 <context>
