@@ -29,6 +29,7 @@
 #include <QSGRendererInterface>
 #include <QScopedPointer>
 #include <QSet>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QStyleHints>
 #include <QTemporaryDir>
@@ -141,6 +142,7 @@ private slots:
     void findInPage();
     void readerView();
     void downloadsPage();
+    void downloadsOfAnEarlierRun();
     void downloadBar();
     void navigationBarShowsDownloads();
     void downloadNotifications();
@@ -4179,6 +4181,11 @@ void tst_qmlload::downloadsPage()
                         " sourceUrl: 'https://x.example/old.pdf', targetPath: '/tmp/old.pdf',"
                         " mimeType: '', size: 0}"));
     send(QStringLiteral("{msg: 'dl-done', id: 4}"));
+    send(QStringLiteral("{msg: 'dl-start', id: 5, displayName: 'older.pdf',"
+                        " sourceUrl: 'https://x.example/older.pdf', targetPath: '/tmp/older.pdf',"
+                        " mimeType: '', size: 0}"));
+    send(QStringLiteral("{msg: 'dl-done', id: 5}"));
+    QCOMPARE(downloads->count(), 3);
     QObject *clear = find(QStringLiteral("clearDownloadsMenu"));
     QVERIFY(clear->property("enabled").toBool());
     click(clear);
@@ -4194,6 +4201,113 @@ void tst_qmlload::downloadsPage()
     // The pulley opens the folder they are saved in.
     click(find(QStringLiteral("openDownloadFolderMenu")));
     QCOMPARE(files.opened.last(), QUrl::fromLocalFile(downloads->directory()));
+}
+
+// What an earlier run left in the list: the engine has forgotten those downloads, so
+// one can be fetched again only from an address that means something without the page
+// it came from.
+void tst_qmlload::downloadsOfAnEarlierRun()
+{
+    cleanup();
+    m_dir.reset(new QTemporaryDir);
+    {
+        Salama::Storage storage(m_dir->path());
+        const QString folder = m_dir->path() + QStringLiteral("/Downloads/Salama/");
+        const auto insert = [&storage, &folder](int id, const char *name, const QString &url,
+                                                Salama::DownloadModel::Status status) {
+            QSqlQuery query(storage.database());
+            query.prepare(QStringLiteral("INSERT INTO download "
+                                         "(id, name, url, path, mime, size, status, started) "
+                                         "VALUES (?, ?, ?, ?, 'application/pdf', 2048, ?, ?)"));
+            query.addBindValue(id);
+            query.addBindValue(QLatin1String(name));
+            query.addBindValue(url);
+            query.addBindValue(folder + QLatin1String(name));
+            query.addBindValue(static_cast<int>(status));
+            query.addBindValue(100 - id);
+            QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        };
+        insert(1, "a.pdf", QStringLiteral("https://files.example/a.pdf"),
+               Salama::DownloadModel::Failed);
+        insert(2, "b.pdf", QStringLiteral("blob:https://files.example/1234"),
+               Salama::DownloadModel::Failed);
+        insert(3, "c.pdf", QStringLiteral("data:application/pdf;base64,AAAA"),
+               Salama::DownloadModel::Canceled);
+        insert(4, "d.pdf", QStringLiteral(""), Salama::DownloadModel::Done);
+    }
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    m_core->tabs()->newTab(QLatin1String(FirstPage));
+    m_core->settings()->setTutorialShown(true);
+    QVERIFY(loadWindow());
+    forgetStartupMessages();
+    QCOMPARE(m_core->downloads()->count(), 4);
+
+    QObject *page = openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(page->objectName(), QStringLiteral("downloadsPage"));
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("downloadDelegate")));
+    QCOMPARE(rows.count(), 4);
+    const auto child = [](QObject *parent, const char *name) {
+        return findObjects(parent, QLatin1String(name)).first();
+    };
+    const auto text = [child](QObject *parent, const char *name) {
+        return child(parent, name)->property("text").toString();
+    };
+    const auto shows = [child](QObject *parent, const char *name) {
+        return child(parent, name)->property("visible").toBool();
+    };
+    const auto told = [this]() {
+        return evaluate(find(QStringLiteral("viewArea")),
+                        QStringLiteral("WebEngine.notifications.length"))
+            .toInt();
+    };
+    const qreal dimmed = evaluate(page, QStringLiteral("Theme.opacityLow")).toReal();
+    const qreal faded = evaluate(page, QStringLiteral("Theme.opacityHigh")).toReal();
+    const auto iconOpacity = [child](QObject *row) {
+        return child(child(row, "downloadIndicator"), "downloadIndicatorIcon")
+            ->property("opacity")
+            .toReal();
+    };
+
+    // Failed from an address that can be fetched again: the row, its arrow and its menu
+    // fetch it again, from the address to the file.
+    QCOMPARE(text(rows.at(0), "downloadStatus"), QStringLiteral("Failed, tap to retry"));
+    QVERIFY(shows(rows.at(0), "retryDownloadMenu"));
+    QCOMPARE(iconOpacity(rows.at(0)), qreal(1));
+    click(rows.at(0));
+    QCOMPARE(told(), 1);
+    QVERIFY(evaluate(find(QStringLiteral("viewArea")),
+                     QStringLiteral("JSON.stringify(WebEngine.notifications[0])"))
+                .toString()
+                .contains(QStringLiteral(R"("msg":"addDownload")")));
+
+    // Failed from one that cannot, a blob: or data: address meaning nothing without the
+    // page it came from: it says so, with the kind of file it was, dimmed, and a tap
+    // on it asks nothing.
+    QCOMPARE(text(rows.at(1), "downloadStatus"), QStringLiteral("Failed"));
+    QVERIFY(!shows(rows.at(1), "retryDownloadMenu"));
+    QCOMPARE(child(child(rows.at(1), "downloadIndicator"), "downloadIndicatorIcon")
+                 ->property("source")
+                 .toUrl()
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-file-pdf"));
+    QCOMPARE(iconOpacity(rows.at(1)), dimmed);
+    click(rows.at(1));
+    click(child(rows.at(1), "downloadIndicator"));
+    QCOMPARE(told(), 1);
+    QCOMPARE(text(rows.at(2), "downloadStatus"), QStringLiteral("Stopped"));
+    QVERIFY(!shows(rows.at(2), "retryDownloadMenu"));
+    QCOMPARE(iconOpacity(rows.at(2)), dimmed);
+    click(rows.at(2));
+    QCOMPARE(told(), 1);
+
+    // Arrived, with no address to copy and no file left: it says so, and fades.
+    QCOMPARE(text(rows.at(3), "downloadStatus"), QStringLiteral("Moved or deleted"));
+    QVERIFY(!shows(rows.at(3), "copyDownloadLinkMenu"));
+    QVERIFY(shows(rows.at(0), "copyDownloadLinkMenu"));
+    QCOMPARE(iconOpacity(rows.at(3)), dimmed);
+    QCOMPARE(child(rows.at(3), "downloadName")->property("opacity").toReal(), faded);
+    QCOMPARE(child(rows.at(0), "downloadName")->property("opacity").toReal(), qreal(1));
 }
 
 // A download coming, or how it ended, in a bar just above the navigation bar, so that
@@ -4291,6 +4405,11 @@ void tst_qmlload::downloadBar()
     send(QStringLiteral("{msg: 'dl-fail', id: 3}"));
     QVERIFY(shown());
     QCOMPARE(text("downloadBarStatus"), QStringLiteral("Failed"));
+    QCOMPARE(findObjects(bar, QStringLiteral("downloadBarStatus"))
+                 .first()
+                 ->property("color")
+                 .value<QColor>(),
+             evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>());
     QCOMPARE(text("downloadBarActionLabel"), QStringLiteral("Retry"));
     QCOMPARE(timer->property("interval").toInt(), 10000);
     click(action);
@@ -4307,6 +4426,32 @@ void tst_qmlload::downloadBar()
     start(4, QStringLiteral("d.pdf"));
     QVERIFY(shown());
     send(QStringLiteral("{msg: 'dl-cancel', id: 4}"));
+    QVERIFY(!shown());
+
+    // One that starts while the end of another is shown takes the bar, and the while of
+    // the other does not run on to put it away.
+    start(6, QStringLiteral("f.pdf"));
+    send(QStringLiteral("{msg: 'dl-fail', id: 6}"));
+    QVERIFY(timer->property("running").toBool());
+    start(7, QStringLiteral("g.pdf"));
+    QVERIFY(!timer->property("running").toBool());
+    QVERIFY(shown());
+
+    // Arrived while others are still coming, it says that it has, not how far they all
+    // have come.
+    start(8, QStringLiteral("h.pdf"));
+    start(9, QStringLiteral("i.pdf"));
+    QCOMPARE(text("downloadBarStatus"), QStringLiteral("3 downloads, 0%"));
+    send(QStringLiteral("{msg: 'dl-done', id: 9, targetPath: '%1/i.pdf'}").arg(folder));
+    QCOMPARE(text("downloadBarName"), QStringLiteral("i.pdf"));
+    QCOMPARE(text("downloadBarStatus"), QStringLiteral("Downloaded"));
+    send(QStringLiteral("{msg: 'dl-cancel', id: 7}"));
+    send(QStringLiteral("{msg: 'dl-cancel', id: 8}"));
+
+    // Forgotten from the list, a download is no longer there to show.
+    start(10, QStringLiteral("j.pdf"));
+    QVERIFY(shown());
+    m_core->downloads()->remove(m_core->downloads()->rowOf(bar->property("downloadId").toInt()));
     QVERIFY(!shown());
 
     // Out of the way of what is over the foot of the page, and back after it.
@@ -4329,6 +4474,11 @@ void tst_qmlload::downloadBar()
     pullUpToTabs();
     QVERIFY(!shown());
     pullDownToBrowser();
+    QVERIFY(shown());
+    // Nor while the grid is held in a drag, before it has opened.
+    evaluate(navigationBar, QStringLiteral("dragStarted()"));
+    QVERIFY(!shown());
+    evaluate(navigationBar, QStringLiteral("dragFinished(0)"));
     QVERIFY(shown());
 
     // A tap anywhere else on it is the list of downloads.
@@ -4361,6 +4511,19 @@ void tst_qmlload::navigationBarShowsDownloads()
     // Faded with the button as the bar slims down.
     QCOMPARE(ring->opacity(), menu->opacity());
     send(QStringLiteral("{msg: 'dl-done', id: 1, targetPath: '/tmp/a.pdf'}"));
+    QVERIFY(!ring->isVisible());
+
+    // Slimming the bar fades the ring with the button, and takes it away with it.
+    send(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'b.pdf',"
+                        " sourceUrl: 'https://files.example/b.pdf', targetPath: '/tmp/b.pdf',"
+                        " mimeType: 'application/pdf', size: 2048}"));
+    QVERIFY(ring->isVisible());
+    find(QStringLiteral("webView"))->setProperty("chrome", false);
+    for (int step = 0; step < 200 && menu->isVisible(); ++step) {
+        QCOMPARE(ring->opacity(), menu->opacity());
+        QTest::qWait(5);
+    }
+    QVERIFY(!menu->isVisible());
     QVERIFY(!ring->isVisible());
 }
 
@@ -4410,10 +4573,33 @@ void tst_qmlload::downloadNotifications()
     shown = findAll(QStringLiteral("downloadNotification"));
     QCOMPARE(shown.count(), 1);
     QCOMPARE(shown.first()->property("summary").toString(), QStringLiteral("Download failed"));
+    const int activations = m_window->property("activateCount").toInt();
     QMetaObject::invokeMethod(shown.first(), "clicked");
     QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    QCOMPARE(m_window->property("activateCount").toInt(), activations + 1);
     QCOMPARE(files.opened.count(), 1);
     popPage();
+
+    // The list is shown over the browser as it is found: the sheet put away, and a page
+    // that was over the browser gone from under the list.
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    start(10, QStringLiteral("j.pdf"));
+    send(QStringLiteral("{msg: 'dl-fail', id: 10}"));
+    QMetaObject::invokeMethod(findAll(QStringLiteral("downloadNotification")).first(), "clicked");
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    QVERIFY(!menu->property("open").toBool());
+    popPage();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QVERIFY(openMenuItem(QStringLiteral("settingsMenuButton")) != nullptr);
+    QVERIFY(currentPage()->objectName() != QStringLiteral("browserPage"));
+    start(11, QStringLiteral("k.pdf"));
+    send(QStringLiteral("{msg: 'dl-fail', id: 11}"));
+    QMetaObject::invokeMethod(findAll(QStringLiteral("downloadNotification")).first(), "clicked");
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
+    popPage();
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
     // One shown goes when its download starts again; one swiped away is forgotten.
     send(QStringLiteral("{msg: 'dl-fail', id: 3}"));
@@ -4431,6 +4617,18 @@ void tst_qmlload::downloadNotifications()
     QMetaObject::invokeMethod(swiped, "closed", Q_ARG(int, 1));
     settle();
     QVERIFY(swiped.isNull());
+
+    // One that fails and then arrives, with no start between, leaves the one notice, not
+    // two.
+    start(9, QStringLiteral("i.pdf"));
+    send(QStringLiteral("{msg: 'dl-fail', id: 9}"));
+    QCOMPARE(findAll(QStringLiteral("downloadNotification")).count(), 1);
+    send(QStringLiteral("{msg: 'dl-done', id: 9}"));
+    shown = findAll(QStringLiteral("downloadNotification"));
+    QCOMPARE(shown.count(), 1);
+    QCOMPARE(shown.first()->property("summary").toString(), QStringLiteral("Download finished"));
+    QMetaObject::invokeMethod(shown.first(), "closed", Q_ARG(int, 1));
+    settle();
 
     // Stopped on purpose, nothing is said.
     start(4, QStringLiteral("d.pdf"));

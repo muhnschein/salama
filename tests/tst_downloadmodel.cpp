@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMetaEnum>
+#include <QRegularExpression>
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -462,6 +463,16 @@ void tst_downloadmodel::done()
              Downloads + QStringLiteral("b.pdf"));
     QCOMPARE(changedRoles(changeSpy), StatusRoles);
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Done));
+
+    // A file that arrived somewhere else says whether it is there as well: its path is
+    // what that is worked out of.
+    const int changes = changeSpy.count();
+    QVariantMap moved = message(QStringLiteral("dl-done"), 2);
+    moved.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("b(1).pdf"));
+    model.observe(Topic, moved);
+    QCOMPARE(changeSpy.count(), changes + 1);
+    QCOMPARE(changedRoles(changeSpy), QVector<int>({roleId(DownloadModel::Role::Path),
+                                                    roleId(DownloadModel::Role::FileExists)}));
 }
 
 void tst_downloadmodel::failAndCancel()
@@ -958,8 +969,15 @@ void tst_downloadmodel::startedAndEnded()
     QCOMPARE(endedSpy.count(), 1);
     QCOMPARE(endedSpy.last().at(0).toInt(), a);
     QCOMPARE(endedSpy.last().at(1).toInt(), static_cast<int>(DownloadModel::Done));
-    // Said twice, it ended once.
+    // Said twice, it ended once; said again with another path, the file is somewhere
+    // else, but nothing ended again.
     model.observe(Topic, message(QStringLiteral("dl-done"), 7));
+    QCOMPARE(endedSpy.count(), 1);
+    QVariantMap moved = message(QStringLiteral("dl-done"), 7);
+    moved.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("a(1).pdf"));
+    model.observe(Topic, moved);
+    QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
+             Downloads + QStringLiteral("a(1).pdf"));
     QCOMPARE(endedSpy.count(), 1);
 
     model.observe(Topic, startMessage(8, QStringLiteral("b.pdf")));
@@ -1212,6 +1230,33 @@ void tst_downloadmodel::deleteFile()
 
     QVERIFY(!model.deleteFile(0));
     QVERIFY(!model.deleteFile(-1));
+
+    // A file that cannot be taken away stays, with its row, for the person to be told
+    // so. It takes a folder closed to its owner, which a user with every right to a file
+    // is never held out of.
+    QVERIFY(QDir(dir.path()).mkdir(QStringLiteral("locked")));
+    const QString kept = makeFile(dir, QStringLiteral("locked/kept.pdf"));
+    QVERIFY(QFileInfo::exists(kept));
+    model.observe(Topic, startIn(dir, 5, QStringLiteral("locked/kept.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 5));
+    const QString locked = dir.filePath(QStringLiteral("locked"));
+    const QFileDevice::Permissions open =
+        QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner;
+    QVERIFY(QFile::setPermissions(locked, QFileDevice::ReadOwner | QFileDevice::ExeOwner));
+    if (QFileInfo(locked).isWritable()) {
+        QVERIFY(QFile::setPermissions(locked, open));
+        // QSKIP itself, a variadic macro given no more than its message, is one clang
+        // warns of.
+        QTest::qSkip("A folder cannot be closed to this user, who may write anywhere", __FILE__,
+                     __LINE__);
+        return;
+    }
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("cannot delete")));
+    const bool deleted = model.deleteFile(0);
+    QVERIFY(QFile::setPermissions(locked, open));
+    QVERIFY(!deleted);
+    QVERIFY(QFileInfo::exists(kept));
+    QCOMPARE(model.count(), 1);
 }
 
 // Whether the file is there is asked of the disk, for a download that arrived; and
@@ -1303,6 +1348,61 @@ void tst_downloadmodel::icons()
         QCOMPARE(DownloadModel::iconFor(type, QStringLiteral("notes.txt")), icon("document"));
         QCOMPARE(DownloadModel::iconFor(type, QStringLiteral("thing.xyz")), icon("other"));
         QCOMPARE(DownloadModel::iconFor(type, QStringLiteral("README")), icon("other"));
+    }
+    // Each extension the list knows, with no type to go by.
+    const struct
+    {
+        const char *extension;
+        const char *kind;
+    } known[] = {
+        {"pdf", "pdf"},
+        {"jpg", "image"},
+        {"jpeg", "image"},
+        {"png", "image"},
+        {"gif", "image"},
+        {"webp", "image"},
+        {"svg", "image"},
+        {"heic", "image"},
+        {"mp3", "audio"},
+        {"ogg", "audio"},
+        {"opus", "audio"},
+        {"flac", "audio"},
+        {"wav", "audio"},
+        {"m4a", "audio"},
+        {"mp4", "video"},
+        {"webm", "video"},
+        {"mkv", "video"},
+        {"mov", "video"},
+        {"apk", "apk"},
+        {"rpm", "rpm"},
+        {"vcf", "vcard"},
+        {"csv", "spreadsheet"},
+        {"ods", "spreadsheet"},
+        {"xls", "spreadsheet"},
+        {"xlsx", "spreadsheet"},
+        {"odp", "presentation"},
+        {"ppt", "presentation"},
+        {"pptx", "presentation"},
+        {"zip", "archive-folder"},
+        {"tar", "archive-folder"},
+        {"gz", "archive-folder"},
+        {"tgz", "archive-folder"},
+        {"bz2", "archive-folder"},
+        {"xz", "archive-folder"},
+        {"7z", "archive-folder"},
+        {"rar", "archive-folder"},
+        {"txt", "document"},
+        {"md", "document"},
+        {"rtf", "document"},
+        {"odt", "document"},
+        {"doc", "document"},
+        {"docx", "document"},
+        {"epub", "document"},
+    };
+    for (const auto &entry : known) {
+        QCOMPARE(
+            DownloadModel::iconFor(none, QStringLiteral("file.") + QLatin1String(entry.extension)),
+            icon(entry.kind));
     }
     // The type comes first: a name that says otherwise does not change it.
     QCOMPARE(DownloadModel::iconFor(QStringLiteral("image/png"), QStringLiteral("a.pdf")),
