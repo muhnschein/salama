@@ -47,7 +47,12 @@ class Storage;
 // reach -- WebEngine is the browsing page's (docs/ARCHITECTURE.md) -- so the model says
 // what to send with engineRequest(), and the browsing page sends it
 // (docs/DECISIONS/0038-download-controls.md).
-class DownloadModel : public QAbstractListModel
+//
+// More methods than SonarQube allows a class (cpp:S1448), and kept whole on purpose, as
+// TabModel is: what the engine says, what the list asks of it and what is written down
+// all change the one list of rows, and each change has to be told as a change to those
+// rows, in order, from here.
+class DownloadModel : public QAbstractListModel // NOSONAR(cpp:S1448) one list, told from here
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
