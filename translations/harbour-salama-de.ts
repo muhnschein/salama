@@ -116,7 +116,7 @@
     </message>
     <message>
         <source>Bookmark</source>
-        <translation>Lesezeichen</translation>
+        <translation>Merken</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1631,7 +1631,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <name>TutorialMenu</name>
     <message>
         <source>Bookmark</source>
-        <translation>Lesezeichen</translation>
+        <translation>Merken</translation>
     </message>
     <message>
         <source>Share</source>
