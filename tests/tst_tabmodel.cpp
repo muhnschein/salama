@@ -65,6 +65,7 @@ private slots:
     void mediaFollowsThePage();
     void mediaMetadataGoesWithWhatPlays();
     void startPageTabs();
+    void sharedLinksOpenInTheDefaultGroup();
 };
 
 namespace {
@@ -1730,6 +1731,32 @@ void tst_tabmodel::startPageTabs()
     QCOMPARE(model.closedTabs()->count(), 0);
     model.closeTabById(page);
     QCOMPARE(model.closedTabs()->count(), 1);
+}
+
+// A link shared from another application opens in a new tab in the default group, which
+// comes to the front with it, whichever group was being read
+// (docs/DECISIONS/0042-share-target.md).
+void tst_tabmodel::sharedLinksOpenInTheDefaultGroup()
+{
+    TabModel model(nullptr);
+    model.newTab(QStringLiteral("https://home.example/"));
+    const int work = model.addGroup(QStringLiteral("Work"));
+    model.newTab(QStringLiteral("https://work.example/"));
+    QCOMPARE(model.currentGroupId(), work);
+
+    const int shared = model.newTabInDefaultGroup(QStringLiteral("https://shared.example/"));
+    QVERIFY(shared > 0);
+    QCOMPARE(model.currentGroupId(), model.defaultGroupId());
+    QCOMPARE(model.activeTabId(), shared);
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://shared.example/"));
+    QCOMPARE(model.tabCountInGroup(model.defaultGroupId()), 2);
+    QCOMPARE(model.tabCountInGroup(work), 1);
+    QCOMPARE(groupTabIds(*model.groupTabs()).last(), shared);
+
+    // What another application would hand on, the group is left as it was.
+    model.setCurrentGroupId(work);
+    QCOMPARE(model.newTabInDefaultGroup(QStringLiteral("tel:+358401234567")), 0);
+    QCOMPARE(model.currentGroupId(), work);
 }
 
 QTEST_GUILESS_MAIN(tst_tabmodel)

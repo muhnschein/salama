@@ -138,6 +138,10 @@ public:
     // The tab opens in the current group. A tab with no url is on the start page, and
     // has no page until one is opened in it (docs/DECISIONS/0032-start-page.md).
     Q_INVOKABLE int newTab(const QString &url);
+    // The same, in the default group, which becomes the current one: where a link
+    // shared from another application opens, whatever group was being read
+    // (docs/DECISIONS/0042-share-target.md).
+    Q_INVOKABLE int newTabInDefaultGroup(const QString &url);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
     Q_INVOKABLE void closeTab(int index);

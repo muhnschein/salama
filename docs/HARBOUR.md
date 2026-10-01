@@ -63,6 +63,11 @@ None.
 | `Documents` | uploading a document through the platform picker |
 | `MediaIndexing` | the platform picker's Images, Videos, Music and Documents lists: they are Tracker queries, and without talking to `org.freedesktop.Tracker3.Miner.Files` they come up empty, leaving File system the only way to a file. Jolla's browser holds it for the same picker |
 
+`ExecDBus=harbour-salama` lets the system start the browser for the share sheet's call
+on the D-Bus name `io.github.muhnschein.salama` (`DECISIONS/0042-share-target.md`). The
+desktop file's one share method, `link`, takes `text/x-url` alone; the call is answered
+through `QtDBus`, whose library is on the validator's list.
+
 `OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
 data, cache and config directories; apart from downloads, nothing is stored anywhere
 else. Sharing needs no permission (part of the `Base` set), and neither do notifications:

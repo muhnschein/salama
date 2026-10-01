@@ -8,9 +8,9 @@
 // 0033-web-notifications.md), and last the way to the tutorial (0034-tutorial.md). Each
 // way in is its icon, its name, and under the name how the subject is set now, as
 // Jolla's Settings writes under each of its own; the page says at a glance how the
-// browser is set, and a tap changes it. The two settings that take a line are here too,
-// under the heading of what they change: the website colours, a choice of three, and the
-// screen cutout's switch.
+// browser is set, and a tap changes it. The settings that take a line are here too,
+// under the heading of what they change: the website colours and the notch guard, each
+// a choice of three, the fixed toolbar, and Privacy's Do not track and JavaScript.
 //
 // Every control writes its setting as it changes; nothing waits on a Save.
 import QtQuick 2.6
@@ -117,12 +117,14 @@ Page {
 
             // How pages are asked to colour themselves: one choice of three, made where it
             // is, as Silica makes one (docs/DECISIONS/0035-website-colours.md). The index
-            // is the stored value. The icon is sailfish-browser's for its own colour
-            // scheme (apps/browser/qml/pages/SettingsPage.qml).
+            // is the stored value. Label, description and icon are sailfish-browser's for
+            // its own colour scheme (apps/browser/qml/pages/SettingsPage.qml), which says
+            // what the choice is for better than a name alone.
             SettingsComboBox {
                 objectName: "websiteColorsCombo"
                 iconSource: "image://theme/icon-m-night"
-                label: qsTr("Website colours")
+                label: qsTr("Preferred color scheme")
+                description: qsTr("The website style to use when available")
                 currentIndex: Settings.websiteColors
                 menu: ContextMenu {
                     MenuItem {
@@ -140,16 +142,40 @@ Page {
                 onCurrentIndexChanged: Settings.websiteColors = currentIndex
             }
 
-            // How pages and the grid sit on the screen, so under Appearance, last: a
-            // switch rather than a page, whose name says what it does
-            // (docs/DECISIONS/0013-screen-cutout.md). The icon is sailfish-browser's for
-            // its notch guard (apps/browser/qml/pages/SettingsPage.qml).
-            SettingsSwitch {
-                objectName: "cutoutGuardSwitch"
+            // How pages sit around the screen's cutout: sailfish-browser's notch guard,
+            // its three modes, its words and its icon (docs/DECISIONS/0013-screen-cutout.md).
+            SettingsComboBox {
+                objectName: "notchGuardCombo"
                 iconSource: "image://theme/icon-m-display"
-                text: qsTr("Avoid the screen cutout")
-                checked: Settings.cutoutGuard
-                onCheckedChanged: Settings.cutoutGuard = checked
+                label: qsTr("Notch guard")
+                description: qsTr("Keeps website content away from the screen notch. Automatic "
+                                  + "lets adapted websites use the notch area while keeping "
+                                  + "content clear.")
+                currentIndex: Settings.notchGuard
+                menu: ContextMenu {
+                    MenuItem {
+                        text: settingsPage.names.notchGuard(Settings.NotchGuardAutomatic)
+                    }
+
+                    MenuItem {
+                        text: settingsPage.names.notchGuard(Settings.NotchGuardForced)
+                    }
+
+                    MenuItem {
+                        text: settingsPage.names.notchGuard(Settings.NotchGuardDisabled)
+                    }
+                }
+                onCurrentIndexChanged: Settings.notchGuard = currentIndex
+            }
+
+            // Whether the bar stays whole while a page is scrolled: sailfish-browser's
+            // Fixed toolbar, in its words (docs/DECISIONS/0009-navigation-bar-gesture.md).
+            SettingsSwitch {
+                objectName: "fixedToolbarSwitch"
+                text: qsTr("Fixed toolbar")
+                description: qsTr("Always show the bottom toolbar")
+                checked: Settings.fixedToolbar
+                onCheckedChanged: Settings.fixedToolbar = checked
             }
 
             SectionHeader {
@@ -166,6 +192,26 @@ Page {
                 text: qsTr("Tracking protection")
                 value: settingsPage.names.trackingProtection(PrivacySettings.trackingProtection)
                 onClicked: settingsPage.open("TrackingSettingsPage.qml")
+            }
+
+            // sailfish-browser's two switches under its Privacy, in its words: what a
+            // site is told, and whether it may run scripts at all
+            // (apps/browser/qml/pages/SettingsPage.qml).
+            SettingsSwitch {
+                objectName: "doNotTrackSwitch"
+                text: qsTr("Do not track")
+                description: qsTr("Tell sites that I do not want to be tracked")
+                checked: PrivacySettings.doNotTrack
+                onCheckedChanged: PrivacySettings.doNotTrack = checked
+            }
+
+            SettingsSwitch {
+                objectName: "javascriptSwitch"
+                text: qsTr("Enable JavaScript")
+                description: checked ? qsTr("Allowed (recommended)")
+                                     : qsTr("Blocked, some sites may not work correctly")
+                checked: PrivacySettings.javascript
+                onCheckedChanged: PrivacySettings.javascript = checked
             }
 
             // Firefox keeps the sites allowed to send notifications with the other

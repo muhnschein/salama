@@ -1,5 +1,7 @@
 # 0035 — Website colours: pages are dark or light as the ambience is, or as chosen
 
+*Now labelled in sailfish-browser's words, Preferred color scheme and Match ambience: see 0044.*
+
 ## Context
 Pages can draw themselves for a dark screen or a light one: a style sheet's
 `prefers-color-scheme` media query reads which the system uses, and more sites answer it

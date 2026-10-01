@@ -51,9 +51,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   engine, the sources the address bar suggests from, and the address-bar heuristics;
   `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
   quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
-  notification requests; `StartPageSettings` -- what the start page shows; and
-  `Settings` -- the website colours, the screen cutout and whether the tutorial has been
-  shown.
+  notification requests, Do not track and JavaScript; `StartPageSettings` -- what the
+  start page shows; and `Settings` -- the website colours, the notch guard, the fixed
+  toolbar and whether the tutorial has been shown.
 - `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
@@ -82,6 +82,9 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   (`DECISIONS/0033-web-notifications.md`).
 
 `registerQmlTypes()` exposes each as a QML singleton under `harbour.salama 1.0`.
+- `ShareReceiver` — a link shared to the browser from another application's share sheet:
+  the share sheet's D-Bus call, answered and read, and the address passed to the window,
+  which opens it in a new tab in the default group (`DECISIONS/0042-share-target.md`).
 
 ## Data flow
 

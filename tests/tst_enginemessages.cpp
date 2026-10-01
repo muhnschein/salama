@@ -65,6 +65,9 @@ private slots:
     void trackingProtectionFeatures();
     void websiteColors_data();
     void websiteColors();
+    void coversCutout_data();
+    void coversCutout();
+    void contentPreferences();
 };
 
 void tst_enginemessages::constants()
@@ -83,6 +86,9 @@ void tst_enginemessages::constants()
     QVERIFY(messages.themeColorScript().contains(QStringLiteral("theme-color")));
     QVERIFY(messages.themeColorScript().contains(QStringLiteral("return ")));
     QVERIFY(!messages.themeColorScript().contains(QStringLiteral("function")));
+    QVERIFY(messages.viewportScript().contains(QStringLiteral("viewport")));
+    QVERIFY(messages.viewportScript().contains(QStringLiteral("return ")));
+    QVERIFY(!messages.viewportScript().contains(QStringLiteral("function")));
     // Find in page: what embedhelper.js listens for, and what it answers on.
     QCOMPARE(messages.findMessage(), QStringLiteral("embedui:find"));
     QCOMPARE(messages.findResultMessage(), QStringLiteral("embed:find"));
@@ -413,6 +419,49 @@ void tst_enginemessages::websiteColors()
              QStringLiteral("ui.systemUsesDarkTheme"));
     QCOMPARE(preference.value(QStringLiteral("value")).type(), QVariant::Int);
     QCOMPARE(preference.value(QStringLiteral("value")).toInt(), dark);
+}
+
+void tst_enginemessages::coversCutout_data()
+{
+    QTest::addColumn<QString>("viewport");
+    QTest::addColumn<bool>("covers");
+
+    QTest::newRow("nothing said") << QString() << false;
+    QTest::newRow("no fit") << QStringLiteral("width=device-width, initial-scale=1") << false;
+    QTest::newRow("cover") << QStringLiteral("width=device-width, viewport-fit=cover") << true;
+    QTest::newRow("cover first") << QStringLiteral("viewport-fit=cover,width=device-width") << true;
+    QTest::newRow("spaced, any case")
+        << QStringLiteral("width=device-width ,  Viewport-Fit = COVER ") << true;
+    QTest::newRow("semicolons") << QStringLiteral("width=device-width; viewport-fit=cover;")
+                                << true;
+    QTest::newRow("contain") << QStringLiteral("viewport-fit=contain") << false;
+    QTest::newRow("auto") << QStringLiteral("viewport-fit=auto") << false;
+    // Not another setting that merely ends in the words.
+    QTest::newRow("covered") << QStringLiteral("viewport-fit=covered") << false;
+    QTest::newRow("prefixed") << QStringLiteral("x-viewport-fit=cover") << false;
+}
+
+void tst_enginemessages::coversCutout()
+{
+    QFETCH(QString, viewport);
+    QFETCH(bool, covers);
+    QCOMPARE(EngineMessages::coversCutout(viewport), covers);
+}
+
+// Do not track and JavaScript, as the preferences sailfish-browser's switches write.
+void tst_enginemessages::contentPreferences()
+{
+    const QVariantList on = EngineMessages::contentPreferences(true, false);
+    QCOMPARE(on.count(), 2);
+    QCOMPARE(on.at(0).toMap().value(QStringLiteral("name")).toString(),
+             QStringLiteral("privacy.donottrackheader.enabled"));
+    QCOMPARE(on.at(0).toMap().value(QStringLiteral("value")), QVariant(true));
+    QCOMPARE(on.at(1).toMap().value(QStringLiteral("name")).toString(),
+             QStringLiteral("javascript.enabled"));
+    QCOMPARE(on.at(1).toMap().value(QStringLiteral("value")), QVariant(false));
+    const QVariantList off = EngineMessages::contentPreferences(false, true);
+    QCOMPARE(off.at(0).toMap().value(QStringLiteral("value")), QVariant(false));
+    QCOMPARE(off.at(1).toMap().value(QStringLiteral("value")), QVariant(true));
 }
 
 QTEST_GUILESS_MAIN(tst_enginemessages)

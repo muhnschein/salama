@@ -135,6 +135,11 @@ QObject *notificationPermissionsProvider(QQmlEngine * /*engine*/, QJSEngine * /*
     return keepOwnership(registeredCore()->notificationPermissions());
 }
 
+QObject *shareReceiverProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->shareReceiver());
+}
+
 QObject *webNotificationsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->webNotifications());
@@ -181,6 +186,8 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<StartPage>(ModuleUri, 1, 0, "StartPage", &startPageProvider);
     qmlRegisterSingletonType<NotificationPermissions>(ModuleUri, 1, 0, "NotificationPermissions",
                                                       &notificationPermissionsProvider);
+    qmlRegisterSingletonType<ShareReceiver>(ModuleUri, 1, 0, "ShareReceiver",
+                                            &shareReceiverProvider);
     qmlRegisterSingletonType<WebNotifications>(ModuleUri, 1, 0, "WebNotifications",
                                                &webNotificationsProvider);
     // The start page's lists, reached as its properties and never made in QML.

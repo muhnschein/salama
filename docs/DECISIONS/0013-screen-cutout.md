@@ -1,5 +1,7 @@
 # 0013 — The display's cutout is kept clear, and that can be turned off
 
+*The switch became sailfish-browser's three notch guard modes: see 0043.*
+
 ## Context
 Recent Sailfish devices have a camera cutout at the top of the screen. salama draws to the
 whole screen, so the cutout sat over whatever was underneath it: on device it took a bite

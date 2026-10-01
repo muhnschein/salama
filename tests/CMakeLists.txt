@@ -54,6 +54,7 @@ foreach(test
     tst_pageactivity
     tst_pagemedia
     tst_webnotifications
+    tst_sharereceiver
     tst_reader
     tst_startpage
     tst_core

@@ -23,6 +23,7 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString heapMinimizePayload READ heapMinimizePayload CONSTANT)
     Q_PROPERTY(QString faviconScript READ faviconScript CONSTANT)
     Q_PROPERTY(QString themeColorScript READ themeColorScript CONSTANT)
+    Q_PROPERTY(QString viewportScript READ viewportScript CONSTANT)
     Q_PROPERTY(QString findMessage READ findMessage CONSTANT)
     Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
 
@@ -70,6 +71,17 @@ public:
     // is behind it, which is the one thing a page's own colour must not do.
     Q_INVOKABLE static QString themeColor(const QString &value);
 
+    // Script for WebView.runJavaScript(); answers what the page's viewport meta tag
+    // says, or an empty string. Asked for the reason the theme colour is: the
+    // viewport-fit sailfish-browser reads comes to its own web page item, not to the
+    // WebView Harbour allows (docs/DECISIONS/0013-screen-cutout.md).
+    QString viewportScript() const;
+
+    // Whether that answer asks for the whole screen, cutout and all: viewport-fit=cover
+    // among its comma- or semicolon-separated settings, as CSS Round Display writes it,
+    // in any case and with any spacing.
+    Q_INVOKABLE static bool coversCutout(const QString &viewport);
+
     // Find in page, the way sailfish-browser does it: findMessage goes to the page
     // with WebView.sendAsyncMessage (apps/browser/qml/pages/components/ToolBar.qml),
     // and the page answers on findResultMessage, which is heard only once registered
@@ -111,6 +123,13 @@ public:
     // dark and 0 light. Automatic is dark on a dark ambience; a choice out of range is
     // Automatic (docs/DECISIONS/0035-website-colours.md).
     Q_INVOKABLE static QVariantList websiteColorPreferences(int colors, bool darkAmbience);
+
+    // What the engine is told for the Privacy switches Do not track and Enable
+    // JavaScript, in the same {name, value} form: the preferences sailfish-browser's
+    // WebEngineSettings.doNotTrack and javascriptEnabled write
+    // (qtmozembed qmozenginesettings.cpp), privacy.donottrackheader.enabled and
+    // javascript.enabled.
+    Q_INVOKABLE static QVariantList contentPreferences(bool doNotTrack, bool javascript);
 };
 
 } // namespace Salama

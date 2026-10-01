@@ -16,11 +16,24 @@ QtObject {
 
     function websiteColors(colors) {
         return [
-            //: Pages are drawn light or dark as the ambience is
-            qsTr("Automatic"),
+            //: Pages are drawn light or dark as the ambience is: sailfish-browser's words
+            qsTr("Match ambience"),
             qsTr("Light"),
             qsTr("Dark")
         ][colors] || ""
+    }
+
+    // sailfish-browser's notch guard modes and its words for them, in the order of
+    // Settings.NotchGuard.
+    function notchGuard(guard) {
+        return [
+            //: Notch guard mode that lets adapted websites use the notch area
+            qsTr("Automatic"),
+            //: Notch guard mode that always keeps website content away from the notch
+            qsTr("Forced"),
+            //: Notch guard mode that lets every website use the notch area
+            qsTr("Disabled")
+        ][guard] || ""
     }
 
     function readerColors(colors) {

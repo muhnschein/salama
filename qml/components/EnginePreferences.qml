@@ -2,8 +2,9 @@
 // Copyright (c) 2026 salama contributors
 //
 // What the settings ask of the engine through its preferences: the tracking protection
-// level (docs/DECISIONS/0023-tracking-protection.md) and the colours pages are asked to
-// draw themselves in (0035-website-colours.md). Given as the browsing page is made, which
+// level (docs/DECISIONS/0023-tracking-protection.md), the colours pages are asked to
+// draw themselves in (0035-website-colours.md), and Privacy's Do not track and
+// JavaScript switches. Given as the browsing page is made, which
 // the engine keeps until it is up, and again whenever a setting changes -- or, for pages
 // drawn as the ambience is, the ambience.
 //
@@ -33,6 +34,11 @@ QtObject {
         give(EngineMessages.trackingProtectionPreferences(PrivacySettings.trackingProtection))
     }
 
+    function applyContent() {
+        give(EngineMessages.contentPreferences(PrivacySettings.doNotTrack,
+                                               PrivacySettings.javascript))
+    }
+
     function applyWebsiteColors() {
         var list = EngineMessages.websiteColorPreferences(Settings.websiteColors, darkAmbience)
         if (givenColors !== list[0].value) {
@@ -46,6 +52,8 @@ QtObject {
     property Connections privacy: Connections {
         target: PrivacySettings
         onTrackingProtectionChanged: preferences.applyTrackingProtection()
+        onDoNotTrackChanged: preferences.applyContent()
+        onJavascriptChanged: preferences.applyContent()
     }
 
     property Connections general: Connections {
@@ -56,5 +64,6 @@ QtObject {
     Component.onCompleted: {
         applyTrackingProtection()
         applyWebsiteColors()
+        applyContent()
     }
 }

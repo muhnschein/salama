@@ -134,6 +134,20 @@ QString EngineMessages::themeColorScript() const
                           " return meta && meta.content ? String(meta.content) : '';");
 }
 
+QString EngineMessages::viewportScript() const
+{
+    return QStringLiteral(" var meta = document.querySelector('meta[name=\"viewport\"]');"
+                          " return meta && meta.content ? String(meta.content) : '';");
+}
+
+bool EngineMessages::coversCutout(const QString &viewport)
+{
+    const QRegularExpression cover(
+        QStringLiteral("(^|[,;])\\s*viewport-fit\\s*=\\s*cover\\s*($|[,;])"),
+        QRegularExpression::CaseInsensitiveOption);
+    return cover.match(viewport).hasMatch();
+}
+
 QString EngineMessages::themeColor(const QString &value)
 {
     const QString text = value.trimmed();
@@ -253,6 +267,15 @@ QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbien
         {QStringLiteral("name"), QStringLiteral("ui.systemUsesDarkTheme")},
         {QStringLiteral("value"), dark ? 1 : 0},
     }};
+}
+
+QVariantList EngineMessages::contentPreferences(bool doNotTrack, bool javascript)
+{
+    return {
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("privacy.donottrackheader.enabled")},
+                    {QStringLiteral("value"), doNotTrack}},
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("javascript.enabled")},
+                    {QStringLiteral("value"), javascript}}};
 }
 
 } // namespace Salama

@@ -486,6 +486,10 @@ void tst_qmlload::rootWindowLoads()
         takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
                       .first()
                       .toMap()));
+    // Do not track off and JavaScript on, as sailfish-browser starts.
+    for (const QVariant &content : EngineMessages::contentPreferences(false, true)) {
+        QVERIFY(takeGiven(content.toMap()));
+    }
     const QVariantList standard =
         EngineMessages::trackingProtectionPreferences(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(given.count(), standard.count());
@@ -566,6 +570,13 @@ void tst_qmlload::startPage()
     QCOMPARE(m_core->history()->count(), 1);
     QVERIFY(bar->property("canGoBack").toBool());
     QVERIFY(find(QStringLiteral("reloadButton"))->property("opacity").toReal() == 1);
+    // Stop, while the page loads, is sailfish-browser's plain cross, not a cross on a disc.
+    view->setProperty("loading", true);
+    QCOMPARE(find(QStringLiteral("reloadButton"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-reset")));
+    view->setProperty("loading", false);
+    QCOMPARE(find(QStringLiteral("reloadButton"))->property("source").toUrl(),
+             QUrl(QStringLiteral("image://theme/icon-m-refresh")));
 
     // Further on in the page, back is the page's; from its first page, the start page.
     view->setProperty("canGoBack", true);
@@ -1525,6 +1536,22 @@ void tst_qmlload::faviconResolvedAfterLoad()
     QCOMPARE(webView->property("pageThemeColor").toString(), QStringLiteral("#123456"));
     QCOMPARE(find(QStringLiteral("cutoutBand"))->property("color").value<QColor>(),
              QColor(QStringLiteral("#123456")));
+
+    // And whether it asked for the whole screen, cutout and all, which Automatic gives
+    // it; a page that says nothing of it is kept below the cutout.
+    QVERIFY(webView->property("scripts").toStringList().contains(
+        m_core->engineMessages()->viewportScript()));
+    QObject *viewport = webView->property("viewport").value<QObject *>();
+    QVERIFY(viewport != nullptr);
+    QVERIFY(!viewport->property("coversCutout").toBool());
+    webView->setProperty("scriptResult", QStringLiteral("width=device-width, viewport-fit=cover"));
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QVERIFY(viewport->property("coversCutout").toBool());
+    QCOMPARE(find(QStringLiteral("browserPage"))->property("pageCutoutInset").toReal(), qreal(0));
+    webView->setProperty("loading", true);
+    QVERIFY(!viewport->property("coversCutout").toBool());
+    webView->setProperty("loading", false);
 
     webView->setProperty("scriptFails", true);
     webView->setProperty("loading", true);
@@ -4581,9 +4608,12 @@ void tst_qmlload::settingsPage()
         QStringLiteral("readerSettingsEntry"),
         QStringLiteral("coverSettingsEntry"),
         QStringLiteral("websiteColorsCombo"),
-        QStringLiteral("cutoutGuardSwitch"),
+        QStringLiteral("notchGuardCombo"),
+        QStringLiteral("fixedToolbarSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("trackingSettingsEntry"),
+        QStringLiteral("doNotTrackSwitch"),
+        QStringLiteral("javascriptSwitch"),
         QStringLiteral("notificationSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
         QStringLiteral("#Help"),
@@ -4658,7 +4688,7 @@ void tst_qmlload::settingsPage()
     const QList<InPlace> inPlace{
         {QStringLiteral("websiteColorsCombo"), QStringLiteral("settingsComboBoxIcon"),
          QStringLiteral("icon-m-night")},
-        {QStringLiteral("cutoutGuardSwitch"), QStringLiteral("settingsSwitchIcon"),
+        {QStringLiteral("notchGuardCombo"), QStringLiteral("settingsComboBoxIcon"),
          QStringLiteral("icon-m-display")},
     };
     for (const InPlace &setting : inPlace) {
@@ -4673,6 +4703,23 @@ void tst_qmlload::settingsPage()
         control->setProperty("highlighted", true);
         QVERIFY(icon->property("highlighted").toBool());
         control->setProperty("highlighted", false);
+    }
+
+    // A row has an icon or a switch, never both: each switch's light stands centred on
+    // the column of icons, where sailfish-browser centres its own.
+    const qreal switchMargin =
+        evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
+                                      " + Math.round((Theme.iconSizeMedium"
+                                      " - Theme.itemSizeExtraSmall) / 2)"))
+            .toReal();
+    for (const QString &name :
+         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("doNotTrackSwitch"),
+          QStringLiteral("javascriptSwitch")}) {
+        QObject *control = find(name);
+        QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
+                 qPrintable(name));
+        QCOMPARE(control->property("leftMargin").toReal(), switchMargin);
+        QVERIFY2(!control->property("description").toString().isEmpty(), qPrintable(name));
     }
 
     // Lit while it is pressed, as Silica's rows are: the name in the highlight colour,
@@ -4764,17 +4811,88 @@ void tst_qmlload::settingsPage()
     colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 
-    // The cutout guard is on until it is turned off here, and the page answers. Its name
-    // says what it does, and nothing under it says it again.
-    QObject *cutoutSwitch = find(QStringLiteral("cutoutGuardSwitch"));
-    QVERIFY(cutoutSwitch->property("description").toString().isEmpty());
-    QVERIFY(cutoutSwitch->property("checked").toBool());
-    cutoutSwitch->setProperty("checked", false);
+    // The colour scheme and the notch guard in sailfish-browser's words, which say what
+    // each is for.
+    QCOMPARE(colors->property("label").toString(), QStringLiteral("Preferred color scheme"));
+    QCOMPARE(colors->property("description").toString(),
+             QStringLiteral("The website style to use when available"));
+    QCOMPARE(evaluate(page, QStringLiteral("names.websiteColors(Settings.WebsiteColorsAutomatic)"))
+                 .toString(),
+             QStringLiteral("Match ambience"));
+
+    // The notch guard: Automatic until changed, and the browsing page answers each mode.
+    // Automatic keeps a page below the cutout unless it asked for the whole screen;
+    // Forced keeps every page below it; Disabled none. The grid's head row keeps out of
+    // it unless the guard is disabled (docs/DECISIONS/0013-screen-cutout.md).
+    QObject *guard = find(QStringLiteral("notchGuardCombo"));
+    QCOMPARE(guard->property("label").toString(), QStringLiteral("Notch guard"));
+    QVERIFY(guard->property("description")
+                .toString()
+                .startsWith(QStringLiteral("Keeps website content away from the screen notch.")));
+    QCOMPARE(guard->property("currentIndex").toInt(), int(Settings::NotchGuardAutomatic));
+    QObject *browser = find(QStringLiteral("browserPage"));
+    QObject *webView = currentWebView();
+    const qreal cutout = browser->property("cutoutHeight").toReal();
+    QVERIFY(cutout > 0);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    QObject *viewport = webView->property("viewport").value<QObject *>();
+    viewport->setProperty("coversCutout", true);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    // Such a page is told where the cutout is, through the platform's safe area, which
+    // a page kept below it is not.
+    QVERIFY(webView->property("safeAreaTop").toReal() > 0);
+    QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), cutout);
+    guard->setProperty("currentIndex", int(Settings::NotchGuardForced));
+    QCOMPARE(m_core->settings()->notchGuard(), int(Settings::NotchGuardForced));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    QCOMPARE(webView->property("safeAreaTop").toReal(), qreal(0));
+    guard->setProperty("currentIndex", int(Settings::NotchGuardDisabled));
     QVERIFY(!m_core->settings()->cutoutGuard());
-    QCOMPARE(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("cutoutInset").toReal(), qreal(0));
     QCOMPARE(find(QStringLiteral("tabsView"))->property("cutoutHeight").toReal(), qreal(0));
-    cutoutSwitch->setProperty("checked", true);
-    QVERIFY(find(QStringLiteral("browserPage"))->property("cutoutInset").toReal() > 0);
+    viewport->setProperty("coversCutout", false);
+    guard->setProperty("currentIndex", int(Settings::NotchGuardAutomatic));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+
+    // Fixed toolbar: the bar stays whole while a page is scrolled.
+    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
+    QVERIFY(!toolbar->property("checked").toBool());
+    toolbar->setProperty("checked", true);
+    QVERIFY(m_core->settings()->fixedToolbar());
+    webView->setProperty("chrome", false);
+    QVERIFY(!browser->property("barCompact").toBool());
+    toolbar->setProperty("checked", false);
+    QVERIFY(browser->property("barCompact").toBool());
+    webView->setProperty("chrome", true);
+
+    // Do not track and JavaScript reach the engine as they change, through the browsing
+    // page; JavaScript's line says what switching it off costs.
+    pageScope = find(QStringLiteral("viewArea"));
+    auto lastPreference = [&](const QString &name) {
+        const QVariantList given =
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = given.count() - 1; i >= 0; --i) {
+            if (given.at(i).toMap().value(QStringLiteral("key")).toString() == name) {
+                return given.at(i).toMap().value(QStringLiteral("value"));
+            }
+        }
+        return QVariant();
+    };
+    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
+    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(true));
+    QObject *doNotTrack = find(QStringLiteral("doNotTrackSwitch"));
+    doNotTrack->setProperty("checked", true);
+    QVERIFY(m_core->privacySettings()->doNotTrack());
+    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(true));
+    QObject *javascript = find(QStringLiteral("javascriptSwitch"));
+    QCOMPARE(javascript->property("description").toString(),
+             QStringLiteral("Allowed (recommended)"));
+    javascript->setProperty("checked", false);
+    QVERIFY(!m_core->privacySettings()->javascript());
+    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(false));
+    QCOMPARE(javascript->property("description").toString(),
+             QStringLiteral("Blocked, some sites may not work correctly"));
 }
 
 // Start page: what it shows, the sections or a blank page, both on the page at once and
@@ -5125,8 +5243,14 @@ void tst_qmlload::trackingSettingsPage()
              given + 2 * strict.count());
 
     // Tracking protection is all there is here: clearing has a page of its own.
+    // Under the levels, once, what none of them can promise.
     const QString choice = QStringLiteral("trackingProtectionChoice");
-    QCOMPARE(columnOf(levels.first()), (QStringList{choice, choice, choice}));
+    QCOMPARE(columnOf(levels.first()),
+             (QStringList{choice, choice, choice, QStringLiteral("trackingProtectionLimits")}));
+    QVERIFY(find(QStringLiteral("trackingProtectionLimits"))
+                ->property("text")
+                .toString()
+                .contains(QStringLiteral("some trackers may still get through")));
 }
 
 // History: whether pages are kept, and whether they go as the browser closes, each a

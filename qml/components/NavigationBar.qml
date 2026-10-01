@@ -295,6 +295,7 @@ Item {
         highlighted: gestureArea.pressedRegion === "menu"
     }
 
+    // Stop is a plain cross, as sailfish-browser's (docs/DECISIONS/0044).
     Icon {
         id: reloadIcon
 
@@ -308,7 +309,7 @@ Item {
         height: width
         opacity: navigationBar.expansion * (navigationBar.view ? 1.0 : Theme.opacityLow)
         visible: !navigationBar.editing && opacity > 0
-        source: navigationBar.loading ? "image://theme/icon-m-clear"
+        source: navigationBar.loading ? "image://theme/icon-m-reset"
                                       : "image://theme/icon-m-refresh"
         highlighted: gestureArea.pressedRegion === "reload"
     }

@@ -162,6 +162,11 @@ StartPage *Core::startPage()
     return &m_startPage;
 }
 
+ShareReceiver *Core::shareReceiver()
+{
+    return &m_shareReceiver;
+}
+
 NotificationPermissions *Core::notificationPermissions()
 {
     return &m_notificationPermissions;
