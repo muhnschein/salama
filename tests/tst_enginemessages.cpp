@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "engine/EngineMessages.h"
+#include "settings/DohSettings.h"
 #include "settings/PrivacySettings.h"
 #include "settings/Settings.h"
 #include "settings/SitePermissionSettings.h"
 
 #include <QtTest>
 
+using Salama::DohSettings;
 using Salama::EngineMessages;
 using Salama::PrivacySettings;
 using Salama::Settings;
@@ -25,6 +27,27 @@ QVariantMap trackingValues(int level, int cookies = SitePermissionSettings::Cook
                       preference.value(QStringLiteral("value")));
     }
     return values;
+}
+
+// A list of {name, value} as a map by name, and the names in their order.
+QVariantMap valuesOf(const QVariantList &list)
+{
+    QVariantMap values;
+    for (const QVariant &entry : list) {
+        const QVariantMap preference = entry.toMap();
+        values.insert(preference.value(QStringLiteral("name")).toString(),
+                      preference.value(QStringLiteral("value")));
+    }
+    return values;
+}
+
+QStringList namesOf(const QVariantList &list)
+{
+    QStringList names;
+    for (const QVariant &entry : list) {
+        names.append(entry.toMap().value(QStringLiteral("name")).toString());
+    }
+    return names;
 }
 
 QStringList trackingNames(int level)
@@ -79,6 +102,9 @@ private slots:
     void coversCutout_data();
     void coversCutout();
     void contentPreferences();
+    void httpsOnlyPreferences();
+    void dohPreferences_data();
+    void dohPreferences();
 };
 
 void tst_enginemessages::constants()
@@ -707,20 +733,85 @@ void tst_enginemessages::coversCutout()
     QCOMPARE(EngineMessages::coversCutout(viewport), covers);
 }
 
-// Do not track and JavaScript, as the preferences sailfish-browser's switches write.
+// Global Privacy Control and JavaScript. GPC is sent only while both of its preferences
+// are on, and Do not track, which it replaced, is switched off whatever GPC is.
 void tst_enginemessages::contentPreferences()
 {
+    const QStringList names{QStringLiteral("privacy.donottrackheader.enabled"),
+                            QStringLiteral("privacy.globalprivacycontrol.functionality.enabled"),
+                            QStringLiteral("privacy.globalprivacycontrol.enabled"),
+                            QStringLiteral("javascript.enabled")};
     const QVariantList on = EngineMessages::contentPreferences(true, false);
-    QCOMPARE(on.count(), 2);
-    QCOMPARE(on.at(0).toMap().value(QStringLiteral("name")).toString(),
-             QStringLiteral("privacy.donottrackheader.enabled"));
-    QCOMPARE(on.at(0).toMap().value(QStringLiteral("value")), QVariant(true));
-    QCOMPARE(on.at(1).toMap().value(QStringLiteral("name")).toString(),
-             QStringLiteral("javascript.enabled"));
-    QCOMPARE(on.at(1).toMap().value(QStringLiteral("value")), QVariant(false));
+    QCOMPARE(namesOf(on), names);
+    const QVariantMap onValues = valuesOf(on);
+    QCOMPARE(onValues.value(names.at(0)), QVariant(false));
+    QCOMPARE(onValues.value(names.at(1)), QVariant(true));
+    QCOMPARE(onValues.value(names.at(2)), QVariant(true));
+    QCOMPARE(onValues.value(names.at(3)), QVariant(false));
     const QVariantList off = EngineMessages::contentPreferences(false, true);
-    QCOMPARE(off.at(0).toMap().value(QStringLiteral("value")), QVariant(false));
-    QCOMPARE(off.at(1).toMap().value(QStringLiteral("value")), QVariant(true));
+    QCOMPARE(namesOf(off), names);
+    const QVariantMap offValues = valuesOf(off);
+    QCOMPARE(offValues.value(names.at(0)), QVariant(false));
+    QCOMPARE(offValues.value(names.at(1)), QVariant(true));
+    QCOMPARE(offValues.value(names.at(2)), QVariant(false));
+    QCOMPARE(offValues.value(names.at(3)), QVariant(true));
+    // Booleans, so the engine sets them as booleans.
+    for (const QVariant &value : onValues) {
+        QCOMPARE(value.userType(), int(QMetaType::Bool));
+    }
+}
+
+// HTTPS-Only Mode as switched, and HTTPS-First on either way, as in Firefox.
+void tst_enginemessages::httpsOnlyPreferences()
+{
+    const QStringList names{QStringLiteral("dom.security.https_only_mode"),
+                            QStringLiteral("dom.security.https_first")};
+    const QVariantList on = EngineMessages::httpsOnlyPreferences(true);
+    QCOMPARE(namesOf(on), names);
+    QCOMPARE(valuesOf(on).value(names.at(0)), QVariant(true));
+    QCOMPARE(valuesOf(on).value(names.at(1)), QVariant(true));
+    const QVariantList off = EngineMessages::httpsOnlyPreferences(false);
+    QCOMPARE(namesOf(off), names);
+    QCOMPARE(valuesOf(off).value(names.at(0)), QVariant(false));
+    QCOMPARE(valuesOf(off).value(names.at(1)), QVariant(true));
+}
+
+// Each level as GeckoView's resolver mode for it, Off for anything else; the provider
+// and the exceptions given before the mode, so a level never starts on the last
+// provider. The mode is a number and the rest text, as the engine keeps them.
+void tst_enginemessages::dohPreferences_data()
+{
+    QTest::addColumn<int>("protection");
+    QTest::addColumn<int>("mode");
+    QTest::newRow("off") << int(DohSettings::ProtectionOff) << 5;
+    QTest::newRow("increased") << int(DohSettings::ProtectionIncreased) << 2;
+    QTest::newRow("max") << int(DohSettings::ProtectionMax) << 3;
+    QTest::newRow("out of range") << 9 << 5;
+    QTest::newRow("negative") << -1 << 5;
+}
+
+void tst_enginemessages::dohPreferences()
+{
+    QFETCH(int, protection);
+    QFETCH(int, mode);
+    const QString provider = QStringLiteral("https://dns.example.org/dns-query");
+    const QVariantList list = EngineMessages::dohPreferences(
+        protection, provider,
+        {QStringLiteral("intranet.example.com"), QStringLiteral("router.local")});
+    QCOMPARE(namesOf(list), (QStringList{QStringLiteral("network.trr.uri"),
+                                         QStringLiteral("network.trr.excluded-domains"),
+                                         QStringLiteral("network.trr.mode")}));
+    const QVariantMap values = valuesOf(list);
+    QCOMPARE(values.value(QStringLiteral("network.trr.mode")), QVariant(mode));
+    QCOMPARE(values.value(QStringLiteral("network.trr.mode")).userType(), int(QMetaType::Int));
+    QCOMPARE(values.value(QStringLiteral("network.trr.uri")), QVariant(provider));
+    QCOMPARE(values.value(QStringLiteral("network.trr.excluded-domains")),
+             QVariant(QStringLiteral("intranet.example.com,router.local")));
+    QCOMPARE(values.value(QStringLiteral("network.trr.excluded-domains")).userType(),
+             int(QMetaType::QString));
+    // No exceptions is an empty list, which clears any the engine kept.
+    const QVariantMap none = valuesOf(EngineMessages::dohPreferences(protection, provider, {}));
+    QCOMPARE(none.value(QStringLiteral("network.trr.excluded-domains")), QVariant(QString()));
 }
 
 QTEST_GUILESS_MAIN(tst_enginemessages)

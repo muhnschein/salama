@@ -30,6 +30,8 @@ struct Message
 {
     QString context;
     QString source;
+    // The disambiguation qsTr() was given, which tells apart one source said twice.
+    QString comment;
     bool unfinished = false;
     QStringList forms; // one, or one per plural form
 };
@@ -66,9 +68,11 @@ Catalog readCatalog(const QString &path)
         } else if (name == QLatin1String("name")) {
             context = xml.readElementText();
         } else if (name == QLatin1String("message")) {
-            message = Message{context, {}, false, {}};
+            message = Message{context, {}, {}, false, {}};
         } else if (name == QLatin1String("source")) {
             message.source = xml.readElementText();
+        } else if (name == QLatin1String("comment")) {
+            message.comment = xml.readElementText();
         } else if (name == QLatin1String("translation")) {
             message.unfinished =
                 xml.attributes().value(QStringLiteral("type")) == QLatin1String("unfinished");
@@ -95,7 +99,8 @@ QSet<QString> keys(const Catalog &catalog)
 {
     QSet<QString> out;
     for (const Message &message : catalog.messages) {
-        out.insert(message.context + QLatin1Char('|') + message.source);
+        out.insert(message.context + QLatin1Char('|') + message.source + QLatin1Char('|') +
+                   message.comment);
     }
     return out;
 }
@@ -264,8 +269,10 @@ void tst_translations::readersLanguageIsInstalled()
         if (message.forms.size() > 1 || message.source.contains(QLatin1String("%n"))) {
             continue;
         }
+        const QByteArray comment = message.comment.toUtf8();
         QCOMPARE(QCoreApplication::translate(message.context.toUtf8().constData(),
-                                             message.source.toUtf8().constData()),
+                                             message.source.toUtf8().constData(),
+                                             comment.isEmpty() ? nullptr : comment.constData()),
                  message.forms.first());
     }
 }

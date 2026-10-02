@@ -44,6 +44,7 @@
 using Salama::BookmarkModel;
 using Salama::Core;
 using Salama::CoverSettings;
+using Salama::DohSettings;
 using Salama::EngineMessages;
 using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
@@ -229,6 +230,10 @@ private slots:
     void searchEnginesRemove();
     void readerSettingsPage();
     void trackingSettingsPage();
+    void httpsOnlySettingsPage();
+    void dohSettingsPage();
+    void dohProviderDialog();
+    void dohExceptionsPage();
     void historySettingsPage();
     void clearDataDialog();
     void coverSettingsPage();
@@ -583,9 +588,17 @@ void tst_qmlload::rootWindowLoads()
         takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
                       .first()
                       .toMap()));
-    // Do not track off and JavaScript on, as sailfish-browser starts.
+    // Global Privacy Control off and JavaScript on; HTTPS-Only Mode and DNS over HTTPS
+    // off (docs/DECISIONS/0047-secure-connections.md).
     for (const QVariant &content : EngineMessages::contentPreferences(false, true)) {
         QVERIFY(takeGiven(content.toMap()));
+    }
+    for (const QVariant &https : EngineMessages::httpsOnlyPreferences(false)) {
+        QVERIFY(takeGiven(https.toMap()));
+    }
+    for (const QVariant &doh : EngineMessages::dohPreferences(DohSettings::ProtectionOff,
+                                                              DohSettings::defaultProvider(), {})) {
+        QVERIFY(takeGiven(doh.toMap()));
     }
     // And the defaults of Site permissions: pop-ups blocked, the rest asked.
     for (const QVariant &preference :
@@ -5452,8 +5465,10 @@ void tst_qmlload::settingsPage()
         QStringLiteral("notchGuardCombo"),
         QStringLiteral("fixedToolbarSwitch"),
         QStringLiteral("#Privacy"),
+        QStringLiteral("httpsOnlySettingsEntry"),
+        QStringLiteral("dohSettingsEntry"),
         QStringLiteral("trackingSettingsEntry"),
-        QStringLiteral("doNotTrackSwitch"),
+        QStringLiteral("globalPrivacyControlSwitch"),
         QStringLiteral("javascriptSwitch"),
         QStringLiteral("sitePermissionsSettingsEntry"),
         QStringLiteral("historySettingsEntry"),
@@ -5482,6 +5497,10 @@ void tst_qmlload::settingsPage()
          QStringLiteral("readerSettingsPage"), QStringLiteral("Ambience · Sans serif · 100 %")},
         {QStringLiteral("coverSettingsEntry"), QStringLiteral("icon-m-tabs"),
          QStringLiteral("coverSettingsPage"), QStringLiteral("Search")},
+        {QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("icon-m-keys"),
+         QStringLiteral("httpsOnlySettingsPage"), QStringLiteral("Off")},
+        {QStringLiteral("dohSettingsEntry"), QStringLiteral("icon-m-browser"),
+         QStringLiteral("dohSettingsPage"), QStringLiteral("Off")},
         {QStringLiteral("trackingSettingsEntry"), QStringLiteral("icon-m-device-lock"),
          QStringLiteral("trackingSettingsPage"), QStringLiteral("Standard")},
         {QStringLiteral("sitePermissionsSettingsEntry"),
@@ -5650,7 +5669,7 @@ void tst_qmlload::sailfishBrowserSettings()
                                       " - Theme.itemSizeExtraSmall) / 2)"))
             .toReal();
     for (const QString &name :
-         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("doNotTrackSwitch"),
+         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("globalPrivacyControlSwitch"),
           QStringLiteral("javascriptSwitch")}) {
         QObject *control = find(name);
         QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
@@ -5714,8 +5733,10 @@ void tst_qmlload::sailfishBrowserSettings()
     QVERIFY(browser->property("barCompact").toBool());
     webView->setProperty("chrome", true);
 
-    // Do not track and JavaScript reach the engine as they change, through the browsing
-    // page; JavaScript's line says what switching it off costs.
+    // Global Privacy Control and JavaScript reach the engine as they change, through the
+    // browsing page; JavaScript's line says what switching it off costs. Do not track,
+    // which GPC took the place of, is told off whatever GPC is, and GPC's own
+    // preference that Gecko keeps off is told on.
     QObject *pageScope = find(QStringLiteral("viewArea"));
     auto lastPreference = [&](const QString &name) {
         const QVariantList given =
@@ -5728,11 +5749,22 @@ void tst_qmlload::sailfishBrowserSettings()
         return QVariant();
     };
     QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
+    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.enabled")),
+             QVariant(false));
+    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.functionality.enabled")),
+             QVariant(true));
     QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(true));
-    QObject *doNotTrack = find(QStringLiteral("doNotTrackSwitch"));
-    doNotTrack->setProperty("checked", true);
-    QVERIFY(m_core->privacySettings()->doNotTrack());
-    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(true));
+    QObject *gpc = find(QStringLiteral("globalPrivacyControlSwitch"));
+    QCOMPARE(gpc->property("text").toString(),
+             QStringLiteral("Tell websites not to share & sell data"));
+    QCOMPARE(gpc->property("description").toString(),
+             QStringLiteral("Global Privacy Control (GPC)"));
+    QVERIFY(!gpc->property("checked").toBool());
+    gpc->setProperty("checked", true);
+    QVERIFY(m_core->privacySettings()->globalPrivacyControl());
+    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.enabled")),
+             QVariant(true));
+    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
     QObject *javascript = find(QStringLiteral("javascriptSwitch"));
     QCOMPARE(javascript->property("description").toString(),
              QStringLiteral("Allowed (recommended)"));
@@ -6272,6 +6304,292 @@ void tst_qmlload::readerSettingsPage()
     m_core->readerSettings()->setColors(ReaderSettings::Ambience);
     QCOMPARE(fontOf(text).family(), QStringLiteral("serif"));
     QCOMPARE(fontOf(heading).family(), QStringLiteral("serif"));
+}
+
+// The value the browsing page last gave the engine for a preference, or nothing.
+QVariant lastPreferenceGiven(const QVariantList &given, const QString &name)
+{
+    for (int i = given.count() - 1; i >= 0; --i) {
+        if (given.at(i).toMap().value(QStringLiteral("key")).toString() == name) {
+            return given.at(i).toMap().value(QStringLiteral("value"));
+        }
+    }
+    return {};
+}
+
+// HTTPS-Only Mode: Firefox for Android's switch in its words, off to begin with; the
+// engine told at once, HTTPS-First on either way, and while it is off the line saying
+// connections may still be upgraded (docs/DECISIONS/0047-secure-connections.md).
+void tst_qmlload::httpsOnlySettingsPage()
+{
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    QObject *entry = find(QStringLiteral("httpsOnlySettingsEntry"));
+    QCOMPARE(entry->property("text").toString(), QStringLiteral("HTTPS-Only Mode"));
+    click(entry);
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("httpsOnlySettingsPage"));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    const auto last = [&](const char *name) {
+        return lastPreferenceGiven(
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList(),
+            QLatin1String(name));
+    };
+    QCOMPARE(last("dom.security.https_only_mode"), QVariant(false));
+    QCOMPARE(last("dom.security.https_first"), QVariant(true));
+
+    QObject *toggle = find(QStringLiteral("httpsOnlySwitch"));
+    QCOMPARE(toggle->property("text").toString(), QStringLiteral("HTTPS-Only Mode"));
+    QVERIFY(toggle->property("description")
+                .toString()
+                .startsWith(QStringLiteral("Automatically attempts to connect to sites using "
+                                           "HTTPS")));
+    QVERIFY(!toggle->property("checked").toBool());
+    QVERIFY(shownIn(page, "httpsFirstNote"));
+    QCOMPARE(textOf(page, "httpsFirstNote"),
+             QStringLiteral("Salama may still upgrade some connections"));
+
+    toggle->setProperty("checked", true);
+    QVERIFY(m_core->privacySettings()->httpsOnly());
+    QCOMPARE(last("dom.security.https_only_mode"), QVariant(true));
+    QCOMPARE(last("dom.security.https_first"), QVariant(true));
+    QVERIFY(!shownIn(page, "httpsFirstNote"));
+    popPage();
+    QCOMPARE(find(QStringLiteral("httpsOnlySettingsEntry"))->property("value").toString(),
+             QStringLiteral("On"));
+    m_core->privacySettings()->setHttpsOnly(false);
+    QCOMPARE(last("dom.security.https_only_mode"), QVariant(false));
+    QCOMPARE(find(QStringLiteral("httpsOnlySettingsEntry"))->property("value").toString(),
+             QStringLiteral("Off"));
+}
+
+// DNS over HTTPS: Firefox for Android's levels without Default, Off to begin with, each
+// in its words and the one set lit; a level reaches the engine at once as GeckoView's
+// resolver mode, after the provider and the exceptions. The provider is chosen only while
+// it is used, and the way in names the level.
+void tst_qmlload::dohSettingsPage()
+{
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("dohSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("dohSettingsPage"));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    const auto given = [&]() {
+        return evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
+    };
+    const auto last = [&](const char *name) {
+        return lastPreferenceGiven(given(), QLatin1String(name));
+    };
+    QCOMPARE(last("network.trr.mode"), QVariant(5));
+    QCOMPARE(last("network.trr.uri"), QVariant(DohSettings::defaultProvider()));
+    QCOMPARE(last("network.trr.excluded-domains"), QVariant(QString()));
+    QVERIFY(textOf(page, "dohSummary").startsWith(QStringLiteral("Domain Name System (DNS)")));
+
+    const QList<QObject *> levels = findAll(QStringLiteral("dohProtectionChoice"));
+    QCOMPARE(levels.count(), 3);
+    const QStringList names{QStringLiteral("Increased Protection"),
+                            QStringLiteral("Max Protection"), QStringLiteral("Off")};
+    const QList<int> stored{DohSettings::ProtectionIncreased, DohSettings::ProtectionMax,
+                            DohSettings::ProtectionOff};
+    QStringList descriptions;
+    for (int i = 0; i < levels.count(); ++i) {
+        QCOMPARE(levels.at(i)->property("text").toString(), names.at(i));
+        QVERIFY(!levels.at(i)->property("automaticCheck").toBool());
+        QCOMPARE(levels.at(i)->property("checked").toBool(),
+                 stored.at(i) == DohSettings::ProtectionOff);
+        const QString description = levels.at(i)->property("description").toString();
+        QVERIFY2(!description.isEmpty(), qPrintable(names.at(i)));
+        QVERIFY(!descriptions.contains(description));
+        descriptions.append(description);
+    }
+    QCOMPARE(descriptions.last(), QStringLiteral("Use your default DNS resolver"));
+    // No provider to choose while it is off.
+    QVERIFY(!shownIn(page, "dohProviderCombo"));
+
+    // Max: the engine never falls back; the provider is given before the mode.
+    const int before = given().count();
+    click(levels.at(1));
+    QCOMPARE(m_core->dohSettings()->protection(), int(DohSettings::ProtectionMax));
+    QVERIFY(levels.at(1)->property("checked").toBool());
+    QVERIFY(!levels.at(2)->property("checked").toBool());
+    const QVariantList after = given();
+    QCOMPARE(after.count(), before + 3);
+    QCOMPARE(after.at(before).toMap().value(QStringLiteral("key")).toString(),
+             QStringLiteral("network.trr.uri"));
+    QCOMPARE(after.last().toMap().value(QStringLiteral("key")).toString(),
+             QStringLiteral("network.trr.mode"));
+    QCOMPARE(last("network.trr.mode"), QVariant(3));
+    click(levels.at(0));
+    QCOMPARE(last("network.trr.mode"), QVariant(2));
+
+    // The provider: Firefox for Android's two, the default marked, and Custom.
+    QObject *provider = find(QStringLiteral("dohProviderCombo"));
+    QVERIFY(shownIn(page, "dohProviderCombo"));
+    QCOMPARE(provider->property("label").toString(), QStringLiteral("Choose provider"));
+    QCOMPARE(provider->property("currentIndex").toInt(), 0);
+    QCOMPARE(provider->property("description").toString(), QString());
+    const QList<QObject *> choices = findAll(QStringLiteral("dohProviderChoice"));
+    QCOMPARE(choices.count(), 3);
+    QCOMPARE(choices.at(0)->property("text").toString(), QStringLiteral("Cloudflare (default)"));
+    QCOMPARE(choices.at(1)->property("text").toString(), QStringLiteral("NextDNS"));
+    QCOMPARE(choices.at(2)->property("text").toString(), QStringLiteral("Custom"));
+    click(choices.at(1));
+    QCOMPARE(m_core->dohSettings()->provider(), QStringLiteral("https://firefox.dns.nextdns.io/"));
+    QCOMPARE(provider->property("currentIndex").toInt(), 1);
+    QCOMPARE(last("network.trr.uri"), QVariant(QStringLiteral("https://firefox.dns.nextdns.io/")));
+    click(choices.at(0));
+    QCOMPARE(m_core->dohSettings()->provider(), DohSettings::defaultProvider());
+
+    // Off again: the engine told 5, its own Off, which nothing else turns on.
+    click(levels.at(2));
+    QCOMPARE(last("network.trr.mode"), QVariant(5));
+    QVERIFY(!shownIn(page, "dohProviderCombo"));
+
+    // The exceptions are a way to a page of their own, with no icon on this page, and
+    // say how many there are.
+    QObject *exceptions = find(QStringLiteral("dohExceptionsEntry"));
+    QCOMPARE(exceptions->property("text").toString(), QStringLiteral("Exceptions"));
+    QCOMPARE(exceptions->property("value").toString(), QStringLiteral("None"));
+    QVERIFY(!findObjects(exceptions, QStringLiteral("settingsEntryIcon"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    m_core->dohSettings()->addException(QStringLiteral("router.local"));
+    QCOMPARE(exceptions->property("value").toString(), QStringLiteral("1 site(s)"));
+    QCOMPARE(last("network.trr.excluded-domains"), QVariant(QStringLiteral("router.local")));
+    m_core->dohSettings()->removeAllExceptions();
+    click(exceptions);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("dohExceptionsPage"));
+    popPage();
+
+    // The way in names the level.
+    m_core->dohSettings()->setProtection(DohSettings::ProtectionIncreased);
+    popPage();
+    QCOMPARE(find(QStringLiteral("dohSettingsEntry"))->property("value").toString(),
+             QStringLiteral("Increased Protection"));
+}
+
+// A provider of the reader's own: Firefox for Android's dialog and its two complaints; a
+// provider that is not one cannot be added, and the choice goes back to the one set when
+// the dialog is left either way.
+void tst_qmlload::dohProviderDialog()
+{
+    m_core->dohSettings()->setProtection(DohSettings::ProtectionIncreased);
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("dohSettingsEntry")));
+    QObject *page = currentPage();
+    QObject *provider = find(QStringLiteral("dohProviderCombo"));
+    const QList<QObject *> choices = findAll(QStringLiteral("dohProviderChoice"));
+
+    // Silica's combo box takes the item tapped as its choice before the dialog is up.
+    provider->setProperty("currentIndex", 2);
+    click(choices.at(2));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("dohProviderDialog"));
+    QObject *address = find(QStringLiteral("dohProviderAddress"));
+    QCOMPARE(address->property("text").toString(), QStringLiteral("https://"));
+    QCOMPARE(address->property("label").toString(), QStringLiteral("Provider"));
+    QVERIFY(!address->property("errorHighlight").toBool());
+    QVERIFY(!dialog->property("canAccept").toBool());
+    address->setProperty("text", QStringLiteral("http://dns.example.org/"));
+    QVERIFY(address->property("errorHighlight").toBool());
+    QCOMPARE(address->property("label").toString(),
+             QStringLiteral("URL must start with “https://”"));
+    QVERIFY(!dialog->property("canAccept").toBool());
+    address->setProperty("text", QStringLiteral("https:///dns-query"));
+    QCOMPARE(address->property("label").toString(), QStringLiteral("Invalid URL"));
+    QVERIFY(!dialog->property("canAccept").toBool());
+    // Left without one: the provider stays, and so does the choice.
+    QMetaObject::invokeMethod(dialog, "reject");
+    popPage();
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(m_core->dohSettings()->provider(), DohSettings::defaultProvider());
+    QCOMPARE(provider->property("currentIndex").toInt(), 0);
+
+    provider->setProperty("currentIndex", 2);
+    click(choices.at(2));
+    dialog = currentPage();
+    address = find(QStringLiteral("dohProviderAddress"));
+    address->setProperty("text", QStringLiteral("https://dns.example.org/dns-query"));
+    QVERIFY(!address->property("errorHighlight").toBool());
+    QVERIFY(dialog->property("canAccept").toBool());
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    QCOMPARE(m_core->dohSettings()->provider(),
+             QStringLiteral("https://dns.example.org/dns-query"));
+    QVERIFY(m_core->dohSettings()->customProvider());
+    QCOMPARE(provider->property("currentIndex").toInt(), 2);
+    QCOMPARE(provider->property("description").toString(),
+             QStringLiteral("https://dns.example.org/dns-query"));
+    QCOMPARE(lastPreferenceGiven(evaluate(find(QStringLiteral("viewArea")),
+                                          QStringLiteral("WebEngineSettings.preferences"))
+                                     .toList(),
+                                 QStringLiteral("network.trr.uri")),
+             QVariant(QStringLiteral("https://dns.example.org/dns-query")));
+    // The dialog opened again starts from the reader's own provider.
+    click(choices.at(2));
+    QCOMPARE(find(QStringLiteral("dohProviderAddress"))->property("text").toString(),
+             QStringLiteral("https://dns.example.org/dns-query"));
+    QMetaObject::invokeMethod(currentPage(), "reject");
+    popPage();
+    // A built-in provider chosen again is no longer the reader's own.
+    click(choices.at(0));
+    QCOMPARE(provider->property("currentIndex").toInt(), 0);
+    QCOMPARE(provider->property("description").toString(), QString());
+}
+
+// The exceptions: domains, each with a menu to remove it; the pull-down menu adds one in
+// Firefox for Android's dialog, or removes them all after a remorse.
+void tst_qmlload::dohExceptionsPage()
+{
+    DohSettings *doh = m_core->dohSettings();
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("dohSettingsEntry")));
+    click(find(QStringLiteral("dohExceptionsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("dohExceptionsPage"));
+    QCOMPARE(textOf(page, "dohExceptionsSummary"),
+             QStringLiteral("Salama won’t use secure DNS on these sites and their subdomains."));
+    QVERIFY(findAll(QStringLiteral("dohException")).isEmpty());
+    QVERIFY(!shownIn(page, "removeAllDohExceptionsMenuItem"));
+    QCOMPARE(textOf(page, "addDohExceptionMenuItem"), QStringLiteral("Add site"));
+
+    click(find(QStringLiteral("addDohExceptionMenuItem")));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("dohExceptionDialog"));
+    QObject *site = find(QStringLiteral("dohExceptionSite"));
+    QCOMPARE(site->property("placeholderText").toString(), QStringLiteral("example.com"));
+    QCOMPARE(site->property("label").toString(), QStringLiteral("Site"));
+    QVERIFY(!dialog->property("canAccept").toBool());
+    site->setProperty("text", QStringLiteral("not a domain"));
+    QVERIFY(site->property("errorHighlight").toBool());
+    QCOMPARE(site->property("label").toString(), QStringLiteral("Must be a valid domain"));
+    QVERIFY(!dialog->property("canAccept").toBool());
+    site->setProperty("text", QStringLiteral("https://Intranet.Example.com/wiki"));
+    QVERIFY(!site->property("errorHighlight").toBool());
+    QCOMPARE(dialog->property("domain").toString(), QStringLiteral("intranet.example.com"));
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    QCOMPARE(doh->exceptions(), QStringList{QStringLiteral("intranet.example.com")});
+    doh->addException(QStringLiteral("router.local"));
+
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("dohException")));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(textOf(rows.at(0), "dohExceptionDomain"), QStringLiteral("intranet.example.com"));
+    QCOMPARE(textOf(rows.at(1), "dohExceptionDomain"), QStringLiteral("router.local"));
+    QVERIFY(shownIn(page, "removeAllDohExceptionsMenuItem"));
+    QCOMPARE(textOf(rows.at(0), "dohExceptionRemove"), QStringLiteral("Remove"));
+    click(findObjects(rows.at(0), QStringLiteral("dohExceptionRemove")).first());
+    QCOMPARE(doh->exceptions(), QStringList{QStringLiteral("router.local")});
+    QCOMPARE(findAll(QStringLiteral("dohException")).count(), 1);
+
+    doh->addException(QStringLiteral("a.example"));
+    const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
+    click(find(QStringLiteral("removeAllDohExceptionsMenuItem")));
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupCount")).toInt(), remorses + 1);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Removing exceptions"));
+    QVERIFY(doh->exceptions().isEmpty());
+    QVERIFY(findAll(QStringLiteral("dohException")).isEmpty());
 }
 
 // Tracking protection: its three levels on the page at once, each saying what it does,

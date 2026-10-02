@@ -309,6 +309,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>儲存</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>必須是有效的網域</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>網站</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>例外網站</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama 不會對下列網站與子網域網站，使用安全 DNS 進行查詢。</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>新增網站</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>移除所有例外網站</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>正在移除例外網站</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>移除</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>沒有例外網站</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>自訂提供者</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>新增</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>提供者</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>網址必須以「https://」開頭</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>網址無效</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS Over HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>DNS over HTTPS 會將你的網域名稱查詢請求加密後傳送，使其他人更難得知你要開啟的網站，讓 DNS 查詢變得安全。</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>選擇提供者</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1（預設）</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>自訂</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>例外網站</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -546,6 +654,22 @@
         <translation>
             <numerusform>%1 個，分屬 %n 個群組</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>純 HTTPS 模式</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>自動嘗試使用加密的 HTTPS 協議連接到網站，以提升安全性。</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama 仍可能會將部分連接升級為 HTTPS 連接</translation>
     </message>
 </context>
 <context>
@@ -1107,6 +1231,57 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n 個網站設有例外</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>加強保護</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>最大保護</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>使用你系統預設的 DNS 解析器</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>只在無法使用安全 DNS 提供者時，使用你的預設 DNS 解析器</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>若無法使用安全 DNS，就不開啟網站或無法正常運作</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n 個網站</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>開啟</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>關閉</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>關閉</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>無</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1183,14 +1358,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>總是顯示底部工具列</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>不要追蹤</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>告訴網站我不想被追蹤</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>啟用 JavaScript</translation>
     </message>
@@ -1205,6 +1372,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>網站權限</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>純 HTTPS 模式</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS Over HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>告訴網站不要出售或分享我的資料</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

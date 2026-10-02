@@ -7,7 +7,8 @@
 // sailfish-browser's own for its Passwords and Clear browsing data rows
 // (apps/browser/qml/pages/SettingsPage.qml): a BackgroundItem a medium item tall, lit
 // while it is pressed, as Silica's rows are. A way in with no value, the tutorial's, is
-// its name alone, centred.
+// its name alone, centred; one with no icon, as on a subject's own page, starts its words
+// at the page's margin.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -35,15 +36,17 @@ BackgroundItem {
         }
         width: Theme.iconSizeMedium
         height: width
+        visible: entry.iconSource.length > 0
         source: entry.iconSource
         highlighted: entry.highlighted
     }
 
     Column {
         anchors {
-            left: icon.right
+            left: entry.iconSource.length > 0 ? icon.right : parent.left
             right: parent.right
-            leftMargin: Theme.paddingMedium
+            leftMargin: entry.iconSource.length > 0 ? Theme.paddingMedium
+                                                    : Theme.horizontalPageMargin
             rightMargin: Theme.horizontalPageMargin
             verticalCenter: parent.verticalCenter
         }

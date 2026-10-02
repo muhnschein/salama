@@ -12,6 +12,7 @@ SettingsSections::SettingsSections(const QString &filePath)
     , m_reader(m_file)
     , m_cover(m_file)
     , m_privacy(m_file)
+    , m_doh(m_file)
     , m_startPage(m_file)
     , m_sitePermissions(m_file)
 {
@@ -45,6 +46,11 @@ CoverSettings *SettingsSections::cover()
 PrivacySettings *SettingsSections::privacy()
 {
     return &m_privacy;
+}
+
+DohSettings *SettingsSections::doh()
+{
+    return &m_doh;
 }
 
 StartPageSettings *SettingsSections::startPage()

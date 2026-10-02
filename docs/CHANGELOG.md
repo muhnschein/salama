@@ -8,6 +8,9 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 ## [Unreleased]
 
 ### Added
+- Settings > Privacy > HTTPS-Only Mode: every page is loaded over HTTPS, and a site without it asks before it loads. Off, as by default, Salama still tries HTTPS first and falls back to HTTP, as Firefox does.
+- Settings > Privacy > DNS over HTTPS, as Firefox for Android has it: Increased Protection, Max Protection or Off, the default; Cloudflare, NextDNS or a provider of your own; and sites it is not used for.
+- Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, in place of Do not track, which Firefox has dropped. If you had Do not track on, this starts on.
 - Press and hold a link or a picture: a sheet like the menu's comes up, naming the link with a button to copy it, with New tab, Background tab, Share and Save link for a page, the app's own action for an email address, a phone number, a text message or a place, and Open image, Save image and Copy image link for a picture. Background tab leaves you where you are and says where the link went, with Show. Saved files keep their own names.
 - A preview of the page a link leads to, at the top of that sheet, as Safari has: tap it to open the link; Hide preview hides it for every link until Show preview.
 - A picture pressed and held is lifted out of the page above the sheet, as large as there is room for, and can be pinched closer.
@@ -16,7 +19,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - Search engines sites offer are collected while browsing and listed under Settings > Search > Found while browsing; a tap adds one and searches with it. Added engines say where they came from and can be removed one by one, or all at once from the pulley, which leaves the three built-in ones.
 - Salama is offered in the share sheet for links: a link shared from another app opens in a new tab in the "N tabs" group, in front, starting Salama if it is not running. Plain text is not offered to Salama.
 - Settings > Appearance > Fixed toolbar: the bar stays whole while a page is scrolled.
-- Settings > Privacy > Do not track, telling sites you do not want to be tracked, and Enable JavaScript, which says what switching it off costs.
+- Settings > Privacy > Enable JavaScript, which says what switching it off costs.
 - Settings > Tracking protection ends with two sentences on what the phone's web engine cannot do yet.
 - Downloads say how they are going on the page they were started from: a card just above the bar with the file's name and how much of how much has come, paused or failed; with several, how many and how far along together. When one arrives the card says so for a few seconds. A tap on it opens Downloads, and a swipe puts it away until something changes.
 - Downloads can be paused, resumed and retried, and one from before the app was last closed fetched again. A row's menu deletes the file with its row; the pulley clears the finished ones, and Clear list is gone.

@@ -6,8 +6,9 @@
 
 namespace Salama {
 
-// The pages under Privacy in Settings: tracking protection, what is kept of the
-// history, and whether sites may ask to send notifications.
+// The pages and switches under Privacy in Settings: HTTPS-Only Mode, tracking protection,
+// what sites are told, JavaScript, what is kept of the history, and whether sites may ask
+// to send notifications. DNS over HTTPS has a section of its own, DohSettings.
 class PrivacySettings : public SettingsSection
 {
     Q_OBJECT
@@ -28,12 +29,19 @@ class PrivacySettings : public SettingsSection
     // notifications (docs/DECISIONS/0033-web-notifications.md).
     Q_PROPERTY(bool blockNotificationRequests READ blockNotificationRequests WRITE
                    setBlockNotificationRequests NOTIFY blockNotificationRequestsChanged)
-    // Whether sites are told the reader does not want to be tracked, off unless switched
-    // on, and whether pages run their scripts, on unless switched off: sailfish-browser's
-    // Do not track and Enable JavaScript, under its Privacy as here. What each asks of
-    // the engine is EngineMessages::contentPreferences().
-    Q_PROPERTY(bool doNotTrack READ doNotTrack WRITE setDoNotTrack NOTIFY doNotTrackChanged)
+    // Whether sites are told not to share or sell the reader's data, off unless switched
+    // on: Firefox's Global Privacy Control, which took the place of Do not track there
+    // and here; and whether pages run their scripts, on unless switched off:
+    // sailfish-browser's Enable JavaScript. What each asks of the engine is
+    // EngineMessages::contentPreferences() (docs/DECISIONS/0047-secure-connections.md).
+    Q_PROPERTY(bool globalPrivacyControl READ globalPrivacyControl WRITE setGlobalPrivacyControl
+                   NOTIFY globalPrivacyControlChanged)
     Q_PROPERTY(bool javascript READ javascript WRITE setJavascript NOTIFY javascriptChanged)
+    // Whether every page is loaded over HTTPS, a page that has no HTTPS asking before it
+    // loads without: Firefox's HTTPS-Only Mode, off unless switched on. Off, the engine
+    // still tries HTTPS first, as Firefox does. What it asks of the engine is
+    // EngineMessages::httpsOnlyPreferences().
+    Q_PROPERTY(bool httpsOnly READ httpsOnly WRITE setHttpsOnly NOTIFY httpsOnlyChanged)
 
 public:
     // Firefox's Enhanced Tracking Protection categories, less protection first, with
@@ -49,6 +57,8 @@ public:
     };
     Q_ENUM(TrackingProtection)
 
+    // A file from before Global Privacy Control has Do not track's switch instead, and
+    // the switch that took its place starts as it was left.
     explicit PrivacySettings(QSettings &file, QObject *parent = nullptr);
 
     // Standard unless changed, as in Firefox. Out of range reads back as the default.
@@ -63,18 +73,22 @@ public:
     bool blockNotificationRequests() const;
     void setBlockNotificationRequests(bool on);
 
-    bool doNotTrack() const;
-    void setDoNotTrack(bool on);
+    bool globalPrivacyControl() const;
+    void setGlobalPrivacyControl(bool on);
     bool javascript() const;
     void setJavascript(bool on);
+
+    bool httpsOnly() const;
+    void setHttpsOnly(bool on);
 
 signals:
     void trackingProtectionChanged();
     void rememberHistoryChanged();
     void clearHistoryOnCloseChanged();
     void blockNotificationRequestsChanged();
-    void doNotTrackChanged();
+    void globalPrivacyControlChanged();
     void javascriptChanged();
+    void httpsOnlyChanged();
 };
 
 } // namespace Salama

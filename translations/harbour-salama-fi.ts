@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Tallenna</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Täytyy olla kelvollinen verkkotunnus</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Sivusto</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Poikkeukset</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama ei käytä suojattua DNS:ää näillä sivustoilla ja niiden aliverkkotunnuksissa.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Lisää sivusto</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Poista kaikki poikkeukset</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Poistetaan poikkeukset</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Poista</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Ei poikkeuksia</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Mukautettu palveluntarjoaja</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Lisää</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Palveluntarjoaja</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL-osoitteen alussa on oltava ”https://”</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Virheellinen osoite</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS HTTPS:n kautta</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>DNS (Domain Name System eli nimipalvelujärjestelmä) HTTPS:n kautta lähettää verkkotunnuksen nimeä koskevan pyyntösi salatun yhteyden kautta, tarjoten suojatun DNS:n ja vaikeuttaen muiden nähdä, mihin verkkosivustoon olet siirtymässä.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Valitse palveluntarjoaja</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (oletus)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Mukautettu</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Poikkeukset</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, %n ryhmässä</numerusform>
             <numerusform>%1, %n ryhmässä</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Vain HTTPS -tila</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Yrittää muodostaa automaattisesti yhteyden sivustoihin käyttämällä salattua HTTPS-protokollaa turvallisuuden parantamiseksi.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama saattaa silti päivittää jotkin yhteydet salatuksi</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n sivustolla poikkeuksia</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Lisätty suojaus</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Täysi suojaus</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Käytä oletusarvoista DNS-selvittäjää</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Käytä oletusarvoista DNS-selvittäjää vain, jos suojatussa DNS:ssä on ongelma</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Jos suojattu DNS ei ole käytettävissä, sivustot eivät lataudu tai toimi oikein</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n sivusto</numerusform>
+            <numerusform>%n sivustoa</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Päällä</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Pois</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Pois päältä</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Ei mitään</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Näytä alapalkki aina</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Älä seuraa</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Kerro sivustoille, etten halua tulla seuratuksi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ota JavaScript käyttöön</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Sivustojen luvat</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Vain HTTPS -tila</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS HTTPS:n kautta</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Pyydä verkkosivustoja olemaan jakamatta ja myymättä tietojani</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

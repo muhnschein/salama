@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, in %n group</numerusform>
             <numerusform>%1, in %n groups</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n sites with exceptions</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation type="unfinished">
+            <numerusform>%n site</numerusform>
+            <numerusform>%n sites</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1221,6 +1389,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Site permissions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

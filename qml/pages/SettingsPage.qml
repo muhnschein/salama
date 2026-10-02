@@ -10,7 +10,10 @@
 // Jolla's Settings writes under each of its own; the page says at a glance how the
 // browser is set, and a tap changes it. The settings that take a line are here too,
 // under the heading of what they change: the website colours and the notch guard, each
-// a choice of three, the fixed toolbar, and Privacy's Do not track and JavaScript.
+// a choice of three, the fixed toolbar, and Privacy's Global Privacy Control and
+// JavaScript. Privacy is Firefox for Android's Privacy and security, in its order:
+// HTTPS-Only Mode, DNS over HTTPS, then tracking protection
+// (docs/DECISIONS/0047-secure-connections.md).
 //
 // Every control writes its setting as it changes; nothing waits on a Save.
 import QtQuick 2.6
@@ -185,6 +188,26 @@ Page {
                 text: qsTr("Privacy")
             }
 
+            // Firefox for Android's first two under its Privacy and security, each a page
+            // of its own as there. The icons are ones sailfish-browser has: the keys of
+            // its passwords for the connection's encryption, and its own for the browser
+            // for how it finds sites.
+            SettingsEntry {
+                objectName: "httpsOnlySettingsEntry"
+                iconSource: "image://theme/icon-m-keys"
+                text: qsTr("HTTPS-Only Mode")
+                value: settingsPage.names.httpsOnly(PrivacySettings.httpsOnly)
+                onClicked: settingsPage.open("HttpsOnlySettingsPage.qml")
+            }
+
+            SettingsEntry {
+                objectName: "dohSettingsEntry"
+                iconSource: "image://theme/icon-m-browser"
+                text: qsTr("DNS over HTTPS")
+                value: settingsPage.names.doh(DohSettings.protection)
+                onClicked: settingsPage.open("DohSettingsPage.qml")
+            }
+
             // Named for the one thing on its page, so the heading over it is not said
             // twice.
             SettingsEntry {
@@ -197,15 +220,16 @@ Page {
                 onClicked: settingsPage.open("TrackingSettingsPage.qml")
             }
 
-            // sailfish-browser's two switches under its Privacy, in its words: what a
-            // site is told, and whether it may run scripts at all
-            // (apps/browser/qml/pages/SettingsPage.qml).
+            // What a site is told, in Firefox for Android's words for Global Privacy
+            // Control, which took the place of Do not track there and here; under it the
+            // name desktop Firefox gives it. Then whether a site may run scripts at all,
+            // sailfish-browser's switch (apps/browser/qml/pages/SettingsPage.qml).
             SettingsSwitch {
-                objectName: "doNotTrackSwitch"
-                text: qsTr("Do not track")
-                description: qsTr("Tell sites that I do not want to be tracked")
-                checked: PrivacySettings.doNotTrack
-                onCheckedChanged: PrivacySettings.doNotTrack = checked
+                objectName: "globalPrivacyControlSwitch"
+                text: qsTr("Tell websites not to share & sell data")
+                description: qsTr("Global Privacy Control (GPC)")
+                checked: PrivacySettings.globalPrivacyControl
+                onCheckedChanged: PrivacySettings.globalPrivacyControl = checked
             }
 
             SettingsSwitch {

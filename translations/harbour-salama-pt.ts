@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Guardar</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Tem de ser um domínio válido</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Site</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Exceções</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>O Salama não irá utilizar o DNS seguro nestes sites e respetivos subdomínios.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Adicionar site</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Remover todas as exceções</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>A remover exceções</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Remover</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Sem exceções</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Fornecedor personalizado</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Adicionar</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Fornecedor</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>O URL deve começar com «https://»</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>URL inválido</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS sobre HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>O Domain Name System (DNS) sobre HTTPS envia o seu pedido de nome de domínio através de uma ligação encriptada, fornecendo um DNS seguro e tornando mais difícil que terceiros possam ver qual o site que está prestes a aceder.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Escolher o fornecedor</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (predefinido)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Personalizado</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Exceções</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, em %n grupo</numerusform>
             <numerusform>%1, em %n grupos</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Modo apenas HTTPS</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Automaticamente tenta conectar-se a sites utilizando o protocolo de encriptação HTTPS para uma melhor segurança.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>O Salama pode, ainda assim, atualizar algumas ligações</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n sites com exceções</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Maior Proteção</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Proteção Máxima</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Utilizar o seu tradutor de DNS predefinido</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Utiliza o seu tradutor de DNS predefinido apenas se existir um problema com o DNS seguro</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Se o DNS seguro não estiver disponível, os sites não serão carregados ou não funcionarão corretamente</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n site</numerusform>
+            <numerusform>%n sites</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Ativado</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Desativado</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Desativado</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Nenhum</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Mostrar sempre a barra de ferramentas inferior</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Não monitorizar</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Pedir aos sites que não me monitorizem</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ativar JavaScript</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Permissões do site</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Modo apenas HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS sobre HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Indique aos sites para não partilhar e vender dados</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Controlo Global de Privacidade (GPC)</translation>
     </message>
 </context>
 <context>

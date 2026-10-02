@@ -150,6 +150,11 @@ PrivacySettings *Core::privacySettings()
     return m_settings.privacy();
 }
 
+DohSettings *Core::dohSettings()
+{
+    return m_settings.doh();
+}
+
 StartPageSettings *Core::startPageSettings()
 {
     return m_settings.startPage();

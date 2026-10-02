@@ -101,6 +101,11 @@ QObject *privacySettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEn
     return keepOwnership(registeredCore()->privacySettings());
 }
 
+QObject *dohSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->dohSettings());
+}
+
 QObject *startPageSettingsProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->startPageSettings());
@@ -193,6 +198,7 @@ void registerQmlTypes(Core *core)
                                             &coverSettingsProvider);
     qmlRegisterSingletonType<PrivacySettings>(ModuleUri, 1, 0, "PrivacySettings",
                                               &privacySettingsProvider);
+    qmlRegisterSingletonType<DohSettings>(ModuleUri, 1, 0, "DohSettings", &dohSettingsProvider);
     qmlRegisterSingletonType<StartPageSettings>(ModuleUri, 1, 0, "StartPageSettings",
                                                 &startPageSettingsProvider);
     qmlRegisterSingletonType<SitePermissionSettings>(ModuleUri, 1, 0, "SitePermissionSettings",

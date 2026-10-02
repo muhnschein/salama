@@ -3,6 +3,7 @@
 #include "EngineMessages.h"
 
 #include "EngineData.h"
+#include "settings/DohSettings.h"
 #include "settings/PrivacySettings.h"
 #include "settings/SearchSettings.h"
 #include "settings/Settings.h"
@@ -404,13 +405,45 @@ QVariantList EngineMessages::websiteColorPreferences(int colors, bool darkAmbien
     }};
 }
 
-QVariantList EngineMessages::contentPreferences(bool doNotTrack, bool javascript)
+QVariantList EngineMessages::contentPreferences(bool globalPrivacyControl, bool javascript)
 {
     return {
         QVariantMap{{QStringLiteral("name"), QStringLiteral("privacy.donottrackheader.enabled")},
-                    {QStringLiteral("value"), doNotTrack}},
+                    {QStringLiteral("value"), false}},
+        QVariantMap{{QStringLiteral("name"),
+                     QStringLiteral("privacy.globalprivacycontrol.functionality.enabled")},
+                    {QStringLiteral("value"), true}},
+        QVariantMap{
+            {QStringLiteral("name"), QStringLiteral("privacy.globalprivacycontrol.enabled")},
+            {QStringLiteral("value"), globalPrivacyControl}},
         QVariantMap{{QStringLiteral("name"), QStringLiteral("javascript.enabled")},
                     {QStringLiteral("value"), javascript}}};
+}
+
+QVariantList EngineMessages::httpsOnlyPreferences(bool httpsOnly)
+{
+    return {QVariantMap{{QStringLiteral("name"), QStringLiteral("dom.security.https_only_mode")},
+                        {QStringLiteral("value"), httpsOnly}},
+            QVariantMap{{QStringLiteral("name"), QStringLiteral("dom.security.https_first")},
+                        {QStringLiteral("value"), true}}};
+}
+
+QVariantList EngineMessages::dohPreferences(int protection, const QString &provider,
+                                            const QStringList &exceptions)
+{
+    // nsIDNSService::MODE_TRROFF, MODE_TRRFIRST, MODE_TRRONLY.
+    int mode = 5;
+    if (protection == DohSettings::ProtectionIncreased) {
+        mode = 2;
+    } else if (protection == DohSettings::ProtectionMax) {
+        mode = 3;
+    }
+    return {QVariantMap{{QStringLiteral("name"), QStringLiteral("network.trr.uri")},
+                        {QStringLiteral("value"), provider}},
+            QVariantMap{{QStringLiteral("name"), QStringLiteral("network.trr.excluded-domains")},
+                        {QStringLiteral("value"), exceptions.join(QLatin1Char(','))}},
+            QVariantMap{{QStringLiteral("name"), QStringLiteral("network.trr.mode")},
+                        {QStringLiteral("value"), mode}}};
 }
 
 } // namespace Salama

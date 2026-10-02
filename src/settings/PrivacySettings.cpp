@@ -10,14 +10,24 @@ const char *const TrackingProtectionKey = "trackingProtection";
 const char *const RememberHistoryKey = "rememberHistory";
 const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
 const char *const BlockNotificationRequestsKey = "blockNotificationRequests";
+// Do not track's, read once to start Global Privacy Control as it was left, then removed.
 const char *const DoNotTrackKey = "doNotTrack";
+const char *const GlobalPrivacyControlKey = "globalPrivacyControl";
 const char *const JavascriptKey = "javascript";
+const char *const HttpsOnlyKey = "httpsOnly";
 
 } // namespace
 
 PrivacySettings::PrivacySettings(QSettings &file, QObject *parent)
     : SettingsSection(file, parent)
 {
+    const QVariant doNotTrack = value(DoNotTrackKey);
+    if (doNotTrack.isValid()) {
+        if (!value(GlobalPrivacyControlKey).isValid()) {
+            setValue(GlobalPrivacyControlKey, doNotTrack.toBool());
+        }
+        remove(DoNotTrackKey);
+    }
 }
 
 int PrivacySettings::trackingProtection() const
@@ -70,15 +80,15 @@ void PrivacySettings::setBlockNotificationRequests(bool on)
     }
 }
 
-bool PrivacySettings::doNotTrack() const
+bool PrivacySettings::globalPrivacyControl() const
 {
-    return flag(DoNotTrackKey, false);
+    return flag(GlobalPrivacyControlKey, false);
 }
 
-void PrivacySettings::setDoNotTrack(bool on)
+void PrivacySettings::setGlobalPrivacyControl(bool on)
 {
-    if (setFlag(DoNotTrackKey, on, false)) {
-        emit doNotTrackChanged();
+    if (setFlag(GlobalPrivacyControlKey, on, false)) {
+        emit globalPrivacyControlChanged();
     }
 }
 
@@ -91,6 +101,18 @@ void PrivacySettings::setJavascript(bool on)
 {
     if (setFlag(JavascriptKey, on)) {
         emit javascriptChanged();
+    }
+}
+
+bool PrivacySettings::httpsOnly() const
+{
+    return flag(HttpsOnlyKey, false);
+}
+
+void PrivacySettings::setHttpsOnly(bool on)
+{
+    if (setFlag(HttpsOnlyKey, on, false)) {
+        emit httpsOnlyChanged();
     }
 }
 

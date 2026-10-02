@@ -157,4 +157,42 @@ QtObject {
         //: The pages visited are kept until the browser closes, or kept for good
         return clearOnClose ? qsTr("Cleared when closed") : qsTr("Remembered")
     }
+
+    // HTTPS-Only Mode's line in Settings (docs/DECISIONS/0047-secure-connections.md).
+    function httpsOnly(on) {
+        //: HTTPS-Only Mode is on
+        return on ? qsTr("On", "HTTPS-Only Mode")
+                    //: HTTPS-Only Mode is off
+                  : qsTr("Off", "HTTPS-Only Mode")
+    }
+
+    // DNS over HTTPS's levels, by their stored values (DohSettings.Protection), in Firefox
+    // for Android's words.
+    function doh(level) {
+        return [
+            //: DNS over HTTPS is off
+            qsTr("Off", "DNS over HTTPS"),
+            qsTr("Increased Protection"),
+            qsTr("Max Protection")
+        ][level] || ""
+    }
+
+    // What each level does: Firefox for Android's own lines for Off, and for the others
+    // those of its pages about them that promise nothing the engine here leaves to
+    // Firefox's front end, such as Max Protection's warning before falling back.
+    function dohDescription(level) {
+        return [
+            qsTr("Use your default DNS resolver"),
+            qsTr("Only use your default DNS resolver if there is a problem with secure DNS"),
+            qsTr("If secure DNS is not available sites will not load or function properly")
+        ][level] || ""
+    }
+
+    // How many sites DNS over HTTPS is not used for.
+    function dohExceptions(sites) {
+        //: No site is an exception to DNS over HTTPS
+        return sites === 0 ? qsTr("None", "no sites")
+                             //: How many sites DNS over HTTPS is not used for
+                           : qsTr("%n site(s)", "", sites)
+    }
 }
