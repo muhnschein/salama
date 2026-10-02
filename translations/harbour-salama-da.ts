@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Gem</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>eksempel.dk</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Skal være et gyldigt domæne</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Websted</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Undtagelser</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama vil ikke anvende sikker DNS på disse websteder og deres subdomæner.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Tilføj websted</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Fjern alle undtagelser</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Fjerner undtagelser</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Fjern</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Ingen undtagelser</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Tilpasset udbyder</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Tilføj</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Udbyder</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL&apos;er skal starte med “https://”</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Ugyldig URL</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS via HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>Domain Name System (DNS) via HTTPS sender din forespørgsel efter et domænenavn over en krypteret forbindelse for at sikre DNS og gøre det sværere for andre at se, hvilket websted du skal til at besøge.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Vælg udbyder</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (standard)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Tilpasset</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Undtagelser</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, i %n gruppe</numerusform>
             <numerusform>%1, i %n grupper</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Tilstanden Kun-HTTPS</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Forsøger automatisk at oprette forbindelse til websteder ved hjælp af krypteringsprotokollen HTTPS for øget sikkerhed.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama kan stadig opgradere nogle forbindelser</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n websteder med undtagelser</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Øget sikkerhed</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Maksimal beskyttelse</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Brug din standard DNS-resolver</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Brug kun din standard DNS-resolver, hvis der er problemer med sikker DNS</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Hvis sikker DNS ikke er tilgængelig, vil websteder ikke indlæses eller fungere korrekt</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n websted</numerusform>
+            <numerusform>%n websteder</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Til</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Fra</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Fra</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Ingen</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Vis altid værktøjslinjen nederst</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Spor mig ikke</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Fortæl websteder, at jeg ikke ønsker at blive sporet</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Aktivér JavaScript</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Websteds-indstillinger</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Tilstanden Kun-HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS via HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Fortæl websteder, at de ikke skal dele og sælge data</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

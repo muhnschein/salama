@@ -588,9 +588,17 @@ void tst_qmlload::rootWindowLoads()
         takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
                       .first()
                       .toMap()));
-    // Do not track off and JavaScript on, as sailfish-browser starts.
+    // Global Privacy Control off and JavaScript on; HTTPS-Only Mode and DNS over HTTPS
+    // off (docs/DECISIONS/0047-secure-connections.md).
     for (const QVariant &content : EngineMessages::contentPreferences(false, true)) {
         QVERIFY(takeGiven(content.toMap()));
+    }
+    for (const QVariant &https : EngineMessages::httpsOnlyPreferences(false)) {
+        QVERIFY(takeGiven(https.toMap()));
+    }
+    for (const QVariant &doh : EngineMessages::dohPreferences(DohSettings::ProtectionOff,
+                                                              DohSettings::defaultProvider(), {})) {
+        QVERIFY(takeGiven(doh.toMap()));
     }
     // And the defaults of Site permissions: pop-ups blocked, the rest asked.
     for (const QVariant &preference :

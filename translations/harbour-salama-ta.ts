@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>சேமி</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>சரியான டொமைனாக இருக்க வேண்டும்</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>தளம்</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>விதிவிலக்குகள்</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>இந்தத் தளங்களிலும் அவற்றின் துணை டொமைன்களிலும் Salama பாதுகாப்பான DNS-ஐப் பயன்படுத்தாது.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>தளத்தைச் சேர்</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>எல்லா விதிவிலக்குகளையும் நீக்கு</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>விதிவிலக்குகள் நீக்கப்படுகின்றன</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>நீக்கு</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>விதிவிலக்குகள் இல்லை</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>தனிப்பயன் வழங்குநர்</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>சேர்</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>வழங்குநர்</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL “https://” என்று தொடங்க வேண்டும்</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>முறையற்ற முகவரி</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS வழி DNS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>HTTPS வழி டொமைன் பெயர் அமைப்பு (DNS) உங்கள் டொமைன் பெயர் கோரிக்கையை மறையாக்கப்பட்ட இணைப்பு வழியாக அனுப்புகிறது; இது பாதுகாப்பான DNS-ஐ வழங்குவதுடன், நீங்கள் எந்த வலைத்தளத்தை அணுகப் போகிறீர்கள் என்பதை மற்றவர்கள் பார்ப்பதைக் கடினமாக்குகிறது.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>வழங்குநரைத் தேர்ந்தெடு</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (இயல்புநிலை)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>தனிப்பயன்</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>விதிவிலக்குகள்</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, %n குழுவில்</numerusform>
             <numerusform>%1, %n குழுக்களில்</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-மட்டும் பயன்முறை</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>கூடுதல் பாதுகாப்பிற்காக HTTPS மறையாக்க நெறிமுறையைப் பயன்படுத்தித் தளங்களுடன் தானாக இணைக்க முயல்கிறது.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama இன்னும் சில இணைப்புகளை மேம்படுத்தக்கூடும்</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>விதிவிலக்குகளுடன் %n தளங்கள்</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>மேம்பட்ட பாதுகாப்பு</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>அதிகபட்ச பாதுகாப்பு</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>உங்கள் இயல்புநிலை DNS தீர்வியைப் பயன்படுத்து</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>பாதுகாப்பான DNS-இல் சிக்கல் இருந்தால் மட்டும் உங்கள் இயல்புநிலை DNS தீர்வியைப் பயன்படுத்து</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>பாதுகாப்பான DNS கிடைக்கவில்லை என்றால் தளங்கள் ஏறாது அல்லது சரியாக வேலை செய்யாது</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n தளம்</numerusform>
+            <numerusform>%n தளங்கள்</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>இயக்கு</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>அணை</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>அணை</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>எதுவுமில்லை</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>கீழ்க் கருவிப்பட்டையை எப்போதும் காட்டு</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>தடமறிய வேண்டாம்</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>நான் தடமறியப்பட விரும்பவில்லை எனத் தளங்களுக்குத் தெரிவி</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ஐ இயக்கு</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>தள அனுமதிகள்</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-மட்டும் பயன்முறை</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS வழி DNS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>தரவைப் பகிர வேண்டாம், விற்க வேண்டாம் என்று வலைத்தளங்களிடம் சொல்</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

@@ -309,6 +309,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Lưu</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Phải là một tên miền hợp lệ</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Trang</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Ngoại lệ</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama sẽ không sử dụng DNS an toàn trên các trang web này và tên miền phụ của chúng.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Thêm trang web</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Xóa tất cả ngoại lệ</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Đang xóa ngoại lệ</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Xóa</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Không có ngoại lệ</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Tuỳ chọn nhà cung cấp</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Thêm</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Nhà cung cấp</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL phải bắt đầu bằng “https://”</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>URL không hợp lệ</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS qua HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>Hệ thống phân giải tên miền (DNS) trên HTTPS gửi yêu cầu tên miền của bạn thông qua kết nối được mã hóa, cung cấp DNS an toàn và khiến người khác khó biết bạn sắp truy cập trang web nào.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Chọn nhà cung cấp</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (mặc định)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Tùy chọn</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Ngoại lệ</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -546,6 +654,22 @@
         <translation>
             <numerusform>%1, trong %n nhóm</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Chế độ chỉ HTTPS</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Tự động cố gắng kết nối với các trang web bằng giao thức mã hóa HTTPS để tăng cường bảo mật.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama vẫn có thể nâng cấp một số kết nối</translation>
     </message>
 </context>
 <context>
@@ -1107,6 +1231,57 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n trang web có ngoại lệ</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Bảo vệ gia tăng</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Bảo vệ tối đa</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Sử dụng trình phân giải DNS mặc định của bạn</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Chỉ sử dụng trình phân giải DNS mặc định của bạn nếu có sự cố với DNS bảo mật</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Nếu DNS an toàn không có sẵn, các trang web sẽ không tải hoặc hoạt động bình thường</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n trang web</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Bật</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Tắt</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Tắt</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Không có</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1183,14 +1358,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Luôn hiện thanh công cụ ở dưới cùng</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Không theo dõi</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Báo cho các trang web rằng tôi không muốn bị theo dõi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Bật JavaScript</translation>
     </message>
@@ -1205,6 +1372,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Quyền hạn trang web</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Chế độ chỉ HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS qua HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Yêu cầu trang web không bán hay chia sẻ dữ liệu cá nhân của tôi</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

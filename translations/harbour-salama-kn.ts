@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>ಉಳಿಸಿ</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>ಮಾನ್ಯವಾದ ಡೊಮೇನ್ ಆಗಿರಬೇಕು</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>ಸೈಟ್</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>ವಿನಾಯಿತಿಗಳು</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama ಈ ಸೈಟ್‌ಗಳು ಮತ್ತು ಅವುಗಳ ಉಪಡೊಮೇನ್‌ಗಳಲ್ಲಿ ಸುರಕ್ಷಿತ DNS ಅನ್ನು ಬಳಸುವುದಿಲ್ಲ.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>ಸೈಟ್ ಸೇರಿಸಿ</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>ಎಲ್ಲಾ ವಿನಾಯಿತಿಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>ವಿನಾಯಿತಿಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತಿದೆ</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>ತೆಗೆದುಹಾಕಿ</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>ವಿನಾಯಿತಿಗಳಿಲ್ಲ</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>ಅಗತ್ಯಾನುಗುಣ ಪೂರೈಕೆದಾರ</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>ಸೇರಿಸಿ</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>ಪೂರೈಕೆದಾರ</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL &quot;https://&quot; ನಿಂದ ಪ್ರಾರಂಭವಾಗಬೇಕು</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>ಅಮಾನ್ಯವಾದ URL</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS ಮೂಲಕ DNS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>HTTPS ಮೂಲಕ ಡೊಮೇನ್ ನೇಮ್ ಸಿಸ್ಟಮ್ (DNS) ನಿಮ್ಮ ಡೊಮೇನ್ ಹೆಸರಿನ ವಿನಂತಿಯನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಸಂಪರ್ಕದ ಮೂಲಕ ಕಳುಹಿಸುತ್ತದೆ; ಇದು ಸುರಕ್ಷಿತ DNS ಒದಗಿಸುತ್ತದೆ ಮತ್ತು ನೀವು ಯಾವ ವೆಬ್‌ಸೈಟ್‌ಗೆ ಭೇಟಿ ನೀಡಲಿದ್ದೀರಿ ಎಂಬುದನ್ನು ಇತರರು ನೋಡುವುದನ್ನು ಕಷ್ಟಕರವಾಗಿಸುತ್ತದೆ.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>ಪೂರೈಕೆದಾರರನ್ನು ಆಯ್ಕೆಮಾಡಿ</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (ಪೂರ್ವನಿಯೋಜಿತ)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>ಅಗತ್ಯಾನುಗುಣ</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>ವಿನಾಯಿತಿಗಳು</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, %n ಗುಂಪಿನಲ್ಲಿ</numerusform>
             <numerusform>%1, %n ಗುಂಪುಗಳಲ್ಲಿ</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-ಮಾತ್ರ ಮೋಡ್</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>ಹೆಚ್ಚಿನ ಸುರಕ್ಷತೆಗಾಗಿ HTTPS ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಪ್ರೊಟೋಕಾಲ್ ಬಳಸಿ ಸೈಟ್‌ಗಳಿಗೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಂಪರ್ಕಿಸಲು ಪ್ರಯತ್ನಿಸುತ್ತದೆ.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama ಈಗಲೂ ಕೆಲವು ಸಂಪರ್ಕಗಳನ್ನು ಅಪ್‌ಗ್ರೇಡ್ ಮಾಡಬಹುದು</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>ವಿನಾಯಿತಿ ಇರುವ %n ಸೈಟ್‌ಗಳು</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>ಹೆಚ್ಚಿದ ರಕ್ಷಣೆ</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>ಗರಿಷ್ಠ ರಕ್ಷಣೆ</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>ನಿಮ್ಮ ಪೂರ್ವನಿಯೋಜಿತ DNS ರಿಸಾಲ್ವರ್ ಬಳಸಿ</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>ಸುರಕ್ಷಿತ DNS ನಲ್ಲಿ ಸಮಸ್ಯೆ ಇದ್ದರೆ ಮಾತ್ರ ನಿಮ್ಮ ಪೂರ್ವನಿಯೋಜಿತ DNS ರಿಸಾಲ್ವರ್ ಬಳಸಿ</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>ಸುರಕ್ಷಿತ DNS ಲಭ್ಯವಿಲ್ಲದಿದ್ದರೆ ಸೈಟ್‌ಗಳು ಲೋಡ್ ಆಗುವುದಿಲ್ಲ ಅಥವಾ ಸರಿಯಾಗಿ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n ಸೈಟ್</numerusform>
+            <numerusform>%n ಸೈಟ್‌ಗಳು</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>ಆನ್</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>ಆಫ್</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>ಆಫ್</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>ಯಾವುದೂ ಇಲ್ಲ</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ಕೆಳಗಿನ ಉಪಕರಣಪಟ್ಟಿಯನ್ನು ಯಾವಾಗಲೂ ತೋರಿಸಿ</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>ಟ್ರ್ಯಾಕ್ ಮಾಡಬೇಡಿ</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>ನನ್ನನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡುವುದು ನನಗೆ ಬೇಡ ಎಂದು ಸೈಟ್‌ಗಳಿಗೆ ತಿಳಿಸಿ</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ಸಕ್ರಿಯಗೊಳಿಸಿ</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>ಸೈಟ್ ಅನುಮತಿಗಳು</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-ಮಾತ್ರ ಮೋಡ್</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS ಮೂಲಕ DNS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>ಡೇಟಾವನ್ನು ಹಂಚಿಕೊಳ್ಳದಂತೆ ಮತ್ತು ಮಾರಾಟ ಮಾಡದಂತೆ ವೆಬ್‌ಸೈಟ್‌ಗಳಿಗೆ ತಿಳಿಸಿ</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

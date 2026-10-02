@@ -319,6 +319,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Salvează</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>exemplu.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Trebuie să fie un domeniu valid</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Site</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Excepții</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama nu va folosi DNS securizat pe aceste site-uri și subdomeniile lor.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Adaugă un site</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Elimină toate excepțiile</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Se elimină excepțiile</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Elimină</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Nicio excepție</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Furnizor personalizat</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Adaugă</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Furnizor</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL-ul trebuie să înceapă cu „https://”</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>URL nevalid</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS prin HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>Sistemul de nume de domeniu (DNS) prin HTTPS trimite solicitarea ta pentru un nume de domeniu printr-o conexiune criptată, oferind un DNS securizat și îngreunând vizibilitatea site-ului web pe care urmează să îl accesezi de către alții.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Alege furnizorul</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (implicit)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Personalizat</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Excepții</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -566,6 +674,22 @@
             <numerusform>%1, în %n grupuri</numerusform>
             <numerusform>%1, în %n de grupuri</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Mod numai HTTPS</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Încearcă automat să se conecteze la site-uri folosind protocolul de criptare HTTPS pentru o securitate sporită.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama poate încă activa modul pe unele conexiuni</translation>
     </message>
 </context>
 <context>
@@ -1141,6 +1265,59 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n de site-uri cu excepții</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Protecție sporită</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Protecție max</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Folosește rezolvitorul DNS implicit</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Folosește rezolverul DNS implicit doar dacă există o problemă cu DNS-ul securizat</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Dacă DNS-ul securizat nu este disponibil, site-urile nu se vor încărca sau nu vor funcționa corect</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n site</numerusform>
+            <numerusform>%n site-uri</numerusform>
+            <numerusform>%n de site-uri</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Activat</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Dezactivat</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Dezactivat</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Niciunul</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1217,14 +1394,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Afișează întotdeauna bara de instrumente de jos</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Nu urmări</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Cere site-urilor să nu mă urmărească</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Activează JavaScript</translation>
     </message>
@@ -1239,6 +1408,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Permisiuni pentru site-uri</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Mod numai HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS prin HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Spune site-urilor web să nu vândă sau să nu distribuie datele</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

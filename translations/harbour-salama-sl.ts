@@ -324,6 +324,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Shrani</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Mora biti veljavna domena</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Spletno mesto</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Izjeme</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Na teh spletnih mestih in njihovih poddomenah Salama ne bo uporabljal varnega DNS.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Dodaj spletno mesto</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Odstrani vse izjeme</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Odstranjevanje izjem</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Odstrani</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Ni izjem</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Ponudnik po meri</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Dodaj</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Ponudnik</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>Naslov URL se mora začeti s »https://«</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Neveljaven URL</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS prek HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>DNS (sistem domenskih imen) prek HTTPS pošilja tvoje zahtevke za imena domen po šifrirani povezavi, kar ustvari zavarovan DNS in drugim otežuje vpogled v to, katera spletna mesta obiskuješ.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Izberi ponudnika</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (privzeto)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Po meri</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Izjeme</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -576,6 +684,22 @@
             <numerusform>%1, v %n skupinah</numerusform>
             <numerusform>%1, v %n skupinah</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Način »samo HTTPS«</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Za večjo varnost poskuša samodejno vzpostaviti povezavo s šifrirnim protokolom HTTPS.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama bo nekatere povezave vseeno nadgradil</translation>
     </message>
 </context>
 <context>
@@ -1158,6 +1282,60 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n spletnih mest z izjemami</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Okrepljena zaščita</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Najmočnejša zaščita</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Uporabljaj privzeti razreševalnik DNS</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Privzeti razreševalnik DNS uporabi samo, če pride do težav z zavarovanim DNS</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Če zavarovani DNS ne bo na voljo, se strani ne bodo nalagale ali delovale pravilno</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n spletno mesto</numerusform>
+            <numerusform>%n spletni mesti</numerusform>
+            <numerusform>%n spletna mesta</numerusform>
+            <numerusform>%n spletnih mest</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Vklopljen</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Izklopljen</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Izklopljeno</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Brez</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1234,14 +1412,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Vedno prikaži spodnjo orodno vrstico</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Ne sledi</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Sporoči spletnim mestom, da ne želim, da se mi sledi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Omogoči JavaScript</translation>
     </message>
@@ -1256,6 +1426,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Dovoljenja spletnih mest</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Način »samo HTTPS«</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS prek HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Spletnim mestom sporočaj, naj ne prodajajo ali delijo podatkov</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

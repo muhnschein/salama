@@ -309,6 +309,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Érvényes domainnek kell lennie</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Webhely</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Kivételek</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>A Salama nem használ biztonságos DNS-t ezeken a webhelyeken és az aldomainjeiken.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Webhely hozzáadása</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Összes kivétel eltávolítása</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Kivételek eltávolítása folyamatban</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Nincs kivétel</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Egyéni szolgáltató</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Hozzáadás</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Szolgáltató</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>A webcímnek „https://” előtaggal kell kezdődnie</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Érvénytelen webcím</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS feletti DNS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>A HTTPS feletti domainnév-rendszer (DNS) a domainnevek lekérését titkosított kapcsolaton keresztül küldi el, biztonságos DNS-t biztosítva, így mások nehezebben láthatják, hogy melyik weboldalt készülsz megnyitni.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Szolgáltató kiválasztása</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (alapértelmezett)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Egyéni</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Kivételek</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -546,6 +654,22 @@
         <translation>
             <numerusform>%1 lap, %n csoportban</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Csak HTTPS mód</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Automatikusan HTTPS titkosítási protokoll használatával próbál meg csatlakozni a webhelyekhez a fokozott biztonság érdekében.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>A Salama továbbra is frissítheti az egyes kapcsolatokat</translation>
     </message>
 </context>
 <context>
@@ -1107,6 +1231,57 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>Kivételek: %n webhely</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Fokozott védelem</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Maximális védelem</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Alapértelmezett DNS-feloldó használata</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Az alapértelmezett DNS-feloldó használata csak akkor, ha probléma van a biztonságos DNS-sel</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Ha a biztonságos DNS nem érhető el, akkor a webhelyek nem fognak betöltődni és működni</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n webhely</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Be</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Ki</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Ki</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Nincs</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1183,14 +1358,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Az alsó eszköztár mindig látható legyen</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Ne kövessenek</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Jelzés a webhelyeknek, hogy nem szeretném, ha követnének</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript engedélyezése</translation>
     </message>
@@ -1205,6 +1372,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Oldalengedélyek</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Csak HTTPS mód</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS feletti DNS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Megmondás a webhelyeknek, hogy ne adják el vagy osszák meg az adataidat</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Globális adatvédelmi szabályozás (GPC)</translation>
     </message>
 </context>
 <context>

@@ -314,6 +314,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>सहेजें</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>डोमेन सही होना चाहिए</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>साइट</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>अपवाद</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama इन साइटों और उनके सब-डोमेन पर सुरक्षित DNS का इस्तेमाल नहीं करेगा।</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>साइट जोड़ें</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>सभी अपवाद हटाएँ</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>अपवाद हटाए जा रहे हैं</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>हटाएँ</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>कोई अपवाद नहीं</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>कस्टम प्रोवाइडर</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>जोड़ें</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>प्रोवाइडर</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL की शुरुआत &quot;https://&quot; से होनी चाहिए</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>URL सही नहीं है</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS पर DNS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>HTTPS पर डोमेन नेम सिस्टम (DNS), आपके डोमेन नाम की रिक्वेस्ट को एक एन्क्रिप्टेड कनेक्शन के माध्यम से भेजता है और एक सुरक्षित DNS मुहैया करवाता है, जिससे दूसरों के लिए यह देखना मुश्किल हो जाता है कि आप कौन-सी वेबसाइट एक्सेस करने वाले हैं।</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>प्रोवाइडर चुनें</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (डिफ़ॉल्ट)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>कस्टम</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>अपवाद</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -556,6 +664,22 @@
             <numerusform>%1, %n समूह में</numerusform>
             <numerusform>%1, %n समूहों में</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-Only मोड</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>और ज़्यादा सुरक्षा के लिए, HTTPS एन्क्रिप्शन प्रोटोकॉल इस्तेमाल करने वाली साइटों से अपने आप कनेक्ट करने की कोशिश करता है।</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama फिर भी कुछ कनेक्शन अपग्रेड कर सकता है</translation>
     </message>
 </context>
 <context>
@@ -1124,6 +1248,58 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>अपवाद वाली %n साइटें</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>बढ़ी हुई सुरक्षा</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>अधिकतम सुरक्षा</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>अपना डिफ़ॉल्ट DNS रिज़ॉल्वर इस्तेमाल करें</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>अगर सुरक्षित DNS में कोई समस्या है, तो ही अपना डिफ़ॉल्ट DNS रिज़ॉल्वर इस्तेमाल करें</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>अगर सुरक्षित DNS उपलब्ध नहीं है, तो वेबसाइटें ठीक से लोड नहीं होंगी या काम नहीं करेंगी</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n साइट</numerusform>
+            <numerusform>%n साइटें</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>चालू</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>बंद</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>बंद</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>कोई नहीं</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1200,14 +1376,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>नीचे वाला टूलबार हमेशा दिखाएँ</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>ट्रैक न करें</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>साइटों को बताएँ कि मुझे ट्रैक न किया जाए</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript सक्षम करें</translation>
     </message>
@@ -1222,6 +1390,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>साइट से जुड़ी अनुमतियाँ</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-Only मोड</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS पर DNS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>वेबसाइटों को डेटा शेयर करने और बेचने से मना करें</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

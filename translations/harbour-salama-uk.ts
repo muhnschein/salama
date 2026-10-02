@@ -319,6 +319,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Зберегти</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Має бути дійсний домен</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Сайт</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Винятки</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama не використовуватиме захищену DNS на цих сайтах та їхніх піддоменах.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Додати сайт</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Вилучити всі винятки</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Вилучення винятків</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Вилучити</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Винятків немає</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Власний провайдер</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Додати</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Провайдер</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL-адреса має починатися з «https://»</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Недійсний URL</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS через HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>Завдяки системі DNS через HTTPS ваші запити на доменне ім&apos;я шифруються, ускладнюючи стороннім особам можливість перегляду, до якого вебсайту ви збираєтеся отримати доступ.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Вибрати провайдера</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (типово)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Власний</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Винятки</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -566,6 +674,22 @@
             <numerusform>%1, у %n групах</numerusform>
             <numerusform>%1, у %n групах</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-режим</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Намагатися автоматично встановлювати з&apos;єднання з сайтами за допомогою протоколу шифрування HTTPS для поліпшення безпеки.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama все одно може оновлювати деякі з&apos;єднання</translation>
     </message>
 </context>
 <context>
@@ -1141,6 +1265,59 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n сайтів із винятками</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Підвищений захист</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Максимальний захист</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Використовувати ваш типовий DNS-перетворювач</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Ваш типовий DNS-перетворювач використовується, лише якщо є проблема з захищеною DNS</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Якщо захищена DNS недоступна, сайти не завантажуватимуться або не працюватимуть належним чином</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n сайт</numerusform>
+            <numerusform>%n сайти</numerusform>
+            <numerusform>%n сайтів</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Увімкнено</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Вимкнено</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Вимкнено</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Немає</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1217,14 +1394,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Завжди показувати нижню панель інструментів</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Не стежити</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Повідомляти сайтам, що я не хочу, щоб за мною стежили</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Увімкнути JavaScript</translation>
     </message>
@@ -1239,6 +1408,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Дозволи сайтів</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-режим</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS через HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Вказувати вебсайтам не ділитися моїми даними та не продавати їх</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>

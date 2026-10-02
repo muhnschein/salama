@@ -319,6 +319,114 @@
     </message>
 </context>
 <context>
+    <name>DohExceptionDialog</name>
+    <message>
+        <source>Save</source>
+        <extracomment>Accept button of the dialog that adds a site DNS over HTTPS is not used for</extracomment>
+        <translation>Įrašyti</translation>
+    </message>
+    <message>
+        <source>example.com</source>
+        <extracomment>An example of a domain, shown in the empty field</extracomment>
+        <translation>example.com</translation>
+    </message>
+    <message>
+        <source>Must be a valid domain</source>
+        <translation>Turi būti tinkamas domenas</translation>
+    </message>
+    <message>
+        <source>Site</source>
+        <translation>Svetainė</translation>
+    </message>
+</context>
+<context>
+    <name>DohExceptionsPage</name>
+    <message>
+        <source>Exceptions</source>
+        <translation>Išimtys</translation>
+    </message>
+    <message>
+        <source>Salama won’t use secure DNS on these sites and their subdomains.</source>
+        <extracomment>Salama is the browser&apos;s name</extracomment>
+        <translation>Salama nenaudos saugiojo DNS šiose svetainėse ir jų subdomenuose.</translation>
+    </message>
+    <message>
+        <source>Add site</source>
+        <translation>Pridėti svetainę</translation>
+    </message>
+    <message>
+        <source>Remove all exceptions</source>
+        <translation>Pašalinti visas išimtis</translation>
+    </message>
+    <message>
+        <source>Removing exceptions</source>
+        <extracomment>Said while the exceptions are about to be removed</extracomment>
+        <translation>Šalinamos išimtys</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Pašalinti</translation>
+    </message>
+    <message>
+        <source>No exceptions</source>
+        <translation>Išimčių nėra</translation>
+    </message>
+</context>
+<context>
+    <name>DohProviderDialog</name>
+    <message>
+        <source>Custom provider</source>
+        <translation>Kitas teikėjas</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <extracomment>Accept button of the dialog that gives a DNS over HTTPS provider</extracomment>
+        <translation>Pridėti</translation>
+    </message>
+    <message>
+        <source>Provider</source>
+        <translation>Teikėjas</translation>
+    </message>
+    <message>
+        <source>URL must start with “https://”</source>
+        <translation>URL turi prasidėti „https://“</translation>
+    </message>
+    <message>
+        <source>Invalid URL</source>
+        <translation>Neteisingas URL</translation>
+    </message>
+</context>
+<context>
+    <name>DohSettingsPage</name>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS per HTTPS</translation>
+    </message>
+    <message>
+        <source>Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.</source>
+        <translation>DNS (domenų vardų sistema) per HTTPS siunčia tavo užklausą dėl domeno vardo šifruotu ryšiu, taip užtikrindama saugų DNS ir apsunkindama kitiems galimybę matyti, kurią svetainę ketini atverti.</translation>
+    </message>
+    <message>
+        <source>Choose provider</source>
+        <translation>Pasirinkti teikėją</translation>
+    </message>
+    <message>
+        <source>%1 (default)</source>
+        <extracomment>%1 is a DNS over HTTPS provider&apos;s name; the default provider</extracomment>
+        <translation>%1 (numatytasis)</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <extracomment>A DNS over HTTPS provider the reader gives the address of</extracomment>
+        <translation>Kitas</translation>
+    </message>
+    <message>
+        <source>Exceptions</source>
+        <extracomment>The sites DNS over HTTPS is not used for</extracomment>
+        <translation>Išimtys</translation>
+    </message>
+</context>
+<context>
     <name>DownloadBanner</name>
     <message numerus="yes">
         <source>%n download(s)</source>
@@ -566,6 +674,22 @@
             <numerusform>%1, %n grupėse</numerusform>
             <numerusform>%1, %n grupių</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>HttpsOnlySettingsPage</name>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Tik HTTPS veiksena</translation>
+    </message>
+    <message>
+        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
+        <translation>Siekiant didesnio saugumo, automatiškai bandoma jungtis prie svetainių naudojant HTTPS šifravimo protokolą.</translation>
+    </message>
+    <message>
+        <source>Salama may still upgrade some connections</source>
+        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
+        <translation>Salama vis tiek gali kai kuriuos ryšius pakeisti į HTTPS</translation>
     </message>
 </context>
 <context>
@@ -1141,6 +1265,59 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
             <numerusform>%n svetainių su išimtimis</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Increased Protection</source>
+        <translation>Padidinta apsauga</translation>
+    </message>
+    <message>
+        <source>Max Protection</source>
+        <translation>Didžiausia apsauga</translation>
+    </message>
+    <message>
+        <source>Use your default DNS resolver</source>
+        <translation>Naudoti numatytąjį DNS serverį</translation>
+    </message>
+    <message>
+        <source>Only use your default DNS resolver if there is a problem with secure DNS</source>
+        <translation>Numatytąjį DNS serverį naudoti tik tada, kai kyla problemų su saugiuoju DNS</translation>
+    </message>
+    <message>
+        <source>If secure DNS is not available sites will not load or function properly</source>
+        <translation>Jei saugusis DNS nepasiekiamas, svetainės neįsikels arba veiks netinkamai</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n site(s)</source>
+        <extracomment>How many sites DNS over HTTPS is not used for</extracomment>
+        <translation>
+            <numerusform>%n svetainė</numerusform>
+            <numerusform>%n svetainės</numerusform>
+            <numerusform>%n svetainių</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation>Įjungta</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation>Išjungta</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation>Išjungta</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation>Nėra</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1217,14 +1394,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Visada rodyti apatinę priemonių juostą</translation>
     </message>
     <message>
-        <source>Do not track</source>
-        <translation>Nesekti</translation>
-    </message>
-    <message>
-        <source>Tell sites that I do not want to be tracked</source>
-        <translation>Pranešti svetainėms, kad nenoriu, jog mane sektų</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Įjungti JavaScript</translation>
     </message>
@@ -1239,6 +1408,22 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Site permissions</source>
         <translation>Svetainių leidimai</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Tik HTTPS veiksena</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS per HTTPS</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Prašyti svetainių nebendrinti ir neparduoti duomenų</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
     </message>
 </context>
 <context>
