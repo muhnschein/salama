@@ -1106,9 +1106,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>None</source>
-        <extracomment>The cover has no quick action
-----------
-No site is an exception to DNS over HTTPS</extracomment>
+        <extracomment>The cover has no quick action</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1148,11 +1146,7 @@ No site is an exception to DNS over HTTPS</extracomment>
     </message>
     <message>
         <source>Off</source>
-        <extracomment>Tracking protection is off
-----------
-HTTPS-Only Mode is off
-----------
-DNS over HTTPS is off</extracomment>
+        <extracomment>Tracking protection is off</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1255,11 +1249,6 @@ DNS over HTTPS is off</extracomment>
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Increased Protection</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1286,6 +1275,30 @@ DNS over HTTPS is off</extracomment>
             <numerusform>%n site</numerusform>
             <numerusform>%n sites</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>On</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is on</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>HTTPS-Only Mode</comment>
+        <extracomment>HTTPS-Only Mode is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>DNS over HTTPS</comment>
+        <extracomment>DNS over HTTPS is off</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>no sites</comment>
+        <extracomment>No site is an exception to DNS over HTTPS</extracomment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

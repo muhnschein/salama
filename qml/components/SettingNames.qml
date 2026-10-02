@@ -161,9 +161,9 @@ QtObject {
     // HTTPS-Only Mode's line in Settings (docs/DECISIONS/0047-secure-connections.md).
     function httpsOnly(on) {
         //: HTTPS-Only Mode is on
-        return on ? qsTr("On")
+        return on ? qsTr("On", "HTTPS-Only Mode")
                     //: HTTPS-Only Mode is off
-                  : qsTr("Off")
+                  : qsTr("Off", "HTTPS-Only Mode")
     }
 
     // DNS over HTTPS's levels, by their stored values (DohSettings.Protection), in Firefox
@@ -171,7 +171,7 @@ QtObject {
     function doh(level) {
         return [
             //: DNS over HTTPS is off
-            qsTr("Off"),
+            qsTr("Off", "DNS over HTTPS"),
             qsTr("Increased Protection"),
             qsTr("Max Protection")
         ][level] || ""
@@ -191,7 +191,7 @@ QtObject {
     // How many sites DNS over HTTPS is not used for.
     function dohExceptions(sites) {
         //: No site is an exception to DNS over HTTPS
-        return sites === 0 ? qsTr("None")
+        return sites === 0 ? qsTr("None", "no sites")
                              //: How many sites DNS over HTTPS is not used for
                            : qsTr("%n site(s)", "", sites)
     }
