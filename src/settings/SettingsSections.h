@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoverSettings.h"
+#include "DohSettings.h"
 #include "PrivacySettings.h"
 #include "ReaderSettings.h"
 #include "SearchSettings.h"
@@ -29,6 +30,7 @@ public:
     ReaderSettings *reader();
     CoverSettings *cover();
     PrivacySettings *privacy();
+    DohSettings *doh();
     StartPageSettings *startPage();
     SitePermissionSettings *sitePermissions();
 
@@ -42,6 +44,7 @@ private:
     ReaderSettings m_reader;
     CoverSettings m_cover;
     PrivacySettings m_privacy;
+    DohSettings m_doh;
     StartPageSettings m_startPage;
     SitePermissionSettings m_sitePermissions;
 };

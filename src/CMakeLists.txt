@@ -44,6 +44,8 @@ add_library(salama-core STATIC
     search/SearchWords.h
     settings/CoverSettings.cpp
     settings/CoverSettings.h
+    settings/DohSettings.cpp
+    settings/DohSettings.h
     settings/PrivacySettings.cpp
     settings/PrivacySettings.h
     settings/ReaderSettings.cpp

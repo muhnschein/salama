@@ -30,3 +30,7 @@ a switch at once.
 ## Consequences
 Do not track is a request sites may ignore, and says so by its name. JavaScript off breaks
 much of the web; the line under the switch says that as it is switched.
+
+*Revised* (0047): Do not track gave its place to Firefox's Global Privacy Control, "Tell
+websites not to share & sell data", which a reader who had Do not track on starts with on;
+`privacy.donottrackheader.enabled` is written false for good.

@@ -54,18 +54,21 @@ The core is one process-wide `Salama::Core` (`src/Core.h`) that owns:
   were browsed (`DECISIONS/0041-search-engines-found.md`; `search/OpenSearch` reads a
   site's description);
   `ReaderSettings` -- the reader view's look; `CoverSettings` -- the cover's style and
-  quick action; `PrivacySettings` -- tracking protection, what is kept of the history,
-  notification requests, Do not track and JavaScript; `StartPageSettings` -- what the
+  quick action; `PrivacySettings` -- HTTPS-Only Mode, tracking protection, what is kept of
+  the history, notification requests, Global Privacy Control and JavaScript;
+  `DohSettings` -- DNS over HTTPS's level, provider and exceptions
+  (`DECISIONS/0047-secure-connections.md`); `StartPageSettings` -- what the
   start page shows; and `Settings` -- the website colours, the notch guard, the fixed
   toolbar and whether the tutorial has been shown.
 - `StartPage` — the start page's lists (`SiteListModel`s): the sites visited most, the
   first bookmarks and the pages read last, read again whenever the history or the
   bookmarks change (`DECISIONS/0032-start-page.md`).
 - `EngineMessages` — the engine-specific strings QML hands to the engine, and the engine
-  preferences each tracking-protection level, each choice of website colours and each
-  default of Site permissions stands for, which the browsing page's `EnginePreferences` writes through
+  preferences each tracking-protection level, each choice of website colours, each
+  default of Site permissions, HTTPS-Only Mode, DNS over HTTPS and Global Privacy Control
+  stand for, which the browsing page's `EnginePreferences` writes through
   `WebEngineSettings.setPreference` (`DECISIONS/0023-tracking-protection.md`,
-  `0035-website-colours.md`).
+  `0035-website-colours.md`, `0047-secure-connections.md`).
 - `PageActivity` — what the engine says is playing, read from its own observer topics,
   and so when the loaded pages are put to sleep out of sight
   (`DECISIONS/0020-pages-sleep-out-of-sight.md`).
@@ -168,7 +171,8 @@ saying where a link opened behind went -- are one bar (`BarBanner.qml`), and the
 where they begin (`DECISIONS/0038-download-status.md`).
 
 Settings is a main page leading to a page each for the start page, search, the reader
-view, the cover, tracking protection, notifications and the history, each way in saying
+view, the cover, HTTPS-Only Mode, DNS over HTTPS, tracking protection, notifications and
+the history, each way in saying
 how its subject is set, and each page making its choices where they are laid out
 (`DECISIONS/0028-settings-pages.md`, `DECISIONS/0036-settings-choose-in-place.md`,
 `DECISIONS/0030-history-settings.md`, `DECISIONS/0033-web-notifications.md`), and to the

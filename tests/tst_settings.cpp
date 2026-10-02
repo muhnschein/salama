@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "settings/CoverSettings.h"
+#include "settings/DohSettings.h"
 #include "settings/PrivacySettings.h"
 #include "settings/ReaderSettings.h"
 #include "settings/SearchSettings.h"
@@ -17,6 +18,7 @@
 #include <QtTest>
 
 using Salama::CoverSettings;
+using Salama::DohSettings;
 using Salama::PrivacySettings;
 using Salama::ReaderSettings;
 using Salama::SearchSettings;
@@ -65,6 +67,16 @@ private slots:
     void fixedToolbar();
     void linkPreview();
     void contentSwitches();
+    void globalPrivacyControlTakesDoNotTracksPlace_data();
+    void globalPrivacyControlTakesDoNotTracksPlace();
+    void httpsOnly();
+    void dohProtection();
+    void dohProvider();
+    void dohProviderProblem_data();
+    void dohProviderProblem();
+    void dohDomainOf_data();
+    void dohDomainOf();
+    void dohExceptions();
 };
 
 void tst_settings::defaults()
@@ -79,8 +91,12 @@ void tst_settings::defaults()
     QVERIFY(settings.general()->cutoutGuard());
     QVERIFY(!settings.general()->fixedToolbar());
     QVERIFY(settings.general()->linkPreview());
-    QVERIFY(!settings.privacy()->doNotTrack());
+    QVERIFY(!settings.privacy()->globalPrivacyControl());
     QVERIFY(settings.privacy()->javascript());
+    QVERIFY(!settings.privacy()->httpsOnly());
+    QCOMPARE(settings.doh()->protection(), int(DohSettings::ProtectionOff));
+    QCOMPARE(settings.doh()->provider(), DohSettings::defaultProvider());
+    QVERIFY(settings.doh()->exceptions().isEmpty());
     QCOMPARE(settings.searchEngines()->engineNames().count(),
              settings.searchEngines()->engineKeys().count());
     QCOMPARE(settings.searchEngines()->engineNames().first(), QStringLiteral("Qwant"));
@@ -1004,25 +1020,255 @@ void tst_settings::linkPreview()
     QVERIFY(again.general()->linkPreview());
 }
 
-// Do not track off and JavaScript on unless switched, as in sailfish-browser, and kept.
+// Global Privacy Control off and JavaScript on unless switched, and kept.
 void tst_settings::contentSwitches()
 {
     QTemporaryDir dir;
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
         Sections settings(path);
-        QSignalSpy trackSpy(settings.privacy(), &PrivacySettings::doNotTrackChanged);
+        QSignalSpy gpcSpy(settings.privacy(), &PrivacySettings::globalPrivacyControlChanged);
         QSignalSpy scriptSpy(settings.privacy(), &PrivacySettings::javascriptChanged);
-        settings.privacy()->setDoNotTrack(true);
-        settings.privacy()->setDoNotTrack(true);
+        settings.privacy()->setGlobalPrivacyControl(true);
+        settings.privacy()->setGlobalPrivacyControl(true);
         settings.privacy()->setJavascript(false);
         settings.privacy()->setJavascript(false);
-        QCOMPARE(trackSpy.count(), 1);
+        QCOMPARE(gpcSpy.count(), 1);
         QCOMPARE(scriptSpy.count(), 1);
     }
     Sections reloaded(path);
-    QVERIFY(reloaded.privacy()->doNotTrack());
+    QVERIFY(reloaded.privacy()->globalPrivacyControl());
     QVERIFY(!reloaded.privacy()->javascript());
+}
+
+// A file from a release with Do not track starts Global Privacy Control as Do not track
+// was left, and loses the old key; one that already has Global Privacy Control keeps it.
+void tst_settings::globalPrivacyControlTakesDoNotTracksPlace_data()
+{
+    QTest::addColumn<QVariant>("doNotTrack");
+    QTest::addColumn<QVariant>("globalPrivacyControl");
+    QTest::addColumn<bool>("expected");
+    QTest::newRow("neither") << QVariant() << QVariant() << false;
+    QTest::newRow("do not track on") << QVariant(true) << QVariant() << true;
+    QTest::newRow("do not track off") << QVariant(false) << QVariant() << false;
+    QTest::newRow("both, gpc wins") << QVariant(true) << QVariant(false) << false;
+    QTest::newRow("gpc alone") << QVariant() << QVariant(true) << true;
+}
+
+void tst_settings::globalPrivacyControlTakesDoNotTracksPlace()
+{
+    QFETCH(QVariant, doNotTrack);
+    QFETCH(QVariant, globalPrivacyControl);
+    QFETCH(bool, expected);
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        QSettings file(path, QSettings::IniFormat);
+        if (doNotTrack.isValid()) {
+            file.setValue(QStringLiteral("doNotTrack"), doNotTrack);
+        }
+        if (globalPrivacyControl.isValid()) {
+            file.setValue(QStringLiteral("globalPrivacyControl"), globalPrivacyControl);
+        }
+    }
+    {
+        Sections settings(path);
+        QCOMPARE(settings.privacy()->globalPrivacyControl(), expected);
+    }
+    QSettings file(path, QSettings::IniFormat);
+    QVERIFY(!file.contains(QStringLiteral("doNotTrack")));
+    Sections reloaded(path);
+    QCOMPARE(reloaded.privacy()->globalPrivacyControl(), expected);
+}
+
+// HTTPS-Only Mode is off unless switched on, as in Firefox, and kept.
+void tst_settings::httpsOnly()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.privacy(), &PrivacySettings::httpsOnlyChanged);
+        settings.privacy()->setHttpsOnly(true);
+        settings.privacy()->setHttpsOnly(true);
+        QCOMPARE(spy.count(), 1);
+    }
+    Sections reloaded(path);
+    QVERIFY(reloaded.privacy()->httpsOnly());
+}
+
+// Off until changed; each level kept, anything else refused, and a hand-edited level
+// out of range read as Off.
+void tst_settings::dohProtection()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.doh(), &DohSettings::protectionChanged);
+        settings.doh()->setProtection(DohSettings::ProtectionMax);
+        settings.doh()->setProtection(DohSettings::ProtectionMax);
+        settings.doh()->setProtection(3);
+        settings.doh()->setProtection(-1);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(settings.doh()->protection(), int(DohSettings::ProtectionMax));
+    }
+    {
+        Sections reloaded(path);
+        QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionMax));
+        reloaded.doh()->setProtection(DohSettings::ProtectionIncreased);
+    }
+    {
+        Sections reloaded(path);
+        QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionIncreased));
+    }
+    {
+        QSettings file(path, QSettings::IniFormat);
+        file.setValue(QStringLiteral("dohProtection"), 7);
+    }
+    Sections edited(path);
+    QCOMPARE(edited.doh()->protection(), int(DohSettings::ProtectionOff));
+}
+
+// Firefox for Android's providers, Cloudflare first and the default; another address
+// is the reader's own, and one that is not a provider's is refused.
+void tst_settings::dohProvider()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    const QString nextDns = QStringLiteral("https://firefox.dns.nextdns.io/");
+    const QString own = QStringLiteral("https://dns.example.org/dns-query");
+    {
+        Sections settings(path);
+        const QVariantList providers = settings.doh()->providers();
+        QCOMPARE(providers.count(), 2);
+        QCOMPARE(providers.at(0).toMap().value(QStringLiteral("name")).toString(),
+                 QStringLiteral("Cloudflare"));
+        QCOMPARE(providers.at(0).toMap().value(QStringLiteral("url")).toString(),
+                 QStringLiteral("https://mozilla.cloudflare-dns.com/dns-query"));
+        QCOMPARE(DohSettings::defaultProvider(),
+                 providers.at(0).toMap().value(QStringLiteral("url")).toString());
+        QCOMPARE(providers.at(1).toMap().value(QStringLiteral("name")).toString(),
+                 QStringLiteral("NextDNS"));
+        QCOMPARE(providers.at(1).toMap().value(QStringLiteral("url")).toString(), nextDns);
+        QVERIFY(!settings.doh()->customProvider());
+
+        QSignalSpy spy(settings.doh(), &DohSettings::providerChanged);
+        settings.doh()->setProvider(nextDns);
+        settings.doh()->setProvider(nextDns);
+        QCOMPARE(spy.count(), 1);
+        QVERIFY(!settings.doh()->customProvider());
+        settings.doh()->setProvider(QStringLiteral("http://dns.example.org/"));
+        settings.doh()->setProvider(QStringLiteral("not an address"));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(settings.doh()->provider(), nextDns);
+        settings.doh()->setProvider(QStringLiteral("  ") + own + QStringLiteral(" "));
+        QCOMPARE(spy.count(), 2);
+        QCOMPARE(settings.doh()->provider(), own);
+        QVERIFY(settings.doh()->customProvider());
+    }
+    {
+        Sections reloaded(path);
+        QCOMPARE(reloaded.doh()->provider(), own);
+    }
+    {
+        QSettings file(path, QSettings::IniFormat);
+        file.setValue(QStringLiteral("dohProvider"), QStringLiteral("ftp://nope"));
+    }
+    Sections edited(path);
+    QCOMPARE(edited.doh()->provider(), DohSettings::defaultProvider());
+    QVERIFY(!edited.doh()->customProvider());
+}
+
+void tst_settings::dohProviderProblem_data()
+{
+    QTest::addColumn<QString>("url");
+    QTest::addColumn<int>("problem");
+    QTest::newRow("valid") << QStringLiteral("https://dns.example.org/dns-query")
+                           << int(DohSettings::ProviderValid);
+    QTest::newRow("bare host") << QStringLiteral("https://dns.example.org")
+                               << int(DohSettings::ProviderValid);
+    QTest::newRow("http") << QStringLiteral("http://dns.example.org/")
+                          << int(DohSettings::ProviderNotHttps);
+    QTest::newRow("no scheme") << QStringLiteral("dns.example.org")
+                               << int(DohSettings::ProviderNotHttps);
+    QTest::newRow("one slash") << QStringLiteral("https:/dns.example.org")
+                               << int(DohSettings::ProviderNotHttps);
+    QTest::newRow("upper case scheme")
+        << QStringLiteral("HTTPS://dns.example.org") << int(DohSettings::ProviderNotHttps);
+    QTest::newRow("empty") << QString() << int(DohSettings::ProviderNotHttps);
+    QTest::newRow("no host") << QStringLiteral("https://") << int(DohSettings::ProviderInvalid);
+    QTest::newRow("no host, a path")
+        << QStringLiteral("https:///dns-query") << int(DohSettings::ProviderInvalid);
+    QTest::newRow("space in host")
+        << QStringLiteral("https://dns example.org/") << int(DohSettings::ProviderInvalid);
+}
+
+void tst_settings::dohProviderProblem()
+{
+    QFETCH(QString, url);
+    QFETCH(int, problem);
+    QCOMPARE(DohSettings::providerProblem(url), problem);
+}
+
+void tst_settings::dohDomainOf_data()
+{
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<QString>("domain");
+    QTest::newRow("domain") << QStringLiteral("example.com") << QStringLiteral("example.com");
+    QTest::newRow("upper case") << QStringLiteral("Example.COM") << QStringLiteral("example.com");
+    QTest::newRow("scheme and path") << QStringLiteral("https://intranet.example.com/a?b")
+                                     << QStringLiteral("intranet.example.com");
+    QTest::newRow("other scheme") << QStringLiteral("http://router.local:8080")
+                                  << QStringLiteral("router.local");
+    QTest::newRow("spaces around")
+        << QStringLiteral("  example.com ") << QStringLiteral("example.com");
+    QTest::newRow("space inside") << QStringLiteral("exam ple.com") << QString();
+    QTest::newRow("empty") << QString() << QString();
+    QTest::newRow("scheme alone") << QStringLiteral("https://") << QString();
+    QTest::newRow("path alone") << QStringLiteral("/path") << QString();
+}
+
+void tst_settings::dohDomainOf()
+{
+    QFETCH(QString, text);
+    QFETCH(QString, domain);
+    QCOMPARE(DohSettings::domainOf(text), domain);
+}
+
+// Exceptions are domains, in the order added, each once; removed one by one or all at
+// once, and kept.
+void tst_settings::dohExceptions()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/salama.conf");
+    {
+        Sections settings(path);
+        QSignalSpy spy(settings.doh(), &DohSettings::exceptionsChanged);
+        QVERIFY(settings.doh()->addException(QStringLiteral("https://Intranet.example.com/")));
+        QVERIFY(settings.doh()->addException(QStringLiteral("router.local")));
+        QVERIFY(!settings.doh()->addException(QStringLiteral("intranet.example.com")));
+        QVERIFY(!settings.doh()->addException(QStringLiteral("not a domain")));
+        QCOMPARE(spy.count(), 2);
+        QCOMPARE(settings.doh()->exceptions(), (QStringList{QStringLiteral("intranet.example.com"),
+                                                            QStringLiteral("router.local")}));
+        settings.doh()->removeException(QStringLiteral("elsewhere.example"));
+        QCOMPARE(spy.count(), 2);
+    }
+    {
+        Sections reloaded(path);
+        QCOMPARE(reloaded.doh()->exceptions().count(), 2);
+        QSignalSpy spy(reloaded.doh(), &DohSettings::exceptionsChanged);
+        reloaded.doh()->removeException(QStringLiteral("intranet.example.com"));
+        QCOMPARE(reloaded.doh()->exceptions(), QStringList{QStringLiteral("router.local")});
+        reloaded.doh()->addException(QStringLiteral("a.example"));
+        reloaded.doh()->removeAllExceptions();
+        reloaded.doh()->removeAllExceptions();
+        QCOMPARE(spy.count(), 3);
+        QVERIFY(reloaded.doh()->exceptions().isEmpty());
+    }
+    Sections again(path);
+    QVERIFY(again.doh()->exceptions().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_settings)

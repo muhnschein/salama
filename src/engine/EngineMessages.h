@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
@@ -181,12 +182,31 @@ public:
     // Automatic (docs/DECISIONS/0035-website-colours.md).
     Q_INVOKABLE static QVariantList websiteColorPreferences(int colors, bool darkAmbience);
 
-    // What the engine is told for the Privacy switches Do not track and Enable
-    // JavaScript, in the same {name, value} form: the preferences sailfish-browser's
-    // WebEngineSettings.doNotTrack and javascriptEnabled write
-    // (qtmozembed qmozenginesettings.cpp), privacy.donottrackheader.enabled and
-    // javascript.enabled.
-    Q_INVOKABLE static QVariantList contentPreferences(bool doNotTrack, bool javascript);
+    // What the engine is told for the Privacy switches, in the same {name, value} form.
+    // Global Privacy Control sends Sec-GPC and answers navigator.globalPrivacyControl
+    // only while both of its preferences are on, and the second is off in Gecko's own
+    // defaults, on in Firefox's (gecko-dev netwerk/protocol/http/nsHttpChannel.cpp,
+    // SetGlobalPrivacyControl). Do not track, which it took the place of, is switched off
+    // for good, as Firefox has dropped it. JavaScript is javascript.enabled, which
+    // sailfish-browser's WebEngineSettings.javascriptEnabled writes (qtmozembed
+    // qmozenginesettings.cpp). docs/DECISIONS/0047-secure-connections.md.
+    Q_INVOKABLE static QVariantList contentPreferences(bool globalPrivacyControl, bool javascript);
+
+    // What the engine is told for HTTPS-Only Mode: dom.security.https_only_mode, and
+    // HTTPS-First, dom.security.https_first, on whatever HTTPS-Only Mode is, as it is in
+    // Firefox -- on by default from ESR 140, off in ESR 115's own defaults.
+    Q_INVOKABLE static QVariantList httpsOnlyPreferences(bool httpsOnly);
+
+    // What the engine is told for DNS over HTTPS: network.trr.mode for a
+    // DohSettings::Protection -- 5, off and never turned on by anything else, for Off; 2,
+    // falling back to the system's resolver, for Increased; 3, never falling back, for
+    // Max (netwerk/dns/nsIDNSService.idl, ResolverMode) -- the provider's address as
+    // network.trr.uri, and the exceptions, comma separated, as
+    // network.trr.excluded-domains, which excludes each domain's subdomains too. The
+    // mapping is GeckoView's, which Firefox for Android's settings write through. A
+    // level out of range is Off.
+    Q_INVOKABLE static QVariantList dohPreferences(int protection, const QString &provider,
+                                                   const QStringList &exceptions);
 };
 
 } // namespace Salama

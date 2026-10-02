@@ -4,8 +4,9 @@
 // What the settings ask of the engine through its preferences: the tracking protection
 // level (docs/DECISIONS/0023-tracking-protection.md), the cookies accepted while it is
 // off and what sites may do unless told otherwise (0039-site-permissions.md), the
-// colours pages are asked to draw themselves in (0035-website-colours.md), and Privacy's
-// Do not track and JavaScript switches (0044-sailfish-browser-settings.md). Given as the
+// colours pages are asked to draw themselves in (0035-website-colours.md), Privacy's
+// Global Privacy Control and JavaScript switches (0044-sailfish-browser-settings.md),
+// HTTPS-Only Mode and DNS over HTTPS (0047-secure-connections.md). Given as the
 // browsing page is made, which
 // the engine keeps until it is up, and again whenever a setting changes -- or, for pages
 // drawn as the ambience is, the ambience.
@@ -47,8 +48,17 @@ QtObject {
     }
 
     function applyContent() {
-        give(EngineMessages.contentPreferences(PrivacySettings.doNotTrack,
+        give(EngineMessages.contentPreferences(PrivacySettings.globalPrivacyControl,
                                                PrivacySettings.javascript))
+    }
+
+    function applyHttpsOnly() {
+        give(EngineMessages.httpsOnlyPreferences(PrivacySettings.httpsOnly))
+    }
+
+    function applyDoh() {
+        give(EngineMessages.dohPreferences(DohSettings.protection, DohSettings.provider,
+                                           DohSettings.exceptions))
     }
 
     function applyWebsiteColors() {
@@ -64,8 +74,16 @@ QtObject {
     property Connections privacy: Connections {
         target: PrivacySettings
         onTrackingProtectionChanged: preferences.applyTrackingProtection()
-        onDoNotTrackChanged: preferences.applyContent()
+        onGlobalPrivacyControlChanged: preferences.applyContent()
         onJavascriptChanged: preferences.applyContent()
+        onHttpsOnlyChanged: preferences.applyHttpsOnly()
+    }
+
+    property Connections doh: Connections {
+        target: DohSettings
+        onProtectionChanged: preferences.applyDoh()
+        onProviderChanged: preferences.applyDoh()
+        onExceptionsChanged: preferences.applyDoh()
     }
 
     property Connections sites: Connections {
@@ -87,5 +105,7 @@ QtObject {
         applySitePermissions()
         applyWebsiteColors()
         applyContent()
+        applyHttpsOnly()
+        applyDoh()
     }
 }

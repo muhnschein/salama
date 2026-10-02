@@ -48,6 +48,7 @@ public:
     ReaderSettings *readerSettings();
     CoverSettings *coverSettings();
     PrivacySettings *privacySettings();
+    DohSettings *dohSettings();
     StartPageSettings *startPageSettings();
     SitePermissionSettings *sitePermissionSettings();
     OmnibarModel *omnibar();
