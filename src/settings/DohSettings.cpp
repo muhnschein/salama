@@ -93,7 +93,7 @@ int DohSettings::providerProblem(const QString &url)
 QString DohSettings::domainOf(const QString &text)
 {
     const QString typed = text.trimmed();
-    if (typed.isEmpty() || typed.contains(QLatin1Char(' '))) {
+    if (typed.isEmpty()) {
         return {};
     }
     // A scheme, if there is one, is dropped, as Firefox for Android drops it; what is
@@ -101,10 +101,8 @@ QString DohSettings::domainOf(const QString &text)
     const int scheme = typed.indexOf(QLatin1String("://"));
     const QString rest = scheme < 0 ? typed : typed.mid(scheme + 3);
     const QUrl parsed(QLatin1String(HttpsPrefix) + rest, QUrl::StrictMode);
-    if (!parsed.isValid()) {
-        return {};
-    }
-    return parsed.host().toLower();
+    // QUrl keeps a host in lower case, as the engine compares it.
+    return parsed.isValid() ? parsed.host() : QString();
 }
 
 QStringList DohSettings::exceptions() const
