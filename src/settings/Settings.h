@@ -7,9 +7,10 @@
 namespace Salama {
 
 // What belongs to no settings page of its own: the website colours, the notch guard and
-// the fixed toolbar, under Appearance on the main page, and whether the tutorial has been
-// shown. The pages' own are SearchSettings, ReaderSettings, CoverSettings,
-// PrivacySettings and StartPageSettings (docs/DECISIONS/0028-settings-pages.md).
+// the fixed toolbar, under Appearance on the main page, whether the tutorial has been
+// shown, and whether the link sheet shows a link's page. The pages' own are SearchSettings,
+// ReaderSettings, CoverSettings, PrivacySettings and StartPageSettings
+// (docs/DECISIONS/0028-settings-pages.md).
 class Settings : public SettingsSection
 {
     Q_OBJECT
@@ -33,6 +34,10 @@ class Settings : public SettingsSection
     // (docs/DECISIONS/0034-tutorial.md).
     Q_PROPERTY(
         bool tutorialShown READ tutorialShown WRITE setTutorialShown NOTIFY tutorialShownChanged)
+    // Whether the link sheet shows the page a link leads to, as Safari's link preview does:
+    // the sheet's Show preview and Hide preview say it for every link from then on
+    // (docs/DECISIONS/0046-link-menu.md).
+    Q_PROPERTY(bool linkPreview READ linkPreview WRITE setLinkPreview NOTIFY linkPreviewChanged)
 
 public:
     // What a page is told the screen is, as the CSS prefers-color-scheme it reads: dark
@@ -81,6 +86,10 @@ public:
     bool tutorialShown() const;
     void setTutorialShown(bool shown);
 
+    // On unless switched off, as Safari's is.
+    bool linkPreview() const;
+    void setLinkPreview(bool shown);
+
     // How many screen pixels the engine lays a css pixel out on, for a screen of this
     // Theme.pixelRatio: 1.75 of it in steps of a half, which is about 360 css pixels
     // across a 1080 wide screen -- the width a phone layout is written for -- where the
@@ -93,6 +102,7 @@ signals:
     void fixedToolbarChanged();
     void websiteColorsChanged();
     void tutorialShownChanged();
+    void linkPreviewChanged();
 };
 
 } // namespace Salama

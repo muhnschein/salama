@@ -7,9 +7,11 @@
 #include "settings/SearchSettings.h"
 #include "settings/Settings.h"
 #include "settings/SitePermissionSettings.h"
+#include "tabs/TabModel.h"
 
 #include <QColor>
 #include <QRegularExpression>
+#include <QStringList>
 #include <QUrl>
 #include <QVector>
 #include <cstring>
@@ -21,6 +23,31 @@ namespace {
 bool isWebScheme(const QString &scheme)
 {
     return scheme == QLatin1String("http") || scheme == QLatin1String("https");
+}
+
+// What the link sheet shows of an address: another application's without its scheme --
+// the mailbox, the number -- and a page's host without www, then its path and query as
+// they read, percent signs decoded; a bare host has nothing after it.
+QString shownAddress(const QString &address)
+{
+    if (address.isEmpty()) {
+        return {};
+    }
+    const QUrl url(address, QUrl::TolerantMode);
+    if (TabModel::isExternalUrl(address)) {
+        return url.path(QUrl::FullyDecoded);
+    }
+    if (url.host().isEmpty()) {
+        return url.toDisplayString();
+    }
+    QString rest = url.path(QUrl::PrettyDecoded);
+    if (url.hasQuery()) {
+        rest += QLatin1Char('?') + url.query(QUrl::PrettyDecoded);
+    }
+    if (rest == QLatin1String("/")) {
+        rest.clear();
+    }
+    return SearchSettings::displayAddress(address) + rest;
 }
 
 // nsITypeAheadFind's answers that mean the text is on the page.
@@ -246,6 +273,52 @@ QVariantMap EngineMessages::searchOffered(const QVariant &data)
         {QStringLiteral("title"), engine.value(QStringLiteral("title")).toString()},
         {QStringLiteral("href"), href},
         {QStringLiteral("host"), host},
+    };
+}
+
+QString EngineMessages::contextMenuMessage() const
+{
+    return QStringLiteral("Content:ContextMenu");
+}
+
+QVariantMap EngineMessages::linkTarget(const QVariant &data)
+{
+    const QVariantMap message = data.toMap();
+    const QStringList types = message.value(QStringLiteral("types")).toStringList();
+
+    QString link;
+    QString scheme;
+    if (types.contains(QStringLiteral("link"))) {
+        const QString href = message.value(QStringLiteral("linkURL")).toString().trimmed();
+        scheme = QUrl(href, QUrl::TolerantMode).scheme().toLower();
+        if (!scheme.isEmpty() && scheme != QLatin1String("javascript")) {
+            link = href;
+        } else {
+            scheme.clear();
+        }
+    }
+
+    QString image;
+    if (types.contains(QStringLiteral("image"))) {
+        const QString src = message.value(QStringLiteral("mediaURL")).toString().trimmed();
+        if (isWebScheme(QUrl(src, QUrl::TolerantMode).scheme().toLower())) {
+            image = src;
+        }
+    }
+
+    QString kind;
+    if (!link.isEmpty()) {
+        kind = TabModel::isExternalUrl(link) ? QStringLiteral("app") : QStringLiteral("page");
+    }
+    const QString title = message.value(QStringLiteral("linkTitle")).toString().simplified();
+    return {
+        {QStringLiteral("link"), link},
+        {QStringLiteral("kind"), kind},
+        {QStringLiteral("scheme"), scheme},
+        {QStringLiteral("title"), title},
+        {QStringLiteral("image"), image},
+        {QStringLiteral("contentType"), message.value(QStringLiteral("contentType")).toString()},
+        {QStringLiteral("address"), shownAddress(link.isEmpty() ? image : link)},
     };
 }
 

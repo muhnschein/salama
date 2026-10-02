@@ -144,6 +144,13 @@ public:
     // shared from another application opens, whatever group was being read
     // (docs/DECISIONS/0042-share-target.md).
     Q_INVOKABLE int newTabInDefaultGroup(const QString &url);
+    // A tab for a link, opened in the current group behind the tab in front, which
+    // stays there: the link sheet's Background tab (docs/DECISIONS/0046-link-menu.md).
+    // It is named by the link's text until its page says otherwise, and has no view until
+    // it first comes to the front, as a restored tab has none
+    // (docs/DECISIONS/0003-one-webview-per-tab.md). Returns the new tab id, or 0 for no
+    // address, or one another application takes.
+    Q_INVOKABLE int newTabBehind(const QString &url, const QString &title);
     Q_INVOKABLE void activateTab(int index);
     Q_INVOKABLE bool activateTabById(int tabId);
     Q_INVOKABLE void closeTab(int index);
@@ -158,6 +165,8 @@ public:
     // tab to the front rather than open the page again
     // (docs/DECISIONS/0029-quick-action.md).
     Q_INVOKABLE int tabIdForUrl(const QString &url) const;
+    // The name of the group a tab is in, empty for an unnamed group or no such tab.
+    Q_INVOKABLE QString groupNameOf(int tabId) const;
 
     // Called by the view as the engine reports page state.
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);
@@ -267,6 +276,8 @@ signals:
 
 private:
     void load();
+    // A tab at the end of the current group, not brought to the front; its id, or 0.
+    int insertTab(const QString &url, const QString &title);
     void ensureGroups();
     // Which tabs keep their views, and the same recomputed with the rows that changed
     // told; the constructor takes the set alone, there being no rows to tell yet.

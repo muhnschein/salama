@@ -38,6 +38,7 @@ private slots:
     void emptyModel();
     void newTabAppendsAndActivates();
     void newTabRejectsExternalUrls();
+    void newTabBehindStaysBehind();
     void activation();
     void moveTabReorders();
     void closeTabActivatesPrevious();
@@ -174,6 +175,66 @@ void tst_tabmodel::newTabRejectsExternalUrls()
     QCOMPARE(model.count(), 0);
     QVERIFY(TabModel::isExternalUrl(QStringLiteral("MAILTO:x@y.z")));
     QVERIFY(!TabModel::isExternalUrl(QStringLiteral("https://x.y/")));
+}
+
+// The link sheet's Background tab: a tab in the current group that does not come to the
+// front, named by the link's text until its page names it, and kept like any other.
+void tst_tabmodel::newTabBehindStaysBehind()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    int reading = 0;
+    int front = 0;
+    int behind = 0;
+    {
+        TabModel model(&persistence);
+        const int first = model.newTab(QStringLiteral("https://one.example/"));
+        reading = model.addGroup(QStringLiteral("Reading"));
+        front = model.newTab(QStringLiteral("https://trails.example/"));
+        QSignalSpy activeSpy(&model, &TabModel::activeTabChanged);
+        QSignalSpy dataSpy(&model, &TabModel::activeTabDataChanged);
+        QSignalSpy addedSpy(&model, &TabModel::tabAdded);
+        QSignalSpy titleSpy(&model, &TabModel::titleUpdated);
+
+        behind = model.newTabBehind(QStringLiteral("https://trails.example/ridge"),
+                                    QStringLiteral("The ridge loop"));
+        QVERIFY(behind > front);
+        QCOMPARE(model.count(), 3);
+        QCOMPARE(model.activeTabId(), front);
+        QCOMPARE(model.currentGroupId(), reading);
+        QCOMPARE(activeSpy.count(), 0);
+        QCOMPARE(dataSpy.count(), 0);
+        QCOMPARE(addedSpy.count(), 1);
+        QCOMPARE(addedSpy.first().first().toInt(), behind);
+        // Named by the link without telling the history so: the page has not been read.
+        QCOMPARE(titleSpy.count(), 0);
+        const int row = model.indexOf(behind);
+        QCOMPARE(role(model, row, roleId(TabModel::Role::Title)).toString(),
+                 QStringLiteral("The ridge loop"));
+        QCOMPARE(role(model, row, roleId(TabModel::Role::Group)).toInt(), reading);
+        QCOMPARE(role(model, row, roleId(TabModel::Role::Active)).toBool(), false);
+        QCOMPARE(model.groupNameOf(behind), QStringLiteral("Reading"));
+        QCOMPARE(model.groupNameOf(first), QString());
+        QCOMPARE(model.groupNameOf(9999), QString());
+
+        // Nothing for no address, or for one another application takes.
+        QCOMPARE(model.newTabBehind(QString(), QStringLiteral("Nothing")), 0);
+        QCOMPARE(model.newTabBehind(QStringLiteral("mailto:a@b.c"), QStringLiteral("Mail")), 0);
+        QCOMPARE(model.count(), 3);
+
+        // Its page is visited when it is first shown, as any new tab's is.
+        QSignalSpy visitedSpy(&model, &TabModel::visited);
+        model.activateTabById(behind);
+        model.updateUrl(behind, QStringLiteral("https://trails.example/ridge"));
+        QCOMPARE(visitedSpy.count(), 1);
+        model.activateTabById(front);
+    }
+    TabModel restored(&persistence);
+    QCOMPARE(restored.count(), 3);
+    QCOMPARE(restored.activeTabId(), front);
+    QCOMPARE(role(restored, restored.indexOf(behind), roleId(TabModel::Role::Title)).toString(),
+             QStringLiteral("The ridge loop"));
 }
 
 void tst_tabmodel::activation()

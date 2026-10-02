@@ -39,9 +39,9 @@ WebViewPage {
     // relaid out on every frame, which is what stretched pages under the keyboard. One
     // resize, and the bar covers the difference while it moves.
     readonly property real barHeight: navigationBar.height
-    readonly property real viewHeight: fullHeight - (navigationBar.compact
-                                                     || navigationBar.resizing
-                                                     ? navigationBar.slimHeight : barHeight)
+    readonly property real viewHeight: fullHeight - banners.height
+                                       - (navigationBar.compact || navigationBar.resizing
+                                          ? navigationBar.slimHeight : barHeight)
 
     // The display's cutout, and how much of it the page and the rest keep out of.
     readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
@@ -166,6 +166,7 @@ WebViewPage {
     // where the cover's quick action starts (docs/DECISIONS/0029-quick-action.md).
     function uncover() {
         browserMenu.hide()
+        linkMenu.hide()
         navigationBar.endEditing()
         deck.settle(false)
     }
@@ -385,8 +386,10 @@ WebViewPage {
             onPageTouchEnded: browserPage.touchPage(position, "end")
         }
 
-        // What the downloads are doing, just above the bar, over the foot of the page.
-        DownloadBanner {
+        // The banners on the bar, where the page ends (viewHeight).
+        BarBanners {
+            id: banners
+
             width: parent.width
             y: navigationBar.y - height
             allowed: !navigationBar.editing && !findBar.active && !browserPage.tabsOpen
@@ -448,6 +451,16 @@ WebViewPage {
         onFindRequested: findBar.open()
     }
 
+    // What a press held on a link or a picture brings up (docs/DECISIONS/0046-link-menu.md).
+    LinkMenu {
+        id: linkMenu
+
+        topInset: browserPage.pageCutoutInset
+        previewView: Component { WebView { objectName: "linkPreviewView"; url: linkMenu.target.link } }
+        onOpenRequested: browserPage.openChosen(url, inNewTab)
+        onOpenedBehind: banners.tabOpened(tabId, title)
+    }
+
     Component {
         id: webViewComponent
 
@@ -461,9 +474,11 @@ WebViewPage {
             // away -- and a player's next track could not start in the grace after it.
             // sailfish-browser keeps its page active the same way
             // (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
-            active: isCurrent && !PageActivity.asleep
+            active: isCurrent && !PageActivity.asleep && !linkMenu.previewShown
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
+            // Put aside while a link's preview has the engine's one picture (LinkMenu.qml).
+            visible: !linkMenu.previewShown
             downloadsEnabled: true
 
             // The chrome gesture the bar reads, and the safe area for the cutout.
@@ -544,6 +559,8 @@ WebViewPage {
             property PageViewport viewport: PageViewport { view: webView }
             // The searches the page offers, kept for Settings > Search (docs/DECISIONS/0041-search-engines-found.md).
             property PageSearchLink searches: PageSearchLink { view: webView }
+            // A press held on a link or a picture of the page in front (docs/DECISIONS/0046-link-menu.md).
+            property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.openFor(target, webView) }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)

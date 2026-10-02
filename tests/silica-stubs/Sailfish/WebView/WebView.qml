@@ -19,7 +19,11 @@ Item {
     property bool downloadsEnabled: false
     property bool domContentLoaded: false
     property string httpUserAgent
-    property var popupProvider
+    // The platform's popup provider, which says what each popup is made of: for a menu on
+    // a press held on a link, a dictionary naming a file (import/popups/PopupProvider.qml).
+    property var popupProvider: QtObject {
+        property var contextMenu: ({ "type": "item", "component": "ContextMenu.qml" })
+    }
     // RawWebView: what the engine keeps clear at the foot of the viewport.
     property real footerMargin: 0
     // QuickMozView's chrome gesture: the engine drops chrome while a page is scrolled
@@ -191,6 +195,7 @@ Item {
         callback({
                      "image": GrabStub.image(webView.grabSaveFails ? 0 : targetSize.width,
                                              webView.grabSaveFails ? 0 : targetSize.height),
+                     "url": "image://grab/" + grabCount,
                      "saveToFile": function (path) {
                          webView.lastGrabPath = path
                          return !webView.grabSaveFails

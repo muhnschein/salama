@@ -16,6 +16,14 @@
     </message>
 </context>
 <context>
+    <name>BarBanner</name>
+    <message>
+        <source>Show</source>
+        <extracomment>The banner over the navigation bar: what it is about, brought up</extracomment>
+        <translation>બતાવો</translation>
+    </message>
+</context>
+<context>
     <name>BookmarkDelegate</name>
     <message>
         <source>Open in new tab</source>
@@ -548,6 +556,94 @@
             <numerusform>%1, %n જૂથમાં</numerusform>
             <numerusform>%1, %n જૂથોમાં</numerusform>
         </translation>
+    </message>
+</context>
+<context>
+    <name>LinkActions</name>
+    <message>
+        <source>New tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, brought to the front</extracomment>
+        <translation>નવી ટૅબ</translation>
+    </message>
+    <message>
+        <source>Background tab</source>
+        <extracomment>The link sheet&apos;s action: the link in a new tab, left behind the one in front</extracomment>
+        <translation>પૃષ્ઠભૂમિ ટૅબ</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation>વહેંચો</translation>
+    </message>
+    <message>
+        <source>Save link</source>
+        <extracomment>The link sheet&apos;s action: what the link leads to, downloaded</extracomment>
+        <translation>કડી સાચવો</translation>
+    </message>
+    <message>
+        <source>Open image</source>
+        <extracomment>The link sheet&apos;s action: the picture alone, in a new tab</extracomment>
+        <translation>ચિત્ર ખોલો</translation>
+    </message>
+    <message>
+        <source>Save image</source>
+        <extracomment>The link sheet&apos;s action: the picture, downloaded</extracomment>
+        <translation>ચિત્ર સાચવો</translation>
+    </message>
+    <message>
+        <source>Copy image link</source>
+        <extracomment>The link sheet&apos;s action: the picture&apos;s address, put on the clipboard</extracomment>
+        <translation>ચિત્રની કડી કૉપિ કરો</translation>
+    </message>
+</context>
+<context>
+    <name>LinkMenu</name>
+    <message>
+        <source>Write email</source>
+        <extracomment>The link sheet&apos;s action for an email address: the mail app, writing to it</extracomment>
+        <translation>ઇમેઇલ લખો</translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>The link sheet&apos;s action for a phone number</extracomment>
+        <translation>કૉલ કરો</translation>
+    </message>
+    <message>
+        <source>Send message</source>
+        <extracomment>The link sheet&apos;s action for a phone number to text</extracomment>
+        <translation>સંદેશ મોકલો</translation>
+    </message>
+    <message>
+        <source>Show on map</source>
+        <extracomment>The link sheet&apos;s action for a place: the maps app, showing it</extracomment>
+        <translation>નકશા પર બતાવો</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <extracomment>Shown for a moment once the link sheet has put an email address, a phone number or a place on the clipboard</extracomment>
+        <translation>કૉપિ થયું</translation>
+    </message>
+    <message>
+        <source>Link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a link on the clipboard</extracomment>
+        <translation>કડી કૉપિ થઈ</translation>
+    </message>
+    <message>
+        <source>Image link copied</source>
+        <extracomment>Shown for a moment once the link sheet has put a picture&apos;s address on the clipboard</extracomment>
+        <translation>ચિત્રની કડી કૉપિ થઈ</translation>
+    </message>
+</context>
+<context>
+    <name>LinkPreview</name>
+    <message>
+        <source>Hide preview</source>
+        <extracomment>The row over a link&apos;s preview, which hides it for every link</extracomment>
+        <translation>પૂર્વદર્શન છુપાવો</translation>
+    </message>
+    <message>
+        <source>Show preview</source>
+        <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
+        <translation>પૂર્વદર્શન બતાવો</translation>
     </message>
 </context>
 <context>
@@ -1502,6 +1598,19 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>The sites you visit and bookmark show up here</source>
         <translation>તમે જે સાઇટ્સની મુલાકાત લો છો અને બુકમાર્ક કરો છો, તે અહીં દેખાય છે</translation>
+    </message>
+</context>
+<context>
+    <name>TabBanner</name>
+    <message>
+        <source>Opened in a new tab</source>
+        <extracomment>The banner as a link opens in a tab behind the one in front</extracomment>
+        <translation>નવી ટૅબમાં ખોલ્યું</translation>
+    </message>
+    <message>
+        <source>%1 · in %2</source>
+        <extracomment>Under &quot;Opened in a new tab&quot;: the link&apos;s name, and the named tab group it went into</extracomment>
+        <translation>%1 · %2 માં</translation>
     </message>
 </context>
 <context>

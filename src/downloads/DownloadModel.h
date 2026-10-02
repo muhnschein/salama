@@ -6,6 +6,7 @@
 
 #include <QAbstractListModel>
 #include <QList>
+#include <QSet>
 #include <QSqlDatabase>
 #include <QString>
 #include <QStringList>
@@ -178,6 +179,15 @@ public:
     Q_INVOKABLE void pause(int row);
     Q_INVOKABLE void resume(int row);
 
+    // A new download of a link or a picture: the link sheet's Save link and Save image
+    // (docs/DECISIONS/0046-link-menu.md). The engine is asked to fetch the address into
+    // the downloads folder, under the name its path ends in -- the host's, for a path
+    // that ends in none -- with the usual ending for the type added to a name that has
+    // none, and numbered before the ending, "map(1).pdf", when a file, a row or a save
+    // asked for earlier already has the name, as Firefox numbers them. Only http and
+    // https. Answers the path asked for, or empty when nothing was asked.
+    Q_INVOKABLE QString save(const QString &url, const QString &contentType);
+
     // Delete a download's file and forget its row. Only a file that has arrived, and
     // only under the downloads folder's own parent -- ~/Downloads, where the engine
     // saves when the folder is gone -- which is where the Downloads permission lets
@@ -224,6 +234,8 @@ private:
     void changed(int row, const QVector<int> &roles);
     void recount();
     void request(const QVariantMap &data);
+    // A path in the downloads folder for this name that no file, row or save has.
+    QString freePath(const QString &name) const;
     void removeRow(int row);
     void dropOldest();
 
@@ -238,6 +250,8 @@ private:
     int m_nextId = 1;
     int m_runningCount = 0;
     int m_runningProgress = 0;
+    // The paths save() has asked the engine for, which it may not have started yet.
+    QSet<QString> m_saved;
 
     struct Tray
     {

@@ -76,6 +76,7 @@ Reuse policy:
 - Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
 - Address bar (URL/search), configurable search engine, with suggestions from the open tabs, bookmarks, history and downloads as it is typed into
 - Back, forward, reload, stop, share (`Sailfish.Share`)
+- A press held on a link or a picture: a sheet to open it in a new tab, in front or behind, share it, save it or copy it, with a preview of the page as Safari has and the picture lifted closer (`docs/DECISIONS/0046-link-menu.md`)
 - A target in the share sheet for links alone, opening them in a new tab (`docs/DECISIONS/0042-share-target.md`)
 - History and bookmarks (SQLite) with management UI
 - Downloads through the platform download plumbing, listed in the browser

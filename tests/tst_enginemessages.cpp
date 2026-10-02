@@ -64,6 +64,9 @@ private slots:
     void themeColor();
     void findRequest();
     void searchOffered();
+    void linkTarget_data();
+    void linkTarget();
+    void linkTargetOfNothing();
     void findFound_data();
     void findFound();
     void trackingProtectionNamesTheSamePreferences();
@@ -139,6 +142,128 @@ void tst_enginemessages::searchOffered()
         QCOMPARE(nothing.count(), 3);
         QVERIFY(nothing.value(QStringLiteral("title")).toString().isEmpty());
         QVERIFY(nothing.value(QStringLiteral("href")).toString().isEmpty());
+    }
+}
+
+// What ContextMenuHandler.js says of a press held on the page, as the link sheet reads it.
+void tst_enginemessages::linkTarget_data()
+{
+    QTest::addColumn<QVariantMap>("message");
+    QTest::addColumn<QString>("link");
+    QTest::addColumn<QString>("kind");
+    QTest::addColumn<QString>("image");
+    QTest::addColumn<QString>("title");
+    QTest::addColumn<QString>("address");
+
+    const auto link = [](const QString &url, const QString &title) {
+        return QVariantMap{{QStringLiteral("types"), QStringList{QStringLiteral("link")}},
+                           {QStringLiteral("linkURL"), url},
+                           {QStringLiteral("linkTitle"), title}};
+    };
+    // The link's text as one line: a link's textContent keeps the page's line breaks.
+    QTest::newRow("page") << link(QStringLiteral("https://www.trails.example/walks/ridge-loop"),
+                                  QStringLiteral("  The ridge\n   loop "))
+                          << QStringLiteral("https://www.trails.example/walks/ridge-loop")
+                          << QStringLiteral("page") << QString() << QStringLiteral("The ridge loop")
+                          << QStringLiteral("trails.example/walks/ridge-loop");
+    QTest::newRow("bare host") << link(QStringLiteral("https://trails.example/"), QString())
+                               << QStringLiteral("https://trails.example/")
+                               << QStringLiteral("page") << QString() << QString()
+                               << QStringLiteral("trails.example");
+    QTest::newRow("query, decoded")
+        << link(QStringLiteral("https://trails.example/s%C3%B6k?walk=1"), QStringLiteral("Search"))
+        << QStringLiteral("https://trails.example/s%C3%B6k?walk=1") << QStringLiteral("page")
+        << QString() << QStringLiteral("Search")
+        << QStringLiteral("trails.example/s\u00f6k?walk=1");
+    // What another application takes is shown without its scheme.
+    QTest::newRow("mailto") << link(QStringLiteral("mailto:walks@trails.example"),
+                                    QStringLiteral("Write to us"))
+                            << QStringLiteral("mailto:walks@trails.example")
+                            << QStringLiteral("app") << QString() << QStringLiteral("Write to us")
+                            << QStringLiteral("walks@trails.example");
+    QTest::newRow("tel") << link(QStringLiteral("tel:+358401234567"), QString())
+                         << QStringLiteral("tel:+358401234567") << QStringLiteral("app")
+                         << QString() << QString() << QStringLiteral("+358401234567");
+    QTest::newRow("geo") << link(QStringLiteral("GEO:60.17,24.94"), QString())
+                         << QStringLiteral("GEO:60.17,24.94") << QStringLiteral("app") << QString()
+                         << QString() << QStringLiteral("60.17,24.94");
+    // A script to run is no place to go.
+    QTest::newRow("javascript") << link(QStringLiteral("javascript:void(0)"),
+                                        QStringLiteral("More"))
+                                << QString() << QString() << QString() << QStringLiteral("More")
+                                << QString();
+    QTest::newRow("no address") << link(QString(), QStringLiteral("More")) << QString() << QString()
+                                << QString() << QStringLiteral("More") << QString();
+
+    // A picture that is a link: both, and the link's address under the title.
+    QTest::newRow("linked image")
+        << QVariantMap{{QStringLiteral("types"),
+                        QStringList{QStringLiteral("image"), QStringLiteral("link")}},
+                       {QStringLiteral("linkURL"),
+                        QStringLiteral("https://trails.example/maps/ridge")},
+                       {QStringLiteral("mediaURL"),
+                        QStringLiteral("https://cdn.example/ridge.jpg")},
+                       {QStringLiteral("contentType"), QStringLiteral("image/jpeg")}}
+        << QStringLiteral("https://trails.example/maps/ridge") << QStringLiteral("page")
+        << QStringLiteral("https://cdn.example/ridge.jpg") << QString()
+        << QStringLiteral("trails.example/maps/ridge");
+    // A picture alone: the picture's address.
+    QTest::newRow("image") << QVariantMap{{QStringLiteral("types"),
+                                           QStringList{QStringLiteral("image")}},
+                                          {QStringLiteral("mediaURL"),
+                                           QStringLiteral("https://cdn.example/photos/ridge.jpg")},
+                                          {QStringLiteral("linkTitle"), QStringLiteral("Dawn")}}
+                           << QString() << QString()
+                           << QStringLiteral("https://cdn.example/photos/ridge.jpg")
+                           << QStringLiteral("Dawn")
+                           << QStringLiteral("cdn.example/photos/ridge.jpg");
+    // Only what the web can give again: not one drawn from the page's own data.
+    QTest::newRow("data image")
+        << QVariantMap{{QStringLiteral("types"), QStringList{QStringLiteral("image")}},
+                       {QStringLiteral("mediaURL"), QStringLiteral("data:image/png;base64,AAAA")}}
+        << QString() << QString() << QString() << QString() << QString();
+    // An address the message carries for something it does not say is there is not used.
+    QTest::newRow("text")
+        << QVariantMap{{QStringLiteral("types"), QStringList{QStringLiteral("content-text")}},
+                       {QStringLiteral("linkURL"), QStringLiteral("https://a.example/")},
+                       {QStringLiteral("mediaURL"), QStringLiteral("https://a.example/b.png")}}
+        << QString() << QString() << QString() << QString() << QString();
+}
+
+void tst_enginemessages::linkTarget()
+{
+    QFETCH(QVariantMap, message);
+    QFETCH(QString, link);
+    QFETCH(QString, kind);
+    QFETCH(QString, image);
+    QFETCH(QString, title);
+    QFETCH(QString, address);
+
+    EngineMessages messages;
+    QCOMPARE(messages.contextMenuMessage(), QStringLiteral("Content:ContextMenu"));
+    const QVariantMap target = EngineMessages::linkTarget(message);
+    QCOMPARE(target.value(QStringLiteral("link")).toString(), link);
+    QCOMPARE(target.value(QStringLiteral("kind")).toString(), kind);
+    QCOMPARE(target.value(QStringLiteral("scheme")).toString(),
+             link.isEmpty() ? QString() : link.section(QLatin1Char(':'), 0, 0).toLower());
+    QCOMPARE(target.value(QStringLiteral("image")).toString(), image);
+    QCOMPARE(target.value(QStringLiteral("title")).toString(), title);
+    QCOMPARE(target.value(QStringLiteral("address")).toString(), address);
+    QCOMPARE(target.value(QStringLiteral("contentType")).toString(),
+             message.value(QStringLiteral("contentType")).toString());
+    QCOMPARE(target.count(), 7);
+}
+
+// Whatever arrives, every key is there for QML to read, and empty.
+void tst_enginemessages::linkTargetOfNothing()
+{
+    for (const QVariant &data : {QVariant(), QVariant(QStringLiteral("text")), QVariant(42),
+                                 QVariant(QVariantMap{{QStringLiteral("types"), 7}})}) {
+        const QVariantMap nothing = EngineMessages::linkTarget(data);
+        QCOMPARE(nothing.count(), 7);
+        for (auto it = nothing.cbegin(); it != nothing.cend(); ++it) {
+            QVERIFY2(it.value().toString().isEmpty(), qPrintable(it.key()));
+        }
     }
 }
 

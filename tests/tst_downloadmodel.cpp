@@ -44,6 +44,7 @@ private slots:
     void withoutDatabase();
     void pauseAndResume();
     void downloadAgain();
+    void saveKeepsTheFilesName();
     void removeAndClearPause();
     void clearFinished();
     void deleteFile();
@@ -989,6 +990,77 @@ void tst_downloadmodel::pauseAndResume()
 
 // One of an earlier run is fetched anew from where it came from into where it was going,
 // and the engine's dl-start for it makes the row that takes its place.
+// Save link and Save image: the engine is asked for the address under the name the
+// address ends in, in the downloads folder -- never a name made up, and never over a file
+// that is there (docs/DECISIONS/0046-link-menu.md).
+void tst_downloadmodel::saveKeepsTheFilesName()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const QString folder = dir.filePath(QStringLiteral("Downloads/Salama"));
+    DownloadModel model(storage, folder);
+    QSignalSpy requests(&model, &DownloadModel::engineRequest);
+    const auto in = [&folder](const QString &name) { return QDir(folder).filePath(name); };
+
+    // The name as the address has it, decoded, its query left behind.
+    const QString map = QStringLiteral("https://files.example/maps/ridge%20loop.pdf?v=2");
+    QCOMPARE(model.save(map, QString()), in(QStringLiteral("ridge loop.pdf")));
+    QCOMPARE(requests.count(), 1);
+    QCOMPARE(requests.last().at(0).toString(), RequestTopic);
+    QCOMPARE(lastRequest(requests),
+             QVariantMap({{QStringLiteral("msg"), QStringLiteral("addDownload")},
+                          {QStringLiteral("from"), map},
+                          {QStringLiteral("to"), in(QStringLiteral("ridge loop.pdf"))}}));
+    // Asked again before the engine has started the first, it is numbered as Firefox
+    // numbers one: two downloads are never written to one file.
+    QCOMPARE(model.save(map, QString()), in(QStringLiteral("ridge loop(1).pdf")));
+    QCOMPARE(model.save(map, QString()), in(QStringLiteral("ridge loop(2).pdf")));
+    // A file that is there is not written over.
+    QFile photo(in(QStringLiteral("photo.jpg")));
+    QVERIFY(photo.open(QIODevice::WriteOnly));
+    photo.close();
+    QCOMPARE(
+        model.save(QStringLiteral("https://cdn.example/photo.jpg"), QStringLiteral("image/jpeg")),
+        in(QStringLiteral("photo(1).jpg")));
+    // Nor is one a download in the list is going to.
+    QVariantMap report = startMessage(1, QStringLiteral("report.pdf"));
+    report.insert(QStringLiteral("targetPath"), in(QStringLiteral("report.pdf")));
+    model.observe(Topic, report);
+    QCOMPARE(model.save(QStringLiteral("https://files.example/report.pdf"), QString()),
+             in(QStringLiteral("report(1).pdf")));
+
+    // A name with no ending gets the type's; a type nobody knows adds nothing.
+    QCOMPARE(
+        model.save(QStringLiteral("https://cdn.example/image/12345"), QStringLiteral("image/png")),
+        in(QStringLiteral("12345.png")));
+    QCOMPARE(model.save(QStringLiteral("https://cdn.example/blob"),
+                        QStringLiteral("application/x-nothing-known")),
+             in(QStringLiteral("blob")));
+    // A path that ends in no name: the host's.
+    QCOMPARE(model.save(QStringLiteral("https://www.trails.example/"), QString()),
+             in(QStringLiteral("www.trails.example")));
+    // An address with neither a name nor a host to go by: a plain word.
+    QCOMPARE(model.save(QStringLiteral("https:///"), QString()), in(QStringLiteral("download")));
+    // What a file system would read as a folder, or hide, is all that is taken out.
+    QCOMPARE(model.save(QStringLiteral("https://x.example/a%5Cb.txt"), QString()),
+             in(QStringLiteral("a_b.txt")));
+    QCOMPARE(model.save(QStringLiteral("https://x.example/.profile"), QString()),
+             in(QStringLiteral("profile")));
+    // A name too long for the file system is cut before its ending, and only then.
+    const QString longName = QString(300, QLatin1Char('a')) + QStringLiteral(".pdf");
+    const QString cut = model.save(QStringLiteral("https://x.example/") + longName, QString());
+    QVERIFY(QFileInfo(cut).fileName().toUtf8().size() <= 240);
+    QVERIFY(QFileInfo(cut).fileName().startsWith(QStringLiteral("aaaa")));
+    QVERIFY(cut.endsWith(QStringLiteral(".pdf")));
+    const int asked = requests.count();
+
+    // Only what the engine can fetch from the web.
+    QCOMPARE(model.save(QStringLiteral("ftp://x.example/a.txt"), QString()), QString());
+    QCOMPARE(model.save(QStringLiteral("data:text/plain,hi"), QString()), QString());
+    QCOMPARE(model.save(QString(), QString()), QString());
+    QCOMPARE(requests.count(), asked);
+}
+
 void tst_downloadmodel::downloadAgain()
 {
     QTemporaryDir dir;
