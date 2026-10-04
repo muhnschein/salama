@@ -68,9 +68,10 @@ Item {
                 width: parent.width
                 height: Theme.paddingLarge
 
+                // High in its strip, close under the sheet's top edge (issue #38).
                 DragHandle {
                     x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
+                    y: Theme.paddingSmall / 2
                 }
             }
 
@@ -79,6 +80,13 @@ Item {
                 width: parent.width
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
+            }
+
+            // Parting the head that names the page from the page's row of actions,
+            // as the real sheet has it (issue #38).
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
             }
 
             Grid {

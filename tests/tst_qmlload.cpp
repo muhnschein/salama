@@ -207,6 +207,7 @@ private slots:
     void menuNamesThePage();
     void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
+    void menuSheetDoesNotScroll();
     void findInPage();
     void readerView();
     void downloadsPage();
@@ -3433,6 +3434,12 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(QString::fromLatin1(title->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader")));
     QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
+    // The handle sits close under the panel's top edge (issue #38).
+    auto *panelItem = qobject_cast<QQuickItem *>(panel);
+    const qreal handleDrop = handle->mapToScene(QPointF()).y();
+    const qreal panelTop = panelItem->mapToScene(QPointF()).y();
+    const qreal small = evaluate(panel, QStringLiteral("Theme.paddingSmall")).toReal();
+    QVERIFY(handleDrop - panelTop < small);
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3760,6 +3767,13 @@ void tst_qmlload::menuSheetLayout()
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
+    // The handle sits close under the sheet's top edge, not a handle's height down
+    // from it (issue #38).
+    auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
+    const qreal handleDrop = handle->mapToScene(QPointF()).y();
+    const qreal sheetTop = sheetItem->mapToScene(QPointF()).y();
+    const qreal small = evaluate(menu, QStringLiteral("Theme.paddingSmall")).toReal();
+    QVERIFY(handleDrop - sheetTop < small);
 
     // How much of an entry is lit: its disc, its icon, its name -- all three or none.
     const auto litParts = [this](QObject *button) {
@@ -3812,11 +3826,14 @@ void tst_qmlload::menuNamesThePage()
     const auto text = [&item](const char *name) { return item(name)->property("text").toString(); };
     const auto sceneY = [](QQuickItem *of) { return of->mapToScene(QPointF()).y(); };
 
-    // Under the handle and over the page's row.
+    // Under the handle and over the page's row, parted from it by a gap of its own
+    // (issue #38).
     QQuickItem *header = item("menuHeader");
     QVERIFY(header != nullptr);
     QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
     QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
+    const qreal gap = sceneY(item("findMenuButton")) - (sceneY(header) + header->height());
+    QVERIFY(gap >= evaluate(menu, QStringLiteral("Theme.paddingLarge")).toReal());
     QCOMPARE(text("menuPageTitle"), title);
     QVERIFY(
         evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
@@ -4027,6 +4044,48 @@ void tst_qmlload::menuSheetUnderAFinger()
     tapBar(QStringLiteral("menu"));
     QTRY_COMPARE(menu->y(), openY);
     QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
+}
+
+// The sheet is fixed-size (issue #38): what is on it does not scroll. Dragged up from
+// an icon it goes nowhere -- no rubber band up, and nothing carried on after the finger
+// -- and no quick scroll bar stands over the icons. The pull down stays the sheet's own
+// (docs/DECISIONS/0021-menu-sheet.md): that is menuSheetUnderAFinger()'s to prove.
+void tst_qmlload::menuSheetDoesNotScroll()
+{
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu")));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QObject *sheet = find(QStringLiteral("menuSheet"));
+    const qreal openY = menu->y();
+    const qreal restY = sheet->property("contentY").toReal();
+    // No quick scroll bar over the icons, and no flick to throw the content on.
+    QVERIFY(!sheet->property("quickScroll").toBool());
+    QCOMPARE(sheet->property("maximumFlickVelocity").toReal(), qreal(0));
+    const auto atRest = [&sheet, restY]() {
+        return qAbs(sheet->property("contentY").toReal() - restY) < 0.5;
+    };
+    QVERIFY(atRest());
+
+    // Up, begun on an icon as anywhere: the content stays where it is, under the finger
+    // and after it, and no pull that way moves the sheet.
+    auto *icon = qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")));
+    const QPoint grab = centreOf(icon);
+    const qreal iconY = icon->mapToScene(QPointF(0, 0)).y();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    for (int step = 1; step <= 12; ++step) {
+        QTest::mouseMove(&window, grab - QPoint(0, 240 * step / 12));
+    }
+    QVERIFY(atRest());
+    QCOMPARE(menu->y(), openY);
+    QVERIFY(qAbs(icon->mapToScene(QPointF(0, 0)).y() - iconY) < 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab - QPoint(0, 240));
+    QVERIFY(atRest());
+    QCOMPARE(menu->y(), openY);
+    QVERIFY(menu->property("open").toBool());
 }
 
 // Find in page: a field over the navigation bar, whose search and steps are the
@@ -4833,6 +4892,13 @@ void tst_qmlload::linkMenuOnALongPress()
     // the page rather than carried by the sheet, a dim, under the sheet.
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
+    // The handle sits close under the sheet's top edge (issue #38).
+    auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
+    auto *linkSheet = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSheet")));
+    const qreal linkDrop = linkHandle->mapToScene(QPointF()).y();
+    const qreal linkTop = linkSheet->mapToScene(QPointF()).y();
+    const qreal linkSmall = evaluate(menu, QStringLiteral("Theme.paddingSmall")).toReal();
+    QVERIFY(linkDrop - linkTop < linkSmall);
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
     QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());
     QVERIFY(overlay->z() < menu->property("z").toReal());

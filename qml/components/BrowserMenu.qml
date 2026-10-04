@@ -141,6 +141,18 @@ DockedPanel {
         // and an automatic flickable with nothing to scroll is not dragged at all.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
+        // The sheet is fixed-size: what this flickable is here for is the pull down, the
+        // sheet's own (docs/DECISIONS/0021-menu-sheet.md), and nothing else may move.
+        // A flick is out outright, so no throw carries the sheet on after the finger;
+        // a drag up is met with content that will not go, so nothing reads as scrolling;
+        // and no quick scroll bar is drawn over the icons (issue #38).
+        maximumFlickVelocity: 0
+        quickScroll: false
+        onContentYChanged: {
+            if (contentY > originY) {
+                contentY = originY
+            }
+        }
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()
@@ -157,10 +169,11 @@ DockedPanel {
                 width: parent.width
                 height: Theme.paddingLarge
 
+                // High in its strip, close under the sheet's top edge (issue #38).
                 DragHandle {
                     objectName: "menuDragHandle"
                     x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
+                    y: Theme.paddingSmall / 2
                 }
             }
 
@@ -177,6 +190,13 @@ DockedPanel {
                     Clipboard.text = TabModel.activeUrl
                     copiedNotice.show()
                 }
+            }
+
+            // Parting the head that names the page from the page's row of actions
+            // (issue #38).
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
             }
 
             // All five of the page's actions in one row, each on a disc, lit while it is a

@@ -74,6 +74,12 @@ and `DockedPanel` takes it from there; released short of that, it springs back u
 flickable. Where `DockedPanel`'s own drag does take a pull, it moves the sheet as it would
 anyway, and closes it the same way.
 
+*Revised.* The sheet is fixed-size (issue #38): the flickable is here for the pull and
+nothing else. A flick throws nothing — `maximumFlickVelocity` is 0 — a drag up is met with
+content that will not go past its top, and no quick scroll bar is drawn over the icons.
+The pull down is untouched: the flickable's overscroll, half the finger's way, and the
+sheet twice that.
+
 The icons are the theme's, by the names sailfish-browser gives the same entries in
 `apps/browser/qml/pages/components/PopUpMenuItem.qml`:
 `icon-m-search-on-page`, `icon-m-share`, `icon-m-computer`, `icon-m-favorite-selected`

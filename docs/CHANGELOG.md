@@ -53,6 +53,7 @@ which `ci/release-notes.sh` cuts out of this file when the release is made
 - The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
 
 ### Fixed
+- The menu sheet's cosmetics: its handle sits close under the sheet's top edge rather than a handle's height down from it, the sheet no longer scrolls or flicks -- what is on it stays where it is, with no quick scroll bar over the icons -- and the head naming the page is parted from the row of actions below it by a gap of its own.
 - The start of the drag up from the bar to the tab grid no longer stutters. The grid follows the finger from the moment the drag is caught instead of leaping to catch up, a slim bar stays slim while it is dragged instead of growing under the finger, and the picture of the page and the grid are made ready while the finger is still down rather than in the drag's first frames.
 
 ### Removed
