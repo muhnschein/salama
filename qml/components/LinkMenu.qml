@@ -255,11 +255,10 @@ DockedPanel {
                 width: parent.width
                 height: Theme.paddingLarge
 
-                // High in its strip, close under the sheet's top edge (issue #38).
                 DragHandle {
                     objectName: "linkMenuDragHandle"
                     x: (parent.width - width) / 2
-                    y: Theme.paddingSmall / 2
+                    y: Theme.paddingSmall
                 }
             }
 

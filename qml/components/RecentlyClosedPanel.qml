@@ -42,8 +42,7 @@ DockedPanel {
             DragHandle {
                 objectName: "panelDragHandle"
                 x: (parent.width - width) / 2
-                // High in its strip, close under the panel's top edge (issue #38).
-                y: Theme.paddingSmall / 2
+                y: Theme.paddingSmall
             }
 
             SectionHeader {
