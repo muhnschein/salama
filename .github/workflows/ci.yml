@@ -38,6 +38,19 @@ jobs:
           PACKAGING_LINT_STRICT: "1"
         run: make check
 
+      # TEMP (bite check only, this branch is disposable): surface the failing
+      # tests as check annotations -- job logs are unreachable from where the
+      # check is being read. Reads ctest's own log after the gate has run.
+      - name: Report failing tests
+        if: always()
+        run: |
+          log=build/Testing/Temporary/LastTest.log
+          if [ -f "$log" ]; then
+            grep -E 'FAIL!|^FAIL\b|QFATAL' "$log" | sort -u | head -40 | while IFS= read -r line; do
+              echo "::error::${line:0:190}"
+            done
+          fi
+
       # For the SonarQube import; a report, not a gate.
       - name: Upload coverage reports
         if: always()
