@@ -104,6 +104,15 @@ DockedPanel {
         // Not AutoFlick: content fits, and auto with nothing to scroll won't drag.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
+        // Fixed-size sheet: pull down only. No drag up, no fling, no quick scroll.
+        // Qt 5.6 has no one-sided bounds, so clamp.
+        maximumFlickVelocity: 0
+        quickScroll: false
+        onContentYChanged: {
+            if (contentY > originY) {
+                contentY = originY
+            }
+        }
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()
@@ -116,15 +125,9 @@ DockedPanel {
             width: parent.width
             bottomPadding: Theme.paddingMedium
 
-            Item {
+            SheetGrip {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    objectName: "menuDragHandle"
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
+                handleName: "menuDragHandle"
             }
 
             MenuPageHeader {
@@ -139,6 +142,11 @@ DockedPanel {
                     Clipboard.text = TabModel.activeUrl
                     copiedNotice.show()
                 }
+            }
+
+            MenuSeparator {
+                width: parent.width
+                lineName: "menuHeaderSeparator"
             }
 
             Grid {
@@ -222,26 +230,9 @@ DockedPanel {
                 }
             }
 
-            // Fades both ends: Silica Separator fades right only, so two, left one mirrored.
-            Item {
+            MenuSeparator {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                Row {
-                    objectName: "menuSeparator"
-                    anchors.centerIn: parent
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                        rotation: 180
-                    }
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                    }
-                }
+                lineName: "menuSeparator"
             }
 
             Grid {

@@ -53,20 +53,18 @@ Item {
             width: parent.width
             bottomPadding: Theme.paddingMedium
 
-            Item {
+            SheetGrip {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
             }
 
             MenuPageHeader {
                 width: parent.width
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
+            }
+
+            MenuSeparator {
+                width: parent.width
             }
 
             Grid {
@@ -93,24 +91,8 @@ Item {
                 }
             }
 
-            Item {
+            MenuSeparator {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                Row {
-                    anchors.centerIn: parent
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                        rotation: 180
-                    }
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                    }
-                }
             }
 
             Grid {

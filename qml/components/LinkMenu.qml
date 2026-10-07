@@ -223,15 +223,9 @@ DockedPanel {
             width: parent.width
             bottomPadding: Theme.paddingMedium
 
-            Item {
+            SheetGrip {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    objectName: "linkMenuDragHandle"
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
+                handleName: "linkMenuDragHandle"
             }
 
             LinkMenuHeader {

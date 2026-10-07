@@ -26,19 +26,20 @@ DockedPanel {
         clip: true
         header: Item {
             width: closedList.width
-            height: Theme.paddingLarge + heading.height
+            height: grip.height + heading.height
 
-            DragHandle {
-                objectName: "panelDragHandle"
-                x: (parent.width - width) / 2
-                y: Theme.paddingSmall
+            SheetGrip {
+                id: grip
+
+                width: parent.width
+                handleName: "panelDragHandle"
             }
 
             SectionHeader {
                 id: heading
 
                 objectName: "recentlyClosedTitle"
-                y: Theme.paddingLarge
+                y: grip.height
                 text: qsTr("Recently closed")
             }
         }
