@@ -1,6 +1,6 @@
 # Salama
 
-![Salama - An experimental native web browser](store/cover.png)
+![Salama - An experimental native web browser](art/store/cover.png)
 
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=coverage)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)
 
@@ -75,18 +75,9 @@ sfdk check -s harbour RPMS/harbour-salama-*.aarch64.rpm
 
 More detail lives in [`docs/`](docs/).
 
-## Distribution
-
-Salama is packaged as `harbour-salama` and intended for distribution through 
-Jolla Harbour.
-
-There is intentionally no support for OpenRepos, Chum, alternate architectures, 
-or bundling a separate browser engine.
-
 ## Licence
 
-Licensed under the Mozilla Public License 2.0. See [`LICENSE`](LICENSE) for 
-details.
+Licensed MPL-2.0, see [`LICENSE`](LICENSE) for details.
 
 Portions derived from `sailfish-browser` remain MPL-2.0 with their attribution 
 preserved. Mozilla Readability is distributed under Apache-2.0.

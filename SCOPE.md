@@ -21,13 +21,8 @@ No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulato
 - Distribution via Chum, OpenRepos, or side-loaded RPMs.
 - WebExtensions.
 - Content blocking beyond what `WebEngineSettings` exposes.
-- Registering as system default browser or `http(s)` scheme handler.
 - Multi-architecture or multi-device support.
-- Any language other than QML and C++. The scripts the engine runs in a page are the web
-  platform's, not the application's: the favicon and theme-colour lookups, the reader
-  view's Readability, which is Mozilla's, verbatim, in `third_party/`
-  (`docs/DECISIONS/0024-reader-view.md`), and the page's Notification with the frame
-  script that hands on what it says (`docs/DECISIONS/0033-web-notifications.md`).
+- Any language other than QML and C++.
 
 ## 4. Constraints
 
@@ -70,32 +65,7 @@ Reuse policy:
 
 `Sailfish.WebView` is imported in the browsing page only, so a release without the engine package breaks browsing rather than the app.
 
-## 6. Deliverables
-
-### Phase 1 — Shippable
-- Multi-tab browsing, tab switcher, tab groups, tab persistence across restarts
-- Address bar (URL/search), configurable search engine, with suggestions from the open tabs, bookmarks, history and downloads as it is typed into
-- Back, forward, reload, stop, share (`Sailfish.Share`)
-- A press held on a link or a picture: a sheet to open it in a new tab, in front or behind, share it, save it or copy it, with a preview of the page as Safari has and the picture lifted closer (`docs/DECISIONS/0046-link-menu.md`)
-- A target in the share sheet for links alone, opening them in a new tab (`docs/DECISIONS/0042-share-target.md`)
-- History and bookmarks (SQLite) with management UI
-- Downloads through the platform download plumbing, listed in the browser
-- Find in page
-- Reader view, as Firefox's: Readability and its style sheet
-- Web notifications, as Firefox's: a site asks, the answer is kept in the engine's permissions, and what it shows is the platform's notification
-- Settings: a main page leading to a page each for the start page, search (engine, the engines sites offer while browsing, suggestion sources), reader view, cover, HTTPS-Only Mode, DNS over HTTPS (level, provider, exceptions), privacy (tracking protection level), site permissions (notifications, pop-ups, location, camera, microphone, and cookies while tracking protection is off; the sites decided for) and history (remembering, clearing on close, clear data), with sailfish-browser's colour scheme, notch guard, fixed toolbar and JavaScript, and Firefox's Global Privacy Control on it (`docs/DECISIONS/0047-secure-connections.md`); a page's desktop version from the menu
-- Site details from the menu's head: the connection and its certificate, tracking protection and the permissions for that site
-- Cover: where the reader was, the downloads' progress, or what the tab in front plays, over the icon's bolt as faint dots, and one quick action chosen in Settings beside the playing tab's mute
-- Tutorial: the address bar, the menu, the tab grid's gesture and closing, moving and grouping tabs, taught as Sailfish's own Tutorial teaches its gestures, on the first start behind a card to start or skip it, and from Settings
-- `sfdk check -s harbour` passes on the built `aarch64` RPM
-
-### Phase 2
-- Bookmark folders, HTML import/export
-- Per-site data clearing
-- Password saving via Sailfish Secrets, within WebView API limits
-- Landscape layout
-
-## 7. Engineering standards
+## 6. Engineering standards
 
 Adopted from postivene and vuo. The governing rule: **`make check` runs exactly what CI runs, from a clean checkout, with no phone, no SDK, and no network.** Anything that cannot be verified under those conditions is badly layered or sits behind an explicit opt-in gate.
 
@@ -104,7 +74,7 @@ Adopted from postivene and vuo. The governing rule: **`make check` runs exactly 
 - `clang-format` checked in; `make fmt` fails on drift.
 - `qmllint` clean. No `console.log` in shipped QML. `Theme` values, never pixel counts.
 - Engine quirks are isolated in C++ with a comment naming the upstream issue. None in QML.
-- One responsibility per QML file. No file over 400 lines without an ADR.
+- One responsibility per QML file.
 - No dead code, no commented-out code, no TODO without an issue number.
 - Every user-visible string translatable; catalogs current and compiling.
 
@@ -139,7 +109,7 @@ SonarQube Cloud on every pull request. A **report, not a gate**: `make check` de
 - Semantic versioning. The version is the spec's; CI builds, validates and publishes each release from a `v` tag on `main`.
 - Dependencies: Harbour allowed list only. Any addition updates `docs/HARBOUR.md` in the same PR.
 
-## 8. Documentation
+## 7. Documentation
 
 Kept in `docs/`. Updated in the PR that changes the subject. No document duplicates another.
 
@@ -149,33 +119,7 @@ Kept in `docs/`. Updated in the PR that changes the subject. No document duplica
 | `ARCHITECTURE.md` | Module boundaries, data flow, storage schema | 2 pages |
 | `HARBOUR.md` | Jolla's rules, how CI gates them, current waivers, Sailjail permissions and why each | 2 pages |
 | `BUILDING.md` | Toolchain pins, lints, test tiers, how a device RPM is built | 2 pages |
-| `TESTING.md` | Device smoke-test checklist | 1 page |
 | `RELEASING.md` | Tag, build, validate, submit | 1 page |
 | `CHANGELOG.md` | Keep-a-Changelog, user-facing entries only | — |
-| `DECISIONS/` | One ADR per non-obvious decision: context, decision, consequences | 1 page each |
 
 Not maintained: design narratives, roadmaps beyond this file, tutorials, marketing copy.
-
-## 9. Verify before Phase 1
-
-1. `sdk-harbour-rpmvalidator` rules on `MimeType=` and `x-scheme-handler` in `.desktop` files.
-2. `WebEngineSettings` support for UA switching and tracking-protection flags on the 5.2 engine. Tracking protection: engine preferences through `setPreference`; list blocking only on ESR 153 (`docs/DECISIONS/0023-tracking-protection.md`).
-3. Download ownership when the app is not the default browser.
-5. Which Sailjail permissions the WebView needs for downloads and pickers.
-
-## 10. Risks
-
-| Risk | Mitigation |
-|---|---|
-| WebView API gap | Drop or defer the feature. Never patch the engine. |
-| Engine upgrade changes WebView behaviour | Track `sailfish-components-webview`. Keep UI decoupled from engine behaviour. |
-| Harbour rejection | Source check on every PR, real validator on every RPM, allow-lists kept current. |
-| Host tests pass, device fails | Static QML tests for 5.6 rules; device smoke test under Sailjail before every tag. |
-| Scope creep | §3 is binding. Changes require a new revision of this document. |
-
-## 11. Done
-
-- Published in Harbour.
-- Daily use on a Jolla Phone 2026 without workarounds.
-- Zero engine patches in the repository.
-- All §7 gates green at tag time.

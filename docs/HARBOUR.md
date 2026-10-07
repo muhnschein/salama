@@ -38,15 +38,6 @@ globs, with the reason as a comment.
 
 None.
 
-## Deviations from SCOPE.md
-
-- `Requires: sailfish-version >= 5.2.0` is not used: the validator rejects any
-  dependency outside `allowed_requires.conf`, and `sailfish-version` is not there. The OS
-  floor is carried by the SDK target used to build (Harbour checks the
-  `__libc_start_main` version the 5.2 toolchain produces) and by the minimum versions of
-  allowed packages in the spec. Verify those minimums against the 5.2.0 release before
-  Phase 1 (`DECISIONS/0007-os-floor.md`).
-
 ## Sailjail permissions
 
 `harbour-salama.desktop`, `[X-Sailjail]`:
