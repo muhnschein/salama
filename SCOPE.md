@@ -116,7 +116,6 @@ Kept in `docs/`. Updated in the PR that changes the subject. No document duplica
 | File | Content | Limit |
 |---|---|---|
 | `README.md` | Build, check, package in three commands each | 1 page |
-| `ARCHITECTURE.md` | Module boundaries, data flow, storage schema | 2 pages |
 | `HARBOUR.md` | Jolla's rules, how CI gates them, current waivers, Sailjail permissions and why each | 2 pages |
 | `BUILDING.md` | Toolchain pins, lints, test tiers, how a device RPM is built | 2 pages |
 | `RELEASING.md` | Tag, build, validate, submit | 1 page |

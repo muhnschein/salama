@@ -1,11 +1,6 @@
 # Translating
 
-Salama is translated into every language Sailfish OS ships in, the same set as Piirit:
-Bengali, Bulgarian, Chinese (China, Hong Kong, Taiwan), Czech, Danish, Dutch, Estonian,
-Finnish, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian,
-Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal, Brazil),
-Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Tamil, Tatar, Telugu,
-Turkish, Ukrainian and Vietnamese. English is the source.
+Salama is translated into every language Sailfish OS ships in. English is the source.
 
 ## How a reader gets their language
 
@@ -77,12 +72,6 @@ Each language follows two references, in this order:
    Firefox's where Android's is thin. Firefox is the browser upstream of Salama's engine,
    and a reader who has used it already knows its words for tabs, bookmarks, history,
    downloads, tracking protection and site permissions.
-
-Where the two do not settle it, a native speaker's phrasing on a phone. Some places are
-tight: the browser menu's labels (five buttons a row, the smallest font, faded past the
-width), the cover and the reader's colour swatches. There a shorter established term beats
-Firefox's longer one; Swedish says *Datorversion* for "Desktop site" rather than Firefox's
-*Webbplats för datorer*.
 
 *Salama* is a name and is never translated. Placeholders (`%1`, `%n`) stay; every plural
 form keeps its `%n`, because Qt picks a form by rule and in some languages the "one" form
