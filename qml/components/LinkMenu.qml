@@ -201,20 +201,16 @@ DockedPanel {
 
     SheetGrip {
         objectName: "linkMenuDragHandle"
+        edgeOf: menu
     }
 
-    SilicaFlickable {
+    SheetFlickable {
         id: sheet
-
-        readonly property real overscroll: Math.max(0, originY - contentY)
 
         objectName: "linkMenuSheet"
         width: parent.width
         height: parent.height
-        y: -overscroll
         contentHeight: content.height
-        flickableDirection: Flickable.VerticalFlick
-        boundsBehavior: Flickable.DragOverBounds
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()

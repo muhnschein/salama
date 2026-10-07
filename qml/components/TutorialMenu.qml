@@ -48,6 +48,7 @@ Item {
         }
 
         SheetGrip {
+            edgeOf: sheet
         }
 
         Column {

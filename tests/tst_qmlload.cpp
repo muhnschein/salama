@@ -215,6 +215,7 @@ private slots:
     void linkMenuActions();
     void linkMenuForOtherApps();
     void linkMenuForPictures();
+    void linkSheetsDoNotScroll();
     void linkPreview();
     void bannersEndThePage();
     void historyPage();
@@ -361,6 +362,19 @@ void settle()
 {
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QCoreApplication::processEvents();
+}
+
+// No clipping item between item and window cuts any of it off.
+bool unclipped(QQuickItem *item)
+{
+    const QRectF drawn = item->mapRectToScene(QRectF(0, 0, item->width(), item->height()));
+    for (QQuickItem *above = item->parentItem(); above != nullptr; above = above->parentItem()) {
+        if (above->clip() &&
+            !above->mapRectToScene(QRectF(0, 0, above->width(), above->height())).contains(drawn)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Repeater/ListView delegates have no QObject parent: walk visual tree too.
@@ -3083,6 +3097,7 @@ void tst_qmlload::recentlyClosedTabs()
     QCOMPARE(handle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
              -handle->height() / 2);
+    QVERIFY(unclipped(handle));
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3378,6 +3393,7 @@ void tst_qmlload::menuSheetLayout()
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
     QCOMPARE(handle->mapToScene(QPointF()).y() - sheetItem->mapToScene(QPointF()).y(),
              -handle->height() / 2);
+    QVERIFY(unclipped(handle));
 
     const auto litParts = [this](QObject *button) {
         const QColor wash =
@@ -3633,19 +3649,24 @@ void tst_qmlload::menuSheetUnderAFinger()
     QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
 }
 
-// Fixed-size sheet (#38): drag up from icon moves nothing, no fling, no quick scroll.
-void tst_qmlload::menuSheetDoesNotScroll()
+namespace {
+
+// Fixed-size sheet (#38): drag up from grabbed item moves nothing, no fling, no quick scroll;
+// pull down still closes.
+void sheetStaysPut(QQuickWindow &window, QQuickItem *menu, QObject *sheet, QQuickItem *grabbed)
 {
-    auto *root = qobject_cast<QQuickItem *>(m_window.data());
-    FingerWindow host(root);
-    QQuickWindow &window = *host.window();
-    QVERIFY(QTest::qWaitForWindowExposed(&window));
-    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu")));
-    tapBar(QStringLiteral("menu"));
     QVERIFY(menu->property("open").toBool());
-    QObject *sheet = find(QStringLiteral("menuSheet"));
+    // Rebound from earlier pull settles first, and sheet's layout: polished before each frame.
+    QTRY_VERIFY(!sheet->property("moving").toBool());
+    QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
+    for (int frame = 0; frame < 2; ++frame) {
+        const int seen = frames.count();
+        window.update();
+        QTRY_VERIFY(frames.count() > seen);
+    }
     const qreal openY = menu->y();
     const qreal restY = sheet->property("contentY").toReal();
+    QCOMPARE(restY, sheet->property("originY").toReal());
     QVERIFY(!sheet->property("quickScroll").toBool());
     QCOMPARE(sheet->property("maximumFlickVelocity").toReal(), qreal(0));
     const auto atRest = [&sheet, restY]() {
@@ -3653,22 +3674,20 @@ void tst_qmlload::menuSheetDoesNotScroll()
     };
     QVERIFY(atRest());
 
-    auto *icon = qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")));
-    const QPoint grab = centreOf(icon);
-    const qreal iconY = icon->mapToScene(QPointF(0, 0)).y();
+    const QPoint grab = centreOf(grabbed);
+    const qreal grabbedY = grabbed->mapToScene(QPointF(0, 0)).y();
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
     for (int step = 1; step <= 12; ++step) {
         QTest::mouseMove(&window, grab - QPoint(0, 240 * step / 12));
     }
     QVERIFY(atRest());
     QCOMPARE(menu->y(), openY);
-    QVERIFY(qAbs(icon->mapToScene(QPointF(0, 0)).y() - iconY) < 1);
+    QVERIFY(qAbs(grabbed->mapToScene(QPointF(0, 0)).y() - grabbedY) < 1);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab - QPoint(0, 240));
     QVERIFY(atRest());
     QCOMPARE(menu->y(), openY);
     QVERIFY(menu->property("open").toBool());
 
-    // Pull down still the sheet's own after an attempted scroll.
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
     for (int step = 1; step <= 12; ++step) {
         QTest::mouseMove(&window, grab + QPoint(0, 240 * step / 12));
@@ -3676,6 +3695,20 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QVERIFY(menu->y() > openY);
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, 240));
     QTRY_VERIFY(!menu->property("open").toBool());
+}
+
+} // namespace
+
+void tst_qmlload::menuSheetDoesNotScroll()
+{
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    tapBar(QStringLiteral("menu"));
+    sheetStaysPut(window, qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu"))),
+                  find(QStringLiteral("menuSheet")),
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton"))));
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to
@@ -4413,6 +4446,7 @@ void tst_qmlload::linkMenuOnALongPress()
                      ->mapToScene(QPointF())
                      .y(),
              -linkHandle->height() / 2);
+    QVERIFY(unclipped(linkHandle));
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
     QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());
     QVERIFY(overlay->z() < menu->property("z").toReal());
@@ -4717,6 +4751,32 @@ void tst_qmlload::linkMenuForPictures()
              QStringLiteral("Image link copied"));
     QVERIFY(!find(QStringLiteral("linkMenuOverlay"))->property("shown").toBool());
     QCOMPARE(errors.all(), QString());
+}
+
+// Link and picture sheets fixed-size like menu sheet (#38).
+void tst_qmlload::linkSheetsDoNotScroll()
+{
+    ScriptErrors errors;
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenu")));
+    QObject *sheet = find(QStringLiteral("linkMenuSheet"));
+
+    // Preview grows sheet whenever page still arrives, which would move it mid-drag.
+    m_core->settings()->setLinkPreview(false);
+    holdOn(currentWebView(), heldOn(QStringLiteral("https://trails.example/walks/ridge-loop")));
+    sheetStaysPut(window, menu, sheet,
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("newTabLinkButton"))));
+    m_core->settings()->setLinkPreview(true);
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+    holdOn(currentWebView(),
+           heldOn(QString(), QString(), QStringLiteral("https://cdn.example/photos/ridge.jpg")));
+    sheetStaysPut(window, menu, sheet,
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("saveImageButton"))));
 }
 
 // Link target preview in sheet like Safari: shown for all links until hidden and vice versa.

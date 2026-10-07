@@ -19,6 +19,7 @@ DockedPanel {
 
     SheetGrip {
         objectName: "panelDragHandle"
+        edgeOf: panel
     }
 
     SilicaListView {

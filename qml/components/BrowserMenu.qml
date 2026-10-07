@@ -92,31 +92,16 @@ DockedPanel {
 
     SheetGrip {
         objectName: "menuDragHandle"
+        edgeOf: menu
     }
 
-    SilicaFlickable {
+    SheetFlickable {
         id: sheet
-
-        readonly property real overscroll: Math.max(0, originY - contentY)
 
         objectName: "menuSheet"
         width: parent.width
         height: parent.height
-        // Cancels overscroll so icons stay under finger.
-        y: -overscroll
         contentHeight: content.height
-        // Not AutoFlick: content fits, and auto with nothing to scroll won't drag.
-        flickableDirection: Flickable.VerticalFlick
-        boundsBehavior: Flickable.DragOverBounds
-        // Fixed-size sheet: pull down only. No drag up, no fling, no quick scroll.
-        // Qt 5.6 has no one-sided bounds, so clamp.
-        maximumFlickVelocity: 0
-        quickScroll: false
-        onContentYChanged: {
-            if (contentY > originY) {
-                contentY = originY
-            }
-        }
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()
