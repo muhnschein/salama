@@ -199,6 +199,10 @@ DockedPanel {
         verticalOffset: -Theme.itemSizeLarge
     }
 
+    SheetGrip {
+        objectName: "linkMenuDragHandle"
+    }
+
     SilicaFlickable {
         id: sheet
 
@@ -221,12 +225,8 @@ DockedPanel {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
-
-            SheetGrip {
-                width: parent.width
-                handleName: "linkMenuDragHandle"
-            }
 
             LinkMenuHeader {
                 width: parent.width

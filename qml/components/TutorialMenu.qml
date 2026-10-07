@@ -47,24 +47,27 @@ Item {
             anchors.fill: parent
         }
 
+        SheetGrip {
+        }
+
         Column {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
-            SheetGrip {
-                width: parent.width
-            }
-
             MenuPageHeader {
+                id: header
+
                 width: parent.width
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
             }
 
-            MenuSeparator {
+            Item {
                 width: parent.width
+                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
             }
 
             Grid {

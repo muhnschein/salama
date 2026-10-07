@@ -90,6 +90,10 @@ DockedPanel {
         text: qsTr("Address copied")
     }
 
+    SheetGrip {
+        objectName: "menuDragHandle"
+    }
+
     SilicaFlickable {
         id: sheet
 
@@ -123,14 +127,12 @@ DockedPanel {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
-            SheetGrip {
-                width: parent.width
-                handleName: "menuDragHandle"
-            }
-
             MenuPageHeader {
+                id: header
+
                 width: parent.width
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
@@ -144,9 +146,11 @@ DockedPanel {
                 }
             }
 
-            MenuSeparator {
+            // Header ink to first row's discs as far as one row's labels to next row's (#38).
+            Item {
+                objectName: "menuHeaderGap"
                 width: parent.width
-                lineName: "menuHeaderSeparator"
+                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
             }
 
             Grid {

@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Top strip of bottom sheets: handle centred in thin strip, half small padding under top edge.
+// Bottom sheet's handle: on its top edge, as on nav bar. Child of sheet itself, never of
+// clipped list.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
-Item {
-    property alias handleName: handle.objectName
-    property alias active: handle.active
-
-    height: handle.height + Theme.paddingSmall
-
-    DragHandle {
-        id: handle
-
-        anchors.centerIn: parent
-    }
+DragHandle {
+    x: (parent.width - width) / 2
+    y: -height / 2
+    z: 1
 }

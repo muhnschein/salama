@@ -3079,10 +3079,10 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(QString::fromLatin1(title->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader")));
     QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
-    // Handle half small padding under panel top (#38).
+    // Handle on panel's top edge, as on nav bar (#38).
     QCOMPARE(handle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
-             evaluate(panel, QStringLiteral("Theme.paddingSmall / 2")).toReal());
+             -handle->height() / 2);
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3374,10 +3374,10 @@ void tst_qmlload::menuSheetLayout()
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
-    // Handle half small padding under sheet top (#38).
+    // Handle on sheet's top edge, as on nav bar (#38).
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
     QCOMPARE(handle->mapToScene(QPointF()).y() - sheetItem->mapToScene(QPointF()).y(),
-             evaluate(menu, QStringLiteral("Theme.paddingSmall / 2")).toReal());
+             -handle->height() / 2);
 
     const auto litParts = [this](QObject *button) {
         const QColor wash =
@@ -3432,14 +3432,21 @@ void tst_qmlload::menuNamesThePage()
     QVERIFY(header != nullptr);
     QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
     QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
-    // Header parted from action row by fading line, as rows are from each other (#38).
-    QQuickItem *parting = item("menuHeaderSeparator");
-    QVERIFY(parting != nullptr);
-    QVERIFY(sceneY(parting) >= sceneY(header) + header->height());
-    QVERIFY(sceneY(parting) < sceneY(item("findMenuButton")));
-    QCOMPARE(parting->childItems().count(), 2);
-    QVERIFY(sceneY(item("findMenuButton")) - (sceneY(header) + header->height()) >=
-            evaluate(menu, QStringLiteral("Theme.paddingLarge")).toReal());
+    // Empty band, no line, under header; as tall as gap between rows, ink to ink (#38).
+    QVERIFY(find(QStringLiteral("menuHeaderSeparator")) == nullptr);
+    const auto part = [](QQuickItem *button, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(button, QLatin1String(name)).first());
+    };
+    QQuickItem *firstRow = item("findMenuButton");
+    QQuickItem *secondRow = item("bookmarksMenuButton");
+    const qreal headerGap =
+        sceneY(part(firstRow, "menuButtonIconSlot")) -
+        (sceneY(header) + header->height() - header->property("inkMargin").toReal());
+    QQuickItem *firstLabel = part(firstRow, "menuButtonLabel");
+    const qreal rowGap =
+        sceneY(part(secondRow, "menuButtonIconSlot")) - (sceneY(firstLabel) + firstLabel->height());
+    QVERIFY(rowGap > 0);
+    QCOMPARE(headerGap, rowGap);
     QCOMPARE(text("menuPageTitle"), title);
     QVERIFY(
         evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
@@ -4399,14 +4406,13 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
-    // Handle half small padding under sheet top (#38).
-    QCOMPARE(qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")))
-                     ->mapToScene(QPointF())
-                     .y() -
+    // Handle on sheet's top edge, as on nav bar (#38).
+    auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
+    QCOMPARE(linkHandle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSheet")))
                      ->mapToScene(QPointF())
                      .y(),
-             evaluate(menu, QStringLiteral("Theme.paddingSmall / 2")).toReal());
+             -linkHandle->height() / 2);
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
     QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());
     QVERIFY(overlay->z() < menu->property("z").toReal());

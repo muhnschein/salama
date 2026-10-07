@@ -17,6 +17,10 @@ DockedPanel {
         anchors.fill: parent
     }
 
+    SheetGrip {
+        objectName: "panelDragHandle"
+    }
+
     SilicaListView {
         id: closedList
 
@@ -26,20 +30,13 @@ DockedPanel {
         clip: true
         header: Item {
             width: closedList.width
-            height: grip.height + heading.height
-
-            SheetGrip {
-                id: grip
-
-                width: parent.width
-                handleName: "panelDragHandle"
-            }
+            height: Theme.paddingMedium + heading.height
 
             SectionHeader {
                 id: heading
 
                 objectName: "recentlyClosedTitle"
-                y: grip.height
+                y: Theme.paddingMedium
                 text: qsTr("Recently closed")
             }
         }

@@ -51,7 +51,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Tutorial: shorter text, five progress dots, icon first card, check-mark last card.
 
 ### Fixed
-- Menu sheet: handle hugs top edge, sheet no longer scrolls or flings, fading line parts page header from actions as it parts the two rows. Same handle on link sheet and recently closed list.
+- Menu sheet: handle sits on top edge as on nav bar, sheet no longer scrolls or flings, page header as far from first row as rows from each other. Same handle on link sheet and recently closed list.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 
 ### Removed
