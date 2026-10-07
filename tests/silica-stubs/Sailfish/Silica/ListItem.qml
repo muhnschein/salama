@@ -1,4 +1,4 @@
-// Stub: remorseAction runs its callback immediately.
+// Stub: remorseAction runs callback immediately.
 import QtQuick 2.6
 
 Item {
@@ -6,8 +6,7 @@ Item {
 
     property real contentHeight: 0
 
-    // Silica's ListItem is as tall as its content, and a list lays its rows out by
-    // that: what the load tests sort rows by.
+    // Silica ListItem height = content; load tests sort rows by it.
     implicitHeight: contentHeight
     property Item menu
     property bool down: false

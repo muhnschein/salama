@@ -9,8 +9,7 @@ namespace Salama {
 SiteExceptions::SiteExceptions(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
-    // dynamicSortFilter, which is on, keeps the order as rows change; what the order is
-    // is lessThan()'s.
+    // dynamicSortFilter (on) re-sorts via lessThan() as rows change.
     connect(this, &QAbstractItemModel::rowsInserted, this, &SiteExceptions::recount);
     connect(this, &QAbstractItemModel::rowsRemoved, this, &SiteExceptions::recount);
     connect(this, &QAbstractItemModel::modelReset, this, &SiteExceptions::recount);
@@ -59,8 +58,7 @@ bool SiteExceptions::lessThan(const QModelIndex &left, const QModelIndex &right)
     const auto read = [this](const QModelIndex &row, SitePermissions::Role role) {
         return sourceModel()->data(row, roleId(role));
     };
-    // Allowed first, then blocked, then those asked each time: Allow, Block and Ask are
-    // 1, 2 and 3.
+    // Allow, Block, Ask = 1, 2, 3: numeric order.
     const int leftDecision = read(left, SitePermissions::Role::Decision).toInt();
     const int rightDecision = read(right, SitePermissions::Role::Decision).toInt();
     if (leftDecision != rightDecision) {

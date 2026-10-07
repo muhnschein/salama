@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// A site asks to send notifications: Firefox's question, with Firefox's three answers,
-// as a dialog, which is how the platform's WebView puts a site's question about the
-// reader's location. Allow, above, lets the site for good; Always block, below, never
-// lets it ask again; backing out is Firefox's Not now -- refused, and the page is not
-// asked about again until it is loaded again. What is decided for good can be changed
-// under Settings > Notifications (docs/DECISIONS/0033-web-notifications.md).
+// Allow = forever; Always block = never asks again; back out = Not now (until reload).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -14,10 +8,8 @@ import harbour.salama 1.0
 Dialog {
     id: dialog
 
-    // The tab whose page asks, and the site it is on.
     property int tabId: 0
     property string host
-    // How the dialog ends when it is not accepted.
     property int refusal: WebNotifications.NotNow
 
     objectName: "notificationPermissionDialog"

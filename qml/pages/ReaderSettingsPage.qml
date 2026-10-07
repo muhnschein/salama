@@ -1,15 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// How the reader view sets an article, as Firefox's reader view offers it: its colours,
-// typeface and text size, each the stored value (docs/DECISIONS/0024-reader-view.md,
-// 0028-settings-pages.md). The colours are five squares, each painted as the reader view
-// will be, and the typefaces two tiles each written in its own: every choice on the
-// screen at once, one tap to make, the one chosen lit, where two combo boxes named them
-// and hid the rest a tap away. Under them, a few lines of an article as the reader view
-// will set them follow each choice as it is made; a reader view on the screen follows
-// them at once too. The picture is below the choices rather than above, so a text size
-// growing it never moves the slider from under the finger dragging it.
+// Preview below choices so text-size growth never moves slider under finger.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -40,9 +31,7 @@ Page {
                 text: qsTr("Colours")
             }
 
-            // In the order a reader reads them: Automatic and the ambience's own, which
-            // follow the phone, then Firefox's three. The stored values are not in this
-            // order (ReaderSettings::Colors), so each square carries its own.
+            // Display order differs from stored (ReaderSettings::Colors): each square carries own.
             Row {
                 id: swatches
 
@@ -71,8 +60,6 @@ Page {
                 text: qsTr("Typeface")
             }
 
-            // Each typeface written in itself, the one chosen washed and ringed in the
-            // highlight colour.
             Row {
                 id: typefaces
 
@@ -136,7 +123,7 @@ Page {
                 height: Theme.paddingLarge
             }
 
-            // Firefox's nine steps, the middle one its default, written as a share of it.
+            // Nine steps, middle = default, shown as share of it.
             Slider {
                 objectName: "readerTextSizeSlider"
                 width: parent.width

@@ -10,8 +10,7 @@ const char *const BlankKey = "startPageBlank";
 const char *const TopSitesKey = "startPageTopSites";
 const char *const BookmarksKey = "startPageBookmarks";
 const char *const RecentKey = "startPageRecent";
-// Where an earlier release kept the address of its home page. The start page took the
-// home page's place, and nothing reads it now.
+// Legacy home page url, unread; removed on load.
 const char *const RetiredHomePageKey = "homePage";
 
 } // namespace

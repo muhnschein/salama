@@ -81,8 +81,7 @@ void SearchSettings::chooseAdded(const QString &key)
     }
 }
 
-// Written rather than left to engine()'s fallback, so that the file never names an
-// engine that is not in it.
+// Write fallback explicitly: file never names missing engine.
 void SearchSettings::enginesWereChanged()
 {
     const QString chosen = value(SearchEngineKey).toString();
@@ -145,17 +144,7 @@ QString SearchSettings::searchUrl(const QString &query) const
     return OpenSearch::fill(m_engines.templateAt(engineIndex()), query);
 }
 
-// What the bar shows when the address is not being edited: the host, without the
-// scheme, without "www." and without the path -- the part that says whose page this
-// is. The field shows the whole url again the moment it is tapped, so nothing is
-// hidden from the person who asks for it.
-//
-// The host is taken as the engine reports it rather than reduced to a registrable
-// domain: "docs.example.com" and "example.com" are different sites, and deciding
-// where the site ends needs the public suffix list, which is not worth carrying and
-// would be wrong the day it goes stale. The port is left off entirely: 80 and 443 say
-// nothing, and the rest are noise in a bar this narrow. Anything without a host --
-// about:, data:, file: -- is shown as it is.
+// No registrable-domain reduction: needs public suffix list, goes stale.
 QString SearchSettings::displayAddress(const QString &url)
 {
     const QUrl parsed(url, QUrl::TolerantMode);
@@ -170,7 +159,7 @@ QString SearchSettings::addressFor(const QString &text)
         return typed.toString();
     }
 
-    // "host", "host/path", "host:port" without a scheme; a space means a search.
+    // "host", "host/path", "host:port" sans scheme; space = search.
     static const QRegularExpression hostLike(
         QStringLiteral("^[^\\s/?#:]+(:[0-9]{1,5})?(/[^\\s]*)?$"));
     if (hostLike.match(text).hasMatch()) {
@@ -195,8 +184,7 @@ QString SearchSettings::urlForInput(const QString &input) const
     return address.isEmpty() ? searchUrl(text) : address;
 }
 
-// Asked of the same rule urlForInput() follows, so the address bar never offers to go
-// to an address that Enter would have searched for, nor the other way round.
+// Same rule as urlForInput(): bar never disagrees with Enter.
 bool SearchSettings::isAddress(const QString &input) const
 {
     const QString text = input.trimmed();

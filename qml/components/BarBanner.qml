@@ -1,15 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One bar along the top of the navigation bar, saying something that happened away from
-// the page in front: the downloads coming (DownloadBanner), a link opened in a tab behind
-// it (TabBanner). Both are this bar, so they read as one kind of thing
-// (docs/DECISIONS/0038-download-status.md, 0046-link-menu.md): the width of the screen,
-// on the sheets' ground with its edge in the highlight colour (SheetBackground), a slot
-// at its start for what stands for it, its words, and at its end the one thing to do
-// about it, Show. A tap anywhere on it does the same; a swipe sideways takes it away.
-//
-// It lies on the bar, not over the page: the browsing page ends where the banners begin.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -20,13 +10,10 @@ Item {
     property string title
     property string detail
     property color detailColor: Theme.secondaryColor
-    // What stands for it, in the slot at its start.
     default property alias badge: badgeSlot.data
     readonly property bool pressed: touch.pressed
 
-    // A tap, on the bar or on Show.
     signal activated()
-    // Swiped away.
     signal dismissed()
 
     height: Theme.itemSizeMedium
@@ -37,7 +24,6 @@ Item {
         FadeAnimation {}
     }
 
-    // What a sideways drag moves; the bar follows it, fading as it goes.
     Item {
         id: handle
 
@@ -128,7 +114,6 @@ Item {
             }
         }
 
-        // The one thing to do about it, in the highlight colour as a Silica text button is.
         BackgroundItem {
             id: action
 

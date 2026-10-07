@@ -13,8 +13,6 @@ namespace {
 
 const int KindCount = SitePermissions::TrackingProtection + 1;
 
-// Whether a site can be given the decision for the kind: allowed or blocked, or asked
-// each time where the kind is one a page asks for.
 bool isDecision(int kind, int decision)
 {
     return decision == SitePermissions::Allow || decision == SitePermissions::Block ||
@@ -23,14 +21,8 @@ bool isDecision(int kind, int decision)
 
 } // namespace
 
-// The engine's name for each kind. Notifications, pop-ups, cookies, the camera and the
-// microphone have one each, Firefox's and sailfish-browser's alike. A location has two:
-// the platform's prompt writes what the page asked for, "geolocation"
-// (embedlite-components jscomps/ContentPermissionPrompt.js), which sailfish-browser lists
-// under that name, and Gecko's own front end and its default preference call it "geo".
-// Which of them the engine reads cannot be seen from here, so both are written, and
-// either is read. "trackingprotection" is Gecko's content blocking allow list: a site
-// with it allowed has tracking protection off.
+// Location: platform prompt writes "geolocation", Gecko default pref uses "geo". Unclear
+// which engine reads: write both, read either.
 QStringList permissionTypesOf(int kind)
 {
     switch (kind) {
@@ -141,8 +133,7 @@ void SitePermissions::observe(const QString &topic, const QVariant &data)
     for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
         const int kind = permissionKindOf(permission.type);
         const int decision = permission.capability;
-        // Gecko's allow list has no deny: a record of one is nothing this application
-        // writes or reads as a decision; nor is asking about what a page does unasked.
+        // Allow list has no deny; Ask invalid for unasked kinds.
         if (kind < 0 || (kind == TrackingProtection && decision != Allow) ||
             (decision == Ask && !canAsk(kind))) {
             continue;
@@ -197,7 +188,6 @@ void SitePermissions::set(int kind, const QString &origin, int decision)
     if (site.isEmpty() || permissionTypesOf(kind).isEmpty()) {
         return;
     }
-    // The decisions are the engine's capabilities.
     send(QStringLiteral("add"), kind, site, decision);
     if (put(kind, site, decision)) {
         touch();
@@ -211,8 +201,7 @@ void SitePermissions::remove(int kind, const QString &origin)
     if (site.isEmpty() || permissionTypesOf(kind).isEmpty()) {
         return;
     }
-    // Sent whether or not the list holds it: the engine may hold what was written since
-    // it was last read, and a site that follows the default is what was asked for.
+    // Always sent: engine may hold entry written since last read.
     send(QStringLiteral("remove"), kind, site, 0);
     if (take(kind, site)) {
         touch();

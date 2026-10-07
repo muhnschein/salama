@@ -1,15 +1,12 @@
-# Device RPM: cross-compiles harbour-salama for aarch64 inside the Sailfish platform
-# SDK image and runs Jolla's validator on the result. Step for step the same as
-# postivene's rpm.yml, minus its Rust plumbing; a release is cut the way piirit's and
-# vuo's are, by this workflow publishing the package it built (docs/RELEASING.md).
+# Device RPM: cross-compile for aarch64 in Sailfish platform SDK image, run Jolla's
+# validator. Same as postivene's rpm.yml minus Rust; releases as piirit/vuo: workflow
+# publishes what it built (docs/RELEASING.md).
 #
-# Not part of ci.yml: the image is multi-gigabyte and the build is minutes of runner
-# time nobody wants on every push. Run it from the Actions tab, dispatch it on main with
-# `release` or push a `v*` tag for a release, or a `build-*` tag to build a branch
-# before this file reaches the default branch (workflow_dispatch only sees workflows
-# that are there).
+# Not in ci.yml: multi-GB image, minutes of runner time. Run from Actions tab; release via
+# main dispatch with `release` or `v*` tag; `build-*` tag builds branch before this file
+# reaches default branch (workflow_dispatch only sees workflows there).
 #
-# Every action is pinned to a commit: a tag can be repointed.
+# Actions pinned to commits: tags can be repointed.
 name: rpm
 
 on:
@@ -34,8 +31,7 @@ on:
   push:
     tags: ["v*", "build-*"]
 
-# Reading the tree is all the build needs; the release job says what more it holds, so
-# the build never holds it.
+# Build only reads tree; release job holds more, build never does.
 permissions:
   contents: read
 
@@ -47,22 +43,18 @@ jobs:
     env:
       ARCH: aarch64
       SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
-      # Free text from the dispatch form: read through the environment, never spliced
-      # into a script, and held to the spec's Version before anything uses it.
+      # Dispatch free text: via env, never spliced into script; checked vs spec Version first.
       RELEASE: ${{ inputs.release || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The version is the spec's. A release is a `v*` tag, or a dispatch on main with
-      # the version in `release`; either has to say what the spec says, or the package
-      # would carry one version and the release page another, and a dispatch is held to
-      # main because the release job tags the commit it runs on. First, so a mistake
-      # costs seconds rather than an SDK pull.
+      # Version = spec's. Release = `v*` tag or main dispatch with `release`; must match
+      # spec, else package and release page disagree. Dispatch limited to main: release
+      # job tags that commit. Runs first so mistake costs seconds, not SDK pull.
       #
-      # A release builds the spec as committed, Release: 1, the file Harbour is given.
-      # Any other build is 1.<run number>, so each is an upgrade of the one before:
-      # rpm -U and pkcon do nothing for a package whose NEVRA they already have. Digits
-      # and periods only, which is all Harbour accepts in either field.
+      # Release builds spec as committed (Release: 1, what Harbour gets). Others get
+      # 1.<run number> so each upgrades previous (rpm -U, pkcon skip known NEVRA).
+      # Digits and periods only (Harbour).
       - name: Stamp the release
         run: |
           version=$(sed -n 's/^Version:[[:space:]]*//p' rpm/harbour-salama.spec)
@@ -90,9 +82,9 @@ jobs:
           grep -E '^(Version|Release):' rpm/harbour-salama.spec
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
-      # By digest, not tag: the image is a third party's and runs privileged with the
-      # checkout mounted read-write. To add a release, pull its tag once, read
-      # `docker inspect --format '{{index .RepoDigests 0}}'`, add a line here.
+      # Digest, not tag: third-party image runs privileged with read-write checkout.
+      # New release: pull tag once, read
+      # `docker inspect --format '{{index .RepoDigests 0}}'`, add line.
       - name: Resolve the SDK image
         run: |
           [[ $SFOS =~ ^[0-9]+(\.[0-9]+){3}$ ]] || {
@@ -107,8 +99,7 @@ jobs:
       - name: Pull the Sailfish SDK
         run: docker pull "$IMAGE"
 
-      # The image names one target per architecture; asked for rather than assumed so
-      # a release whose naming differs fails here with the list, not inside rpmbuild.
+      # Ask image for target, don't assume: odd naming fails here with list, not in rpmbuild.
       - name: Resolve the build target
         run: |
           targets=$(docker run --rm "$IMAGE" sb2-config -l 2>/dev/null || true)
@@ -121,10 +112,9 @@ jobs:
           echo "Building against $target"
           echo "TARGET=$target" >> "$GITHUB_ENV"
 
-      # sdk-manage refuses to run as root, so the build runs as the image's own user and
-      # the checkout must belong to it. The tree is mounted inside that user's home:
-      # rpm runs under scratchbox2, which maps unknown absolute paths into the target
-      # rootfs, so a tree at /build is written outside and read inside.
+      # sdk-manage refuses root: build as image user, checkout owned by it, mounted
+      # in its home. scratchbox2 rpm maps unknown absolute paths into target rootfs,
+      # so tree at /build would be written outside, read inside.
       - name: Hand the checkout to the SDK's build user
         run: |
           uid=$(docker run --rm "$IMAGE" id -u)
@@ -134,10 +124,8 @@ jobs:
           echo "BUILDDIR=$home/harbour-salama" >> "$GITHUB_ENV"
           sudo chown -R "$uid:$gid" "$PWD"
 
-      # `-X`: without it build-init asks `git describe` for a version, finds no tag and
-      # stops before writing .mb2/spec. build-requires installs the spec's BuildRequires
-      # into the target from the Jolla repositories, which a runner can reach. The C++
-      # build runs parallel make (%{_smp_mflags}) on the runner's cores.
+      # `-X`: else build-init asks `git describe`, finds no tag, never writes
+      # .mb2/spec. build-requires pulls BuildRequires from Jolla repos. Parallel make.
       - name: Build the RPM
         run: |
           docker run --rm --privileged \
@@ -171,10 +159,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # The authority. ci/harbour-check.sh answers the same questions from the sources
-      # on every pull request; only this sees the built package: the generated Requires
-      # and Provides, the stripped binary's symbols, the real file modes. After the
-      # upload on purpose: a package Harbour would reject is still worth a phone.
+      # Authority. Only built package shows generated Requires/Provides, stripped
+      # symbols, real file modes. After upload on purpose: rejected package still
+      # useful on phone.
       - name: Validate the RPM against Harbour's rules
         run: |
           rpm=$(find RPMS -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
@@ -182,19 +169,14 @@ jobs:
           echo "Validating $rpm"
           ci/harbour-validate-rpm.sh "$rpm"
 
-  # A release: the package the job above built goes on a GitHub release named
-  # v<version>, with that version's section of docs/CHANGELOG.md as its text. Its own
-  # job so that `contents: write` is held only here, by a few commands, and never by
-  # the build running a third party's SDK image with `--privileged`. It needs the
-  # build, and the build ends with Jolla's validator, so a package Harbour would
-  # reject never gets a release page.
+  # Release: built package on GitHub release v<version>, text = version's
+  # docs/CHANGELOG.md section. Own job so `contents: write` never reaches privileged
+  # third-party SDK build. Needs build, which ends with validator: rejected package gets
+  # no release.
   #
-  # From a `v*` tag the tag is there already and `--verify-tag` refuses to invent one;
-  # from a dispatch the release is what makes the tag, on the commit this run checked
-  # out, so the tag, the release and the RPM are one commit by construction. A release
-  # that is already there is added to rather than refused, so re-running this job
-  # after a transient failure finishes it. `gh` is the runner's own, so there is no
-  # third-party tag to repoint; the token is the job's.
+  # `v*` tag: tag exists, `--verify-tag` won't invent one. Dispatch: release creates tag
+  # on checked-out commit, so tag, release, RPM = one commit. Existing release is added
+  # to, so re-run finishes after transient failure. Runner's own `gh`, job token.
   release:
     name: GitHub release
     needs: rpm
@@ -214,8 +196,7 @@ jobs:
       - name: Fetch the package this run built
         run: gh run download "$GITHUB_RUN_ID" --dir rpms
 
-      # The device package and its checksum, and nothing else: the debug and source
-      # RPMs are for a developer with the tree, not a phone.
+      # Device RPM + checksum only; debug/source RPMs are for developers.
       - name: Gather the assets
         run: |
           mkdir -p assets

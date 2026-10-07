@@ -1,6 +1,4 @@
-// Stub: Silica's fades its source item out towards one edge or both with a shader,
-// drawn in place of the item. These tests draw nothing; the stub keeps what it was
-// told, over the item it would be drawn over.
+// Stub: Silica shader fade toward edge(s). Draws nothing; keeps settings, sits over source.
 import QtQuick 2.6
 
 Item {

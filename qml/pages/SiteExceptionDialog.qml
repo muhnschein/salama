@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// Adds a site to the exceptions of a kind of permission: its address, which has to
-// begin with http:// or https:// as an origin does, and whether it is allowed or blocked.
-// The shape is sailfish-browser's own
-// (apps/browser/qml/pages/components/PermissionCreateDialog.qml). Tracking protection's
-// sites are only ever the ones it is off for, so there is nothing to choose
-// (docs/DECISIONS/0039-site-permissions.md).
+// Tracking kind: off-list only, so no allow/block choice.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -15,19 +9,16 @@ import "../components"
 Dialog {
     id: dialog
 
-    // A SitePermissions kind.
     property int kind
-    // The site as the engine writes it, from what was typed; empty while that is no site.
+    // Empty while not a site.
     readonly property string origin: SitePermissions.originOf(address.text)
     readonly property bool listOnly: kind === SitePermissions.TrackingProtection
-    // What the address starts as, for the reader to go on from: the one an origin begins
-    // with nearly always.
     readonly property string scheme: "https://"
     property SitePermissionNames siteNames: SitePermissionNames {}
 
     objectName: "siteExceptionDialog"
     canAccept: origin.length > 0
-    // The menu's choices in its order: Allow, Block, and Always ask for a kind that asks.
+    // Always ask only for asking kinds.
     onAccepted: SitePermissions.set(kind, origin,
                                     listOnly ? SitePermissions.Allow
                                              : [SitePermissions.Allow, SitePermissions.Block,

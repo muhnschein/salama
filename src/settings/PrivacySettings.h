@@ -6,49 +6,25 @@
 
 namespace Salama {
 
-// The pages and switches under Privacy in Settings: HTTPS-Only Mode, tracking protection,
-// what sites are told, JavaScript, what is kept of the history, and whether sites may ask
-// to send notifications. DNS over HTTPS has a section of its own, DohSettings.
 class PrivacySettings : public SettingsSection
 {
     Q_OBJECT
-    // How much of the engine's own anti-tracking is switched on; a TrackingProtection
-    // value (docs/DECISIONS/0023-tracking-protection.md).
     Q_PROPERTY(int trackingProtection READ trackingProtection WRITE setTrackingProtection NOTIFY
                    trackingProtectionChanged)
-    // Whether the pages visited are kept in the history, on unless switched off, and
-    // whether the history is cleared as the browser closes, off unless switched on:
-    // Firefox's Remember browsing and download history and Clear history when Firefox
-    // closes (docs/DECISIONS/0030-history-settings.md).
     Q_PROPERTY(bool rememberHistory READ rememberHistory WRITE setRememberHistory NOTIFY
                    rememberHistoryChanged)
     Q_PROPERTY(bool clearHistoryOnClose READ clearHistoryOnClose WRITE setClearHistoryOnClose NOTIFY
                    clearHistoryOnCloseChanged)
-    // Whether sites the reader has not decided on may ask to send notifications, as they
-    // may unless this is switched on: Firefox's Block new requests asking to allow
-    // notifications (docs/DECISIONS/0033-web-notifications.md).
     Q_PROPERTY(bool blockNotificationRequests READ blockNotificationRequests WRITE
                    setBlockNotificationRequests NOTIFY blockNotificationRequestsChanged)
-    // Whether sites are told not to share or sell the reader's data, off unless switched
-    // on: Firefox's Global Privacy Control, which took the place of Do not track there
-    // and here; and whether pages run their scripts, on unless switched off:
-    // sailfish-browser's Enable JavaScript. What each asks of the engine is
-    // EngineMessages::contentPreferences() (docs/DECISIONS/0047-secure-connections.md).
     Q_PROPERTY(bool globalPrivacyControl READ globalPrivacyControl WRITE setGlobalPrivacyControl
                    NOTIFY globalPrivacyControlChanged)
     Q_PROPERTY(bool javascript READ javascript WRITE setJavascript NOTIFY javascriptChanged)
-    // Whether every page is loaded over HTTPS, a page that has no HTTPS asking before it
-    // loads without: Firefox's HTTPS-Only Mode, off unless switched on. Off, the engine
-    // still tries HTTPS first, as Firefox does. What it asks of the engine is
-    // EngineMessages::httpsOnlyPreferences().
+    // Off still tries HTTPS first.
     Q_PROPERTY(bool httpsOnly READ httpsOnly WRITE setHttpsOnly NOTIFY httpsOnlyChanged)
 
 public:
-    // Firefox's Enhanced Tracking Protection categories, less protection first, with
-    // Off in place of Custom. Stored, so the numbers are part of the file format, and
-    // unscoped as ReaderSettings::Colors is: QML reads
-    // `PrivacySettings.TrackingProtectionOff`. What each asks of the engine is
-    // EngineMessages::trackingProtectionPreferences().
+    // Stored: values are file format.
     enum TrackingProtection // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         TrackingProtectionOff = 0,
@@ -57,11 +33,10 @@ public:
     };
     Q_ENUM(TrackingProtection)
 
-    // A file from before Global Privacy Control has Do not track's switch instead, and
-    // the switch that took its place starts as it was left.
+    // Migrates old Do not track value to GPC.
     explicit PrivacySettings(QSettings &file, QObject *parent = nullptr);
 
-    // Standard unless changed, as in Firefox. Out of range reads back as the default.
+    // Out of range -> default.
     int trackingProtection() const;
     void setTrackingProtection(int level);
 

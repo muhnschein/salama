@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// Says where a link opened behind the page in front went: the link sheet's Background
-// tab leaves the reader where they were, and this says so for a few seconds, on the bar
-// every banner is (BarBanner.qml) -- the link's name, and the group it went into when the
-// group has a name -- with Show to go to it (docs/DECISIONS/0046-link-menu.md). A swipe
-// sideways takes it away sooner.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -13,9 +7,7 @@ import harbour.salama 1.0
 BarBanner {
     id: banner
 
-    // Whether the page leaves room for it, as for the downloads' banner.
     property bool allowed: true
-    // The tab opened, its name, and the name of its group.
     property int tabId: 0
     property string tabTitle
     property string groupName
@@ -54,8 +46,7 @@ BarBanner {
         highlighted: banner.pressed
     }
 
-    // The grid takes over from here: a tab that comes to the front, by Show or otherwise,
-    // has been found.
+    // Any tab change to front ends banner.
     Connections {
         target: TabModel
         onActiveTabChanged: banner.dismiss()

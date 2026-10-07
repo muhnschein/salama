@@ -4,8 +4,7 @@
 
 namespace Salama {
 
-// Every model's roles are a scoped enum, and Qt hands a role about as an int: data()'s
-// argument, roleNames()' keys, the list dataChanged() carries.
+// Roles are scoped enums; Qt wants int.
 template <typename Role> constexpr int roleId(Role role)
 {
     return static_cast<int>(role);

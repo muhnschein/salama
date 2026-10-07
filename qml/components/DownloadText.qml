@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What a download is said to be doing, and the icon its file wears: the same words in
-// the list of downloads and on the browsing page's banner
-// (docs/DECISIONS/0038-download-status.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
 
 QtObject {
-    // How far along one still coming is: how much of how much when the size is known,
-    // and the percentage alone when it is not.
     function progress(size, percent) {
         if (size > 0) {
             //: A download's progress: "3.1 MB of 7.4 MB · 42%"
@@ -20,7 +14,6 @@ QtObject {
         return qsTr("Downloading, %1%").arg(percent)
     }
 
-    // The line under a download's name, in the list.
     function status(download) {
         if (download.status === DownloadModel.Running) {
             return progress(download.size, download.progress)
@@ -42,8 +35,7 @@ QtObject {
         return download.size > 0 ? DownloadModel.formatSize(download.size) + " · " + site : site
     }
 
-    // The theme's icon for a kind of file, by its type, or by its name's ending when the
-    // type says nothing more than bytes.
+    // By extension when mime type is generic bytes.
     function fileIcon(mimeType, name) {
         var type = String(mimeType).toLowerCase()
         var ending = String(name).toLowerCase().replace(/^.*\./, "")

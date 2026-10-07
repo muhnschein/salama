@@ -1,29 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The tab grid. It is not a page: it sits directly below the browsing page, and the
-// two are dragged over each other like a pulley. Pushing it onto the page stack
-// instead gave the grid a sideways transition, which says "another screen" when what
-// is meant is "the same screen, further down".
-//
-// The way back is this view's own overscroll. Dragged past its top it reports the
-// distance and moves itself up by the same amount, which cancels the shift the
-// flickable would otherwise draw: the content then stays exactly where the finger
-// put it while the deck behind it slides down and brings the page back. It is
-// dragged from anywhere on the screen: the cells leave a drag up or down to it, and
-// the two rows drawn over the cells are the flickable's own children, so it sees
-// every press on them too -- though a pull begun on the foot row has too little
-// screen below it to bring the page back.
-//
-// The head row is the one place a drag down is not the grid's to scroll. A grid
-// longer than the screen, dragged down from the middle, scrolls back towards its top
-// before it can overscroll; from the head row the page comes back at once, from
-// wherever the grid is scrolled to.
-//
-// The head row holds the search for a tab, and what it finds is listed over the cells
-// while there is anything typed. The foot row holds the way to a new tab and the
-// groups, within reach of the thumb that carries a cell down to one of them to change
-// its group (docs/DECISIONS/0015-tab-groups.md).
+// Not a page: sits below browsing page in TabDeck. Way back = overscroll: grid shifts up by
+// distance so content stays under finger while deck slides page back.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -31,25 +10,16 @@ import harbour.salama 1.0
 Item {
     id: tabsView
 
-    // A finger has started, moved and released the pull that brings the page back.
-    // The distance is how far the grid has been dragged past its own top.
     signal pullStarted()
     signal pulled(real distance)
     signal pullFinished(real distance)
-    // A tab was chosen; the page is wanted back regardless of any drag.
     signal tabActivated()
 
-    // What the display's cutout takes at the top of the screen, as the page works it
-    // out and the settings allow. Silica's own PullDownMenu adds the same to its top
-    // margin in portrait (docs/DECISIONS/0013-screen-cutout.md).
+    // Silica PullDownMenu adds same to top margin in portrait.
     property real cutoutHeight: 0
-    // Something is typed in the search, and what it finds is shown in place of the
-    // cells.
     readonly property bool searching: searchField.text.length > 0
                                       && TabSearch.searchTerm.length > 0
-    // What the results light: every word of the term, wherever it is, whatever its case,
-    // as TabSearch matched them -- a RegExp of the words, each escaped, as Jolla's
-    // contacts build theirs for Theme.highlightText() (Sailfish/Contacts/ContactItem.qml).
+    // Escaped term words, as Jolla contacts build for Theme.highlightText().
     readonly property var searchMatch: {
         var words = TabSearch.searchTerm.trim().split(/\s+/)
         var escaped = []
@@ -62,20 +32,15 @@ Item {
     }
 
     objectName: "tabsView"
-    // Nothing of the grid is drawn over the page. A grid scrolled down has a row of
-    // cells cut by its top edge, the rest of it above; while the page is pulled back
-    // down from the head row, that rest came down over the page and its bar.
+    // Unclipped, scrolled cells slide over page during head-row pull.
     clip: true
 
-    // A tab found by the search comes to the front, and the page with it.
     function openFound(tabId) {
         TabModel.activateTabById(tabId)
         endSearch()
         tabActivated()
     }
 
-    // The search is the grid's while it is up: put away, it starts empty next time,
-    // with the keyboard down.
     function endSearch() {
         searchField.text = ""
         searchField.focus = false
@@ -89,8 +54,7 @@ Item {
         }
     }
 
-    // Not bound straight to the field: only the last of a burst of keystrokes is
-    // wanted, or the list changes under the finger as the first results come in.
+    // Debounced, else list changes under finger as first results arrive.
     Timer {
         id: searchDebounce
 
@@ -99,11 +63,8 @@ Item {
         onTriggered: TabSearch.searchTerm = searchField.text
     }
 
-    // The rows are declared beside the grid, where the view's own default property
-    // cannot take them into the content it scrolls, and are handed to the grid once
-    // made. A flickable filters the presses of its own children and nothing else's:
-    // beside it, the group strip took every press on the head of the screen, and
-    // the page could not be pulled back from there.
+    // Reparented into grid: flickable filters only own children's presses, so as siblings
+    // rows ate presses and page couldn't be pulled back.
     Component.onCompleted: {
         headRow.parent = tabGrid
         footRow.parent = tabGrid
@@ -112,9 +73,7 @@ Item {
     SilicaGridView {
         id: tabGrid
 
-        // How far the view is dragged past its top, and the last such distance while
-        // a finger was on it. The signal follows the finger only: the flickable's own
-        // bounce back afterwards would otherwise fight the page's animation.
+        // Tracks finger only; flickable bounce-back would fight page animation.
         readonly property real overscroll: Math.max(0, originY - contentY)
         property real pullDistance: 0
 
@@ -125,9 +84,7 @@ Item {
         model: GroupTabs
         cellWidth: width / 2
         cellHeight: cellWidth + Theme.itemSizeSmall
-        // Vertical rather than automatic: with a handful of tabs the content fits the
-        // screen, and an automatic flickable refuses to be dragged at all -- which is
-        // exactly the case where the way back would go missing.
+        // Explicit vertical: automatic refuses drag when content fits.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
 
@@ -143,10 +100,6 @@ Item {
         }
         onDragEnded: tabsView.pullFinished(pullDistance)
 
-        // Room at the head and the foot for the two rows below, which are drawn over
-        // the cells rather than scrolling among them. The head also keeps the first
-        // row of cells -- and the close button in its corner -- out from under the
-        // device's own cutout.
         header: Item {
             width: tabGrid.width
             height: headRow.height
@@ -157,10 +110,7 @@ Item {
             height: footRow.height
         }
 
-        // By id rather than by row: the grid's rows are the current group's, and
-        // the tab model's are every group's. A cell carried down onto the strip of
-        // groups is put into the group it is dropped on, and whatever the strip lit
-        // goes out when the carry ends, dropped or cancelled.
+        // By tab id: grid rows are current group's, model rows all groups'.
         delegate: TabPreview {
             dropTarget: groupStrip
             onHeldChanged: {
@@ -186,15 +136,7 @@ Item {
         VerticalScrollDecorator {}
     }
 
-    // The search for a tab, over the cells rather than among them. The row is also what
-    // keeps the top row of cells clear of the screen's cutout. It rides on the grid,
-    // which moves up as it is pulled down; the margin keeps the row where the content
-    // is.
-    //
-    // Both rows are panes of Silica's glass: a tint with the ambience's own pattern over
-    // it. The tint alone was a smooth band where Silica's own panes are textured. The
-    // tint is opaque, as the navigation bar's is: any cell showing through a row, however
-    // faintly, was one more thing on a busy screen (docs/DECISIONS/0010-tab-grid-deck.md).
+    // Rides grid (moves up on pull); margin compensates.
     Rectangle {
         id: headRow
 
@@ -205,9 +147,7 @@ Item {
             top: parent.top
             topMargin: tabGrid.overscroll
         }
-        // The cutout on top of the row's own height, and the controls below the
-        // cutout rather than centred through it: the row starts at the top of the
-        // screen, and the notch was taking a bite out of what it carries.
+        // Controls below cutout, not centred through notch.
         height: Theme.itemSizeLarge + tabsView.cutoutHeight
         color: Theme.highlightDimmerColor
 
@@ -216,11 +156,6 @@ Item {
             anchors.fill: parent
         }
 
-        // The grid's own edge is a pulley too: dragged down it hands the page back.
-        // Said the way Silica says a pulley menu is there -- a line across the whole
-        // edge -- rather than with the bar's handle, which on device read as a second
-        // handle to find. The highlight background colour: the highlight itself was
-        // too loud a line to have across the top of every grid.
         Rectangle {
             objectName: "gridPullIndicator"
             anchors {
@@ -241,8 +176,6 @@ Item {
             }
             height: Theme.itemSizeLarge
 
-            // Every open tab that holds each word typed, in its title or address, group
-            // by group. Silica's own search field, with its words from the left edge.
             SearchField {
                 id: searchField
 
@@ -253,14 +186,13 @@ Item {
                     verticalCenter: parent.verticalCenter
                 }
                 placeholderText: qsTr("Search tabs")
-                // Enter puts the keyboard away, and the whole list is there to see.
                 EnterKey.iconSource: "image://theme/icon-m-enter-close"
                 EnterKey.onClicked: focus = false
                 onTextChanged: searchDebounce.restart()
             }
         }
 
-        // A drag down the row is the page's, however far the grid is scrolled.
+        // Drag down here is page's, however far grid scrolled.
         GridHeadGesture {
             objectName: "gridHeadPull"
             anchors.fill: parent
@@ -271,10 +203,8 @@ Item {
         }
     }
 
-    // What the search finds, between the two rows and over the cells, which are not
-    // drawn meanwhile. The field is not the list's header, as it was once on a page of
-    // its own: a list that narrows on every search moves its content, and Silica takes
-    // the keyboard away from a field in a flickable whose content moves under it.
+    // Field not list header: Silica drops keyboard from field in flickable whose content
+    // moves.
     SilicaListView {
         id: searchResults
 
@@ -305,9 +235,6 @@ Item {
         value: !tabsView.searching
     }
 
-    // The way to a new tab and the groups, along the foot of the view in the same glass
-    // as the head. On the grid as the head row is, and held still against its pull the
-    // same way.
     Rectangle {
         id: footRow
 
@@ -335,8 +262,6 @@ Item {
                 tabsView.tabActivated()
             }
             onClosedTabsRequested: closedPanel.show()
-            // A page of its own over the grid, which stays open under it for when it
-            // is popped.
             onEditRequested: pageStack.push(Qt.resolvedUrl("../pages/TabGroupsPage.qml"))
         }
     }

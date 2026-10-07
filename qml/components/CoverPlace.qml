@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The cover at rest: where the reader was. The site of the tab in front, its icon beside
-// it, and the page's title, large, as much of it as there is room for
-// (docs/DECISIONS/0037-cover-is-where-you-were.md).
-//
-// Words only, over the cover's faint halftone: nothing here is a picture of the page. It
-// changes as the tab in front does, or its page, and is still in between.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -14,18 +7,14 @@ import harbour.salama 1.0
 Item {
     id: place
 
-    /// The page in front: its address, title and icon.
     property string url
     property string title
     property string favicon
 
-    /// The site, as the bar shows it.
     readonly property string host: SearchSettings.displayAddress(url)
 
     objectName: "coverPlace"
 
-    // The site's icon on a faint square, or, while it has none, the first letter of its
-    // host, as the start page's tiles draw one.
     Rectangle {
         id: tile
 
@@ -79,7 +68,6 @@ Item {
         color: Theme.highlightColor
     }
 
-    // As many lines as fit under the site, the last cut short.
     Label {
         objectName: "coverPlaceTitle"
         anchors {

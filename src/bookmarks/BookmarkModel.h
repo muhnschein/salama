@@ -2,8 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/browser/bookmarks/declarativebookmarkmodel.{h,cpp}
-// (Copyright (c) 2013 - 2021 Jolla Ltd., MPL-2.0), stored in SQLite instead of JSON so
-// Phase 2 folders are a column, not a file-format change.
+// (Copyright (c) 2013 - 2021 Jolla Ltd., MPL-2.0). SQLite not JSON: folders = column later.
 #pragma once
 
 #include "ModelRoles.h"
@@ -24,11 +23,8 @@ class BookmarkModel : public QAbstractListModel
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString activeUrl READ activeUrl WRITE setActiveUrl NOTIFY activeUrlChanged)
     Q_PROPERTY(bool activeUrlBookmarked READ activeUrlBookmarked NOTIFY activeUrlBookmarkedChanged)
-    // Counts every change to the bookmarks: one added, removed or edited, a favicon
-    // arriving, the list cleared or read again. A QML binding that asks one of the
-    // invokables below reads this first -- `(BookmarkModel.revision,
-    // BookmarkModel.titleOf(id))` -- so that it is asked again when anything changes,
-    // which a call alone would never be.
+    // Bumps on any change. QML bindings calling invokables read it first so they re-evaluate:
+    // `(BookmarkModel.revision, BookmarkModel.titleOf(id))`.
     Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
 
 public:
@@ -46,8 +42,7 @@ public:
         QString url;
         QString title;
         QString favicon;
-        // When it was added, in milliseconds since the epoch: how old a bookmark never
-        // visited is, to the address bar's ranking (OmnibarModel::frecency).
+        // Added time, ms since epoch. Age for never-visited bookmark in OmnibarModel::frecency.
         qint64 created = 0;
     };
 
@@ -62,11 +57,8 @@ public:
     void setActiveUrl(const QString &url);
     bool activeUrlBookmarked() const;
     int revision() const;
-    // The bookmarks in the list's order, for the address bar's suggestions
-    // (docs/DECISIONS/0027-omnibar.md): each title as stored, empty when there is none.
     const QList<Bookmark> &bookmarks() const;
 
-    // Returns the bookmark id; an already bookmarked url returns its existing id.
     Q_INVOKABLE int add(const QString &url, const QString &title,
                         const QString &favicon = QString());
     Q_INVOKABLE void remove(int index);
@@ -76,19 +68,13 @@ public:
     Q_INVOKABLE void updateFavicon(const QString &url, const QString &favicon);
     Q_INVOKABLE void clear();
 
-    // One bookmark by its id, for the cover's quick action, which keeps a bookmark by
-    // its id (docs/DECISIONS/0029-quick-action.md). The title is the one the list
-    // shows, the address when there is no other; an id with no bookmark has neither.
+    // Title falls back to url.
     Q_INVOKABLE bool hasBookmark(int id) const;
     Q_INVOKABLE QString urlOf(int id) const;
     Q_INVOKABLE QString titleOf(int id) const;
-    // The id of the bookmark for this address, 0 when there is none: a bookmark
-    // removed and added again comes back under another id, and is found by this.
+    // 0 if none.
     Q_INVOKABLE int idForUrl(const QString &url) const;
-    // The bookmarks whose title and address hold every word of the query, in the
-    // list's order, as maps of bookmarkId, title, url and favicon -- the title as
-    // titleOf() gives it. Every bookmark for an empty query. What the quick action's
-    // bookmark picker lists; matched as every search in the browser is (SearchWords).
+    // Maps of bookmarkId, title, url, favicon. Empty query -> all.
     Q_INVOKABLE QVariantList matching(const QString &query) const;
 
 signals:

@@ -1,24 +1,17 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The cover while something downloads: Silica's ring, filled as far as the downloads
-// have come together, the percentage in it and how many files are coming under that
-// (docs/DECISIONS/0037-cover-is-where-you-were.md).
-//
-// In steps of five: the ring and the number move twenty times in a download at most,
-// however often the engine reports, so the cover is drawn again no more often than that.
+// Steps of 5: cover redraws at most 20 times per download.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Item {
     id: downloads
 
-    /// How many downloads are coming, and how far along they are together, 0 to 100
-    /// (DownloadModel.runningCount and runningProgress).
+    /// DownloadModel.runningCount and runningProgress (0-100).
     property int count
     property int progress
 
-    /// The progress as the cover shows it, down to the step of five below.
     readonly property int shown: Math.floor(Math.max(0, Math.min(progress, 100)) / 5) * 5
 
     objectName: "coverDownloads"
@@ -39,7 +32,6 @@ Item {
         color: Theme.highlightColor
     }
 
-    // As large as the room under the heading allows, and centred in it.
     Item {
         id: room
 

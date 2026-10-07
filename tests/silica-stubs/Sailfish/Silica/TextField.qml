@@ -1,6 +1,4 @@
-// Stub: Silica's TextField is an editor with a label above it and an underline below.
-// Text rather than Item, so that `font` and `text` are the real ones -- a field the
-// application sizes its own text on is a field whose font has to exist.
+// Stub: Text not Item, so font and text are real: app sizes its text on field font.
 import QtQuick 2.6
 
 Text {
@@ -9,20 +7,14 @@ Text {
     property int inputMethodHints: 0
     property bool readOnly: false
     property int selectAllCount: 0
-    // Silica's TextBase publishes where its text sits relative to the item's own
-    // centre, so a field can be lined up with a label beside it.
+    // TextBase: text offset from item centre, for aligning with label beside.
     property real textVerticalCenterOffset: 0
-    // Silica insets the text inside a field by Theme.horizontalPageMargin at each
-    // end; the stub's Theme has that at 24.
+    // Silica insets text by Theme.horizontalPageMargin each end; stub Theme = 24.
     property real textLeftMargin: 24
     property real textRightMargin: 24
-    // Silica's TextBase draws the text and its underline in the error colour.
     property bool errorHighlight: false
-    // What a press outside the field does to its focus: FocusBehavior.ClearItemFocus,
-    // TextBase's own default, takes it away.
+    // Press outside: FocusBehavior.ClearItemFocus (TextBase default) drops focus.
     property int focusOutBehavior: 0
-    // The items Silica puts beside the text; SearchField's right one is its clear
-    // button.
     property Item leftItem
     property Item rightItem
 

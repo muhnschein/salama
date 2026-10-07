@@ -1,16 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// A few lines of an article as the reader view will set them: on the reader settings'
-// page, under the choices, following each as it is made (pages/ReaderSettingsPage.qml,
-// docs/DECISIONS/0024-reader-view.md). The site's name in the colour of a link, a
-// heading and a paragraph, in the theme's colours from the style sheet (Reader), in its
-// typeface, and at its text size as many screen pixels large as the engine makes a css
-// pixel (Settings.pageZoom) -- the reader view's own size, not a smaller picture of it.
-// In the ambience's own look they are set as the style sheet sets it: the heading first
-// and at the end of the line, light, in the highlight colour, the site under it as a
-// PageHeader's description, on a page of the ambience's dimmer highlight. Every measure
-// is the style sheet's, in css pixels. Not a button.
+// Real size (Settings.pageZoom px per css px), not scaled. Measures in css px, from
+// Reader style sheet.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -22,7 +14,7 @@ Rectangle {
                                                       Reader.isDarkAmbience(Theme.primaryColor))
     readonly property bool ambience: scheme === "ambience"
     readonly property real cssPixel: Settings.pageZoom(Theme.pixelRatio)
-    // The article's --font-size, which every em below is of.
+    // ems below relative to this.
     readonly property real em: Reader.fontSizeFor(ReaderSettings.textSize) * cssPixel
     readonly property bool serif: ReaderSettings.typeface === ReaderSettings.Serif
     readonly property string family: serif ? "serif" : ambience ? Theme.fontFamily : "sans-serif"
@@ -55,15 +47,11 @@ Rectangle {
     Item {
         id: article
 
-        // The body's padding.
         x: 20 * preview.cssPixel
         y: x
         width: preview.width - 2 * x
         height: paragraph.y + paragraph.height
 
-        // .domain: the site the article came from, in the sans-serif whatever the
-        // typeface; in the ambience's look under the heading, as a PageHeader's
-        // description is under its title.
         Label {
             id: domain
 
@@ -83,8 +71,6 @@ Rectangle {
             color: preview.ambience ? Theme.secondaryHighlightColor : preview.linkColor
         }
 
-        // .header > h1, with its margin above and below; in the ambience's look first,
-        // at the end of the line and light, as a PageHeader's title.
         Label {
             id: heading
 
@@ -108,7 +94,6 @@ Rectangle {
             color: preview.ambience ? Theme.highlightColor : preview.textColor
         }
 
-        // A paragraph of the article, a line of it as tall as the style sheet makes one.
         Label {
             id: paragraph
 

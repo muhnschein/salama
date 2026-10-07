@@ -56,7 +56,7 @@ void tst_tabpersistence::roundTrip()
     QCOMPARE(tabs.at(0).id, 7);
     QCOMPARE(tabs.at(1).id, 3);
     QCOMPARE(tabs.at(1).title, QStringLiteral("Title 3"));
-    // The cover's order is written with the rest of the tab, not derived on load.
+    // Cover order stored with tab, not derived on load.
     QCOMPARE(tabs.at(0).lastActive, 7LL);
     QCOMPARE(tabs.at(0).groupId, 1);
 
@@ -87,8 +87,7 @@ void tst_tabpersistence::saveOrderRenumbers()
 
     QList<Tab> tabs = persistence.loadTabs();
     tabs.move(0, 2);
-    // An invalid tab in the middle of the list has no row of its own and must not
-    // consume a position or upset the ones around it.
+    // Invalid tab mid-list: no row, takes no position.
     tabs.insert(1, makeTab(0, QStringLiteral("https://nowhere.example/")));
     persistence.saveOrder(tabs);
 
@@ -98,7 +97,6 @@ void tst_tabpersistence::saveOrderRenumbers()
     QCOMPARE(reloaded.at(1).id, 3);
     QCOMPARE(reloaded.at(2).id, 1);
 
-    // Positions were renumbered from 1, so a new tab still lands after all of them.
     persistence.insertTab(makeTab(4, QStringLiteral("https://d.example/")));
     QCOMPARE(persistence.loadTabs().at(3).id, 4);
 }
@@ -168,7 +166,6 @@ void tst_tabpersistence::groupsRoundTrip()
     persistence.insertGroup(invalid);
     persistence.updateGroup(invalid);
 
-    // In the order they were added, not by id.
     QList<TabGroup> groups = persistence.loadGroups();
     QCOMPARE(groups.count(), 2);
     QCOMPARE(groups.at(0), first);
@@ -177,7 +174,6 @@ void tst_tabpersistence::groupsRoundTrip()
     QVERIFY(groups.at(0).name.isEmpty());
     QCOMPARE(groups.at(1).name, QStringLiteral("Work"));
 
-    // The order can be written back from a list.
     persistence.saveGroupOrder(QList<TabGroup>{second, invalid, first});
     groups = persistence.loadGroups();
     QCOMPARE(groups.at(0).id, 2);
@@ -219,7 +215,6 @@ void tst_tabpersistence::closedTabsRoundTrip()
     persistence.insertClosedTab(newer);
     persistence.insertClosedTab(invalid);
 
-    // Newest first.
     QList<ClosedTab> closed = persistence.loadClosedTabs();
     QCOMPARE(closed.count(), 2);
     QCOMPARE(closed.at(0), newer);

@@ -17,8 +17,7 @@ namespace {
 
 const char *const ModuleUri = "harbour.salama";
 
-// The Core the providers hand out from, which registerQmlTypes() sets. A provider is a
-// plain function pointer on Qt 5.6 and cannot capture it.
+// Qt 5.6 provider is plain function pointer, no capture: Core kept here.
 Core *&registeredCore()
 {
     static Core *core = nullptr;
@@ -218,9 +217,7 @@ void registerQmlTypes(Core *core)
                                                &webNotificationsProvider);
     qmlRegisterSingletonType<SitePermissions>(ModuleUri, 1, 0, "SitePermissions",
                                               &sitePermissionsProvider);
-    // One kind's exceptions, made in QML by each page that lists them.
     qmlRegisterType<SiteExceptions>(ModuleUri, 1, 0, "SiteExceptions");
-    // The start page's lists, reached as its properties and never made in QML.
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));
 }

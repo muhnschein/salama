@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Stand-in for Silica's EnterKey attached property. Attached properties need C++,
-// which is the only reason the stub module carries a plugin.
+// Silica EnterKey attached property stand-in. Attached props need C++: why plugin exists.
 #pragma once
 
 #include <QObject>

@@ -5,7 +5,7 @@ Item {
 
     property bool down: false
     property bool highlighted: down
-    // The wash drawn across the item while it is highlighted.
+    // Wash drawn while highlighted.
     property color highlightedColor: "#4daaccff"
     property int remorseCount: 0
 

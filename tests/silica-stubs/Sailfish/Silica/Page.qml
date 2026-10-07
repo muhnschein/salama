@@ -1,7 +1,7 @@
 import QtQuick 2.6
 
 Item {
-    // Silica pages fill the window; a size lets list views instantiate delegates.
+    // Pages fill window; size needed so list views instantiate delegates.
     width: parent ? parent.width : 0
     height: parent ? parent.height : 0
 

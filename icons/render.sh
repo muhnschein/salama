@@ -1,6 +1,6 @@
 #!/bin/bash
-# Regenerate the launcher icons from icons/harbour-salama.svg at the sizes Harbour expects.
-# The PNGs are committed so the device build needs no SVG tooling.
+# Regenerate launcher icon PNGs from icons/harbour-salama.svg at Harbour sizes.
+# PNGs committed: device build needs no SVG tools.
 set -euo pipefail
 cd "$(dirname "$0")"
 for size in 86 108 128 172; do
@@ -8,17 +8,13 @@ for size in 86 108 128 172; do
     rsvg-convert -w "$size" -h "$size" harbour-salama.svg -o "${size}x${size}/harbour-salama.png"
 done
 
-# The cover's own pictures go into art/, which is installed beside the QML so that an
-# Image can resolve them on the device. Not inside qml/ -- ci/harbour-check.sh holds that
-# directory to QML files alone.
+# Cover pictures go to art/, installed beside QML. Not qml/: ci/harbour-check.sh allows
+# only QML there.
 #
-# First its quick-action icons, icons/cover/*.svg, into art/cover/, as
-# <name>-<size>-<ink>.png. The home screen draws a cover action's icon itself, from the
-# file, so the picture has to arrive at the size and in the colour it is shown in: one
-# per size Silica's small icon takes at the scales a phone runs at, 1.0 to 2.0, in white
-# for a dark ambience and black for a light one -- the way piirit hands over its own.
-# The cover picks the file (qml/cover/CoverPage.qml). The sources draw in white; the
-# black ones are the same file recoloured.
+# Quick-action icons icons/cover/*.svg -> art/cover/<name>-<size>-<ink>.png. Home screen
+# draws file as-is, so one per Silica small-icon size at scales 1.0-2.0, white for dark
+# ambience, black for light (as piirit). qml/cover/CoverPage.qml picks. Sources white;
+# black = recoloured.
 mkdir -p ../art/cover
 rm -f ../art/cover/*.png
 work=$(mktemp -d)
@@ -33,15 +29,11 @@ for source in cover/*.svg; do
     done
 done
 
-# Then the halftone the cover is drawn over (qml/components/CoverHalftone.qml): the
-# launcher icon's bolt as a field of dots, once, in white -- the cover tints it with the
-# ambience's highlight colour itself, and fades it under what it has to say. The bolt is
-# harbour-salama.svg's outline, as a polygon, 6.4 of the picture's units to the icon's,
-# its bounds centred on the picture. Largest inside the bolt and thinning towards its
-# foot; a halo just outside it; a faint even field everywhere else. Taller than any
-# cover, so the cover fills itself with it and cuts it top and bottom alike, which keeps
-# the bolt in the cover's middle whatever the cover's shape. Drawn at twice the size it
-# is laid out at, so the cover only ever draws it smaller.
+# Cover halftone (qml/components/CoverHalftone.qml): launcher bolt as dot field, white
+# (cover tints with highlight colour). Bolt = harbour-salama.svg outline polygon, 6.4
+# picture units per icon unit, centred. Dots largest inside bolt, thinning to foot; halo
+# just outside; faint field elsewhere. Taller than any cover, cropped evenly so bolt stays
+# centred. Drawn 2x, cover only scales down.
 awk -v pitch=16 -v width=352 -v height=640 '
 function inside(x, y,    i, j, hit) {
     hit = 0
@@ -119,13 +111,11 @@ BEGIN {
 }' > "$work/halftone.svg"
 rsvg-convert -w 704 -h 1280 "$work/halftone.svg" -o ../art/cover/halftone.png
 
-# The launcher icon again, larger, for the tutorial's first card, which shows it over the
-# application's name (qml/components/TutorialCard.qml): drawn at an extra-large item's
-# size, which is never larger than this on a phone this runs on.
+# Launcher icon, large, for tutorial first card (qml/components/TutorialCard.qml), at
+# extra-large item size (max on target phone).
 rsvg-convert -w 512 -h 512 harbour-salama.svg -o ../art/logo.png
 
-# And the made-up pages the tutorial's sketch of the tab grid shows in its cells, at
-# the size the grid draws a preview: half the screen across.
+# Fake pages for tutorial's tab grid sketch, at grid preview size: half screen wide.
 mkdir -p ../art/tutorial
 for source in tutorial/*.svg; do
     rsvg-convert -w 540 -h 1120 "$source" -o "../art/tutorial/$(basename "$source" .svg).png"

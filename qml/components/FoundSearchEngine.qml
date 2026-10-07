@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// A search engine a site offered while it was browsed: the add icon, the engine's name,
-// and under it the site and what a tap does, in the secondary highlight colour as
-// Silica writes a value under a label. A tap takes it up; a context menu forgets it
-// (docs/DECISIONS/0041-search-engines-found.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

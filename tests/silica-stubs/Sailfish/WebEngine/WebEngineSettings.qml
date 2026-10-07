@@ -6,7 +6,7 @@ QtObject {
     property bool autoLoadImages: true
     property bool popupEnabled: true
     property bool useDownloadDir: false
-    // QMozEngineSettings: how many device pixels the engine lays a css pixel out in.
+    // QMozEngineSettings: device pixels per css pixel.
     property real pixelRatio: 1.0
     property string downloadDir
     property var preferences: []

@@ -22,8 +22,8 @@ namespace {
 const QString Chat = QStringLiteral("https://chat.example");
 const QString Page = QStringLiteral("p1");
 
-// What embedlite-components' ContentPermissionManager.js sends on "embed:perms:all", as
-// qtmozembed hands it over: a list of maps, every number a double.
+// embedlite-components ContentPermissionManager.js "embed:perms:all" via qtmozembed: list
+// of maps, every number double.
 QVariantMap permission(const QString &type, const QString &uri, int capability, int expireType = 0)
 {
     return {
@@ -39,8 +39,6 @@ QVariantMap notificationPermission(const QString &uri, int capability, int expir
     return permission(QStringLiteral("desktop-notification"), uri, capability, expireType);
 }
 
-// What the frame script sends from a page: the page's message, as JSON, with the origin
-// and the permission Gecko holds.
 QVariantMap relayed(const QVariantMap &message, const QString &origin = Chat,
                     const QString &permission = QStringLiteral("default"))
 {
@@ -77,7 +75,6 @@ QVariantMap showMessage(int id, const QString &title, const QString &tag = QStri
     return message;
 }
 
-// The message a reply script hands the page, read back out of the script.
 QVariantMap replyOf(const QString &script)
 {
     QJSEngine engine;
@@ -94,7 +91,6 @@ QVariantMap replyOf(const QString &script)
         .toMap();
 }
 
-// Every reply sent to a tab, in order, as "type:id:detail".
 QStringList replies(const QSignalSpy &spy, int tabId)
 {
     QStringList list;
@@ -127,10 +123,8 @@ QString pngDataUrl(int width, int height)
     return QStringLiteral("data:image/png;base64,") + QString::fromLatin1(bytes.toBase64());
 }
 
-// A page for the page script, in a JavaScript engine rather than a browser's: the parts
-// of the DOM it touches, the timers run by hand. `permission` is what Gecko says; a
-// trusted event is what a touch is; `images` are what it loads, loaded or failed by the
-// test; `posted` is what it says to the frame script.
+// Minimal DOM for page script in JS engine, timers run by hand. `permission` = Gecko's;
+// trusted event = touch; `images` loaded/failed by test; `posted` = sent to frame script.
 const char *const FakePage = R"(
 var permission = 'default', posted = [], timers = [], images = [], drawn = [], errors = [];
 var tainted = false;
@@ -194,8 +188,8 @@ function reply(script) { return new Function(script)(); }
 function last() { return posted[posted.length - 1]; }
 )";
 
-// The frame script's world: the message manager's own addEventListener and
-// sendAsyncMessage, and the content window. `fire` hands a listener an event.
+// Frame script world: message manager addEventListener/sendAsyncMessage, content window.
+// `fire` dispatches to listener.
 const char *const FakeFrame = R"(
 var listeners = {}, sent = [];
 function addEventListener(type, listener, capture, untrusted) {
@@ -264,12 +258,11 @@ void tst_webnotifications::origins()
              QStringLiteral("https://chat.example:8443"));
     QCOMPARE(NotificationPermissions::originOf(QStringLiteral("https://[::1]:8080/")),
              QStringLiteral("https://[::1]:8080"));
-    // The host in ASCII, as Gecko's principals have it; shown to the reader as it reads.
+    // Host in ASCII as Gecko principals; shown to reader decoded.
     const QString ace = NotificationPermissions::originOf(QStringLiteral("https://ääkkönen.fi/"));
     QCOMPARE(ace, QStringLiteral("https://xn--kknen-fraa0m.fi"));
     QCOMPARE(NotificationPermissions::hostOf(ace), QStringLiteral("ääkkönen.fi"));
     QCOMPARE(NotificationPermissions::hostOf(Chat), QStringLiteral("chat.example"));
-    // Nothing but a site on the web has an origin to allow.
     QCOMPARE(NotificationPermissions::originOf(QStringLiteral("data:text/html,x")), QString());
     QCOMPARE(NotificationPermissions::originOf(QStringLiteral("file:///tmp/a.html")), QString());
     QCOMPARE(NotificationPermissions::originOf(QStringLiteral("about:blank")), QString());
@@ -284,15 +277,12 @@ void tst_webnotifications::permissionList()
     QSignalSpy count(&permissions, &NotificationPermissions::countChanged);
     QSignalSpy requests(&permissions, &NotificationPermissions::engineRequest);
 
-    // Asked for as the model is refreshed.
     permissions.refresh();
     QCOMPARE(requests.count(), 1);
     QCOMPARE(requests.at(0).at(0).toString(), QStringLiteral("embedui:perms"));
     QCOMPARE(requests.at(0).at(1).toMap().value(QStringLiteral("msg")).toString(),
              QStringLiteral("get-all"));
 
-    // The allowed first, then the blocked, each sorted by host; the origin's attributes
-    // after a caret are not the site's.
     permissions.observe(QStringLiteral("embed:perms:all"),
                         QVariantList{
                             notificationPermission(QStringLiteral("https://news.example"), 2),
@@ -321,7 +311,6 @@ void tst_webnotifications::permissionList()
              QByteArray("allowed"));
     QCOMPARE(permissions.rowCount(permissions.index(0)), 0);
 
-    // Any address of a site is the site.
     QVERIFY(permissions.isAllowed(QStringLiteral("https://chat.example/room/42")));
     QVERIFY(!permissions.isAllowed(QStringLiteral("https://news.example/")));
     QVERIFY(permissions.isBlocked(QStringLiteral("https://news.example")));
@@ -329,7 +318,7 @@ void tst_webnotifications::permissionList()
     QVERIFY(!permissions.isAllowed(QStringLiteral("https://other.example/")));
     QVERIFY(!permissions.isAllowed(QStringLiteral("data:text/html,x")));
 
-    // As a string too, which is how qtmozembed hands over what it could not read.
+    // String form too: qtmozembed passes unparsed data so.
     permissions.observe(QStringLiteral("embed:perms:all"),
                         QStringLiteral("[{\"type\":\"desktop-notification\","
                                        "\"uri\":\"https://chat.example\",\"capability\":2,"
@@ -345,8 +334,6 @@ void tst_webnotifications::permissionListIgnoresTheRest()
     permissions.observe(
         QStringLiteral("embed:perms:all"),
         QVariantList{
-            // Another permission; one for the session, the platform's; one to prompt;
-            // one of a page that is no site; a repeat.
             permission(QStringLiteral("geolocation"), QStringLiteral("https://maps.example"), 1),
             notificationPermission(QStringLiteral("https://session.example"), 2, 1),
             notificationPermission(QStringLiteral("https://prompt.example"), 3),
@@ -361,7 +348,6 @@ void tst_webnotifications::permissionListIgnoresTheRest()
     QCOMPARE(permissions.rowCount(), 1);
     QVERIFY(permissions.isAllowed(Chat));
 
-    // Another topic is not the list.
     permissions.observe(QStringLiteral("embed:download"), QVariantList{});
     QCOMPARE(permissions.rowCount(), 1);
 }
@@ -376,7 +362,6 @@ void tst_webnotifications::permissionChanges()
     QSignalSpy sites(&permissions, &NotificationPermissions::sitesChanged);
     const auto request = [&requests](int index) { return requests.at(index).at(1).toMap(); };
 
-    // Allowed for good, as the engine's permission manager keeps it.
     permissions.setAllowed(QStringLiteral("https://news.example/today"), true);
     QCOMPARE(requests.count(), 1);
     QCOMPARE(requests.at(0).at(0).toString(), QStringLiteral("embedui:perms"));
@@ -390,7 +375,6 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(permissions.rowCount(), 1);
     QCOMPARE(count.count(), 1);
 
-    // In its place: among the blocked, after the allowed.
     const auto originAt = [&permissions](int row) {
         return permissions
             .data(permissions.index(row), roleId(NotificationPermissions::Role::Origin))
@@ -403,8 +387,6 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(permissions.allowedCount(), 1);
     QCOMPARE(permissions.blockedCount(), 1);
 
-    // Allowed, it moves up among the allowed, before news by host, as one row moved;
-    // the same again changes nothing but tells the engine.
     permissions.setAllowed(Chat, true);
     QCOMPARE(moved.count(), 1);
     QCOMPARE(changed.count(), 1);
@@ -418,8 +400,6 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(count.count(), 2);
     QCOMPARE(sites.count(), 3);
 
-    // Blocked, down past the allowed; news blocked too, and chat's place is by host
-    // among the blocked.
     permissions.setAllowed(Chat, false);
     QCOMPARE(originAt(1), Chat);
     QCOMPARE(moved.count(), 2);
@@ -432,7 +412,6 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(moved.count(), 3);
     QCOMPARE(requests.count(), 7);
 
-    // Removed: asked about again.
     permissions.remove(QStringLiteral("https://chat.example/room"));
     QCOMPARE(request(7).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
     QCOMPARE(request(7).value(QStringLiteral("uri")).toString(), Chat);
@@ -441,7 +420,6 @@ void tst_webnotifications::permissionChanges()
     QCOMPARE(count.count(), 3);
     QCOMPARE(permissions.allowedCount(), 0);
 
-    // Nothing to remove, and nothing a site: nothing said.
     permissions.remove(Chat);
     permissions.setAllowed(QStringLiteral("about:blank"), true);
     QCOMPARE(requests.count(), 8);
@@ -466,7 +444,6 @@ void tst_webnotifications::automaticDenialTakenBack()
     QCOMPARE(requests.at(0).at(1).toMap().value(QStringLiteral("msg")).toString(),
              QStringLiteral("remove"));
     QCOMPARE(requests.at(0).at(1).toMap().value(QStringLiteral("uri")).toString(), Chat);
-    // A site decided on is the reader's, and nothing is a site's but a site's.
     permissions.setAllowed(Chat, false);
     permissions.undoAutomaticDenial(Chat);
     permissions.undoAutomaticDenial(QStringLiteral("data:text/html,x"));
@@ -479,19 +456,17 @@ void tst_webnotifications::strings()
     NotificationPermissions permissions;
     WebNotifications notifications(&permissions, QString());
     QCOMPARE(notifications.messageName(), QStringLiteral("salama:notification"));
-    // The frame script, as a data: url the engine loads, which is the script itself.
     const QString url = notifications.relayScriptUrl();
     QVERIFY(url.startsWith(QLatin1String("data:application/javascript;charset=utf-8,")));
     QCOMPARE(QUrl::fromPercentEncoding(url.mid(url.indexOf(QLatin1Char(',')) + 1).toLatin1()),
              notifications.relayScript());
     QVERIFY(notifications.relayScript().contains(QLatin1String("\"salama:notification\"")));
-    // The page script is the body of a function, as every script the engine runs.
+    // Page script = function body, like every engine script.
     const QString page = notifications.pageScript();
     QVERIFY(page.contains(QLatin1String("return true;")));
     QVERIFY(page.contains(QLatin1String("var ICON = 256, WAIT = 3000, ACTIVATION = 5000;")));
     QVERIFY(!page.contains(QLatin1String("%")));
 
-    // A reply is the message as a string, whatever it holds.
     const QVariantMap message{{QStringLiteral("type"), QStringLiteral("show")},
                               {QStringLiteral("text"), QStringLiteral("'\"\\\n </script>")}};
     QCOMPARE(replyOf(WebNotifications::replyScript(message)), message);
@@ -508,7 +483,6 @@ void tst_webnotifications::requestAsksOncePerTab()
     QCOMPARE(asked.count(), 1);
     QCOMPARE(asked.at(0).at(0).toInt(), 1);
     QCOMPARE(asked.at(0).at(1).toString(), QStringLiteral("chat.example"));
-    // The same page asking again waits for the same answer; another tab asks for itself.
     notifications.receive(1, relayed(requestMessage(2)));
     notifications.receive(2, relayed(requestMessage(1)));
     QCOMPARE(asked.count(), 2);
@@ -519,7 +493,6 @@ void tst_webnotifications::requestAsksOncePerTab()
     QCOMPARE(replies(pages, 1), (QStringList{QStringLiteral("permission:1:denied"),
                                              QStringLiteral("permission:2:denied")}));
     QCOMPARE(replies(pages, 2), QStringList());
-    // Answered once.
     notifications.answer(1, WebNotifications::Allow);
     QCOMPARE(pages.count(), 2);
     QCOMPARE(permissions.rowCount(), 0);
@@ -537,7 +510,6 @@ void tst_webnotifications::requestAnswers_data()
                            << false;
     QTest::newRow("not now") << int(WebNotifications::NotNow) << QStringLiteral("denied") << 0
                              << false;
-    // Nothing else is an answer but not now.
     QTest::newRow("out of range") << 7 << QStringLiteral("denied") << 0 << false;
 }
 
@@ -583,17 +555,13 @@ void tst_webnotifications::showIsGatedByThePermission()
     QSignalSpy published(&notifications, &WebNotifications::publishRequested);
     QSignalSpy pages(&notifications, &WebNotifications::pageRequested);
 
-    // Gecko's word is the page's permission.
     notifications.receive(
         1, relayed(showMessage(1, QStringLiteral("a")), Chat, QStringLiteral("granted")));
-    // Not asked, or refused: an error for the page, nothing shown.
     notifications.receive(1, relayed(showMessage(2, QStringLiteral("b"))));
     notifications.receive(
         1, relayed(showMessage(3, QStringLiteral("c")), Chat, QStringLiteral("denied")));
-    // Allowed here before the engine has written it down.
     permissions.setAllowed(Chat, true);
     notifications.receive(1, relayed(showMessage(4, QStringLiteral("d"))));
-    // Never over Gecko's refusal.
     notifications.receive(
         1, relayed(showMessage(5, QStringLiteral("e")), Chat, QStringLiteral("denied")));
     QCOMPARE(published.count(), 2);
@@ -622,7 +590,6 @@ void tst_webnotifications::showPublishes()
     QCOMPARE(fields.value(QStringLiteral("summary")).toString(),
              longTitle.left(WebNotifications::TextLimit) + QStringLiteral(" …"));
     QCOMPARE(fields.value(QStringLiteral("body")).toString(), QStringLiteral("See you"));
-    // The site says who it is from, where the page cannot say otherwise.
     QCOMPARE(fields.value(QStringLiteral("subText")).toString(), QStringLiteral("chat.example"));
     QCOMPARE(fields.value(QStringLiteral("icon")).toString(), QString());
 }
@@ -639,10 +606,8 @@ void tst_webnotifications::aTagReplaces()
                           relayed(showMessage(1, QStringLiteral("one"), QStringLiteral("room"))));
     notifications.receive(1,
                           relayed(showMessage(2, QStringLiteral("two"), QStringLiteral("room"))));
-    // Another tab of the same site, the same tag: in the same place.
     notifications.receive(4,
                           relayed(showMessage(1, QStringLiteral("three"), QStringLiteral("room"))));
-    // Another tag, no tag, another site: each its own.
     notifications.receive(1, relayed(showMessage(3, QStringLiteral("four"), QStringLiteral("dm"))));
     notifications.receive(1, relayed(showMessage(4, QStringLiteral("five"))));
     notifications.receive(1, relayed(showMessage(5, QStringLiteral("six"))));
@@ -656,7 +621,6 @@ void tst_webnotifications::aTagReplaces()
     QCOMPARE(notifications.tabOf(keyOf(0)), 4);
     QCOMPARE(QSet<int>({keyOf(0), keyOf(3), keyOf(4), keyOf(5), keyOf(6)}).count(), 5);
     QCOMPARE(notifications.keys().count(), 5);
-    // The page whose notification was replaced hears nothing of it.
     QVERIFY(!replies(pages, 1).contains(QStringLiteral("close:1")));
 }
 
@@ -671,7 +635,6 @@ void tst_webnotifications::closeFromThePage()
 
     notifications.receive(1, relayed(showMessage(1, QStringLiteral("a"))));
     const int key = published.at(0).at(0).toInt();
-    // Another page's number, another tab's: not this one.
     notifications.receive(1, relayed({{QStringLiteral("type"), QStringLiteral("close")},
                                       {QStringLiteral("id"), 1},
                                       {QStringLiteral("page"), QStringLiteral("p2")}}));
@@ -683,9 +646,7 @@ void tst_webnotifications::closeFromThePage()
     QCOMPARE(closed.count(), 1);
     QCOMPARE(closed.at(0).at(0).toInt(), key);
     QVERIFY(notifications.keys().isEmpty());
-    // The page closed it, and says so itself: no reply.
     QCOMPARE(replies(pages, 1), QStringList{QStringLiteral("show:1")});
-    // The platform saying it went, after, is nothing new.
     notifications.closed(key);
     QCOMPARE(pages.count(), 1);
 }
@@ -705,7 +666,6 @@ void tst_webnotifications::unloadTakesThePageWithIt()
     permissions.remove(Chat);
     notifications.receive(1, relayed(requestMessage(3)));
 
-    // The frame script's word as the document goes, whatever the origin.
     notifications.receive(
         1, relayed({{QStringLiteral("type"), QStringLiteral("unload")}}, QStringLiteral("null")));
     QCOMPARE(closed.count(), 2);
@@ -714,11 +674,9 @@ void tst_webnotifications::unloadTakesThePageWithIt()
     QCOMPARE(withdrawn.count(), 1);
     QCOMPARE(withdrawn.at(0).at(0).toInt(), 1);
     QCOMPARE(notifications.keys(), QList<int>{published.at(2).at(0).toInt()});
-    // Nothing left to withdraw.
     notifications.receive(1, relayed({{QStringLiteral("type"), QStringLiteral("unload")}}));
     QCOMPARE(withdrawn.count(), 1);
 
-    // The tab's view going is its page going.
     notifications.forgetTab(2);
     QCOMPARE(closed.count(), 3);
     QVERIFY(notifications.keys().isEmpty());
@@ -739,19 +697,16 @@ void tst_webnotifications::tapAndDismiss()
     const int first = published.at(0).at(0).toInt();
     const int second = published.at(1).at(0).toInt();
 
-    // Tapped: the tab to the front, the page told, and the notification closed.
     notifications.activate(first);
     QCOMPARE(tabs.count(), 1);
     QCOMPARE(tabs.at(0).at(0).toInt(), 5);
     QCOMPARE(closed.count(), 1);
     QCOMPARE(closed.at(0).at(0).toInt(), first);
-    // Swiped away: the page told.
     notifications.closed(second);
     QCOMPARE(closed.count(), 1);
     QCOMPARE(replies(pages, 5), (QStringList{QStringLiteral("show:1"), QStringLiteral("show:2"),
                                              QStringLiteral("click:1"), QStringLiteral("close:1"),
                                              QStringLiteral("close:2")}));
-    // Gone is gone.
     notifications.activate(first);
     notifications.closed(second);
     QCOMPARE(tabs.count(), 1);
@@ -772,7 +727,6 @@ void tst_webnotifications::closeAll()
     notifications.closeAll();
     QCOMPARE(closed.count(), 2);
     QVERIFY(notifications.keys().isEmpty());
-    // The browser is closing: nothing is asked any more, and no page told.
     notifications.answer(3, WebNotifications::Allow);
     QCOMPARE(pages.count(), 2);
     QCOMPARE(permissions.rowCount(), 0);
@@ -788,17 +742,14 @@ void tst_webnotifications::ignoresWhatItDoesNotKnow()
     QSignalSpy pages(&notifications, &WebNotifications::pageRequested);
 
     const QVariantMap show = showMessage(1, QStringLiteral("a"));
-    // No tab; not a map; not JSON; not an object.
     notifications.receive(0, relayed(show));
     notifications.receive(1, QStringLiteral("show"));
     notifications.receive(1, QVariantMap{{QStringLiteral("origin"), Chat},
                                          {QStringLiteral("detail"), QStringLiteral("{show")}});
     notifications.receive(1, QVariantMap{{QStringLiteral("origin"), Chat},
                                          {QStringLiteral("detail"), QStringLiteral("[1]")}});
-    // No site: a data: page, a page that is no page at all.
     notifications.receive(1, relayed(show, QStringLiteral("null")));
     notifications.receive(1, relayed(show, QString()));
-    // A page not named as the page script names one, a number that is none.
     QVariantMap named = show;
     named.insert(QStringLiteral("page"), QStringLiteral("Not a name!"));
     notifications.receive(1, relayed(named));
@@ -807,11 +758,9 @@ void tst_webnotifications::ignoresWhatItDoesNotKnow()
     notifications.receive(1, relayed(unnumbered));
     unnumbered.remove(QStringLiteral("id"));
     notifications.receive(1, relayed(unnumbered));
-    // Something it does not know.
     QVariantMap other = show;
     other.insert(QStringLiteral("type"), QStringLiteral("vibrate"));
     notifications.receive(1, relayed(other));
-    // Longer than a message may be.
     QVariantMap huge = relayed(show);
     huge.insert(QStringLiteral("detail"),
                 QString(WebNotifications::MessageLimit + 1, QLatin1Char(' ')));
@@ -820,7 +769,6 @@ void tst_webnotifications::ignoresWhatItDoesNotKnow()
     QCOMPARE(asked.count(), 0);
     QCOMPARE(pages.count(), 0);
 
-    // Answers and taps nothing waits for.
     notifications.answer(9, WebNotifications::Allow);
     notifications.activate(42);
     notifications.closed(42);
@@ -831,7 +779,6 @@ void tst_webnotifications::icons()
 {
     QTemporaryDir dir;
     const QString icons = dir.path() + QStringLiteral("/notifications");
-    // What a browser that stopped left behind goes as the next one starts; nothing else.
     QVERIFY(QDir().mkpath(icons));
     QFile left(icons + QStringLiteral("/1-1.png"));
     QVERIFY(left.open(QIODevice::WriteOnly));
@@ -850,8 +797,6 @@ void tst_webnotifications::icons()
         return published.at(index).at(1).toMap().value(QStringLiteral("icon")).toString();
     };
 
-    // The page's picture, as a file of the browser's cache, no larger than the platform
-    // shows one.
     notifications.receive(
         1, relayed(showMessage(1, QStringLiteral("a"), QStringLiteral("t"), pngDataUrl(600, 300))));
     const QString first = iconOf(0);
@@ -860,7 +805,6 @@ void tst_webnotifications::icons()
     QImage read(first);
     QCOMPARE(read.size(), QSize(WebNotifications::IconSize, WebNotifications::IconSize / 2));
 
-    // Shown in its place: a file of its own, the last one gone.
     notifications.receive(
         1, relayed(showMessage(2, QStringLiteral("b"), QStringLiteral("t"), pngDataUrl(16, 16))));
     const QString second = iconOf(1);
@@ -869,7 +813,6 @@ void tst_webnotifications::icons()
     QVERIFY(!QFile::exists(first));
     QCOMPARE(QImage(second).size(), QSize(16, 16));
 
-    // Nothing but a PNG, and one that is one.
     notifications.receive(
         1, relayed(showMessage(3, QStringLiteral("c"), QString(),
                                QStringLiteral("data:image/svg+xml;base64,PHN2Zz4="))));
@@ -881,18 +824,15 @@ void tst_webnotifications::icons()
     QCOMPARE(iconOf(3), QString());
     QCOMPARE(iconOf(4), QString());
 
-    // Closed, its picture goes with it.
     notifications.closed(published.at(1).at(0).toInt());
     QVERIFY(!QFile::exists(second));
 
-    // Without a directory to keep them in, there are no pictures.
     WebNotifications without(&permissions, QString());
     QSignalSpy withoutPublished(&without, &WebNotifications::publishRequested);
     without.receive(1, relayed(showMessage(1, QStringLiteral("a"), QString(), pngDataUrl(4, 4))));
     QCOMPARE(withoutPublished.at(0).at(1).toMap().value(QStringLiteral("icon")).toString(),
              QString());
 
-    // A directory that cannot be made: none either.
     QFile blocker(dir.path() + QStringLiteral("/file"));
     QVERIFY(blocker.open(QIODevice::WriteOnly));
     blocker.close();
@@ -913,7 +853,6 @@ void tst_webnotifications::popupOpening()
         {QStringLiteral("host"), QStringLiteral("chat.example")},
         {QStringLiteral("id"), QStringLiteral("chat.example desktop-notification")}};
 
-    // Not a permission, another permission, another host, a page that is no site.
     notifications.popupOpening(QStringLiteral("https://chat.example/"),
                                QStringLiteral("embed:alert"), refused);
     QVariantMap location = refused;
@@ -927,7 +866,7 @@ void tst_webnotifications::popupOpening()
     QCoreApplication::processEvents();
     QCOMPARE(engine.count(), 0);
 
-    // Taken back after the platform has answered, which it does as this returns.
+    // Withdrawn after platform answered (it answers as this returns).
     notifications.popupOpening(QStringLiteral("https://chat.example/room"),
                                QStringLiteral("embed:permissions"), refused);
     QCOMPARE(engine.count(), 0);
@@ -937,7 +876,6 @@ void tst_webnotifications::popupOpening()
     QCOMPARE(engine.at(0).at(1).toMap().value(QStringLiteral("uri")).toString(), Chat);
 }
 
-// The frame script, in a world made of the parts of the message manager it uses.
 void tst_webnotifications::relayScript()
 {
     NotificationPermissions permissions;
@@ -948,7 +886,7 @@ void tst_webnotifications::relayScript()
     QVERIFY2(!loaded.isError(), qPrintable(loaded.toString()));
     const auto js = [&engine](const QString &code) { return engine.evaluate(code); };
 
-    // Listening in the capture phase, for what the page dispatches itself.
+    // Capture phase: catches page-dispatched events.
     QVERIFY(js(QStringLiteral("listeners['salama-notification'].capture")).toBool());
     QVERIFY(js(QStringLiteral("listeners['salama-notification'].untrusted")).toBool());
 
@@ -960,19 +898,16 @@ void tst_webnotifications::relayScript()
     QCOMPARE(js(QStringLiteral("sent[0].data.detail")).toString(),
              QStringLiteral("{\"type\":\"show\"}"));
 
-    // A frame's, something but a string, more than a message may be: nothing.
     js(QStringLiteral("fire('salama-notification', { frame: true }, '{}')"));
     js(QStringLiteral("fire('salama-notification', content, { type: 'show' })"));
     js(QStringLiteral("fire('salama-notification', content, new Array(%1).join('x'))")
            .arg(WebNotifications::MessageLimit + 2));
     QCOMPARE(js(QStringLiteral("sent.length")).toInt(), 1);
 
-    // The permission as Gecko has it, or nothing when it cannot be read.
     js(QStringLiteral("nativePermission = null;"
                       "fire('salama-notification', content, '{}')"));
     QCOMPARE(js(QStringLiteral("sent[1].data.permission")).toString(), QString());
 
-    // The document going, but not a frame's.
     js(QStringLiteral("fire('pagehide', { frame: true })"));
     QCOMPARE(js(QStringLiteral("sent.length")).toInt(), 2);
     js(QStringLiteral("fire('pagehide', content.document)"));
@@ -1001,7 +936,6 @@ void tst_webnotifications::pageScriptInstallsOnce()
     QCOMPARE(js(QStringLiteral("Object.prototype.toString.call(new first('x'))")).toString(),
              QStringLiteral("[object Notification]"));
 
-    // A page with no Notification of its own is left as it is.
     QJSEngine bare;
     bare.evaluate(QString::fromUtf8(FakePage));
     bare.evaluate(QStringLiteral("delete window.Notification"));
@@ -1029,7 +963,6 @@ void tst_webnotifications::pageScriptPermission()
                       "function ask() { N.requestPermission(function (p) { called.push(p); })"
                       "                  .then(function (p) { results.push(p); }); }"));
 
-    // Gecko's permission, read as it is.
     QCOMPARE(js(QStringLiteral("N.permission")).toString(), QStringLiteral("default"));
     js(QStringLiteral("permission = 'denied'"));
     QCOMPARE(js(QStringLiteral("N.permission")).toString(), QStringLiteral("denied"));
@@ -1038,24 +971,22 @@ void tst_webnotifications::pageScriptPermission()
     QCOMPARE(js(QStringLiteral("called.join()")).toString(), QStringLiteral("denied"));
     js(QStringLiteral("permission = 'default'; results = []; called = []"));
 
-    // Not while the page handles a touch: not asked, and nothing decided.
+    // Only during touch handling: else not asked, nothing decided.
     js(QStringLiteral("ask()"));
     QTRY_COMPARE(js(QStringLiteral("results.join()")).toString(), QStringLiteral("default"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 0);
-    // A touch the page made up is no touch.
+    // Synthetic (untrusted) touch doesn't count.
     js(QStringLiteral("window.dispatchEvent(new Event('touchend'));"
                       "results = []; ask()"));
     QTRY_COMPARE(js(QStringLiteral("results.join()")).toString(), QStringLiteral("default"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 0);
 
-    // Asked as a touch is handled; allowed.
     js(QStringLiteral("results = []; called = []; touch(); ask()"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 1);
     QCOMPARE(js(QStringLiteral("last().type")).toString(), QStringLiteral("request"));
     const int id = js(QStringLiteral("last().id")).toInt();
     const QString page = js(QStringLiteral("last().page")).toString();
     QVERIFY(QRegularExpression(QStringLiteral("^[a-z0-9]{1,32}$")).match(page).hasMatch());
-    // An answer for another page is not this one's.
     const auto answer = [&](int requestId, const QString &state, const QString &to) {
         engine.globalObject().setProperty(
             QStringLiteral("answer"),
@@ -1071,14 +1002,11 @@ void tst_webnotifications::pageScriptPermission()
     answer(id, QStringLiteral("granted"), page);
     QTRY_COMPARE(js(QStringLiteral("results.join()")).toString(), QStringLiteral("granted"));
     QCOMPARE(js(QStringLiteral("called.join()")).toString(), QStringLiteral("granted"));
-    // Granted, though the engine has yet to say so.
     QCOMPARE(js(QStringLiteral("N.permission")).toString(), QStringLiteral("granted"));
-    // Answered once.
     answer(id, QStringLiteral("denied"), page);
     QCOMPARE(js(QStringLiteral("N.permission")).toString(), QStringLiteral("granted"));
 }
 
-// Refused, a page is not asked again until it is loaded again.
 void tst_webnotifications::pageScriptRefusal()
 {
     NotificationPermissions permissions;
@@ -1104,7 +1032,7 @@ void tst_webnotifications::pageScriptRefusal()
     QTRY_COMPARE(other.evaluate(QStringLiteral("results.join()")).toString(),
                  QStringLiteral("denied,denied"));
     QCOMPARE(other.evaluate(QStringLiteral("posted.length")).toInt(), 1);
-    // A callback that throws is the page's error, not the promise's.
+    // Throwing callback = page error, not promise rejection.
     other.evaluate(QStringLiteral("permission = 'granted';"
                                   "N.requestPermission(function () { throw new Error('page'); })"
                                   "  .then(function (p) { results.push(p); });"));
@@ -1144,7 +1072,6 @@ void tst_webnotifications::pageScriptNotifications()
         "  });"
         "}"));
 
-    // As Gecko's constructor is: a title at least, a direction it knows.
     QVERIFY(
         js(QStringLiteral(
                "(function () { try { new N(); } catch (e) { return e instanceof TypeError; } })()"))
@@ -1156,7 +1083,6 @@ void tst_webnotifications::pageScriptNotifications()
                               "instanceof TypeError; } })()"))
                 .toBool());
 
-    // Not allowed: an error, and nothing said to the browser.
     js(QStringLiteral("var refused = new N('no'); watch(refused, 'refused');"
                       "var fired = []; refused.onerror = function () { fired.push('onerror'); };"));
     QCOMPARE(js(QStringLiteral("events.length")).toInt(), 0);
@@ -1164,11 +1090,9 @@ void tst_webnotifications::pageScriptNotifications()
     QCOMPARE(js(QStringLiteral("events.join()")).toString(), QStringLiteral("refused:error"));
     QCOMPARE(js(QStringLiteral("fired.join()")).toString(), QStringLiteral("onerror"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 0);
-    // Closed already.
     js(QStringLiteral("refused.close()"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 0);
 
-    // Allowed: what it holds, and the browser told.
     js(QStringLiteral("permission = 'granted'; events = [];"
                       "var n = new N('Hello', { body: 'World', tag: 'room', lang: 'fi',"
                       "  dir: 'ltr', data: { a: [1] }, requireInteraction: 1, silent: true });"
@@ -1187,7 +1111,6 @@ void tst_webnotifications::pageScriptNotifications()
     QVERIFY(js(QStringLiteral("posted[0].icon === undefined")).toBool());
     const int id = js(QStringLiteral("posted[0].id")).toInt();
 
-    // What the browser says, in order; the handler properties as Gecko's are.
     js(QStringLiteral(
         "n.onclick = function (e) { events.push('onclick:' + (this === n)); return false; };"
         "n.onclick = n.onclick; var prevented = null;"
@@ -1201,7 +1124,6 @@ void tst_webnotifications::pageScriptNotifications()
     js(QStringLiteral("n.onclick = 'not a function'"));
     QVERIFY(js(QStringLiteral("n.onclick === null")).toBool());
 
-    // Another number, another page's: nothing.
     say(QStringLiteral("click"), id + 100);
     engine.globalObject().setProperty(
         QStringLiteral("answer"),
@@ -1213,7 +1135,6 @@ void tst_webnotifications::pageScriptNotifications()
         "window.dispatchEvent(new CustomEvent('salama-notification-reply', { detail: '{' }))"));
     QCOMPARE(js(QStringLiteral("events.length")).toInt(), 3);
 
-    // Closed by the page: the browser told, and the page's close a moment later.
     js(QStringLiteral("events = []; n.close(); n.close()"));
     QCOMPARE(js(QStringLiteral("last().type + ':' + last().id")).toString(),
              QStringLiteral("close:%1").arg(id));
@@ -1222,11 +1143,9 @@ void tst_webnotifications::pageScriptNotifications()
              1);
     js(QStringLiteral("runTimers()"));
     QCOMPARE(js(QStringLiteral("events.join()")).toString(), QStringLiteral("n:close"));
-    // What the browser says after is nothing to it.
     say(QStringLiteral("close"), id);
     QCOMPARE(js(QStringLiteral("events.join()")).toString(), QStringLiteral("n:close"));
 
-    // Closed by the browser, or refused by it.
     js(QStringLiteral(
         "events = []; var m = new N('m'); watch(m, 'm'); var e = new N('e'); watch(e, 'e');"));
     const int mId = js(QStringLiteral("m ? posted[posted.length - 2].id : 0")).toInt();
@@ -1238,7 +1157,6 @@ void tst_webnotifications::pageScriptNotifications()
     js(QStringLiteral("m.close()"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), before);
 
-    // Data that cannot be cloned is the page's error, as Gecko's is.
     QVERIFY(js(QStringLiteral("(function () { try { new N('x', { data: function () {} }); } catch "
                               "(e) { return true; } return false; })()"))
                 .toBool());
@@ -1261,8 +1179,6 @@ void tst_webnotifications::pageScriptIcons()
     };
     js(QStringLiteral("install(script); var N = window.Notification; permission = 'granted';"));
 
-    // Its address as the page's, and nothing said until it has loaded, drawn no larger
-    // than the platform shows one.
     js(QStringLiteral("var a = new N('a', { icon: 'avatar.png' })"));
     QCOMPARE(js(QStringLiteral("a.icon")).toString(),
              QStringLiteral("https://chat.example/room/avatar.png"));
@@ -1277,11 +1193,9 @@ void tst_webnotifications::pageScriptIcons()
     QCOMPARE(js(QStringLiteral("drawn.join()")).toString(), QStringLiteral("128x256"));
     QCOMPARE(js(QStringLiteral("posted[0].icon")).toString(),
              QStringLiteral("data:image/png;base64,128x256"));
-    // The wait running out after changes nothing.
     js(QStringLiteral("runTimers()"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 1);
 
-    // Small ones as they are; one with no size of its own, as large as they are shown.
     js(QStringLiteral(
         "drawn = []; new N('b', { icon: '/b.png' });"
         "images[1].naturalWidth = 32; images[1].naturalHeight = 16; images[1].onload();"
@@ -1291,8 +1205,7 @@ void tst_webnotifications::pageScriptIcons()
              QStringLiteral("https://chat.example/b.png"));
     QCOMPARE(js(QStringLiteral("drawn.join()")).toString(), QStringLiteral("32x16,256x256"));
 
-    // One that will not load, will not be drawn -- from another site that does not
-    // allow it -- or takes too long, and it is shown without.
+    // Load fails, draw refused (cross-site, not allowed), or timeout: shown without icon.
     js(QStringLiteral("timers = []; posted = [];"
                       "new N('d', { icon: 'd.png' }); images[3].onerror();"
                       "tainted = true; new N('e', { icon: 'e.png' });"
@@ -1305,7 +1218,6 @@ void tst_webnotifications::pageScriptIcons()
                  .toString(),
              QStringLiteral("d:,e:,f:"));
 
-    // An address that is none is no icon; one closed before its icon came is not shown.
     js(QStringLiteral("posted = []; var g = new N('g', { icon: 'http://[bad' });"));
     QCOMPARE(js(QStringLiteral("g.icon")).toString(), QString());
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 1);
@@ -1335,7 +1247,6 @@ void tst_webnotifications::pageScriptServiceWorker()
         "function note(p) { p.then(function (v) { results.push(v === undefined ? 'shown' : v); },"
         "                         function (e) { results.push(e.name || String(e)); }); }"));
 
-    // Refused without the permission, or without a title.
     js(QStringLiteral("note(registration.showNotification('a'))"));
     QTRY_COMPARE(js(QStringLiteral("results.join()")).toString(), QStringLiteral("TypeError"));
     js(QStringLiteral("permission = 'granted'; results = [];"
@@ -1351,7 +1262,6 @@ void tst_webnotifications::pageScriptServiceWorker()
                  QStringLiteral("shown,shown,shown"));
     QCOMPARE(js(QStringLiteral("posted.length")).toInt(), 3);
 
-    // What the registration shows, by tag, as the same objects each time.
     js(QStringLiteral(
         "var all = null, tagged = null, again = null;"
         "registration.getNotifications().then(function (l) { all = l; });"
@@ -1365,8 +1275,6 @@ void tst_webnotifications::pageScriptServiceWorker()
     QVERIFY(js(QStringLiteral("all[0] === again[0] && all[0] instanceof window.Notification"))
                 .toBool());
 
-    // A tap is the worker's, which nothing here reaches: nothing for the page. Closed,
-    // it is no longer among them.
     js(QStringLiteral("var events = [];"
                       "all[0].addEventListener('click', function () { events.push('click'); });"
                       "all[0].addEventListener('close', function () { events.push('close'); });"));

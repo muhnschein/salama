@@ -55,8 +55,6 @@ void GroupTabModel::moveTab(int from, int to)
     if (from == to || from < 0 || from > last || to < 0 || to > last) {
         return;
     }
-    // The tab model moves the row and reports the move back here through moveTabRow():
-    // one place decides the order, and the grid's picture of it follows.
     m_tabs->moveTab(m_tabs->indexOf(m_tabIds.at(from)), m_tabs->indexOf(m_tabIds.at(to)));
 }
 
@@ -95,8 +93,7 @@ void GroupTabModel::moveTabRow(int from, int to)
     if (from == to || from < 0 || from > last || to < 0 || to > last) {
         return;
     }
-    // beginMoveRows wants the row the block lands *before*, one past the destination
-    // when moving down the list.
+    // beginMoveRows wants dest + 1 when moving down.
     const int destination = to > from ? to + 1 : to;
     if (!beginMoveRows(QModelIndex(), from, from, QModelIndex(), destination)) {
         return;

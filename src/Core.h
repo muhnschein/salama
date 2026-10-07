@@ -26,8 +26,7 @@
 
 namespace Salama {
 
-// Owns every model and the wiring between them. One per process; tests build one
-// per test case on a temporary directory.
+// Owns all models + wiring. One per process; tests build one per case on temp dir.
 class Core : public QObject
 {
     Q_OBJECT
@@ -62,10 +61,7 @@ public:
     WebNotifications *webNotifications();
     ShareReceiver *shareReceiver();
 
-    // What is set to go as the browser closes -- the history, the list of downloads and
-    // the recently closed tabs, with PrivacySettings::clearHistoryOnClose -- goes: main() calls
-    // it as the application quits, and the constructor on every start, for a browser
-    // stopped before it could (docs/DECISIONS/0030-history-settings.md).
+    // Called on quit and on start too: browser may be killed before quit.
     void clearOnClose();
 
 private:
@@ -77,7 +73,7 @@ private:
     BookmarkModel m_bookmarks;
     DownloadModel m_downloads;
     SettingsSections m_settings;
-    // After everything it searches, which it is made from.
+    // Declared after everything it searches: init order.
     OmnibarModel m_omnibar;
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
@@ -86,7 +82,7 @@ private:
     StartPage m_startPage;
     NotificationPermissions m_notificationPermissions;
     SitePermissions m_sitePermissions;
-    // After the permissions, which it reads.
+    // After permissions: reads them at init.
     WebNotifications m_webNotifications;
     ShareReceiver m_shareReceiver;
 };

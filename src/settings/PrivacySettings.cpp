@@ -10,7 +10,7 @@ const char *const TrackingProtectionKey = "trackingProtection";
 const char *const RememberHistoryKey = "rememberHistory";
 const char *const ClearHistoryOnCloseKey = "clearHistoryOnClose";
 const char *const BlockNotificationRequestsKey = "blockNotificationRequests";
-// Do not track's, read once to start Global Privacy Control as it was left, then removed.
+// Read once to seed GPC, then removed.
 const char *const DoNotTrackKey = "doNotTrack";
 const char *const GlobalPrivacyControlKey = "globalPrivacyControl";
 const char *const JavascriptKey = "javascript";

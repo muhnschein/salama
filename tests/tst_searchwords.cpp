@@ -33,11 +33,11 @@ void tst_searchwords::splitsOnWhitespace_data()
     QTest::newRow("trimmed and collapsed")
         << QStringLiteral("  news \t  helsinki ")
         << QStringList{QStringLiteral("news"), QStringLiteral("helsinki")};
-    // A no-break space is whitespace too, as a phone's keyboard may type one.
+    // No-break space is whitespace (phone keyboards type it).
     QTest::newRow("no-break space")
         << QStringLiteral("jolla phone")
         << QStringList{QStringLiteral("jolla"), QStringLiteral("phone")};
-    // An address is one word: nothing but whitespace divides.
+    // Address = one word: only whitespace divides.
     QTest::newRow("address") << QStringLiteral("example.org/a?b=c")
                              << QStringList{QStringLiteral("example.org/a?b=c")};
 }
@@ -56,26 +56,22 @@ void tst_searchwords::everyWordInSomeField()
     const QStringList page{QStringLiteral("Helsinki news"),
                            QStringLiteral("https://yle.fi/uutiset")};
 
-    // Each word may be found in a field of its own, and in any order.
     QVERIFY(SearchWords(QStringLiteral("news helsinki")).matches(page));
     QVERIFY(SearchWords(QStringLiteral("yle news")).matches(page));
     QVERIFY(SearchWords(QStringLiteral("NEWS")).matches(page));
     QVERIFY(SearchWords(QStringLiteral("ki ne")).matches(page));
-    // Every word, not any: one missing word is no match.
     QVERIFY(!SearchWords(QStringLiteral("news tampere")).matches(page));
     QVERIFY(!SearchWords(QStringLiteral("weather")).matches(page));
-    // A word is not a phrase: across the space between two words of a field it is
-    // not found.
+    // Word not phrase: no match across space between field words.
     QVERIFY(!SearchWords(QStringLiteral("inews")).matches(page));
 
-    // Nothing typed hides nothing, and no fields hold nothing.
     QVERIFY(SearchWords().matches(page));
     QVERIFY(SearchWords().matches({}));
     QVERIFY(!SearchWords(QStringLiteral("news")).matches({}));
     QVERIFY(!SearchWords(QStringLiteral("news")).matches({QString()}));
 }
 
-// Unicode's case folding, not ASCII's: what SQLite's LIKE would have missed.
+// Unicode case folding, not ASCII (SQLite LIKE would miss).
 void tst_searchwords::unicodeCase()
 {
     QVERIFY(SearchWords(QStringLiteral("äly")).matches({QStringLiteral("Älypuhelin")}));
@@ -83,14 +79,12 @@ void tst_searchwords::unicodeCase()
     QVERIFY(SearchWords(QStringLiteral("ÖLJY")).matches({QStringLiteral("Öljynvaihto")}));
     QVERIFY(SearchWords(QStringLiteral("москва")).matches({QStringLiteral("МОСКВА")}));
     QVERIFY(SearchWords(QStringLiteral("ΑΘΉΝΑ")).matches({QStringLiteral("Αθήνα")}));
-    // A letter is not its unaccented neighbour.
     QVERIFY(!SearchWords(QStringLiteral("aly")).matches({QStringLiteral("Älypuhelin")}));
 }
 
 void tst_searchwords::prefixes()
 {
     const SearchWords search(QStringLiteral("Wiki sailfish"));
-    // By the first word only, whatever its case.
     QVERIFY(search.prefixes(QStringLiteral("wikipedia.org")));
     QVERIFY(!search.prefixes(QStringLiteral("en.wikipedia.org")));
     QVERIFY(!search.prefixes(QStringLiteral("sailfish.org")));
@@ -111,7 +105,7 @@ void tst_searchwords::prefixesAWord_data()
     QTest::newRow("after a dash") << QStringLiteral("news") << QStringLiteral("Yle-news") << true;
     QTest::newRow("inside a word")
         << QStringLiteral("fish") << QStringLiteral("Sailfish OS") << false;
-    // Found inside a word first and at the start of one later: the later counts.
+    // Mid-word hit first, word-start later: later counts.
     QTest::newRow("second occurrence")
         << QStringLiteral("fish") << QStringLiteral("Sailfish fishing") << true;
     QTest::newRow("unicode") << QStringLiteral("äly") << QStringLiteral("Uusi Älypuhelin") << true;
@@ -129,8 +123,7 @@ void tst_searchwords::prefixesAWord()
     QCOMPARE(SearchWords(query).prefixesAWordOf(text), expected);
 }
 
-// Every place a word typed appears, in bold, whatever its case; places that touch or
-// overlap are one; everything else is escaped, a page's markup included.
+// Every hit bold, any case; touching/overlapping hits merge; rest escaped, page markup too.
 void tst_searchwords::marked_data()
 {
     QTest::addColumn<QString>("typed");

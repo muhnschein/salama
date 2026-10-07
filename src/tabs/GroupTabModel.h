@@ -9,12 +9,8 @@ namespace Salama {
 
 class TabModel;
 
-// The tabs of the current group, in the order the tab model keeps them: what the grid
-// shows. A list of ids over the tab model rather than a filter proxy, because a proxy
-// answers a move in its source with a layout change, and a layout change rebuilds
-// every cell of the grid -- including the one a finger is carrying
-// (docs/DECISIONS/0015-tab-groups.md). The tab model owns this list and calls the
-// methods under "Kept by TabModel" as it changes; nothing else does.
+// Current group's tabs. Id list, not filter proxy: proxy turns move into layout change,
+// rebuilding every cell incl. one under finger.
 class GroupTabModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -30,8 +26,7 @@ public:
     int count() const;
     Q_INVOKABLE int tabIdAt(int row) const;
     Q_INVOKABLE int rowOf(int tabId) const;
-    // Reorder within the group, from the grid. The tabs trade places in the tab model
-    // too, so the order is what is persisted.
+    // Swaps in TabModel too so order persists.
     Q_INVOKABLE void moveTab(int from, int to);
 
     // Kept by TabModel.

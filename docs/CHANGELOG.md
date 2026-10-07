@@ -1,117 +1,115 @@
 # Changelog
 
-All notable, user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versions follow semantic versioning. A version's section is the text of its GitHub release,
-which `ci/release-notes.sh` cuts out of this file when the release is made
-(`.github/workflows/rpm.yml`; docs/RELEASING.md).
+User-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); semver.
+Each version's section is its GitHub release text, cut by `ci/release-notes.sh` (`.github/workflows/rpm.yml`; docs/RELEASING.md).
 
 ## [Unreleased]
 
 ### Added
-- Settings > Privacy > HTTPS-Only Mode: every page is loaded over HTTPS, and a site without it asks before it loads. Off, as by default, Salama still tries HTTPS first and falls back to HTTP, as Firefox does.
-- Settings > Privacy > DNS over HTTPS, as Firefox for Android has it: Increased Protection, Max Protection or Off, the default; Cloudflare, NextDNS or a provider of your own; and sites it is not used for.
-- Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, in place of Do not track, which Firefox has dropped. If you had Do not track on, this starts on.
-- Press and hold a link or a picture: a sheet like the menu's comes up, naming the link with a button to copy it, with New tab, Background tab, Share and Save link for a page, the app's own action for an email address, a phone number, a text message or a place, and Open image, Save image and Copy image link for a picture. Background tab leaves you where you are and says where the link went, with Show. Saved files keep their own names.
-- A preview of the page a link leads to, at the top of that sheet, as Safari has: tap it to open the link; Hide preview hides it for every link until Show preview.
-- A picture pressed and held is lifted out of the page above the sheet, as large as there is room for, and can be pinched closer.
-- Settings > Site permissions, in place of Settings > Notifications: what sites may do unless decided otherwise -- notifications, pop-ups, location, camera and microphone, and cookies while tracking protection is off -- each with its exceptions, which can be added, switched and removed. Salama now asks the phone for location, camera and microphone, so sites can be given them.
-- Site details: tap the page's name at the head of the menu to see whether the connection is secure and who verified it, the certificate and the cipher, turn tracking protection off for that site alone, and decide its permissions.
-- Search engines sites offer are collected while browsing and listed under Settings > Search > Found while browsing; a tap adds one and searches with it. Added engines say where they came from and can be removed one by one, or all at once from the pulley, which leaves the three built-in ones.
-- Salama is offered in the share sheet for links: a link shared from another app opens in a new tab in the "N tabs" group, in front, starting Salama if it is not running. Plain text is not offered to Salama.
-- Settings > Appearance > Fixed toolbar: the bar stays whole while a page is scrolled.
-- Settings > Privacy > Enable JavaScript, which says what switching it off costs.
-- Settings > Tracking protection ends with two sentences on what the phone's web engine cannot do yet.
-- Downloads say how they are going on the page they were started from: a card just above the bar with the file's name and how much of how much has come, paused or failed; with several, how many and how far along together. When one arrives the card says so for a few seconds. A tap on it opens Downloads, and a swipe puts it away until something changes.
-- Downloads can be paused, resumed and retried, and one from before the app was last closed fetched again. A row's menu deletes the file with its row; the pulley clears the finished ones, and Clear list is gone.
-- A new cover: where you were -- the site and title of the tab in front -- over the app's bolt drawn as faint dots in the ambience's colour. While something downloads, a ring fills as it goes, with the percentage in it; while the tab in front plays, the cover shows what plays, with its cover art or the video's picture when the page gives one, and says whether it plays or is paused. With no tab open, the dotted bolt alone. Nothing on it moves, and the quick action and the mute stay along its foot.
-- Settings > Website colours: pages that have colours for a dark screen and for a light one are drawn dark on a dark ambience and light on a light one, or always light, or always dark.
-- The reader view's Ambience look, now the default: the article set as a Sailfish page is, in the ambience's colours and typeface, its title light and at the right as a page header's. What was called Ambience, Firefox's light or dark as the ambience is, is now Automatic; a reader who had it chosen gets the new look, and one who chose Light, Sepia or Dark keeps it.
-- Settings > History counts what is kept on the phone -- the pages in the history, the downloads, the recently closed tabs and the open tabs -- above Clear browsing data, and the Clear browsing data dialog says how much of each kind goes.
-- Settings > Start page shows the screen as a new tab will show it, at half its size under the switches and following each one: your own sites and bookmarks as the start page draws them, and the address bar along the foot.
-- The menu names the page it acts on -- its icon, title, padlock and host -- with a button to copy its address, and says "Start page" on the start page, where the page's actions are dimmed. While a download is coming, the menu's Downloads wears a ring that fills as it goes.
-- Tab groups can be put in order: drag a group by the bars at the end of its row. The "N tabs" group stays first.
-- Ungroup, in a tab group's menu, takes the group away and keeps its tabs open in the first group, their pages as they were.
+- Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
+- Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
+- Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
+- Press and hold link or picture: sheet like menu's, link named with copy button; New tab, Background tab, Share, Save link; app action for email, phone, text message, place; Open image, Save image, Copy image link. Background tab stays put, notes where link went, with Show. Saved files keep names.
+- Link preview atop that sheet, like Safari: tap opens; Hide preview hides for all links until Show preview.
+- Held picture lifts above sheet, max size, pinch to zoom.
+- Settings > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies when tracking protection off; each with editable exceptions. Salama now requests location, camera, microphone from phone.
+- Site details: tap page name atop menu; connection security, verifier, certificate, cipher; per-site tracking protection off; permissions.
+- Site-offered search engines collected under Settings > Search > Found while browsing; tap adds and searches. Added engines show source; remove singly or all via pulley (three built-in stay).
+- Salama in share sheet for links: opens in new front tab in "N tabs" group, launching Salama if needed. Plain text not offered.
+- Settings > Appearance > Fixed toolbar: bar stays whole while scrolling.
+- Settings > Privacy > Enable JavaScript, notes cost of turning off.
+- Settings > Tracking protection ends with web engine's current limits.
+- Download card above bar on originating page: name, progress, paused or failed; several: count and total progress. Shows arrival few seconds. Tap opens Downloads; swipe hides until change.
+- Downloads pause, resume, retry; pre-restart ones refetchable. Row menu deletes file too; pulley clears finished; Clear list gone.
+- New cover: front tab's site and title over app's bolt in faint dots, ambience colour. Downloading: ring with percentage. Playing: what plays, with art or video picture, playing/paused. No tab: bolt alone. Static; quick action and mute at foot.
+- Settings > Website colours: pages with dark and light schemes follow ambience, or always light, or always dark.
+- Reader view's Ambience look, now default: article like Sailfish page, ambience colours and typeface, light right-aligned title. Old Ambience now Automatic; its users get new look; Light, Sepia, Dark kept.
+- Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind.
+- Settings > Start page shows half-size live new-tab preview under switches.
+- Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads entry wears progress ring.
+- Tab groups reorderable: drag by bars at row end. "N tabs" stays first.
+- Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
 - Swedish translation.
-- Translations into every other language Sailfish OS ships in: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese, in Firefox's words for what Firefox has words for.
+- Translations into every other Sailfish OS language: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese; Firefox wording where available.
 
 ### Changed
-- The downloads card is now a bar on the navigation bar, the width of the screen, with Show at its end, and the page ends above it rather than under it.
-- Website colours is Preferred color scheme, with sailfish-browser's line under it saying what it is for, and its Automatic is called Match ambience.
-- Avoid the screen cutout is Notch guard, with sailfish-browser's three modes and description: Automatic, the default, lets a page written for the cutout use it and keeps every other page below it; Forced keeps every page below it; Disabled none. A switch left on becomes Forced, one left off Disabled.
-- A settings row has an icon or a switch, never both: the switches' lights stand in the column of icons.
-- While a page loads, stop is a plain cross, as in sailfish-browser.
-- Each download in Downloads wears a ring at its start, filled as far as it has come, with pause, play or retry in it, in place of the line along its foot, and the icon of its kind once it has arrived; failed ones say so in red, and one whose file has gone says "File not found". Removing a download still coming, or clearing the list, stops it.
-- Settings says how each subject is set under its name -- the start page, the search engine, the reader view's look, the cover and its quick action, the tracking protection level, the sites allowed and blocked from sending notifications, and whether the history is remembered. The headings are Browsing, Appearance, Privacy and Help; Privacy's page is Tracking protection, named for what is on it.
-- Choices are made where they are shown, every one on the screen at once: the start page, the search engine and the tracking protection level are lists with the chosen one lit; the reader view's colours are five squares painted as the reader view will be, and its typefaces two tiles; and the cover's quick action six rows, each with the glyph it wears on the cover, under a picture of the cover wearing it.
-- Lines under settings that said their names again are gone; the ones left say what the name does not.
-- Website colours and Avoid the screen cutout wear icons, as the rest of Settings does: a moon and a display, sailfish-browser's for its colour scheme and notch guard.
-- Settings > Notifications lists the sites under Allowed and Blocked; its switch reads Sites can ask, and a site is forgotten with Forget this site.
-- Clear browsing data on the history page is a button.
-- The menu is an opaque sheet with the page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit while they are on, and the browser's four under a line.
-- In the grid, the tab in front is framed by a thin rounded line just outside its picture rather than washed; the close buttons are smaller discs with the same place to tap; a group name a tab is carried over lights in a rounded wash; search results light the letters typed; and the list of recently closed tabs comes up on the same sheet as the menu.
-- The list of tab groups shows each group as a small square picture of its most recent tabs, with the current group framed, and "N tabs" under the name; the row that makes a new group wears the theme's ringed plus, and its dialog reads New tab group, with Create.
-- The tutorial's words are shorter, five dots under them say which lesson it is on, the first card shows the address bar, the menu and the tabs as icons, and the last card has a check mark.
+- Downloads card now full-width bar on navigation bar, Show at end; page ends above.
+- Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
+- Avoid the screen cutout now Notch guard, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Forced keeps all below; Disabled none. Old on becomes Forced, off Disabled.
+- Settings rows: icon or switch, never both; switch lights in icon column.
+- Loading stop button: plain cross, like sailfish-browser.
+- Downloads rows: progress ring at start with pause, play or retry, replacing foot line; kind icon when done. Failed in red; missing file "File not found". Removing in-progress download or clearing list stops it.
+- Settings shows current value under each name (start page, search engine, reader look, cover, tracking protection level, notification sites, history). Headings: Browsing, Appearance, Privacy, Help; Privacy page now Tracking protection.
+- Choices inline: start page, search engine, tracking protection level as lists, chosen lit; reader colours five painted squares, typefaces two tiles; cover quick action six rows with glyphs under cover picture.
+- Name-repeating setting descriptions gone; rest add info.
+- Website colours and Avoid the screen cutout get icons: moon and display, from sailfish-browser.
+- Settings > Notifications lists Allowed and Blocked; switch reads Sites can ask; Forget this site removes one.
+- Clear browsing data on history page now button.
+- Menu: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit when on; browser's four below line.
+- Grid: front tab framed by thin rounded outline, not washed; smaller close discs, same tap area; target group name lights in rounded wash; search highlights typed letters; recently closed tabs on menu's sheet.
+- Tab group list: square thumbnail of recent tabs per group, current framed, "N tabs" under name; new-group row has ringed plus; dialog reads New tab group, Create.
+- Tutorial: shorter text, five progress dots, icon first card, check-mark last card.
 
 ### Fixed
-- The start of the drag up from the bar to the tab grid no longer stutters. The grid follows the finger from the moment the drag is caught instead of leaping to catch up, a slim bar stays slim while it is dragged instead of growing under the finger, and the picture of the page and the grid are made ready while the finger is still down rather than in the drag's first frames.
+- Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 
 ### Removed
-- The lightning cover and its flash, and the choice of cover in Settings: there is one cover now.
+- Lightning cover, its flash, and cover choice in Settings: one cover now.
 
 ## [0.8.0] - 2026-09-26
 
 ### Fixed
-- Counts in English, and in any language Salama has no translation for, read "1 page" and "3 pages" rather than "3 page(s)": the English catalog that says so was never loaded.
-- Uploading a file lists the phone's images, videos, music and documents in the picker, rather than empty pages that left File system the only way to a file. The application now holds Sailjail's `MediaIndexing` permission, which the picker's lists are searched through, and `Videos` and `Music`, the folders those two list.
-- A player's controls just above the navigation bar work: a tap there, or a drag sideways or down -- along a seek bar -- goes to the page, while a drag upwards from there still opens the grid.
-- Pages play sound. The application now holds Sailjail's `Audio` permission, without which the platform keeps it out of the sound system altogether.
-- The grid can be pulled back to the page from anywhere on it again, a preview or the head row included, and a grid longer than the screen scrolls from a drag begun on a preview. A preview being held is let go when the finger moves up or down, as a held list item is.
+- English and untranslated languages read "1 page", "3 pages", not "3 page(s)": English catalog never loaded.
+- Upload picker lists phone's images, videos, music, documents, not empty pages. App now holds Sailjail's `MediaIndexing` permission (picker search), plus `Videos` and `Music` (their folders).
+- Player controls just above navigation bar work: tap or sideways/down drag (seek bar) goes to page; upward drag still opens grid.
+- Pages play sound: app now holds Sailjail's `Audio` permission.
+- Grid pulls back to page from anywhere again, preview and head row included; long grid scrolls from drag on preview. Held preview released on vertical move, like list item.
 
 ### Changed
-- In a long tab group, a drag down the grid's head row, where "Search tabs" is, brings the page back at once from wherever the grid is scrolled to, rather than only once the grid is back at its top; the grid is where it was when it next comes up. A tap there still opens the search.
-- The cover's search opens the address bar for a new tab, empty and listing the bookmarks, rather than a new tab loading the home page with its address selected; no tab is made until something is chosen.
-- Settings is a main page with a way each, an icon and a name, to a page for the start page, search, the reader view, the cover, privacy and the history, and the screen cutout's switch under Appearance. Request desktop sites and Pages kept loaded are gone from Settings: the menu's Desktop version switches a page, and five pages stay loaded as in Jolla's browser. The four buttons that cleared history, cookies and site data, the cache and the open tabs are one Clear browsing data dialog on the history page, with a switch for each, how far back to clear, and one remorse.
-- The menu sheet has two rows, This page and Browser: New tab has gone from it, a new tab being the plus in the grid's foot or the cover's search.
-- The grid's "Search tabs" finds the tabs that hold every word typed, in the title or the address, rather than the whole text as one piece.
-- The tab grid is quieter: nothing under the previews -- no favicon, no title -- so the pictures have the room; the active preview is marked by its faint wash alone, without the border in the highlight colour; the close button is a dark or light disc, as the ambience is, rather than one in its colour, with an opaque cross; and the rows along the head and foot are opaque.
-- A new application icon: a pale pink lightning bolt on a plum-to-navy disc in a mauve frame.
-- A preview in the grid is picked up after a second of holding rather than a second and a half.
-- Private tabs are gone, and the private group with them: the platform offers a Harbour application no way to put a device-lock or fingerprint gate on them, and an unlocked "Private" group would promise what it cannot keep. A database that still has private tabs loses them on first start.
-- The application is now called salama (it was tuuli): package `harbour-salama`, Sailjail application name `salama`. The data directory changes with the name, so tabs, bookmarks, history and settings from a tuuli build do not carry over.
+- Long tab group: drag down grid's head row ("Search tabs") returns page from any scroll position; grid keeps position. Tap still opens search.
+- Cover's search opens empty address bar for new tab listing bookmarks, not home page; no tab until choice made.
+- Settings: main page linking start page, search, reader view, cover, privacy, history; cutout switch under Appearance. Request desktop sites and Pages kept loaded removed: menu's Desktop version per page; five pages loaded, like Jolla's browser. Four clear buttons (history, cookies and site data, cache, open tabs) now one Clear browsing data dialog on history page: per-kind switches, time range, one remorse.
+- Menu sheet: two rows, This page and Browser; New tab removed (grid's plus or cover's search).
+- Grid's "Search tabs" matches every typed word in title or address, not whole string.
+- Quieter tab grid: no favicon or title under previews; active preview faint wash only, no border; close button dark/light disc per ambience, opaque cross; opaque head and foot rows.
+- New app icon: pale pink lightning bolt on plum-to-navy disc, mauve frame.
+- Grid preview pickup after 1 s hold, not 1.5 s.
+- Private tabs and private group removed: platform gives Harbour apps no device-lock or fingerprint gate. Existing private tabs dropped on first start.
+- App renamed salama (was tuuli): package `harbour-salama`, Sailjail application name `salama`. New data directory; tuuli tabs, bookmarks, history, settings don't carry over.
 
 ### Added
-- A short tutorial, as Sailfish's own Tutorial teaches its gestures: on a picture of the browser, the address bar tapped, which opens an address and searches alike; the menu opened and closed; the bar dragged up to the tabs; a tab closed, moved, and moved to another group; and the grid pulled back down. Each step is shown by Silica's animated hint and said at the other end of the screen, and waits for its gesture; nothing done in it touches a tab. The first start opens on a card with the application's icon and name, to start the tutorial or skip it. Settings > Help > Tutorial shows it again.
-- Web notifications, as Firefox has them: a site asks "Allow *site* to send notifications?" after a tap on the page, and Allow, Always block or Not now answers it; what an allowed site sends shows up with the phone's other notifications, with the site's name under it and its icon, and a tap on one opens the browser on its tab. A notification goes when its page or its tab does. A site allowed to notify keeps working out of sight, so that its notifications still come. Settings > Notifications lists the sites allowed and blocked, to change or remove, and can block new requests.
-- A start page, as Firefox's home is, in place of a home page: every new tab, and the first start, opens on it. Tiles for the sites visited most and for the first bookmarks, with the site's icon or its first letter, and rows for the pages read last, over the ambience; searches are in neither. Tapping one opens it in the tab, and back from that first page returns to the start page. Settings > Start page switches each section on or off, or leaves the start page blank; the home page's address, and the ways to take it from the page in front or a bookmark, are gone.
-- The address bar suggests as it is typed into: a pane above it lists what the words find in the open tabs of every group, the bookmarks, the history and the downloads, and right above the bar a row to go to the address and one to search the web for the words. The list is short, laid out from the bottom up, and ranked as Firefox ranks its suggestions: a page is one row whether it is open, bookmarked or in the history; what was chosen after the same words before comes first; then a site whose name begins with what is typed, then pages by how often and how lately they were visited; files last. Each row shows its site's icon, or the site's initial, with the words typed in bold. An open tab says "Switch to tab" in the ambience's colour, and comes to the front in its group; a finished download opens. Put the keyboard away, or drag the list, to see more of it without ending the edit; a tap on the pane's bare glass ends it. Settings > Search chooses which of the four the bar suggests from.
-- Settings > History: whether the pages visited are remembered, whether the history, the downloads list and the recently closed tabs are cleared each time the browser closes, and Clear browsing data, which now asks how far back: the last hour, two, four, today or everything.
-- Settings > Reader view shows a few lines of an article as the reader view will set them, following each choice as it is made.
-- The cover's quick action is chosen in Settings > Cover: none, a search, the bookmarks, one bookmark, the downloads or the history. The page says why there is one -- the place beside it is the media control's -- and shows the cover with nothing playing and while a tab plays. A bookmark is picked from a searchable list and wears one of eight glyphs; its action brings forward the tab it is open in, in any group, or opens it in a new one. It follows the bookmark through a rename or a remove and re-add, and once the bookmark is gone it opens the bookmarks.
-- A tab whose page plays something with sound says so, with a mute: centred at the foot of its preview in the grid, where the picture fades out under it as a cover's quick actions sit on the cover; in the navigation bar left of the host, in the ambience's colour, with the host kept in the middle of the bar; and on the cover beside its quick action, while the tab in front plays. The speaker shows whether the tab is heard: struck through while it is muted, paused, or behind the tab in front. Muting pauses the page as well, and unmuting plays again what that paused; unmuting a tab behind the front brings it to the front. A muted tab stays muted across its pages until it is unmuted or closed. Only media the page's own scripts can reach has the mute: not a player embedded from another site.
-- What plays is the tab in front's: a tab left while it plays is paused as it is left, and plays again when it is back in front, YouTube's mobile site included, which pauses itself on being hidden. Sailfish's engine silences every tab behind the front, so music in one tab does not go on while another is read. When the tab in front starts playing, every other tab that plays is paused.
-- Out of sight, a page that plays goes on playing its sound with its videos hidden, so the engine stops decoding pictures nobody sees.
-- Firefox's tracking protection, in Settings > Privacy. Standard, the default, keeps each site's cookies to that site; Strict also hides more of what tells one device from another and shortens the address sent on to other sites. With the ESR 153 engine, which fetches the lists, Standard also blocks known fingerprinters and cryptominers, and Strict every known tracker, strips tracking parameters from links and clears bounce trackers' data. Off leaves the engine as it was.
-- Reader view, as Firefox has it, from the menu's *This page* row: a page that reads as an article is shown as its title, byline and text alone, with an estimate of how long it takes to read, in Firefox's reader styles. The entry is dimmed on pages that are not articles, and lit while the reader view is up; tapping it again, or back, returns to the page. The address, the history and bookmarks keep the article's own address. Settings > Reader view chooses the colours (the ambience's, light, sepia or dark), the typeface and the text size, and a reader view on the screen follows them at once.
-- Multi-tab browsing with a grid of page previews, the active one in a square wash; tabs, the active tab and the previews survive restarts. The rows along the grid's head and foot are panes of the ambience's glass, patterned as the keyboard is, and opaque.
-- Dragging the navigation bar upwards pulls the tab grid up from under the page, and dragging the grid down past its top, from anywhere on it, puts the page back; tapping a preview does the same. A handle on the bar's edge and a line across the top of the grid say where to take hold.
-- Address shown in the navigation bar as the host alone, tapped to edit the whole url in place, opening addresses or searching with a configurable engine. Scrolling down slims the bar to the address alone; scrolling up, or a tap on the slim bar, brings it back whole, and a tap on the whole bar edits the address.
-- A red warning on the address when the engine reports a broken TLS connection, and a navigation bar the page ends above rather than running behind, so the foot of a page is always reachable. Scrolling down slims the bar to the address alone and scrolling up brings its controls back.
-- Pages laid out at a phone-sized zoom rather than the engine's smaller default.
-- Tabs can be carried to another place in the grid; the order is kept across restarts.
-- Tab groups, as Safari has them: the grid shows one group at a time, and a strip along its foot names them, centred, in type sized to sit with the search field, the current one underlined and kept in the middle, the row fading out at an end with more names past it. An edit button in the foot's right corner lists the groups to rename and delete them, with a row under the last one that makes a new group. A "Search tabs" field along the head of the grid lists the tabs that hold every word typed, in the title or the address, across every group, in place of the previews. Groups survive a restart.
-- A preview picked up and carried down onto a group's name in the strip moves its tab into that group; the name lights while the preview is over it. Carrying the tab in front takes the grid to its new group with it.
-- The default group, first in the strip, can be neither renamed nor deleted.
-- A preview in the grid is picked up to be carried by holding it for a second, and closed by sliding it to the left. The close button in its corner is a dark or light disc, as the ambience is, with a cross through it, faint enough not to crowd the preview and opaque under a finger.
-- The new-tab button sits in the left corner of the grid's foot; holding it brings up the tabs closed lately, to open again, and the list survives a restart.
-- Five pages stay loaded, the ones read most recently; the rest reload when their tab comes back. Settings chooses 3, 5, 10 or all. After ten minutes in the background the engine is asked to trim its memory.
-- A second after the application is put away, the loaded pages are put to sleep -- their scripts, timers and workers stop -- so a busy site no longer keeps the phone busy out of sight. A page playing something with sound, or in a call, keeps them awake, and they sleep five seconds after it stops. Each page wakes as it is next on the screen.
-- Back, reload and stop on the navigation bar, which the address field takes over while it is being edited.
-- The menu is a sheet of icons that comes up from under the navigation bar, in two rows: search on the page, bookmark it, share it, or ask for its desktop version; bookmarks, history, downloads and settings. A tap outside puts it away, and so does pulling it back down, from anywhere on it.
-- Search on page: a field over the navigation bar finds text in the page, highlighting the match and scrolling to it, with arrows to the previous and next match and the field in the error colour when there is none.
-- The desktop version of one page, from the menu, while the setting in Settings still decides the rest.
-- History with search, and bookmarks with edit and remove.
-- Downloads, saved to Downloads/Salama without asking where, and listed in the browser from the menu: newest first, with their progress while they come and how they ended after; a tap opens a finished one. The list survives a restart; clearing it leaves the files.
-- Settings: what the start page shows, search engine (Qwant, Ecosia, Startpage), desktop site mode, keeping clear of the display's camera cutout (on by default), what the cover shows and its quick action, and clearing history, cookies and site data, the cache and the open tabs.
-- The slim navigation bar stays opaque while a page is scrolled, so the address stays readable over a light page; the page ends above it as it does above the whole bar.
-- A cover that is a lightning bolt in the ambience's colour, with nothing to read, and a flash of sheet lightning behind it each time it comes into view; and a quick action on it, a search unless Settings chooses another, that opens the address bar for a new tab. Settings can have the cover show the number of open tabs over a grey picture of the tab last in front instead, a picture refreshed as the app is put away so it shows the page as it was left.
+- Short tutorial, like Sailfish's Tutorial: tap address bar, open/close menu, drag bar up to tabs, close/move tab and move to other group, pull grid down. Silica animated hints, waits for each gesture; no real tabs touched. First start: card with icon and name, start or skip. Settings > Help > Tutorial replays.
+- Web notifications, like Firefox: after page tap, "Allow *site* to send notifications?" -- Allow, Always block, Not now. Shown in phone's notifications with site name and icon; tap opens tab; gone with page or tab. Allowed site keeps running out of sight. Settings > Notifications lists allowed/blocked sites, blocks new requests.
+- Start page, like Firefox's home, replaces home page: every new tab and first start. Tiles for top sites and first bookmarks, rows for recent pages; no searches. Back from opened page returns to it. Settings > Start page toggles sections or blank; home page address settings gone.
+- Address bar suggestions from open tabs (all groups), bookmarks, history, downloads; rows above bar to go to address or search web. Short, bottom-up, Firefox ranking: one row per page; past picks first, then site-name prefix, then frequency and recency; files last. Site icon or initial, typed words bold. Open tab: "Switch to tab" in ambience colour, fronts it in its group; finished download opens. Hide keyboard or drag list for more; tap bare glass ends edit. Settings > Search picks sources.
+- Settings > History: remember visits; clear history, downloads list, recently closed tabs on close; Clear browsing data range: last hour, two, four, today, everything.
+- Settings > Reader view: live article preview per choice.
+- Cover quick action in Settings > Cover: none, search, bookmarks, one bookmark, downloads, history. Explains single slot (other is media control); previews idle and playing cover. Bookmark from searchable list, one of eight glyphs; fronts its tab, any group, else new tab. Survives rename or re-add; if gone, opens bookmarks.
+- Sound-playing tab shows mute: grid preview foot; navigation bar left of host, ambience colour; cover beside quick action for front tab. Speaker struck through when muted, paused or behind front. Mute pauses page; unmute resumes; unmuting background tab fronts it. Mute persists across pages until unmuted or closed. Only for media page's own scripts reach, not cross-site embeds.
+- Only front tab plays: leaving pauses, returning resumes, YouTube mobile included. Engine silences background tabs. Front tab starting playback pauses others.
+- Out of sight, playing page keeps sound, videos hidden; no decoding unseen frames.
+- Firefox's tracking protection, Settings > Privacy. Standard (default): per-site cookies; Strict: more anti-fingerprinting, trimmed referrer. With ESR 153 engine (fetches lists): Standard blocks known fingerprinters, cryptominers; Strict blocks all known trackers, strips tracking parameters, clears bounce trackers' data. Off: engine default.
+- Reader view, like Firefox, from menu's *This page* row: articles as title, byline, text, read-time estimate, Firefox's reader styles. Dimmed on non-articles, lit when on; tap again or back exits. Address, history, bookmarks keep article URL. Settings > Reader view: colours (ambience's, light, sepia, dark), typeface, size; applied live.
+- Multi-tab browsing, grid of previews, active in square wash; all survive restart. Grid head and foot: opaque ambience glass, keyboard pattern.
+- Drag navigation bar up for tab grid; drag grid down past top, from anywhere, or tap preview to return. Handle on bar, line atop grid mark grab spots.
+- Navigation bar shows host; tap edits full url in place; addresses or search with configurable engine. Scroll down slims bar; scroll up or tap restores; tap whole bar edits.
+- Red address warning on broken TLS connection; page ends above navigation bar, foot always reachable. Scroll down slims bar; up restores controls.
+- Phone-sized page zoom, not engine's smaller default.
+- Tabs reorderable in grid; order kept across restarts.
+- Tab groups, like Safari: grid shows one group; foot strip names them, current underlined and centred, edges fade when more. Edit button, foot's right corner: rename, delete, new-group row. "Search tabs" field atop grid matches every typed word, title or address, across groups. Groups survive restart.
+- Preview dropped on group name in strip moves tab there; name lights on hover. Moving front tab takes grid along.
+- Default group, first in strip: no rename or delete.
+- Grid preview: 1 s hold to carry, slide left to close. Corner close button: faint dark/light disc per ambience, opaque under finger.
+- New-tab button, grid foot's left corner; hold for recently closed tabs; list survives restart.
+- Five most recent pages stay loaded; rest reload on return. Settings: 3, 5, 10 or all. After ten minutes backgrounded, engine trims memory.
+- One second after app put away, pages sleep -- scripts, timers, workers stop. Sound-playing or in-call page stays awake, sleeps five seconds after stopping. Page wakes when shown.
+- Back, reload, stop on navigation bar; address field replaces them while editing.
+- Menu: icon sheet rising from navigation bar, two rows: search on page, bookmark, share, desktop version; bookmarks, history, downloads, settings. Tap outside or pull down dismisses.
+- Search on page: field over navigation bar; highlights and scrolls to match, previous/next arrows, error colour on no match.
+- Per-page desktop version from menu; Settings governs rest.
+- History with search; bookmarks with edit and remove.
+- Downloads to Downloads/Salama without prompt, listed from menu: newest first, progress, outcome; tap opens finished. List survives restart; clearing keeps files.
+- Settings: start page content, search engine (Qwant, Ecosia, Startpage), desktop site mode, avoid display's camera cutout (on by default), cover content and quick action, clear history, cookies and site data, cache, open tabs.
+- Slim navigation bar opaque while scrolling, readable over light pages; page ends above it.
+- Cover: lightning bolt in ambience colour, sheet-lightning flash on each view; quick action (search unless set otherwise) opens address bar for new tab. Option: open-tab count over grey picture of last front tab, refreshed on app put away.
 - Finnish translation.

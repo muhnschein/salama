@@ -1,5 +1,5 @@
 ---
-# Qt-flavoured LLVM style. `make fmt` fails on any drift from this file.
+# Qt-flavoured LLVM style. `make fmt` fails on drift.
 Language: Cpp
 BasedOnStyle: LLVM
 Standard: c++14

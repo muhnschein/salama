@@ -35,7 +35,6 @@ bool run(QSqlQuery &query)
     return true;
 }
 
-// The row a download of this run is on, by the engine's id for it, or -1.
 int rowForEngineId(const QList<DownloadModel::Download> &downloads, int engineId)
 {
     for (int row = 0; row < downloads.count(); ++row) {
@@ -46,9 +45,7 @@ int rowForEngineId(const QList<DownloadModel::Download> &downloads, int engineId
     return -1;
 }
 
-// Counts the downloads still coming again, and how far along they are together, into
-// count and progress: answers whether either changed, so the model says so only then.
-// Called after every change to a row's status or progress, and to which rows there are.
+// Returns whether changed.
 bool recountRunning(const QList<DownloadModel::Download> &downloads, int &count, int &progress)
 {
     int running = 0;
@@ -68,8 +65,6 @@ bool recountRunning(const QList<DownloadModel::Download> &downloads, int &count,
     return true;
 }
 
-// Whether a row is one the engine still has and has not finished: what pausing and
-// resuming go on from.
 bool resumable(const DownloadModel::Download &download)
 {
     return download.engineId != 0 &&
@@ -235,8 +230,7 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
     const QString msg = message.value(QStringLiteral("msg")).toString();
     const int row = rowForEngineId(m_downloads, engineId);
     if (msg == QLatin1String("dl-start")) {
-        // A download the engine starts again -- retried after it failed, or resumed
-        // after it was canceled -- keeps its id, and its row.
+        // Engine restart of same id keeps id and row.
         if (row < 0) {
             start(engineId, message);
         } else {
@@ -295,7 +289,7 @@ void DownloadModel::pause(int row)
     if (download.status != Running || download.engineId == 0) {
         return;
     }
-    // The row says Paused when the engine says it has stopped (dl-cancel), not before.
+    // Paused only once engine confirms (dl-cancel).
     request({{QStringLiteral("msg"), QStringLiteral("cancelDownload")},
              {QStringLiteral("id"), download.engineId}});
 }
@@ -314,8 +308,7 @@ void DownloadModel::resume(int row)
                  {QStringLiteral("id"), download.engineId}});
         return;
     }
-    // One of an earlier run: the engine has forgotten it, and fetches it anew. Its
-    // dl-start makes the row that stands for it now.
+    // Engine forgot it: refetch; its dl-start makes new row.
     if (download.url.isEmpty()) {
         return;
     }
@@ -329,13 +322,10 @@ void DownloadModel::resume(int row)
 
 namespace {
 
-// A file system takes a name of up to 255 bytes; room is left for a number.
+// FS name limit 255 bytes; room left for number.
 const int FileNameBytes = 240;
 
-// What a saved file is called: the name the address's path ends in, as it is, decoded --
-// never one made up -- with only what a file system would read as a folder, or hide,
-// taken out of it; the host's for a path that ends in none; "download" for neither. A
-// name with no ending gets the type's.
+// Path tail decoded, never invented; strips only folder/hidden-making chars.
 QString savedFileName(const QUrl &url, const QString &contentType)
 {
     static const QRegularExpression unsafe(QStringLiteral(R"([/\\\x00-\x1f\x7f])"));
@@ -357,8 +347,6 @@ QString savedFileName(const QUrl &url, const QString &contentType)
             name += QLatin1Char('.') + suffix;
         }
     }
-    // Only a name the file system would refuse is cut, from the end of what comes before
-    // its ending.
     if (name.toUtf8().size() > FileNameBytes) {
         const QString suffix = QFileInfo(name).suffix();
         const QString ending = suffix.isEmpty() ? QString() : QLatin1Char('.') + suffix;
@@ -417,7 +405,7 @@ bool DownloadModel::deleteFile(int row)
     }
     const QFileInfo file(download.path);
     if (file.exists()) {
-        // Where the file really is, links and ".." followed, under where it may be.
+        // Real path (links, ".." resolved) must be under allowed root.
         const QString root = QFileInfo(QFileInfo(m_directory).absolutePath()).canonicalFilePath();
         const QString real = file.canonicalFilePath();
         if (root.isEmpty() || !real.startsWith(root + QLatin1Char('/'))) {
@@ -525,7 +513,7 @@ QString DownloadModel::formatSize(double bytes)
         value /= 1024;
         ++unit;
     }
-    // A size reads as one number: "1023 B", never "1,023 B".
+    // "1023 B", never "1,023 B".
     QLocale locale;
     locale.setNumberOptions(QLocale::OmitGroupSeparator);
     const QString number = unit == 0 ? locale.toString(qRound64(value))
@@ -545,8 +533,7 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
     }
     download.url = message.value(QStringLiteral("sourceUrl")).toString();
     download.mimeType = message.value(QStringLiteral("mimeType")).toString();
-    // The engine's totalBytes, which is 0 while the size is not known; a size that is
-    // not a number says no more than that.
+    // 0 while unknown.
     const QVariant size = message.value(QStringLiteral("size"));
     download.size = EngineData::isNumber(size) ? std::max<qint64>(0, size.toLongLong()) : 0;
     download.status = Running;
@@ -569,15 +556,13 @@ void DownloadModel::setProgress(int row, const QVariant &percent)
     if (!EngineData::isNumber(percent)) {
         return;
     }
-    // Bounded as a double, before rounding: a number past what an int holds has no
-    // int to round to.
+    // Bound as double before rounding.
     const int progress = qRound(qBound(0.0, percent.toDouble(), 100.0));
     Download &download = m_downloads[row];
     if (download.progress == progress) {
         return;
     }
-    // Not written: it would be worth nothing after a restart, when a download read
-    // back has either finished or never will (load()).
+    // Not stored: meaningless after restart.
     download.progress = progress;
     changed(row, {roleId(Role::Progress)});
 }
@@ -603,8 +588,7 @@ void DownloadModel::finish(int row, const QString &path)
         return;
     }
     store(download);
-    // Said before the row's change, so that the banner has the name before the row
-    // leaves what it shows.
+    // Emit before row change so banner has name.
     if (arrived) {
         emit finished(download.id, download.name);
     }
@@ -618,7 +602,7 @@ void DownloadModel::setStatus(int row, Status status)
         return;
     }
     download.status = status;
-    // A change of state is news again, swiped away or not.
+    // State change re-shows on banner even if swiped.
     download.dismissed = false;
     store(download);
     changed(row, {roleId(Role::Status), roleId(Role::Resumable)});
@@ -628,7 +612,6 @@ void DownloadModel::changed(int row, const QVector<int> &roles)
 {
     const QModelIndex modelIndex = index(row, 0);
     emit dataChanged(modelIndex, modelIndex, roles);
-    // Every change to a row's status or progress comes through here.
     recount();
 }
 
@@ -714,11 +697,7 @@ void DownloadModel::load()
         download.mimeType = query.value(4).toString();
         download.size = query.value(5).toLongLong();
         download.started = query.value(7).toLongLong();
-        // A download still running when the application stopped never finishes: the
-        // engine forgets every download when it starts -- EmbedliteDownloadManager.js
-        // removes them all at profile-after-change -- so no message will name it
-        // again. It failed, and the database is told so. A status this build does not
-        // know is read the same way.
+        // Engine drops all downloads at startup: running ones never finish. Mark failed.
         const int status = query.value(6).toInt();
         if (status == Done || status == Failed || status == Canceled) {
             download.status = static_cast<Status>(status);
@@ -730,8 +709,8 @@ void DownloadModel::load()
         m_downloads.append(download);
         m_nextId = std::max(m_nextId, download.id + 1);
     }
-    // Written once the rows are read: SQLite leaves it undefined whether a query still
-    // stepping through a table sees rows changed under it (sqlite.org/isolation.html).
+    // Write after reading: SQLite undefined whether stepping query sees rows changed under it
+    // (sqlite.org/isolation.html).
     for (const Download &download : stale) {
         store(download);
     }

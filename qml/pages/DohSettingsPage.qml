@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// DNS over HTTPS: Firefox for Android's page for it, its levels, its providers and its
-// exceptions, in its words (docs/DECISIONS/0047-secure-connections.md). The levels are
-// all on the screen at once, the one chosen lit, as Tracking protection lays its own out
-// (TrackingSettingsPage.qml); Firefox's Default Protection is not among them, since what
-// it stands for -- Firefox deciding when to turn it on -- is not done by the engine here.
-// The provider is chosen while it is used at all: Firefox's two, or one of the reader's
-// own, given in a dialog of its own. The exceptions have a page of their own.
+// No Firefox Default Protection: engine can't auto-enable.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -17,8 +10,7 @@ Page {
     id: dohPage
 
     property SettingNames names: SettingNames {}
-    // The provider's place among the combo box's choices: a built-in one's own, or the
-    // last, Custom.
+    // Combo index: built-in's own, or last (Custom).
     readonly property int providerIndex: DohSettings.customProvider
                                          ? 2
                                          : (DohSettings.provider === DohSettings.providers[0].url
@@ -64,8 +56,7 @@ Page {
                            + "access.")
             }
 
-            // Firefox for Android's order, without Default: the stored values
-            // DohSettings.ProtectionIncreased, ProtectionMax, ProtectionOff.
+            // Stored order: ProtectionIncreased, ProtectionMax, ProtectionOff.
             Repeater {
                 model: [DohSettings.ProtectionIncreased, DohSettings.ProtectionMax,
                         DohSettings.ProtectionOff]
@@ -87,7 +78,6 @@ Page {
                 visible: DohSettings.protection !== DohSettings.ProtectionOff
                 width: parent.width
                 label: qsTr("Choose provider")
-                // The reader's own provider's address, under the choice.
                 description: DohSettings.customProvider ? DohSettings.provider : ""
                 currentIndex: dohPage.providerIndex
                 menu: ContextMenu {

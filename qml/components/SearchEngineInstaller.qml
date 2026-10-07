@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Takes up a search engine a site offered: fetches its OpenSearch description, hands the
-// text to SearchEngines, which reads it and adds the engine, and says how it went in a
-// Silica Notice, as sailfish-browser says a search was added (apps/browser/qml/pages/
-// SettingsPage.qml). The fetch is QML's own XMLHttpRequest, which is Qt's network access
-// and needs no module Harbour does not allow; the reading is C++'s (src/search/
-// OpenSearch.h). The status line is not asked: a page that is not a description -- an
-// error page, a login -- is no description whatever its status says, and reading is
-// what decides that (docs/DECISIONS/0041-search-engines-found.md).
+// XMLHttpRequest: Qt network, needs no Harbour-banned module. HTTP status ignored: parse
+// decides (error/login pages aren't descriptions anyway).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -16,9 +10,7 @@ import harbour.salama 1.0
 Item {
     id: installer
 
-    // The addresses being fetched: a second tap on an offer waits for the first rather
-    // than fetching twice, and then saying that the engine could not be added because
-    // the first tap added it.
+    // In-flight hrefs: second tap waits instead of double fetch and bogus failure notice.
     property var fetching: ({})
 
     function install(title, href) {

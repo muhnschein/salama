@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One recently closed tab, as the search results draw theirs.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

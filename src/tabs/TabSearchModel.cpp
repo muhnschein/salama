@@ -10,8 +10,6 @@ TabSearchModel::TabSearchModel(TabModel *tabs, QObject *parent)
     : QAbstractListModel(parent)
     , m_tabs(tabs)
 {
-    // Rows come and go with the tabs; a title or address arriving can change whether
-    // a row matches, and a group's name or order is part of what every row says.
     connect(m_tabs, &TabModel::countChanged, this, &TabSearchModel::rebuild);
     connect(m_tabs, &TabModel::rowsMoved, this, &TabSearchModel::rebuild);
     connect(m_tabs, &TabModel::dataChanged, this, &TabSearchModel::rebuild);
@@ -121,7 +119,6 @@ QList<TabSearchModel::Row> TabSearchModel::rowsForTerm() const
     return rows;
 }
 
-// The tabs or the groups changed: whatever the list was, it is built again.
 void TabSearchModel::rebuild()
 {
     const int before = m_rows.count();
@@ -133,11 +130,8 @@ void TabSearchModel::rebuild()
     }
 }
 
-// Only the term changed, so the old rows and the new are both drawn from the same
-// tabs in the same order: walking the two together, a row is kept, removed or
-// inserted, and the list under the reader's finger is never rebuilt around a
-// keystroke. The headings move with the rows: the first row of a group is told when
-// it stops or starts being one.
+// Term-only change: walk old and new rows together (same tab order), so list never resets per
+// keystroke.
 void TabSearchModel::refine()
 {
     const int before = m_rows.count();
@@ -152,7 +146,6 @@ void TabSearchModel::refine()
     };
     int have = 0;
     for (int want = 0; want < wanted.count(); ++want) {
-        // Rows the new list no longer has come out first, in order.
         while (have < m_rows.count() && !wantedFrom(want, m_rows.at(have).tabId)) {
             beginRemoveRows(QModelIndex(), have, have);
             m_rows.removeAt(have);

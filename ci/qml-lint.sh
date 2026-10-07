@@ -1,12 +1,11 @@
 #!/bin/bash
-# ci/qml-lint.sh — QML rules from SCOPE.md §7 that host Qt would accept silently.
-#
-#  * qmllint clean (SKIP when the tool is missing, unless PACKAGING_LINT_STRICT=1)
-#  * no console.* calls in shipped QML
+# QML rules (SCOPE.md §6) host Qt accepts silently:
+#  * qmllint clean (SKIP if missing, unless PACKAGING_LINT_STRICT=1)
+#  * no console.* in shipped QML
 #  * Theme values, never pixel counts
-#  * Qt 5.6 only: import versions, no ES6/ES2015+, no Qt 5.7+ QML syntax
-#  * every user-visible string translatable
-#  * no file over 400 lines without a decision record; no TODO/FIXME without an issue
+#  * Qt 5.6 only: import versions, no ES2015+, no Qt 5.7+ QML syntax
+#  * user-visible strings translatable
+#  * file ≤ 400 lines unless in SIZE_WAIVERS, never > 600; TODO/FIXME needs issue
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -76,7 +75,7 @@ while read -r hit; do
             fail qt56-import "$file" "$module is not available on the device"
             ;;
         *)
-            # Other modules' versions are ci/harbour-check.sh's to check.
+            # Other modules: ci/harbour-check.sh.
             ;;
     esac
 done < <(grep -nE '^\s*import\s+Qt' "${FILES[@]}" | sed "s|^$ROOT/||")
@@ -119,20 +118,22 @@ while read -r hit; do
     fail untranslated "${hit%%:*}" "user-visible string is not translatable: ${hit#*:}"
 done < <(grep -nE "^\s*$TEXT_PROPS\s*:\s*\"[^\"]+\"\s*$" "${FILES[@]}" | sed "s|^$ROOT/||")
 
-# 7. File size. SCOPE.md §7 is "no file over 400 lines without an ADR", so a decision
-# record can waive one by name -- a line reading "qml-size-waiver: <path>" -- and the
-# record is where the reason has to be written down. The ceiling is a reason, not a
-# blank cheque: nothing passes 600 lines, waived or not.
+# 7. File size. Cap 400. Waiver: path in SIZE_WAIVERS with reason; hard ceiling 600.
+declare -A SIZE_WAIVERS=(
+    # Only file allowed to import Sailfish.WebView (SCOPE.md §5); per-tab WebView
+    # component can't move out.
+    ['qml/pages/BrowserPage.qml']=1
+)
 for file in "${FILES[@]}"; do
     lines=$(wc -l <"$file")
     file_rel=$(rel "$file")
     limit=400
-    if grep -rqs -- "qml-size-waiver: $file_rel\$" "$ROOT/docs/DECISIONS"; then
+    if [[ -n ${SIZE_WAIVERS[$file_rel]:-} ]]; then
         limit=600
-        [[ $lines -le 400 ]] || echo "INFO  [file-size] [$file_rel] $lines lines; waived by a decision record"
+        [[ $lines -le 400 ]] || echo "INFO  [file-size] [$file_rel] $lines lines; waived"
     fi
     [[ $lines -le $limit ]] || fail file-size "$file_rel" \
-        "$lines lines; over $limit -- SCOPE.md §7 (a decision record waives 400, nothing waives 600)"
+        "$lines lines; over $limit -- SCOPE.md §6 (SIZE_WAIVERS lifts 400, nothing lifts 600)"
 done
 
 # 8. TODO without an issue number, across shipped sources and tests

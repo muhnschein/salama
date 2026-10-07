@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The head of the menu sheet, naming the page its actions are for: the page's icon, its
-// title, and under the title a padlock for a page that came over https and its host, as
-// the bar shows it (docs/DECISIONS/0021-menu-sheet.md). At the right, a button that puts
-// the page's address on the clipboard, as sailfish-browser does from its toolbar
-// (apps/browser/qml/pages/components/ToolBar.qml). A tap on the rest of the head opens
-// the page's site details, which a chevron after the title says are there
-// (docs/DECISIONS/0040-site-details.md). On the start page there is no page and no
-// address: the head says so, beside the theme's home, and there is nothing to copy and
-// no site to show the details of.
-//
-// Titles and hosts are what pages chose to be called, and are drawn as plain text.
+// Menu sheet head: page icon, title, host, copy-address button; tap opens site details.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -19,25 +9,20 @@ import harbour.salama 1.0
 Item {
     id: header
 
-    // The page: its address, which is empty on the start page, its title and its icon.
     property string url
     property string title
     property string favicon
-    // The engine is not satisfied with the connection, as the bar's warning says.
     property bool tlsBroken: false
     readonly property bool hasPage: url.length > 0
     readonly property string host: hasPage ? SearchSettings.displayAddress(url) : ""
 
-    // The copy button was tapped.
     signal copyRequested()
-    // The rest of the head was tapped: the page's site details are wanted.
     signal detailsRequested()
 
     objectName: "menuHeader"
     height: Theme.itemSizeSmall
 
-    // The head as a whole is the way to the site details, lit while it is pressed as
-    // Silica's rows are; the copy button, over it at the right, takes its own taps.
+    // Copy button on top takes own taps.
     BackgroundItem {
         objectName: "menuHeaderDetails"
         anchors {
@@ -50,8 +35,7 @@ Item {
         onClicked: header.detailsRequested()
     }
 
-    // The page's icon on a tile of its own, the address bar's suggestions' faint tile,
-    // so that an icon drawn for a light page still has a ground under it.
+    // Tile so favicon drawn for light page still has ground.
     Rectangle {
         id: tile
 
@@ -78,8 +62,6 @@ Item {
             visible: status === Image.Ready
         }
 
-        // A page without an icon of its own: its host's initial, as the address bar's
-        // suggestions draw one.
         Label {
             objectName: "menuPageInitial"
             anchors.centerIn: parent
@@ -90,8 +72,6 @@ Item {
             color: Theme.secondaryColor
         }
 
-        // The theme's home, as sailfish-browser draws beside its home page setting
-        // (apps/browser/qml/pages/SettingsPage.qml).
         Icon {
             objectName: "menuStartPageIcon"
             anchors.centerIn: parent
@@ -126,8 +106,6 @@ Item {
             height: hostLabel.height
             visible: header.hasPage
 
-            // The padlock sailfish-browser's toolbar draws for https, and while the engine
-            // is unhappy with the connection the warning the bar draws, in its colour.
             Icon {
                 id: securityIcon
 
@@ -157,7 +135,6 @@ Item {
         }
     }
 
-    // After the title, small: there is more behind it, as a list row's has.
     Icon {
         id: chevron
 
@@ -174,9 +151,6 @@ Item {
         color: Theme.secondaryColor
     }
 
-    // At the page margin inside a button a padding wider either side and the row's
-    // height, as the grid's corner buttons are. The theme's clipboard, as the keyboard's
-    // paste key draws it (maliit com/jolla/PasteButton.qml).
     IconButton {
         id: copyButton
 

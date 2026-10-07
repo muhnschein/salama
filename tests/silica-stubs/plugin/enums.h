@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Enum holders mirroring Silica's values. QML property names cannot start with an
-// upper-case letter, so `Orientation.Portrait` and friends must come from C++.
+// Enum holders with Silica values. QML property names can't start upper-case, so
+// Orientation.Portrait etc. must come from C++.
 #pragma once
 
 #include <QObject>
@@ -41,8 +41,6 @@ public:
     Q_ENUM(Value)
 };
 
-// Where a cover is in coming into view on the home screen, as a page's status says
-// where it is on the stack.
 class Cover : public QObject
 {
     Q_OBJECT
@@ -73,8 +71,7 @@ public:
     Q_ENUM(Value)
 };
 
-// Which way OpacityRampEffect fades: the first four from opaque to clear, the last two
-// from the middle out to both edges.
+// First four: opaque -> clear. Last two: middle out to both edges.
 class OpacityRamp : public QObject
 {
     Q_OBJECT
@@ -106,10 +103,8 @@ public:
     Q_ENUM(Value)
 };
 
-// What a text field does with its focus when a press lands outside it: Silica's TextBase
-// clears the field's own focus, the page's, or keeps it. Silica's plugin source is not
-// among what Jolla publishes, so the values follow the order Silica documents them in;
-// QML reads them by name.
+// Focus on press outside field (Silica TextBase). Silica plugin source unpublished: values
+// follow documented order; QML reads by name.
 class FocusBehavior : public QObject
 {
     Q_OBJECT
@@ -124,7 +119,6 @@ public:
     Q_ENUM(Value)
 };
 
-// How a page is put on the stack or taken off it: with Silica's transition, or at once.
 class PageStackAction : public QObject
 {
     Q_OBJECT
@@ -138,9 +132,7 @@ public:
     Q_ENUM(Value)
 };
 
-// The movement a TouchInteractionHint shows: which way the finger goes, and whether it
-// swipes, swipes in from the edge of the screen, or pulls. The values are Silica's own,
-// as its plugins.qmltypes lists them.
+// Values from Silica plugins.qmltypes.
 class TouchInteraction : public QObject
 {
     Q_OBJECT

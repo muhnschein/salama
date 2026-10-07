@@ -1,28 +1,23 @@
 # Translating
 
-Salama is translated into every language Sailfish OS ships in. English is the source.
+Translated into every language Sailfish OS ships. English is source.
 
-## How a reader gets their language
+## Language selection
 
 `translations/harbour-salama-<lang>.ts` compiles to `harbour-salama-<lang>.qm`, installed
-under `share/harbour-salama/translations`. At start-up `Salama::loadTranslations`
-(`src/Translations.h`) loads the one for the locale the system starts the app under, which
-is the reader's Language setting: `harbour-salama-pt_BR.qm` for Brazil, `-pt.qm` for
-Portugal, `-de.qm` for every German locale. A language with no catalog of its own gets
-`harbour-salama.qm`, the English source catalog, whose only translations are the English
-plural forms ("1 page", "2 pages" rather than "2 page(s)").
+under `share/harbour-salama/translations`. At start `Salama::loadTranslations`
+(`src/Translations.h`) loads catalog for system locale (reader's Language setting):
+`-pt_BR.qm` Brazil, `-pt.qm` Portugal, `-de.qm` every German locale. No catalog →
+`harbour-salama.qm`, English source, holding only English plural forms ("1 page", "2 pages").
 
-## The files
+## Files
 
-- `harbour-salama.ts` is the source catalog: every `qsTr()` and `tr()` in `qml/` and `src/`,
-  with the English plurals filled in.
-- `harbour-salama-<lang>.ts` is one language. Its `language` attribute is the file's
-  `<lang>`; lupdate counts the plural forms from it.
+- `harbour-salama.ts`: source catalog. Every `qsTr()`/`tr()` in `qml/` and `src/`, English plurals filled.
+- `harbour-salama-<lang>.ts`: one language. `language` attribute = `<lang>`; lupdate counts plural forms from it.
 
-Nobody edits the strings' list by hand. `make translations` regenerates every catalog from
-the source in one run, so a string added to the source arrives unfinished in every language
-at once, and one removed from the source leaves every catalog. To add a language, write its
-header to `translations/harbour-salama-<lang>.ts` and run `make translations`:
+Never edit string list by hand. `make translations` regenerates all catalogs in one run:
+new string lands unfinished everywhere, removed string leaves everywhere. New language: write
+header to `translations/harbour-salama-<lang>.ts`, run `make translations`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -30,49 +25,41 @@ header to `translations/harbour-salama-<lang>.ts` and run `make translations`:
 <TS version="2.1" language="<lang>"></TS>
 ```
 
-The build picks every catalog in `translations/` up by itself.
+Build picks up every catalog in `translations/`.
 
-## What the gates hold a catalog to
+## Gates
 
-- `ci/packaging-lint.sh`: every catalog compiles with lrelease without a warning (a plural
-  form too few is one), and regenerating them all from the source changes none of them.
-- `tests/tst_translations.cpp`: every language Sailfish OS ships in has a catalog; each
-  carries exactly the source catalog's strings, under its own `language`, with none left
-  unfinished; the reader's locale installs the right one, a country's own before its
-  language's; plurals are counted by the language's rule; and a language without a catalog
-  gets English.
+- `ci/packaging-lint.sh`: every catalog compiles with lrelease, no warning (missing plural
+  form is one); regenerating from source changes none.
+- `tests/tst_translations.cpp`: catalog per Sailfish OS language; each has exactly source
+  strings, own `language`, none unfinished; locale installs right one, country before
+  language; plurals by language rule; no catalog → English.
 
-So a changed English string fails the build until every catalog has it again: it orphans its
-translation in all of them, and the cost of getting the English wrong is paid thirty-nine
-times. Write it once.
+Changed English string fails build until every catalog has it again. Cost paid 39 times.
+Get English right once.
 
-## Writing the English
+## Writing English
 
-The English is not only what a reader sees; it is the source text a translator works from,
-and English that leans on metaphor, ellipsis or an ambiguous phrasal verb does not survive
-the trip. A string says what the thing does, in plain words:
+English is translator's source. Metaphor, ellipsis, ambiguous phrasal verbs don't survive.
+Say what thing does, plain words:
 
-- Literal verbs, and a plain verb where there is a phrasal one.
-- Firefox's wording for a browser concept where Firefox has one: its translations then
-  have an answer in every language.
-- A `//:` comment above anything a translator could read two ways: where it is shown,
-  what `%1` is, whether "Clear" is a verb.
-- Sentence case, `…` rather than three dots, and `%n` for a count so it can be a plural.
+- Literal verbs; plain verb over phrasal.
+- Firefox's wording for browser concepts: translations exist in every language.
+- `//:` comment above anything readable two ways: where shown, what `%1` is, whether "Clear" is verb.
+- Sentence case, `…` not three dots, `%n` for counts so plural works.
 
 ## Filling a catalog
 
-Each language follows two references, in this order:
+Two references, in order:
 
-1. **Piirit's catalog for the language** (`translations/piirit-<lang>.ts` in
-   [Piirit](https://github.com/muhnschein/piirit)) for register and style: how the reader is
-   addressed, whether a button is an imperative, an infinitive or a noun, quotation marks,
-   punctuation. German says *du* because Piirit does, though German Firefox says *Sie*.
-2. **Firefox** for the words. Firefox for Android's catalog (the
-   [android-l10n](https://github.com/mozilla-l10n/android-l10n) repository) first, desktop
-   Firefox's where Android's is thin. Firefox is the browser upstream of Salama's engine,
-   and a reader who has used it already knows its words for tabs, bookmarks, history,
-   downloads, tracking protection and site permissions.
+1. **Piirit's catalog** (`translations/piirit-<lang>.ts` in
+   [Piirit](https://github.com/muhnschein/piirit)) for register and style: address form,
+   button as imperative/infinitive/noun, quotes, punctuation. German uses *du* (Piirit does),
+   though German Firefox uses *Sie*.
+2. **Firefox** for words. Firefox for Android catalog
+   ([android-l10n](https://github.com/mozilla-l10n/android-l10n)) first, desktop Firefox
+   where Android thin. Firefox is engine upstream; readers know its words for tabs,
+   bookmarks, history, downloads, tracking protection, site permissions.
 
-*Salama* is a name and is never translated. Placeholders (`%1`, `%n`) stay; every plural
-form keeps its `%n`, because Qt picks a form by rule and in some languages the "one" form
-also serves 21 and 31.
+*Salama* is a name, never translated. Placeholders (`%1`, `%n`) stay; every plural form
+keeps `%n`: Qt picks form by rule, some languages' "one" form also serves 21, 31.

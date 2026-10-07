@@ -9,9 +9,8 @@ using Salama::PageActivity;
 
 namespace {
 
-// Short enough to wait out, and far enough apart that a slow machine cannot mistake
-// one for the other: every wait that expects nothing to have happened yet is a few
-// settle delays long, and well inside the grace.
+// Short to wait out, far enough apart that slow machine can't confuse them: "nothing yet"
+// waits are few settles long, well inside grace.
 const int Settle = 20;
 const int Grace = 1000;
 
@@ -20,8 +19,7 @@ QVariantMap decoder(const QString &owner, const QString &state)
     return {{QStringLiteral("owner"), owner}, {QStringLiteral("state"), state}};
 }
 
-// What the engine sends once a decoder knows its stream. It writes the flags as
-// numbers, which is what they are after the JSON is read.
+// Engine message once decoder knows stream. Flags numeric after JSON parse.
 QVariantMap meta(const QString &owner, bool sound, bool pictures)
 {
     QVariantMap info = decoder(owner, QStringLiteral("meta"));
@@ -61,7 +59,6 @@ private slots:
 void tst_pageactivity::defaults()
 {
     PageActivity activity;
-    // The topics are the two sailfish-browser subscribes to for the same decision.
     QCOMPARE(activity.topics(), QStringList({DecoderTopic, CallTopic}));
     QCOMPARE(activity.settleDelay(), 1000);
     QCOMPARE(activity.soundGraceDelay(), 5000);
@@ -76,12 +73,10 @@ void tst_pageactivity::asleepAfterSettling()
     QSignalSpy background(&activity, &PageActivity::backgroundChanged);
     QSignalSpy asleep(&activity, &PageActivity::asleepChanged);
 
-    // In sight, the pages never sleep.
     QTest::qWait(Settle * 3);
     QVERIFY(!activity.asleep());
 
-    // Out of sight, not at once -- a peek at the home screen is not leaving -- but
-    // after the settle delay.
+    // Background: not at once (home-screen peek isn't leaving), after settle delay.
     activity.setBackground(true);
     activity.setBackground(true);
     QCOMPARE(background.count(), 1);
@@ -98,7 +93,6 @@ void tst_pageactivity::backInSightWakesAtOnce()
     activity.setBackground(false);
     QVERIFY(!activity.asleep());
 
-    // A return before the delay ran out cancels it.
     activity.setBackground(true);
     activity.setBackground(false);
     QTest::qWait(Settle * 3);
@@ -119,15 +113,13 @@ void tst_pageactivity::soundKeepsPagesAwake()
     QTest::qWait(Settle * 5);
     QVERIFY(!activity.asleep());
 
-    // The music stops: the pages sleep, but only after the longer grace a player needs
-    // to start its next track.
+    // Music stops: sleep only after longer grace, for player to start next track.
     activity.observe(DecoderTopic, decoder(QStringLiteral("0x1"), QStringLiteral("pause")));
     QVERIFY(!activity.audible());
     QTest::qWait(Settle * 5);
     QVERIFY(!activity.asleep());
     QTRY_VERIFY(activity.asleep());
 
-    // The next track in time keeps them awake.
     activity.setBackground(false);
     activity.observe(DecoderTopic, decoder(QStringLiteral("0x1"), QStringLiteral("play")));
     activity.setBackground(true);
@@ -140,8 +132,8 @@ void tst_pageactivity::soundKeepsPagesAwake()
 
 void tst_pageactivity::silentVideoDoesNot()
 {
-    // A muted hero video on a busy page is exactly what should not keep it running,
-    // and a stream with no sound in it is the one kind the engine can say is silent.
+    // Muted hero video must not keep busy page running; no-audio stream is only kind engine
+    // can call silent.
     PageActivity activity(Settle, Grace);
     activity.observe(DecoderTopic, meta(QStringLiteral("0x3"), false, true));
     activity.observe(DecoderTopic, decoder(QStringLiteral("0x3"), QStringLiteral("play")));
@@ -177,7 +169,7 @@ void tst_pageactivity::callsKeepPagesAwake()
 
 void tst_pageactivity::unknownDecodersCountAsSound()
 {
-    // Playing before its metadata was seen: sound until the engine says otherwise.
+    // Playing before metadata: assume sound until engine says otherwise.
     PageActivity activity(Settle, Grace);
     activity.observe(DecoderTopic, decoder(QStringLiteral("0x5"), QStringLiteral("play")));
     QVERIFY(activity.audible());
@@ -188,7 +180,6 @@ void tst_pageactivity::unknownDecodersCountAsSound()
 void tst_pageactivity::forgottenDecodersAreBounded()
 {
     PageActivity activity(Settle, Grace);
-    // A silent decoder that is playing is remembered through a clear-out ...
     activity.observe(DecoderTopic, meta(QStringLiteral("playing"), false, true));
     activity.observe(DecoderTopic, decoder(QStringLiteral("playing"), QStringLiteral("play")));
     activity.observe(DecoderTopic, meta(QStringLiteral("paused"), false, true));
@@ -196,7 +187,6 @@ void tst_pageactivity::forgottenDecodersAreBounded()
         activity.observe(DecoderTopic, meta(QStringLiteral("clip-%1").arg(i), false, true));
     }
     QVERIFY(!activity.audible());
-    // ... one that was not is forgotten, and playing again it counts as sound.
     activity.observe(DecoderTopic, decoder(QStringLiteral("paused"), QStringLiteral("play")));
     QVERIFY(activity.audible());
 }
@@ -213,8 +203,7 @@ void tst_pageactivity::otherMessagesIgnored()
     QCOMPARE(audible.count(), 0);
 }
 
-// Every change of a decoder's play state is told on, for PageMedia to ask the pages
-// what plays; what a decoder's stream holds, and a call, are not.
+// Every play-state change notified (PageMedia then asks pages); stream contents and calls not.
 void tst_pageactivity::playStateChangesAreTold()
 {
     PageActivity activity(Settle, Grace);

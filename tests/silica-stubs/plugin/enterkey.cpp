@@ -51,8 +51,7 @@ void EnterKeyAttached::setText(const QString &text)
 
 EnterKeyAttached *EnterKey::qmlAttachedProperties(QObject *object)
 {
-    // Named so tests can reach the attached object without type-name lookups, which
-    // would be ambiguous with QtQuick's own EnterKey attached property.
+    // Named so tests find it without type-name lookup (ambiguous with QtQuick EnterKey).
     auto *attached = new EnterKeyAttached(object);
     attached->setObjectName(QStringLiteral("EnterKeyAttached"));
     return attached;

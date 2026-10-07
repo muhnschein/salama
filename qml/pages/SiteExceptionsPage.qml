@@ -1,17 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The sites that are an exception to one kind of permission, whichever kind the page is
-// given: the allowed under a heading and the blocked under another, as Settings >
-// Notifications lists its own (docs/DECISIONS/0033-web-notifications.md,
-// 0039-site-permissions.md). Each has a menu to change it or remove it, when it follows
-// the default again; the pull-down menu adds a site by its address, as sailfish-browser's
-// own page of exceptions does (apps/browser/qml/pages/PermissionExceptionsPage.qml), and
-// removes them all, after a remorse.
-//
-// Tracking protection is a kind here too: its sites are the ones it is off for, which is
-// all a site on its list can be, so it has no blocked, no way to change a site and one
-// heading.
+// Tracking kind: off-list only -> one heading, no blocked, no change.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -20,7 +9,6 @@ import "../components"
 Page {
     id: exceptionsPage
 
-    // A SitePermissions kind.
     property int kind
     readonly property bool listOnly: kind === SitePermissions.TrackingProtection
     property SitePermissionNames siteNames: SitePermissionNames {}
@@ -73,8 +61,7 @@ Page {
             }
         }
 
-        // The model lists the allowed first, the blocked after them, and those asked each
-        // time last.
+        // Model order: allowed, blocked, ask-each-time.
         section.property: "decision"
         section.delegate: SectionHeader {
             objectName: "siteExceptionSection"
@@ -87,7 +74,7 @@ Page {
             width: ListView.view.width
             kind: exceptionsPage.kind
             listOnly: exceptionsPage.listOnly
-            // Held apart from the row, which a change in the menu may remove or move.
+            // Held outside row, which menu change may remove or move.
             origin: model.origin
             host: model.host
             decision: model.decision

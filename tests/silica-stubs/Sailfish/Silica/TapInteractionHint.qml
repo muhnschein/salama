@@ -1,6 +1,4 @@
-// Stub: Silica's blinks a finger's tap where it is placed, as often as loops says, and
-// runs from the start unless told not to. These tests draw nothing; the stub keeps what
-// it was told and whether it runs, as start(), restart() and stop() leave it.
+// Stub: Silica tap hint. Draws nothing; keeps settings and running state per start/restart/stop.
 import QtQuick 2.6
 
 Item {

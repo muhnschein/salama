@@ -9,7 +9,7 @@ namespace Salama {
 
 namespace {
 
-// QThreadPool::start() takes a function only from Qt 5.15; the device has 5.6.
+// QThreadPool::start(function) needs Qt 5.15; device has 5.6.
 class WriteJob : public QRunnable
 {
 public:
@@ -21,8 +21,7 @@ public:
     {
     }
 
-    // The writer waits for its pool before it goes, so it is still there to signal.
-    // Emitted from the worker, the signal reaches its receivers on their own thread.
+    // Writer waits for pool before dying, so still alive to signal.
     void run() override
     {
         const bool saved = m_image.save(m_path, "PNG");

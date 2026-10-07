@@ -1,6 +1,5 @@
 #!/bin/bash
-# Run clang-tidy over every C++ source we own, using the compile database of the
-# host build. Findings are errors (.clang-tidy: WarningsAsErrors '*').
+# clang-tidy over all our C++ via host build compile DB. Findings are errors.
 set -euo pipefail
 
 BUILD_DIR=${1:-build}

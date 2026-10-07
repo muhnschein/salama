@@ -1,6 +1,5 @@
-// Stub: Silica's is a band as wide as its parent, clear at one edge and darkening to
-// the dimmer colour at the other, where its text lies in the highlight colour: the
-// bottom edge, or the top one inverted.
+// Stub: parent-wide band, clear at one edge, dims toward other where highlight-colour text
+// sits: bottom, or top when inverted.
 import QtQuick 2.6
 
 Rectangle {

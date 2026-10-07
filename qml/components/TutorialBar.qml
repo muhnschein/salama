@@ -1,16 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The navigation bar as the tutorial draws it: the bar's colour, its controls where they
-// sit on the real one, the handle along its top edge, and under it all the real bar's own
-// gesture, BarGesture, so the drag the tutorial teaches is caught, measured and reached
-// for exactly as it is on the browsing page (docs/DECISIONS/0034-tutorial.md). The
-// address and the menu answer a tap by saying so, and the tutorial decides what that
-// shows; back and reload are pictures of controls, and what the reach above the bar hands
-// on to a page has no page to go to.
-//
-// While the address is edited, the bar is the field, as the real one is: from the edge of
-// the screen to the menu, with what was typed in it.
+// Real BarGesture under sketched bar, so taught drag behaves exactly as on browsing page.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -18,7 +9,6 @@ import harbour.salama 1.0
 Item {
     id: tutorialBar
 
-    // What BarGesture raises on the bar it is the gesture of.
     signal dragArmed()
     signal dragDisarmed()
     signal dragStarted()
@@ -27,22 +17,17 @@ Item {
     signal pageTouchStarted(point position)
     signal pageTouchMoved(point position)
     signal pageTouchEnded(point position)
-    // The address or the menu was tapped.
     signal tapped(string region)
 
-    // The address as a field, with this typed into it.
     property bool editing: false
     property string typed
     readonly property bool dragging: gestureArea.dragging
-    // The middle of the address and of the menu button, in the bar's own coordinates:
-    // where the tutorial's hint taps.
+    // Hint tap targets, bar coords.
     readonly property point addressCentre: Qt.point(width / 2, height / 2)
     readonly property point menuCentre: Qt.point(menuIcon.x + menuIcon.width / 2, height / 2)
 
     height: Theme.itemSizeLarge
 
-    // As the real bar's: the menu from its icon to the edge, back and reload their icons'
-    // room, and the address between.
     function regionAt(x) {
         if (x >= menuIcon.x) {
             return "menu"
@@ -86,9 +71,6 @@ Item {
         source: "image://theme/icon-m-back"
     }
 
-    // The front tab's host, as the bar shows it, and on a first start "Search or enter
-    // address", as the bar says then. Centred on the screen, as wide as the room on the
-    // side with two controls allows.
     AddressLabel {
         anchors.centerIn: parent
         visible: !tutorialBar.editing
@@ -98,8 +80,6 @@ Item {
                                           + Theme.paddingLarge + Theme.paddingMedium)
     }
 
-    // The field, drawn: what was typed, from the edge to the menu, over the line Silica
-    // draws under a field.
     Item {
         objectName: "tutorialField"
         x: Theme.paddingMedium

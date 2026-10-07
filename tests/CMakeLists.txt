@@ -1,11 +1,9 @@
-# Host test suite. Everything here runs without a device, an SDK, or network.
+# Host test suite: no device, SDK or network.
 find_package(Qt5 5.6 REQUIRED COMPONENTS Test Gui Quick Network)
 
 # --- Stub QML modules ---------------------------------------------------------------
-# The QML stubs are copied into the build tree so they sit next to the compiled plugin
-# that provides the attached property and enum holders pure QML cannot express. The
-# Sailfish and Nemo modules are stubbed because they are the device's; QtGraphicalEffects
-# is stubbed because it is not installed on the host, and the tests draw nothing.
+# Stub QML modules copied next to compiled plugin (attached props, enums pure QML can't do).
+# Sailfish/Nemo: device-only. QtGraphicalEffects: not on host; tests draw nothing.
 set(STUBS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/silica-stubs)
 set(STUBS_DIR ${CMAKE_BINARY_DIR}/silica-stubs)
 file(GLOB_RECURSE STUB_FILES RELATIVE ${STUBS_SOURCE_DIR}
@@ -67,10 +65,10 @@ foreach(test
 )
     salama_add_test(${test})
 endforeach()
-# The load tests serve OpenSearch descriptions from the loopback (tst_qmlload.cpp).
+# OpenSearch descriptions served from loopback.
 target_link_libraries(tst_qmlload PRIVATE Qt5::Network)
 add_dependencies(tst_qmlload silicastubsplugin)
-# The catalogs as the RPM installs them, compiled by translations/CMakeLists.txt.
+# Catalogs as RPM installs them (translations/CMakeLists.txt).
 target_compile_definitions(tst_translations PRIVATE
     SALAMA_TRANSLATIONS_DIR="${CMAKE_BINARY_DIR}/translations")
 add_dependencies(tst_translations translations)

@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Whether a page asked for the whole screen, cutout and all, with viewport-fit=cover in
-// its viewport meta tag: asked of the page as each load ends, for the reason its theme
-// colour is -- sailfish-browser reads it from its own web page item, which the WebView
-// Harbour allows does not have -- and forgotten as the next load starts
-// (docs/DECISIONS/0043-notch-guard-modes.md).
+// viewport-fit=cover via script: Harbour-allowed WebView lacks web page item exposing it.
 import QtQuick 2.6
 import harbour.salama 1.0
 

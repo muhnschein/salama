@@ -27,15 +27,11 @@ QString orUrl(const QString &title, const QString &url)
     return title.isEmpty() ? url : title;
 }
 
-// A page on its way to being a row: the row, and what it is ranked by.
 struct Page
 {
     OmnibarRow row;
-    // How well the words match: 0 when the host begins with the first word, 1 when a
-    // word of the title or the address does, 2 when they are only somewhere in it, and
-    // 3 when they are not in it at all and it is here for having been chosen after them.
+    // 0 host prefix, 1 word prefix, 2 anywhere, 3 none (learnt only).
     int match = 3;
-    // How strongly what is typed leads here from choices before (HistoryModel::inputRanks).
     double learnt = 0;
     int visits = 0;
     qint64 lastUsed = 0;
@@ -53,21 +49,17 @@ int matchOf(const SearchWords &words, const OmnibarRow &row)
     return words.prefixesAWordOf(row.title) || words.prefixesAWordOf(row.url) ? 1 : 2;
 }
 
-// What is typed, and what it is known to lead to (HistoryModel::inputRanks).
 struct Search
 {
     const SearchWords &words;
     QHash<QString, double> learnt;
 
-    // A candidate is listed when it holds every word, or when what is typed has led to
-    // it before.
     bool wants(const QString &title, const QString &url) const
     {
         return learnt.contains(url) || words.matches({title, url});
     }
 };
 
-// The pages gathered so far, and where each address is among them.
 struct Pages
 {
     QList<Page> list;
@@ -80,8 +72,7 @@ struct Pages
     }
 };
 
-// Every group's tabs but the one in front, most recently in front first, so of two tabs
-// on one page the nearer to hand is it.
+// Most recent first: of two tabs on one page, nearer wins.
 void addTabs(Pages &pages, const TabModel &model, const Search &search)
 {
     QList<const Tab *> tabs;
@@ -111,7 +102,6 @@ void addTabs(Pages &pages, const TabModel &model, const Search &search)
     }
 }
 
-// In the bookmarks' own order, but for those open in a tab listed.
 void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search)
 {
     for (const BookmarkModel::Bookmark &bookmark : model.bookmarks()) {
@@ -129,7 +119,6 @@ void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search
     }
 }
 
-// A site's icon, as any page of it has shown one, by host: the first given is kept.
 using SiteIcons = QHash<QString, QString>;
 
 void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
@@ -142,9 +131,7 @@ void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
     }
 }
 
-// The visits of the pages already gathered, and -- when the history is a source -- the
-// pages of it that are not, newest first. The icons the history kept go to the pages
-// that have none, and to their sites.
+// History icons fill pages and sites lacking one.
 void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search,
                 SiteIcons &icons)
 {
@@ -176,8 +163,7 @@ void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Sear
     }
 }
 
-// What a page shows and is ranked by. Without an icon of its own, its site's. A tab the
-// history does not know is open now, which is a visit now.
+// Tab unknown to history counts as visit now.
 void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &icons, qint64 now)
 {
     page.row.host = SearchSettings::displayAddress(page.row.url);
@@ -195,8 +181,6 @@ void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &i
     page.frecency = OmnibarModel::frecency(page.visits, bookmarked, page.lastUsed, now);
 }
 
-// The pages chosen before, the likeliest first, no more than OmnibarModel::MaxLearnt;
-// then the rest by how well they match and how often and how lately they were used.
 void rank(QList<Page> &pages)
 {
     std::stable_sort(pages.begin(), pages.end(), [](const Page &one, const Page &other) {
@@ -251,21 +235,16 @@ OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryMode
     m_refresh.setInterval(0);
     connect(&m_refresh, &QTimer::timeout, this, &OmnibarModel::rebuild);
 
-    // A tab opened, closed, moved, renamed, loaded or brought to the front -- the one in
-    // front is left out -- and a group renamed.
     connect(m_tabs, &TabModel::countChanged, this, &OmnibarModel::sourceChanged);
     connect(m_tabs, &TabModel::dataChanged, this, &OmnibarModel::sourceChanged);
     connect(m_tabs, &TabModel::rowsMoved, this, &OmnibarModel::sourceChanged);
     connect(m_tabs, &TabModel::groupsChanged, this, &OmnibarModel::sourceChanged);
     connect(m_tabs, &TabModel::activeTabChanged, this, &OmnibarModel::sourceChanged);
     connect(m_bookmarks, &BookmarkModel::revisionChanged, this, &OmnibarModel::sourceChanged);
-    // A download started, gone, or on its way: count alone would miss the oldest going
-    // as a new one comes.
+    // Not count: oldest dropped as new arrives keeps count same.
     connect(m_downloads, &DownloadModel::rowsInserted, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::dataChanged, this, &OmnibarModel::sourceChanged);
-    // The history model reads itself again on every visit, and changes a row in place
-    // for a title and takes one out for a removal.
     connect(m_history, &HistoryModel::modelReset, this, &OmnibarModel::sourceChanged);
     connect(m_history, &HistoryModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
     connect(m_history, &HistoryModel::dataChanged, this, &OmnibarModel::sourceChanged);
@@ -362,8 +341,7 @@ void OmnibarModel::setQuery(const QString &query)
     }
     m_query = trimmed;
     emit queryChanged();
-    // At once, not on the next turn: the pane reads the rows as soon as it has set
-    // the query, and what was waiting for the event loop is built with them.
+    // Immediate: pane reads rows right after setting query.
     m_refresh.stop();
     rebuild();
 }
@@ -400,15 +378,14 @@ qint64 OmnibarModel::frecency(int visitCount, bool bookmarked, qint64 lastUsed, 
 {
     const double lambda = std::log(2.0) / HalfLifeDays;
     const qint64 today = now / Day;
-    // A use stamped ahead of the clock -- a clock set back -- is one today.
+    // Future timestamp (clock set back) = today.
     const qint64 age = today - std::min(lastUsed, now) / Day;
     const double score =
         (bookmarked ? 100 : 50) * std::exp(-lambda * double(age)) * std::max(visitCount, 1);
     return today + qint64(std::floor(std::log(score) / lambda));
 }
 
-// Anything to show: something typed, or the bookmarks asked for with nothing typed.
-// While there is not, the sources change unheard, and the empty list stays empty.
+// Inactive: source changes ignored.
 bool OmnibarModel::active() const
 {
     return !m_query.isEmpty() || m_bookmarksWhenEmpty;
@@ -462,7 +439,6 @@ QList<OmnibarRow> OmnibarModel::collect() const
     return pageRows(words, MaxRows - downloads.count()) + downloads;
 }
 
-// Every bookmark, in the bookmarks' own order.
 QList<OmnibarRow> OmnibarModel::emptyRows() const
 {
     QList<OmnibarRow> rows;
@@ -485,10 +461,7 @@ QList<OmnibarRow> OmnibarModel::emptyRows() const
     return rows;
 }
 
-// The pages, one row an address, gathered from the open tabs, the bookmarks and the
-// history in that order -- the first to hold an address decides what its row does --
-// and ranked as the class says. A page's visits are counted whether or not the history
-// is a source: a tab visited often ranks as often visited.
+// First source holding url decides row action. Visits counted even if history isn't a source.
 QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) const
 {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -500,7 +473,6 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
     if (m_search->omnibarBookmarks()) {
         addBookmarks(pages, *m_bookmarks, search);
     }
-    // The icons of the sites open in tabs, then bookmarked, then in the history.
     SiteIcons icons;
     for (const Tab &tab : m_tabs->tabs()) {
         addSiteIcon(icons, tab.url, tab.favicon);
@@ -524,7 +496,6 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
     return rows;
 }
 
-// Newest first, as the downloads list has them. The host is where the file came from.
 QList<OmnibarRow> OmnibarModel::downloadRows(const SearchWords &words) const
 {
     QList<OmnibarRow> rows;

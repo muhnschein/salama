@@ -1,15 +1,10 @@
 #!/bin/bash
-# ci/apt-install.sh — install Ubuntu packages on a CI runner without letting a
-# third-party apt repository fail the job.
+# Install Ubuntu packages on CI runner; third-party apt repos can't fail job.
+# `apt-get update` fails on any broken repo; runner images ship unused ones.
+# Source lists naming no ubuntu.com host dropped first.
 #
-# `apt-get update` exits non-zero when any configured repository fails, and runner
-# images ship several this project never installs from. Source lists that name no
-# ubuntu.com host are dropped before updating; Ubuntu's own are kept wherever the
-# image puts them.
-#
-# Usage: ci/apt-install.sh <package>...
-#        ci/apt-install.sh --prune-only
-# APT_SOURCES_DIR overrides the directory that is pruned.
+# Usage: ci/apt-install.sh <package>... | --prune-only
+# APT_SOURCES_DIR overrides pruned dir.
 set -euo pipefail
 
 sources_dir=${APT_SOURCES_DIR:-/etc/apt/sources.list.d}

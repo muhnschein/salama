@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// What the navigation bar's address turns into while it is edited: Silica's own field,
-// at the size the host is drawn at so the text does not jump when the label becomes a
-// field, with its text inset by a padding rather than by a page's margin
-// (docs/DECISIONS/0009-navigation-bar-gesture.md). Where it sits, and what editing
-// means, are the bar's.
+// Nav bar address in edit; host's size so text doesn't jump.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 TextField {
     id: field
 
-    // The omnibar's pane is up above the bar (docs/DECISIONS/0027-omnibar.md). Silica
-    // takes a field's focus away at a press anywhere outside it, and a press on the
-    // pane -- a row, the list being scrolled -- is not the end of typing.
+    // Silica clears focus on press outside field; pane press isn't end of typing.
     property bool keepsFocus: false
 
     objectName: "addressField"
@@ -24,9 +18,7 @@ TextField {
     EnterKey.enabled: text.length > 0
     EnterKey.iconSource: "image://theme/icon-m-enter-accept"
 
-    // Silica insets the text inside a field by a page margin at each end, which is a
-    // page's margin, not a bar's. These three through Binding: a Silica without them
-    // should cost a line in the log rather than a bar that fails to load.
+    // Via Binding: Silica lacking prop logs, doesn't fail load.
     Binding {
         target: field
         property: "textLeftMargin"
@@ -39,9 +31,7 @@ TextField {
         value: Theme.paddingMedium
     }
 
-    // Both ways, rather than only while the pane is up: a Binding that lets go puts
-    // back a binding it had replaced, and on Qt 5.6 a plain value it leaves as it was.
-    // Otherwise, Silica's own default.
+    // Always bound: on Qt 5.6 a released Binding leaves plain values as-is.
     Binding {
         target: field
         property: "focusOutBehavior"

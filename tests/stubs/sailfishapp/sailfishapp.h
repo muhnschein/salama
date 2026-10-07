@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Host stand-in for libsailfishapp's public header so src/main.cpp compiles under
-// -Werror and clang-tidy without the device SDK. Never installed.
+// Host stand-in for libsailfishapp header: src/main.cpp builds under -Werror/clang-tidy
+// without SDK. Never installed.
 #pragma once
 
 #include <QString>

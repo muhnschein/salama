@@ -1,19 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// One thing the omnibar found -- an open tab, a bookmark, a page of the history, a
-// download -- as one row whatever its kind, so that the list reads as one: the site's
-// icon, the title, and under it where a tap leads, no more
-// (docs/DECISIONS/0027-omnibar.md). A page shows its site's icon wherever one is known
-// (Omnibar's favicon), and without one a tile with the site's initial, as Firefox for
-// Android draws a site it has no icon for; a file shows the downloads' glyph. The words
-// typed are in bold in the title and the host (Omnibar's markedTitle, markedHost), as
-// Firefox's address bar makes them stand out. The line under the title is quieter than
-// the title, but for an open tab's "Switch to tab", which is in the ambience's colour:
-// a tap on it brings the tab to the front rather than loading the page again.
-//
-// Titles and addresses are what pages and files chose to be called: the marked ones are
-// escaped by the model, and everything else here is plain text.
+// Marked strings escaped by model; everything else plain text.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -25,10 +13,8 @@ ListItem {
     readonly property bool switches: model.kind === "tab"
     readonly property bool showsFavicon: !isFile && model.favicon.length > 0
                                          && siteIcon.status !== Image.Error
-    // The site's initial, for the tile in place of an icon.
     readonly property string initial: (model.host.length > 0 ? model.host : model.title)
                                       .charAt(0).toUpperCase()
-    // What a download not yet there is doing, as the list of downloads says it.
     readonly property string downloadState: {
         if (model.kind !== "download") {
             return ""
@@ -41,10 +27,7 @@ ListItem {
         }
         return model.downloadStatus === DownloadModel.Canceled ? qsTr("Cancelled") : ""
     }
-    // The second line: where a tap leads. A tab in another group than the grid's says
-    // which, by the name the strip gives the group; a download, the site it came from
-    // and how it is going; any other page, its host. As StyledText but for a tab's, whose
-    // group has the name someone gave it.
+    // Plain text for tab rows: group name is user text.
     readonly property string detail: {
         if (switches) {
             if (model.groupId === TabModel.currentGroupId) {
@@ -67,8 +50,6 @@ ListItem {
     width: ListView.view.width
     contentHeight: Theme.itemSizeMedium
 
-    // A slot as wide as a glyph, so every title starts at the same place whichever
-    // picture its row has.
     Item {
         id: pictureSlot
 
@@ -145,7 +126,6 @@ ListItem {
             textFormat: row.switches ? Text.PlainText : Text.StyledText
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeExtraSmall
-            // Quieter than the secondary colour alone, but for "Switch to tab".
             opacity: row.switches ? 1.0 : Theme.opacityOverlay
             color: row.switches ? Theme.highlightColor
                                 : row.highlighted ? Theme.secondaryHighlightColor
@@ -153,8 +133,6 @@ ListItem {
         }
     }
 
-    // How far along a download still coming is, at a glance, as its row in the list of
-    // downloads says it.
     Rectangle {
         objectName: "omnibarResultProgress"
         anchors {

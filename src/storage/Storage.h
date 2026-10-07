@@ -8,9 +8,7 @@
 
 namespace Salama {
 
-// Owns the single SQLite database (tabs, history, bookmarks, settings table) and
-// applies the schema. One Storage per process; models borrow its connection.
-// Schema is documented in docs/ARCHITECTURE.md; bump SchemaVersion on change.
+// One per process; models borrow connection. Bump SchemaVersion on schema change.
 class Storage
 {
 public:
@@ -27,16 +25,13 @@ public:
     QString databasePath() const;
     int userVersion() const;
 
-    // Sailjail grants write access only below these locations; see docs/HARBOUR.md.
+    // Sailjail allows writes only below these; see docs/HARBOUR.md.
     static QString defaultDataDirectory();
     static QString defaultConfigFilePath();
-    // Tab previews live here: losing them costs a placeholder, not data.
     static QString defaultCacheDirectory();
-    // Where the engine saves downloads: a folder of this browser's own in ~/Downloads,
-    // which the Downloads permission opens (docs/DECISIONS/0025-downloads-folder.md).
     static QString defaultDownloadDirectory();
 
-    // Bind value for a TEXT NOT NULL column: a null QString would bind SQL NULL.
+    // For TEXT NOT NULL: null QString binds SQL NULL.
     static QVariant text(const QString &value);
 
 private:

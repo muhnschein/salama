@@ -22,7 +22,7 @@ int id(const QVariant &value)
         return 0;
     }
     const double number = value.toDouble();
-    // A NaN fails the last of these: it equals nothing, itself included.
+    // NaN fails last check: equals nothing, itself included.
     if (number < 1 || number > std::numeric_limits<int>::max() || std::floor(number) != number) {
         return 0;
     }

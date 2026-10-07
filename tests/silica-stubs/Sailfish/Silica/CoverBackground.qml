@@ -1,6 +1,6 @@
 import QtQuick 2.6
 
 Item {
-    // A Cover value. The home screen sets it on the device; tests set it themselves.
+    // Cover value. Home screen sets on device; tests set it here.
     property int status: 0
 }

@@ -85,8 +85,7 @@ void tst_settings::defaults()
     Sections settings(dir.path() + QStringLiteral("/salama.conf"));
     QCOMPARE(settings.search()->engine(), SearchSettings::defaultEngine());
     QCOMPARE(settings.search()->engineIndex(), 0);
-    // Automatic unless it is changed, as sailfish-browser's: a camera cutout over the
-    // first line of a page is not a design decision (docs/DECISIONS/0013-screen-cutout.md).
+    // Automatic by default, as sailfish-browser: cutout over page's first line isn't design.
     QCOMPARE(settings.general()->notchGuard(), int(Settings::NotchGuardAutomatic));
     QVERIFY(settings.general()->cutoutGuard());
     QVERIFY(!settings.general()->fixedToolbar());
@@ -101,7 +100,6 @@ void tst_settings::defaults()
              settings.searchEngines()->engineKeys().count());
     QCOMPARE(settings.searchEngines()->engineNames().first(), QStringLiteral("Qwant"));
     QVERIFY(settings.searchEngines()->engineNames().contains(QStringLiteral("Ecosia")));
-    // Removed by choice, and the list is the whole set on offer.
     QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("google")));
     QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("bing")));
     QVERIFY(!settings.searchEngines()->engineKeys().contains(QStringLiteral("duckduckgo")));
@@ -191,8 +189,7 @@ void tst_settings::urlForInput_data()
                                          "https://www.qwant.com/?q=what%20is%20example.org");
     QTest::newRow("question") << QStringLiteral("how? really")
                               << QStringLiteral("https://www.qwant.com/?q=how%3F%20really");
-    // Shaped like a host with a port, but no port can be that: not an address QUrl
-    // will take, so words to search for rather than nothing at all.
+    // Host:port shape with impossible port: QUrl rejects, so search words, not empty.
     QTest::newRow("port out of range")
         << QStringLiteral("example.org:99999")
         << QStringLiteral("https://www.qwant.com/?q=example.org%3A99999");
@@ -218,18 +215,15 @@ void tst_settings::displayAddress_data()
         << QStringLiteral("https://example.org/a/b?c=d#e") << QStringLiteral("example.org");
     QTest::newRow("subdomain kept") << QStringLiteral("https://en.wikipedia.org/wiki/Sailfish")
                                     << QStringLiteral("en.wikipedia.org");
-    // "www" only counts as the prefix of the host, never in the middle of a name.
     QTest::newRow("wwwsomething") << QStringLiteral("https://wwwhat.example/")
                                   << QStringLiteral("wwwhat.example");
     QTest::newRow("http") << QStringLiteral("http://example.org/") << QStringLiteral("example.org");
-    // The port is left off: 80 and 443 say nothing, and the rest are noise here.
     QTest::newRow("port") << QStringLiteral("http://localhost:8080/app")
                           << QStringLiteral("localhost");
     QTest::newRow("default port") << QStringLiteral("https://example.org:443/")
                                   << QStringLiteral("example.org");
     QTest::newRow("ipv4") << QStringLiteral("http://192.168.1.1/admin")
                           << QStringLiteral("192.168.1.1");
-    // Nothing to shorten: shown as it is rather than emptied.
     QTest::newRow("about") << QStringLiteral("about:blank") << QStringLiteral("about:blank");
     QTest::newRow("file") << QStringLiteral("file:///home/user/page.html")
                           << QStringLiteral("file:///home/user/page.html");
@@ -250,7 +244,6 @@ void tst_settings::trackingProtection()
     Sections settings(path);
     QSignalSpy spy(settings.privacy(), &PrivacySettings::trackingProtectionChanged);
 
-    // Standard by default, as in Firefox (docs/DECISIONS/0023-tracking-protection.md).
     QCOMPARE(settings.privacy()->trackingProtection(),
              int(PrivacySettings::TrackingProtectionStandard));
 
@@ -261,7 +254,6 @@ void tst_settings::trackingProtection()
     settings.privacy()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(spy.count(), 1);
 
-    // Refused rather than stored, as the cover's quick action is.
     settings.privacy()->setTrackingProtection(3);
     settings.privacy()->setTrackingProtection(-1);
     QCOMPARE(settings.privacy()->trackingProtection(),
@@ -276,8 +268,7 @@ void tst_settings::trackingProtection()
                  int(PrivacySettings::TrackingProtectionOff));
     }
 
-    // Written by hand, out of range: the default, not a level the engine has no
-    // preferences for.
+    // Hand-written out-of-range: default, not level engine has no prefs for.
     {
         QSettings raw(path, QSettings::IniFormat);
         raw.setValue(QStringLiteral("trackingProtection"), 9);
@@ -289,9 +280,6 @@ void tst_settings::trackingProtection()
     }
 }
 
-// How the reader view sets an article: the ambience's colours, sans-serif and Firefox's
-// middle text size until they are changed, and each one refused out of range and read
-// back as the default when the file says something out of range.
 void tst_settings::readerStyle()
 {
     QTemporaryDir dir;
@@ -350,9 +338,8 @@ void tst_settings::readerStyle()
     }
 }
 
-// The colours as an earlier release kept them, when 0 was the light or dark theme as the
-// ambience is: that reader has the Ambience look, which follows the ambience too, and one
-// who chose a theme keeps it. The earlier key goes, so Automatic chosen since stays.
+// Old format: 0 = theme per ambience -> now Ambience look (also follows ambience); chosen
+// theme kept. Old key removed so later Automatic sticks.
 void tst_settings::readerColorsOfAnEarlierRelease()
 {
     QTemporaryDir dir;
@@ -413,8 +400,7 @@ void tst_settings::isAddress_data()
     QTest::newRow("blank") << QStringLiteral("   ") << false;
 }
 
-// An address exactly when urlForInput() does not make a search of it: the omnibar's
-// "Go to" and Enter never disagree (docs/DECISIONS/0027-omnibar.md).
+// Address iff urlForInput() doesn't search it: omnibar "Go to" and Enter agree.
 void tst_settings::isAddress()
 {
     QFETCH(QString, input);
@@ -428,8 +414,6 @@ void tst_settings::isAddress()
     }
 }
 
-// Every source of the address bar's suggestions is on until it is switched off, and
-// each is kept under its own name.
 void tst_settings::omnibarSources()
 {
     QTemporaryDir dir;
@@ -459,7 +443,6 @@ void tst_settings::omnibarSources()
         QCOMPARE(bookmarks.count(), 2);
         settings.search()->setOmnibarDownloads(false);
         QCOMPARE(downloads.count(), 1);
-        // Each signal is its own flag's.
         QCOMPARE(tabs.count(), 1);
         QCOMPARE(history.count(), 1);
     }
@@ -477,8 +460,6 @@ void tst_settings::omnibarSources()
     QCOMPARE(raw.value(QStringLiteral("omnibarDownloads")).toBool(), false);
 }
 
-// The history is kept unless switched off, and cleared on closing only once switched on
-// (docs/DECISIONS/0030-history-settings.md).
 void tst_settings::historySwitches()
 {
     QTemporaryDir dir;
@@ -509,8 +490,6 @@ void tst_settings::historySwitches()
     QCOMPARE(raw.value(QStringLiteral("clearHistoryOnClose")).toBool(), true);
 }
 
-// Sites may ask to send notifications until new requests are blocked, as in Firefox
-// (docs/DECISIONS/0033-web-notifications.md).
 void tst_settings::blockNotificationRequests()
 {
     QTemporaryDir dir;
@@ -531,7 +510,7 @@ void tst_settings::blockNotificationRequests()
     QCOMPARE(raw.value(QStringLiteral("blockNotificationRequests")).toBool(), true);
 }
 
-// 1.75 of the screen's pixel ratio, in steps of a half.
+// 1.75 x screen pixel ratio, steps of 0.5.
 void tst_settings::pageZoom()
 {
     QCOMPARE(Settings::pageZoom(1.0), 2.0);
@@ -540,9 +519,6 @@ void tst_settings::pageZoom()
     QCOMPARE(Settings::pageZoom(2.25), 4.0);
 }
 
-// The cover's one quick action: Search unless changed, refused out of range and read
-// back as Search when the file says something out of range
-// (docs/DECISIONS/0029-quick-action.md).
 void tst_settings::quickAction()
 {
     QTemporaryDir dir;
@@ -551,7 +527,7 @@ void tst_settings::quickAction()
     QSignalSpy spy(settings.cover(), &CoverSettings::quickActionChanged);
 
     QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionSearch));
-    // Stored as numbers, so the numbers may not move.
+    // Stored as numbers: values must not change.
     QCOMPARE(int(CoverSettings::QuickActionNone), 0);
     QCOMPARE(int(CoverSettings::QuickActionSearch), 1);
     QCOMPARE(int(CoverSettings::QuickActionBookmarks), 2);
@@ -584,7 +560,6 @@ void tst_settings::quickAction()
     }
 }
 
-// The bookmark is written whole, id, address and title in one go, with one signal.
 void tst_settings::quickActionBookmark()
 {
     QTemporaryDir dir;
@@ -605,21 +580,17 @@ void tst_settings::quickActionBookmark()
         settings.cover()->setQuickActionBookmark(4, QStringLiteral("https://a.example/"),
                                                  QStringLiteral("A"));
         QCOMPARE(spy.count(), 1);
-        // A negative id is no bookmark's, and nothing is written.
         settings.cover()->setQuickActionBookmark(-2, QStringLiteral("https://b.example/"),
                                                  QStringLiteral("B"));
         QCOMPARE(spy.count(), 1);
         QCOMPARE(settings.cover()->quickActionBookmark(), 4);
 
-        // Found again under a new id: the same address, and one signal.
         settings.cover()->setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
                                                  QStringLiteral("A"));
         QCOMPARE(spy.count(), 2);
-        // Only the title changed is a change.
         settings.cover()->setQuickActionBookmark(9, QStringLiteral("https://a.example/"),
                                                  QStringLiteral("Alpha"));
         QCOMPARE(spy.count(), 3);
-        // The action is left as it was.
         QCOMPARE(settings.cover()->quickAction(), int(CoverSettings::QuickActionSearch));
     }
     {
@@ -628,7 +599,6 @@ void tst_settings::quickActionBookmark()
         QCOMPARE(again.cover()->quickActionBookmarkUrl(), QStringLiteral("https://a.example/"));
         QCOMPARE(again.cover()->quickActionBookmarkTitle(), QStringLiteral("Alpha"));
 
-        // No bookmark is no address and no title either.
         QSignalSpy spy(again.cover(), &CoverSettings::quickActionBookmarkChanged);
         again.cover()->setQuickActionBookmark(0, QStringLiteral("https://a.example/"),
                                               QStringLiteral("Alpha"));
@@ -654,7 +624,6 @@ void tst_settings::quickActionIcon()
     Sections settings(path);
     QSignalSpy spy(settings.cover(), &CoverSettings::quickActionIconChanged);
 
-    // The star last: it is the bookmarks overview's own glyph.
     QCOMPARE(settings.cover()->quickActionIcons(),
              (QStringList{QStringLiteral("globe"), QStringLiteral("heart"), QStringLiteral("home"),
                           QStringLiteral("work"), QStringLiteral("news"), QStringLiteral("music"),
@@ -696,7 +665,7 @@ void tst_settings::coverIconPath_data()
                           << QStringLiteral("art/cover/globe-48-white.png");
     QTest::newRow("up") << QStringLiteral("globe") << qreal(52.1) << true
                         << QStringLiteral("art/cover/globe-56-white.png");
-    // Halfway rounds up, as Math.round() does.
+    // Half rounds up, like Math.round().
     QTest::newRow("halfway") << QStringLiteral("globe") << qreal(36) << false
                              << QStringLiteral("art/cover/globe-40-black.png");
     QTest::newRow("small") << QStringLiteral("history") << qreal(12) << true
@@ -718,8 +687,6 @@ void tst_settings::coverIconPath()
     QCOMPARE(CoverSettings::iconPath(name, size, onDark), expected);
 }
 
-// The mute the cover already draws is found where coverIconPath() says, at every size
-// and in both inks: the path is the one icons/render.sh writes.
 void tst_settings::coverIconPathNamesTheSpeakers()
 {
     const QDir source(QStringLiteral(SALAMA_SOURCE_DIR));
@@ -733,11 +700,9 @@ void tst_settings::coverIconPathNamesTheSpeakers()
     }
 }
 
-// Every glyph the quick action can wear -- each kind's own, and each a bookmark's action
-// can be given -- is where coverIconPath() says, at every size and in both inks, and
-// the black is not the white: icons/render.sh draws the black set by rewriting the one
-// colour the white is written in, and a glyph written in another spelling of white would
-// come out white twice (docs/DECISIONS/0029-quick-action.md).
+// Every quick action glyph (per kind + bookmark-assignable) at coverIconPath(), every size,
+// both inks, black != white: icons/render.sh derives black by rewriting white's one colour
+// spelling; other white spelling would yield white twice.
 void tst_settings::coverIconPathNamesEveryGlyph()
 {
     QTemporaryDir dir;
@@ -766,8 +731,6 @@ void tst_settings::coverIconPathNamesEveryGlyph()
     }
 }
 
-// The start page is Firefox's home: every section on, and not blank, until changed; a
-// section keeps its switch while the page is blank (docs/DECISIONS/0032-start-page.md).
 void tst_settings::startPage()
 {
     QTemporaryDir dir;
@@ -800,8 +763,6 @@ void tst_settings::startPage()
     QVERIFY(reloaded.startPage()->recent());
 }
 
-// The home page an earlier release kept is taken out of the file: the start page took
-// its place, and a key nothing reads is only a question for whoever opens the file.
 void tst_settings::retiresTheHomePage()
 {
     QTemporaryDir dir;
@@ -817,12 +778,9 @@ void tst_settings::retiresTheHomePage()
     }
     QSettings file(path, QSettings::IniFormat);
     QVERIFY(!file.contains(QStringLiteral("homePage")));
-    // The switch is read into the notch guard and goes with it; the rest stays.
     QVERIFY(file.contains(QStringLiteral("notchGuard")));
 }
 
-// The tutorial comes up by itself until it has been shown once, and stays shown
-// (docs/DECISIONS/0034-tutorial.md).
 void tst_settings::tutorialShown()
 {
     QTemporaryDir dir;
@@ -841,9 +799,6 @@ void tst_settings::tutorialShown()
     QVERIFY(reloaded.general()->tutorialShown());
 }
 
-// Pages are drawn as the ambience is until that is changed, and a choice out of range
-// -- the file is one a user can edit -- reads back as that
-// (docs/DECISIONS/0035-website-colours.md).
 void tst_settings::websiteColors()
 {
     QTemporaryDir dir;
@@ -884,8 +839,6 @@ void tst_settings::isSearchUrl_data()
         const QString results = settings.search()->searchUrl(QStringLiteral("sailfish os"));
         QTest::newRow(qPrintable(settings.searchEngines()->engineKeys().at(i))) << results << true;
     }
-    // As the engines themselves hand the results on: with parameters of their own ahead
-    // of the words, and with or without "www.".
     QTest::newRow("qwant, redirected")
         << QStringLiteral("https://qwant.com/?t=web&q=sailfish") << true;
     QTest::newRow("ecosia, redirected")
@@ -908,9 +861,8 @@ void tst_settings::isSearchUrl()
     QCOMPARE(settings.searchEngines()->isSearchUrl(url), search);
 }
 
-// sailfish-browser's three notch guard modes, stored as chosen; one out of range is
-// refused, and whether anything keeps out of the cutout at all follows the mode
-// (docs/DECISIONS/0013-screen-cutout.md).
+// sailfish-browser's three notch guard modes stored as chosen; out-of-range refused;
+// cutout avoidance follows mode.
 void tst_settings::notchGuard()
 {
     QTemporaryDir dir;
@@ -942,13 +894,12 @@ void tst_settings::notchGuardOfAnEarlierRelease_data()
     QTest::addColumn<QVariant>("notchGuard");
     QTest::addColumn<int>("expected");
 
-    // The switch an earlier release kept: on kept every page below the cutout, off none.
+    // Old switch: on = every page below cutout, off = none.
     QTest::newRow("switched on") << QVariant(true) << QVariant() << int(Settings::NotchGuardForced);
     QTest::newRow("switched off") << QVariant(false) << QVariant()
                                   << int(Settings::NotchGuardDisabled);
     QTest::newRow("never switched")
         << QVariant() << QVariant() << int(Settings::NotchGuardAutomatic);
-    // A mode already chosen is not overwritten by a switch left behind.
     QTest::newRow("both") << QVariant(false) << QVariant(int(Settings::NotchGuardAutomatic))
                           << int(Settings::NotchGuardAutomatic);
 }
@@ -980,7 +931,6 @@ void tst_settings::notchGuardOfAnEarlierRelease()
     QCOMPARE(reloaded.general()->notchGuard(), expected);
 }
 
-// Off unless switched on, and kept (docs/DECISIONS/0009-navigation-bar-gesture.md).
 void tst_settings::fixedToolbar()
 {
     QTemporaryDir dir;
@@ -996,8 +946,6 @@ void tst_settings::fixedToolbar()
     QVERIFY(reloaded.general()->fixedToolbar());
 }
 
-// On unless switched off, as Safari's link preview is, and kept
-// (docs/DECISIONS/0046-link-menu.md).
 void tst_settings::linkPreview()
 {
     QTemporaryDir dir;
@@ -1020,7 +968,6 @@ void tst_settings::linkPreview()
     QVERIFY(again.general()->linkPreview());
 }
 
-// Global Privacy Control off and JavaScript on unless switched, and kept.
 void tst_settings::contentSwitches()
 {
     QTemporaryDir dir;
@@ -1041,8 +988,7 @@ void tst_settings::contentSwitches()
     QVERIFY(!reloaded.privacy()->javascript());
 }
 
-// A file from a release with Do not track starts Global Privacy Control as Do not track
-// was left, and loses the old key; one that already has Global Privacy Control keeps it.
+// Old Do Not Track file: GPC starts as DNT was, old key removed; existing GPC kept.
 void tst_settings::globalPrivacyControlTakesDoNotTracksPlace_data()
 {
     QTest::addColumn<QVariant>("doNotTrack");
@@ -1081,7 +1027,6 @@ void tst_settings::globalPrivacyControlTakesDoNotTracksPlace()
     QCOMPARE(reloaded.privacy()->globalPrivacyControl(), expected);
 }
 
-// HTTPS-Only Mode is off unless switched on, as in Firefox, and kept.
 void tst_settings::httpsOnly()
 {
     QTemporaryDir dir;
@@ -1097,8 +1042,6 @@ void tst_settings::httpsOnly()
     QVERIFY(reloaded.privacy()->httpsOnly());
 }
 
-// Off until changed; each level kept, anything else refused, and a hand-edited level
-// out of range read as Off.
 void tst_settings::dohProtection()
 {
     QTemporaryDir dir;
@@ -1130,8 +1073,6 @@ void tst_settings::dohProtection()
     QCOMPARE(edited.doh()->protection(), int(DohSettings::ProtectionOff));
 }
 
-// Firefox for Android's providers, Cloudflare first and the default; another address
-// is the reader's own, and one that is not a provider's is refused.
 void tst_settings::dohProvider()
 {
     QTemporaryDir dir;
@@ -1236,8 +1177,6 @@ void tst_settings::dohDomainOf()
     QCOMPARE(DohSettings::domainOf(text), domain);
 }
 
-// Exceptions are domains, in the order added, each once; removed one by one or all at
-// once, and kept.
 void tst_settings::dohExceptions()
 {
     QTemporaryDir dir;

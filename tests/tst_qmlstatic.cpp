@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Static checks over the QML sources that host Qt would accept silently:
-//  * Sailfish.WebView is imported only where SCOPE.md §5 allows.
-//  * Every `model.<role>` a delegate binds exists on that delegate's model.
-//  * Every `<Singleton>.<member>` reference resolves to a property, method or signal.
+// Static checks host Qt would pass silently:
+//  * Sailfish.WebView imported only where SCOPE.md §5 allows.
+//  * Every `model.<role>` in delegate exists on its model.
+//  * Every `<Singleton>.<member>` resolves to property, method or signal.
 #include "Core.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
@@ -81,9 +81,7 @@ QSet<QString> metaMembers(const QMetaObject *meta)
     for (int i = 0; i < meta->methodCount(); ++i) {
         members.insert(QString::fromLatin1(meta->method(i).name()));
     }
-    // Enumerators too: QML reads `CoverSettings.QuickActionSearch` off the singleton the same
-    // way it reads a property, and a checker that knew only properties and methods
-    // called every one of them a typo.
+    // Enumerators too: QML reads `CoverSettings.QuickActionSearch` like property.
     for (int i = 0; i < meta->enumeratorCount(); ++i) {
         const QMetaEnum metaEnum = meta->enumerator(i);
         members.insert(QString::fromLatin1(metaEnum.name()));
@@ -130,10 +128,8 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
                                      QRegularExpression::MultilineOption);
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
-    // The browsing page, which drives the engine; the history settings, which tell it
-    // to clear its data; and the two parts of the browsing page that keep something in
-    // it, the notifications' the sites' permissions and the preferences' what the
-    // settings ask of it (docs/ARCHITECTURE.md).
+    // Engine users: BrowserPage drives it; history settings clear its data; notifications
+    // (site permissions) and preferences (settings) keep state in it.
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
                                     QStringLiteral("pages/HistorySettingsPage.qml"),
                                     QStringLiteral("components/NotificationCenter.qml"),
@@ -174,9 +170,8 @@ void tst_qmlstatic::delegateRolesExist()
     NotificationPermissions notificationSites;
     SitePermissions sitePermissions;
 
-    // Which model backs the `model.` references in each file. The grid's rows come
-    // from GroupTabs, whose roles are the tab model's own; the grid's view also lists
-    // what its search finds.
+    // Model behind `model.` refs per file. Grid rows from GroupTabs (tab model roles); grid
+    // view also lists search results.
     const QHash<QString, QSet<QString>> expected{
         {QStringLiteral("pages/BrowserPage.qml"), roleSet(tabs)},
         {QStringLiteral("components/TabViewLoader.qml"), roleSet(tabs)},

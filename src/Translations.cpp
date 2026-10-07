@@ -10,11 +10,8 @@ namespace Salama {
 
 bool loadTranslations(QTranslator &translator, const QLocale &locale, const QString &directory)
 {
-    // "-" sits between the name and the locale in the file name. load() tries the locale's
-    // languages from the most specific down, so harbour-salama-pt_BR.qm wins over
-    // harbour-salama-pt.qm, and ends at harbour-salama.qm when no language matched. That
-    // last only with the suffix given: left to its default, load() looks for the fallback
-    // as "harbour-salama", without one, and finds nothing.
+    // load() tries most specific first (pt_BR before pt), falls back to harbour-salama.qm.
+    // Suffix must be explicit: default suffix makes fallback lookup miss.
     return translator.load(locale, QStringLiteral("harbour-salama"), QStringLiteral("-"), directory,
                            QStringLiteral(".qm"));
 }

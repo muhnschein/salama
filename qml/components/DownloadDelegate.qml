@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One download: at its start a ring that fills as it comes, the way the menu's
-// Downloads and the cover show the downloads together, with what a tap on it does in
-// its middle -- pause one coming, resume one paused, try one that failed again -- or,
-// once the file is there, the icon of its kind. Beside it the file's name, and under
-// that how far along it is, how it stopped, or the size and the site it came from
-// (docs/DECISIONS/0038-download-status.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -19,7 +12,6 @@ ListItem {
     readonly property bool failed: model.status === DownloadModel.Failed
     readonly property bool openable: done && model.fileExists
 
-    // The ring's tap: pause or resume.
     signal actionRequested()
     signal removeRequested()
     signal deleteRequested()
@@ -81,8 +73,6 @@ ListItem {
         width: Theme.iconSizeMedium + Theme.paddingSmall
         height: width
 
-        // Silica's ring, as the menu draws it: lit while coming, dimmed while paused,
-        // and in the error colour once failed, holding as far as it had got.
         ProgressCircle {
             objectName: "downloadProgress"
             anchors.centerIn: parent

@@ -1,17 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// Settings > Site permissions: what sites may do unless the reader decided otherwise for
-// a site, a kind to a row -- notifications, pop-ups, cookies, location, camera and
-// microphone -- with how it is set and how many sites are an exception to it. A tap
-// offers the choices of the default and the way to the exceptions, which are a page of
-// their own; the notifications' are the page they have had since 0033, and its row is a
-// way on. Cookies are tracking protection's while it is on, so their row is there while
-// it is off, and for as long as a site has a cookie exception of its own. Under the rows,
-// the sites tracking protection was turned off for, from their details
-// (docs/DECISIONS/0039-site-permissions.md, 0040-site-details.md).
-//
-// Every choice is made where it is and written as it is made.
+// Cookies row only while tracking off or a cookie exception exists.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -27,7 +16,7 @@ Page {
     property SitePermissionNames siteNames: SitePermissionNames {}
     readonly property bool trackingOff:
         PrivacySettings.trackingProtection === PrivacySettings.TrackingProtectionOff
-    // How many sites are an exception to a kind, asked again as the list changes.
+    // Re-queried on list change.
     readonly property int popupExceptions: exceptions(SitePermissions.Popups)
     readonly property int cookieExceptions: exceptions(SitePermissions.Cookies)
     readonly property int locationExceptions: exceptions(SitePermissions.Location)
@@ -45,7 +34,6 @@ Page {
         pageStack.push(Qt.resolvedUrl("SiteExceptionsPage.qml"), { "kind": kind })
     }
 
-    // What the engine keeps is read as the page comes, as the notifications' page has it.
     Component.onCompleted: SitePermissions.refresh()
 
     SilicaFlickable {
@@ -73,7 +61,6 @@ Page {
                 text: qsTr("What sites may do unless you decided otherwise for a site. Tap one to change it or see the exceptions.")
             }
 
-            // Its default is the one switch on its page, and its sites are listed there.
             SitePermissionRow {
                 objectName: "notificationsPermissionRow"
                 iconSource: sitePermissionsPage.siteNames.kindIcon(SitePermissions.Notifications)
@@ -100,9 +87,7 @@ Page {
                 onOpened: sitePermissionsPage.showExceptions(SitePermissions.Popups)
             }
 
-            // While tracking protection is on its level decides what cookies are accepted,
-            // and a choice made here would change nothing: the row is for as long as one
-            // is in effect, or a site has a decision of its own.
+            // Tracking on -> its level decides cookies, choice here moot.
             SitePermissionRow {
                 objectName: "cookiesPermissionRow"
                 visible: sitePermissionsPage.trackingOff || sitePermissionsPage.cookieExceptions > 0
@@ -161,8 +146,7 @@ Page {
                 onOpened: sitePermissionsPage.showExceptions(SitePermissions.Microphone)
             }
 
-            // Tracking protection has its level on a page of its own (0023); what is here
-            // is the sites it was turned off for, which only a site's details do.
+            // Only sites turned off via site details.
             SectionHeader {
                 objectName: "trackingExceptionsSection"
                 visible: sitePermissionsPage.trackingExceptions > 0

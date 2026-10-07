@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The start page in the browsing page, where a view would be: made while the tab in
-// front has no address, and only then -- it is read again whenever the history
-// changes, which is on every page (docs/DECISIONS/0032-start-page.md). What is opened
-// from it goes to the browsing page to open in the tab.
+// Loaded only while front tab has no url: start page re-reads history on every page change.
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -22,8 +19,6 @@ Loader {
         }
     }
 
-    // The start page's picture for the grid and the cover, taken as a page's is: at half
-    // size, into the path the model hands out.
     function capture() {
         if (!item) {
             return

@@ -10,8 +10,7 @@ namespace Salama {
 
 namespace {
 
-// The permission's name in Gecko, Firefox's and the engine's own
-// (dom/notification/Notification.cpp, embedlite-components ContentPermissionPrompt.js).
+// Gecko name (dom/notification/Notification.cpp, ContentPermissionPrompt.js).
 const QString PermissionType = QStringLiteral("desktop-notification");
 const QString DefaultPreference = QStringLiteral("permissions.default.desktop-notification");
 
@@ -25,7 +24,7 @@ bool byHost(const QString &one, const QString &other)
     return oneHost == otherHost ? one < other : oneHost < otherHost;
 }
 
-// The list's order: the sites allowed, then the sites blocked, each by host.
+// Allowed, then blocked, each by host.
 bool before(const QString &one, bool oneAllowed, const QString &other, bool otherAllowed)
 {
     return oneAllowed == otherAllowed ? byHost(one, other) : oneAllowed;
@@ -102,7 +101,7 @@ void NotificationPermissions::observe(const QString &topic, const QVariant &data
     }
     QVector<Site> sites;
     for (const EnginePermissions::Entry &permission : EnginePermissions::parse(data)) {
-        // A site to be asked each time is neither allowed nor blocked: it is not listed.
+        // Ask-each-time sites not listed.
         if (permission.type != PermissionType ||
             (permission.capability != AllowAction && permission.capability != DenyAction)) {
             continue;
@@ -237,8 +236,7 @@ int NotificationPermissions::positionOf(const QString &origin, bool allowed) con
                             m_sites.cbegin());
 }
 
-// A site allowed or blocked from here goes under the other heading: its row moves
-// rather than being taken out and put back, so the list keeps the row a finger is on.
+// Move row, not remove+insert: keeps row under finger.
 void NotificationPermissions::put(const QString &origin, bool allowed)
 {
     const int row = rowOf(origin);
@@ -246,8 +244,6 @@ void NotificationPermissions::put(const QString &origin, bool allowed)
         if (m_sites.at(row).allowed == allowed) {
             return;
         }
-        // Where it goes counted among the others, and where that is before the move
-        // as beginMoveRows() counts it.
         int to = positionOf(origin, allowed);
         if (to > row) {
             --to;

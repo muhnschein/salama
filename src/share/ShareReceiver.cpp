@@ -12,14 +12,11 @@ namespace Salama {
 
 namespace {
 
-// harbour-salama.desktop's [X-Sailjail] OrganizationName.ApplicationName, which is the
-// name its ExecDBus starts the application under, and its X-Share-Methods' one method.
+// Must match harbour-salama.desktop [X-Sailjail] Org.App (ExecDBus name) and X-Share-Methods.
 const char *const ServiceName = "io.github.muhnschein.salama";
 const char *const ObjectPath = "/share/link";
 
-// The interface the share sheet calls. A slot exported on a plain object is not
-// advertised under an interface name, and the caller's call then fails as
-// UnknownInterface: an adaptor is what names it.
+// Adaptor needed: plain-object slot has no interface name -> caller gets UnknownInterface.
 class ShareAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
@@ -57,8 +54,7 @@ bool ShareReceiver::registerService()
     }
     auto *target = new QObject(this);
     new ShareAdaptor(target, this);
-    // The object first: claiming the name is what lets a call that started the
-    // application through, and it has to find something answering.
+    // Object before name: claiming name releases launching call, must find target.
     return bus.registerObject(QLatin1String(ObjectPath), target) &&
            bus.registerService(QLatin1String(ServiceName));
 }
@@ -79,8 +75,7 @@ void ShareReceiver::receive(const QVariantMap &arguments)
     if (url.isEmpty()) {
         return;
     }
-    // Answered at once whether or not the window is there: the share sheet gives up on a
-    // call that a starting application is slow to answer.
+    // Return fast even before window: share sheet times out slow callees.
     if (m_ready) {
         emit linkShared(url);
     } else {
@@ -95,7 +90,7 @@ QString ShareReceiver::sharedUrl(const QVariantMap &arguments)
         return {};
     }
     QVariant first = unwrap(resources.first());
-    // Tolerates one more wrapping, a list around the resource, in case a sender adds it.
+    // Tolerate extra list wrapping from some senders.
     if (first.type() == QVariant::List) {
         const QVariantList nested = first.toList();
         first = nested.isEmpty() ? QVariant() : unwrap(nested.first());

@@ -17,16 +17,11 @@ namespace Salama {
 
 namespace {
 
-// The added engines and the offers as JSON arrays of objects: records do not go in a
-// file of keys, and a name or an address may hold any character an INI line would
-// take apart.
+// Stored as JSON arrays: names/urls may hold chars INI would break.
 const char *const AddedEnginesKey = "searchEnginesAdded";
 const char *const FoundEnginesKey = "searchEnginesFound";
-// What stands for the words searched for when a search engine's address template
-// is read as an address.
 const char *const SearchTermsWord = "searchTerms";
-// The start of an added engine's key: the built-in keys are plain words, so none of
-// these can be one of them.
+// Built-in keys plain words, so prefix can't collide.
 const char *const AddedKeyPrefix = "added-";
 
 struct BuiltInEngine
@@ -52,7 +47,6 @@ bool isWebUrl(const QUrl &url)
            !url.host().isEmpty();
 }
 
-// "Wikipedia (en)" as the middle of a key: letters and digits, the rest as single dashes.
 QString slug(const QString &name)
 {
     QString text;
@@ -84,10 +78,8 @@ QString jsonOf(const QJsonArray &records)
     return QString::fromUtf8(QJsonDocument(records).toJson(QJsonDocument::Compact));
 }
 
-// Where an engine's results are: its host without "www.", and either its path and the
-// parameter that carries the words, or -- when the template has the words in the path --
-// what stands before them and after them. False for an address that says neither, and
-// for one that would take in every page of its site ("https://example.org/{searchTerms}").
+// Host sans www + path + param, or path prefix/suffix when words in path. False if neither,
+// or would match whole site ("https://example.org/{searchTerms}").
 bool readResults(const QString &urlTemplate, SearchEngines::Results &results)
 {
     QString probed = urlTemplate;
@@ -131,9 +123,7 @@ QString withoutWww(const QString &host)
     return host.startsWith(QLatin1String("www.")) ? host.mid(4) : host;
 }
 
-// What the file says, kept as it was read: the file is one a user can edit, so a record
-// that is no engine is passed over rather than trusted, and nothing else writes these
-// keys, so what is held here is what is there.
+// User-editable file: invalid records skipped, not trusted.
 void SearchEngines::readStored()
 {
     for (const auto &entry : recordsIn(value(AddedEnginesKey))) {
@@ -221,8 +211,6 @@ QString SearchEngines::templateAt(int index) const
     return engines().at(index).urlTemplate;
 }
 
-// An engine is told apart by its name, which is what the lists show: two of one name
-// would be two rows no one could choose between.
 bool SearchEngines::hasEngineNamed(const QString &name) const
 {
     const QVector<Engine> all = engines();
@@ -286,10 +274,7 @@ QVariantList SearchEngines::foundEngines() const
     return offers;
 }
 
-// The page says what it has twice over if it has two links, and again on every visit:
-// what is on offer already, by title or by address, is not kept again, and neither is
-// what the browser has under that name. There is no private mode to keep it from
-// (docs/DECISIONS/0019-no-private-tabs.md), so every page is listened to.
+// Pages re-offer every visit and per link: dedupe.
 bool SearchEngines::offerEngine(const QString &title, const QString &href, const QString &host)
 {
     const QString name = title.trimmed();
@@ -320,7 +305,6 @@ bool SearchEngines::addFoundEngine(const QString &href, const QString &descripti
         return false;
     }
     const OpenSearchEngine read = OpenSearch::parse(description);
-    // A description may leave its name out; the title the page gave it stands in.
     const QString name = read.name.isEmpty() ? offer->title : read.name;
     if (!read.isValid() || hasEngineNamed(name)) {
         return false;
@@ -381,8 +365,7 @@ void SearchEngines::enginesWereChanged()
     emit enginesChanged();
 }
 
-// The asking is of every page in the history, so what each engine's results look like
-// is read once, here, and again when the engines change.
+// Asked for every history page: parse once per engines change.
 void SearchEngines::rebuildResults()
 {
     m_results.clear();
@@ -394,9 +377,7 @@ void SearchEngines::rebuildResults()
     }
 }
 
-// The engine's host and path, and its words in the parameter the template puts them in.
-// Not the template's text up to the words: an engine is free to add parameters of its
-// own ahead of them as it redirects, and to drop "www.".
+// Match host, path, param; not template prefix: engines add params on redirect, drop www.
 bool SearchEngines::isSearchUrl(const QString &url) const
 {
     const QUrl page(url, QUrl::TolerantMode);

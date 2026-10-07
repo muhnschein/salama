@@ -14,12 +14,8 @@ namespace Salama {
 
 class TabModel;
 
-// The open tabs whose title and address hold every word of the search term, group by
-// group in the strip's order and within a group in the grid's. The words are matched as
-// the address bar's suggestions match them, by the one SearchWords, so the two searches
-// find the same tabs (docs/DECISIONS/0027-omnibar.md). Every change to the tabs or the
-// groups rebuilds the whole list: it is read on one page, and it is never long
-// (docs/DECISIONS/0015-tab-groups.md).
+// Open tabs holding every word, in strip then grid order. Same SearchWords as address bar.
+// Full rebuild on tab/group change: short list.
 class TabSearchModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -36,7 +32,6 @@ public:
         GroupId,
         GroupName,
         GroupTabCount,
-        // True on the first row of each group, where the page draws the group's heading.
         GroupStart
     };
 
@@ -64,7 +59,7 @@ private:
 
     QList<Row> rowsForTerm() const;
     void rebuild();
-    // The term changed: rows come and go one at a time, the list is not reset.
+    // Incremental, no reset.
     void refine();
     bool matches(int tabIndex) const;
 

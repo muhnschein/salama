@@ -32,11 +32,7 @@ TabModel::TabModel(TabPersistence *persistence, QString thumbnailDirectory, QObj
     load();
     ensureGroups();
     m_liveIds = liveSet();
-    // Another tab in front is other media in front.
     connect(this, &TabModel::activeTabChanged, this, &TabModel::activeMediaChanged);
-    // A group's picture is its most recent tabs' previews, so it changes whenever one
-    // of those does: a tab opened or closed, one brought to the front, a preview taken.
-    // Every group is told, there being only a handful.
     connect(this, &TabModel::recentTabsChanged, m_groupModel,
             [this]() { m_groupModel->changedAll(TabGroupModel::Role::Previews); });
     connect(m_thumbnailWriter, &ThumbnailWriter::written, this, &TabModel::thumbnailWritten);
@@ -52,7 +48,6 @@ void TabModel::load()
     for (const Tab &tab : m_tabs) {
         m_nextTabId = std::max(m_nextTabId, tab.id + 1);
     }
-    // A preview whose file went away shows as nothing rather than as a broken image.
     for (Tab &tab : m_tabs) {
         if (!tab.thumbnail.isEmpty() && !QFile::exists(tab.thumbnail)) {
             tab.thumbnail.clear();
@@ -69,16 +64,12 @@ void TabModel::load()
     }
     const int storedActive = m_persistence->loadActiveTabId();
     m_activeTabId = indexOf(storedActive) >= 0 ? storedActive : m_tabs.first().id;
-    // The restored tab is in front from here, whatever the database said about which
-    // was in front last. A database written before schema 3 has no stamps at all, and
-    // this is what gives the first one out.
+    // Pre-schema-3 DB has no stamps; this gives first.
     stampActive();
 }
 
-// Every tab is in a group that exists, there is at least one group, and the current
-// group is among them. A group a stored tab names but no row describes is created
-// unnamed rather than the tab moved: that is what a database from before schema 4
-// looks like, where every tab says group 1 and no group table says anything.
+// Missing group created unnamed, not tab moved: pre-schema-4 DB has all tabs in group 1, no
+// group table.
 void TabModel::ensureGroups()
 {
     for (const TabGroup &group : m_groups) {
@@ -107,7 +98,6 @@ void TabModel::ensureGroups()
         }
     }
 
-    // The active tab's group first, then what was stored, then the first there is.
     const int activeIndex = indexOf(m_activeTabId);
     if (activeIndex >= 0) {
         m_currentGroupId = m_tabs.at(activeIndex).groupId;
@@ -257,7 +247,6 @@ const QList<Tab> &TabModel::tabs() const
 
 bool TabModel::isExternalUrl(const QString &url)
 {
-    // Schemes the engine hands to other applications; they never become tabs.
     const QString scheme = QUrl(url, QUrl::TolerantMode).scheme();
     return scheme == QLatin1String("tel") || scheme == QLatin1String("sms") ||
            scheme == QLatin1String("mailto") || scheme == QLatin1String("geo");
@@ -337,8 +326,6 @@ bool TabModel::activateTabById(int tabId)
     return true;
 }
 
-// How many tabs of the current group sit before this row: the row the grid would
-// show the tab at, were it in that group.
 int TabModel::groupRowFor(int index) const
 {
     int row = 0;
@@ -357,16 +344,13 @@ void TabModel::moveTab(int from, int to)
         return;
     }
     const int groupRow = m_groupTabs->rowOf(m_tabs.at(from).id);
-    // beginMoveRows wants the row the block lands *before*, which is one past the
-    // destination when moving down the list.
+    // beginMoveRows wants row block lands *before*: dest + 1 when moving down.
     const int destination = to > from ? to + 1 : to;
     if (!beginMoveRows(QModelIndex(), from, from, QModelIndex(), destination)) {
         return;
     }
     m_tabs.move(from, to);
     endMoveRows();
-    // The grid's order is this order with the other groups' tabs left out, so a tab
-    // of the current group lands in the grid where the tabs before it put it.
     if (groupRow >= 0) {
         m_groupTabs->moveTabRow(groupRow, groupRowFor(to));
     }
@@ -374,13 +358,10 @@ void TabModel::moveTab(int from, int to)
     if (m_persistence != nullptr) {
         m_persistence->saveOrder(m_tabs);
     }
-    // activeTabIndex is a position, and positions have just changed.
     emit activeTabChanged();
 }
 
-// The tab to bring to the front when the one at this row closes: the one before it in
-// its own group, else the one after, else the most recent tab in any group. Zero when
-// it was the last tab there is.
+// Previous in group, else next, else most recent anywhere. 0 if last tab.
 int TabModel::successorOf(int index) const
 {
     const Tab &closing = m_tabs.at(index);
@@ -405,7 +386,6 @@ int TabModel::successorOf(int index) const
     return successor;
 }
 
-// The tab of this group that was in front last, or zero for an empty group.
 int TabModel::mostRecentTabId(int groupId) const
 {
     int recent = 0;
@@ -455,11 +435,10 @@ void TabModel::closeTab(int index)
             setActiveTab(successor);
         }
     }
-    // A tab gone may leave room for another to keep its page.
     refreshLive();
     m_closedTabs->record(closing);
 
-    // Last: listeners may open a replacement tab from here, which re-enters this model.
+    // Last: listeners may open replacement, re-entering model.
     emit tabClosed(closing.id);
     emit countChanged();
     emit recentTabsChanged();
@@ -570,7 +549,6 @@ void TabModel::updateUrl(int tabId, const QString &url)
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
     }
-    // A page where the start page was takes a place among the pages kept loaded.
     if (leavesStartPage) {
         refreshLive();
     }
@@ -616,7 +594,6 @@ void TabModel::showStartPage(int tabId)
         return;
     }
     Tab &tab = m_tabs[index];
-    // A picture of the page being left, still being written, is not the start page's.
     m_pendingThumbnails.remove(tabId);
     tab.url.clear();
     tab.title.clear();
@@ -630,8 +607,6 @@ void TabModel::showStartPage(int tabId)
     if (tab.id == m_activeTabId) {
         emit activeTabDataChanged();
     }
-    // Its page goes, and whatever it was playing with it; and the place it took among
-    // the pages kept loaded is another's.
     setMediaState(tabId, NoMedia);
     refreshLive();
     emit recentTabsChanged();
@@ -648,8 +623,7 @@ QString TabModel::thumbnailPath(int tabId)
         qWarning() << "TabModel: cannot create preview directory" << m_thumbnailDirectory;
         return {};
     }
-    // Unique per capture: a counter alongside the clock, so two grabs within the same
-    // millisecond still differ.
+    // Counter + clock: two grabs in same ms differ.
     return dir.absoluteFilePath(QStringLiteral("tab-%1-%2-%3.png")
                                     .arg(tabId)
                                     .arg(QDateTime::currentMSecsSinceEpoch())
@@ -694,7 +668,6 @@ void TabModel::thumbnailWritten(int tabId, const QString &path, bool saved)
     if (saved && newest && indexOf(tabId) >= 0) {
         updateThumbnail(tabId, path);
     } else {
-        // Overtaken, its tab gone, or a file the encoder gave up on part way.
         discardThumbnail(path);
     }
 }
@@ -713,7 +686,7 @@ TabModel::MediaState TabModel::shownMediaState(int tabId) const
 void TabModel::setMediaState(int tabId, MediaState state)
 {
     const int index = indexOf(tabId);
-    // An answer that arrives after its page was given up is about a page that is gone.
+    // Late answer for unloaded page: ignore.
     if (index < 0 || mediaState(tabId) == state ||
         (state != NoMedia && !m_liveIds.contains(tabId))) {
         return;
@@ -770,8 +743,7 @@ void TabModel::setMuted(int tabId, bool muted)
 
 void TabModel::discardThumbnail(const QString &path) const
 {
-    // Only ever removes what this model handed out, so a stray value in the database
-    // cannot turn into a delete somewhere else.
+    // Only deletes own files: stray DB value can't delete elsewhere.
     if (path.isEmpty() || m_thumbnailDirectory.isEmpty()) {
         return;
     }
@@ -829,9 +801,6 @@ void TabModel::setCurrentGroupId(int groupId)
         return;
     }
     applyCurrentGroup(groupId);
-    // Each group remembers which of its tabs was in front, the way Safari's do: what
-    // the page shows once the grid is put away is the group that was chosen, not the
-    // one it was opened from. An empty group leaves the page as it is.
     const int recent = mostRecentTabId(groupId);
     if (recent != 0 && recent != m_activeTabId) {
         applyActiveTab(recent);
@@ -862,14 +831,11 @@ int TabModel::addGroup(const QString &name)
     TabGroup group;
     group.id = m_nextGroupId++;
     group.name = name.trimmed();
-    // Last: the default group keeps the front of the strip.
     const int row = m_groups.count();
     m_groups.append(group);
     m_groupModel->inserted(row);
     if (m_persistence != nullptr) {
         m_persistence->insertGroup(group);
-        // Positions are given out in insertion order; renumbered so a restart keeps
-        // the order the strip shows.
         m_persistence->saveGroupOrder(m_groups);
     }
     emit groupsChanged();
@@ -897,9 +863,7 @@ bool TabModel::removeGroup(int groupId)
     if (index < 0 || groupId == defaultGroupId()) {
         return false;
     }
-    // Current moves to the group before it first: closing the group's tabs can close
-    // the active one, and whoever answers that by opening a replacement must not open
-    // it in the group that is going.
+    // Switch group first: closing may close active; replacement must not open in dying group.
     if (groupId == m_currentGroupId) {
         setCurrentGroupId(m_groups.at(index - 1).id);
     }
@@ -914,7 +878,6 @@ bool TabModel::removeGroup(int groupId)
         m_persistence->removeGroup(groupId);
     }
     emit groupsChanged();
-    // The current group's row may have moved up.
     emit currentGroupChanged();
     return true;
 }
@@ -943,8 +906,7 @@ bool TabModel::moveTabToGroup(int tabId, int groupId)
         m_groupModel->changed(groupIndexOf(group), TabGroupModel::Role::Previews);
     }
     emit groupsChanged();
-    // The active tab is in the current group, always: a tab moved away takes the
-    // current group with it.
+    // Active tab always in current group.
     if (tab.id == m_activeTabId) {
         setCurrentGroupId(groupId);
     }
@@ -958,8 +920,6 @@ bool TabModel::ungroup(int groupId)
     if (index < 0 || groupId == home) {
         return false;
     }
-    // Each tab keeps its row, and so its page, as a tab carried onto another group does,
-    // and joins the default group's grid after the tabs already there.
     for (int i = 0; i < m_tabs.count(); ++i) {
         Tab &tab = m_tabs[i];
         if (tab.groupId != groupId) {
@@ -974,8 +934,6 @@ bool TabModel::ungroup(int groupId)
     }
     m_groupModel->changed(groupIndexOf(home), TabGroupModel::Role::TabCount);
     m_groupModel->changed(groupIndexOf(home), TabGroupModel::Role::Previews);
-    // The group shown goes, and the grid goes with its tabs, to the default group. The
-    // tab in front, if it was one of them, is the most recent tab there and stays.
     if (groupId == m_currentGroupId) {
         setCurrentGroupId(home);
     }
@@ -985,7 +943,6 @@ bool TabModel::ungroup(int groupId)
         m_persistence->removeGroup(groupId);
     }
     emit groupsChanged();
-    // The current group's row may have moved up.
     emit currentGroupChanged();
     return true;
 }
@@ -1011,10 +968,8 @@ bool TabModel::moveGroup(int from, int to)
 
 QStringList TabModel::groupThumbnails(int groupId, int limit) const
 {
-    // Ordered on a copy of the ids: the model's own order is what the grid shows and
-    // what is persisted, and a group's picture must not disturb either.
-    // std::stable_sort so that tabs never yet in front -- restored ones, before they are
-    // opened -- keep the order the grid puts them in rather than an arbitrary one.
+    // Sort copy: model order is grid/persisted order. stable_sort keeps never-fronted tabs in grid
+    // order.
     QList<const Tab *> ordered;
     for (const Tab &tab : m_tabs) {
         if (tab.groupId == groupId) {
@@ -1047,10 +1002,6 @@ void TabModel::setLiveTabLimit(int limit)
     refreshLive();
 }
 
-// The tab in front and the ones read most recently before it keep their pages; the
-// rest are unloaded by the view and reloaded when they come to the front again, the
-// way Jolla's browser keeps five (docs/DECISIONS/0016-five-live-pages.md). Ordered
-// as the cover orders them, by the activation stamp, stable over the list.
 QSet<int> TabModel::liveSet() const
 {
     QList<const Tab *> ordered;
@@ -1061,9 +1012,7 @@ QSet<int> TabModel::liveSet() const
     std::stable_sort(ordered.begin(), ordered.end(), [](const Tab *one, const Tab *other) {
         return one->lastActive > other->lastActive;
     });
-    // A tab on the start page has no page to keep, and takes no page's place: it is
-    // live, so its view can be made the moment a page is opened in it, but it is not
-    // counted.
+    // Start-page tab: live but not counted, holds no page.
     QSet<int> live;
     int pages = 0;
     for (const Tab *tab : ordered) {
@@ -1092,7 +1041,6 @@ void TabModel::refreshLive()
         if (before.contains(id) != live.contains(id)) {
             notifyRow(i, Role::Live);
         }
-        // Its view goes, and whatever it was playing with it.
         if (!live.contains(id)) {
             setMediaState(id, NoMedia);
         }
@@ -1114,9 +1062,7 @@ TabGroupModel *TabModel::groupModel() const
     return m_groupModel;
 }
 
-// The two halves below are kept apart from setCurrentGroupId() and setActiveTab() so
-// that neither calls the other: the group follows the tab and the tab follows the
-// group, and done as one pair of functions that was a cycle.
+// Kept apart from setCurrentGroupId()/setActiveTab(): calling each other cycled.
 void TabModel::setActiveTab(int tabId)
 {
     if (tabId == m_activeTabId) {
@@ -1136,7 +1082,6 @@ void TabModel::applyActiveTab(int tabId)
     }
     const int oldIndex = indexOf(m_activeTabId);
     m_activeTabId = tabId;
-    // Media shown as held behind the front, or no longer (shownMediaState()).
     for (const int index : {oldIndex, indexOf(tabId)}) {
         if (index >= 0) {
             notifyRow(index, Role::Active);

@@ -1,18 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The tab grid as the tutorial draws it: the glass rows at its head and foot, the line
-// across the top that says the edge can be pulled, the strip of groups at the foot, and
-// cells of made-up pages between (docs/DECISIONS/0034-tutorial.md). The cells are the
-// real grid's, TabPreview, over a model of four sketched tabs rather than TabModel, so a
-// tab is slid away, held and carried, or carried onto a group, by the same hand as in the
-// real grid; what happens to it happens to the sketch alone.
-//
-// The way back to the page is what it is on the real grid: the view's own overscroll,
-// reported as a distance, with the view moved up by as much so the cells stay under the
-// finger while the deck behind them slides down (docs/DECISIONS/0010-tab-grid-deck.md).
-// The rows are children of the view, as the real grid's are, so a pull begun on either is
-// the view's.
+// Real TabPreview cells over sketched ListModel, so gestures match real grid.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -23,29 +12,22 @@ Item {
     signal pullStarted()
     signal pulled(real distance)
     signal pullFinished(real distance)
-    // A cell was tapped, slid away or closed, carried to another place and released, or
-    // dropped on the other group.
     signal tabTapped()
     signal tabClosed()
     signal tabMoved()
     signal tabGrouped()
 
-    // What the display's cutout takes at the top of the screen, which the head row is
-    // taller by, as the real grid's is.
     property real cutoutHeight: 0
     readonly property int count: tabs.count
     readonly property Item strip: groupStrip
-    // The cell being carried has traded places with another.
     property bool moved: false
-    // A cell is held or being slid: a finger is making a gesture on the grid.
     property bool handling: false
 
-    // The sketch's four tabs again, the first in front.
     function reset() {
         var pages = ["news", "shop", "article", "dark"]
         tabs.clear()
         for (var i = 0; i < pages.length; ++i) {
-            // A path, as TabModel's thumbnails are, which TabPreview makes a file url of.
+            // TabPreview prefixes file://.
             var picture = String(Qt.resolvedUrl("../../art/tutorial/" + pages[i] + ".png"))
             tabs.append({
                 tabId: i + 1,
@@ -58,7 +40,6 @@ Item {
         }
     }
 
-    // The middle of a cell, in the grid's own coordinates.
     function cellCentre(index) {
         return Qt.point((index % 2 + 0.5) * view.cellWidth,
                         headRow.height + (Math.floor(index / 2) + 0.5) * view.cellHeight)
@@ -96,8 +77,7 @@ Item {
         model: tabs
         cellWidth: width / 2
         cellHeight: cellWidth + Theme.itemSizeSmall
-        // Vertical rather than automatic: the cells fit the screen, and an automatic
-        // flickable whose content fits refuses to be dragged at all.
+        // Explicit vertical: automatic refuses drag when content fits.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
 
@@ -125,8 +105,7 @@ Item {
 
         delegate: TabPreview {
             dropTarget: groupStrip
-            // A carry that traded places with another cell has moved a tab once the
-            // finger lifts.
+            // Carry with swap counts as move once finger lifts.
             onSwipingChanged: tutorialGrid.handling = held || swiping
             onHeldChanged: {
                 tutorialGrid.handling = held || swiping

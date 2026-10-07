@@ -177,8 +177,6 @@ void tst_tabmodel::newTabRejectsExternalUrls()
     QVERIFY(!TabModel::isExternalUrl(QStringLiteral("https://x.y/")));
 }
 
-// The link sheet's Background tab: a tab in the current group that does not come to the
-// front, named by the link's text until its page names it, and kept like any other.
 void tst_tabmodel::newTabBehindStaysBehind()
 {
     QTemporaryDir dir;
@@ -207,7 +205,6 @@ void tst_tabmodel::newTabBehindStaysBehind()
         QCOMPARE(dataSpy.count(), 0);
         QCOMPARE(addedSpy.count(), 1);
         QCOMPARE(addedSpy.first().first().toInt(), behind);
-        // Named by the link without telling the history so: the page has not been read.
         QCOMPARE(titleSpy.count(), 0);
         const int row = model.indexOf(behind);
         QCOMPARE(role(model, row, roleId(TabModel::Role::Title)).toString(),
@@ -218,12 +215,10 @@ void tst_tabmodel::newTabBehindStaysBehind()
         QCOMPARE(model.groupNameOf(first), QString());
         QCOMPARE(model.groupNameOf(9999), QString());
 
-        // Nothing for no address, or for one another application takes.
         QCOMPARE(model.newTabBehind(QString(), QStringLiteral("Nothing")), 0);
         QCOMPARE(model.newTabBehind(QStringLiteral("mailto:a@b.c"), QStringLiteral("Mail")), 0);
         QCOMPARE(model.count(), 3);
 
-        // Its page is visited when it is first shown, as any new tab's is.
         QSignalSpy visitedSpy(&model, &TabModel::visited);
         model.activateTabById(behind);
         model.updateUrl(behind, QStringLiteral("https://trails.example/ridge"));
@@ -245,7 +240,7 @@ void tst_tabmodel::activation()
     QSignalSpy activeSpy(&model, &TabModel::activeTabChanged);
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
     QSignalSpy leavingSpy(&model, &TabModel::activeTabLeaving);
-    // The tab being left is named before any row says it is no longer in front.
+    // Left tab named before rows report it's no longer front.
     int rowsWhenLeft = -1;
     connect(&model, &TabModel::activeTabLeaving, this,
             [&rowSpy, &rowsWhenLeft]() { rowsWhenLeft = rowSpy.count(); });
@@ -289,24 +284,20 @@ void tst_tabmodel::moveTabReorders()
     QSignalSpy movedSpy(&model, &TabModel::rowsMoved);
     QSignalSpy activeSpy(&model, &TabModel::activeTabChanged);
 
-    // Carried to the end: the rest close up behind it.
     model.moveTab(0, 2);
     QCOMPARE(movedSpy.count(), 1);
     QCOMPARE(role(model, 0, roleId(TabModel::Role::TabId)).toInt(), second);
     QCOMPARE(role(model, 1, roleId(TabModel::Role::TabId)).toInt(), third);
     QCOMPARE(role(model, 2, roleId(TabModel::Role::TabId)).toInt(), first);
-    // The tab that moved is the same tab, and still the active one.
     QCOMPARE(model.activeTabId(), first);
     QCOMPARE(model.activeTabIndex(), 2);
     QCOMPARE(activeSpy.count(), 1);
     QVERIFY(role(model, 2, roleId(TabModel::Role::Active)).toBool());
 
-    // And back towards the front.
     model.moveTab(2, 1);
     QCOMPARE(role(model, 1, roleId(TabModel::Role::TabId)).toInt(), first);
     QCOMPARE(model.activeTabIndex(), 1);
 
-    // Nothing to do, nothing reported.
     movedSpy.clear();
     model.moveTab(1, 1);
     model.moveTab(-1, 0);
@@ -315,14 +306,12 @@ void tst_tabmodel::moveTabReorders()
     QCOMPARE(movedSpy.count(), 0);
     QCOMPARE(model.count(), 3);
 
-    // The order is the one a restart reads back.
     const QList<Salama::Tab> stored = persistence.loadTabs();
     QCOMPARE(stored.count(), 3);
     QCOMPARE(stored.at(0).id, second);
     QCOMPARE(stored.at(1).id, first);
     QCOMPARE(stored.at(2).id, third);
 
-    // A tab opened afterwards still lands last.
     const int fourth = model.newTab(QStringLiteral("https://d.example/"));
     QCOMPARE(persistence.loadTabs().at(3).id, fourth);
 }
@@ -387,14 +376,12 @@ void tst_tabmodel::urlUpdatesAndVisits()
     QCOMPARE(visitedSpy.count(), 0);
     dataSpy.clear();
 
-    // The engine reporting the requested url is the first visit, reported once.
     model.updateUrl(a, QStringLiteral("https://a.example/"));
     QCOMPARE(visitedSpy.count(), 1);
     model.updateUrl(a, QStringLiteral("https://a.example/"));
     QCOMPARE(visitedSpy.count(), 1);
     QCOMPARE(dataSpy.count(), 0);
 
-    // Navigation within a tab.
     model.updateUrl(a, QStringLiteral("https://a.example/next"));
     QCOMPARE(visitedSpy.count(), 2);
     QCOMPARE(visitedSpy.last().first().toString(), QStringLiteral("https://a.example/next"));
@@ -402,12 +389,10 @@ void tst_tabmodel::urlUpdatesAndVisits()
              QStringLiteral("https://a.example/next"));
     QCOMPARE(dataSpy.count(), 0);
 
-    // Active tab reports through activeTabDataChanged too.
     model.updateUrl(b, QStringLiteral("https://b.example/"));
     QCOMPARE(dataSpy.count(), 1);
     QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
 
-    // Ignored inputs.
     model.updateUrl(b, QString());
     model.updateUrl(b, QStringLiteral("tel:112"));
     model.updateUrl(999, QStringLiteral("https://nowhere.example/"));
@@ -460,13 +445,10 @@ void tst_tabmodel::recentThumbnailsFollowTheFront()
     const int second = model.newTab(QStringLiteral("https://second.example/"));
     const int third = model.newTab(QStringLiteral("https://third.example/"));
     QSignalSpy recent(&model, &TabModel::recentTabsChanged);
-    // The default group's, which holds every tab here.
     const auto recentThumbnails = [&model]() {
         return model.groupThumbnails(model.defaultGroupId(), 10);
     };
 
-    // One entry per tab, whether or not it has a picture, so a group's picture keeps a
-    // cell for each.
     QCOMPARE(recentThumbnails().count(), 3);
     for (const QString &thumbnail : recentThumbnails()) {
         QVERIFY(thumbnail.isEmpty());
@@ -480,7 +462,6 @@ void tst_tabmodel::recentThumbnailsFollowTheFront()
     model.updateThumbnail(third, thirdShot);
     QVERIFY(recent.count() > 0);
 
-    // The third tab is the one in front: newTab activates what it opens.
     QCOMPARE(recentThumbnails().first(), thirdShot);
 
     recent.clear();
@@ -488,14 +469,12 @@ void tst_tabmodel::recentThumbnailsFollowTheFront()
     QVERIFY(recent.count() > 0);
     QCOMPARE(recentThumbnails().first(), firstShot);
 
-    // Nothing the grid does reorders the pictures: a carried cell changes positions, not
-    // which tab was last read.
+    // Grid moves don't reorder pictures: position change, not recency.
     model.moveTab(0, 2);
     QCOMPARE(recentThumbnails().first(), firstShot);
 
-    // The tab that has never been in front keeps the grid's order rather than an
-    // arbitrary one: second was opened before third and comes after it here only
-    // because third was activated later.
+    // Never-front tab keeps grid order, not arbitrary: second opened before third, after it
+    // here only because third activated later.
     model.activateTabById(second);
     QCOMPARE(recentThumbnails().at(1), firstShot);
     QCOMPARE(recentThumbnails().at(2), thirdShot);
@@ -526,7 +505,6 @@ void tst_tabmodel::recentOrderSurvivesARestart()
         TabModel model(&persistence, shots.path());
         const QStringList recent = model.groupThumbnails(model.defaultGroupId(), 10);
         QCOMPARE(recent.count(), 3);
-        // The restored tab is in front, and was also the last one read.
         QCOMPARE(recent.first(), wanted);
     }
 }
@@ -559,7 +537,6 @@ void tst_tabmodel::persistenceRoundTrip()
                  QStringLiteral("https://other.example/moved"));
         QCOMPARE(role(model, 1, roleId(TabModel::Role::Group)).toInt(), model.defaultGroupId());
 
-        // Restored tabs are not "visited" again when the engine reports their url.
         QSignalSpy visitedSpy(&model, &TabModel::visited);
         model.updateUrl(publicId, QStringLiteral("https://public.example/"));
         QCOMPARE(visitedSpy.count(), 0);
@@ -575,7 +552,6 @@ void tst_tabmodel::persistenceRoundTrip()
         QCOMPARE(model.activeTabId(), 0);
     }
     {
-        // A stale active id falls back to the first tab.
         TabModel model(&persistence);
         model.newTab(QStringLiteral("https://x.example/"));
         model.newTab(QStringLiteral("https://y.example/"));
@@ -594,14 +570,13 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
     const int a = model.newTab(QStringLiteral("https://a.example/"));
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
 
-    // An unknown tab is never given a file to write.
     QVERIFY(model.thumbnailPath(4242).isEmpty());
 
     const QString first = model.thumbnailPath(a);
     QVERIFY(!first.isEmpty());
     QCOMPARE(QFileInfo(first).absolutePath(),
              QDir(dir.path() + QStringLiteral("/previews")).absolutePath());
-    // Each capture gets its own name, so a new image is never hidden behind a cached one.
+    // Unique name per capture: new image never masked by cached one.
     QVERIFY(model.thumbnailPath(a) != first);
 
     QVERIFY(writeFile(first));
@@ -613,7 +588,6 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
     QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Thumbnail)),
              QByteArrayLiteral("thumbnail"));
 
-    // Replacing a preview removes the file it replaces.
     const QString second = model.thumbnailPath(a);
     QVERIFY(writeFile(second));
     model.updateThumbnail(a, second);
@@ -623,7 +597,6 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
     model.updateThumbnail(a, second);
     QCOMPARE(rowSpy.count(), 2);
 
-    // Nothing outside the preview directory is ever removed.
     const QString outside = dir.path() + QStringLiteral("/keep.png");
     QVERIFY(writeFile(outside));
     model.updateThumbnail(a, outside);
@@ -631,9 +604,8 @@ void tst_tabmodel::thumbnailsAreCapturedPerTab()
     QVERIFY(QFile::exists(outside));
 }
 
-// A grabbed picture is encoded and written by a worker, never by the GUI thread: the
-// encode of a picture half the screen in each direction, done in QML's grab callback,
-// was the stutter at the start of the drag that opens the grid (issue #27).
+// Picture encoded and written on worker, never GUI thread: half-screen encode in grab
+// callback stuttered grid-open drag (#27).
 void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
 {
     QTemporaryDir dir;
@@ -647,7 +619,7 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
     QImage picture(270, 600, QImage::Format_ARGB32_Premultiplied);
     picture.fill(Qt::darkCyan);
     QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
-    // Nothing is told before the file is complete, and that is never within the call.
+    // No signal before file complete; never within call.
     QVERIFY(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
     QTRY_VERIFY(!role(model, 0, roleId(TabModel::Role::Thumbnail)).toString().isEmpty());
     QVERIFY(writtenOn != nullptr);
@@ -660,7 +632,6 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
     QCOMPARE(reader.format(), QByteArrayLiteral("png"));
     QCOMPARE(reader.size(), picture.size());
 
-    // Nothing to write, or nowhere to write it: nothing is asked of the worker.
     QVERIFY(!model.storeThumbnail(a, QVariant::fromValue(QImage())));
     QVERIFY(!model.storeThumbnail(a, QVariant()));
     QVERIFY(!model.storeThumbnail(4242, QVariant::fromValue(picture)));
@@ -669,9 +640,8 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
                                        QVariant::fromValue(picture)));
 }
 
-// Writes finish after the fact: one overtaken by a newer picture of the same tab, or
-// finished after its tab has closed or gone back to the start page, leaves no file and
-// changes nothing.
+// Late write superseded by newer picture, or after tab closed / back on start page: no
+// file, no change.
 void tst_tabmodel::staleThumbnailWritesAreDiscarded()
 {
     QTemporaryDir dir;
@@ -694,7 +664,6 @@ void tst_tabmodel::staleThumbnailWritesAreDiscarded()
         role(model, model.indexOf(a), roleId(TabModel::Role::Thumbnail)).toString();
     QCOMPARE(QFileInfo(kept).fileName(), files().first());
 
-    // A tab back on its start page is not given the picture of the page it left.
     const int c = model.newTab(QStringLiteral("https://c.example/"));
     QVERIFY(model.storeThumbnail(c, QVariant::fromValue(picture)));
     model.showStartPage(c);
@@ -723,7 +692,6 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
         model.updateThumbnail(a, shotA);
         model.updateThumbnail(b, shotB);
 
-        // Closing a tab takes its preview with it.
         model.closeTab(model.indexOf(a));
         QVERIFY(!QFile::exists(shotA));
         QVERIFY(QFile::exists(shotB));
@@ -731,7 +699,6 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
         keptId = b;
     }
     {
-        // Previews survive a restart.
         TabModel model(&persistence, previews);
         QCOMPARE(model.count(), 1);
         QCOMPARE(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString(), kept);
@@ -740,7 +707,6 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
         QVERIFY(!QFile::exists(kept));
     }
     {
-        // A path whose file has gone reads as no preview rather than a broken one.
         TabModel model(&persistence, previews);
         const int c = model.newTab(QStringLiteral("https://c.example/"));
         const QString shot = model.thumbnailPath(c);
@@ -756,7 +722,6 @@ void tst_tabmodel::thumbnailsFollowTabLifetime()
 
 void tst_tabmodel::thumbnailsAreOptional()
 {
-    // No directory means no previews, which is how the unit tests above run.
     TabModel model(nullptr);
     const int a = model.newTab(QStringLiteral("https://a.example/"));
     QVERIFY(model.thumbnailPath(a).isEmpty());
@@ -768,7 +733,6 @@ void tst_tabmodel::thumbnailsAreOptional()
 
 void tst_tabmodel::thereIsAlwaysAGroup()
 {
-    // The default group, and nothing else.
     TabModel model(nullptr);
     QCOMPARE(model.groups().count(), 1);
     const int groupId = model.defaultGroupId();
@@ -791,8 +755,6 @@ void tst_tabmodel::thereIsAlwaysAGroup()
              QByteArrayLiteral("defaultGroup"));
     QCOMPARE(model.roleNames().value(roleId(TabModel::Role::Group)), QByteArrayLiteral("groupId"));
 
-    // The default group can neither go nor be renamed, and nothing else names a
-    // group that is not there.
     QVERIFY(!model.removeGroup(groupId));
     QVERIFY(!model.removeGroup(4242));
     model.setCurrentGroupId(4242);
@@ -804,7 +766,6 @@ void tst_tabmodel::thereIsAlwaysAGroup()
     model.renameGroup(groupId, QStringLiteral("Home"));
     QVERIFY(model.groups().first().name.isEmpty());
 
-    // A new tab lands in the group there is, and the grid's model shows it.
     const int a = model.newTab(QStringLiteral("https://a.example/"));
     QCOMPARE(role(model, 0, roleId(TabModel::Role::Group)).toInt(), groupId);
     QCOMPARE(model.groupTabs()->count(), 1);
@@ -830,14 +791,11 @@ void tst_tabmodel::groupsHoldTheirOwnTabs()
     QSignalSpy insertSpy(model.groupModel(), &TabGroupModel::rowsInserted);
     QSignalSpy resetSpy(model.groupTabs(), &GroupTabModel::modelReset);
 
-    // A new group is empty, and it is where the grid now looks and new tabs go. The
-    // page keeps the tab it had: an empty group has nothing to bring to the front.
     const int work = model.addGroup(QStringLiteral("  Work "));
     QVERIFY(work > home);
     QCOMPARE(model.groups().count(), 2);
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(model.currentGroupIndex(), 1);
-    // Last, after the default group.
     QCOMPARE(model.groups().last().id, work);
     QCOMPARE(groupSpy.count(), 1);
     QCOMPARE(groupsSpy.count(), 1);
@@ -858,7 +816,6 @@ void tst_tabmodel::groupsHoldTheirOwnTabs()
     QCOMPARE(role(*model.groupModel(), 0, roleId(TabGroupModel::Role::TabCount)).toInt(), 2);
     QCOMPARE(model.count(), 3);
 
-    // Going back to the default group brings back the tab that was in front there.
     model.activateTabById(a);
     model.activateTabById(c);
     model.groupModel()->activate(0);
@@ -867,11 +824,9 @@ void tst_tabmodel::groupsHoldTheirOwnTabs()
     QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a, b}));
     QCOMPARE(groupSpy.count(), 4);
 
-    // Activating a tab in another group takes the current group there.
     model.activateTabById(c);
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c});
-    // Choosing the current group again changes nothing.
     model.setCurrentGroupId(work);
     QCOMPARE(groupSpy.count(), 5);
 
@@ -893,12 +848,9 @@ void tst_tabmodel::movingTabsInsideAGroup()
     const int b2 = model.newTab(QStringLiteral("https://b2.example/"));
     model.activateTabById(a2);
     const int a3 = model.newTab(QStringLiteral("https://a3.example/"));
-    // The groups are interleaved in the model, and the grid sees only its own.
     QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
     QSignalSpy moveSpy(model.groupTabs(), &GroupTabModel::rowsMoved);
 
-    // A move in the grid is a move in the model, and the other group's tabs stay
-    // where they were.
     model.groupTabs()->moveTab(2, 0);
     QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a3, a1, a2}));
     QCOMPARE(moveSpy.count(), 1);
@@ -907,21 +859,19 @@ void tst_tabmodel::movingTabsInsideAGroup()
     QCOMPARE(model.indexOf(b2), 4);
     QCOMPARE(model.activeTabId(), a3);
 
-    // Back to the end of the group, which is right after a2 in the model: the other
-    // group's tabs are not part of the order and a2 is where the finger let go.
+    // Back to group end = right after a2 in model: other group's tabs not in order; a2 where
+    // finger let go.
     model.groupTabs()->moveTab(0, 2);
     QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
     QCOMPARE(moveSpy.count(), 2);
     QCOMPARE(model.indexOf(a3), 3);
     QCOMPARE(model.indexOf(b2), 4);
 
-    // Out of range or in place: nothing happens.
     model.groupTabs()->moveTab(1, 1);
     model.groupTabs()->moveTab(-1, 1);
     model.groupTabs()->moveTab(1, 3);
     QCOMPARE(moveSpy.count(), 2);
 
-    // A move in the model of a tab from the other group leaves the grid alone.
     model.moveTab(model.indexOf(b2), model.indexOf(b1));
     QCOMPARE(moveSpy.count(), 2);
     QCOMPARE(groupTabIds(*model.groupTabs()), (QList<int>{a1, a2, a3}));
@@ -940,28 +890,22 @@ void tst_tabmodel::closingStaysInTheGroup()
     const int a2 = model.newTab(QStringLiteral("https://a2.example/"));
     const int a3 = model.newTab(QStringLiteral("https://a3.example/"));
 
-    // The tab before the closed one in its own group, not the one before it in the
-    // model -- which here belongs to the other group.
     model.activateTabById(a2);
     model.closeTabById(a2);
     QCOMPARE(model.activeTabId(), a1);
     QCOMPARE(model.currentGroupId(), home);
     model.activateTabById(a1);
-    // Nothing before it in the group: the one after.
     model.closeTab(model.indexOf(a1));
     QCOMPARE(model.activeTabId(), a3);
     QCOMPARE(model.currentGroupId(), home);
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a3});
 
-    // The group's last tab: the most recent tab anywhere comes to the front, and the
-    // current group goes with it. The empty group stays.
     model.closeTabById(a3);
     QCOMPARE(model.activeTabId(), b1);
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(model.groups().count(), 2);
     QCOMPARE(model.tabCountInGroup(home), 0);
 
-    // An empty group can be looked at, and a tab opened there.
     model.setCurrentGroupId(home);
     QCOMPARE(model.activeTabId(), b1);
     QCOMPARE(model.groupTabs()->count(), 0);
@@ -969,14 +913,12 @@ void tst_tabmodel::closingStaysInTheGroup()
     QCOMPARE(role(model, model.indexOf(a4), roleId(TabModel::Role::Group)).toInt(), home);
     QCOMPARE(model.activeTabId(), a4);
 
-    // Closing a tab that is not in front changes neither the front nor the group.
     model.closeTabById(b1);
     QCOMPARE(model.activeTabId(), a4);
     QCOMPARE(model.currentGroupId(), home);
     model.closeTabById(4242);
     QCOMPARE(model.count(), 1);
 
-    // Closing every tab empties every group and keeps them all.
     model.closeAllTabs();
     QCOMPARE(model.groups().count(), 2);
     QCOMPARE(model.groupTabs()->count(), 0);
@@ -996,7 +938,6 @@ void tst_tabmodel::removingAGroupClosesItsTabs()
     QSignalSpy closedSpy(&model, &TabModel::tabClosed);
     QSignalSpy removedSpy(model.groupModel(), &TabGroupModel::rowsRemoved);
 
-    // Removing the current group closes its tabs and moves to the group before it.
     model.activateTabById(b2);
     QCOMPARE(model.currentGroupId(), work);
     QVERIFY(model.removeGroup(work));
@@ -1011,8 +952,6 @@ void tst_tabmodel::removingAGroupClosesItsTabs()
     QCOMPARE(model.currentGroupIndex(), 0);
     QCOMPARE(model.groupIndexOf(play), 1);
 
-    // The default group stays whatever is asked; the group after it goes, and its
-    // tab with it, and the default group is current again.
     QVERIFY(!model.removeGroup(home));
     model.activateTabById(c1);
     QCOMPARE(model.currentGroupId(), play);
@@ -1036,8 +975,6 @@ void tst_tabmodel::movingATabToAnotherGroup()
     QSignalSpy moveSpy(&model, &TabModel::rowsMoved);
     QSignalSpy removeSpy(&model, &TabModel::rowsRemoved);
 
-    // The tab keeps its row, so the view behind it is kept too; it leaves the grid
-    // of the group it was in, and the front goes with it.
     QVERIFY(model.moveTabToGroup(a2, work));
     QCOMPARE(model.indexOf(a2), 1);
     QCOMPARE(role(model, 1, roleId(TabModel::Role::Group)).toInt(), work);
@@ -1051,8 +988,6 @@ void tst_tabmodel::movingATabToAnotherGroup()
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{a2});
     QCOMPARE(model.tabCountInGroup(home), 1);
 
-    // A tab that is not in front moves without the front moving; into the current
-    // group it joins the grid at the end.
     QVERIFY(model.moveTabToGroup(a1, work));
     QCOMPARE(model.currentGroupId(), work);
     QCOMPARE(model.activeTabId(), a2);
@@ -1096,7 +1031,6 @@ void tst_tabmodel::groupsSurviveARestart()
         const int play = model.addGroup(QStringLiteral("Play"));
         QVERIFY(play > work);
         QVERIFY(model.removeGroup(work));
-        // The tab most recently in front elsewhere comes forward.
         QCOMPARE(model.activeTabId(), a1);
         QCOMPARE(model.currentGroupId(), home);
         QVERIFY(model.removeGroup(play));
@@ -1109,8 +1043,7 @@ void tst_tabmodel::groupsSurviveARestart()
         QVERIFY(model.addGroup(QStringLiteral("Again")) > home);
     }
     {
-        // A tab naming a group no row describes -- every tab of a database from
-        // before schema 4 -- gets that group created for it, unnamed.
+        // Tab with group lacking row (all tabs from pre-schema-4 DB): group created, unnamed.
         Tab stray;
         stray.id = 77;
         stray.url = QStringLiteral("https://stray.example/");
@@ -1120,7 +1053,6 @@ void tst_tabmodel::groupsSurviveARestart()
         persistence.setActiveTabId(77);
         TabModel model(&persistence);
         QCOMPARE(model.groups().count(), 3);
-        // Made for the stray, and put last.
         const TabGroup strayGroup = model.groups().at(2);
         QCOMPARE(strayGroup.id, 40);
         QVERIFY(strayGroup.name.isEmpty());
@@ -1145,14 +1077,10 @@ void tst_tabmodel::ungroupingKeepsTheTabs()
     QSignalSpy removedSpy(model.groupModel(), &TabGroupModel::rowsRemoved);
     QSignalSpy groupsSpy(&model, &TabModel::groupsChanged);
 
-    // The default group has nothing to be ungrouped from, and a group that is not there
-    // has nothing to ungroup.
     QVERIFY(!model.ungroup(home));
     QVERIFY(!model.groupModel()->ungroup(4242));
     QCOMPARE(model.groups().count(), 3);
 
-    // A group that is not the one shown: its tabs join the default group, open and in
-    // the rows they had, and the group goes. The grid stays where it was.
     model.activateTabById(b2);
     model.activateTabById(c1);
     QCOMPARE(model.currentGroupId(), play);
@@ -1174,8 +1102,6 @@ void tst_tabmodel::ungroupingKeepsTheTabs()
     QCOMPARE(model.activeTabId(), c1);
     QCOMPARE(groupTabIds(*model.groupTabs()), QList<int>{c1});
 
-    // The group shown, holding the tab in front: the grid goes with the tabs to the
-    // default group, and the tab in front stays in front.
     QVERIFY(model.ungroup(play));
     QCOMPARE(model.groups().count(), 1);
     QCOMPARE(model.currentGroupId(), home);
@@ -1184,9 +1110,6 @@ void tst_tabmodel::ungroupingKeepsTheTabs()
     QCOMPARE(closedSpy.count(), 0);
     QCOMPARE(model.count(), 4);
 
-    // Into the default group while it is the one shown: the grid takes the tabs after
-    // its own. An empty group shown, ungrouped, hands the grid to the default group and
-    // the page to that group's most recent tab.
     const int mail = model.addGroup(QStringLiteral("Mail"));
     const int d1 = model.newTab(QStringLiteral("https://d1.example/"));
     model.activateTabById(a1);
@@ -1226,7 +1149,6 @@ void tst_tabmodel::movingGroups()
         QSignalSpy groupsSpy(&model, &TabModel::groupsChanged);
         QSignalSpy currentSpy(&model, &TabModel::currentGroupChanged);
 
-        // The current group, down the list: current still, at its new row.
         QVERIFY(model.groupModel()->moveGroup(1, 3));
         QCOMPARE(model.groups().at(1).id, play);
         QCOMPARE(model.groups().at(2).id, mail);
@@ -1240,8 +1162,6 @@ void tst_tabmodel::movingGroups()
         QCOMPARE(model.currentGroupIndex(), 3);
         QCOMPARE(model.groupModel()->groupIdAt(3), work);
 
-        // Two others trading places leave the current group's row as it was, and nobody
-        // is told it changed.
         QVERIFY(model.moveGroup(2, 1));
         QCOMPARE(model.groups().at(1).id, mail);
         QCOMPARE(model.groups().at(2).id, play);
@@ -1249,8 +1169,6 @@ void tst_tabmodel::movingGroups()
         QCOMPARE(moveSpy.last().at(4).toInt(), 1);
         QCOMPARE(currentSpy.count(), 1);
 
-        // The default group is first and stays there; nothing outside the list moves,
-        // and a group put where it is has not moved.
         QVERIFY(!model.moveGroup(0, 2));
         QVERIFY(!model.moveGroup(2, 0));
         QVERIFY(!model.moveGroup(1, 4));
@@ -1261,7 +1179,6 @@ void tst_tabmodel::movingGroups()
         QCOMPARE(model.groups().first().id, home);
     }
     {
-        // The order survives a restart, and a group made afterwards still goes last.
         TabModel model(&persistence);
         QCOMPARE(model.groups().count(), 4);
         QCOMPARE(model.groups().at(0).id, home);
@@ -1282,11 +1199,9 @@ void tst_tabmodel::groupPreviews()
     const auto previews = [&model](int row) {
         return role(*model.groupModel(), row, roleId(TabGroupModel::Role::Previews)).toStringList();
     };
-    // An empty group has none.
     QVERIFY(previews(0).isEmpty());
     QVERIFY(model.groupThumbnails(4242, 4).isEmpty());
 
-    // The most recent first, four at most; a tab with no picture is a place for one.
     QList<int> ids;
     for (int i = 0; i < 5; ++i) {
         ids.append(model.newTab(QStringLiteral("https://t%1.example/").arg(i)));
@@ -1302,8 +1217,6 @@ void tst_tabmodel::groupPreviews()
     QCOMPARE(model.groupThumbnails(home, 2),
              (QStringList{QString(), QStringLiteral("/previews/t4.png")}));
 
-    // Each group its own; the views are told as a tab comes to the front, as a preview
-    // is taken, and as a tab moves from one group to another.
     QSignalSpy changeSpy(model.groupModel(), &TabGroupModel::dataChanged);
     const auto told = [&changeSpy](int row) {
         return std::any_of(changeSpy.cbegin(), changeSpy.cend(),
@@ -1332,8 +1245,6 @@ void tst_tabmodel::groupPreviews()
     QVERIFY(told(0));
     QVERIFY(previews(0).contains(QStringLiteral("/previews/bare.png")));
 
-    // Ungrouped, a group's tabs are in the default group's picture, by how recent they
-    // are.
     changeSpy.clear();
     model.activateTabById(ids.at(0));
     QVERIFY(model.ungroup(work));
@@ -1360,8 +1271,6 @@ void tst_tabmodel::searchSpansTheGroups()
     const int a2 = model.newTab(QStringLiteral("https://weather.example/"));
     model.updateTitle(a2, QStringLiteral("Weather news"));
 
-    // With nothing typed, every tab, group by group and each group's first marked:
-    // the two in the default group, then the one in Work.
     QCOMPARE(search.count(), 3);
     QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), a1);
     QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), a2);
@@ -1383,7 +1292,6 @@ void tst_tabmodel::searchSpansTheGroups()
     QCOMPARE(search.roleNames().value(roleId(TabSearchModel::Role::GroupStart)),
              QByteArrayLiteral("groupStart"));
 
-    // Title or address, whatever the case, and the term is trimmed.
     search.setSearchTerm(QStringLiteral("  NEWS "));
     QCOMPARE(search.searchTerm(), QStringLiteral("NEWS"));
     QCOMPARE(termSpy.count(), 1);
@@ -1400,7 +1308,6 @@ void tst_tabmodel::searchSpansTheGroups()
     search.setSearchTerm(QStringLiteral("nothing"));
     QCOMPARE(search.count(), 0);
 
-    // The list follows the tabs and the groups without being asked.
     search.setSearchTerm(QString());
     QCOMPARE(search.count(), 3);
     model.renameGroup(work, QStringLiteral("Office"));
@@ -1430,8 +1337,7 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QSignalSpy insertSpy(&search, &TabSearchModel::rowsInserted);
     QSignalSpy changeSpy(&search, &TabSearchModel::dataChanged);
 
-    // Typing takes rows out one at a time; the list is never reset around a
-    // keystroke, so the page under the keyboard keeps its place and its focus.
+    // Typing removes rows one by one, never resets: page under keyboard keeps place and focus.
     search.setSearchTerm(QStringLiteral("ap"));
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(removeSpy.count(), 2);
@@ -1441,8 +1347,6 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(role(search, 1, roleId(TabSearchModel::Role::TabId)).toInt(), c);
     QVERIFY(role(search, 1, roleId(TabSearchModel::Role::GroupStart)).toBool());
 
-    // Narrowing further removes the last row of a group, and the next group's first
-    // row keeps its heading.
     search.setSearchTerm(QStringLiteral("apr"));
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(removeSpy.count(), 3);
@@ -1450,8 +1354,6 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), c);
     QVERIFY(role(search, 0, roleId(TabSearchModel::Role::GroupStart)).toBool());
 
-    // Widening puts rows back where they belong -- "a" is in every address -- and a
-    // row that stops being the first of its group is told so.
     search.setSearchTerm(QStringLiteral("a"));
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(insertSpy.count(), 3);
@@ -1471,14 +1373,11 @@ void tst_tabmodel::searchRefinesWithoutResetting()
     QCOMPARE(role(search, 3, roleId(TabSearchModel::Role::TabId)).toInt(), d);
     QCOMPARE(resetSpy.count(), 0);
 
-    // The tabs changing is another matter: then the list is built again.
     model.closeTabById(d);
     QVERIFY(resetSpy.count() >= 1);
     QCOMPARE(search.count(), 3);
 }
 
-// The grid's search matches as the address bar's does: every word, in the title or the
-// address, whatever the case (docs/DECISIONS/0027-omnibar.md).
 void tst_tabmodel::searchTakesEveryWord()
 {
     TabModel model(nullptr);
@@ -1490,8 +1389,6 @@ void tst_tabmodel::searchTakesEveryWord()
     const int phones = model.newTab(QStringLiteral("https://shop.example/"));
     model.updateTitle(phones, QStringLiteral("Älypuhelimet"));
 
-    // Two words, in the other order and a field each: the whole term as one string
-    // is found nowhere.
     search.setSearchTerm(QStringLiteral("news  yle"));
     QCOMPARE(search.count(), 1);
     QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), news);
@@ -1507,8 +1404,6 @@ void tst_tabmodel::searchTakesEveryWord()
     QCOMPARE(role(search, 0, roleId(TabSearchModel::Role::TabId)).toInt(), phones);
 }
 
-// The open tab for an address, in any group; the one in front most recently of
-// several; none for an address no tab shows.
 void tst_tabmodel::tabIdForUrl()
 {
     TabModel model(nullptr);
@@ -1523,7 +1418,6 @@ void tst_tabmodel::tabIdForUrl()
     QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), first);
     QCOMPARE(model.tabIdForUrl(QStringLiteral("https://c.example/")), 0);
     QCOMPARE(model.tabIdForUrl(QString()), 0);
-    // An address as the page says it now, not as the tab was opened.
     model.updateUrl(first, QStringLiteral("https://a.example/next"));
     QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/")), second);
     QCOMPARE(model.tabIdForUrl(QStringLiteral("https://a.example/next")), first);
@@ -1550,7 +1444,6 @@ void tst_tabmodel::closedTabsCanBeReopened()
         const int b = model.newTab(QStringLiteral("https://b.example/"));
         model.newTab(QStringLiteral("https://c.example/"));
 
-        // Closed tabs are listed newest first.
         model.closeTabById(a);
         model.closeTabById(b);
         QCOMPARE(closed->count(), 2);
@@ -1568,8 +1461,6 @@ void tst_tabmodel::closedTabsCanBeReopened()
         QCOMPARE(closed->roleNames().value(roleId(ClosedTabModel::Role::ClosedId)),
                  QByteArrayLiteral("closedId"));
 
-        // Opening one again brings it back with what it was and takes it off the
-        // list.
         closed->reopen(1);
         QCOMPARE(closed->count(), 1);
         QCOMPARE(model.activeUrl(), QStringLiteral("https://a.example/"));
@@ -1579,14 +1470,12 @@ void tst_tabmodel::closedTabsCanBeReopened()
         closed->reopen(5);
         QCOMPARE(closed->count(), 1);
 
-        // Closing every tab records every one.
         model.closeAllTabs();
         QCOMPARE(closed->count(), 3);
         QCOMPARE(role(*closed, 0, roleId(ClosedTabModel::Role::Url)).toString(),
                  QStringLiteral("https://a.example/"));
     }
     {
-        // The list survives a restart, and clears on request.
         TabModel model(&persistence);
         ClosedTabModel *closed = model.closedTabs();
         QCOMPARE(closed->count(), 3);
@@ -1599,7 +1488,6 @@ void tst_tabmodel::closedTabsCanBeReopened()
     {
         TabModel model(&persistence);
         QCOMPARE(model.closedTabs()->count(), 0);
-        // Never more than the limit; the oldest go.
         for (int i = 0; i < ClosedTabModel::Limit + 5; ++i) {
             model.closeTabById(model.newTab(QStringLiteral("https://n%1.example/").arg(i)));
         }
@@ -1620,12 +1508,10 @@ void tst_tabmodel::livePagesAreCapped()
     for (int i = 0; i < 6; ++i) {
         ids.append(model.newTab(QStringLiteral("https://t%1.example/").arg(i)));
     }
-    // No limit: every page keeps its view.
     for (int i = 0; i < 6; ++i) {
         QVERIFY(role(model, i, roleId(TabModel::Role::Live)).toBool());
     }
 
-    // With a limit, the tab in front and the ones read most recently before it.
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
     model.setLiveTabLimit(3);
     QCOMPARE(model.liveTabLimit(), 3);
@@ -1639,21 +1525,17 @@ void tst_tabmodel::livePagesAreCapped()
     QCOMPARE(model.liveTabLimit(), 0);
     model.setLiveTabLimit(3);
 
-    // Bringing an old tab to the front keeps it, and lets the least recent go.
     model.activateTabById(ids.at(0));
     QVERIFY(role(model, 0, roleId(TabModel::Role::Live)).toBool());
     QVERIFY(!role(model, 3, roleId(TabModel::Role::Live)).toBool());
     QVERIFY(role(model, 4, roleId(TabModel::Role::Live)).toBool());
     QVERIFY(role(model, 5, roleId(TabModel::Role::Live)).toBool());
 
-    // A tab closed makes room for the next most recent.
     model.closeTabById(ids.at(5));
     QVERIFY(role(model, model.indexOf(ids.at(3)), roleId(TabModel::Role::Live)).toBool());
     model.closeAllTabs();
 }
 
-// What a page says of what it plays is the cover's to show while the page plays, and
-// goes with what it plays: stopping, the tab closing.
 void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
 {
     TabModel model(nullptr);
@@ -1664,7 +1546,6 @@ void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
                                            QStringLiteral("https://b.example/5.png")};
     QSignalSpy activeSpy(&model, &TabModel::activeMediaChanged);
 
-    // Nothing plays: nothing is kept.
     model.setMediaMetadata(front, symphony);
     QCOMPARE(model.mediaMetadata(front), TabModel::MediaMetadata());
     QCOMPARE(activeSpy.count(), 0);
@@ -1676,30 +1557,24 @@ void tst_tabmodel::mediaMetadataGoesWithWhatPlays()
     QCOMPARE(model.activeMediaTitle(), symphony.title);
     QCOMPARE(model.activeMediaArtist(), symphony.artist);
     QCOMPARE(model.activeMediaArtwork(), symphony.artwork);
-    // Said twice, it is said once.
     model.setMediaMetadata(front, symphony);
     QCOMPARE(activeSpy.count(), 1);
 
-    // Behind the front, it is kept but not the front's to tell.
     model.setMediaState(behind, TabModel::MediaPlaying);
     activeSpy.clear();
     model.setMediaMetadata(behind, {QStringLiteral("Other"), QString(), QString()});
     QCOMPARE(activeSpy.count(), 0);
     QCOMPARE(model.mediaMetadata(behind).title, QStringLiteral("Other"));
-    // Brought to the front, it is.
     model.activateTabById(behind);
     QCOMPARE(model.activeMediaTitle(), QStringLiteral("Other"));
     model.activateTabById(front);
 
-    // Stopped, it goes; closed, too.
     model.setMediaState(front, TabModel::NoMedia);
     QCOMPARE(model.activeMediaTitle(), QString());
     model.closeTabById(behind);
     QCOMPARE(model.mediaMetadata(behind), TabModel::MediaMetadata());
 }
 
-// What a page plays is the page's, and goes with it; whether its tab is muted is the
-// tab's, for as long as it is open (docs/DECISIONS/0026-media-controls.md).
 void tst_tabmodel::mediaFollowsThePage()
 {
     TabModel model(nullptr);
@@ -1713,7 +1588,6 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(role(model, 1, roleId(TabModel::Role::Media)).toInt(),
              static_cast<int>(TabModel::NoMedia));
 
-    // The tab in front plays: its row says so, and so does the model's front.
     QSignalSpy rowSpy(&model, &TabModel::dataChanged);
     QSignalSpy groupRowSpy(model.groupTabs(), &GroupTabModel::dataChanged);
     QSignalSpy activeSpy(&model, &TabModel::activeMediaChanged);
@@ -1726,12 +1600,9 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::MediaPlaying));
     QCOMPARE(role(model, 1, roleId(TabModel::Role::Media)).toInt(),
              static_cast<int>(TabModel::MediaPlaying));
-    // Said twice, it is said once.
     model.setMediaState(front, TabModel::MediaPlaying);
     QCOMPARE(rowSpy.count(), 1);
 
-    // Behind the one in front a page that says it plays is held, and shows as paused;
-    // brought to the front, it plays again, and the one it replaced is held.
     model.setMediaState(behind, TabModel::MediaPlaying);
     QCOMPARE(activeSpy.count(), 1);
     QCOMPARE(model.mediaState(behind), TabModel::MediaPlaying);
@@ -1754,7 +1625,6 @@ void tst_tabmodel::mediaFollowsThePage()
     QVERIFY(activeSpy.count() > 1);
     model.activateTabById(front);
 
-    // Muted is the tab's: it outlives what the page plays.
     activeSpy.clear();
     model.setMuted(front, true);
     QVERIFY(model.isMuted(front));
@@ -1766,19 +1636,15 @@ void tst_tabmodel::mediaFollowsThePage()
     model.setMediaState(front, TabModel::NoMedia);
     QVERIFY(model.isMuted(front));
     QCOMPARE(activeSpy.count(), 2);
-    // Behind, it is not the front's to tell.
     model.setMuted(behind, true);
     QCOMPARE(activeSpy.count(), 2);
     model.setMuted(behind, false);
     QVERIFY(!model.isMuted(behind));
-    // A tab that is not there is neither.
     model.setMuted(front + 10, true);
     model.setMediaState(front + 10, TabModel::MediaPlaying);
     QVERIFY(!model.isMuted(front + 10));
     QCOMPARE(model.mediaState(front + 10), TabModel::NoMedia);
 
-    // A page that gives up its view gives up what it played, and one without a view
-    // plays nothing, whatever arrives late for it.
     model.setMediaState(behind, TabModel::MediaPaused);
     model.setLiveTabLimit(1);
     QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
@@ -1786,7 +1652,6 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(model.mediaState(behind), TabModel::NoMedia);
     model.setLiveTabLimit(0);
 
-    // Closed, the tab takes both with it.
     model.setMediaState(front, TabModel::MediaPlaying);
     model.closeTabById(front);
     QCOMPARE(model.mediaState(front), TabModel::NoMedia);
@@ -1799,9 +1664,8 @@ void tst_tabmodel::mediaFollowsThePage()
     QCOMPARE(model.activeMediaState(), static_cast<int>(TabModel::NoMedia));
 }
 
-// A tab with no address is on the start page: it has no page, takes no page's place
-// among the ones kept loaded, is neither a visit nor a tab to reopen, and is taken back
-// to the start page from the page opened in it (docs/DECISIONS/0032-start-page.md).
+// Url-less tab = start page: no page, no live-slot, not visit, not reopenable; showStartPage
+// returns opened page to start page.
 void tst_tabmodel::startPageTabs()
 {
     QTemporaryDir dir;
@@ -1817,13 +1681,10 @@ void tst_tabmodel::startPageTabs()
     QVERIFY(model.activeUrl().isEmpty());
     QCOMPARE(visited.count(), 0);
 
-    // One page kept loaded, and it is the other tab's; the start page's view, which it
-    // has none of, can be made at any time.
     model.setLiveTabLimit(1);
     QVERIFY(role(model, model.indexOf(page), roleId(TabModel::Role::Live)).toBool());
     QVERIFY(role(model, model.indexOf(start), roleId(TabModel::Role::Live)).toBool());
 
-    // A page opened from it is a visit, and takes that place.
     model.updateUrl(start, QStringLiteral("https://b.example/"));
     QCOMPARE(visited.count(), 1);
     QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
@@ -1836,8 +1697,6 @@ void tst_tabmodel::startPageTabs()
     model.updateThumbnail(start, preview);
     model.setMediaState(start, TabModel::MediaPlaying);
 
-    // Back to the start page, nothing of the page stays, and the other tab's page has
-    // its place back.
     QSignalSpy activeData(&model, &TabModel::activeTabDataChanged);
     QSignalSpy recent(&model, &TabModel::recentTabsChanged);
     model.showStartPage(start);
@@ -1852,12 +1711,10 @@ void tst_tabmodel::startPageTabs()
     QCOMPARE(activeData.count(), 1);
     QCOMPARE(recent.count(), 1);
     QCOMPARE(visited.count(), 1);
-    // Once there it stays there, and a tab that is not there is not taken anywhere.
     model.showStartPage(start);
     model.showStartPage(start + 10);
     QCOMPARE(activeData.count(), 1);
 
-    // It is kept as it is across a restart.
     {
         TabModel restored(&persistence, previews);
         QCOMPARE(restored.count(), 2);
@@ -1866,16 +1723,12 @@ void tst_tabmodel::startPageTabs()
         QVERIFY(restored.activeTitle().isEmpty());
     }
 
-    // Closed, it is not among the tabs to open again: there was nothing in it.
     model.closeTabById(start);
     QCOMPARE(model.closedTabs()->count(), 0);
     model.closeTabById(page);
     QCOMPARE(model.closedTabs()->count(), 1);
 }
 
-// A link shared from another application opens in a new tab in the default group, which
-// comes to the front with it, whichever group was being read
-// (docs/DECISIONS/0042-share-target.md).
 void tst_tabmodel::sharedLinksOpenInTheDefaultGroup()
 {
     TabModel model(nullptr);
@@ -1893,7 +1746,6 @@ void tst_tabmodel::sharedLinksOpenInTheDefaultGroup()
     QCOMPARE(model.tabCountInGroup(work), 1);
     QCOMPARE(groupTabIds(*model.groupTabs()).last(), shared);
 
-    // What another application would hand on, the group is left as it was.
     model.setCurrentGroupId(work);
     QCOMPARE(model.newTabInDefaultGroup(QStringLiteral("tel:+358401234567")), 0);
     QCOMPARE(model.currentGroupId(), work);

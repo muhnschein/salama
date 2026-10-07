@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// What each setting's choices are called, in one place: the page a choice is made on
-// and the line under its way in on the main page, which says how it is set, name it the
-// same way (docs/DECISIONS/0028-settings-pages.md). Each takes the setting's stored value,
-// and its lists are in the order of those values.
+// Choice names shared by choice pages and main-page value lines. Lists ordered by stored value.
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -23,8 +20,7 @@ QtObject {
         ][colors] || ""
     }
 
-    // sailfish-browser's notch guard modes and its words for them, in the order of
-    // Settings.NotchGuard.
+    // Settings.NotchGuard order.
     function notchGuard(guard) {
         return [
             //: Notch guard mode that lets adapted websites use the notch area
@@ -52,7 +48,6 @@ QtObject {
         return typeface === ReaderSettings.Serif ? qsTr("Serif") : qsTr("Sans serif")
     }
 
-    // Firefox's nine steps, written as a share of its default, the middle one.
     function textSize(step) {
         //: A text size, as a share of the default: "100 %"
         return qsTr("%1 %").arg(Math.round(100 * Reader.fontSizeFor(step)
@@ -82,9 +77,7 @@ QtObject {
         ][action] || ""
     }
 
-    // What the quick action does now: a bookmark's by its title, as it is called now,
-    // and a bookmark gone for good as gone -- the cover keeps offering it, and it opens
-    // the bookmarks then.
+    // Deleted bookmark still offered by cover; opens bookmarks list.
     function quickActionValue(action, bookmarkId, bookmarkTitle) {
         if (action !== CoverSettings.QuickActionBookmark) {
             return quickAction(action)
@@ -93,7 +86,6 @@ QtObject {
         return bookmarkId > 0 ? bookmarkTitle : qsTr("Deleted bookmark")
     }
 
-    // The cover, by its quick action: "Search", "Yle Uutiset" for a bookmark's.
     function cover(action, bookmarkId, bookmarkTitle) {
         return action === CoverSettings.QuickActionNone
                 //: The cover's line in Settings when it offers no quick action
@@ -110,8 +102,7 @@ QtObject {
         ][level] || ""
     }
 
-    // What each level does, promising only what every engine this runs on does
-    // (docs/DECISIONS/0023-tracking-protection.md).
+    // Promises only what every supported engine does.
     function trackingProtectionDescription(level) {
         return [
             qsTr("Sites can follow you from one to another"),
@@ -120,8 +111,6 @@ QtObject {
         ][level] || ""
     }
 
-    // The sites that may send notifications and those that may not, as many as there
-    // are of each; with none of either, whether sites may ask.
     function notifications(allowed, blocked, blockRequests) {
         if (allowed === 0 && blocked === 0) {
             return blockRequests ? qsTr("Sites cannot ask") : qsTr("Sites can ask")
@@ -141,7 +130,6 @@ QtObject {
         return qsTr("%1 · %2").arg(allowedText).arg(blockedText)
     }
 
-    // How many sites have a permission decided for them, Site permissions' line.
     function sitePermissions(sites) {
         //: Settings' line under Site permissions when no site has a decision of its own
         return sites === 0 ? qsTr("No exceptions")
@@ -158,7 +146,6 @@ QtObject {
         return clearOnClose ? qsTr("Cleared when closed") : qsTr("Remembered")
     }
 
-    // HTTPS-Only Mode's line in Settings (docs/DECISIONS/0047-secure-connections.md).
     function httpsOnly(on) {
         //: HTTPS-Only Mode is on
         return on ? qsTr("On", "HTTPS-Only Mode")
@@ -166,8 +153,6 @@ QtObject {
                   : qsTr("Off", "HTTPS-Only Mode")
     }
 
-    // DNS over HTTPS's levels, by their stored values (DohSettings.Protection), in Firefox
-    // for Android's words.
     function doh(level) {
         return [
             //: DNS over HTTPS is off
@@ -177,9 +162,7 @@ QtObject {
         ][level] || ""
     }
 
-    // What each level does: Firefox for Android's own lines for Off, and for the others
-    // those of its pages about them that promise nothing the engine here leaves to
-    // Firefox's front end, such as Max Protection's warning before falling back.
+    // Promises nothing engine leaves to Firefox front end (e.g. Max Protection fallback warning).
     function dohDescription(level) {
         return [
             qsTr("Use your default DNS resolver"),
@@ -188,7 +171,6 @@ QtObject {
         ][level] || ""
     }
 
-    // How many sites DNS over HTTPS is not used for.
     function dohExceptions(sites) {
         //: No site is an exception to DNS over HTTPS
         return sites === 0 ? qsTr("None", "no sites")

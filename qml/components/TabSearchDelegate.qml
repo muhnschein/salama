@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// One tab in the search results, under a heading naming its group on the first row
-// of each group. The heading is part of the row rather than a section of the list,
-// so that two unnamed groups holding the same number of tabs stay two headings. What
-// was typed is lit wherever it is in the title and the address (TabRow's match).
+// Heading in row, not list section, so two unnamed groups with same tab count stay separate.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -13,7 +10,6 @@ Column {
 
     signal chosen()
 
-    // What the search lights in the row, as TabRow takes it.
     property var match: null
 
     objectName: "tabSearchDelegate"

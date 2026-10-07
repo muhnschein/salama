@@ -43,16 +43,13 @@ QString article(const QJsonObject &fields)
     return QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
-// The address the engine reports for a document it was handed as HTML: what qtmozembed's
-// QuickMozView::loadText makes of it.
+// Url engine reports for HTML-loaded doc (qtmozembed QuickMozView::loadText).
 QUrl loaded(const QString &html)
 {
     return QUrl(QStringLiteral("data:text/html;charset=utf-8,") +
                 QString::fromLatin1(QUrl::toPercentEncoding(html)));
 }
 
-// Silica's Theme values as QML hands them to the reader: a dark ambience's, and a light
-// one's.
 QVariantMap darkAmbience()
 {
     return {
@@ -129,8 +126,7 @@ void tst_reader::cleanup()
     m_dir.reset();
 }
 
-// What runs in the page is Readability as Mozilla publishes it, compiled in whole: the
-// files under third_party/ are the ones the scripts carry.
+// Page runs Mozilla's Readability whole: third_party/ files = what scripts carry.
 void tst_reader::scriptsAreMozillasReadability()
 {
     const QString readability = thirdParty(QStringLiteral("Readability.js"));
@@ -140,22 +136,17 @@ void tst_reader::scriptsAreMozillasReadability()
 
     QVERIFY(m_reader->articleScript().contains(readability));
     QVERIFY(m_reader->readerableScript().contains(readerable));
-    // A page's own global `module` is not handed Readability as its exports.
+    // Page's own global `module` must not get Readability exports.
     QVERIFY(m_reader->articleScript().startsWith(QLatin1String("var module;\n")));
     QVERIFY(m_reader->readerableScript().startsWith(QLatin1String("var module;\n")));
-    // Function bodies that answer, the form runJavaScript needs
-    // (docs/DECISIONS/0005-favicons.md).
     QVERIFY(m_reader->articleScript().contains(QLatin1String("return JSON.stringify(")));
     QVERIFY(m_reader->readerableScript().contains(QLatin1String("return isProbablyReaderable(")));
-    // Firefox's options: the classes its style sheet matches are kept.
     QVERIFY(m_reader->articleScript().contains(QLatin1String("\"wp-caption-text\"")));
 }
 
-// What this application adds around Readability compiles as the function body
-// runJavaScript makes of it. Readability itself is written for the engine's JavaScript,
-// Gecko's, and uses syntax the host's QJSEngine does not know (an optional catch
-// binding, `??`), so it is taken out first: it is Mozilla's, and tested there. What
-// is left of each script is compiled with a stand-in for what it calls.
+// Our wrapper compiles as runJavaScript function body. Readability itself uses Gecko-only
+// syntax host QJSEngine lacks (optional catch binding, `??`), so stripped first (Mozilla
+// tests it). Rest compiled with stand-ins for callees.
 void tst_reader::scriptsParse()
 {
     const QString readability = thirdParty(QStringLiteral("Readability.js"));
@@ -190,11 +181,9 @@ void tst_reader::checksUrl_data()
     QTest::newRow("data") << "data:text/html;charset=utf-8,%3Cp%3E" << false;
     QTest::newRow("file") << "file:///home/defaultuser/page.html" << false;
     QTest::newRow("not a url") << "" << false;
-    // Firefox's list of sites that read as articles and are not.
     QTest::newRow("amazon") << "https://www.amazon.com/dp/B000" << false;
     QTest::newRow("youtube") << "https://m.youtube.com/watch?v=x" << false;
     QTest::newRow("reddit") << "https://old.reddit.com/r/sailfishos/" << false;
-    // "Allow github on non-project pages"
     QTest::newRow("github") << "https://github.com/mozilla/readability" << true;
     QTest::newRow("github issues") << "https://github.com/mozilla/readability/issues/1" << false;
     QTest::newRow("github projects") << "https://github.com/orgs/x/projects/1" << false;
@@ -208,8 +197,6 @@ void tst_reader::checksUrl()
     QCOMPARE(Reader::checksUrl(url), checked);
 }
 
-// The engine answers a boolean. Nothing else is taken for a yes -- not the string a
-// script that went wrong might have made of one.
 void tst_reader::readerableAnswer()
 {
     QVERIFY(Reader::readerable(QVariant(true)));
@@ -221,14 +208,11 @@ void tst_reader::readerableAnswer()
 
 void tst_reader::colors()
 {
-    // Light text is written on a dark ambience.
     QVERIFY(Reader::isDarkAmbience(QColor(Qt::white)));
     QVERIFY(Reader::isDarkAmbience(QColor(QStringLiteral("#e0e0e0"))));
     QVERIFY(!Reader::isDarkAmbience(QColor(Qt::black)));
     QVERIFY(!Reader::isDarkAmbience(QColor(QStringLiteral("#202020"))));
 
-    // The ambience's own look until something else is chosen, whatever the ambience;
-    // Automatic is Firefox's light or dark as the ambience is.
     QCOMPARE(m_reader->colorScheme(true), QStringLiteral("ambience"));
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("ambience"));
     m_settings->setColors(ReaderSettings::Automatic);
@@ -242,14 +226,12 @@ void tst_reader::colors()
     m_settings->setColors(ReaderSettings::Dark);
     QCOMPARE(m_reader->colorScheme(false), QStringLiteral("dark"));
 
-    // Asked for a setting rather than the one set, as the settings' preview asks.
     QCOMPARE(Reader::schemeFor(ReaderSettings::Automatic, true), QStringLiteral("dark"));
     QCOMPARE(Reader::schemeFor(ReaderSettings::Automatic, false), QStringLiteral("light"));
     QCOMPARE(Reader::schemeFor(ReaderSettings::Ambience, false), QStringLiteral("ambience"));
     QCOMPARE(Reader::schemeFor(ReaderSettings::Sepia, true), QStringLiteral("sepia"));
     QCOMPARE(Reader::schemeFor(99, false), QStringLiteral("light"));
 
-    // The style sheet's colours for each theme.
     QCOMPARE(Reader::backgroundOf(QStringLiteral("light")), QColor(QStringLiteral("#ffffff")));
     QCOMPARE(Reader::backgroundOf(QStringLiteral("sepia")), QColor(244, 236, 216));
     QCOMPARE(Reader::backgroundOf(QStringLiteral("dark")), QColor(28, 27, 34));
@@ -266,15 +248,12 @@ void tst_reader::colors()
     QVERIFY(css.contains(QStringLiteral("--main-foreground: rgb(91, 70, 54);")));
     QVERIFY(css.contains(QStringLiteral("--primary-color: rgb(0, 221, 255);")));
 
-    // Firefox's text sizes: 10 and two more a step.
+    // Firefox sizes: 10 + 2 per step.
     QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeMin), 12);
     QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeDefault), 20);
     QCOMPARE(Reader::fontSizeFor(ReaderSettings::TextSizeMax), 28);
 }
 
-// The ambience's own look: the article in the ambience's colours and typefaces, handed
-// in as the body's properties, on a page of the ambience's dimmer highlight, and the
-// title where a PageHeader has it (docs/DECISIONS/0024-reader-view.md).
 void tst_reader::ambienceLook()
 {
     const QString url = QStringLiteral("https://example.com/story");
@@ -282,7 +261,6 @@ void tst_reader::ambienceLook()
     QVERIFY(dark.contains(QLatin1String("<body class=\"ambience ambience-dark sans-serif\" "
                                         "style=\"--font-size: 20px; ")));
     QVERIFY(dark.contains(QLatin1String("--ambience-primary: rgba(255, 255, 255, 1);")));
-    // Silica's secondary colours are its primary ones faded, and stay so.
     QVERIFY(dark.contains(QLatin1String("--ambience-secondary: rgba(255, 255, 255, 0.69);")));
     QVERIFY(dark.contains(QLatin1String("--ambience-highlight: rgba(255, 196, 128, 1);")));
     QVERIFY(
@@ -293,22 +271,17 @@ void tst_reader::ambienceLook()
     QVERIFY(dark.contains(QLatin1String("--ambience-font: &#39;Sail Sans Pro&#39;;")) ||
             dark.contains(QLatin1String("--ambience-font: 'Sail Sans Pro';")));
     QVERIFY(dark.contains(QLatin1String("Sail Sans Pro Light")));
-    // The strip beside the cutout is the top of the page.
     QVERIFY(dark.contains(QLatin1String("<meta name=\"theme-color\" content=\"#4a2408\">")));
-    // The style sheet sets the look by those properties alone.
     QVERIFY(dark.contains(QLatin1String("body.ambience {")));
     QVERIFY(dark.contains(QLatin1String("color: var(--ambience-highlight);")));
 
-    // Half way from the dimmer highlight to the overlay: darker on a dark ambience,
-    // lighter on a light one.
+    // Halfway dimmer highlight -> overlay: darker on dark, lighter on light.
     QCOMPARE(Reader::ambienceBackground(darkAmbience()), QColor(37, 18, 4));
     QCOMPARE(Reader::ambienceBackground(lightAmbience()), QColor(253, 242, 228));
     const QString light = m_reader->page(article({}), url, QString(), QString(), lightAmbience());
     QVERIFY(light.contains(QLatin1String("<body class=\"ambience ambience-light sans-serif\"")));
     QVERIFY(light.contains(QLatin1String("--ambience-primary: rgba(0, 0, 0, 1);")));
 
-    // Nothing handed in reads as a dark ambience's, and a typeface's name cannot close
-    // what it is written into.
     const QString bare = m_reader->page(article({}), url, QString(), QString(), QVariantMap());
     QVERIFY(bare.contains(QLatin1String("<body class=\"ambience ambience-dark sans-serif\"")));
     QVERIFY(bare.contains(QLatin1String("--ambience-font: sans-serif;")));
@@ -340,8 +313,6 @@ void tst_reader::refusesWhatIsNoArticle()
                 ->page(article({{QStringLiteral("content"), QStringLiteral("  ")}}), url, QString(),
                        QString(), lightAmbience())
                 .isEmpty());
-    // Only a web page is read into a reader view: the view says where it came from,
-    // and links back there.
     QVERIFY(m_reader
                 ->page(article({}), QStringLiteral("about:blank"), QString(), QString(),
                        lightAmbience())
@@ -365,8 +336,6 @@ void tst_reader::setsTheArticle()
                        QStringLiteral("An article | Example"),
                        QStringLiteral("https://www.example.com/icon.png"), lightAmbience());
 
-    // Firefox's about:reader: the site, the title, the byline, the reading time, a rule,
-    // and the article.
     QVERIFY(html.startsWith(QLatin1String("<!DOCTYPE html><html><head><meta charset=\"utf-8\">")));
     QVERIFY(html.contains(
         QLatin1String("<a class=\"domain reader-domain\" "
@@ -377,39 +346,29 @@ void tst_reader::setsTheArticle()
         html.contains(QStringLiteral("<div class=\"reader-estimated-time\">5–6 minute(s)</div>")));
     QVERIFY(html.contains(QLatin1String(
         "<div class=\"moz-reader-content\"><p>100%1 <a href=\"#note\">here</a></p></div>")));
-    // The page's language and direction, for the hyphenation and the text's side.
     QVERIFY(html.contains(QLatin1String("<div class=\"container\" lang=\"en-GB\" dir=\"rtl\">")));
-    // The tab keeps the page's own title, and its icon.
     QVERIFY(html.contains(QLatin1String("<title>An article | Example</title>")));
     QVERIFY(html.contains(
         QLatin1String("<link rel=\"icon\" href=\"https://www.example.com/icon.png\">")));
-    // Firefox's style sheet, in, and the settings: Automatic in a light ambience,
-    // sans-serif, the middle size.
     QVERIFY(html.contains(QLatin1String(".moz-reader-content blockquote {")));
     QVERIFY(html.contains(
         QLatin1String("<body class=\"light sans-serif\" style=\"--font-size: 20px; ")));
     QVERIFY(html.contains(QLatin1String("<meta name=\"theme-color\" content=\"#ffffff\">")));
-    // Nothing of the article's runs, and the view is a phone's width.
     QVERIFY(
         html.contains(QLatin1String("<meta http-equiv=\"Content-Security-Policy\" "
                                     "content=\"default-src 'none'; script-src 'unsafe-eval';")));
     QVERIFY(html.contains(QLatin1String("<meta name=\"viewport\" content=\"width=device-width")));
 
-    // Without a title of the page's own, the article's; without one of those either,
-    // the site's. Without an icon that is a picture's address, no icon.
     const QString untitled = m_reader->page(article({{QStringLiteral("title"), QString()}}),
                                             QStringLiteral("https://m.example.org/a"), QString(),
                                             QStringLiteral("javascript:alert(1)"), darkAmbience());
     QVERIFY(untitled.contains(QLatin1String("<title>example.org</title>")));
     QVERIFY(untitled.contains(QLatin1String("<h1 class=\"reader-title\">example.org</h1>")));
     QVERIFY(!untitled.contains(QLatin1String("rel=\"icon\"")));
-    // A dark ambience, a dark reader view.
     QVERIFY(untitled.contains(QLatin1String("<body class=\"dark sans-serif\"")));
     QVERIFY(untitled.contains(QLatin1String("<meta name=\"theme-color\" content=\"#1c1b22\">")));
 }
 
-// The page chose the title, the byline, the language and the direction; none of them
-// gets to be markup in the reader view.
 void tst_reader::keepsWhatThePageSaysOutOfTheMarkup()
 {
     const QString html = m_reader->page(
@@ -430,8 +389,6 @@ void tst_reader::keepsWhatThePageSaysOutOfTheMarkup()
     QVERIFY(!html.contains(QLatin1String("<script>")));
 }
 
-// The engine reports the reader view's address, and the page it was made from is read
-// back out of it -- in whatever form of the data: url it arrives.
 void tst_reader::sourceUrlRoundTrip()
 {
     const QStringList pages{
@@ -446,7 +403,6 @@ void tst_reader::sourceUrlRoundTrip()
         QVERIFY(!html.isEmpty());
         const QUrl url = loaded(html);
         QCOMPARE(Reader::sourceUrl(url), page);
-        // As a string through QML and back, and after a jump to an anchor in it.
         QCOMPARE(Reader::sourceUrl(QUrl(url.toString())), page);
         QCOMPARE(Reader::sourceUrl(QUrl(url.toString() + QStringLiteral("#note"))), page);
         QCOMPARE(Reader::sourceUrl(QUrl::fromEncoded(url.toEncoded())), page);
@@ -459,8 +415,6 @@ void tst_reader::sourceUrlOfOtherAddresses()
     QVERIFY(Reader::sourceUrl(QUrl()).isEmpty());
     QVERIFY(Reader::sourceUrl(loaded(QStringLiteral("<p>A page</p>"))).isEmpty());
     QVERIFY(Reader::sourceUrl(QUrl(QStringLiteral("data:text/plain,hello"))).isEmpty());
-    // A document that says it is a reader view of something that is not a web page is
-    // not taken at its word.
     QVERIFY(Reader::sourceUrl(loaded(QStringLiteral("<!DOCTYPE html><html><head><meta "
                                                     "charset=\"utf-8\"><meta "
                                                     "name=\"salama-reader\" "
@@ -480,7 +434,6 @@ void tst_reader::styleFollowsSettings()
     QVERIFY(script.contains(QLatin1String("document.body.className = 'light sans-serif';")));
     QVERIFY(script.contains(QLatin1String("setProperty('--font-size', '20px')")));
     QVERIFY(script.contains(QLatin1String("color.content = '#ffffff'")));
-    // Only a reader view is restyled: it is recognised by its own head.
     QVERIFY(script.contains(QLatin1String("meta[name=\"salama-reader\"]")));
 
     m_settings->setColors(ReaderSettings::Sepia);
@@ -492,14 +445,12 @@ void tst_reader::styleFollowsSettings()
     QVERIFY(script.contains(QLatin1String("setProperty('--font-size', '28px')")));
     QVERIFY(script.contains(QLatin1String("color.content = '#f4ecd8'")));
 
-    // A new reader view is set the same way from the start.
     const QString html = m_reader->page(article({}), QStringLiteral("https://example.com/a"),
                                         QString(), QString(), darkAmbience());
     QVERIFY(
         html.contains(QLatin1String("<body class=\"sepia serif\" style=\"--font-size: 28px; ")));
     m_settings->setTextSize(ReaderSettings::TextSizeMin);
     QVERIFY(m_reader->styleScript(darkAmbience()).contains(QLatin1String("'12px'")));
-    // The ambience's look is set in place too, the ambience's properties with it.
     m_settings->setColors(ReaderSettings::Ambience);
     QCOMPARE(changed.count(), 5);
     script = m_reader->styleScript(darkAmbience());
@@ -517,16 +468,15 @@ void tst_reader::readingTime_data()
     QTest::addColumn<QString>("expected");
 
     QTest::newRow("empty") << 0 << "en" << QString();
-    // English, 987 ± 118 characters a minute.
+    // English, 987 ± 118 chars/min.
     QTest::newRow("a minute") << 869 << "en" << "1 minute(s)";
     QTest::newRow("a range") << 5000 << "en" << "5–6 minute(s)";
     QTest::newRow("a region's variant") << 5000 << "en-US" << "5–6 minute(s)";
     QTest::newRow("unknown language") << 5000 << "xx" << "5–6 minute(s)";
     QTest::newRow("no language") << 5000 << "" << "5–6 minute(s)";
-    // Finnish, 1078 ± 121; Chinese, 255 ± 29.
+    // Finnish 1078 ± 121; Chinese 255 ± 29.
     QTest::newRow("finnish") << 12000 << "fi" << "11–13 minute(s)";
     QTest::newRow("chinese") << 5000 << "zh_CN" << "18–23 minute(s)";
-    // Past two hours, in hours.
     QTest::newRow("hours") << 130350 << "en" << "2–3 hour(s)";
     QTest::newRow("hours alike") << 173800 << "en" << "3 hour(s)";
 }

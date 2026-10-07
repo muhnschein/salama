@@ -24,10 +24,6 @@ bool run(QSqlQuery &query)
     return true;
 }
 
-// The helpers below read the list rather than the model, so that they are this file's
-// own rather than more members of a class Qt's model interface already makes long.
-
-// What a bookmark is called where it is shown: its title, or its address without one.
 QString shownTitle(const BookmarkModel::Bookmark &bookmark)
 {
     return bookmark.title.isEmpty() ? bookmark.url : bookmark.title;

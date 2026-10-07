@@ -1,4 +1,4 @@
-// Stub page stack: synchronous, no transitions, pages parented to the stack.
+// Stub page stack: synchronous, no transitions, pages parented to stack.
 import QtQuick 2.6
 
 Item {

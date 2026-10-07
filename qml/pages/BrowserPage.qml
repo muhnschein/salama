@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The only file that imports Sailfish.WebView (SCOPE.md §5): a missing engine package
-// breaks browsing, not the application.
-//
-// The page is the top half of a deck two screens tall, components/TabDeck.qml:
-// browsing above, the tab grid below. The deck owns where it is and the gestures that
-// move it; what it carries is declared here, in this file's context, which is the one
-// that has the engine.
+// Only file importing Sailfish.WebView (SCOPE.md §5): missing engine breaks browsing, not app.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebView 1.0
@@ -18,49 +11,35 @@ import "../components"
 WebViewPage {
     id: browserPage
 
-    // The WebView of the active tab, or null while it is being created or while the tab
-    // is on the start page (docs/DECISIONS/0032-start-page.md); and its TabViewLoader.
+    // null while creating or on start page.
     property Item currentView: null
     property Item currentLoader: null
     property NotificationCenter notifications: NotificationCenter { page: browserPage }
     property EnginePreferences preferences: EnginePreferences {}
 
-    // The deck's state, as the rest of this page and the tests read it.
     property alias tabsOpen: deck.tabsOpen
     property alias dragging: deck.dragging
     property alias tabsOffset: deck.tabsOffset
     property alias fullHeight: deck.fullHeight
     property alias pullThreshold: deck.pullThreshold
 
-    // The bar's height, which is height the engine's view does not get: the page ends
-    // where the bar begins rather than running on behind it, in either of the two
-    // heights the bar has. While the bar is between them the view is sized as it will
-    // be at the slim end: a view resized on every frame of that animation is a page
-    // relaid out on every frame, which is what stretched pages under the keyboard. One
-    // resize, and the bar covers the difference while it moves.
+    // Mid-animation view sized to slim end: per-frame resize relaid out page (keyboard stretch).
     readonly property real barHeight: navigationBar.height
     readonly property real viewHeight: fullHeight - banners.height
                                        - (navigationBar.compact || navigationBar.resizing
                                           ? navigationBar.slimHeight : barHeight)
 
-    // The display's cutout, and how much of it the page and the rest keep out of.
     readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
     readonly property real cutoutHeight: cutout.height
     readonly property real cutoutInset: cutout.inset
     readonly property real pageCutoutInset: cutout.pageInset
 
-    // Scrolling down slims the bar to the handle and the host; scrolling back up puts
-    // its controls back. The engine's own chrome gesture is the signal -- the same one
-    // that used to take the whole bar off the screen -- and the view is resized with
-    // the bar, so the foot of a page clears it either way. A drag of the deck leaves it
-    // as it is: made whole as the drag began, the bar grew under the finger for the
-    // first fifth of a second and the engine's view was resized, and its page laid out
-    // again, in the middle of the movement -- and once more as it sprang back.
+    // Not during deck drag: mid-drag resize relaid out page.
     readonly property bool barCompact: {
         if (!currentView || navigationBar.editing || findBar.active || Settings.fixedToolbar) {
             return false
         }
-        // undefined on an engine with no chrome gesture: then the bar stays as it is.
+        // undefined on engine without chrome gesture -> bar unchanged.
         return currentView.chrome === false
     }
 
@@ -92,8 +71,6 @@ WebViewPage {
         }
     }
 
-    // What the bar asks of the current page. Back from the first page opened from the
-    // start page goes back to it.
     readonly property bool canGoBack: currentView ? currentView.canGoBack === true
                                                     || currentLoader !== null
                                                     && currentLoader.startPageBehind : false
@@ -118,7 +95,6 @@ WebViewPage {
         }
     }
 
-    // Refresh the grid's picture of this tab before it can be seen.
     function captureCurrent() {
         if (currentView) {
             currentView.captureThumbnail()
@@ -127,13 +103,7 @@ WebViewPage {
         }
     }
 
-    // The cover is made of these pictures, so the last thing this page does on the way
-    // out is take one. Until now a preview was only as fresh as the last load or the
-    // last time the grid was opened, which left the cover showing a page as it was
-    // before it was read: scrolled somewhere else, or a step further into a site that
-    // navigates without loading. Out of sight is also when the pages are put to sleep,
-    // and PageActivity says when. A named function rather than the handler's body, so
-    // the load tests can leave the application without a window manager to do it.
+    // Capture on leaving so cover is fresh. Named so load tests can call without window manager.
     function applicationStateChanged(state) {
         if (state !== Qt.ApplicationActive) {
             captureCurrent()
@@ -141,9 +111,7 @@ WebViewPage {
         PageActivity.background = state !== Qt.ApplicationActive
     }
 
-    // Every page that is loaded, the one in front and the ones behind it, stops its
-    // timers, workers and scripts until its view is next on the screen, but for one
-    // allowed to send notifications (docs/DECISIONS/0020-pages-sleep-out-of-sight.md, 0033).
+    // Notification-allowed pages stay awake.
     function suspendPages() {
         for (var i = 0; i < webViews.count; ++i) {
             var loader = webViews.itemAt(i)
@@ -153,17 +121,12 @@ WebViewPage {
         }
     }
 
-    // Ten minutes in the background, and the engine is asked to give back what it
-    // can -- the words sailfish-browser uses after the same wait
-    // (docs/DECISIONS/0016-five-live-pages.md). A named function, so the load tests
-    // can ask without waiting ten minutes.
+    // Named so load tests skip 10 min wait.
     function trimMemory() {
         WebEngine.notifyObservers(EngineMessages.memoryPressureTopic,
                                   EngineMessages.heapMinimizePayload)
     }
 
-    // Nothing over the page: the sheet away, the address not edited, the grid closed --
-    // where the cover's quick action starts (docs/DECISIONS/0029-quick-action.md).
     function uncover() {
         browserMenu.hide()
         linkMenu.hide()
@@ -171,18 +134,12 @@ WebViewPage {
         deck.settle(false)
     }
 
-    // The address bar with its pane up (docs/DECISIONS/0027-omnibar.md). For a new tab
-    // -- the cover's search -- the field opens empty over the bookmarks, and no tab is
-    // made until something is chosen. The sheet, and the find bar, which lies where
-    // the field goes, are put away first.
     function openOmnibar(forNewTab) {
         uncover()
         findBar.close()
         navigationBar.beginEditing(forNewTab)
     }
 
-    // What the omnibar opens: in the tab in front, or in a tab of its own when the bar
-    // was opened for one -- after a picture of the page being left, as for the grid.
     function openChosen(url, inNewTab) {
         navigationBar.endEditing()
         if (inNewTab && url.length > 0) {
@@ -193,8 +150,6 @@ WebViewPage {
         }
     }
 
-    // A download the omnibar found: one that has arrived opens its file, as the list of
-    // downloads opens it, and one still coming or failed is shown in that list.
     function openDownload(downloadId, done) {
         navigationBar.endEditing()
         if (done) {
@@ -204,9 +159,7 @@ WebViewPage {
         }
     }
 
-    // A touch the reach above the bar took from the foot of the page and handed back,
-    // given to the engine as the touch it would have had, in the view's coordinates.
-    // The view takes focus the way a real touch gives it, which ends editing the address.
+    // Touch taken above bar from page foot, replayed to engine; focus ends address edit.
     function touchPage(position, phase) {
         if (!currentView) {
             return
@@ -223,8 +176,7 @@ WebViewPage {
         }
     }
 
-    // How large the engine lays a page out (Settings.pageZoom). A function, so the
-    // load tests can compare it with what the engine was given.
+    // Function so load tests can compare with engine value.
     function pageZoom() {
         return Settings.pageZoom(Theme.pixelRatio)
     }
@@ -243,8 +195,7 @@ WebViewPage {
         }
     }
 
-    // What the engine says is playing, for PageActivity to weigh: a page making a
-    // sound is not put to sleep. And what it says of downloads, for the list of them.
+    // Playing media keeps page awake.
     Connections {
         target: WebEngine
         onRecvObserve: {
@@ -253,7 +204,6 @@ WebViewPage {
         }
     }
 
-    // And what the downloads' list and banner ask of it (docs/DECISIONS/0038-download-status.md).
     Connections {
         target: DownloadModel
         onEngineRequest: WebEngine.notifyObservers(topic, data)
@@ -270,8 +220,6 @@ WebViewPage {
 
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
-        // Downloads go to a folder of this browser's own, without the engine asking
-        // where each time (docs/DECISIONS/0025-downloads-folder.md).
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
         for (var i = 0; i < PageActivity.topics.length; ++i) {
@@ -294,17 +242,12 @@ WebViewPage {
         objectName: "tabDeck"
         width: parent.width
         pageHeight: browserPage.height
-        // The grid in front ends editing the address, which would be left under it.
         onTabsOpenChanged: {
             if (tabsOpen) {
                 navigationBar.endEditing()
             }
         }
 
-        // The strip the cutout sits in, in the page's own theme colour when it
-        // declares one. sailfish-browser paints the same strip the same way, from
-        // a property its own web page item carries; this one asks the page
-        // (docs/DECISIONS/0013-screen-cutout.md).
         Rectangle {
             objectName: "cutoutBand"
             width: parent.width
@@ -314,10 +257,7 @@ WebViewPage {
                    ? browserPage.currentView.pageThemeColor : Theme.highlightDimmerColor
         }
 
-        // The engine gets the page between the cutout and the bar, and no
-        // further. Letting it run on behind a bar that scrolled away was the
-        // other answer, and on device the foot of a page was still out of reach
-        // often enough to be a defect (docs/DECISIONS/0009-navigation-bar-gesture.md).
+        // Engine gets page between cutout and bar only, so page foot stays reachable.
         Item {
             id: viewArea
 
@@ -329,11 +269,7 @@ WebViewPage {
             y: browserPage.pageCutoutInset
             height: browserPage.viewHeight - browserPage.pageCutoutInset
 
-            // One WebView per tab shown this session; restored tabs stay unloaded
-            // until first activated (docs/DECISIONS/0003-one-webview-per-tab.md),
-            // and a tab not among the most recently read gives its view up until
-            // it is next in front, when it is loaded again from the page it was
-            // on (docs/DECISIONS/0016-five-live-pages.md).
+            // Restored tabs load on first activation; not recently read ones drop view until in front.
             Repeater {
                 id: webViews
 
@@ -358,8 +294,7 @@ WebViewPage {
 
             objectName: "navigationBar"
             width: parent.width
-            // The page's own height, not the layer's: Silica shrinks the page for
-            // the keyboard, and the field the bar carries has to come up with it.
+            // Page height, not layer's: Silica shrinks page for keyboard, field must follow.
             y: browserPage.height - height
 
             view: browserPage.currentView
@@ -369,10 +304,7 @@ WebViewPage {
             onBack: browserPage.goBack()
             onReloadOrStop: browserPage.reloadOrStop()
             onShowMenu: browserMenu.show()
-            // The grid may be about to show: the picture of the tab being left is
-            // taken, and the grid made ready under the page, while the finger is still
-            // down and nothing moves. Both in the drag's first frame were the stutter
-            // at its start.
+            // Capture and prime grid while finger down: both in drag's first frame stuttered.
             onDragArmed: {
                 browserPage.captureCurrent()
                 deck.prime()
@@ -386,7 +318,6 @@ WebViewPage {
             onPageTouchEnded: browserPage.touchPage(position, "end")
         }
 
-        // The banners on the bar, where the page ends (viewHeight).
         BarBanners {
             id: banners
 
@@ -403,9 +334,7 @@ WebViewPage {
             view: browserPage.currentView
         }
 
-        // The pane above the bar while the address is edited into something to look
-        // for, or opened for a new tab: from under the cutout to the bar, over the
-        // page. After both bars, so that nothing of theirs is drawn over it.
+        // After both bars so nothing of theirs draws over it.
         OmnibarView {
             id: omnibar
 
@@ -418,7 +347,6 @@ WebViewPage {
             onGoRequested: browserPage.openChosen(url, forNewTab)
             onSearchRequested: browserPage.openChosen(url, forNewTab)
             onUrlChosen: browserPage.openChosen(url, forNewTab)
-            // A tab found in any group comes to the front, and its group with it.
             onTabChosen: {
                 navigationBar.endEditing()
                 TabModel.activateTabById(tabId)
@@ -432,10 +360,7 @@ WebViewPage {
 
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
-            // Nothing to draw while the page covers it: the engine has the screen. But
-            // drawn, out of sight below it, from the moment a finger may be about to
-            // pull it up: the first frame it is drawn in uploads every preview it shows,
-            // and that frame must not be the first of the drag.
+            // Drawn once drag may start: first drawn frame uploads all previews, stutters drag.
             visible: deck.tabsOffset > 0 || deck.primed
             onPullStarted: deck.beginDrag()
             onPulled: deck.dragTo(browserPage.height - distance)
@@ -451,7 +376,6 @@ WebViewPage {
         onFindRequested: findBar.open()
     }
 
-    // What a press held on a link or a picture brings up (docs/DECISIONS/0046-link-menu.md).
     LinkMenu {
         id: linkMenu
 
@@ -468,28 +392,20 @@ WebViewPage {
             id: webView
 
             objectName: "webView"
-            // Active out of sight, too, until the pages are put to sleep: an inactive
-            // view's document is hidden, and Sailfish's Gecko pauses the media of a
-            // hidden document, so music would stop the moment the application was put
-            // away -- and a player's next track could not start in the grace after it.
-            // sailfish-browser keeps its page active the same way
-            // (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+            // Active until pages sleep: Sailfish Gecko pauses media of inactive (hidden) documents.
             active: isCurrent && !PageActivity.asleep && !linkMenu.previewShown
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
-            // Put aside while a link's preview has the engine's one picture (LinkMenu.qml).
+            // Link preview holds engine's single picture.
             visible: !linkMenu.previewShown
             downloadsEnabled: true
 
-            // The chrome gesture the bar reads, and the safe area for the cutout.
             property ViewChrome viewChrome: ViewChrome {
                 view: webView
                 cutoutInset: browserPage.pageCutoutInset
             }
 
-            // What the page asks the browser to dress itself in, or nothing. Read
-            // from the page because the engine keeps it to itself; the C++ side is
-            // what decides whether the answer is a colour at all.
+            // Engine doesn't expose it; C++ validates colour.
             property string pageThemeColor: ""
 
             function fetchThemeColor() {
@@ -509,11 +425,7 @@ WebViewPage {
                 })
             }
 
-            // Asleep: its timers, workers and scripts stopped by suspendView() until
-            // the view is next active, which is on the screen. Only ever out of sight:
-            // Gecko draws every view into one window, and suspendView() stops that
-            // window drawing -- which a view going active again starts, and nothing
-            // else does (docs/DECISIONS/0020-pages-sleep-out-of-sight.md).
+            // Only out of sight: Gecko draws all views in one window; suspendView() stops it.
             property bool suspended: false
 
             function suspend() {
@@ -534,51 +446,33 @@ WebViewPage {
                 }
             }
 
-            // The model hands out a fresh file name per capture and removes the one it
-            // replaces.
             function captureThumbnail() {
                 if (!isCurrent) {
                     return
                 }
-                // Half size in each direction: the grab is a read back from the GPU on
-                // the way into a gesture, and the grid never draws it wider than half
-                // the screen anyway. The encode and the write are the model's, off the
-                // GUI thread: here, they were the stutter at the start of the drag.
+                // Half size: GPU readback at gesture start. Encode/write off GUI thread in model.
                 grabToImage(function (result) {
                     TabModel.storeThumbnail(tabId, result.image)
                 }, Qt.size(width / 2, height / 2))
             }
 
-            // Whether the page reads as an article, and the article's own address while
-            // the view shows its reader view (docs/DECISIONS/0024-reader-view.md).
             property ReaderMode reader: ReaderMode { view: webView }
-            // What the page plays, and its notifications (docs/DECISIONS/0026-media-controls.md, 0033).
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
             property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
-            // Whether it asked for the screen's cutout (docs/DECISIONS/0043-notch-guard-modes.md).
             property PageViewport viewport: PageViewport { view: webView }
-            // The searches the page offers, kept for Settings > Search (docs/DECISIONS/0041-search-engines-found.md).
             property PageSearchLink searches: PageSearchLink { view: webView }
-            // A press held on a link or a picture of the page in front (docs/DECISIONS/0046-link-menu.md).
             property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.openFor(target, webView) }
 
             onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
-                // What sleeps is a document, and one that arrives while its view is
-                // asleep arrives awake -- a load already under way, a redirect, a page
-                // that reloads itself. It is put to sleep with the rest, as
-                // sailfish-browser does with a page that finishes loading unseen. Only
-                // while the pages sleep, out of sight: a view behind the one in front
-                // stays suspended after the application is back, and suspending it then
-                // would stop the shared window drawing the page on the screen.
+                // Doc arriving while asleep arrives awake (redirect, reload): re-suspend. Only
+                // while asleep: suspending after return stops shared window drawing.
                 if (suspended && PageActivity.asleep) {
                     suspendView()
                 }
                 if (loading) {
-                    // A new page starts at the top, and the bar starts whole: it would
-                    // otherwise stay slim from whatever was scrolled before it. The
-                    // colour goes with the page that declared it.
+                    // Else bar stays slim from previous page's scroll.
                     chrome = true
                     pageThemeColor = ""
                 } else {

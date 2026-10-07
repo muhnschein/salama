@@ -1,16 +1,12 @@
 #!/bin/bash
-# ci/harbour-validate-rpm.sh — run Jolla's validator on a built RPM and judge the
-# result against ci/harbour/waivers.conf.
-#
-# This is the authority ci/harbour-check.sh stands in for: only a built package shows
-# the Requires and Provides rpm generated, the stripped binary's symbols and the real
-# file modes. It needs a package, so it runs in .github/workflows/rpm.yml.
+# Run Jolla's validator on built RPM, judge against ci/harbour/waivers.conf.
+# Authority ci/harbour-check.sh stands in for: only built package shows generated
+# Requires/Provides, stripped symbols, real file modes. Runs in rpm.yml.
 #
 # Usage: ci/harbour-validate-rpm.sh <rpm>
 #
-# The validator is fetched at the commit ci/harbour/UPSTREAM names, so the rules
-# vendored here and the code reading them are the same Harbour. HARBOUR_VALIDATOR
-# points at an existing checkout instead.
+# Validator fetched at ci/harbour/UPSTREAM commit so vendored rules match its code.
+# HARBOUR_VALIDATOR points at existing checkout instead.
 set -uo pipefail
 shopt -s extglob
 
@@ -38,7 +34,7 @@ if [[ ! -x $VALIDATOR/rpmvalidation.sh ]]; then
         && git -C "$VALIDATOR" checkout -q FETCH_HEAD; } || fail "could not fetch the validator at $commit"
 fi
 
-# The vendored rules must be the validator's own, or the two checks disagree.
+# Vendored rules must equal validator's, else checks disagree.
 for conf in "$ROOT"/ci/harbour/*.conf; do
     name=$(basename "$conf")
     [[ $name == waivers.conf ]] && continue
@@ -48,15 +44,14 @@ done
 
 log=$(mktemp)
 trap 'rm -f "$log"' EXIT
-# BATCHERBATCHERBATCHER: `KIND|subject|message` lines without colour, `=Section`
-# markers, and a `!END!` verdict. It exits non-zero on warnings too, so the
-# markers decide, not the status.
+# BATCHERBATCHERBATCHER: `KIND|subject|message` lines, no colour, `=Section` markers,
+# `!END!` verdict. Exits non-zero on warnings too, so markers decide.
 BATCHERBATCHERBATCHER=1 "$VALIDATOR/rpmvalidation.sh" -g "$VALIDATOR" "$rpm" >"$log" 2>&1 || true
 cat "$log"
 grep -q '^!END!' "$log" || fail "the validator produced no verdict"
 
-# Same format as ci/harbour-check.sh: `<check-id> <subject-glob> <message-glob>`, where
-# the check id is `rpm-<section>` (e.g. rpm-requires) for validator findings.
+# Same format as ci/harbour-check.sh: `<check-id> <subject-glob> <message-glob>`;
+# validator findings use `rpm-<section>` (e.g. rpm-requires).
 waived() { # id subject message
     local id=$1 subject=$2 message=$3 entry wid wsubject wmessage
     [[ -f $WAIVERS ]] || return 1

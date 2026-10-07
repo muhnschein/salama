@@ -1,6 +1,5 @@
 #!/bin/bash
-# ci/harbour-check-selftest.sh — breaks each Harbour rule in a throwaway copy of the
-# tree and asserts that ci/harbour-check.sh names it. Keeps the checker honest.
+# Break each Harbour rule in throwaway tree copy, assert ci/harbour-check.sh names it.
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

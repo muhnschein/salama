@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The sites DNS over HTTPS is not used for: Firefox for Android's Exceptions, in its words
-// (docs/DECISIONS/0047-secure-connections.md). Each is a domain, with its subdomains; a
-// menu removes one, and the pull-down menu adds a site, or removes them all after a
-// remorse, as the site permissions' exceptions are (SiteExceptionsPage.qml).
+// Domain covers subdomains.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -60,7 +56,7 @@ Page {
         delegate: ListItem {
             id: site
 
-            // Held apart from the row, which removing it takes away.
+            // Held outside row, which removal destroys.
             property string domain: modelData
 
             objectName: "dohException"

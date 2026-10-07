@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
-# Harbour package for salama. Every Requires must appear in ci/harbour/allowed_requires.conf
-# (or be a library from allowed_libraries.conf); see docs/HARBOUR.md. The OS floor
-# (Sailfish OS >= 5.2.0) cannot be expressed as `Requires: sailfish-version` because
-# Harbour rejects that dependency, so it is carried by the SDK target used to build
-# (the __libc_start_main version check) and by the package versions below.
+# Harbour package. Every Requires must be in ci/harbour/allowed_requires.conf (or a library
+# from allowed_libraries.conf); see docs/HARBOUR.md. OS floor (>= 5.2.0) can't be
+# `Requires: sailfish-version` (Harbour rejects it); carried by SDK target
+# (__libc_start_main check) and package versions below.
 #
-# Version is the release's, and a release is cut from it (docs/RELEASING.md): CI refuses
-# a release tag that says otherwise. Release stays 1 here; CI stamps 1.<run number> on
-# every build that is not a release.
+# Version = release version (docs/RELEASING.md); CI refuses mismatching tag. Release stays 1;
+# CI stamps 1.<run number> on non-release builds.
 Name:       harbour-salama
 Summary:    Web browser
 Version:    0.8.0
@@ -33,9 +31,9 @@ Requires:   sailfish-components-webview-qt5 >= 1.7.0
 Requires:   sailfish-components-webview-qt5-popups >= 1.7.0
 Requires:   sailfish-components-webview-qt5-pickers >= 1.7.0
 Requires:   qt5-plugin-imageformat-ico
-# QtGraphicalEffects, for the rounded corners on the tab previews.
+# QtGraphicalEffects: rounded tab preview corners.
 Requires:   qt5-qtgraphicaleffects
-# Nemo.Notifications, for what pages show as notifications (docs/DECISIONS/0033-web-notifications.md).
+# Nemo.Notifications: page notifications.
 Requires:   nemo-qml-plugin-notifications-qt5
 
 %description

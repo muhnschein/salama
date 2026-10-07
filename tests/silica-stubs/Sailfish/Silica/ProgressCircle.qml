@@ -1,5 +1,4 @@
-// Stub: Silica's ring that fills as something goes along, value from 0 to 1. Nothing
-// is drawn; the values are there for the tests to read.
+// Stub: Silica progress ring, value 0..1. Draws nothing.
 import QtQuick 2.6
 
 Item {

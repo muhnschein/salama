@@ -17,8 +17,7 @@ namespace {
 
 const qint64 Hour = qint64(60) * 60 * 1000;
 const qint64 Day = 24 * Hour;
-// Firefox's: a choice counts over nine tenths of those before it, and every count
-// wears down by a fortieth a day (nsNavHistory::DecayFrecency).
+// Firefox values (nsNavHistory::DecayFrecency).
 const double InputUseDecay = 0.9;
 const double InputDayDecay = 0.975;
 
@@ -155,8 +154,7 @@ void HistoryModel::visit(const QString &url, const QString &title)
     if (!isRecordable(url)) {
         return;
     }
-    // Strictly increasing within a session, so two visits in the same millisecond
-    // still order by recency rather than by row id.
+    // Strictly increasing: same-ms visits still order by recency, not row id.
     const qint64 now =
         std::max(QDateTime::currentDateTimeUtc().toMSecsSinceEpoch(), m_lastVisit + 1);
     m_lastVisit = now;
@@ -254,7 +252,6 @@ void HistoryModel::remove(int index)
     m_entries.removeAt(index);
     endRemoveRows();
     emit countChanged();
-    // The one row of the table gone.
     --m_pageCount;
     emit pageCountChanged();
 }
@@ -346,8 +343,6 @@ void HistoryModel::recordInput(const QString &input, const QString &url) const
     run(query);
 }
 
-// The whole table, matched here rather than in SQL, as the history is (allEntries()):
-// it is pruned to MaxInputs.
 QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now) const
 {
     QHash<QString, double> ranks;
@@ -419,7 +414,6 @@ void HistoryModel::reload()
     if (oldCount != m_entries.count()) {
         emit countChanged();
     }
-    // Every page the table keeps, which the page of them shown may not be.
     const int pages = countSince(0);
     if (pages != m_pageCount) {
         m_pageCount = pages;

@@ -1,7 +1,5 @@
 # harbour-salama developer entry points.
-#
-# `make check` runs exactly what CI runs: from a clean checkout, without a phone,
-# an SDK, or network access. Every target below is also usable on its own.
+# `make check` = CI: clean checkout, no phone, no SDK, no network. Targets usable alone.
 
 BUILD ?= build
 JOBS ?= $(shell nproc 2>/dev/null || echo 2)
@@ -25,16 +23,12 @@ $(BUILD)/CMakeCache.txt: CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt 
 build: configure
 	cmake --build $(BUILD) -j $(JOBS)
 
-# Tests run one per process, serially, with no retries (a second-attempt pass is a defect).
+# One process per test, serial, no retries (second-attempt pass = defect).
 test: build
 	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 120
 
-# --exclude-throw-branches and --exclude-unreachable-branches drop the edges the
-# compiler generates for C++ exceptions -- an allocation that could throw, an
-# implicit destructor unwinding -- which no test can take and which gcov counts
-# anyway. They were 632 of 1732 "branches" here, dragging branch coverage to 58%
-# and, through the blended line+condition figure SonarQube reads, the imported
-# coverage with it. Line coverage, which $(COVERAGE_MIN) gates, is unaffected.
+# Drop compiler-made exception branches no test can take (632 of 1732; dragged imported
+# Sonar coverage down). Line coverage gate unaffected.
 coverage: test
 	mkdir -p $(BUILD)/coverage
 	gcovr --root . --object-directory $(BUILD) \
@@ -69,10 +63,8 @@ harbour-selftest:
 sonar-selftest:
 	ci/sonar-report-selftest.sh
 
-# What SonarQube Cloud imports rather than measures: the coverage report and the
-# compilation database its C++ analyser reads. sonar-project.properties names both
-# under build/, so a different BUILD needs that file changed with it. Not part of
-# `check`: Sonar is a report, and this only gathers what the scan uploads.
+# Gather what SonarQube imports: coverage report, compile DB. sonar-project.properties names
+# both under build/; other BUILD needs that file changed. Not in `check`: Sonar is report.
 sonar-reports: coverage
 	@test -f $(BUILD)/compile_commands.json || { \
 		echo "sonar-reports: no $(BUILD)/compile_commands.json" >&2; exit 1; }
@@ -85,21 +77,11 @@ lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
 check: lint build test coverage tidy
 	@echo "check: all gates green"
 
-# The application's own sources only: left to itself lupdate follows src/reader/reader.qrc
-# into Mozilla's Readability, which has no strings of ours and syntax its parser rejects.
+# Own sources only: else lupdate follows src/reader/reader.qrc into Readability (no strings
+# of ours, syntax parser rejects).
 LUPDATE_EXTENSIONS := cpp,h,qml
 
-# Regenerates every catalog from the source in one run, so a string added to the source shows
-# up unfinished in every language at once. To add a language, write its header to
-# translations/harbour-salama-<lang>.ts and run this; lupdate fills in every string, with as
-# many plural forms as the language has:
-#
-#     <?xml version="1.0" encoding="utf-8"?>
-#     <!DOCTYPE TS>
-#     <TS version="2.1" language="<lang>"></TS>
-#
-# <lang> is what QTranslator matches against the reader's locale: `de` serves every German
-# locale, `pt_BR` only Brazil's. docs/TRANSLATING.md says how a catalog is filled.
+# Regenerate all catalogs from source in one run. New language: see docs/TRANSLATING.md.
 translations:
 	lupdate -no-obsolete -locations none -extensions $(LUPDATE_EXTENSIONS) qml src -ts $(TS_FILES)
 

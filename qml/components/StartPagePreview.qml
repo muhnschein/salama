@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// A picture of what a new tab shows, on the start page's settings, under the switches it
-// follows (pages/StartPageSettingsPage.qml, docs/DECISIONS/0032-start-page.md): the
-// phone's screen, half its size, as the start page lays it out -- the sections switched
-// on, in its order, under their headings, made of the start page's own tiles and rows
-// with the sites the reader has, and the navigation bar along the foot as a new tab has
-// it. A section with nothing in it yet is drawn as where things go, faint squares and
-// lines, since what is being set is what a tab will show; a blank page, or none of the
-// sections, is the bar alone. Not a button: nothing in it answers a touch.
+// Half-size new-tab picture; empty sections drawn as faint placeholders. Takes no input.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -17,8 +10,7 @@ import harbour.salama 1.0
 Item {
     id: preview
 
-    // The screen the picture is of: the settings page's size, which in portrait is the
-    // browsing page's.
+    // Settings page size = browsing page size in portrait.
     property real screenWidth
     property real screenHeight
     readonly property real miniature: 0.5
@@ -26,14 +18,12 @@ Item {
     readonly property bool showsTopSites: !blank && StartPageSettings.topSites
     readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
-    // The start page's four to a row (StartPageView).
     readonly property int columns: 4
     readonly property color ink: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
 
     objectName: "startPagePreview"
     height: frame.height
 
-    // The screen's edge, round its corners as a phone's are.
     Rectangle {
         id: frame
 
@@ -48,9 +38,7 @@ Item {
             color: Theme.rgba(Theme.primaryColor, Theme.opacityLow)
         }
 
-        // Cut to the frame's corners: clipping is rectangular whatever the shape of the
-        // item doing it, so the corners are cut by a mask, as the grid's cells are
-        // (docs/DECISIONS/0010-tab-grid-deck.md).
+        // Clipping is always rectangular, so corners cut by mask.
         Item {
             id: glass
 
@@ -68,8 +56,7 @@ Item {
                 }
             }
 
-            // The screen at its own size, made smaller: the start page's own measures,
-            // tiles and type, so the picture is laid out as a new tab is.
+            // Full size scaled down so layout matches real start page.
             Item {
                 id: screen
 
@@ -248,8 +235,6 @@ Item {
                     }
                 }
 
-                // The navigation bar as a new tab has it: nothing to go back to, and
-                // where the address will be, the words that ask for one.
                 Rectangle {
                     objectName: "startPagePreviewBar"
                     anchors.bottom: parent.bottom

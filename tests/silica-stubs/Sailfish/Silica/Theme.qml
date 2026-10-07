@@ -1,4 +1,4 @@
-// Stub: values exist only so bindings resolve; nothing here imitates layout.
+// Stub: values only so bindings resolve; no layout imitation.
 pragma Singleton
 import QtQuick 2.6
 
@@ -32,7 +32,6 @@ QtObject {
     readonly property color errorColor: "#ff4d4d"
     readonly property color highlightBackgroundColor: "#aaccff"
     readonly property color highlightDimmerColor: "#22447f"
-    // A dark ambience's: black, as white is a light one's.
     readonly property color overlayBackgroundColor: "#000000"
     readonly property real highlightBackgroundOpacity: 0.3
     readonly property real opacityFaint: 0.2
@@ -41,21 +40,18 @@ QtObject {
     readonly property real opacityOverlay: 0.8
     readonly property real startDragDistance: 20
     readonly property real itemSizeExtraSmall: 60
-    // The size of a cover on the home screen, which the cover's settings draw theirs to.
     readonly property size coverSizeLarge: Qt.size(234, 374)
     readonly property real pixelRatio: 2.0
     readonly property real _lineWidth: 2
-    // Silica's names the pattern the ambience lays over its glass; the stub's names an
-    // image its own theme provider draws.
+    // Silica: ambience glass pattern. Stub: image from own theme provider.
     readonly property url _patternImage: "image://theme/glass-pattern"
 
     function rgba(color, opacity) {
         return Qt.rgba(color.r, color.g, color.b, opacity)
     }
 
-    // Silica's hands back the text as StyledText, escaped, with every match of the
-    // pattern -- a string, whatever its case, or a RegExp -- in the colour given. So does
-    // the stub's, simply, so that a test can read what was lit.
+    // Like Silica: escaped StyledText, every match (case-insensitive string or RegExp) in given
+    // colour, so tests can read highlights.
     function highlightText(text, pattern, color) {
         text = String(text)
         var escape = function (plain) {

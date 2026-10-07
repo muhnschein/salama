@@ -18,8 +18,6 @@ namespace {
 
 const char *const DatabaseFileName = "salama.sqlite";
 
-// The tab and group tables by the name to create them under: the schema and the
-// rebuild that drops a column from an older table both need them.
 QString tabTable(const QString &name)
 {
     return QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
@@ -72,9 +70,6 @@ const QStringList &schemaStatements()
         QStringLiteral("CREATE TABLE IF NOT EXISTS setting ("
                        "name TEXT PRIMARY KEY, "
                        "value TEXT NOT NULL)"),
-        // Schema 7: the browser's own list of downloads (src/downloads/DownloadModel.h).
-        // An older database gains it here as a new one does; a whole new table needs
-        // none of the column work below.
         QStringLiteral("CREATE TABLE IF NOT EXISTS download ("
                        "id INTEGER PRIMARY KEY, "
                        "name TEXT NOT NULL DEFAULT '', "
@@ -84,8 +79,6 @@ const QStringList &schemaStatements()
                        "size INTEGER NOT NULL DEFAULT 0, "
                        "status INTEGER NOT NULL, "
                        "started INTEGER NOT NULL)"),
-        // Schema 8: what was typed into the address bar before a page was chosen from
-        // what it found, and how often (src/history/HistoryModel.h). A new table again.
         QStringLiteral("CREATE TABLE IF NOT EXISTS input_history ("
                        "input TEXT NOT NULL, "
                        "url TEXT NOT NULL, "
@@ -174,8 +167,7 @@ QString Storage::defaultDownloadDirectory()
 
 QString Storage::defaultConfigFilePath()
 {
-    // Sandboxed apps must not use the default QSettings path; this is the layout
-    // recommended by sailjail-permissions/README.md.
+    // Sandboxed: not default QSettings path. Layout per sailjail-permissions/README.md.
     return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QLatin1Char('/') +
            QCoreApplication::applicationName() + QStringLiteral(".conf");
 }
@@ -223,12 +215,8 @@ bool Storage::applySchema() const
         }
     }
 
-    // Schema 1 predates tab previews, schema 2 the cover's order of tabs, schema 3
-    // tab groups and schema 9 the history's icons. CREATE TABLE IF NOT EXISTS above
-    // leaves an existing table alone, so the columns are added here; asking the table
-    // rather than the version number makes this correct whichever way the database was
-    // created. Every tab from before schema 4 lands in group 1, which TabModel creates
-    // when no group row claims the id.
+    // CREATE TABLE IF NOT EXISTS skips existing tables: add columns here, checked by table not
+    // version. Pre-4 tabs land in group 1; TabModel creates it.
     struct Column
     {
         const char *table;
@@ -239,7 +227,6 @@ bool Storage::applySchema() const
         {"tab", "thumbnail", "TEXT NOT NULL DEFAULT ''"},
         {"tab", "last_active", "INTEGER NOT NULL DEFAULT 0"},
         {"tab", "group_id", "INTEGER NOT NULL DEFAULT 1"},
-        // Schema 9: the icon a page of the history loaded with, for the address bar.
         {"browser_history", "favicon", "TEXT NOT NULL DEFAULT ''"},
     };
     for (const Column &column : columns) {
@@ -255,10 +242,8 @@ bool Storage::applySchema() const
             return false;
         }
     }
-    // Schema 5 kept private tabs, as a flag on the tab and on the group; schema 6
-    // does not. A table that still carries the column loses its private rows and is
-    // rebuilt without it -- copied, because SQLite before 3.35 cannot drop a column.
-    // The ids are kept, so the tabs still name their groups.
+    // Schema 5 private flag dropped in 6: delete private rows, rebuild by copy (SQLite < 3.35
+    // has no DROP COLUMN). Ids kept so group refs hold.
     struct Rebuild
     {
         const char *table;

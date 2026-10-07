@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What each kind of site permission, and each choice about one, is called, in one place:
-// the page of defaults, the page of a kind's exceptions and the details of one site all
-// say the same of the same thing (docs/DECISIONS/0039-site-permissions.md), as
-// SettingNames.qml has the settings' choices said (0036-settings-choose-in-place.md).
-// A kind is a SitePermissions kind; a decision, one of its decisions.
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -31,9 +25,6 @@ QtObject {
         return ""
     }
 
-    // sailfish-browser's own for the five it has
-    // (apps/browser/qml/pages/components/CertificateInfo.qml), the platform's for
-    // notifications and, for tracking protection, the one Settings draws it with.
     function kindIcon(kind) {
         switch (kind) {
         case SitePermissions.Notifications:
@@ -80,7 +71,6 @@ QtObject {
         ][choice] || ""
     }
 
-    // What a kind is set to for the sites that have no exception to it.
     function defaultName(kind) {
         switch (kind) {
         case SitePermissions.Notifications:
@@ -104,14 +94,11 @@ QtObject {
         return qsTr("Always ask")
     }
 
-    // A site's following what is set for every site, and what that is: "Follow default: Ask".
     function followDefault(kind) {
         //: A site has no choice of its own and does what every site does; %1 is that
         return qsTr("Follow default: %1").arg(defaultName(kind))
     }
 
-    // What a site was given, as the details of one say it and its heading in a list of
-    // exceptions.
     function decisionName(decision) {
         if (decision === SitePermissions.Ask) {
             return alwaysAsk()
@@ -123,7 +110,6 @@ QtObject {
                 : qsTr("Blocked")
     }
 
-    // How many exceptions there are, as the page of defaults says it under each.
     function exceptionCount(count) {
         //: Under a kind of permission, when no site has been given an exception to it
         return count === 0 ? qsTr("No exceptions") : qsTr("%n exception(s)", "", count)
