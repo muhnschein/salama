@@ -1899,6 +1899,9 @@ void tst_qmlload::tabGroupRows()
     const int first = tabs->activeTabId();
     const int work = tabs->addGroup(QStringLiteral("Work"));
     pullUpToTabs();
+    // Opening grid grabs a preview; let its write land first, else it replaces ours.
+    tabs->thumbnailWriter()->waitForDone();
+    QCoreApplication::processEvents();
     const QString shot = tabs->thumbnailPath(first);
     tabs->updateThumbnail(first, shot);
     click(find(QStringLiteral("editGroupsButton")));
