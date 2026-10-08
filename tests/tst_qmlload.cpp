@@ -1447,6 +1447,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(handle != nullptr);
     QVERIFY(handle->property("width").toReal() > 0);
     QVERIFY(handle->property("y").toReal() < 0);
+    QCOMPARE(handle->property("opacity").toReal(), 1.0);
     QVERIFY(!handle->property("active").toBool());
     QObject *gesture = find(QStringLiteral("navigationBarGesture"));
     gesture->setProperty("dragging", true);
@@ -3098,6 +3099,7 @@ void tst_qmlload::recentlyClosedTabs()
                  qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
              -handle->height() / 2);
     QVERIFY(unclipped(handle));
+    QCOMPARE(handle->opacity(), 1.0);
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -4452,6 +4454,8 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(overlay->z() < menu->property("z").toReal());
     QVERIFY(overlay->property("shown").toBool());
     QTRY_VERIFY(shownIn(find(QStringLiteral("linkMenuDim"))));
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("opacity").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal());
     QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkAppRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
@@ -4697,6 +4701,13 @@ void tst_qmlload::linkMenuForPictures()
              page->property("height").toReal() - menu->property("height").toReal());
     QCOMPARE(picture->property("width").toReal(), page->property("width").toReal());
     QCOMPARE(picture->property("fillMode").toInt(), 1); // Image.PreserveAspectFit
+    // Picture over sheet's modal shade, fully drawn; backdrop darker than for links (#38).
+    QVERIFY(area->z() > menu->property("z").toReal());
+    QVERIFY(area->clip());
+    QTRY_COMPARE(area->opacity(), 1.0);
+    QCOMPARE(picture->property("opacity").toReal(), 1.0);
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("opacity").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityHigh")).toReal());
     QObject *pinch = find(QStringLiteral("linkMenuPinch"));
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.target === parent.children[0]")).toBool(), true);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.maximumScale")).toReal(), 4.0);

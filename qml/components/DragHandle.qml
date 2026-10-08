@@ -16,5 +16,4 @@ Rectangle {
     height: Theme.paddingSmall
     radius: height / 2
     color: handle.active ? Theme.highlightColor : Theme.primaryColor
-    opacity: handle.active ? 1.0 : Theme.opacityHigh
 }

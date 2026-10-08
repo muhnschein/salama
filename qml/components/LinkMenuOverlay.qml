@@ -35,15 +35,23 @@ Item {
         source: overlay.still !== null ? overlay.still.url : ""
     }
 
+    // Picture: darker, so eye goes to picture.
     Rectangle {
         objectName: "linkMenuDim"
         anchors.fill: parent
         color: Theme.highlightDimmerColor
-        opacity: Theme.opacityLow
+        opacity: overlay.picture.length > 0 ? Theme.opacityHigh : Theme.opacityLow
     }
 
+    // Over sheet, not under: modal DockedPanel shades everything below it, picture included.
+    // Clipped so pinch zoom stays out of sheet.
     Item {
         objectName: "linkMenuPictureArea"
+        parent: overlay.parent
+        z: overlay.z + 2
+        visible: overlay.visible
+        opacity: overlay.opacity
+        clip: true
         y: overlay.roomTop
         width: parent.width
         height: Math.max(0, overlay.roomBottom - overlay.roomTop)
