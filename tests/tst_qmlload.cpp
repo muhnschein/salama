@@ -3755,6 +3755,17 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QTRY_VERIFY(!menu->property("open").toBool());
     QVERIFY(!tap->property("enabled").toBool());
     QTRY_VERIFY(!shade->isVisible());
+
+    // Web view takes touch as touch, so InverseMouseArea never sees it: dim takes the press
+    // itself, closing on press, and nothing under it gets one.
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QTRY_COMPARE(shade->opacity(), 1.0);
+    const QPoint beside = shade->mapToScene(QPointF(shade->width() / 2, menu->y() / 2)).toPoint();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QVERIFY(!menu->property("open").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QTRY_VERIFY(!shade->isVisible());
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to

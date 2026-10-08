@@ -3,8 +3,9 @@
 //
 // Dim behind open bottom sheet; press beside sheet closes it. DockedPanel's modal does both,
 // but dims window-wide outside panel, so handle and lifted picture over it came out
-// see-through. Same press catcher as modal (InverseMouseArea, window level; plain MouseArea
-// over page never got presses), own dim under sheet (sheet needs z over page's other items).
+// see-through. Own dim under sheet (sheet needs z over page's other items). Two press catchers:
+// modal's InverseMouseArea sees only mouse presses, and web view takes touches as touch, so dim
+// also swallows presses and closes on press (not click: no click came on device).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -31,6 +32,13 @@ Item {
         anchors.fill: parent
         color: Theme.highlightDimmerColor
         opacity: shade.strength
+    }
+
+    // Also while fading out: press meant for sheet never lands on page.
+    MouseArea {
+        objectName: "sheetShadePress"
+        anchors.fill: parent
+        onPressed: shade.edgeOf.hide()
     }
 
     InverseMouseArea {
