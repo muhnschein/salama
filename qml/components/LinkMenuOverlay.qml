@@ -16,6 +16,10 @@ Item {
     property rect stillRect
     property bool stillShown: false
     property string picture
+    property real pictureZ
+    // Drawn picture's top, in parent's coordinates.
+    readonly property bool pictureShown: lifted.visible
+    readonly property real pictureTop: pictureArea.y + pinchArea.y
 
     objectName: "linkMenuOverlay"
     visible: opacity > 0
@@ -35,15 +39,16 @@ Item {
         source: overlay.still !== null ? overlay.still.url : ""
     }
 
-    Rectangle {
-        objectName: "linkMenuDim"
-        anchors.fill: parent
-        color: Theme.highlightDimmerColor
-        opacity: Theme.opacityLow
-    }
-
+    // Over sheet and its shade, so drawn undimmed. Clipped so pinch zoom stays out of sheet.
     Item {
+        id: pictureArea
+
         objectName: "linkMenuPictureArea"
+        parent: overlay.parent
+        z: overlay.pictureZ
+        visible: overlay.visible
+        opacity: overlay.opacity
+        clip: true
         y: overlay.roomTop
         width: parent.width
         height: Math.max(0, overlay.roomBottom - overlay.roomTop)
@@ -63,16 +68,42 @@ Item {
             visible: status === Image.Ready
         }
 
+        // Drawn picture only, not its letterbox.
         PinchArea {
+            id: pinchArea
+
             objectName: "linkMenuPinch"
-            anchors.fill: lifted
+            anchors.centerIn: lifted
+            width: lifted.paintedWidth * lifted.scale
+            height: lifted.paintedHeight * lifted.scale
             enabled: lifted.visible
             pinch.target: lifted
             pinch.minimumScale: 1.0
             pinch.maximumScale: 4.0
             pinch.dragAxis: Pinch.NoDrag
+
+            MouseArea {
+                objectName: "linkMenuPictureTap"
+                anchors.fill: parent
+                onDoubleClicked: {
+                    zoom.to = lifted.scale > 1.0 ? 1.0 : 2.5
+                    zoom.restart()
+                }
+            }
+        }
+
+        NumberAnimation {
+            id: zoom
+
+            target: lifted
+            property: "scale"
+            duration: 200
+            easing.type: Easing.InOutQuad
         }
     }
 
-    onPictureChanged: lifted.scale = 1.0
+    onPictureChanged: {
+        zoom.stop()
+        lifted.scale = 1.0
+    }
 }

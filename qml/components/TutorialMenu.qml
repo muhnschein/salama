@@ -27,7 +27,8 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            color: Theme.rgba(Theme.overlayBackgroundColor, Theme.opacityLow)
+            color: Theme.highlightDimmerColor
+            opacity: Theme.opacityHigh
         }
     }
 
@@ -47,26 +48,28 @@ Item {
             anchors.fill: parent
         }
 
+        SheetGrip {
+            edgeOf: sheet
+        }
+
         Column {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
-            Item {
-                width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
-            }
-
             MenuPageHeader {
+                id: header
+
                 width: parent.width
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
+            }
+
+            Item {
+                width: parent.width
+                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
             }
 
             Grid {
@@ -93,24 +96,8 @@ Item {
                 }
             }
 
-            Item {
+            MenuSeparator {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                Row {
-                    anchors.centerIn: parent
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                        rotation: 180
-                    }
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                    }
-                }
             }
 
             Grid {

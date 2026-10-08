@@ -204,6 +204,7 @@ private slots:
     void menuNamesThePage();
     void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
+    void menuSheetDoesNotScroll();
     void findInPage();
     void readerView();
     void downloadsPage();
@@ -214,6 +215,7 @@ private slots:
     void linkMenuActions();
     void linkMenuForOtherApps();
     void linkMenuForPictures();
+    void linkSheetsDoNotScroll();
     void linkPreview();
     void bannersEndThePage();
     void historyPage();
@@ -360,6 +362,29 @@ void settle()
 {
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QCoreApplication::processEvents();
+}
+
+// No clipping item between item and window cuts any of it off.
+bool unclipped(QQuickItem *item)
+{
+    const QRectF drawn = item->mapRectToScene(QRectF(0, 0, item->width(), item->height()));
+    for (QQuickItem *above = item->parentItem(); above != nullptr; above = above->parentItem()) {
+        if (above->clip() &&
+            !above->mapRectToScene(QRectF(0, 0, above->width(), above->height())).contains(drawn)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Sheet's shade over every other shown item beside sheet, so taps beside sheet reach it.
+bool shadeOnTop(QQuickItem *shade, QQuickItem *sheet)
+{
+    const QList<QQuickItem *> besides = shade->parentItem()->childItems();
+    return std::all_of(besides.cbegin(), besides.cend(), [shade, sheet](QQuickItem *beside) {
+        return beside == shade || beside == sheet || !beside->isVisible() ||
+               beside->z() < shade->z() || beside->z() > sheet->z();
+    });
 }
 
 // Repeater/ListView delegates have no QObject parent: walk visual tree too.
@@ -1432,6 +1457,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(handle != nullptr);
     QVERIFY(handle->property("width").toReal() > 0);
     QVERIFY(handle->property("y").toReal() < 0);
+    QCOMPARE(handle->property("opacity").toReal(), 1.0);
     QVERIFY(!handle->property("active").toBool());
     QObject *gesture = find(QStringLiteral("navigationBarGesture"));
     gesture->setProperty("dragging", true);
@@ -1873,6 +1899,9 @@ void tst_qmlload::tabGroupRows()
     const int first = tabs->activeTabId();
     const int work = tabs->addGroup(QStringLiteral("Work"));
     pullUpToTabs();
+    // Opening grid grabs a preview; let its write land first, else it replaces ours.
+    tabs->thumbnailWriter()->waitForDone();
+    QCoreApplication::processEvents();
     const QString shot = tabs->thumbnailPath(first);
     tabs->updateThumbnail(first, shot);
     click(find(QStringLiteral("editGroupsButton")));
@@ -3056,7 +3085,8 @@ void tst_qmlload::recentlyClosedTabs()
     QObject *panel = find(QStringLiteral("recentlyClosedPanel"));
     QVERIFY(panel != nullptr);
     QVERIFY(!panel->property("open").toBool());
-    QVERIFY(panel->property("modal").toBool());
+    // Own shade, not DockedPanel's modal, which dims handle too (#38).
+    QVERIFY(!panel->property("modal").toBool());
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
@@ -3078,6 +3108,16 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(QString::fromLatin1(title->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader")));
     QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
+    // Handle centred on panel's edge line, as on nav bar (#38).
+    QCOMPARE(handle->mapToScene(QPointF()).y() -
+                 qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
+             evaluate(panel, QStringLiteral("Theme._lineWidth / 2")).toReal() -
+                 handle->height() / 2);
+    QVERIFY(unclipped(handle));
+    QCOMPARE(handle->opacity(), 1.0);
+    QVERIFY(shadeOnTop(
+        qobject_cast<QQuickItem *>(findObjects(panel, QStringLiteral("panelShade")).first()),
+        qobject_cast<QQuickItem *>(panel)));
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3174,7 +3214,7 @@ void tst_qmlload::browserMenu()
     QObject *menu = find(QStringLiteral("browserMenu"));
     QVERIFY(menu != nullptr);
     QVERIFY(!menu->property("open").toBool());
-    QVERIFY(menu->property("modal").toBool());
+    QVERIFY(!menu->property("modal").toBool());
     QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
     tapBar(QStringLiteral("menu"));
     QVERIFY(menu->property("open").toBool());
@@ -3369,6 +3409,12 @@ void tst_qmlload::menuSheetLayout()
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
+    // Handle centred on sheet's edge line, as on nav bar (#38).
+    auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
+    QCOMPARE(handle->mapToScene(QPointF()).y() - sheetItem->mapToScene(QPointF()).y(),
+             evaluate(menu, QStringLiteral("Theme._lineWidth / 2")).toReal() -
+                 handle->height() / 2);
+    QVERIFY(unclipped(handle));
 
     const auto litParts = [this](QObject *button) {
         const QColor wash =
@@ -3423,6 +3469,21 @@ void tst_qmlload::menuNamesThePage()
     QVERIFY(header != nullptr);
     QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
     QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
+    // Empty band, no line, under header; as tall as gap between rows, ink to ink (#38).
+    QVERIFY(find(QStringLiteral("menuHeaderSeparator")) == nullptr);
+    const auto part = [](QQuickItem *button, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(button, QLatin1String(name)).first());
+    };
+    QQuickItem *firstRow = item("findMenuButton");
+    QQuickItem *secondRow = item("bookmarksMenuButton");
+    const qreal headerGap =
+        sceneY(part(firstRow, "menuButtonIconSlot")) -
+        (sceneY(header) + header->height() - header->property("inkMargin").toReal());
+    QQuickItem *firstLabel = part(firstRow, "menuButtonLabel");
+    const qreal rowGap =
+        sceneY(part(secondRow, "menuButtonIconSlot")) - (sceneY(firstLabel) + firstLabel->height());
+    QVERIFY(rowGap > 0);
+    QCOMPARE(headerGap, rowGap);
     QCOMPARE(text("menuPageTitle"), title);
     QVERIFY(
         evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
@@ -3607,6 +3668,107 @@ void tst_qmlload::menuSheetUnderAFinger()
     tapBar(QStringLiteral("menu"));
     QTRY_COMPARE(menu->y(), openY);
     QTRY_COMPARE(find(QStringLiteral("menuSheet"))->property("y").toReal(), qreal(0));
+}
+
+namespace {
+
+// Fixed-size sheet (#38): drag up from grabbed item moves nothing, no fling, no quick scroll;
+// pull down still closes.
+void sheetStaysPut(QQuickWindow &window, QQuickItem *menu, QObject *sheet, QQuickItem *grabbed)
+{
+    QVERIFY(menu->property("open").toBool());
+    // Rebound from earlier pull settles first, and sheet's layout: polished before each frame.
+    QTRY_VERIFY(!sheet->property("moving").toBool());
+    QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
+    for (int frame = 0; frame < 2; ++frame) {
+        const int seen = frames.count();
+        window.update();
+        QTRY_VERIFY(frames.count() > seen);
+    }
+    const qreal openY = menu->y();
+    const qreal restY = sheet->property("contentY").toReal();
+    QCOMPARE(restY, sheet->property("originY").toReal());
+    QVERIFY(!sheet->property("quickScroll").toBool());
+    QCOMPARE(sheet->property("maximumFlickVelocity").toReal(), qreal(0));
+    const auto atRest = [&sheet, restY]() {
+        return qAbs(sheet->property("contentY").toReal() - restY) < 0.5;
+    };
+    QVERIFY(atRest());
+
+    const QPoint grab = centreOf(grabbed);
+    const qreal grabbedY = grabbed->mapToScene(QPointF(0, 0)).y();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    for (int step = 1; step <= 12; ++step) {
+        QTest::mouseMove(&window, grab - QPoint(0, 240 * step / 12));
+    }
+    QVERIFY(atRest());
+    QCOMPARE(menu->y(), openY);
+    QVERIFY(qAbs(grabbed->mapToScene(QPointF(0, 0)).y() - grabbedY) < 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab - QPoint(0, 240));
+    QVERIFY(atRest());
+    QCOMPARE(menu->y(), openY);
+    QVERIFY(menu->property("open").toBool());
+
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, grab);
+    for (int step = 1; step <= 12; ++step) {
+        QTest::mouseMove(&window, grab + QPoint(0, 240 * step / 12));
+    }
+    QVERIFY(menu->y() > openY);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, grab + QPoint(0, 240));
+    QTRY_VERIFY(!menu->property("open").toBool());
+}
+
+} // namespace
+
+void tst_qmlload::menuSheetDoesNotScroll()
+{
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu")));
+    tapBar(QStringLiteral("menu"));
+    sheetStaysPut(window, menu, find(QStringLiteral("menuSheet")),
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton"))));
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+
+    // Own shade under sheet, handle over both, so handle drawn undimmed; tap on shade closes.
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    auto *shade = qobject_cast<QQuickItem *>(find(QStringLiteral("menuShade")));
+    auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
+    QCOMPARE(shade->parentItem(), menu->parentItem());
+    QCOMPARE(handle->parentItem(), menu->parentItem());
+    QVERIFY(shade->z() < menu->z());
+    QVERIFY(shadeOnTop(shade, menu));
+    // Press beside sheet caught window-wide, as DockedPanel's modal does: covers sheet exactly.
+    auto *tap =
+        qobject_cast<QQuickItem *>(findObjects(shade, QStringLiteral("sheetShadeTap")).first());
+    QCOMPARE(tap->parentItem(), menu);
+    QCOMPARE(tap->y(), 0.0);
+    QCOMPARE(tap->height(), menu->height());
+    QVERIFY(tap->property("stealPress").toBool());
+    QVERIFY(tap->property("enabled").toBool());
+    QVERIFY(handle->z() > menu->z());
+    QCOMPARE(handle->opacity(), 1.0);
+    QTRY_COMPARE(shade->opacity(), 1.0);
+    evaluate(tap, QStringLiteral("pressedOutside(10, 10)"));
+    QTRY_VERIFY(!menu->property("open").toBool());
+    QVERIFY(!tap->property("enabled").toBool());
+    QTRY_VERIFY(!shade->isVisible());
+
+    // Web view takes touch as touch, so InverseMouseArea never sees it: dim takes the press
+    // itself, closing on press, and nothing under it gets one.
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    QTRY_COMPARE(shade->opacity(), 1.0);
+    const QPoint beside = shade->mapToScene(QPointF(shade->width() / 2, menu->y() / 2)).toPoint();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QVERIFY(!menu->property("open").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QTRY_VERIFY(!shade->isVisible());
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to
@@ -4291,7 +4453,7 @@ void tst_qmlload::linkMenuOnALongPress()
     QObject *view = currentWebView();
     QVERIFY(menu != nullptr);
     QVERIFY(!menu->property("open").toBool());
-    QVERIFY(menu->property("modal").toBool());
+    QVERIFY(!menu->property("modal").toBool());
     QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
 
     // Platform opener builds menu from view's provider: stand-in file that loads, accepts opener's
@@ -4337,11 +4499,22 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
+    // Handle centred on sheet's edge line, as on nav bar (#38).
+    auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
+    QCOMPARE(linkHandle->mapToScene(QPointF()).y() -
+                 qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSheet")))
+                     ->mapToScene(QPointF())
+                     .y(),
+             evaluate(menu, QStringLiteral("Theme._lineWidth / 2")).toReal() -
+                 linkHandle->height() / 2);
+    QVERIFY(unclipped(linkHandle));
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
     QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());
     QVERIFY(overlay->z() < menu->property("z").toReal());
     QVERIFY(overlay->property("shown").toBool());
     QTRY_VERIFY(shownIn(find(QStringLiteral("linkMenuDim"))));
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("strength").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityHigh")).toReal());
     QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkAppRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
@@ -4587,10 +4760,34 @@ void tst_qmlload::linkMenuForPictures()
              page->property("height").toReal() - menu->property("height").toReal());
     QCOMPARE(picture->property("width").toReal(), page->property("width").toReal());
     QCOMPARE(picture->property("fillMode").toInt(), 1); // Image.PreserveAspectFit
+    // Picture over sheet and its shade, fully drawn; backdrop darker than for links (#38).
+    QVERIFY(area->z() > menu->property("z").toReal());
+    QVERIFY(area->z() > find(QStringLiteral("linkMenuDim"))->property("z").toReal());
+    QVERIFY(area->clip());
+    QTRY_COMPARE(area->opacity(), 1.0);
+    QCOMPARE(picture->property("opacity").toReal(), 1.0);
+    // Drawn picture counts as sheet for press-beside: pinch and double tap stay its own.
+    auto *pictureCatch = qobject_cast<QQuickItem *>(
+        findObjects(find(QStringLiteral("linkMenuDim")), QStringLiteral("sheetShadeTap")).first());
+    QCOMPARE(pictureCatch->y(), 0.0);
+    picture->setProperty("visible", true);
+    QObject *overlayItem = find(QStringLiteral("linkMenuOverlay"));
+    QVERIFY(overlayItem->property("pictureShown").toBool());
+    QCOMPARE(pictureCatch->y(),
+             overlayItem->property("pictureTop").toReal() - menu->property("y").toReal());
+    QVERIFY(pictureCatch->y() < 0);
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("strength").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityOverlay")).toReal());
     QObject *pinch = find(QStringLiteral("linkMenuPinch"));
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.target === parent.children[0]")).toBool(), true);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.maximumScale")).toReal(), 4.0);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.minimumScale")).toReal(), 1.0);
+    // Double tap zooms in, again zooms back out (#38).
+    QObject *pictureTap = find(QStringLiteral("linkMenuPictureTap"));
+    evaluate(pictureTap, QStringLiteral("doubleClicked(null)"));
+    QTRY_COMPARE(picture->property("scale").toReal(), 2.5);
+    evaluate(pictureTap, QStringLiteral("doubleClicked(null)"));
+    QTRY_COMPARE(picture->property("scale").toReal(), 1.0);
     picture->setProperty("scale", 2.5);
     holdOn(view, heldOn(QString(), QString(), QStringLiteral("https://cdn.example/b.jpg")));
     QCOMPARE(picture->property("scale").toReal(), 1.0);
@@ -4641,6 +4838,32 @@ void tst_qmlload::linkMenuForPictures()
              QStringLiteral("Image link copied"));
     QVERIFY(!find(QStringLiteral("linkMenuOverlay"))->property("shown").toBool());
     QCOMPARE(errors.all(), QString());
+}
+
+// Link and picture sheets fixed-size like menu sheet (#38).
+void tst_qmlload::linkSheetsDoNotScroll()
+{
+    ScriptErrors errors;
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenu")));
+    QObject *sheet = find(QStringLiteral("linkMenuSheet"));
+
+    // Preview grows sheet whenever page still arrives, which would move it mid-drag.
+    m_core->settings()->setLinkPreview(false);
+    holdOn(currentWebView(), heldOn(QStringLiteral("https://trails.example/walks/ridge-loop")));
+    sheetStaysPut(window, menu, sheet,
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("newTabLinkButton"))));
+    m_core->settings()->setLinkPreview(true);
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+    holdOn(currentWebView(),
+           heldOn(QString(), QString(), QStringLiteral("https://cdn.example/photos/ridge.jpg")));
+    sheetStaysPut(window, menu, sheet,
+                  qobject_cast<QQuickItem *>(find(QStringLiteral("saveImageButton"))));
 }
 
 // Link target preview in sheet like Safari: shown for all links until hidden and vice versa.

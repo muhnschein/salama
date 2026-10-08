@@ -46,7 +46,6 @@ DockedPanel {
     width: parent.width
     height: content.height
     dock: Dock.Bottom
-    modal: true
     z: 2
 
     function openFor(pressed, page) {
@@ -171,7 +170,8 @@ DockedPanel {
 
         parent: menu.parent
         anchors.fill: parent
-        z: menu.z - 1
+        z: menu.z - 2
+        pictureZ: menu.z + 1
         shown: menu.open
         roomTop: menu.topInset
         roomBottom: parent.height - menu.height
@@ -199,18 +199,26 @@ DockedPanel {
         verticalOffset: -Theme.itemSizeLarge
     }
 
-    SilicaFlickable {
-        id: sheet
+    // Darker behind picture, so eye goes to picture.
+    SheetShade {
+        objectName: "linkMenuDim"
+        edgeOf: menu
+        strength: menu.hasImage ? Theme.opacityOverlay : Theme.opacityHigh
+        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop) : 0
+    }
 
-        readonly property real overscroll: Math.max(0, originY - contentY)
+    SheetGrip {
+        objectName: "linkMenuDragHandle"
+        edgeOf: menu
+    }
+
+    SheetFlickable {
+        id: sheet
 
         objectName: "linkMenuSheet"
         width: parent.width
         height: parent.height
-        y: -overscroll
         contentHeight: content.height
-        flickableDirection: Flickable.VerticalFlick
-        boundsBehavior: Flickable.DragOverBounds
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()
@@ -221,18 +229,8 @@ DockedPanel {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
-
-            Item {
-                width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    objectName: "linkMenuDragHandle"
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
-            }
 
             LinkMenuHeader {
                 width: parent.width

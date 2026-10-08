@@ -11,10 +11,21 @@ DockedPanel {
 
     objectName: "recentlyClosedPanel"
     dock: Dock.Bottom
-    modal: true
+    // Shade sits one under: over grid, so taps beside sheet reach it.
+    z: 2
 
     SheetBackground {
         anchors.fill: parent
+    }
+
+    SheetShade {
+        objectName: "panelShade"
+        edgeOf: panel
+    }
+
+    SheetGrip {
+        objectName: "panelDragHandle"
+        edgeOf: panel
     }
 
     SilicaListView {
@@ -26,19 +37,13 @@ DockedPanel {
         clip: true
         header: Item {
             width: closedList.width
-            height: Theme.paddingLarge + heading.height
-
-            DragHandle {
-                objectName: "panelDragHandle"
-                x: (parent.width - width) / 2
-                y: Theme.paddingSmall
-            }
+            height: Theme.paddingMedium + heading.height
 
             SectionHeader {
                 id: heading
 
                 objectName: "recentlyClosedTitle"
-                y: Theme.paddingLarge
+                y: Theme.paddingMedium
                 text: qsTr("Recently closed")
             }
         }

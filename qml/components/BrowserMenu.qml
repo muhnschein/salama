@@ -33,7 +33,8 @@ DockedPanel {
     width: parent.width
     height: content.height
     dock: Dock.Bottom
-    modal: true
+    // Shade sits one under: over page, so taps beside sheet reach it.
+    z: 2
 
     function openPage(page) {
         hide()
@@ -90,20 +91,23 @@ DockedPanel {
         text: qsTr("Address copied")
     }
 
-    SilicaFlickable {
-        id: sheet
+    SheetShade {
+        objectName: "menuShade"
+        edgeOf: menu
+    }
 
-        readonly property real overscroll: Math.max(0, originY - contentY)
+    SheetGrip {
+        objectName: "menuDragHandle"
+        edgeOf: menu
+    }
+
+    SheetFlickable {
+        id: sheet
 
         objectName: "menuSheet"
         width: parent.width
         height: parent.height
-        // Cancels overscroll so icons stay under finger.
-        y: -overscroll
         contentHeight: content.height
-        // Not AutoFlick: content fits, and auto with nothing to scroll won't drag.
-        flickableDirection: Flickable.VerticalFlick
-        boundsBehavior: Flickable.DragOverBounds
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
                 menu.hide()
@@ -114,20 +118,12 @@ DockedPanel {
             id: content
 
             width: parent.width
+            topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
-            Item {
-                width: parent.width
-                height: Theme.paddingLarge
-
-                DragHandle {
-                    objectName: "menuDragHandle"
-                    x: (parent.width - width) / 2
-                    y: Theme.paddingSmall
-                }
-            }
-
             MenuPageHeader {
+                id: header
+
                 width: parent.width
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
@@ -139,6 +135,13 @@ DockedPanel {
                     Clipboard.text = TabModel.activeUrl
                     copiedNotice.show()
                 }
+            }
+
+            // Header ink to first row's discs as far as one row's labels to next row's (#38).
+            Item {
+                objectName: "menuHeaderGap"
+                width: parent.width
+                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
             }
 
             Grid {
@@ -222,26 +225,9 @@ DockedPanel {
                 }
             }
 
-            // Fades both ends: Silica Separator fades right only, so two, left one mirrored.
-            Item {
+            MenuSeparator {
                 width: parent.width
-                height: Theme.paddingLarge
-
-                Row {
-                    objectName: "menuSeparator"
-                    anchors.centerIn: parent
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                        rotation: 180
-                    }
-
-                    Separator {
-                        width: menu.width / 2 - Theme.horizontalPageMargin
-                        color: Theme.primaryColor
-                    }
-                }
+                lineName: "menuSeparator"
             }
 
             Grid {

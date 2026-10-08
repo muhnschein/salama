@@ -4,6 +4,8 @@ import QtQuick 2.6
 
 Item {
     visible: open
+    // Silica's clips too: anything over its edge is cut.
+    clip: true
     property bool open: false
     property int dock: 0
     property bool modal: false
