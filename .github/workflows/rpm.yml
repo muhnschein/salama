@@ -99,17 +99,6 @@ jobs:
       - name: Pull the Sailfish SDK
         run: docker pull "$IMAGE"
 
-      # TEMPORARY (#38 investigation, reverted next commit): show Silica's InverseMouseArea.
-      - name: Dump Silica InverseMouseArea
-        continue-on-error: true
-        run: |
-          docker run --rm --privileged "$IMAGE" /bin/bash -c '
-            d=$(dirname "$(find /srv/mer/targets -path "*aarch64/*" -name DockedPanel.qml | head -1)")
-            echo "=== qmltypes InverseMouseArea"
-            awk "/Component \{/{buf=\"\"; keep=0} {buf=buf\"\n\"\$0} /InverseMouseArea/{keep=1} /^    \}/{if(keep){print buf}; keep=0}" "$d/plugins.qmltypes"
-            echo "=== uses"
-            grep -rn -A6 "InverseMouseArea" "$d" --include=*.qml | head -150'
-
       # Ask image for target, don't assume: odd naming fails here with list, not in rpmbuild.
       - name: Resolve the build target
         run: |
