@@ -99,25 +99,16 @@ jobs:
       - name: Pull the Sailfish SDK
         run: docker pull "$IMAGE"
 
-      # TEMPORARY (#38 investigation, reverted next commit): show Silica's DockedPanel.
-      - name: Dump Silica DockedPanel
+      # TEMPORARY (#38 investigation, reverted next commit): show Silica's InverseMouseArea.
+      - name: Dump Silica InverseMouseArea
         continue-on-error: true
         run: |
           docker run --rm --privileged "$IMAGE" /bin/bash -c '
-            t=$(sb2-config -l | grep -- "-aarch64$" | tail -1)
-            root=$(sb2 -t "$t" -m sdk-install -R sh -c "echo /" >/dev/null 2>&1; echo /srv/mer/targets/$t)
-            f=$(find "$root" /srv -name DockedPanel.qml 2>/dev/null | head -1)
-            if [ -z "$f" ]; then
-              sb2 -t "$t" -m sdk-install -R zypper --non-interactive in sailfishsilica-qt5 >/dev/null 2>&1 || true
-              f=$(find / -name DockedPanel.qml 2>/dev/null | head -1)
-            fi
-            echo "FILE=$f"
-            d=$(dirname "$f")
-            echo "=== DockedPanel.qml"; cat "$f"
-            for n in $(grep -oE "\b(Private\.)?[A-Z][A-Za-z]*(Panel|Dimmer|Mouse[A-Za-z]*|Shade|Modal)[A-Za-z]*\b" "$f" | sort -u | sed "s/^Private\.//"); do
-              for g in $(find "$d" -name "$n.qml" 2>/dev/null); do echo "=== $g"; cat "$g"; done
-            done
-            echo "=== grep modal"; grep -rln "modal" "$d" | head -30'
+            d=$(dirname "$(find /srv/mer/targets -path "*aarch64/*" -name DockedPanel.qml | head -1)")
+            echo "=== qmltypes InverseMouseArea"
+            awk "/Component \{/{buf=\"\"; keep=0} {buf=buf\"\n\"\$0} /InverseMouseArea/{keep=1} /^    \}/{if(keep){print buf}; keep=0}" "$d/plugins.qmltypes"
+            echo "=== uses"
+            grep -rn -A6 "InverseMouseArea" "$d" --include=*.qml | head -150'
 
       # Ask image for target, don't assume: odd naming fails here with list, not in rpmbuild.
       - name: Resolve the build target
