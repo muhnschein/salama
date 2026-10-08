@@ -11,6 +11,8 @@ DockedPanel {
 
     objectName: "recentlyClosedPanel"
     dock: Dock.Bottom
+    // Shade sits one under: over grid, so taps beside sheet reach it.
+    z: 2
 
     SheetBackground {
         anchors.fill: parent

@@ -377,6 +377,16 @@ bool unclipped(QQuickItem *item)
     return true;
 }
 
+// Sheet's shade over every other shown item beside sheet, so taps beside sheet reach it.
+bool shadeOnTop(QQuickItem *shade, QQuickItem *sheet)
+{
+    const QList<QQuickItem *> besides = shade->parentItem()->childItems();
+    return std::all_of(besides.cbegin(), besides.cend(), [shade, sheet](QQuickItem *beside) {
+        return beside == shade || beside == sheet || !beside->isVisible() ||
+               beside->z() < shade->z() || beside->z() > sheet->z();
+    });
+}
+
 // Repeater/ListView delegates have no QObject parent: walk visual tree too.
 QList<QObject *> findObjects(QObject *root, const QString &name)
 {
@@ -3095,12 +3105,15 @@ void tst_qmlload::recentlyClosedTabs()
     QVERIFY(QString::fromLatin1(title->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader")));
     QVERIFY(handle->mapToScene(QPointF()).y() < title->mapToScene(QPointF()).y());
-    // Handle on panel's top edge, as on nav bar (#38).
+    // Handle centred on panel's edge line, as on nav bar (#38).
     QCOMPARE(handle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
-             -handle->height() / 2);
+             evaluate(panel, QStringLiteral("Theme._lineWidth")).toReal() - handle->height() / 2);
     QVERIFY(unclipped(handle));
     QCOMPARE(handle->opacity(), 1.0);
+    QVERIFY(shadeOnTop(
+        qobject_cast<QQuickItem *>(findObjects(panel, QStringLiteral("panelShade")).first()),
+        qobject_cast<QQuickItem *>(panel)));
     QList<QObject *> rows = findAll(QStringLiteral("closedTabDelegate"));
     QCOMPARE(rows.count(), 1);
     QCOMPARE(findObjects(rows.first(), QStringLiteral("tabRowTitle"))
@@ -3392,10 +3405,10 @@ void tst_qmlload::menuSheetLayout()
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
-    // Handle on sheet's top edge, as on nav bar (#38).
+    // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
     QCOMPARE(handle->mapToScene(QPointF()).y() - sheetItem->mapToScene(QPointF()).y(),
-             -handle->height() / 2);
+             evaluate(menu, QStringLiteral("Theme._lineWidth")).toReal() - handle->height() / 2);
     QVERIFY(unclipped(handle));
 
     const auto litParts = [this](QObject *button) {
@@ -3724,11 +3737,12 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QCOMPARE(shade->parentItem(), menu->parentItem());
     QCOMPARE(handle->parentItem(), menu->parentItem());
     QVERIFY(shade->z() < menu->z());
+    QVERIFY(shadeOnTop(shade, menu));
     QVERIFY(handle->z() > menu->z());
     QCOMPARE(handle->opacity(), 1.0);
     QTRY_COMPARE(shade->opacity(), 1.0);
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
-                      QPoint(int(window.width() / 2), int(menu->y() / 2)));
+                      QPoint(window.width() / 2, int(menu->y() / 2)));
     QTRY_VERIFY(!menu->property("open").toBool());
     QTRY_VERIFY(!shade->isVisible());
 }
@@ -4461,13 +4475,14 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
-    // Handle on sheet's top edge, as on nav bar (#38).
+    // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
     QCOMPARE(linkHandle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSheet")))
                      ->mapToScene(QPointF())
                      .y(),
-             -linkHandle->height() / 2);
+             evaluate(menu, QStringLiteral("Theme._lineWidth")).toReal() -
+                 linkHandle->height() / 2);
     QVERIFY(unclipped(linkHandle));
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
     QCOMPARE(overlay->parentItem(), qobject_cast<QQuickItem *>(menu)->parentItem());

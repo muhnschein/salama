@@ -33,6 +33,8 @@ DockedPanel {
     width: parent.width
     height: content.height
     dock: Dock.Bottom
+    // Shade sits one under: over page, so taps beside sheet reach it.
+    z: 2
 
     function openPage(page) {
         hide()
