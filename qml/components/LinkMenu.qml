@@ -171,7 +171,8 @@ DockedPanel {
         parent: menu.parent
         anchors.fill: parent
         z: menu.z - 2
-        pictureZ: menu.z + 1
+        // Over shade's tap catcher too: pinch, not close.
+        pictureZ: menu.z + 2
         shown: menu.open
         roomTop: menu.topInset
         roomBottom: parent.height - menu.height

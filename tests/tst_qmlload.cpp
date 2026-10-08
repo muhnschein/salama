@@ -3108,7 +3108,8 @@ void tst_qmlload::recentlyClosedTabs()
     // Handle centred on panel's edge line, as on nav bar (#38).
     QCOMPARE(handle->mapToScene(QPointF()).y() -
                  qobject_cast<QQuickItem *>(panel)->mapToScene(QPointF()).y(),
-             evaluate(panel, QStringLiteral("Theme._lineWidth")).toReal() - handle->height() / 2);
+             evaluate(panel, QStringLiteral("Theme._lineWidth / 2")).toReal() -
+                 handle->height() / 2);
     QVERIFY(unclipped(handle));
     QCOMPARE(handle->opacity(), 1.0);
     QVERIFY(shadeOnTop(
@@ -3408,7 +3409,8 @@ void tst_qmlload::menuSheetLayout()
     // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
     QCOMPARE(handle->mapToScene(QPointF()).y() - sheetItem->mapToScene(QPointF()).y(),
-             evaluate(menu, QStringLiteral("Theme._lineWidth")).toReal() - handle->height() / 2);
+             evaluate(menu, QStringLiteral("Theme._lineWidth / 2")).toReal() -
+                 handle->height() / 2);
     QVERIFY(unclipped(handle));
 
     const auto litParts = [this](QObject *button) {
@@ -3738,6 +3740,12 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QCOMPARE(handle->parentItem(), menu->parentItem());
     QVERIFY(shade->z() < menu->z());
     QVERIFY(shadeOnTop(shade, menu));
+    // Tap catcher over sheet's own outside area, covering only page above sheet.
+    auto *tap =
+        qobject_cast<QQuickItem *>(findObjects(shade, QStringLiteral("sheetShadeTap")).first());
+    QCOMPARE(tap->parentItem(), menu->parentItem());
+    QVERIFY(tap->z() > menu->z());
+    QCOMPARE(tap->y() + tap->height(), menu->y());
     QVERIFY(handle->z() > menu->z());
     QCOMPARE(handle->opacity(), 1.0);
     QTRY_COMPARE(shade->opacity(), 1.0);
@@ -4481,7 +4489,7 @@ void tst_qmlload::linkMenuOnALongPress()
                  qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSheet")))
                      ->mapToScene(QPointF())
                      .y(),
-             evaluate(menu, QStringLiteral("Theme._lineWidth")).toReal() -
+             evaluate(menu, QStringLiteral("Theme._lineWidth / 2")).toReal() -
                  linkHandle->height() / 2);
     QVERIFY(unclipped(linkHandle));
     auto *overlay = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuOverlay")));
@@ -4739,6 +4747,11 @@ void tst_qmlload::linkMenuForPictures()
     // Picture over sheet and its shade, fully drawn; backdrop darker than for links (#38).
     QVERIFY(area->z() > menu->property("z").toReal());
     QVERIFY(area->z() > find(QStringLiteral("linkMenuDim"))->property("z").toReal());
+    QVERIFY(area->z() >
+            findObjects(find(QStringLiteral("linkMenuDim")), QStringLiteral("sheetShadeTap"))
+                .first()
+                ->property("z")
+                .toReal());
     QVERIFY(area->clip());
     QTRY_COMPARE(area->opacity(), 1.0);
     QCOMPARE(picture->property("opacity").toReal(), 1.0);

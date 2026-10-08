@@ -11,7 +11,7 @@ DragHandle {
 
     parent: edgeOf ? edgeOf.parent : null
     x: edgeOf.x + (edgeOf.width - width) / 2
-    y: edgeOf.y + Theme._lineWidth - height / 2
+    y: edgeOf.y + Theme._lineWidth / 2 - height / 2
     z: edgeOf.z + 1
     // Shut sheet lies past parent's bottom edge; top half would peek out.
     visible: parent !== null && edgeOf.visible && edgeOf.y < parent.height
