@@ -1,22 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The tutorial: what this browser does its own way, taught as the platform's own Tutorial
-// teaches the system's gestures -- on a sketch of the screen that answers the finger, one
-// step at a time, each shown by Silica's TapInteractionHint or TouchInteractionHint and
-// said by an InteractionHintLabel, and each waiting for the finger to have done it. The
-// address bar, which goes to an address and searches alike; the menu; the grid under the
-// page; and in the grid, a tab closed, moved, and moved to another group
-// (docs/DECISIONS/0034-tutorial.md).
-//
-// On the first start a card comes first, with the application's mark, to start the
-// tutorial or skip it. From Settings the lessons start at once. Back leaves it at any step,
-// as it leaves any page.
-//
-// The deck is the real one (components/TabDeck.qml), and so are the bar's gesture and
-// handle and the grid's cells, so a drag, a slide or a carry is caught, followed and
-// released here as it is in the browser. What the deck carries is a sketch: nothing done
-// here opens, moves or closes a real tab.
+// Real TabDeck, bar gesture/handle and grid cells, so gestures behave as in browser;
+// content is sketch, no real tabs touched. Each step waits for its gesture.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -25,25 +10,19 @@ import "../components"
 Page {
     id: tutorialPage
 
-    // The first start's card, with the way to skip it all, before the lessons.
     property bool welcome: false
-    // Where the tutorial is: "welcome"; then a step of a lesson, one of the lessons below;
-    // then "done", and the card that says so a moment after.
+    // "welcome", then a lesson step, then "done".
     property string step: welcome ? "welcome" : lessons[0]
     readonly property var lessons: ["address", "omnibar", "menu", "menuOpen", "open", "closeTab",
                                     "moveTab", "groupTab", "close"]
     property bool recapShown: false
-    // The deck may be raised, or lowered, now: only by the step that asks for it, and
-    // freely once it is all done.
+    // Only step asking for it moves deck; free once done.
     readonly property bool canOpen: step === "open" || step === "done"
     readonly property bool canClose: step === "close" || step === "done"
     readonly property bool hinting: hintShown()
-    // The label says the step while its hint is shown, and while the address bar's pane
-    // is explained, which has no hint.
+    // Also during pane explanation (no hint).
     readonly property bool saying: hinting || step === "omnibar"
 
-    // What the display's cutout takes at the top of the screen, which the sketch keeps
-    // out of as the browsing page does, while Settings says so.
     readonly property real cutoutHeight: Settings.cutoutGuard && Screen.topCutout
                                          ? Math.max(0, Screen.topCutout.y + Screen.topCutout.height)
                                          : 0
@@ -58,7 +37,6 @@ Page {
         step = lessons[0]
     }
 
-    // The step after this one: the next of the lessons, and after the last, done.
     function next() {
         var at = lessons.indexOf(step)
         if (at < 0) {
@@ -72,9 +50,7 @@ Page {
         }
     }
 
-    // A gesture made on a cell: the step it is for moves on. Made out of turn, it changes
-    // only the sketch, unless it leaves too few tabs for what comes next, when the sketch
-    // starts over.
+    // Out-of-turn gesture only changes sketch; sketch resets if too few tabs remain.
     function tabGesture(forStep) {
         if (step === forStep) {
             next()
@@ -83,7 +59,6 @@ Page {
         }
     }
 
-    // How a step is shown: a tap, a movement, or neither.
     function hintKind(forStep) {
         if (forStep === "address" || forStep === "menu" || forStep === "menuOpen") {
             return "tap"
@@ -94,15 +69,13 @@ Page {
         return "touch"
     }
 
-    // Shown while a step waits for a gesture, and not under a finger already making one.
-    // Read from the page's own state each time rather than from a binding on it: the
-    // handlers below ask as the state changes, before a binding would have caught up.
+    // Not under finger already gesturing. Read state directly, not via binding: handlers
+    // query on state change before binding updates.
     function hintShown() {
         return hintKind(step) !== "" && !deck.dragging && !grid.handling
                 && status === PageStatus.Active
     }
 
-    // The step's hint, while it waits for its gesture.
     function updateHints() {
         if (hintShown()) {
             hints.show(step)
@@ -111,8 +84,6 @@ Page {
         }
     }
 
-    // What the label says for a step: one short sentence, or two where the first is
-    // what the step shows and the second what to do.
     function stepText(forStep) {
         switch (forStep) {
         case "address":
@@ -144,8 +115,6 @@ Page {
         return ""
     }
 
-    // Which of the five lessons a step is part of: the address bar, the menu, the grid
-    // brought up, the tabs in it, and the page brought back.
     function lessonOf(forStep) {
         return [["address", "omnibar"], ["menu", "menuOpen"], ["open"],
                 ["closeTab", "moveTab", "groupTab"], ["close"]]
@@ -170,8 +139,6 @@ Page {
         }
         onDraggingChanged: tutorialPage.updateHints()
 
-        // A page, sketched: a picture and a few lines of text under the cutout, over
-        // the ambience as the start page is.
         Column {
             x: Theme.horizontalPageMargin
             y: tutorialPage.cutoutHeight + Theme.paddingLarge
@@ -197,7 +164,6 @@ Page {
             }
         }
 
-        // What an address typed into the bar offers: to go there, and to search for it.
         TutorialOmnibar {
             objectName: "tutorialOmnibar"
             width: parent.width
@@ -262,8 +228,6 @@ Page {
                     deck.settle(distance <= deck.pullThreshold)
                 }
             }
-            // A tap on a cell brings the page back, as it does in the browser, once
-            // that is what is asked for.
             onTabTapped: {
                 if (tutorialPage.canClose) {
                     deck.settle(false)
@@ -293,8 +257,7 @@ Page {
         menu: menu
     }
 
-    // At the other end of the screen from the gesture, so the words do not cover it, and
-    // put away while a finger is on the screen, as the Tutorial's own are.
+    // Opposite end from gesture so words don't cover it.
     InteractionHintLabel {
         id: label
 
@@ -313,8 +276,6 @@ Page {
         }
     }
 
-    // Which lesson this is, just past the words, towards the middle of the screen; and
-    // gone with them while a finger is down.
     TutorialProgress {
         objectName: "tutorialProgress"
         anchors.horizontalCenter: parent.horizontalCenter
@@ -326,7 +287,7 @@ Page {
         visible: tutorialPage.lessonOf(tutorialPage.step) >= 0
     }
 
-    // The explanation has no gesture to wait for: this goes on from it.
+    // Explanation step has no gesture: this advances it.
     Button {
         objectName: "tutorialContinueButton"
         anchors.centerIn: parent
@@ -341,12 +302,10 @@ Page {
         anchors.fill: parent
         opacity: tutorialPage.step === "welcome" ? 1.0 : 0.0
         showLogo: true
-        // The application's name, which is not translated.
+        // Not translated.
         heading: "Salama"
         //: Under the application's name on the tutorial's first card
         subheading: qsTr("Web browser for Sailfish OS")
-        // What the lessons cover, by the icons the browser draws them with: the bar
-        // searches, the menu is its button's, and the grid is the tabs'.
         topics: [
             //: What the tutorial covers: the address bar
             { "icon": "image://theme/icon-m-search", "text": qsTr("Address bar") },
@@ -371,8 +330,6 @@ Page {
         }
     }
 
-    // A moment to see the page come back before the card covers it, as the Tutorial
-    // waits after each lesson.
     Timer {
         id: recapDelay
 

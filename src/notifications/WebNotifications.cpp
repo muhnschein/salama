@@ -24,41 +24,25 @@ namespace Salama {
 
 namespace {
 
-// The page's event to the frame script, the frame script's message to the application,
-// the application's event back to the page, and the mark the page script leaves on the
-// window so that it is put in place once.
 const QString PageEvent = QStringLiteral("salama-notification");
 const QString Message = QStringLiteral("salama:notification");
 const QString ReplyEvent = QStringLiteral("salama-notification-reply");
 const QString Mark = QStringLiteral("salamaNotifications");
 
-// Firefox asks a site's question only while the page is handling something the reader
-// did (dom.webnotifications.requireuserinteraction; browser/modules/PermissionUI.sys.mjs),
-// and Gecko counts an input as that for five seconds (dom.user_activation.transient.timeout).
-// This engine's own count is not the page's to read -- navigator.userActivation came
-// with Firefox 120 -- so the page script keeps it: the last touch or key the engine
-// itself delivered.
+// Ask only during user gesture (dom.webnotifications.requireuserinteraction), 5 s window
+// (dom.user_activation.transient.timeout). navigator.userActivation needs Firefox 120, so
+// page script tracks last engine-delivered touch/key itself.
 const int ActivationMs = 5000;
-// How long a notification waits for its icon.
 const int IconWaitMs = 3000;
 
-// What the platform's WebView says as it refuses a permission, and which one
-// (sailfish-components-webview import/popups/PopupOpener.qml; the title is
-// ContentPermissionPrompt.js's entity name for "desktop-notification").
+// Platform PopupOpener.qml refusal; title = ContentPermissionPrompt.js entity.
 const QString PermissionsTopic = QStringLiteral("embed:permissions");
 const QString PermissionTitle = QStringLiteral("desktopNotification");
 
 const QString PngDataUrl = QStringLiteral("data:image/png;base64,");
 
-// The frame script: loaded into each view's message manager, as sailfish-browser loads
-// its PageMetadata.js (apps/qtmozembed/declarativewebpage.cpp) and the platform's
-// WebView its TextZoom.js. It runs in the scope embedlite's own helpers share, so it
-// keeps to a function of its own. It passes on what the page says -- a string, from the
-// top-level document, of a bounded length -- with the two things the page cannot
-// forge: its origin, and the notification permission Gecko holds for it, read through
-// the window's own Notification rather than whatever the page has put in its place.
-// And it says when the document goes, as Gecko closes a page's notifications when it
-// does (dom/notification/Notification.cpp, Notification::Observe).
+// Own function: shares scope with embedlite helpers. Reads permission via native
+// Notification, not page's replacement. Reports unload: Gecko closes notifications then.
 const char *const RelayTemplate = R"((function () {
     "use strict";
     var pageEvent = "%1", message = "%2", limit = %3;
@@ -82,26 +66,8 @@ const char *const RelayTemplate = R"((function () {
 })();
 )";
 
-// The page's Notification, and a service worker registration's showNotification() and
-// getNotifications() as a page calls them: Gecko's interface, as far as a page sees it,
-// with the browser behind it where Gecko has its alerts service.
-//
-//  * Notification.permission is Gecko's own, read from the engine's permission manager
-//    through the Notification it replaces. Once the reader has allowed the site, the
-//    page takes it as granted even before the engine has written it down.
-//  * requestPermission() asks the browser, and only while the page handles a touch or a
-//    key, as Firefox asks; otherwise it answers what the permission is. Refused once, a
-//    page is refused without asking until it is loaded again.
-//  * A notification is shown once it has its icon, drawn no larger than the platform
-//    shows it: loaded as an image of the page's, from its own site or one that allows
-//    it (CORS), and handed over as a PNG. One that has none, or cannot be drawn, is
-//    shown without after a wait at most.
-//  * Events: show, click, close and error, as the browser answers; close at once when
-//    the page closes one itself. A notification shown for a service worker has none,
-//    since they would be the worker's (notificationclick), which nothing here reaches.
-//
-// Each message carries the document's own random name, so that an answer meant for a
-// page that has gone is not taken by the next one.
+// Asks only during touch/key; refused -> no re-ask until reload. SW notifications get no
+// events (notificationclick unreachable). Random document name: stale replies miss next page.
 const char *const PageTemplate = R"( var EVENT = '%1', REPLY = '%2', MARK = '%3';
  var ICON = %4, WAIT = %5, ACTIVATION = %6;
  if (window[MARK]) { return true; }
@@ -333,7 +299,6 @@ const char *const PageTemplate = R"( var EVENT = '%1', REPLY = '%2', MARK = '%3'
 const char *const ReplyTemplate =
     R"(window.dispatchEvent(new CustomEvent('%1', { detail: %2 })); return true;)";
 
-// A document's name, as the page script makes one.
 bool isPageName(const QString &page)
 {
     static const QRegularExpression name(QStringLiteral("^[a-z0-9]{1,32}$"));
@@ -347,8 +312,7 @@ QString clipped(const QString &text)
                : text;
 }
 
-// A string as a JavaScript literal: JSON's, which JavaScript reads the same since
-// ES2019, U+2028 and U+2029 included.
+// JSON string = valid JS literal since ES2019 (U+2028/9 included).
 QString literal(const QString &text)
 {
     const QString array =
@@ -364,7 +328,7 @@ WebNotifications::WebNotifications(NotificationPermissions *permissions, QString
     , m_permissions(permissions)
     , m_iconDirectory(std::move(iconDirectory))
 {
-    // Icons left by a browser that stopped without closing what it showed.
+    // Leftover icons from crashed run.
     if (!m_iconDirectory.isEmpty()) {
         QDir directory(m_iconDirectory);
         const QStringList left = directory.entryList({QStringLiteral("*.png")}, QDir::Files);
@@ -422,8 +386,7 @@ void WebNotifications::receive(int tabId, const QVariant &data)
     if (type == QLatin1String("request")) {
         request(tabId, page, id, origin);
     } else if (type == QLatin1String("show")) {
-        // Gecko's word for the page, unless the reader has allowed the site since and
-        // the engine has yet to say so; never over Gecko's refusal.
+        // Gecko's answer, or our allow if engine not caught up; never overrides denied.
         const QString permission = relayed.value(QStringLiteral("permission")).toString();
         const bool allowed =
             permission == QLatin1String("granted") ||
@@ -436,7 +399,6 @@ void WebNotifications::receive(int tabId, const QVariant &data)
 
 void WebNotifications::request(int tabId, const QString &page, int id, const QString &origin)
 {
-    // A site decided on answers at once: the page asked before it heard.
     if (m_permissions->isBlocked(origin) || m_permissions->isAllowed(origin)) {
         const bool allowed = m_permissions->isAllowed(origin);
         reply(tabId, page,
@@ -485,9 +447,7 @@ void WebNotifications::show(int tabId, const QString &page, const QVariantMap &m
               {{QStringLiteral("type"), QStringLiteral("error")}, {QStringLiteral("id"), id}});
         return;
     }
-    // A notification with a tag takes the place of the site's last one with the same
-    // tag, as Gecko names an alert by its origin and tag (Notification::GetAlertName):
-    // in the same place, without a word to the page that showed the last one.
+    // Same origin+tag replaces previous silently (Gecko Notification::GetAlertName).
     const QString tag = message.value(QStringLiteral("tag")).toString().left(TextLimit);
     Shown shown;
     if (!tag.isEmpty()) {
@@ -602,16 +562,14 @@ void WebNotifications::popupOpening(const QString &pageUrl, const QString &topic
         request.value(QStringLiteral("title")).toString() != PermissionTitle) {
         return;
     }
-    // The platform names the site by its host alone: taken back only for the page's own,
-    // and not for a frame's from elsewhere, which Gecko refuses in any case.
+    // Platform gives host only: undo for top page's host, not cross-origin frames (Gecko
+    // refuses those anyway).
     const QString origin = NotificationPermissions::originOf(pageUrl);
     const QString host = request.value(QStringLiteral("host")).toString().toLower();
     if (origin.isEmpty() || QUrl(origin).host(QUrl::FullyEncoded) != host) {
         return;
     }
-    // After the refusal, which the platform sends as this returns: the engine takes the
-    // two in the order they are sent, over the one channel between the application and
-    // the engine.
+    // Deferred: must follow platform's refusal, sent on return. Single channel keeps order.
     NotificationPermissions *permissions = m_permissions;
     QTimer::singleShot(0, permissions,
                        [permissions, origin]() { permissions->undoAutomaticDenial(origin); });

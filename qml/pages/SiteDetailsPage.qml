@@ -1,18 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What is known of the site of the page in front and what it may do, from the head of the
-// menu sheet: whether the connection is secure and whose certificate says so, what
-// tracking protection is doing for the site and a switch for it, and the permissions the
-// site has been given or left to the defaults, each changed where it is. The page the
-// padlock in the address bar stands for in sailfish-browser
-// (apps/browser/qml/pages/components/CertificateInfo.qml), with the site's permissions
-// beside it as its own SitePermissionPage has them (docs/DECISIONS/0040-site-details.md).
-//
-// The connection is the engine's, as the view has it, view.security, which is not there
-// for an engine build that has none, nor for a view that has gone since the page was
-// opened, and every binding here copes with that (0011-address-and-security.md). An
-// address that is not http or https has no site: its permissions are not drawn.
+// view.security absent on engines without it or after view gone: bindings cope.
+// Non-http(s) address has no site -> no permissions drawn.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -21,8 +10,6 @@ import "../components"
 Page {
     id: detailsPage
 
-    // The page: its address and title as the menu sheet's head had them, and the view
-    // that shows it, to read its connection from and to load again.
     property string url
     property string title
     property Item view
@@ -31,12 +18,10 @@ Page {
     readonly property string origin: SitePermissions.originOf(url)
     readonly property bool https: url.indexOf("https://") === 0
     readonly property var security: view && view.security ? view.security : null
-    // The engine is not satisfied with the connection, as the address bar's warning says
-    // (components/BrowserMenu.qml).
     readonly property bool tlsBroken:
         https && !!security && !!security.validState && !security.allGood
     readonly property bool secure: https && !tlsBroken
-    // Why, as the engine's own verdict says it, the most to the point first.
+    // Most relevant first.
     readonly property string reason: {
         if (!tlsBroken) {
             return ""
@@ -49,7 +34,7 @@ Page {
         }
         return security.untrusted ? qsTr("The certificate is not trusted") : ""
     }
-    // Cookies are tracking protection's while it is on, for every site and for this one.
+    // Tracking protection owns cookies while on.
     readonly property bool trackingOff:
         PrivacySettings.trackingProtection === PrivacySettings.TrackingProtectionOff
         || (SitePermissions.revision,
@@ -64,16 +49,14 @@ Page {
     objectName: "siteDetailsPage"
     allowedOrientations: Orientation.Portrait
 
-    // What the engine keeps is read as the page opens: a site may have asked, and been
-    // answered, since it was last read.
+    // Reread on open: site may have asked since.
     Component.onCompleted: SitePermissions.refresh()
 
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
 
-        // Only while the site has a choice of its own: an empty pulley is one to pull for
-        // nothing.
+        // Only when site has own choice: no empty pulley.
         PullDownMenu {
             objectName: "siteDetailsPulley"
             visible: detailsPage.exceptions > 0
@@ -82,8 +65,7 @@ Page {
                 objectName: "clearSitePermissionsMenuItem"
                 text: qsTr("Clear site permissions")
                 onClicked: {
-                    // Tracking protection comes back on with the site's other decisions, and
-                    // the page is told so as it is when the switch does it.
+                    // Tracking protection returns on with other decisions; page told as switch would.
                     var wasOff = SitePermissions.decision(SitePermissions.TrackingProtection,
                                                           detailsPage.origin) === SitePermissions.Allow
                     SitePermissions.removeAllForOrigin(detailsPage.origin)

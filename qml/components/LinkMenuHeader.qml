@@ -1,34 +1,24 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The head of the link sheet, naming what was pressed as the menu's head names the page
-// (docs/DECISIONS/0046-link-menu.md, 0021-menu-sheet.md): on a faint tile the picture
-// pressed, or the icon of the application another kind of link is for, or the host's
-// initial; the link's text, and under it where it goes -- the host and the path, the
-// mailbox, the number. At the right, the menu head's button to copy it.
-//
-// Link texts and addresses are what pages chose, and are drawn as plain text.
+// Link texts and addresses are page-controlled: plain text only.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Item {
     id: header
 
-    // What was pressed: EngineMessages.linkTarget()'s map.
+    // EngineMessages.linkTarget() map.
     property var target
-    // The theme icon of the application a link is for, when it is for one.
     property string appIcon
 
     readonly property bool hasTitle: target.title.length > 0
 
-    // The copy button was tapped.
     signal copyRequested()
 
     objectName: "linkMenuHeader"
     height: Theme.itemSizeSmall
 
-    // The address bar's suggestions' faint tile, so that a picture or a letter has a
-    // ground under it whatever the ambience.
     Rectangle {
         id: tile
 
@@ -83,8 +73,7 @@ Item {
             verticalCenter: parent.verticalCenter
         }
 
-        // A link without text of its own -- a picture, or a bare address -- is named by
-        // where it goes, once.
+        // Textless link (image, bare url): named by target, shown once.
         Label {
             objectName: "linkMenuTitle"
             width: parent.width
@@ -106,8 +95,6 @@ Item {
         }
     }
 
-    // As the menu head's: at the page margin inside a button a padding wider either side,
-    // the keyboard's paste key's clipboard (MenuPageHeader.qml).
     IconButton {
         id: copyButton
 

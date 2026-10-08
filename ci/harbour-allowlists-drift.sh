@@ -1,9 +1,7 @@
 #!/bin/bash
-# ci/harbour-allowlists-drift.sh — compare ci/harbour/*.conf with upstream.
-#
-# The only script in ci/ that needs the network; it is a CI step, not part of
-# `make check`. Prints a GitHub Actions warning per file that lags upstream and always
-# exits 0. With --update the upstream copies are written into ci/harbour/.
+# Compare ci/harbour/*.conf with upstream. Only ci/ script needing network; CI step,
+# not `make check`. GitHub warning per lagging file, always exit 0.
+# --update writes upstream copies into ci/harbour/.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

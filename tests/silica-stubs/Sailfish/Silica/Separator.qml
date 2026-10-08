@@ -1,4 +1,4 @@
-// Stub: Silica's line that fades out towards its ends.
+// Stub: Silica line fading toward ends.
 import QtQuick 2.6
 
 Item {

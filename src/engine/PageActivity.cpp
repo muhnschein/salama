@@ -9,8 +9,7 @@ namespace {
 const QString DecoderTopic = QStringLiteral("media-decoder-info");
 const QString CallTopic = QStringLiteral("webrtc-media-info");
 
-// Decoders remembered beyond those playing. A page that plays one clip after another
-// makes a decoder for each, and each is an address that is never heard of again.
+// Cap: each clip makes new decoder, address never seen again.
 const int RememberedDecoders = 256;
 
 } // namespace
@@ -110,7 +109,7 @@ void PageActivity::observeDecoder(const QVariantMap &info)
         m_playing.insert(owner);
         emit playStateChanged();
     } else {
-        // "pause" is every state but playing, the decoder's shutdown included.
+        // "pause" = any non-playing state, shutdown included.
         m_playing.remove(owner);
         emit playStateChanged();
     }
@@ -129,9 +128,7 @@ void PageActivity::forgetIdleDecoders()
 
 void PageActivity::updateAudible()
 {
-    // A decoder whose metadata was never seen counts as sound: the engine sends it
-    // before playing starts, so this is a decoder forgotten above or an engine that
-    // changed its order, and a silent video kept running costs less than music cut off.
+    // Unseen metadata counts as sound: silent video kept running beats music cut off.
     bool audible = m_inCall;
     for (auto it = m_playing.constBegin(); it != m_playing.constEnd(); ++it) {
         audible = audible || m_hasSound.value(*it, true);

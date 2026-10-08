@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One kind of permission for the one site, in its details: the kind's icon and name, and
-// under the name what the site has been given -- allowed, blocked, or asked each time --
-// or, with no choice of its own, "Follow default: " and what the default is. A tap offers
-// the same: allowing, blocking, asking each time where the kind is one a page asks for,
-// and following the default, which takes the site's own record away
-// (docs/DECISIONS/0039-site-permissions.md, 0040-site-details.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -14,11 +7,10 @@ import harbour.salama 1.0
 ListItem {
     id: row
 
-    // A SitePermissions kind, and the site's origin.
     property int kind
     property string origin
     property SitePermissionNames siteNames: SitePermissionNames {}
-    // As the site has it now, asked again as the list changes.
+    // revision in comma expression forces re-eval on list change.
     readonly property int decision: (SitePermissions.revision,
                                      SitePermissions.decision(kind, origin))
     readonly property bool followsDefault: decision === SitePermissions.Default

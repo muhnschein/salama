@@ -1,5 +1,4 @@
-// Stub: the module is not installed on the host, and these tests draw nothing. It
-// exists so the import resolves; what the effect renders is a device question.
+// Stub: module absent on host; exists so import resolves. Tests draw nothing.
 import QtQuick 2.6
 
 Item {

@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What a tab with no address shows: the start page, which is this browser's home page
-// (docs/DECISIONS/0032-start-page.md). Firefox's home, as a Silica page over the
-// ambience: tiles for the sites visited most and for the bookmarks, and rows for the
-// pages read last, each section as Settings > Start page has it -- or nothing at all.
-// A tap opens the page in this tab; a row's menu opens it in a new one, or takes it out
-// of the history.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -21,7 +14,6 @@ SilicaFlickable {
                                            && StartPage.bookmarks.count > 0
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
-    // Four tiles to a row, the way the phone's own app grid sets them.
     readonly property int columns: 4
 
     signal openRequested(string url)
@@ -35,8 +27,7 @@ SilicaFlickable {
 
         width: parent.width
         topPadding: Theme.paddingLarge
-        // Clear of the reach above the navigation bar, which takes a press there for
-        // the drag that opens the grid.
+        // Clear of nav bar reach, which takes presses for grid drag.
         bottomPadding: Theme.itemSizeSmall
 
         Column {
@@ -135,7 +126,6 @@ SilicaFlickable {
         }
     }
 
-    // Nothing in any section switched on: a first start, or a history just cleared.
     ViewPlaceholder {
         objectName: "startPagePlaceholder"
         enabled: !startPage.blank && !startPage.showsTopSites && !startPage.showsBookmarks

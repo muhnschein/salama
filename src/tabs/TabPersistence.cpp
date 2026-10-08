@@ -122,7 +122,7 @@ void TabPersistence::updateTab(const Tab &tab) const
 
 void TabPersistence::saveOrder(const QList<Tab> &tabs) const
 {
-    // Numbered from 1 so that insertTab's MAX(position) + 1 still lands last.
+    // From 1 so insertTab's MAX(position) + 1 lands last.
     int position = 0;
     for (const Tab &tab : tabs) {
         if (!tab.isValid()) {

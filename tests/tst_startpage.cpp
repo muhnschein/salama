@@ -49,8 +49,8 @@ QStringList urls(const SiteListModel &model)
     return list;
 }
 
-// The built-in search engines, and the one in use, over a settings file of their own,
-// which is what a start page reads to tell a page of results from a site.
+// Built-in engines + current one over own settings file; start page uses it to tell results
+// from sites.
 struct Engines
 {
     explicit Engines(const QString &directory)
@@ -102,8 +102,6 @@ void tst_startpage::siteList()
     QVERIFY(!model.data(model.index(0, 0), Qt::DisplayRole).isValid());
     QVERIFY(!model.data(model.index(2, 0), roleId(SiteListModel::Role::Url)).isValid());
 
-    // The same list again is no change; the same sites under another title is one, of
-    // as many rows.
     model.setSites({a, b});
     QCOMPARE(resetSpy.count(), 1);
     Site renamed = a;
@@ -137,8 +135,7 @@ void tst_startpage::siteOf()
     QCOMPARE(StartPage::siteOf(url), site);
 }
 
-// Visited most first, and of the pages of one site only the one visited most; the
-// ones visited as often, the one visited last first.
+// Most visited first, one page per site (most visited); ties: last visited first.
 void tst_startpage::topSitesAreOnePerSite()
 {
     QTemporaryDir dir;
@@ -165,7 +162,6 @@ void tst_startpage::topSitesAreOnePerSite()
     QCOMPARE(top.sites().first().favicon, QStringLiteral("https://a.example/icon.png"));
     QVERIFY(top.sites().at(1).favicon.isEmpty());
 
-    // Read again, it follows the history.
     visit(history, QStringLiteral("https://c.example/"), 3);
     start.refresh();
     QCOMPARE(urls(top).first(), QStringLiteral("https://c.example/"));
@@ -174,8 +170,6 @@ void tst_startpage::topSitesAreOnePerSite()
     QCOMPARE(top.count(), 0);
 }
 
-// Searching makes a page of results a visit to the engine each time; none of them is
-// a site visited, or a page read.
 void tst_startpage::searchesAreNotVisits()
 {
     QTemporaryDir dir;
@@ -194,9 +188,8 @@ void tst_startpage::searchesAreNotVisits()
     QCOMPARE(urls(*start.recentPages()), QStringList{QStringLiteral("https://a.example/")});
 }
 
-// An engine added while browsing is as much an engine as the built-in ones: its pages of
-// results were sites visited until it was added, and are not once it has been
-// (docs/DECISIONS/0041-search-engines-found.md).
+// Engine added while browsing counts like built-in: its results were site visits before add,
+// not after.
 void tst_startpage::addedEnginesAreSearchesToo()
 {
     QTemporaryDir dir;
@@ -220,7 +213,6 @@ void tst_startpage::addedEnginesAreSearchesToo()
     QCOMPARE(urls(*start.recentPages()), QStringList{QStringLiteral("https://a.example/")});
 }
 
-// The pages read last, newest first, a site as often as it was read.
 void tst_startpage::recentPagesNewestFirst()
 {
     QTemporaryDir dir;
@@ -262,8 +254,7 @@ void tst_startpage::bookmarksInTheirOrder()
     QCOMPARE(urls(marked), QStringList{QStringLiteral("https://a.example/")});
 }
 
-// Two rows of tiles, and a handful of rows: the start page is not the history, or the
-// bookmarks, which have pages of their own.
+// Two tile rows, few list rows: start page not history or bookmarks.
 void tst_startpage::listsAreShort()
 {
     QTemporaryDir dir;

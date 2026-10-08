@@ -188,8 +188,7 @@ void tst_bookmarkmodel::persistence()
     QCOMPARE(role(model, 1, roleId(BookmarkModel::Role::Title)).toString(), QStringLiteral("Y"));
 }
 
-// Every change to the bookmarks moves the revision on, so a QML binding that reads it
-// before asking an invokable is asked again (docs/DECISIONS/0029-quick-action.md).
+// Every change bumps revision, so QML binding reading it re-asks invokable.
 void tst_bookmarkmodel::revisionCountsEveryChange()
 {
     QTemporaryDir dir;
@@ -218,7 +217,6 @@ void tst_bookmarkmodel::revisionCountsEveryChange()
     model.clear();
     QVERIFY(moved());
 
-    // What changes nothing moves nothing.
     model.add(QStringLiteral("https://c.example/"), QStringLiteral("C"));
     QVERIFY(moved());
     model.add(QStringLiteral("https://c.example/"), QStringLiteral("C again"));
@@ -229,8 +227,7 @@ void tst_bookmarkmodel::revisionCountsEveryChange()
     QCOMPARE(model.revision(), revision);
 }
 
-// One bookmark by its id, as the quick action keeps it; and the id by the address,
-// which is how it is found again once removed and added back.
+// Id as quick action keeps it; id by url finds it again after remove + re-add.
 void tst_bookmarkmodel::byId()
 {
     QTemporaryDir dir;
@@ -245,7 +242,6 @@ void tst_bookmarkmodel::byId()
     QVERIFY(!model.hasBookmark(b + 1));
     QCOMPARE(model.urlOf(a), QStringLiteral("https://a.example/"));
     QCOMPARE(model.titleOf(a), QStringLiteral("A"));
-    // No title: the address, as the list shows it.
     QCOMPARE(model.titleOf(b), QStringLiteral("https://b.example/"));
     QVERIFY(model.urlOf(b + 1).isEmpty());
     QVERIFY(model.titleOf(b + 1).isEmpty());
@@ -253,12 +249,9 @@ void tst_bookmarkmodel::byId()
     QCOMPARE(model.idForUrl(QStringLiteral("https://c.example/")), 0);
     QCOMPARE(model.idForUrl(QString()), 0);
 
-    // Renamed: the id reads as it is now.
     model.edit(0, QStringLiteral("https://a.example/"), QStringLiteral("Alpha"));
     QCOMPARE(model.titleOf(a), QStringLiteral("Alpha"));
 
-    // Removed and added again, as the menu's Bookmark toggle does: a new id, found by
-    // the address.
     model.removeByUrl(QStringLiteral("https://a.example/"));
     QVERIFY(!model.hasBookmark(a));
     const int again = model.add(QStringLiteral("https://a.example/"), QStringLiteral("Alpha"));
@@ -266,8 +259,6 @@ void tst_bookmarkmodel::byId()
     QCOMPARE(model.idForUrl(QStringLiteral("https://a.example/")), again);
 }
 
-// What the bookmark picker lists: every word, anywhere, whatever the case; all of
-// them for nothing typed.
 void tst_bookmarkmodel::matching()
 {
     QTemporaryDir dir;
@@ -292,7 +283,6 @@ void tst_bookmarkmodel::matching()
     QCOMPARE(all.at(2).toMap().value(QStringLiteral("title")).toString(),
              QStringLiteral("https://bare.example/news"));
 
-    // Words across title and address, in the list's order.
     QVariantList found = model.matching(QStringLiteral("NEWS"));
     QCOMPARE(found.count(), 2);
     QCOMPARE(found.at(0).toMap().value(QStringLiteral("bookmarkId")).toInt(), news);
@@ -306,7 +296,7 @@ void tst_bookmarkmodel::matching()
     QVERIFY(model.matching(QStringLiteral("news tampere")).isEmpty());
 }
 
-// The rows as kept, for the address bar: the title as stored, not as shown.
+// Raw rows for address bar: stored title, not displayed.
 void tst_bookmarkmodel::rowsInMemory()
 {
     QTemporaryDir dir;
@@ -324,7 +314,7 @@ void tst_bookmarkmodel::rowsInMemory()
     QCOMPARE(model.bookmarks().at(1).id, b);
     QVERIFY(model.bookmarks().at(1).title.isEmpty());
 
-    // When each was added, to the second, in milliseconds: as added, and as read back.
+    // Added time, ms, second precision.
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     const qint64 created = model.bookmarks().at(0).created;
     QCOMPARE(created % 1000, qint64(0));

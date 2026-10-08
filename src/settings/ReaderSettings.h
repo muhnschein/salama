@@ -6,8 +6,6 @@
 
 namespace Salama {
 
-// Settings > Reader view: how the reader view sets an article
-// (docs/DECISIONS/0024-reader-view.md). Out-of-range values read back as the defaults.
 class ReaderSettings : public SettingsSection
 {
     Q_OBJECT
@@ -16,19 +14,9 @@ class ReaderSettings : public SettingsSection
     Q_PROPERTY(int textSize READ textSize WRITE setTextSize NOTIFY textSizeChanged)
 
 public:
-    // The reader view's colours: Firefox's light or dark theme as the ambience is light
-    // or dark, one of Firefox's reader themes whatever the ambience, or the ambience's
-    // own -- the article set as a Silica page is, in its colours and typeface, and what
-    // a reader who has chosen nothing gets. Stored, so the numbers are part of the file
-    // format: Automatic has the 0 the ambience's light or dark had when that was all
-    // "Ambience" meant, and the Silica look is added after the rest. Kept under a key of
-    // its own since the Silica look became the default, which a 0 under the earlier one
-    // becomes, the others staying as they were (docs/DECISIONS/0024-reader-view.md).
-    //
-    // Unscoped on purpose, as every enum QML reads is (cpp:S3642): the page reaches
-    // these as `ReaderSettings.Sepia`, and QML could not do that with a scoped enum
-    // until Qt 5.8. This application is built against 5.6 (SCOPE.md §4), so `enum
-    // class` here would compile on the host and leave the choice unset on the phone.
+    // Stored: values are file format.
+    // Unscoped: QML reads scoped enums only from Qt 5.8; target 5.6 (SCOPE.md §4). `enum class`
+    // compiles on host but leaves choice unset on phone.
     enum Colors // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         Automatic = 0,
@@ -39,8 +27,6 @@ public:
     };
     Q_ENUM(Colors)
 
-    // The reader view's typeface, as Firefox offers it. Stored, and unscoped as Colors
-    // is.
     enum Typeface // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         SansSerif = 0,
@@ -48,9 +34,7 @@ public:
     };
     Q_ENUM(Typeface)
 
-    // The reader view's text size, in Firefox's reader.font_size steps: 1 to 9, 5 the
-    // default. An enum so the slider in Settings can read its ends from here, and
-    // unscoped as Colors is.
+    // Firefox reader.font_size steps.
     enum TextSize // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         TextSizeMin = 1,
@@ -61,7 +45,6 @@ public:
 
     explicit ReaderSettings(QSettings &file, QObject *parent = nullptr);
 
-    // The ambience's own unless changed.
     int colors() const;
     void setColors(int colors);
     int typeface() const;

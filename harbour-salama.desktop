@@ -46,11 +46,8 @@ Comment[zh_TW]=網頁瀏覽器
 Icon=harbour-salama
 Exec=harbour-salama
 X-Nemo-Application-Type=silica-qt5
-# What the share sheet offers when a link is shared from another application: this
-# browser, for links alone. text/x-url is what a link is shared as; plain text is not
-# offered here, even text holding an address. The share sheet calls the method's object,
-# /share/link, at the service ExecDBus below starts the browser under
-# (src/share/ShareReceiver.h, docs/DECISIONS/0042-share-target.md).
+# Share sheet offers browser for links only (text/x-url), not plain text. Sheet calls
+# /share/link at service ExecDBus starts (src/share/ShareReceiver.h).
 X-Share-Methods=link
 
 [X-Share Method link]

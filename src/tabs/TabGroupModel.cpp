@@ -108,7 +108,6 @@ bool TabGroupModel::moveTab(int tabId, int groupId)
 
 void TabGroupModel::inserted(int row)
 {
-    // The tab model has already put the group in its list; this only tells the views.
     beginInsertRows(QModelIndex(), row, row);
     endInsertRows();
     emit countChanged();
@@ -123,9 +122,7 @@ void TabGroupModel::removed(int row)
 
 void TabGroupModel::moved(int from, int to)
 {
-    // As inserted() and removed(): the tab model has already moved the group. The rows
-    // land before the one past the destination when moving down the list, which is how
-    // beginMoveRows wants it said.
+    // beginMoveRows wants dest + 1 when moving down.
     if (beginMoveRows(QModelIndex(), from, from, QModelIndex(), to > from ? to + 1 : to)) {
         endMoveRows();
     }

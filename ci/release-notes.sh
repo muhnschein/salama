@@ -1,14 +1,10 @@
 #!/bin/bash
-# ci/release-notes.sh — print one version's section of docs/CHANGELOG.md, which is the
-# text of the GitHub release for that version (docs/RELEASING.md).
+# Print one version's docs/CHANGELOG.md section = GitHub release text (docs/RELEASING.md).
 #
 # Usage: ci/release-notes.sh <version>        # e.g. 0.8.0
 #
-# A section starts at its Keep a Changelog heading, "## [<version>]" with the date after
-# it, and runs to the next "## " heading or the end of the file. The heading itself is
-# left out, the release page already has the name, and so are blank lines at either end.
-# No such section, or an empty one, is a failure: a release cut before the changelog was
-# written stops in the workflow rather than publishing a release with nothing in it.
+# Section: from "## [<version>]" heading to next "## " or EOF. Heading and edge blank
+# lines dropped. Missing or empty section fails, so release without notes stops.
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,8 +16,8 @@ version=${1:-}
     exit 2
 }
 
-# The heading is compared as text, not as a pattern, so the version's dots are dots.
-# Blank lines are held back until a line follows them, which drops the trailing ones.
+# Heading compared as text, not pattern (dots are dots).
+# Blank lines held until a line follows; drops trailing ones.
 notes=$(awk -v head="## [$version]" '
     /^## / { inside = (substr($0, 1, length(head)) == head); next }
     !inside { next }

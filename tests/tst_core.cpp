@@ -92,19 +92,17 @@ void tst_core::restoresState()
     }
     Core core(dir.path(), config, dir.path());
     QCOMPARE(core.tabs()->count(), 1);
-    // The downloads are kept in the same database; one that was running did not finish.
     QCOMPARE(core.downloads()->count(), 1);
     QCOMPARE(core.downloads()
                  ->data(core.downloads()->index(0, 0), roleId(DownloadModel::Role::Status))
                  .toInt(),
              static_cast<int>(DownloadModel::Failed));
     QCOMPARE(core.bookmarks()->activeUrl(), QStringLiteral("https://a.example/"));
-    // Five pages stay loaded, as in Jolla's browser.
+    // Five live pages, as Jolla browser.
     QCOMPARE(core.tabs()->liveTabLimit(), 5);
 }
 
-// The engine's word that something plays, which PageActivity hears, has every loaded
-// page asked what it plays (docs/DECISIONS/0026-media-controls.md).
+// Engine playback notice (via PageActivity) makes every loaded page report what plays.
 void tst_core::wiresPlaybackToPageMedia()
 {
     QTemporaryDir dir;
@@ -121,7 +119,6 @@ void tst_core::wiresPlaybackToPageMedia()
     QCOMPARE(requested.first().at(0).toInt(), 0);
     QCOMPARE(requested.first().at(1).toInt(), static_cast<int>(Salama::PageMedia::Command::Query));
 
-    // Out of sight, the pages hear of it: what plays is hidden from them.
     const int id = core.tabs()->activeTabId();
     core.pageActivity()->setBackground(true);
     QVERIFY(core.pageMedia()
@@ -133,8 +130,6 @@ void tst_core::wiresPlaybackToPageMedia()
                 .contains(QLatin1String("concealed = false;")));
 }
 
-// The address bar's suggestions are drawn from the core's own models, and follow the
-// core's settings (docs/DECISIONS/0027-omnibar.md).
 void tst_core::omnibarSearchesTheModels()
 {
     QTemporaryDir dir;
@@ -147,7 +142,6 @@ void tst_core::omnibarSearchesTheModels()
     core.bookmarks()->add(QStringLiteral("https://core.example/bookmark"), QStringLiteral("B"));
 
     omnibar->setQuery(QStringLiteral("core"));
-    // The tab's visit went to the history, and is listed as the tab it is.
     QCOMPARE(core.history()->count(), 1);
     QCOMPARE(omnibar->count(), 2);
     const auto kinds = [omnibar]() {
@@ -167,8 +161,6 @@ void tst_core::omnibarSearchesTheModels()
     QTRY_COMPARE(kinds(), QStringList{QStringLiteral("tab")});
 }
 
-// A page visited while the history is not to be kept is not kept; what was kept stays
-// (docs/DECISIONS/0030-history-settings.md).
 void tst_core::historyNotRemembered()
 {
     QTemporaryDir dir;
@@ -186,9 +178,8 @@ void tst_core::historyNotRemembered()
     QCOMPARE(core.history()->count(), 2);
 }
 
-// Set to, the history, the list of downloads and the recently closed tabs go as the
-// browser closes -- and as it starts, for a browser stopped before it could. The tabs
-// themselves and the bookmarks stay.
+// When set: history, downloads, closed tabs cleared on close, and on start after unclean
+// stop. Tabs and bookmarks stay.
 void tst_core::clearsOnClose()
 {
     QTemporaryDir dir;
@@ -215,7 +206,6 @@ void tst_core::clearsOnClose()
         QCOMPARE(core.downloads()->count(), 1);
         QCOMPARE(core.tabs()->closedTabs()->count(), 1);
 
-        // Off unless switched on: closing leaves everything.
         QVERIFY(!core.privacySettings()->clearHistoryOnClose());
         core.clearOnClose();
         QCOMPARE(core.history()->count(), 2);
@@ -229,7 +219,6 @@ void tst_core::clearsOnClose()
         QCOMPARE(core.tabs()->count(), 1);
         QCOMPARE(core.bookmarks()->count(), 1);
 
-        // A page after that, and the browser stopped rather than closed.
         load(QStringLiteral("https://later.example/"));
         QCOMPARE(core.history()->count(), 1);
     }
@@ -238,8 +227,6 @@ void tst_core::clearsOnClose()
     QCOMPARE(again.bookmarks()->count(), 1);
 }
 
-// The start page follows the history and the bookmarks as they change, icons included
-// (docs/DECISIONS/0032-start-page.md).
 void tst_core::wiresHistoryAndBookmarksToTheStartPage()
 {
     QTemporaryDir dir;
@@ -270,9 +257,8 @@ void tst_core::wiresHistoryAndBookmarksToTheStartPage()
     QCOMPARE(start->recentPages()->count(), 0);
 }
 
-// A page of results of an engine added while browsing is a search and not a site visited,
-// from the moment the engine is added, with no visit to prompt the start page to look
-// again (docs/DECISIONS/0041-search-engines-found.md).
+// Result page of engine added while browsing = search, not visit, from moment of add,
+// without needing visit to refresh start page.
 void tst_core::wiresAddedEnginesToTheStartPage()
 {
     QTemporaryDir dir;

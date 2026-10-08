@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One tab group in the list of them: a picture of its tabs, its name -- or, unnamed,
-// what it holds -- and how many tabs it has, with a grip at its end to carry it to
-// another place in the list, and rename, ungroup and delete in its menu. The default
-// group has neither grip nor menu: it is first, and none of the three applies to it
-// (docs/DECISIONS/0015-tab-groups.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -15,20 +9,15 @@ ListItem {
 
     signal renameRequested()
 
-    // The default group is what it is: neither renamed, ungrouped nor removed, and
-    // first whatever else moves.
     readonly property bool fixed: model.defaultGroup
-    // While the grip has a finger, the row is carried. Where the finger went down and
-    // where it is now are in the list's own coordinates, which do not move with the
-    // row, and the row it is carried to is counted from the one it started at.
+    // Ys in list coords (don't move with row); target row counted from startRow.
     property bool carried: false
     property int startRow: -1
     property int carriedRow: -1
     property real startY: 0
     property real grabY: 0
     property real fingerY: 0
-    // Made for every group, and handed to the list item only for one that has a menu:
-    // on the default group a hold opens nothing, rather than a menu of nothing to do.
+    // Attached only for non-default groups, so hold on default opens nothing.
     property Item groupMenu: ContextMenu {
         MenuItem {
             objectName: "renameGroupMenu"
@@ -53,17 +42,14 @@ ListItem {
     objectName: "tabGroupDelegate"
     contentHeight: Theme.itemSizeExtraLarge
     menu: fixed ? null : groupMenu
-    // A carried row passes over the others, not under them.
     z: carried ? 1 : 0
-    // The list has laid the carried row out at its new place: what it shows stays under
-    // the finger.
+    // List relaid carried row; keep content under finger.
     onYChanged: {
         if (carried) {
             follow()
         }
     }
 
-    // The finger is down on the grip, this far down the list.
     function pickUp(y) {
         startRow = index
         carriedRow = index
@@ -73,16 +59,12 @@ ListItem {
         carried = true
     }
 
-    // What the row shows, moved from the row's place to where the finger has it.
     function follow() {
         body.y = fingerY - grabY - (delegate.y - startY)
     }
 
-    // The finger has moved. The row trades places with the one its middle has been
-    // carried into, as a cell of the grid trades with the one it is carried over (0010).
-    // Counted from where it started rather than asked of the list, which lays its rows
-    // out again only on its next frame: a second move before then would go by where
-    // the rows were.
+    // Counted from start, not asked of list: list relays out next frame, so second move
+    // before then would use stale rows.
     function carryTo(y) {
         if (!carried) {
             return
@@ -96,17 +78,12 @@ ListItem {
         }
     }
 
-    // The finger is off the grip: the row settles into its place. In that order, so the
-    // spring below is on before its property moves; switched by a binding on the same
-    // change, it would not be ordered against the move
-    // (docs/DECISIONS/0010-tab-grid-deck.md).
+    // Order matters: spring enabled before y moves.
     function drop() {
         carried = false
         body.y = 0
     }
 
-    // What the finger carries: all the row shows, lifted off its place in the list while
-    // the rows it passes make way for it, and back into place once the finger lifts.
     Item {
         id: body
 
@@ -122,7 +99,6 @@ ListItem {
             }
         }
 
-        // The wash of a pressed row, for as long as the row is held.
         Rectangle {
             objectName: "tabGroupCarryWash"
             anchors.fill: parent
@@ -160,12 +136,10 @@ ListItem {
                        ? Theme.highlightColor : Theme.primaryColor
             }
 
-            // Just the count: the picture beside it says what the tabs are.
             Label {
                 objectName: "tabGroupCount"
                 width: parent.width
                 text: qsTr("%n tab(s)", "", model.tabCount)
-                // The name already says this for an unnamed group.
                 visible: model.name.length > 0
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: delegate.highlighted || delegate.carried || model.currentGroup
@@ -173,11 +147,7 @@ ListItem {
             }
         }
 
-        // The grip: three short bars at the row's end, with room round them for a thumb.
-        // A finger on it carries the row at once, with no hold first -- the grip is there
-        // for nothing else -- and keeps the touch from the list, which would take a drag
-        // up or down to scroll. The default group keeps the room and not the grip, so
-        // every name has the same width.
+        // Carries at once, no hold; preventStealing keeps vertical drag from list scroll.
         MouseArea {
             id: grip
 

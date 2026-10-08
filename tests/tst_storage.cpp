@@ -108,9 +108,8 @@ void tst_storage::migratesSchemaOne()
     QTemporaryDir dir;
     const QString path = QDir(dir.path()).absoluteFilePath(QStringLiteral("salama.sqlite"));
     {
-        // A schema 1 database: the tab table has none of the columns later schemas
-        // added -- thumbnail (2), last_active (3), group_id (4) -- and neither the
-        // group table nor the closed-tab table.
+        // Schema 1: tab table lacks thumbnail (2), last_active (3), group_id (4); no group or
+        // closed-tab table.
         QSqlDatabase db =
             QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("legacy"));
         db.setDatabaseName(path);
@@ -138,9 +137,8 @@ void tst_storage::migratesSchemaOne()
     QCOMPARE(query.value(0).toInt(), 1);
     QCOMPARE(query.value(1).toString(), QStringLiteral("A"));
     QVERIFY(query.value(2).toString().isEmpty());
-    // Never in front as far as the database knows; the model stamps the restored tab.
+    // Never in front per DB; model stamps restored tab.
     QCOMPARE(query.value(3).toLongLong(), 0LL);
-    // In group 1, which the model creates when it finds no row for it.
     QCOMPARE(query.value(4).toInt(), 1);
     QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM tab_group")));
     QVERIFY(query.next());
@@ -149,15 +147,13 @@ void tst_storage::migratesSchemaOne()
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
 
-    // Reopening an already migrated database changes nothing.
     Storage again(dir.path());
     QVERIFY(again.isOpen());
     QCOMPARE(again.userVersion(), Storage::SchemaVersion);
 }
 
-// Schema 5 flagged private tabs and a private group. Schema 6 has neither: the
-// flagged rows go, and the tables are rebuilt without the column, ids and the rest
-// of the rows intact.
+// Schema 5 had private tabs/group flag; 6 drops flagged rows, rebuilds tables without column,
+// ids and other rows intact.
 void tst_storage::dropsPrivateTabsFromSchemaFive()
 {
     QTemporaryDir dir;
@@ -226,7 +222,6 @@ void tst_storage::dropsPrivateTabsFromSchemaFive()
     QCOMPARE(query.value(1).toString(), QStringLiteral("Work"));
     QVERIFY(!query.next());
 
-    // The rebuilt tables are the schema's own: a new row still gets its defaults.
     QVERIFY(query.exec(QStringLiteral(
         "INSERT INTO tab (tab_id, position, url) VALUES (9, 9, 'https://n.example/')")));
     QVERIFY(query.exec(QStringLiteral("SELECT group_id, title FROM tab WHERE tab_id = 9")));
@@ -235,8 +230,7 @@ void tst_storage::dropsPrivateTabsFromSchemaFive()
     QVERIFY(query.value(1).toString().isEmpty());
 }
 
-// Schema 7 adds the download table and nothing else. A schema 6 database gains it on
-// opening, with every row it already had left where it was.
+// Schema 7 adds download table only; schema 6 rows untouched.
 void tst_storage::addsDownloadsToSchemaSix()
 {
     QTemporaryDir dir;
@@ -285,7 +279,6 @@ void tst_storage::addsDownloadsToSchemaSix()
     QVERIFY(storage.isOpen());
     QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
     QVERIFY(tableNames(storage).contains(QStringLiteral("download")));
-    // Schema 9's icon for each page of the history, empty for those from before it.
     {
         QSqlQuery icons(storage.database());
         QVERIFY(icons.exec(QStringLiteral("SELECT favicon FROM browser_history")));
@@ -293,7 +286,6 @@ void tst_storage::addsDownloadsToSchemaSix()
         QCOMPARE(icons.value(0).toString(), QString());
         QVERIFY(!icons.value(0).isNull());
     }
-    // And schema 8's, as a new database has it: a text and a page are one row.
     QVERIFY(tableNames(storage).contains(QStringLiteral("input_history")));
     {
         QSqlQuery learnt(storage.database());
@@ -311,8 +303,6 @@ void tst_storage::addsDownloadsToSchemaSix()
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toString(), QStringLiteral("A"));
 
-    // The new table is the schema's own: a row gets its defaults, and a status and a
-    // start time are what it cannot do without.
     QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM download")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
@@ -329,7 +319,6 @@ void tst_storage::addsDownloadsToSchemaSix()
     QVERIFY(!query.exec(QStringLiteral("INSERT INTO download (id, started) VALUES (2, 9)")));
     QVERIFY(!query.exec(QStringLiteral("INSERT INTO download (id, status) VALUES (3, 0)")));
 
-    // And opening it again finds nothing left to do.
     Storage again(dir.path());
     QVERIFY(again.isOpen());
     QCOMPARE(again.userVersion(), Storage::SchemaVersion);
@@ -340,7 +329,7 @@ void tst_storage::defaultPaths()
     QVERIFY(!Storage::defaultDataDirectory().isEmpty());
     QVERIFY(Storage::defaultConfigFilePath().endsWith(QStringLiteral(".conf")));
     QVERIFY(!Storage::defaultCacheDirectory().isEmpty());
-    // A folder of the application's own inside the one the Downloads permission opens.
+    // App's own folder inside Downloads permission dir.
     QCOMPARE(Storage::defaultDownloadDirectory(),
              QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) +
                  QStringLiteral("/Salama"));

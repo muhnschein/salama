@@ -3,10 +3,10 @@ import QtQuick 2.6
 
 QtObject {
     property var notifications: []
-    // The topics subscribed to, in order, repeats included.
+    // Subscribed topics, in order, repeats kept.
     property var observers: []
 
-    // What the engine sends on a subscribed topic; a test raises it.
+    // Engine message on subscribed topic; tests raise it.
     signal recvObserve(string message, var data)
 
     function addObserver(topic) {

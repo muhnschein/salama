@@ -1,36 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What the tutorial says before its lessons and after them, as the platform's own Tutorial
-// says it: the screen dimmed under the ambience's darkest highlight, words in the
-// highlight colour, and the buttons that go on from there, one under another
-// (docs/DECISIONS/0034-tutorial.md). The first one also carries the application's mark
-// over its name, as piirit's first screen does, so that the first thing a first start
-// shows and the launcher say the same thing, and under them the subjects the lessons
-// cover, each its icon with its name, rather than a sentence listing them. The last one
-// carries a check mark over its heading, the lessons done. While it is up, nothing under
-// it takes a press.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Rectangle {
     id: card
 
-    // The launcher icon over the heading, for the first card.
     property bool showLogo: false
-    // A check mark over the heading, for the last.
     property bool showCheck: false
-    // What the lessons cover, each {icon, text}, in a row under the words.
+    // Each {icon, text}.
     property var topics: []
     property string heading
-    // A line under the heading, in the primary colour.
     property string subheading
     property string text
-    // The buttons, laid out under the words.
     default property alias buttons: buttonColumn.data
 
-    // As the Tutorial's own: the dimmer colour at nine tenths, which is what Silica's
-    // InteractionHintLabel lays under its words too.
     color: Theme.rgba(Theme.highlightDimmerColor, 0.9)
     visible: opacity > 0
 
@@ -38,7 +22,7 @@ Rectangle {
         FadeAnimation {}
     }
 
-    // The sketch under the card is not to be dragged while the card is up.
+    // Blocks sketch drags below.
     MouseArea {
         anchors.fill: parent
     }
@@ -47,14 +31,12 @@ Rectangle {
         anchors {
             horizontalCenter: parent.horizontalCenter
             verticalCenter: parent.verticalCenter
-            // A little above the middle, where a title sits.
             verticalCenterOffset: -parent.height * 0.04
         }
         width: parent.width - 2 * Theme.horizontalPageMargin
         spacing: Theme.paddingLarge
 
-        // The launcher icon, drawn larger (art/logo.png is icons/harbour-salama.svg
-        // rendered by icons/render.sh), and decoded at the size it is drawn at.
+        // art/logo.png rendered from icons/harbour-salama.svg by icons/render.sh.
         Image {
             objectName: "tutorialLogo"
             x: (parent.width - width) / 2
@@ -68,8 +50,7 @@ Rectangle {
             source: card.showLogo ? Qt.resolvedUrl("../../art/logo.png") : ""
         }
 
-        // A ring in the highlight colour and a tick in it, drawn rather than taken from
-        // the theme, so that it is the same on every ambience's icons.
+        // Drawn, not theme icon, so same on every ambience.
         Canvas {
             id: check
 

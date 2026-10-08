@@ -1,14 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One of the reader view's colours as the reader settings offer it: a square painted as
-// the reader view will be, "Aa" on it in its text colour, and its name under it -- the
-// one chosen ringed and named in the highlight colour, as Silica marks what is chosen
-// (pages/ReaderSettingsPage.qml, docs/DECISIONS/0024-reader-view.md). Automatic is half
-// Firefox's light and half its dark, since it is one or the other as the ambience is; the
-// ambience's own look runs down from the ambience's dimmer highlight, with its text and
-// highlight colours and its typeface. The colours are the style sheet's, from Reader.
-// Not a picture of a page: a choice, tapped to make it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -16,13 +7,12 @@ import harbour.salama 1.0
 BackgroundItem {
     id: swatch
 
-    // A ReaderSettings.Colors value.
     property int colors
     property string text
     property bool selected
     readonly property bool ambience: colors === ReaderSettings.Ambience
     readonly property bool automatic: colors === ReaderSettings.Automatic
-    // The scheme it paints: for Automatic, its light half's.
+    // Automatic paints light half's scheme.
     readonly property string scheme: Reader.schemeFor(colors, false)
     //: A sample of text, a capital and a small letter, drawn in each of the reader
     //: view's colours to choose from
@@ -61,8 +51,7 @@ BackgroundItem {
             }
         }
 
-        // Automatic's dark half: its outer corners rounded as the square's, its inner
-        // edge straight.
+        // Automatic dark half: inner corners squared by overlay.
         Rectangle {
             visible: swatch.automatic
             x: parent.width / 2
@@ -96,7 +85,6 @@ BackgroundItem {
             }
         }
 
-        // The ring, over whatever the square is painted with.
         Rectangle {
             objectName: "readerSwatchRing"
             anchors.fill: parent

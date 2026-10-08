@@ -1,29 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Where the tutorial shows each step, and how: Silica's TapInteractionHint for a tap and
-// TouchInteractionHint for a movement, placed over the sketch the step is about
-// (docs/DECISIONS/0034-tutorial.md). A tap on the address, on the menu button, or beside
-// the menu; up from the bar's handle, where the browsing page's drag is aimed; across the
-// first row of cells, left to close a tab and right to carry one on; down onto the other
-// group's name; and down from the upper third, where Silica starts a pull.
-//
-// Laid over the whole page, since both hints place themselves by their parent's size.
+// Covers page: Silica interaction hints size from parent.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Item {
     id: hints
 
-    // The sketch's parts the hints are placed over.
     property Item bar
     property Item grid
     property Item menu
 
-    // Where a point of the sketch will be once the deck is at rest: in the coordinates of
-    // the layer it is on, which lies over the whole page when that layer is the one shown.
-    // Not where it is now, since a step changes the moment a finger lifts, while the
-    // deck is still springing into place.
+    // Position at deck rest: step changes on finger lift while deck still springs.
     function placeOf(item, point, layer) {
         return item.mapToItem(layer, point.x, point.y)
     }
@@ -33,7 +22,6 @@ Item {
         touchHint.stop()
     }
 
-    // The hint for a step, which the page asks for once the step waits for its gesture.
     function show(step) {
         stop()
         if (step === "address" || step === "menu" || step === "menuOpen") {

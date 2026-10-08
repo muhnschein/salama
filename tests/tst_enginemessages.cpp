@@ -16,8 +16,6 @@ using Salama::SitePermissionSettings;
 
 namespace {
 
-// The cookies the reader chose, Block cross-site unless a test says otherwise: only what
-// Off does with it is a test of its own.
 QVariantMap trackingValues(int level, int cookies = SitePermissionSettings::CookiesBlockCrossSite)
 {
     QVariantMap values;
@@ -29,7 +27,6 @@ QVariantMap trackingValues(int level, int cookies = SitePermissionSettings::Cook
     return values;
 }
 
-// A list of {name, value} as a map by name, and the names in their order.
 QVariantMap valuesOf(const QVariantList &list)
 {
     QVariantMap values;
@@ -60,8 +57,8 @@ QStringList trackingNames(int level)
     return names;
 }
 
-// Split by hand for an empty list: Qt 5.6 has no Qt::SkipEmptyParts, and host Qt
-// deprecates QString::SkipEmptyParts.
+// Manual split for empty list: Qt 5.6 lacks Qt::SkipEmptyParts, host Qt deprecates
+// QString::SkipEmptyParts.
 QStringList features(const QVariant &engines)
 {
     const QString list = engines.toString();
@@ -113,10 +110,8 @@ void tst_enginemessages::constants()
     QCOMPARE(messages.clearPrivateDataTopic(), QStringLiteral("clear-private-data"));
     QCOMPARE(messages.cookiesAndSiteDataPayload(), QStringLiteral("cookies-and-site-data"));
     QCOMPARE(messages.cachePayload(), QStringLiteral("cache"));
-    // The engine builds a function from the script and calls it -- embedhelper.js
-    // does `new content.Function(script)` -- so a script is a function body and has
-    // to return. One that only evaluates to something hands the callback undefined,
-    // which is what the favicon script did: every page fell back to /favicon.ico.
+    // Engine wraps script in function (embedhelper.js: new content.Function(script)), so script
+    // is function body and must return; bare expression gives callback undefined.
     QVERIFY(messages.faviconScript().contains(QStringLiteral("icon")));
     QVERIFY(messages.faviconScript().contains(QStringLiteral("return ")));
     QVERIFY(!messages.faviconScript().contains(QStringLiteral("function")));
@@ -126,13 +121,10 @@ void tst_enginemessages::constants()
     QVERIFY(messages.viewportScript().contains(QStringLiteral("viewport")));
     QVERIFY(messages.viewportScript().contains(QStringLiteral("return ")));
     QVERIFY(!messages.viewportScript().contains(QStringLiteral("function")));
-    // Find in page: what embedhelper.js listens for, and what it answers on.
     QCOMPARE(messages.findMessage(), QStringLiteral("embedui:find"));
     QCOMPARE(messages.findResultMessage(), QStringLiteral("embed:find"));
 }
 
-// What ContentLinkHandler.jsm sends for a page that has a search of its own, and what is
-// made of it: the title and the address of the description, and the page's host.
 void tst_enginemessages::searchOffered()
 {
     EngineMessages messages;
@@ -147,11 +139,9 @@ void tst_enginemessages::searchOffered()
     QCOMPARE(offered.value(QStringLiteral("title")).toString(), QStringLiteral("Find"));
     QCOMPARE(offered.value(QStringLiteral("href")).toString(),
              QStringLiteral("https://cdn.example/os.xml"));
-    // The page's, not the description's, and without "www.".
     QCOMPARE(offered.value(QStringLiteral("host")).toString(), QStringLiteral("find.example"));
     QCOMPARE(offered.count(), 3);
 
-    // A page with no address to speak of is offered by the host the description is on.
     const QVariantMap unplaced = EngineMessages::searchOffered(
         QVariantMap{{QStringLiteral("engine"), engine},
                     {QStringLiteral("url"), QStringLiteral("about:blank")}});
@@ -161,7 +151,6 @@ void tst_enginemessages::searchOffered()
                  .toString(),
              QStringLiteral("cdn.example"));
 
-    // Anything else says nothing, and has all three in it all the same.
     for (const QVariant &data : {QVariant(), QVariant(QStringLiteral("text")), QVariant(42),
                                  QVariant(QVariantMap{{QStringLiteral("engine"), 7}})}) {
         const QVariantMap nothing = EngineMessages::searchOffered(data);
@@ -171,7 +160,6 @@ void tst_enginemessages::searchOffered()
     }
 }
 
-// What ContextMenuHandler.js says of a press held on the page, as the link sheet reads it.
 void tst_enginemessages::linkTarget_data()
 {
     QTest::addColumn<QVariantMap>("message");
@@ -186,7 +174,7 @@ void tst_enginemessages::linkTarget_data()
                            {QStringLiteral("linkURL"), url},
                            {QStringLiteral("linkTitle"), title}};
     };
-    // The link's text as one line: a link's textContent keeps the page's line breaks.
+    // Link text one line: textContent keeps page line breaks.
     QTest::newRow("page") << link(QStringLiteral("https://www.trails.example/walks/ridge-loop"),
                                   QStringLiteral("  The ridge\n   loop "))
                           << QStringLiteral("https://www.trails.example/walks/ridge-loop")
@@ -201,7 +189,6 @@ void tst_enginemessages::linkTarget_data()
         << QStringLiteral("https://trails.example/s%C3%B6k?walk=1") << QStringLiteral("page")
         << QString() << QStringLiteral("Search")
         << QStringLiteral("trails.example/s\u00f6k?walk=1");
-    // What another application takes is shown without its scheme.
     QTest::newRow("mailto") << link(QStringLiteral("mailto:walks@trails.example"),
                                     QStringLiteral("Write to us"))
                             << QStringLiteral("mailto:walks@trails.example")
@@ -213,7 +200,6 @@ void tst_enginemessages::linkTarget_data()
     QTest::newRow("geo") << link(QStringLiteral("GEO:60.17,24.94"), QString())
                          << QStringLiteral("GEO:60.17,24.94") << QStringLiteral("app") << QString()
                          << QString() << QStringLiteral("60.17,24.94");
-    // A script to run is no place to go.
     QTest::newRow("javascript") << link(QStringLiteral("javascript:void(0)"),
                                         QStringLiteral("More"))
                                 << QString() << QString() << QString() << QStringLiteral("More")
@@ -221,7 +207,6 @@ void tst_enginemessages::linkTarget_data()
     QTest::newRow("no address") << link(QString(), QStringLiteral("More")) << QString() << QString()
                                 << QString() << QStringLiteral("More") << QString();
 
-    // A picture that is a link: both, and the link's address under the title.
     QTest::newRow("linked image")
         << QVariantMap{{QStringLiteral("types"),
                         QStringList{QStringLiteral("image"), QStringLiteral("link")}},
@@ -233,7 +218,6 @@ void tst_enginemessages::linkTarget_data()
         << QStringLiteral("https://trails.example/maps/ridge") << QStringLiteral("page")
         << QStringLiteral("https://cdn.example/ridge.jpg") << QString()
         << QStringLiteral("trails.example/maps/ridge");
-    // A picture alone: the picture's address.
     QTest::newRow("image") << QVariantMap{{QStringLiteral("types"),
                                            QStringList{QStringLiteral("image")}},
                                           {QStringLiteral("mediaURL"),
@@ -243,12 +227,10 @@ void tst_enginemessages::linkTarget_data()
                            << QStringLiteral("https://cdn.example/photos/ridge.jpg")
                            << QStringLiteral("Dawn")
                            << QStringLiteral("cdn.example/photos/ridge.jpg");
-    // Only what the web can give again: not one drawn from the page's own data.
     QTest::newRow("data image")
         << QVariantMap{{QStringLiteral("types"), QStringList{QStringLiteral("image")}},
                        {QStringLiteral("mediaURL"), QStringLiteral("data:image/png;base64,AAAA")}}
         << QString() << QString() << QString() << QString() << QString();
-    // An address the message carries for something it does not say is there is not used.
     QTest::newRow("text")
         << QVariantMap{{QStringLiteral("types"), QStringList{QStringLiteral("content-text")}},
                        {QStringLiteral("linkURL"), QStringLiteral("https://a.example/")},
@@ -280,7 +262,6 @@ void tst_enginemessages::linkTarget()
     QCOMPARE(target.count(), 7);
 }
 
-// Whatever arrives, every key is there for QML to read, and empty.
 void tst_enginemessages::linkTargetOfNothing()
 {
     for (const QVariant &data : {QVariant(), QVariant(QStringLiteral("text")), QVariant(42),
@@ -293,7 +274,6 @@ void tst_enginemessages::linkTargetOfNothing()
     }
 }
 
-// The three fields embedhelper.js reads off the message, by the names it reads them by.
 void tst_enginemessages::findRequest()
 {
     EngineMessages messages;
@@ -307,35 +287,30 @@ void tst_enginemessages::findRequest()
     QCOMPARE(previous.value(QStringLiteral("again")), QVariant(true));
     QCOMPARE(previous.value(QStringLiteral("backwards")), QVariant(true));
 
-    // The message that ends the search is the same one with no text in it.
     const QVariantMap end = messages.findRequest(QString(), false, false);
     QVERIFY(end.contains(QStringLiteral("text")));
     QVERIFY(end.value(QStringLiteral("text")).toString().isEmpty());
 }
 
-// The page answers {"r": result} with nsITypeAheadFind's result. Found, and found after
-// going round the end, are the two that mean the text is there; anything the page did
-// not say as a number means it is not.
+// Page answers {"r": nsITypeAheadFind result}. Found and found-wrapped = present; non-number
+// = not.
 void tst_enginemessages::findFound_data()
 {
     QTest::addColumn<QVariant>("data");
     QTest::addColumn<bool>("expected");
     const QString r = QStringLiteral("r");
-    // JSON has one kind of number, and the device's Qt 5.6 reads every one as a
-    // double, so that is how the engine's answer arrives.
+    // JSON numbers -> double on device Qt 5.6.
     QTest::newRow("found") << QVariant(QVariantMap{{r, 0.0}}) << true;
     QTest::newRow("not found") << QVariant(QVariantMap{{r, 1.0}}) << false;
     QTest::newRow("wrapped") << QVariant(QVariantMap{{r, 2.0}}) << true;
     QTest::newRow("pending") << QVariant(QVariantMap{{r, 3.0}}) << false;
-    // QML hands an integral number over as an int.
     QTest::newRow("found int") << QVariant(QVariantMap{{r, 0}}) << true;
     QTest::newRow("wrapped int") << QVariant(QVariantMap{{r, 2}}) << true;
     QTest::newRow("not found int") << QVariant(QVariantMap{{r, 1}}) << false;
-    // Qt reads a whole number in JSON as a qlonglong from 5.15 on.
+    // Qt 5.15+ reads JSON whole number as qlonglong.
     QTest::newRow("found longlong") << QVariant(QVariantMap{{r, 0LL}}) << true;
     QTest::newRow("wrapped longlong") << QVariant(QVariantMap{{r, 2LL}}) << true;
     QTest::newRow("pending longlong") << QVariant(QVariantMap{{r, 3LL}}) << false;
-    // Nothing is known to hand over an unsigned number, but it is a number all the same.
     QTest::newRow("wrapped uint") << QVariant(QVariantMap{{r, 2U}}) << true;
     QTest::newRow("not found uint") << QVariant(QVariantMap{{r, 1U}}) << false;
     QTest::newRow("found ulonglong") << QVariant(QVariantMap{{r, 0ULL}}) << true;
@@ -344,7 +319,7 @@ void tst_enginemessages::findFound_data()
     QTest::newRow("fraction") << QVariant(QVariantMap{{r, 0.5}}) << false;
     QTest::newRow("missing") << QVariant(QVariantMap{}) << false;
     QTest::newRow("null") << QVariant(QVariantMap{{r, QVariant()}}) << false;
-    // QVariant reads 0 out of these, which would be FIND_FOUND.
+    // QVariant reads 0 from these = FIND_FOUND.
     QTest::newRow("false") << QVariant(QVariantMap{{r, false}}) << false;
     QTest::newRow("string") << QVariant(QVariantMap{{r, QStringLiteral("0")}}) << false;
     QTest::newRow("empty string") << QVariant(QVariantMap{{r, QString()}}) << false;
@@ -360,8 +335,6 @@ void tst_enginemessages::findFound()
     QCOMPARE(EngineMessages::findFound(data), expected);
 }
 
-// What a page's theme-color says, read into something Qt can draw with. CSS writes
-// colours in forms QColor does not, and a page can write anything at all.
 void tst_enginemessages::themeColor_data()
 {
     QTest::addColumn<QString>("value");
@@ -370,14 +343,11 @@ void tst_enginemessages::themeColor_data()
     QTest::newRow("hex") << blue << blue;
     QTest::newRow("padded") << QStringLiteral("  #123456  ") << blue;
     QTest::newRow("short hex") << QStringLiteral("#abc") << QStringLiteral("#aabbcc");
-    // CSS puts alpha last in an eight-digit hex; QColor reads the same string with
-    // alpha first, so #123456ff would come out as #3456ff without this.
+    // CSS 8-digit hex = alpha last; QColor = alpha first (#123456ff -> #3456ff otherwise).
     QTest::newRow("hex with alpha") << QStringLiteral("#123456ff") << blue;
     QTest::newRow("named") << QStringLiteral("darkslateblue") << QStringLiteral("#483d8b");
     QTest::newRow("rgb") << QStringLiteral("rgb(18, 52, 86)") << blue;
     QTest::newRow("rgb spaces") << QStringLiteral("rgb(18 52 86)") << blue;
-    // Alpha is dropped rather than honoured: a band that showed what is behind it
-    // would not be the page's colour any more.
     QTest::newRow("rgba") << QStringLiteral("rgba(18, 52, 86, 0.5)") << blue;
     QTest::newRow("rgb clamped") << QStringLiteral("rgb(300, 52, 86)") << QStringLiteral("#ff3456");
     QTest::newRow("empty") << QString() << QString();
@@ -447,10 +417,8 @@ void tst_enginemessages::resolveFavicon()
     QCOMPARE(messages.resolveFavicon(page, href), expected);
 }
 
-// Every level writes every preference, in one order and with one type each, so that
-// moving from Strict to Off leaves nothing of Strict in the profile, and a number is
-// never handed to the engine as text: setPreference() picks the engine's setter by the
-// value's type, and the engine refuses a value of the wrong one.
+// Every level writes every pref, same order and type, so Strict -> Off leaves no Strict
+// residue; setPreference() picks setter by value type, engine rejects wrong type.
 void tst_enginemessages::trackingProtectionNamesTheSamePreferences()
 {
     QStringList names = trackingNames(PrivacySettings::TrackingProtectionStandard);
@@ -497,9 +465,8 @@ void tst_enginemessages::trackingProtectionLevels()
     const QString convenience =
         QStringLiteral("privacy.trackingprotection.allow_list.convenience.enabled");
 
-    // Off is the engine as it comes -- nothing classified, bounce tracking watched and
-    // never acted on -- save the cookies, which are the reader's choice: Block cross-site
-    // here (cookiesAtOffAreTheReadersChoice() has the others).
+    // Off = stock engine (nothing classified, bounce tracking watched not acted on), except
+    // cookies: reader's choice, Block cross-site here (others: cookiesAtOffAreTheReadersChoice()).
     const QVariantMap off = trackingValues(PrivacySettings::TrackingProtectionOff);
     QCOMPARE(off.value(cookies), QVariant(1));
     QCOMPARE(off.value(blocking), QVariant(false));
@@ -512,8 +479,6 @@ void tst_enginemessages::trackingProtectionLevels()
     }
     QCOMPARE(off.value(convenience), QVariant(true));
 
-    // Standard is Firefox's: Total Cookie Protection, and fingerprinters and
-    // cryptominers blocked.
     const QVariantMap standard = trackingValues(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(standard.value(cookies), QVariant(5));
     QCOMPARE(standard.value(blocking), QVariant(true));
@@ -527,7 +492,6 @@ void tst_enginemessages::trackingProtectionLevels()
     }
     QCOMPARE(standard.value(convenience), QVariant(true));
 
-    // Strict blocks every tracker list, and switches on what Standard leaves off.
     const QVariantMap strict = trackingValues(PrivacySettings::TrackingProtectionStrict);
     QCOMPARE(strict.value(cookies), QVariant(5));
     QCOMPARE(strict.value(bounceTracking), QVariant(1));
@@ -545,17 +509,16 @@ void tst_enginemessages::trackingProtectionLevels()
     QVERIFY(strictBlocking.contains(QStringLiteral("social-trackers")));
     QVERIFY(!strictBlocking.contains(QStringLiteral("minor-exceptions")));
 
-    // A level from outside the range is Standard, as Settings reads one back.
     QCOMPARE(trackingValues(3), standard);
     QCOMPARE(trackingValues(-1), standard);
 }
 
-// The feature names are the engine's own, and the order it needs them in: a blocking
-// list ends with its exception-only features, and annotation has none of them.
+// Engine's own feature names and required order: blocking list ends with exception-only
+// features; annotation has none.
 void tst_enginemessages::trackingProtectionFeatures()
 {
     // kFeatures in gecko-dev toolkit/components/content-classifier/
-    // ContentClassifierService.cpp, less the two test-only ones.
+    // ContentClassifierService.cpp, minus two test-only ones.
     const QStringList engine{
         QStringLiteral("trackers"),        QStringLiteral("trackers-content"),
         QStringLiteral("social-trackers"), QStringLiteral("fingerprinters"),
@@ -578,7 +541,6 @@ void tst_enginemessages::trackingProtectionFeatures()
             }
         }
         QVERIFY(inExceptions);
-        // The level-2 list is only ever annotated.
         QVERIFY(!blocking.contains(QStringLiteral("trackers-content")));
 
         const QStringList annotation = features(values.value(QLatin1String(ContentAnnotation)));
@@ -591,9 +553,8 @@ void tst_enginemessages::trackingProtectionFeatures()
     }
 }
 
-// The cookies the reader chose count only while tracking protection is off: Standard
-// and Strict are Firefox's, whatever was chosen, and the choice is the one preference
-// of the twelve that differs.
+// Cookie choice applies only when protection Off: Standard/Strict use Firefox's. Only one
+// of twelve prefs that differs.
 void tst_enginemessages::cookiesAtOffAreTheReadersChoice()
 {
     const QString cookies = QStringLiteral("network.cookie.cookieBehavior");
@@ -604,8 +565,6 @@ void tst_enginemessages::cookiesAtOffAreTheReadersChoice()
              QVariant(1));
     QCOMPARE(trackingValues(off, SitePermissionSettings::CookiesBlockAll).value(cookies),
              QVariant(2));
-    // A choice out of range is the default, and the number reaches the engine as an
-    // integer.
     QCOMPARE(trackingValues(off, 7).value(cookies), QVariant(1));
     QCOMPARE(trackingValues(off, -1).value(cookies), QVariant(1));
     QCOMPARE(trackingValues(off, 2).value(cookies).userType(), int(QMetaType::Int));
@@ -616,7 +575,6 @@ void tst_enginemessages::cookiesAtOffAreTheReadersChoice()
             QCOMPARE(trackingValues(level, choice).value(cookies), QVariant(5));
         }
     }
-    // Nothing but the cookies follows the choice.
     QVariantMap allowAll = trackingValues(off, SitePermissionSettings::CookiesAllowAll);
     QVariantMap blockAll = trackingValues(off, SitePermissionSettings::CookiesBlockAll);
     allowAll.remove(cookies);
@@ -624,9 +582,6 @@ void tst_enginemessages::cookiesAtOffAreTheReadersChoice()
     QCOMPARE(allowAll, blockAll);
 }
 
-// The defaults of Site permissions: pop-ups are blocked by a boolean preference that
-// says so, the rest are asked about (0) or refused outright (2), and a location is told
-// under both names the engine is known by.
 void tst_enginemessages::sitePermissionDefaults()
 {
     const auto values = [](bool popups, bool location, bool camera, bool microphone) {
@@ -640,7 +595,6 @@ void tst_enginemessages::sitePermissionDefaults()
     };
     const QString popups = QStringLiteral("dom.disable_open_during_load");
 
-    // As it comes: pop-ups blocked, the rest asked.
     const QVariantMap asked = values(false, false, false, false);
     QCOMPARE(asked.count(), 5);
     QCOMPARE(asked.value(popups), QVariant(true));
@@ -653,7 +607,6 @@ void tst_enginemessages::sitePermissionDefaults()
         QCOMPARE(asked.value(name).userType(), int(QMetaType::Int));
     }
 
-    // Each choice moves its own preferences and no other.
     QVariantMap changed = values(true, false, false, false);
     QCOMPARE(changed.value(popups), QVariant(false));
     changed.insert(popups, true);
@@ -689,8 +642,6 @@ void tst_enginemessages::websiteColors_data()
     QTest::newRow("out of range is automatic") << 9 << true << 1;
 }
 
-// One preference, the engine's own override of the toolkit's dark theme, and an int:
-// Gecko reads it as one (docs/DECISIONS/0035-website-colours.md).
 void tst_enginemessages::websiteColors()
 {
     QFETCH(int, colors);
@@ -721,7 +672,6 @@ void tst_enginemessages::coversCutout_data()
                                 << true;
     QTest::newRow("contain") << QStringLiteral("viewport-fit=contain") << false;
     QTest::newRow("auto") << QStringLiteral("viewport-fit=auto") << false;
-    // Not another setting that merely ends in the words.
     QTest::newRow("covered") << QStringLiteral("viewport-fit=covered") << false;
     QTest::newRow("prefixed") << QStringLiteral("x-viewport-fit=cover") << false;
 }
@@ -733,8 +683,7 @@ void tst_enginemessages::coversCutout()
     QCOMPARE(EngineMessages::coversCutout(viewport), covers);
 }
 
-// Global Privacy Control and JavaScript. GPC is sent only while both of its preferences
-// are on, and Do not track, which it replaced, is switched off whatever GPC is.
+// GPC sent only when both prefs on; Do Not Track (replaced) always off.
 void tst_enginemessages::contentPreferences()
 {
     const QStringList names{QStringLiteral("privacy.donottrackheader.enabled"),
@@ -755,13 +704,12 @@ void tst_enginemessages::contentPreferences()
     QCOMPARE(offValues.value(names.at(1)), QVariant(true));
     QCOMPARE(offValues.value(names.at(2)), QVariant(false));
     QCOMPARE(offValues.value(names.at(3)), QVariant(true));
-    // Booleans, so the engine sets them as booleans.
+    // Booleans so engine sets as booleans.
     for (const QVariant &value : onValues) {
         QCOMPARE(value.userType(), int(QMetaType::Bool));
     }
 }
 
-// HTTPS-Only Mode as switched, and HTTPS-First on either way, as in Firefox.
 void tst_enginemessages::httpsOnlyPreferences()
 {
     const QStringList names{QStringLiteral("dom.security.https_only_mode"),
@@ -776,9 +724,8 @@ void tst_enginemessages::httpsOnlyPreferences()
     QCOMPARE(valuesOf(off).value(names.at(1)), QVariant(true));
 }
 
-// Each level as GeckoView's resolver mode for it, Off for anything else; the provider
-// and the exceptions given before the mode, so a level never starts on the last
-// provider. The mode is a number and the rest text, as the engine keeps them.
+// Level -> GeckoView resolver mode, else Off. Provider and exceptions before mode so level
+// never starts on stale provider. Mode int, rest text, as engine stores.
 void tst_enginemessages::dohPreferences_data()
 {
     QTest::addColumn<int>("protection");
@@ -809,7 +756,6 @@ void tst_enginemessages::dohPreferences()
              QVariant(QStringLiteral("intranet.example.com,router.local")));
     QCOMPARE(values.value(QStringLiteral("network.trr.excluded-domains")).userType(),
              int(QMetaType::QString));
-    // No exceptions is an empty list, which clears any the engine kept.
     const QVariantMap none = valuesOf(EngineMessages::dohPreferences(protection, provider, {}));
     QCOMPARE(none.value(QStringLiteral("network.trr.excluded-domains")), QVariant(QString()));
 }

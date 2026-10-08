@@ -1,4 +1,4 @@
-// Stub: Silica's is a NumberAnimation of opacity at the theme's own pace.
+// Stub: Silica's = NumberAnimation of opacity at theme pace.
 import QtQuick 2.6
 
 NumberAnimation {

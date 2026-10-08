@@ -7,9 +7,8 @@
 
 using Salama::ShareReceiver;
 
-// A link shared to the browser from another application's share sheet
-// (docs/DECISIONS/0042-share-target.md). What the D-Bus call carries is read here; the
-// call itself needs the phone's session bus.
+// Link shared from another app's share sheet. Tests D-Bus payload parsing; call itself
+// needs phone session bus.
 class tst_sharereceiver : public QObject
 {
     Q_OBJECT
@@ -25,8 +24,8 @@ private slots:
 
 namespace {
 
-// The call as sailfish-browser and this browser's own ShareAction make it, captured on a
-// device by harbour-nextmarks: one resource, its address the status.
+// Call as sailfish-browser and own ShareAction make it (captured on device by
+// harbour-nextmarks): one resource, url in status.
 QVariantMap browserShare(const QString &url)
 {
     return {{QStringLiteral("mimeType"), QStringLiteral("text/x-url")},
@@ -69,7 +68,6 @@ void tst_sharereceiver::sharedUrl_data()
                                              .toList()
                                              .first()}}}}
         << QStringLiteral("https://example.org/d");
-    // Only a link opens: words, other schemes, an address with no host, nothing at all.
     QTest::newRow("words") << dataShare(QStringLiteral("Meet at six by the station")) << QString();
     QTest::newRow("words and a link")
         << dataShare(QStringLiteral("Look https://example.org/")) << QString();
@@ -93,8 +91,7 @@ void tst_sharereceiver::sharedUrl()
     QCOMPARE(ShareReceiver::sharedUrl(arguments), expected);
 }
 
-// The call is answered at once, and a link that started the browser waits for the window
-// to say it is listening; after that, each is handed on as it comes.
+// Call answered at once; launch link waits until window listens; later ones passed straight on.
 void tst_sharereceiver::heldUntilReady()
 {
     ShareReceiver receiver;
@@ -128,7 +125,7 @@ void tst_sharereceiver::unwrapLeavesPlainValues()
     QCOMPARE(ShareReceiver::unwrap(QStringLiteral("x")), QVariant(QStringLiteral("x")));
 }
 
-// The host has no session bus to claim the name on; that is a refusal, not a failure.
+// No session bus on host: refusal, not failure.
 void tst_sharereceiver::noBusNoService()
 {
     qputenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/nonexistent/salama-test-bus");

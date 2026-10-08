@@ -17,8 +17,7 @@ using Salama::loadTranslations;
 
 namespace {
 
-// The languages Sailfish OS ships in, besides English: one catalog each. Piirit, the sister
-// app, is translated into the same set.
+// Sailfish OS languages besides English, one catalog each. Same set as sister app Piirit.
 QStringList sailfishLanguages()
 {
     return QStringLiteral("bg bn cs da de el es et fi fr gu hi hu it kn lt lv ml mr nb nl pa pl "
@@ -30,7 +29,6 @@ struct Message
 {
     QString context;
     QString source;
-    // The disambiguation qsTr() was given, which tells apart one source said twice.
     QString comment;
     bool unfinished = false;
     QStringList forms; // one, or one per plural form
@@ -76,7 +74,6 @@ Catalog readCatalog(const QString &path)
         } else if (name == QLatin1String("translation")) {
             message.unfinished =
                 xml.attributes().value(QStringLiteral("type")) == QLatin1String("unfinished");
-            // A plural translation holds its forms; any other holds its text.
             QString text;
             while (!(xml.isEndElement() && xml.name() == QLatin1String("translation"))) {
                 xml.readNext();
@@ -137,7 +134,6 @@ private:
     {
         return QStringLiteral(SALAMA_TRANSLATIONS_DIR);
     }
-    // Loads the catalog for `locale` from `directory` and installs it, as main() does.
     bool install(const QString &locale, const QString &directory = qmDir());
 
     QTranslator m_translator;
@@ -169,8 +165,7 @@ void tst_translations::everySailfishLanguageHasACatalog()
                         missing.join(QStringLiteral(", "))));
 }
 
-// A string left unfinished is one the reader of that language meets in English, and with
-// forty catalogs nobody notices from the diff.
+// Unfinished string shows English to reader; unnoticeable in diff over 40 catalogs.
 void tst_translations::everyLanguageCatalogIsComplete()
 {
     const Catalog source = readCatalog(sourceDir() + QStringLiteral("/harbour-salama.ts"));
@@ -185,7 +180,7 @@ void tst_translations::everyLanguageCatalogIsComplete()
         const QString prefix = QStringLiteral("harbour-salama-");
         const QString language = file.mid(prefix.size(), file.size() - prefix.size() - 3);
         const Catalog catalog = readCatalog(sourceDir() + QLatin1Char('/') + file);
-        // What lupdate counts the plural forms from, and which reader the file is for.
+        // lupdate derives plural forms from this; names target reader.
         if (catalog.language != language) {
             problems << QStringLiteral("%1: its language attribute is %2, not %3")
                             .arg(file, catalog.language, language);
@@ -216,9 +211,8 @@ void tst_translations::everyLanguageCatalogIsComplete()
                         problems.join(QStringLiteral("\n  "))));
 }
 
-// harbour-salama.ts compiles to the catalog a language without its own falls back to, so
-// its plural forms are the English ones; everything else falls back to the source text,
-// which is English already.
+// harbour-salama.ts = fallback catalog, so plural forms English; else falls back to source
+// text (English).
 void tst_translations::sourceCatalogCarriesEnglishPlurals()
 {
     const Catalog source = readCatalog(sourceDir() + QStringLiteral("/harbour-salama.ts"));
@@ -245,10 +239,8 @@ void tst_translations::readersLanguageIsInstalled_data()
 
     QTest::newRow("a language's own") << QStringLiteral("fi_FI") << QStringLiteral("fi");
     QTest::newRow("any country of it") << QStringLiteral("de_AT") << QStringLiteral("de");
-    // Taiwan's catalog, not Hong Kong's, though both are Traditional Chinese. Brazil's
-    // cannot be a row: a QLocale made from "pt_BR" names plain "pt" first, Portuguese
-    // being Brazil's by Qt's likely subtags, where the phone's own locale -- read from
-    // LANG, as main() gets it -- names "pt-BR" first.
+    // zh_TW, not Hong Kong, though both Traditional. pt_BR can't be row: QLocale("pt_BR") names
+    // "pt" first (likely subtags), phone locale from LANG names "pt-BR" first.
     QTest::newRow("a country's own") << QStringLiteral("zh_TW") << QStringLiteral("zh_TW");
     QTest::newRow("another country's") << QStringLiteral("zh_HK") << QStringLiteral("zh_HK");
     QTest::newRow("Portugal's") << QStringLiteral("pt_PT") << QStringLiteral("pt");
@@ -261,7 +253,6 @@ void tst_translations::readersLanguageIsInstalled()
 
     QVERIFY2(install(locale), qPrintable(QStringLiteral("nothing installed from ") + qmDir()));
 
-    // Every string of the catalog, as the reader of that language is shown it.
     const Catalog expected =
         readCatalog(sourceDir() + QStringLiteral("/harbour-salama-%1.ts").arg(catalog));
     QVERIFY(!expected.messages.isEmpty());
@@ -285,7 +276,7 @@ void tst_translations::pluralsAreCountedByTheLanguagesRule()
         find(polish, QStringLiteral("ClearDataDialog"), QStringLiteral("%n page(s)"));
     QCOMPARE(pages.forms.size(), 3);
 
-    // Polish: one; two to four, but not twelve to fourteen; and the rest.
+    // Polish: one; 2-4 except 12-14; rest.
     const QMap<int, int> formOf{{1, 0}, {2, 1}, {4, 1}, {5, 2}, {12, 2}, {22, 1}, {25, 2}};
     for (auto it = formOf.cbegin(); it != formOf.cend(); ++it) {
         QString want = pages.forms.at(it.value());
@@ -305,7 +296,6 @@ void tst_translations::languageWithoutACatalogGetsEnglish()
              QStringLiteral("3 pages"));
     QCOMPARE(QCoreApplication::translate("BrowserMenu", "Settings"), QStringLiteral("Settings"));
 
-    // And with no catalogs at all, nothing is loaded, and nothing claims to be.
     QTranslator none;
     QVERIFY(!loadTranslations(none, QLocale(QStringLiteral("ja_JP")),
                               QDir::tempPath() + QStringLiteral("/no-such-salama-catalogs")));

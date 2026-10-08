@@ -1,24 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The browser's side of the pages' notifications (docs/DECISIONS/0033-web-notifications.md):
-//
-//  * what they show, as the platform shows a notification: one of Nemo.Notifications'
-//    for each that WebNotifications keeps, made the first time it is shown and published
-//    again to show another in its place, as the platform replaces what one published
-//    showed. Its title and text are the page's, with the site's host under them, where
-//    Firefox for Android names the site; its picture is the page's icon when it has one.
-//    A tap on one, or its going, is WebNotifications' to answer;
-//  * the question a page asks before it may, put while the page is the one on the
-//    screen;
-//  * the sites allowed and blocked, which the engine keeps, and whether others may ask;
-//  * the engine's permissions of every other kind, whose list SitePermissions keeps as
-//    this does the notifications' (docs/DECISIONS/0039-site-permissions.md): this is the
-//    one place the engine's answers come in, and both models read them.
-//
-// Made by the browsing page alone, whose page it asks over, and which is the one that
-// has the engine: it imports Sailfish.WebEngine for the permissions, as that page does
-// (docs/ARCHITECTURE.md).
+// Web notifications: Nemo Notification per WebNotifications key, permission prompts, and
+// single entry point for engine permission answers (NotificationPermissions, SitePermissions).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebEngine 1.0
@@ -28,12 +12,9 @@ import harbour.salama 1.0
 QtObject {
     id: center
 
-    // The browsing page.
     property Item page
-    // By WebNotifications' key.
     property var shown: ({})
-    // The browser's own icon, which the platform may show each one under: the file the
-    // package installs, from this file's place in it (rpm/harbour-salama.spec).
+    // Installed path (rpm/harbour-salama.spec).
     readonly property string appIcon:
         Qt.resolvedUrl("../../../icons/hicolor/172x172/apps/harbour-salama.png")
 
@@ -44,8 +25,7 @@ QtObject {
             objectName: "webNotification"
             appName: "Salama"
             appIcon: center.appIcon
-            // What a tap on the notification invokes; with no D-Bus call named, the
-            // platform tells this process, which is the one that can show the page.
+            // No D-Bus call named -> platform tells this process.
             remoteActions: [{ "name": "default" }]
             onClicked: WebNotifications.activate(key)
             onClosed: center.gone(key)
@@ -76,8 +56,7 @@ QtObject {
         }
     }
 
-    // Swiped away, or closed by the platform: not by this browser, which forgets one
-    // as it closes it.
+    // Swiped away or platform-closed.
     function gone(key) {
         var notification = shown[key]
         if (notification) {
@@ -87,9 +66,7 @@ QtObject {
         }
     }
 
-    // Firefox asks in the tab the page is in, while it is shown; this asks while the
-    // page is the one on the screen with nothing over it, and refuses it -- this time --
-    // otherwise. The page asked as the reader touched it, so it is almost always so.
+    // Ask only while page on screen with nothing over it, else refuse this time.
     function ask(tabId, host) {
         if (tabId !== TabModel.activeTabId || PageActivity.background
                 || pageStack.currentPage !== page || pageStack.busy || page.tabsOpen) {
@@ -101,7 +78,6 @@ QtObject {
                        { "tabId": tabId, "host": host })
     }
 
-    // The page that asked has gone, and its question with it.
     function withdraw(tabId) {
         var top = pageStack.currentPage
         if (top && top.objectName === "notificationPermissionDialog" && top.tabId === tabId) {
@@ -109,12 +85,10 @@ QtObject {
         }
     }
 
-    // The sites allowed and blocked are the engine's to keep.
     function tellEngine(topic, payload) {
         WebEngine.notifyObservers(topic, payload)
     }
 
-    // Whether sites may ask: the engine's default for the permission.
     function applyRequests() {
         var preference = NotificationPermissions.defaultPreference(PrivacySettings.blockNotificationRequests)
         WebEngineSettings.setPreference(preference.name, preference.value)
@@ -142,16 +116,13 @@ QtObject {
     }
 
     Component.onCompleted: {
-        // Connected here rather than by a Connections, so that it is before the first
-        // request, which nothing would carry otherwise.
+        // Not via Connections, so connected before first request.
         NotificationPermissions.engineRequest.connect(center.tellEngine)
         SitePermissions.engineRequest.connect(center.tellEngine)
         WebEngine.addObserver(NotificationPermissions.topic)
         NotificationPermissions.refresh()
         applyRequests()
-        // What a browser that stopped without closing them left behind: their pages are
-        // gone, and a tap on one would find nothing. The platform lists an application's
-        // own; asking goes through a notification, since that is where the call is.
+        // Close leftovers from unclean exit: their pages are gone.
         var probe = notificationComponent.createObject(center)
         var left = probe.notifications()
         for (var i = 0; i < left.length; ++i) {

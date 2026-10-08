@@ -52,8 +52,7 @@ SiteListModel *StartPage::recentPages()
 
 void StartPage::refresh()
 {
-    // Visited most, and of two pages visited as often the one visited last: a tile
-    // stands for the page of its site that was read most.
+    // Ties broken by recency. Tile = site's most-read page.
     m_topSites.setSites(
         readHistory(QStringLiteral("visited_count DESC, date DESC, id DESC"), TopSiteLimit, true));
     m_bookmarks.setSites(readBookmarks());
@@ -75,8 +74,7 @@ Site StartPage::siteAt(const QSqlQuery &query)
     return site;
 }
 
-// The whole history is read in the worst case -- a history of one site, or of
-// searches -- which its cap of HistoryModel::MaxEntries rows keeps small.
+// Worst case scans whole history (one site, all searches): capped by MaxEntries.
 QList<Site> StartPage::readHistory(const QString &order, int limit, bool onePerSite) const
 {
     QSqlQuery query(m_db);

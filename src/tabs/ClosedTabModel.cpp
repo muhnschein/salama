@@ -90,7 +90,6 @@ void ClosedTabModel::record(const Tab &tab)
         m_persistence->insertClosedTab(closed);
     }
 
-    // The oldest go once there are more than the panel has any use for.
     if (m_closed.count() > Limit) {
         const int last = m_closed.count() - 1;
         beginRemoveRows(QModelIndex(), Limit, last);
@@ -119,9 +118,7 @@ void ClosedTabModel::reopen(int row)
     }
     emit countChanged();
 
-    // Last: opening the tab re-enters the tab model, and the grid's cell wants the
-    // title and the icon before the page has loaded to say them itself. It comes
-    // back in the current group.
+    // Last: newTab re-enters tab model.
     const int tabId = m_tabs->newTab(closed.url);
     if (tabId > 0) {
         m_tabs->updateTitle(tabId, closed.title);

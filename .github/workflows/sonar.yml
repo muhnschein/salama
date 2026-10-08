@@ -1,15 +1,11 @@
 # SonarQube Cloud analysis.
 #
-# Kept out of ci.yml on purpose. ci.yml is the GATE: it installs the toolchain and
-# calls `make check`, and SCOPE.md §7's rule is that a contributor's green `make
-# check` is a green CI. This workflow is a REPORT: it cannot fail a change on its
-# own findings, and the quality gate it publishes is advice, not intake. Folding it
-# into the gate would quietly make a hosted service part of the rule that says a
-# laptop is enough.
+# Out of ci.yml on purpose: ci.yml is GATE (`make check`; green laptop = green CI,
+# SCOPE.md §6). This is REPORT: can't fail change. Hosted service in gate would break
+# "laptop enough" rule.
 #
-# What Sonar imports -- coverage and the compilation database its C++ analyser
-# reads -- comes from `make sonar-reports`, so what runs here runs at home too. See
-# sonar-project.properties for why the scanner does not produce them itself.
+# Imports (coverage, compile DB) come from `make sonar-reports`, same as local.
+# sonar-project.properties says why scanner doesn't make them.
 name: sonar
 
 on:
@@ -19,8 +15,7 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-# Nothing here writes. SonarQube Cloud decorates pull requests through its own
-# GitHub App, not through this token.
+# Read-only. SonarQube Cloud decorates PRs via own GitHub App.
 permissions:
   contents: read
 
@@ -33,22 +28,18 @@ jobs:
     name: SonarQube Cloud
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # A pull request from a fork gets no secrets, so SONAR_TOKEN would be empty and
-    # the scan would fail on every such PR with an authentication error that looks
-    # like a broken setup. Skip it instead; the analysis of the merge lands when the
-    # branch reaches main.
+    # Fork PRs get no secrets: empty SONAR_TOKEN -> confusing auth failure. Skip;
+    # merge gets analysed on main.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Sonar reads git blame to decide what counts as new code. A shallow clone
-          # leaves every line looking as though it landed in this commit.
+          # Sonar reads git blame for new code; shallow clone makes every line new.
           fetch-depth: 0
 
-      # The same set ci.yml installs: `make sonar-reports` runs the whole suite to
-      # produce coverage, and the QML load tests drive a real QtQuick engine.
+      # Same set as ci.yml: `make sonar-reports` runs full suite incl. QML load tests.
       - name: Install toolchain
         run: |
           ci/apt-install.sh \
@@ -61,7 +52,7 @@ jobs:
       - name: make sonar-reports
         run: make sonar-reports
 
-      # One version, the spec's (sonar-project.properties says why it is not there).
+      # Version from spec (sonar-project.properties says why).
       - name: Read the version
         id: version
         run: |
@@ -75,25 +66,18 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        # SONAR_HOST_URL is not set: unset means SonarQube Cloud, and a self-hosted
-        # Server is what needs it.
+        # SONAR_HOST_URL unset = SonarQube Cloud; self-hosted Server needs it.
         with:
           args: >
             -Dsonar.projectVersion=${{ steps.version.outputs.version }}
 
-      # The scan uploads a report and exits. The server processes it afterwards, so
-      # without this the run finishes knowing nothing about its own result -- the
-      # gate, the ratings and the issue list stay on a dashboard, which neither the
-      # job log, nor a reviewer, nor anything whose network policy stops at
-      # sonarcloud.io can reach.
-      #
-      # continue-on-error, and never `sonar.qualitygate.wait`: this reports and does
-      # not gate. A Sonar outage costs a warning here, not a build.
+      # Scan uploads and exits; server processes later. This prints gate, ratings,
+      # issues into job log. continue-on-error, never `sonar.qualitygate.wait`:
+      # report, not gate. Outage = warning.
       - name: What SonarQube made of it
         if: always()
         continue-on-error: true
         env:
-          # Only used if the project is private; the endpoints are readable without
-          # it on a public one. See the script.
+          # Private project only; public endpoints readable without.
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ci/sonar-report.sh

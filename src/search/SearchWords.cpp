@@ -10,8 +10,7 @@ namespace Salama {
 
 SearchWords::SearchWords(const QString &text)
 {
-    // simplified() trims the ends and turns every run of whitespace, Unicode's as well
-    // as ASCII's, into one space; what is left splits into words without empty ones.
+    // simplified() collapses Unicode whitespace too: split yields no empties.
     const QString simple = text.simplified();
     if (!simple.isEmpty()) {
         m_words = simple.split(QLatin1Char(' '));
@@ -59,7 +58,6 @@ bool SearchWords::prefixesAWordOf(const QString &text) const
 
 QString SearchWords::marked(const QString &text) const
 {
-    // Where each word appears, as [start, end), in order of where they start.
     QVector<QPair<int, int>> spans;
     for (const QString &word : m_words) {
         for (int at = text.indexOf(word, 0, Qt::CaseInsensitive); at >= 0;
@@ -75,7 +73,6 @@ QString SearchWords::marked(const QString &text) const
     while (next < spans.count()) {
         const int start = spans.at(next).first;
         int end = spans.at(next).second;
-        // The places after it that begin before it ends are part of it.
         for (++next; next < spans.count() && spans.at(next).first <= end; ++next) {
             end = std::max(end, spans.at(next).second);
         }

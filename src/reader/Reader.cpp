@@ -11,9 +11,8 @@
 #include <QtMath>
 #include <array>
 
-// Resources compiled into a static library have to be asked for by name, or the linker
-// leaves them out of what links it; and from outside any namespace, as Qt's
-// documentation of Q_INIT_RESOURCE writes it ("Using Resources in a Library").
+// Static-lib resources must be inited by name or linker drops them; outside any namespace per
+// Qt docs.
 inline void initReaderResources()
 {
     Q_INIT_RESOURCE(reader);
@@ -49,10 +48,8 @@ const std::array<const char *, 8> BlockedHosts{{
     "app.slack.com",
 }};
 
-// Reading speeds from ReaderMode._getReadingSpeedForLanguage, in characters a minute
-// and how far either side of that a reader may be, from the study it cites
-// (http://iovs.arvojournals.org/article.aspx?articleid=2166061). English for any
-// language not here.
+// Firefox reading speeds (chars/min, variance) from
+// http://iovs.arvojournals.org/article.aspx?articleid=2166061. Unknown language = English.
 struct ReadingSpeed
 {
     const char *language;
@@ -94,16 +91,13 @@ const ReadingSpeed &readingSpeed(const QString &language)
     return ReadingSpeeds.front();
 }
 
-// A Theme colour out of the ambience map, or what a dark ambience's is when the map
-// has none that reads as a colour.
 QColor themeColor(const QVariantMap &ambience, const char *name, const QColor &otherwise)
 {
     const QColor color = ambience.value(QLatin1String(name)).value<QColor>();
     return color.isValid() ? color : otherwise;
 }
 
-// A colour as a style sheet takes it, its opacity with it: Silica's secondary colours
-// are its primary ones, faded.
+// Keeps alpha: Silica secondary colours are faded primaries.
 QString cssColor(const QColor &color)
 {
     return QStringLiteral("rgba(%1, %2, %3, %4)")
@@ -113,9 +107,7 @@ QString cssColor(const QColor &color)
         .arg(QString::number(color.alphaF(), 'g', 3));
 }
 
-// A typeface's name as a style sheet takes it, in quotes: letters, digits, spaces and
-// hyphens, which are what family names are made of. Anything else is left out, so a
-// name cannot end the quotes, the declaration or the attribute it is written into.
+// Only letters/digits/spaces/hyphens: name can't break out of quotes or attribute.
 QString cssFamily(const QVariantMap &ambience, const char *name)
 {
     QString family = ambience.value(QLatin1String(name)).toString();
@@ -125,7 +117,6 @@ QString cssFamily(const QVariantMap &ambience, const char *name)
                             : QLatin1Char('\'') + family + QLatin1Char('\'');
 }
 
-// What the document says in an attribute, escaped for one in double quotes.
 QString attribute(const QString &value)
 {
     return value.toHtmlEscaped();
@@ -140,34 +131,23 @@ QString unescapeAttribute(QString value)
     return value;
 }
 
-// The head of every reader view, as far as the page it was made from: sourceUrl()
-// reads it back from the address the engine reports.
+// sourceUrl() parses source back from engine-reported address.
 const char *const HeadStart = R"(<!DOCTYPE html><html><head><meta charset="utf-8">)"
                               R"(<meta name="salama-reader" content=")";
 
-// How much of a reader view's address sourceUrl() reads: the start of the document,
-// percent-encoded, which is up to three times its length. Enough for any address a
-// page is read from.
+// Doc start percent-encoded, up to 3x length.
 const int SourceWindow = 16384;
 
-// The engine loads what it is handed as a data: url of this form: qtmozembed's
-// QuickMozView::loadText, which loadHtml calls.
+// qtmozembed QuickMozView::loadText form.
 const char *const LoadedPrefix = "data:text/html;charset=utf-8,";
 
-// No script of the article's runs, and nothing loads but its pictures and media: the
-// reader view is a document of its own, with none of the page's code. Evaluated
-// scripts stay allowed, because that is what the engine's runJavaScript is, and it is
-// how the favicon, the theme colour and a change of style are asked of the view.
+// No article script runs. 'unsafe-eval' kept: runJavaScript is eval.
 const char *const ContentSecurityPolicy =
     "default-src 'none'; script-src 'unsafe-eval'; style-src 'unsafe-inline'; "
     "img-src * data: blob:; media-src * data: blob:; font-src * data:";
 
-// ReaderMode.sys.mjs's CLASSES_TO_PRESERVE, which aboutReader.css styles; and what
-// about:reader's own parser utils leave out of an article on the way into its page
-// (nsIParserUtils.parseFragment with SanitizerDropForms): form controls go, forms
-// themselves leave their contents behind, and neither handlers nor script urls
-// survive. Here the article is a document of its own, and the same goes for frames,
-// which that document could not load anyway.
+// Sanitize like about:reader (SanitizerDropForms): drop controls, unwrap forms, strip
+// handlers/script urls, plus frames.
 const char *const ArticleScript = R"JS(
 var classesToPreserve = ["caption", "emoji", "hidden", "invisible", "sr-only",
     "visually-hidden", "visuallyhidden", "wp-caption", "wp-caption-text", "wp-smiley"];
@@ -212,8 +192,7 @@ return JSON.stringify({
 });
 )JS";
 
-// Readerable.isProbablyReaderable: real HTML documents only, and a node counts only if
-// it takes up room on the screen (Readerable._isNodeVisible).
+// Node counts only if visible (Readerable._isNodeVisible).
 const char *const ReaderableScript = R"JS(
 if (!(document instanceof HTMLDocument) || document.contentType === "application/pdf") {
     return false;
@@ -223,8 +202,7 @@ return isProbablyReaderable(document, function (node) {
 });
 )JS";
 
-// A global `module` the page may have would otherwise be handed Readability as its
-// exports, by the lines at the foot of both files.
+// Shadow page's global `module`, else Readability exports into it.
 const char *const ShadowModule = "var module;\n";
 
 } // namespace
@@ -308,8 +286,6 @@ QString Reader::schemeFor(int colors, bool darkAmbience)
     }
 }
 
-// The scheme and the typeface, and for the ambience's own look whether the ambience is
-// dark, which the style sheet reads for the colour scheme the page's own controls take.
 QString Reader::bodyClass(const QVariantMap &ambience) const
 {
     const bool dark = isDarkAmbience(themeColor(ambience, "primaryColor", Qt::white));
@@ -350,9 +326,7 @@ QList<QPair<QString, QString>> Reader::bodyProperties(const QVariantMap &ambienc
     };
 }
 
-// The background the page is painted, for the document's theme-color: the strip beside
-// the display's cutout is painted in it (docs/DECISIONS/0013-screen-cutout.md). The
-// ambience's own look is painted from the top in its dimmer highlight.
+// Paints cutout strip.
 QString Reader::themeBackground(const QVariantMap &ambience) const
 {
     const QString scheme =
@@ -374,8 +348,6 @@ QColor Reader::ambienceBackground(const QVariantMap &ambience)
                             (top.blueF() + overlay.blueF()) / 2);
 }
 
-// The style sheet's --main-background, --main-foreground and --link-foreground for
-// each of Firefox's body classes; Automatic is one of light and dark by then.
 QColor Reader::backgroundOf(const QString &scheme)
 {
     if (scheme == QLatin1String("dark")) {
@@ -433,7 +405,7 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
     const QString direction = object.value(QStringLiteral("dir")).toString().trimmed().toLower();
     const int length = object.value(QStringLiteral("length")).toInt();
 
-    // Only what an attribute of that name can say: a language tag, a direction.
+    // Only valid language tag / direction allowed in attributes.
     static const QRegularExpression languageTag(
         QStringLiteral("^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*$"));
     QString textAttributes;
@@ -477,7 +449,7 @@ QString Reader::page(const QString &article, const QString &pageUrl, const QStri
     html += QStringLiteral("<div class=\"meta-data\"><div class=\"reader-estimated-time\">%1"
                            "</div></div></div><hr>")
                 .arg(readingTime(length, language).toHtmlEscaped());
-    // Appended rather than put in with arg(): an article is free to contain "%1".
+    // Append, not arg(): article may contain "%1".
     html += QStringLiteral("<div class=\"content\"><div class=\"moz-reader-content\">");
     html += content;
     html += QStringLiteral("</div></div></div></body></html>");
@@ -508,8 +480,7 @@ QString Reader::sourceUrl(const QUrl &url)
 
 QString Reader::styleScript(const QVariantMap &ambience) const
 {
-    // Every value is one of this class's making, and none holds a quote but the ones
-    // cssFamily() puts round a name, which are escaped for the string they go into.
+    // Only quotes are cssFamily()'s, escaped here.
     QString properties;
     for (const auto &property : bodyProperties(ambience)) {
         QString value = property.second;
@@ -536,7 +507,6 @@ QString Reader::readingTime(int length, const QString &language)
     const ReadingSpeed &speed = readingSpeed(language);
     const int slow = qCeil(double(length) / (speed.cpm - speed.variance));
     const int fast = qCeil(double(length) / (speed.cpm + speed.variance));
-    // In hours once the slower estimate is two of them, as Firefox does.
     if (slow >= 120) {
         const int slowHours = qRound(slow / 60.0);
         const int fastHours = qRound(fast / 60.0);

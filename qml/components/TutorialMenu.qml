@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The menu as the tutorial draws it: the sheet up from under the bar on the real sheet's
-// ground, its head naming the sketched page, then its two rows -- the page's five actions
-// on their discs, a line, and where the browser's own pages are -- each entry the real
-// sheet's icon and name, MenuButton and MenuPageHeader as the real sheet has them
-// (docs/DECISIONS/0021-menu-sheet.md, 0034-tutorial.md). The rest of the screen is
-// dimmed, as a modal DockedPanel dims it, and a tap there puts the sheet away, as it does
-// the real one. The entries do nothing.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -15,12 +7,10 @@ Item {
     id: menu
 
     property bool open: false
-    // The sketched page's own title, as its site names it: not translated.
+    // Site's own title: not translated.
     readonly property string pageTitle: "Sailfish OS"
-    // How tall the sheet is, from its top to the foot of the screen.
     readonly property real sheetHeight: sheet.height
 
-    // A tap outside the sheet.
     signal dismissed()
 
     visible: open
@@ -53,7 +43,6 @@ Item {
             anchors.fill: parent
         }
 
-        // Presses on the sheet stay on it.
         MouseArea {
             anchors.fill: parent
         }
@@ -74,7 +63,6 @@ Item {
                 }
             }
 
-            // The sketched page, as the bar names it; its copy button does nothing here.
             MenuPageHeader {
                 width: parent.width
                 url: "https://sailfishos.org"
@@ -105,7 +93,6 @@ Item {
                 }
             }
 
-            // The real sheet's line between the page's actions and the browser's.
             Item {
                 width: parent.width
                 height: Theme.paddingLarge

@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Modelled on sailfish-browser apps/storage/tab.h (Copyright (c) 2013 Jolla Ltd., MPL-2.0),
-// reduced to the fields the platform WebView does not already keep per view.
+// only fields WebView doesn't keep per view.
 #pragma once
 
 #include <QString>
@@ -15,16 +15,9 @@ struct Tab
     QString url;
     QString title;
     QString favicon;
-    // Absolute path to the last captured page preview, empty when there is none.
     QString thumbnail;
-    // When this tab was last the active one, on the model's own activation clock: a
-    // counter, not a time, because all the order needs is which came after which. Zero
-    // for a tab that has not been in front since the database was written. A group's
-    // picture reads it (docs/DECISIONS/0015-tab-groups.md).
+    // Activation counter, not time: order only. 0 = not fronted since DB written.
     qint64 lastActive = 0;
-    // The tab group this tab belongs to (docs/DECISIONS/0015-tab-groups.md). Every tab
-    // is in exactly one; the model gives a tab the group that was current when it was
-    // opened, and repairs a stored id that names no group on load.
     int groupId = 0;
 
     bool isValid() const
@@ -45,10 +38,7 @@ struct Tab
     }
 };
 
-// A tab group: a name and a place in the order the strip shows them in. The name may
-// be empty, in which case the interface names the group by what it holds -- "3 tabs"
-// -- the way Safari names its ungrouped tabs. The first group is the default one,
-// never removed.
+// Empty name -> UI names by content ("3 tabs"). First group = default, never removed.
 struct TabGroup
 {
     int id = 0;
@@ -70,15 +60,13 @@ struct TabGroup
     }
 };
 
-// What is kept of a closed tab, so it can be opened again: the page and how it
-// presented itself.
 struct ClosedTab
 {
     int id = 0;
     QString url;
     QString title;
     QString favicon;
-    // Milliseconds since the epoch, for the order and nothing else.
+    // ms since epoch.
     qint64 closedAt = 0;
 
     friend bool operator==(const ClosedTab &lhs, const ClosedTab &rhs)

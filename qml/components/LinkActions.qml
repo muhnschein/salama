@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The link sheet's actions on discs, in rows as the menu's are (BrowserMenu.qml): for a
-// link to a page New tab, Background tab, Share and Save link; for a link another
-// application takes, that application's -- Write email, Call, Send message, Show on map --
-// and Share; and after the menu's fading line, for a picture, Open image, Save image and
-// Copy image link (docs/DECISIONS/0046-link-menu.md). What each does is the sheet's.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Column {
-    // The sheet they are on, which knows what was pressed and does what they say.
     property Item sheet
 
     Grid {
@@ -90,8 +83,6 @@ Column {
         }
     }
 
-    // Between the link's actions and the picture's, the menu's line that fades
-    // out towards both ends.
     Item {
         width: parent.width
         height: Theme.paddingLarge

@@ -87,11 +87,9 @@ add_library(salama-core STATIC
     tabs/ThumbnailWriter.h
 )
 target_include_directories(salama-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-# The reader view's scripts and style sheet, compiled in (src/reader/reader.qrc).
+# For src/reader/reader.qrc.
 set_target_properties(salama-core PROPERTIES AUTORCC ON)
-# Gui, for QColor: a page's theme-color is a CSS colour, and reading one is what
-# QColor is for (src/engine/EngineMessages.cpp).
-# DBus, for the share sheet's call with a shared link (src/share/ShareReceiver.h).
+# Gui: QColor parses theme-color. DBus: share sheet.
 target_link_libraries(salama-core PUBLIC Qt5::Core Qt5::DBus Qt5::Gui Qt5::Qml Qt5::Sql)
 target_compile_definitions(salama-core PUBLIC
     QT_NO_CAST_FROM_ASCII
@@ -102,8 +100,7 @@ target_compile_definitions(salama-core PUBLIC
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE salama-core Qt5::Gui Qt5::Quick)
-# The Silica booster dlopen()s the binary and calls its exported main(): -pie -rdynamic
-# is what libsailfishapp's qmake feature adds, reproduced here for CMake.
+# Silica booster dlopen()s binary, calls main(): -pie -rdynamic as libsailfishapp qmake.
 target_link_options(${PROJECT_NAME} PRIVATE -pie -rdynamic)
 
 find_package(PkgConfig)

@@ -1,13 +1,10 @@
 #!/bin/bash
-# ci/harbour-check.sh — Harbour rules applied to the source tree.
-#
-# Reimplements the checks of Jolla's sdk-harbour-rpmvalidator (rpmvalidation.sh) over
-# the sources, so every pull request sees them without building an RPM. It is not the
-# authority: `sfdk check -s harbour` on the built package is (docs/HARBOUR.md). The
-# allow-lists in ci/harbour/ are the validator's own files, copied verbatim.
+# Harbour rules over source tree. Reimplements Jolla's sdk-harbour-rpmvalidator
+# (rpmvalidation.sh) so every PR sees them without RPM. Not authority: `sfdk check -s harbour`
+# on built package is. ci/harbour/ allow-lists are validator's own, verbatim.
 #
 # Usage: ci/harbour-check.sh [--root DIR]
-# Exit status: 0 when no ERROR remains after ci/harbour/waivers.conf, 1 otherwise.
+# Exit 0 when no ERROR left after ci/harbour/waivers.conf, else 1.
 # shellcheck disable=SC2317  # validators are invoked through run_section
 set -uo pipefail
 shopt -s extglob
@@ -131,7 +128,7 @@ conf() { echo "$CONF_DIR/$1"; }
 spec_tag() { grep -E "^$1:" "$SPEC" | head -1 | sed -E "s/^$1:[[:space:]]*//"; }
 spec_tags() { grep -E "^$1:" "$SPEC" | sed -E "s/^$1:[[:space:]]*//"; }
 
-# Names from a dependency line: drops comparison operators and the version after them.
+# Dependency line -> names; drops operators and versions.
 dependency_names() {
     local token skip=0
     for token in $(tr ',' ' ' <<<"$1"); do
@@ -456,8 +453,8 @@ validate_sandboxing() {
     while read -r hit; do
         error path-policy "${hit%%:*}" "location not writable under Sailjail: ${hit#*:}"
     done < <(grep -rnoE 'QStandardPaths::(GenericDataLocation|GenericConfigLocation|GenericCacheLocation|HomeLocation|ConfigLocation|DataLocation)\b' "$ROOT/src" | sed "s|^$ROOT/||")
-    # Default-constructed or organisation-keyed QSettings land outside the sandbox;
-    # members (m_*) are constructed in initialiser lists and are not decidable here.
+# Default or org-keyed QSettings land outside sandbox. m_* members built in
+# initialiser lists; undecidable here.
     while read -r hit; do
         error path-policy "${hit%%:*}" "QSettings must be given an explicit file path: ${hit#*:}"
     done < <(grep -rnE 'QSettings[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*;|QSettings[[:space:]]*\([[:space:]]*\)|QSettings[[:space:]]*\([[:space:]]*QSettings::' "$ROOT/src" | grep -vE ':[[:space:]]*(//|\*)|QSettings[[:space:]]+m_' | sed "s|^$ROOT/||")

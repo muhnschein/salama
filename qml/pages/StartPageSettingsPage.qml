@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// Start page: what a tab with no address shows, which is this browser's home page --
-// there is no other (docs/DECISIONS/0032-start-page.md). The start page's sections or a
-// blank page, both on the screen at once and one tap to change, as TextSwitches that do
-// not check themselves, the one chosen lit; then Firefox's home sections, the sites
-// visited most, the bookmarks and the pages read last, each switched on or off. The
-// sections keep their switches while the page is blank, and are dimmed. Under them, a
-// picture of the screen as a new tab will show it follows each switch as it moves.
+// Start page is home page. Sections stay switchable (dimmed) while blank.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

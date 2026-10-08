@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The address bar's pane as the tutorial draws it: the glass over the page, and above
-// the bar the rows the real pane keeps there for what was typed, one that goes to it as
-// an address and one that searches the web for it, under two rows sketched for what the
-// open tabs, the bookmarks and the history would suggest (docs/DECISIONS/0027-omnibar.md,
-// 0034-tutorial.md). The go and search rows are the pane's own, OmnibarAction, and the
-// search names the engine Settings has chosen. Nothing here takes a tap.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -14,7 +7,6 @@ import harbour.salama 1.0
 Item {
     id: pane
 
-    // What the sketched field holds, and the address it would go to.
     property string typed
     property string address
 
@@ -34,7 +26,6 @@ Item {
             bottom: parent.bottom
         }
 
-        // What the other sources would suggest: a site's initial and two lines.
         Repeater {
             model: 2
 

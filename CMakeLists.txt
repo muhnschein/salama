@@ -1,8 +1,7 @@
 # harbour-salama — Silica web browser for Sailfish OS.
-#
-# Two build flavours share this file:
+# Two flavours:
 #   * device RPM (rpm/harbour-salama.spec): SALAMA_BUILD_TESTS=OFF, sailfishapp required.
-#   * host `make check`: tests on, sailfishapp replaced by tests/stubs/sailfishapp.
+#   * host `make check`: tests on, sailfishapp stubbed by tests/stubs/sailfishapp.
 cmake_minimum_required(VERSION 3.13)
 project(harbour-salama VERSION 0.8.0 LANGUAGES CXX)
 
@@ -35,12 +34,11 @@ if(SALAMA_BUILD_TESTS)
 endif()
 
 install(DIRECTORY qml DESTINATION share/${PROJECT_NAME})
-# Pictures the QML draws but which are not QML: ci/harbour-check.sh holds qml/ to QML
-# files alone, and the cover's own icon has to be a file an Image can resolve.
+# Non-QML pictures QML draws: ci/harbour-check.sh allows only QML in qml/, and cover
+# icon must be file Image can resolve.
 install(DIRECTORY art DESTINATION share/${PROJECT_NAME})
 install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications)
-# Readability is compiled into the application (src/reader/reader.qrc), so its licence and
-# notice travel with the package, as Apache-2.0 §4 asks.
+# Readability compiled in (src/reader/reader.qrc): licence + notice ship with package (Apache-2.0 §4).
 install(FILES third_party/readability/LICENSE.md third_party/readability/NOTICE
         DESTINATION share/${PROJECT_NAME}/licenses/readability)
 foreach(size 86x86 108x108 128x128 172x172)

@@ -1,5 +1,4 @@
-// Stub: the system clipboard, as Silica hands it to QML. What was put on it stays for a
-// test to read.
+// Stub: system clipboard; content kept for tests.
 pragma Singleton
 import QtQuick 2.6
 

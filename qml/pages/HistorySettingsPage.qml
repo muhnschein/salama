@@ -1,18 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// History: whether the pages visited are kept, whether they go as the browser closes,
-// what browsing has left on the phone, and the way to clear it -- Firefox's History
-// settings, with its Remember browsing and download history, Clear history when Firefox
-// closes and Clear History… (docs/DECISIONS/0030-history-settings.md). What is kept is
-// counted as Silica lays out details, a label and a value to a line, so that what the
-// button under it clears is known before it is pressed.
-//
-// The clearing is done here, not in its dialog, which only asks: what the dialog is
-// accepted with goes under one remorse on this page -- the page on the screen once the
-// dialog has gone -- and each kind is then cleared as it always has been. That is why
-// this page, and no other settings page, imports Sailfish.WebEngine: the engine is
-// told to clear its cookies, site data and cache by its own notification.
+// Clears here, not in dialog: page stack destroys dialog on pop, so remorse runs here.
+// Only settings page importing Sailfish.WebEngine: engine clears cookies/site data/cache.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.WebEngine 1.0
@@ -24,11 +13,7 @@ Page {
     objectName: "historySettingsPage"
     allowedOrientations: Orientation.Portrait
 
-    // What was chosen is handed in rather than read off the dialog when the remorse
-    // runs out: the page stack does away with the dialog as it pops it. The history
-    // takes with it what it reaches back to of the list of downloads, and when it goes
-    // whole, the recently closed tabs; the range reaches no further than those, the
-    // engine clearing all it keeps or nothing.
+    // Choice passed in: dialog gone before remorse ends. Engine clears all or nothing.
     function clearData(range, tabs, history, siteData, cache) {
         Remorse.popupAction(historyPage, qsTr("Clearing browsing data"), function () {
             if (tabs) {
@@ -74,7 +59,7 @@ Page {
                 title: qsTr("History")
             }
 
-            // Off, what is already kept stays until it is cleared, as in Firefox.
+            // Off keeps existing history until cleared.
             TextSwitch {
                 objectName: "rememberHistorySwitch"
                 text: qsTr("Remember browsing history")
@@ -82,7 +67,6 @@ Page {
                 onCheckedChanged: PrivacySettings.rememberHistory = checked
             }
 
-            // The line says what goes with the history, which the name does not.
             TextSwitch {
                 objectName: "clearHistoryOnCloseSwitch"
                 text: qsTr("Clear history when closed")
@@ -131,8 +115,7 @@ Page {
                 height: Theme.paddingLarge
             }
 
-            // Under what it clears, and a Silica Button rather than a row: it does
-            // something, after asking what, rather than going somewhere.
+            // Button, not row: acts, doesn't navigate.
             Button {
                 objectName: "clearDataButton"
                 anchors.horizontalCenter: parent.horizontalCenter

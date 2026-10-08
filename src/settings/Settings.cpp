@@ -7,8 +7,7 @@ namespace Salama {
 namespace {
 
 const char *const NotchGuardKey = "notchGuard";
-// The switch the notch guard was before it had three modes: on kept every page below the
-// cutout, which is Forced, and off kept none, which is Disabled.
+// Legacy bool: on = Forced, off = Disabled.
 const char *const RetiredCutoutGuardKey = "cutoutGuard";
 const char *const FixedToolbarKey = "fixedToolbar";
 const char *const TutorialShownKey = "tutorialShown";

@@ -1,19 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The cover: the one quick action it offers on the home screen (docs/DECISIONS/
-// 0029-quick-action.md, 0028-settings-pages.md), under a picture of the cover with the
-// action on it (0037-cover-is-where-you-were.md). What the cover shows is not a choice:
-// it says what the browser has to say.
-//
-// The action is one of six rows under a line saying why there is one, each with the glyph
-// it wears on the cover, the one set lit -- every choice on the screen at once, where one
-// row's menu hid them. Choosing a bookmark asks which, and the action is that bookmark's
-// only once one is picked: backing out leaves it as it was. Its row then names the
-// bookmark as it is called now, and under the rows are the glyphs the action can wear.
-//
-// Nothing here needs saving: each control writes its setting as it changes, and the
-// cover (cover/CoverPage.qml) follows the settings.
+// Bookmark action set only once picked; back-out keeps old. Controls write live.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -23,27 +10,21 @@ Page {
     id: coverSettingsPage
 
     property SettingNames names: SettingNames {}
-    // The glyph the action wears, as the cover picks it: what it opens, and for one
-    // bookmark the glyph chosen for it here; none for no action.
     readonly property string glyph: glyphOf(CoverSettings.quickAction)
-    // Whether the ambience is dark, which decides the ink the cover's pictures are drawn
-    // in, worked out as the cover works it out.
+    // Computed as cover does.
     readonly property bool onDark: {
         var ink = Theme.primaryColor
         return 0.299 * ink.r + 0.587 * ink.g + 0.114 * ink.b > 0.5
     }
-    // The action's bookmark as it is now: by its id, or by its address once the id is
-    // gone -- the menu's Bookmark takes one away and adds it back under another, and the
-    // window points the setting at that (harbour-salama.qml). 0 when neither finds one.
-    // The revision is read so that both are asked again as the bookmarks change.
+    // By id, else by address (menu Bookmark re-adds under new id; harbour-salama.qml
+    // repoints setting). 0 if neither. Revision read -> re-query on change.
     readonly property int bookmarkId: (BookmarkModel.revision,
                                        BookmarkModel.hasBookmark(CoverSettings.quickActionBookmark)
                                        ? CoverSettings.quickActionBookmark
                                        : BookmarkModel.idForUrl(CoverSettings.quickActionBookmarkUrl))
     readonly property string bookmarkTitle: (BookmarkModel.revision,
                                              BookmarkModel.titleOf(bookmarkId))
-    // The bookmark's row names it once there is one picked, whether or not the action is
-    // that bookmark's now.
+    // Names picked bookmark even when action isn't bookmark now.
     readonly property bool bookmarkPicked: CoverSettings.quickActionBookmark > 0
                                            || CoverSettings.quickActionBookmarkUrl.length > 0
 
@@ -60,7 +41,6 @@ Page {
         }
     }
 
-    // Which bookmark. The choice is written when one is picked, and not before.
     function pickBookmark() {
         var picker = pageStack.push(Qt.resolvedUrl("BookmarkPickerPage.qml"))
         if (!picker) {
@@ -72,7 +52,6 @@ Page {
         })
     }
 
-    // A glyph's picture as the cover hands it to the home screen, as a whole URL.
     function iconSource(name) {
         return Qt.resolvedUrl("../../" + CoverSettings.iconPath(name, Theme.iconSizeSmall,
                                                                  coverSettingsPage.onDark))
@@ -94,8 +73,7 @@ Page {
                 title: qsTr("Cover")
             }
 
-            // The cover, centred, two thirds of a real one across, so the rows under it
-            // start on the screen with it and the glyph on it is still told apart.
+            // 2/3 real cover width: rows start on screen, glyph still legible.
             QuickActionPreview {
                 objectName: "coverPreview"
                 x: (parent.width - width) / 2
@@ -125,8 +103,6 @@ Page {
                 text: qsTr("The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.")
             }
 
-            // The six, in the stored order, each with the glyph it wears on the cover; the
-            // one set lit, as Silica lights a chosen item.
             Repeater {
                 model: [
                     { "action": CoverSettings.QuickActionNone, "key": "none" },
@@ -174,7 +150,7 @@ Page {
                             highlighted: actionRow.lit
                         }
 
-                        // No action wears nothing: a dot keeps its place.
+                        // Dot keeps place for no-action row.
                         Rectangle {
                             anchors.centerIn: parent
                             visible: actionRow.rowGlyph.length === 0
@@ -217,10 +193,7 @@ Page {
                 }
             }
 
-            // The glyphs a bookmark's action can wear, the one it wears lit, in as few rows
-            // as the page's width allows, each as full as the next. Drawn from the files
-            // the cover hands the home screen, so what is picked here is what is seen
-            // there.
+            // Same files cover uses, so pick = what's seen.
             Column {
                 objectName: "quickActionIconPicker"
                 x: Theme.horizontalPageMargin
@@ -240,7 +213,6 @@ Page {
                 Grid {
                     id: icons
 
-                    // How many cells a row has room for, and how many glyphs there are.
                     readonly property int room: Math.max(1, Math.floor(parent.width
                                                                        / Theme.itemSizeSmall))
                     readonly property int glyphs: CoverSettings.quickActionIcons.length

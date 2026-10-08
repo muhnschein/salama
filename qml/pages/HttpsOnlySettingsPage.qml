@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// HTTPS-Only Mode: Firefox for Android's page for it, its switch and its words, under
-// Privacy (docs/DECISIONS/0047-secure-connections.md). Firefox for Android asks whether
-// it is on in all tabs or only in private ones; this browser has no private tabs
-// (0019-no-private-tabs.md), so the switch is all there is. While it is off, the engine
-// still tries HTTPS first and falls back to HTTP, as Firefox does, and the line under
-// the switch says so in desktop Firefox's words.
+// No private tabs, so one switch. Off: engine still tries HTTPS first, falls back to HTTP.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

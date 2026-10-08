@@ -14,10 +14,8 @@ using Salama::TabModel;
 
 namespace {
 
-// Short enough to wait out.
 const int Delay = 20;
 
-// The requests raised so far, as "tab:command".
 QStringList requests(const QSignalSpy &spy)
 {
     QStringList list;
@@ -33,12 +31,9 @@ QString request(int tabId, PageMedia::Command command)
     return QStringLiteral("%1:%2").arg(tabId).arg(static_cast<int>(command));
 }
 
-// A page for the script to run over, in a JavaScript engine rather than a browser's:
-// just the parts of the DOM it touches. `media` makes an element: playing or paused,
-// muted or not, and with what the engine says of its sound (hasAudio), a <video> -- or
-// an <audio> when that is left out, Gecko having mozHasAudio on a video only. `page`
-// makes a document of elements and frames; a frame from another site has no document.
-// `navigator` has a Media Session with nothing said in it until a test says something.
+// Minimal DOM for script, run in JS engine. `media`: element playing/paused, muted or not,
+// hasAudio -> <video>, else <audio> (Gecko has mozHasAudio on video only). `page`: document
+// of elements and frames; cross-site frame has no document. `navigator`: empty Media Session.
 const char *const FakeDom = R"(
 function media(options) {
   var m = { paused: true, ended: false, muted: false, volume: 1, plays: 0,
@@ -91,18 +86,16 @@ void tst_pagemedia::scriptCarriesTheCommandAndTheMute()
     QCOMPARE(media.queryDelay(), Delay);
     QCOMPARE(PageMedia(&tabs).queryDelay(), PageMedia::DefaultQueryDelay);
 
-    // The body of a function, as every script the engine runs: it has to return.
+    // Function body, as every engine script: must return.
     const QString query = media.script(id, PageMedia::Command::Query);
     QVERIFY(query.contains(QLatin1String("return ")));
     QVERIFY(
         query.contains(QLatin1String("var command = 'query', muted = false, concealed = false;")));
     QVERIFY(media.script(id, PageMedia::Command::Pause).contains(QLatin1String("'pause'")));
     QVERIFY(media.script(id, PageMedia::Command::Play).contains(QLatin1String("'play'")));
-    // It reaches frames, and every kind of media element.
     QVERIFY(query.contains(QLatin1String("contentDocument")));
     QVERIFY(query.contains(QLatin1String("'audio, video'")));
 
-    // A muted tab's script mutes what it finds; out of sight, it hides what plays.
     tabs.setMuted(id, true);
     QVERIFY(media.script(id, PageMedia::Command::Query).contains(QLatin1String("muted = true,")));
     media.setBackground(true);
@@ -110,7 +103,6 @@ void tst_pagemedia::scriptCarriesTheCommandAndTheMute()
         media.script(id, PageMedia::Command::Query).contains(QLatin1String("concealed = true;")));
 }
 
-// The script itself, run over a page made of the parts of the DOM it reads.
 void tst_pagemedia::scriptOverAPage()
 {
     TabModel tabs(nullptr);
@@ -118,7 +110,6 @@ void tst_pagemedia::scriptOverAPage()
     const int id = tabs.newTab(QStringLiteral("https://a.example/"));
     QJSEngine engine;
     QVERIFY(!engine.evaluate(QString::fromUtf8(FakeDom)).isError());
-    // The script for a command, run over a page; the state it answers, or its error.
     const auto run = [&](PageMedia::Command command, const QString &page) {
         engine.globalObject().setProperty(QStringLiteral("script"), media.script(id, command));
         const QJSValue result =
@@ -127,10 +118,8 @@ void tst_pagemedia::scriptOverAPage()
     };
     const auto js = [&](const QString &code) { return engine.evaluate(code); };
 
-    // Nothing on the page, nothing playing.
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([])")), QString());
 
-    // A video with sound, playing; an <audio>, which has nothing but sound, playing.
     js(QStringLiteral("var video = media({ paused: false, hasAudio: true });"
                       "var audio = media({ paused: false });"
                       "var silent = media({ paused: false, hasAudio: false });"
@@ -140,59 +129,50 @@ void tst_pagemedia::scriptOverAPage()
              QStringLiteral("playing"));
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([audio])")),
              QStringLiteral("playing"));
-    // Nothing anyone hears: no sound track, muted by the page, turned down to nothing.
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([silent, hushed, quiet])")),
              QString());
 
-    // Frames from the same site are searched; one from another has no document, and
-    // one whose document throws is passed over.
     js(QStringLiteral("var framed = page([], [{ contentDocument: page([audio]) }]);"
                       "var foreign = page([], [{ contentDocument: null },"
                       " { get contentDocument() { throw new Error('denied'); } }]);"));
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("framed")), QStringLiteral("playing"));
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("foreign")), QString());
 
-    // Paused: what played is paused and marked, and the page says so. What the page
-    // itself had paused is not marked, and not played again below.
+    // Pause: playing media paused and marked. Page's own paused media not marked, not resumed.
     js(QStringLiteral("var own = media({ paused: true, hasAudio: true });"));
     QCOMPARE(run(PageMedia::Command::Pause, QStringLiteral("page([video, own, silent])")),
              QStringLiteral("paused"));
     QVERIFY(js(QStringLiteral("video.paused && video.salamaPaused === true")).toBool());
     QVERIFY(js(QStringLiteral("own.salamaPaused === undefined")).toBool());
-    // A silent video is not the page's sound, and is left to play.
     QVERIFY(!js(QStringLiteral("silent.paused")).toBool());
     QCOMPARE(run(PageMedia::Command::Play, QStringLiteral("page([video, own])")),
              QStringLiteral("playing"));
     QVERIFY(js(QStringLiteral("!video.paused && video.salamaPaused === undefined")).toBool());
     QVERIFY(js(QStringLiteral("own.paused && own.plays === 0")).toBool());
-    // A play() without a promise, as older engines had, is played all the same.
+    // play() without promise (older engines) still works.
     js(QStringLiteral("var old = media({ paused: false, hasAudio: true });"
                       "old.play = function () { this.paused = false; };"));
     run(PageMedia::Command::Pause, QStringLiteral("page([old])"));
     QCOMPARE(run(PageMedia::Command::Play, QStringLiteral("page([old])")),
              QStringLiteral("playing"));
-    // Paused from here and ended since: nothing to play again.
     run(PageMedia::Command::Pause, QStringLiteral("page([video])"));
     js(QStringLiteral("video.ended = true;"));
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([video])")), QString());
     js(QStringLiteral("video.ended = false; video.paused = false;"));
 
-    // Muted: every element the page has not muted itself is muted, and marked. What is
-    // muted from here still plays, and says so: the tab shows it muted, not silent.
+    // Mute: all not page-muted get muted + marked. Still reports playing: tab shows muted,
+    // not silent.
     tabs.setMuted(id, true);
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([video, hushed])")),
              QStringLiteral("playing"));
     QVERIFY(js(QStringLiteral("video.muted && video.salamaMuted === true")).toBool());
     QVERIFY(js(QStringLiteral("hushed.muted && hushed.salamaMuted === undefined")).toBool());
-    // Unmuted: only what was muted from here is heard again.
     tabs.setMuted(id, false);
     QCOMPARE(run(PageMedia::Command::Query, QStringLiteral("page([video, hushed])")),
              QStringLiteral("playing"));
     QVERIFY(js(QStringLiteral("!video.muted && video.salamaMuted === undefined")).toBool());
     QVERIFY(js(QStringLiteral("hushed.muted")).toBool());
 
-    // Muted from the control, and paused in the same run: the tab says it is paused,
-    // and what was paused is muted as well. Unmuted, it plays again, and is heard.
     tabs.setMuted(id, true);
     QCOMPARE(run(PageMedia::Command::Pause, QStringLiteral("page([video])")),
              QStringLiteral("paused"));
@@ -203,8 +183,7 @@ void tst_pagemedia::scriptOverAPage()
              QStringLiteral("playing"));
     QVERIFY(js(QStringLiteral("!video.paused && !video.muted")).toBool());
 
-    // Out of sight, a video that plays is hidden, and what the page had set for its
-    // visibility kept; one that is paused, and an <audio>, are left as they are.
+    // Background: playing video hidden, page's visibility kept; paused video and <audio> untouched.
     media.setBackground(true);
     js(QStringLiteral("video.style.visibility = 'visible';"
                       "var still = media({ paused: true, hasAudio: true });"));
@@ -217,10 +196,8 @@ void tst_pagemedia::scriptOverAPage()
                 .toBool());
     QVERIFY(js(QStringLiteral("audio.style.visibility === '' && !('salamaConcealed' in audio)"))
                 .toBool());
-    // Asked again, it stays hidden, and what the page had is not lost.
     run(PageMedia::Command::Query, QStringLiteral("page([video])"));
     QVERIFY(js(QStringLiteral("video.salamaConcealed === 'visible'")).toBool());
-    // Back on the screen, it is shown as the page had it.
     media.setBackground(false);
     run(PageMedia::Command::Query, QStringLiteral("page([video])"));
     QVERIFY(js(QStringLiteral("video.style.visibility === 'visible'"
@@ -228,8 +205,6 @@ void tst_pagemedia::scriptOverAPage()
                 .toBool());
 }
 
-// What the page says of what it plays, for the cover: its Media Session's, and a
-// video's poster when that has no picture.
 void tst_pagemedia::scriptSaysWhatPlays()
 {
     TabModel tabs(nullptr);
@@ -248,18 +223,15 @@ void tst_pagemedia::scriptSaysWhatPlays()
     const QString artist = QStringLiteral("artist");
     const QString artwork = QStringLiteral("artwork");
 
-    // Nothing said: the state alone.
     js(QStringLiteral("var song = media({ paused: false });"
                       "var film = media({ paused: false, hasAudio: true,"
                       " poster: 'https://a.example/poster.jpg' });"));
     QCOMPARE(said(QStringLiteral("page([song])")),
              QJsonObject({{QStringLiteral("state"), QStringLiteral("playing")}}));
 
-    // A video's poster is its picture while nothing else is said.
     QCOMPARE(said(QStringLiteral("page([song, film])")).value(artwork).toString(),
              QStringLiteral("https://a.example/poster.jpg"));
 
-    // The Media Session's title and artist, and its widest picture, over the poster.
     js(QStringLiteral(
         "navigator.mediaSession.metadata = { title: 'Symphony No. 5', artist: 'Beethoven',"
         " artwork: [{ src: 'https://a.example/96.png', sizes: '96x96' },"
@@ -269,8 +241,6 @@ void tst_pagemedia::scriptSaysWhatPlays()
     QCOMPARE(answer.value(title).toString(), QStringLiteral("Symphony No. 5"));
     QCOMPARE(answer.value(artist).toString(), QStringLiteral("Beethoven"));
     QCOMPARE(answer.value(artwork).toString(), QStringLiteral("https://a.example/512.png"));
-    // A picture of any size is the widest; of pictures saying nothing of their size, the
-    // last listed.
     js(QStringLiteral("navigator.mediaSession.metadata.artwork = ["
                       " { src: 'https://a.example/any.svg', sizes: 'any' },"
                       " { src: 'https://a.example/512.png', sizes: '512x512' }];"));
@@ -281,12 +251,10 @@ void tst_pagemedia::scriptSaysWhatPlays()
         " { src: 'https://a.example/one.png' }, { src: 'https://a.example/two.png' }];"));
     QCOMPARE(said(QStringLiteral("page([film])")).value(artwork).toString(),
              QStringLiteral("https://a.example/two.png"));
-    // No picture in the session: the poster.
     js(QStringLiteral("navigator.mediaSession.metadata.artwork = [];"));
     QCOMPARE(said(QStringLiteral("page([film])")).value(artwork).toString(),
              QStringLiteral("https://a.example/poster.jpg"));
 
-    // Paused from here, it is still said; with nothing playing, nothing is.
     js(QStringLiteral("film.paused = true; film.salamaPaused = true;"));
     QCOMPARE(said(QStringLiteral("page([film])")).value(title).toString(),
              QStringLiteral("Symphony No. 5"));
@@ -294,7 +262,6 @@ void tst_pagemedia::scriptSaysWhatPlays()
     QCOMPARE(said(QStringLiteral("page([film])")),
              QJsonObject({{QStringLiteral("state"), QString()}}));
 
-    // A page without a Media Session says what it plays all the same.
     js(QStringLiteral("navigator = {};"));
     QCOMPARE(said(QStringLiteral("page([song])")).value(QStringLiteral("state")).toString(),
              QStringLiteral("playing"));
@@ -313,8 +280,7 @@ void tst_pagemedia::answersBecomeTheTabsState()
     media.answer(id, PageMedia::Command::Query, QString());
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
 
-    // Only the words the script says: anything else, a failed script included, is
-    // nothing playing.
+    // Only known words; anything else (failed script too) = not playing.
     media.answer(id, PageMedia::Command::Query, QStringLiteral("playing"));
     media.answer(id, PageMedia::Command::Query, QVariant());
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
@@ -324,8 +290,6 @@ void tst_pagemedia::answersBecomeTheTabsState()
     media.answer(id, PageMedia::Command::Query, QStringLiteral("Playing"));
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
 
-    // The script's JSON: the state, and what the page says of what it plays -- a
-    // picture only by an address the cover can fetch.
     media.answer(
         id, PageMedia::Command::Query,
         QStringLiteral("{\"state\":\"playing\",\"title\":\" Symphony\\n No. 5 \","
@@ -343,7 +307,6 @@ void tst_pagemedia::answersBecomeTheTabsState()
         QCOMPARE(tabs.activeMediaArtwork(), QString());
     }
     QCOMPARE(tabs.activeMediaTitle(), QString());
-    // What is not a string says nothing; a state that is not one of the words is none.
     media.answer(id, PageMedia::Command::Query,
                  QStringLiteral("{\"state\":\"playing\",\"title\":5,\"artist\":null}"));
     QCOMPARE(tabs.mediaState(id), TabModel::MediaPlaying);
@@ -352,14 +315,12 @@ void tst_pagemedia::answersBecomeTheTabsState()
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
     QCOMPARE(tabs.activeMediaTitle(), QString());
 
-    // A page going takes what it played with it, and what it said of it.
     media.answer(id, PageMedia::Command::Query,
                  QStringLiteral("{\"state\":\"playing\",\"title\":\"Symphony No. 5\"}"));
     media.forget(id);
     QCOMPARE(tabs.mediaState(id), TabModel::NoMedia);
     QCOMPARE(tabs.activeMediaTitle(), QString());
 
-    // A tab that is not there has nothing to say.
     media.answer(id + 1, PageMedia::Command::Query, QStringLiteral("playing"));
     QCOMPARE(tabs.mediaState(id + 1), TabModel::NoMedia);
 }
@@ -373,25 +334,21 @@ void tst_pagemedia::theTabInFrontPausesTheOthers()
     const int third = tabs.newTab(QStringLiteral("https://c.example/"));
     QSignalSpy spy(&media, &PageMedia::requested);
 
-    // Two tabs behind that say they play -- a page left behind keeps saying so --
-    // and nothing is done while the one in front is silent.
+    // Two background tabs claim playing (stale page keeps saying so); no action while front silent.
     media.answer(first, PageMedia::Command::Query, QStringLiteral("playing"));
     media.answer(second, PageMedia::Command::Query, QStringLiteral("playing"));
     QVERIFY(spy.isEmpty());
 
-    // The one in front starts, and both are paused.
     QCOMPARE(tabs.activeTabId(), third);
     media.answer(third, PageMedia::Command::Query, QStringLiteral("playing"));
     QCOMPARE(requests(spy), QStringList({request(first, PageMedia::Command::Pause),
                                          request(second, PageMedia::Command::Pause)}));
-    // What they answer to that is paused, which asks nothing more.
     spy.clear();
     media.answer(first, PageMedia::Command::Pause, QStringLiteral("paused"));
     media.answer(second, PageMedia::Command::Pause, QStringLiteral("paused"));
     QVERIFY(spy.isEmpty());
     QCOMPARE(tabs.mediaState(first), TabModel::MediaPaused);
 
-    // Asked again, the front still plays, and there is nothing left to pause.
     media.answer(third, PageMedia::Command::Query, QStringLiteral("playing"));
     QVERIFY(spy.isEmpty());
 }
@@ -409,8 +366,8 @@ void tst_pagemedia::aTabBehindIsPausedWhileTheFrontPlays()
     media.answer(behind, PageMedia::Command::Query, QStringLiteral("playing"));
     QCOMPARE(requests(spy), QStringList({request(behind, PageMedia::Command::Pause)}));
 
-    // A page that will not pause says it still plays, and is not asked again: that
-    // would be asking for ever. The next word from the engine asks it once more.
+    // Page refusing pause still plays, not re-asked (would loop forever). Next engine event
+    // asks once more.
     spy.clear();
     media.answer(behind, PageMedia::Command::Pause, QStringLiteral("playing"));
     QCOMPARE(tabs.mediaState(behind), TabModel::MediaPlaying);
@@ -441,7 +398,6 @@ void tst_pagemedia::toggleMuted()
     const int id = tabs.newTab(QStringLiteral("https://b.example/"));
     QSignalSpy spy(&media, &PageMedia::requested);
 
-    // Heard: muted, and paused at once, which mutes it as it pauses.
     media.answer(id, PageMedia::Command::Query, QStringLiteral("playing"));
     QVERIFY(media.isHeard(id));
     media.toggleMuted(id);
@@ -449,14 +405,11 @@ void tst_pagemedia::toggleMuted()
     QVERIFY(!media.isHeard(id));
     QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Command::Pause)}));
 
-    // Not heard: unmuted, and what was paused is played again.
     spy.clear();
     media.answer(id, PageMedia::Command::Pause, QStringLiteral("paused"));
     media.toggleMuted(id);
     QVERIFY(!tabs.isMuted(id));
     QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Command::Play)}));
-    // Paused and not muted is not heard either, and is played; so is one that plays
-    // muted, which the page started on its own.
     spy.clear();
     media.answer(id, PageMedia::Command::Play, QStringLiteral("paused"));
     QVERIFY(!media.isHeard(id));
@@ -470,8 +423,6 @@ void tst_pagemedia::toggleMuted()
     QVERIFY(!tabs.isMuted(id));
     QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Command::Play)}));
 
-    // A tab behind the front is played in front: it is brought there, and what played
-    // in front is held.
     spy.clear();
     QVERIFY(media.isHeard(id));
     media.answer(behind, PageMedia::Command::Query, QStringLiteral("paused"));
@@ -481,15 +432,12 @@ void tst_pagemedia::toggleMuted()
     QCOMPARE(requests(spy), QStringList({request(id, PageMedia::Command::Pause),
                                          request(behind, PageMedia::Command::Play)}));
 
-    // A tab that is not there is left alone.
     spy.clear();
     media.toggleMuted(id + 1);
     QVERIFY(!tabs.isMuted(id + 1));
     QVERIFY(spy.isEmpty());
 }
 
-// The engine silences a tab behind the front; this pauses it first, as it is left,
-// and plays it again when it is back.
 void tst_pagemedia::aTabLeftIsHeldUntilItIsBack()
 {
     TabModel tabs(nullptr);
@@ -497,17 +445,14 @@ void tst_pagemedia::aTabLeftIsHeldUntilItIsBack()
     const int first = tabs.newTab(QStringLiteral("https://a.example/"));
     const int second = tabs.newTab(QStringLiteral("https://b.example/"));
     QSignalSpy spy(&media, &PageMedia::requested);
-    // Asked while the page being left is still the one in front: before its view hears
-    // that it is not, and the page that it is hidden.
+    // Asked while leaving page still front: before view and page learn it's hidden.
     int frontWhenAsked = 0;
     connect(&media, &PageMedia::requested, this,
             [&tabs, &frontWhenAsked]() { frontWhenAsked = tabs.activeTabId(); });
 
-    // Silent, it is left as it is.
     tabs.activateTabById(first);
     QVERIFY(spy.isEmpty());
 
-    // Playing, it is paused as it is left, and shown paused behind the front.
     tabs.activateTabById(second);
     media.answer(second, PageMedia::Command::Query, QStringLiteral("playing"));
     tabs.activateTabById(first);
@@ -517,7 +462,6 @@ void tst_pagemedia::aTabLeftIsHeldUntilItIsBack()
     QCOMPARE(tabs.shownMediaState(second), TabModel::MediaPaused);
     QVERIFY(!media.isHeard(second));
 
-    // Back in front, it plays again, once.
     spy.clear();
     tabs.activateTabById(second);
     QCOMPARE(requests(spy), QStringList({request(second, PageMedia::Command::Play)}));
@@ -528,7 +472,6 @@ void tst_pagemedia::aTabLeftIsHeldUntilItIsBack()
     tabs.activateTabById(second);
     QVERIFY(spy.isEmpty());
 
-    // A page that loads while it is held takes the hold with it.
     media.answer(second, PageMedia::Command::Query, QStringLiteral("playing"));
     tabs.activateTabById(first);
     media.forget(second);
@@ -544,8 +487,6 @@ void tst_pagemedia::outOfSightThePagesAreAskedAgain()
     PageMedia media(&tabs, Delay);
     QSignalSpy spy(&media, &PageMedia::requested);
 
-    // Out of sight and back, each is carried to every page by asking it once more, at
-    // once.
     media.setBackground(true);
     QCOMPARE(requests(spy), QStringList({request(0, PageMedia::Command::Query)}));
     spy.clear();
@@ -563,7 +504,7 @@ void tst_pagemedia::refreshAsksEveryPageOnce()
     PageMedia media(&tabs, Delay);
     QSignalSpy spy(&media, &PageMedia::requested);
 
-    // Several decoders report at once; the pages are asked once, a moment later.
+    // Several decoders at once -> pages asked once, after delay.
     media.refresh();
     media.refresh();
     media.refresh();
@@ -585,7 +526,6 @@ void tst_pagemedia::anotherTabInFrontAsksAgain()
     QVERIFY(spy.wait(Delay * 50));
     QCOMPARE(requests(spy), QStringList({request(0, PageMedia::Command::Query)}));
 
-    // A tab moved in the grid is the same tab in front: nothing is asked.
     spy.clear();
     tabs.moveTab(0, 1);
     QTest::qWait(Delay * 5);

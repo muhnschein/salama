@@ -1,19 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The downloads, said on the browsing page on the bar, so that nobody has to go to the
-// list to see what became of one (docs/DECISIONS/0038-download-status.md). It comes up
-// as a download starts, and speaks for the downloads of this run that have not arrived --
-// coming, paused or failed -- as DownloadModel's tray counts them:
-//
-//  * one: its name, and how far along it is, paused or failed
-//  * more: how many, and how far along together
-//
-// When one arrives it says so for a few seconds. A tap, on it or on its Show, opens the
-// list of downloads, where each has its own controls, whatever the banner says; a swipe
-// sideways takes it away until a download starts or changes state. It goes once there is
-// nothing left to say. It is the bar every banner is (BarBanner.qml), as the one a link
-// opened behind the page says it with (docs/DECISIONS/0046-link-menu.md).
+// Swipe hides until a download starts or changes state.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -21,10 +9,8 @@ import harbour.salama 1.0
 BarBanner {
     id: banner
 
-    // Whether the page leaves room for it: not while the address is edited, a word is
-    // looked for, or the grid is out.
+    // False while address edited, find open, or grid out.
     property bool allowed: true
-    // The name of the download that arrived last, said for a moment.
     property string flashName
     readonly property bool flashing: flashTimer.running
     readonly property bool single: !flashing && DownloadModel.trayCount === 1
@@ -35,7 +21,6 @@ BarBanner {
         DownloadModel.dismissTray()
     }
 
-    // A tap: the list, never a file.
     function activate() {
         pageStack.push(Qt.resolvedUrl("../pages/DownloadsPage.qml"))
     }
@@ -52,7 +37,6 @@ BarBanner {
                 + DownloadModel.trayProgress + "%"
     }
 
-    // The line under the heading: none for several downloads.
     function line() {
         if (flashing) {
             //: The banner as a download arrives

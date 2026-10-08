@@ -1,124 +1,127 @@
 # SCOPE.md — salama
 
-Web browser for Sailfish OS. Silica UI over the platform Gecko engine via `Sailfish.WebView`. Package name `harbour-salama`. Distributed only through Jolla Harbour.
+Sailfish OS web browser. Silica UI over platform Gecko via `Sailfish.WebView`. Package `harbour-salama`. Jolla Harbour only.
 
 ## 1. Goal
 
-A browser with a contemporary interface, reusing the platform browser stack unmodified. This is a UI project. The engine is not in scope.
+Contemporary UI on unmodified platform browser stack. UI project. Engine out of scope.
 
 ## 2. Target
 
 - **Device:** Jolla Phone 2026 only. `aarch64` only.
-- **OS:** Sailfish OS 5.2 or newer. `Requires: sailfish-version >= 5.2.0`.
-- **SDK:** the 5.2 SDK. Older SDKs produce a `__libc_start_main` version Harbour rejects; the SDK version is therefore a Harbour rule, not a preference.
+- **OS:** Sailfish OS 5.2+. `Requires: sailfish-version >= 5.2.0`.
+- **SDK:** 5.2. Older SDKs emit `__libc_start_main` version Harbour rejects, so SDK version is Harbour rule.
 
-No effort is made for other or older hardware, `armv7hl`, `i486`, or the emulator. Code paths, layouts, and tests exist for one screen and one architecture.
+No work for other/older hardware, `armv7hl`, `i486`, emulator. One screen, one arch.
 
 ## 3. Non-goals
 
-- Building, patching, or bundling Gecko/xulrunner.
-- Supporting community `-next` engine stacks. If Jolla ships a newer engine, salama inherits it.
-- Distribution via Chum, OpenRepos, or side-loaded RPMs.
+- Building, patching, bundling Gecko/xulrunner.
+- Community `-next` engine stacks. Newer Jolla engine inherited as-is.
+- Chum, OpenRepos, side-loaded RPMs.
 - WebExtensions.
-- Content blocking beyond what `WebEngineSettings` exposes.
-- Multi-architecture or multi-device support.
-- Any language other than QML and C++.
+- Content blocking beyond `WebEngineSettings`.
+- Multi-arch, multi-device.
+- Languages other than QML, C++.
 
 ## 4. Constraints
 
 | Constraint | Consequence |
 |---|---|
-| Harbour allowed-API list | Only `Sailfish.WebView`, `.Controls`, `.Popups`, `.Pickers`, `Sailfish.WebEngine`, Silica, and listed Qt/Nemo modules. No private `Sailfish.Browser` plugin. |
-| Engine version tracks OS | Web-platform feature set is not ours to change. |
-| Qt 5.6 | No newer Qt/QML APIs. Host Qt 5.15 accepts what 5.6 rejects; see §7 static QML tests. |
-| `harbour-` namespace, Sailjail | All storage under the app data dir. `[X-Sailjail]` permissions minimal and listed in `docs/HARBOUR.md`. |
-| MPL-2.0 (sailfish-browser) | Ported code stays MPL-2.0 with attribution preserved. Project licence: MPL-2.0. |
+| Harbour allowed-API list | Only `Sailfish.WebView`, `.Controls`, `.Popups`, `.Pickers`, `Sailfish.WebEngine`, Silica, listed Qt/Nemo modules. No private `Sailfish.Browser` plugin. |
+| Engine version tracks OS | Web-platform features not ours. |
+| Qt 5.6 | No newer Qt/QML APIs. Host Qt 5.15 accepts what 5.6 rejects; static QML tests (§6) catch it. |
+| `harbour-` namespace, Sailjail | Storage under app data dir. `[X-Sailjail]` permissions minimal, listed in `docs/HARBOUR.md`. |
+| MPL-2.0 (sailfish-browser) | Ported code stays MPL-2.0, attribution kept. Project licence MPL-2.0. |
 
 ## 5. Architecture
 
 ```
 qml/           Silica UI. Root, cover/, pages/, components/.
-src/           C++ core. QObject / QAbstractListModel types exposed to QML.
+src/           C++ core. QObject / QAbstractListModel types for QML.
   tabs/        TabModel, TabPersistence
   history/     HistoryModel (SQLite)
   bookmarks/   BookmarkModel (SQLite)
-  settings/    Settings and a section per settings page (QSettings)
-  startpage/   StartPage: what a tab with no address shows
-  reader/      Reader: the reader view, and Firefox's style sheet for it
+  settings/    Settings, one section per settings page (QSettings)
+  startpage/   StartPage: what empty tab shows
+  reader/      Reader view, Firefox style sheet
   notifications/
-               NotificationPermissions, WebNotifications: the pages' notifications
-  permissions/ SitePermissions, SiteExceptions: what each site may do
-  share/       ShareReceiver: links shared to the browser from the share sheet
+               NotificationPermissions, WebNotifications: page notifications
+  permissions/ SitePermissions, SiteExceptions: per-site permissions
+  share/       ShareReceiver: links from share sheet
 third_party/   Readability (Mozilla, Apache-2.0), verbatim
 tests/         QtTest units, QML load tests, silica-stubs/, static QML tests
 ci/            harbour-check.sh, harbour-check-selftest.sh, packaging-lint.sh,
                qml-lint.sh, harbour/ (validator allow-lists, waivers.conf)
 rpm/           harbour-salama.spec
-docs/          See §8
+docs/          See §7
 ```
 
-Reuse policy:
+Reuse:
 - Platform, unmodified: WebView, text selection, JS/auth/permission dialogs, file pickers, download plumbing.
-- Ported from sailfish-browser: engine-independent C++ model and tab-container logic.
-- From Firefox: the reader view -- Readability as published, `aboutReader.css` adapted; web notifications -- Firefox's question and answers, kept in the engine's permissions.
+- From sailfish-browser: engine-independent C++ models, tab-container logic.
+- From Firefox: reader view (Readability as published, `aboutReader.css` adapted); web notification question and answers, stored in engine permissions.
 - New: all UI.
 
-`Sailfish.WebView` is imported in the browsing page only, so a release without the engine package breaks browsing rather than the app.
+`Sailfish.WebView` imported in browsing page only: missing engine package breaks browsing, not app.
 
 ## 6. Engineering standards
 
-Adopted from postivene and vuo. The governing rule: **`make check` runs exactly what CI runs, from a clean checkout, with no phone, no SDK, and no network.** Anything that cannot be verified under those conditions is badly layered or sits behind an explicit opt-in gate.
+From postivene and vuo. Rule: **`make check` = CI, from clean checkout, no phone, no SDK, no network.** Anything unverifiable that way is mislayered or behind explicit opt-in.
 
 ### Code
-- C++14, `-Wall -Wextra -Wpedantic -Werror`. `clang-tidy` with a checked-in config; findings are errors.
+- C++14, `-Wall -Wextra -Wpedantic -Werror`. `clang-tidy`, checked-in config, findings are errors.
 - `clang-format` checked in; `make fmt` fails on drift.
 - `qmllint` clean. No `console.log` in shipped QML. `Theme` values, never pixel counts.
-- Engine quirks are isolated in C++ with a comment naming the upstream issue. None in QML.
+- QML file ≤ 400 lines. Waivers listed in `ci/qml-lint.sh`, with reason; nothing over 600.
+- Engine quirks isolated in C++, comment names upstream issue. None in QML.
 - One responsibility per QML file.
-- No dead code, no commented-out code, no TODO without an issue number.
-- Every user-visible string translatable; catalogs current and compiling.
+- No dead code, no commented-out code, no TODO without issue number.
+- Every user-visible string translatable; catalogs current, compiling.
+- Comments terse: why, not what. No narrative.
 
 ### Tests
-1. **C++ unit tests** (QtTest) for every model. Coverage of `src/` ≥ 80%, enforced in CI.
-2. **QML load tests** against `tests/silica-stubs/`: the real page files, driven by `objectName`. Stubs imitate no layout; these prove structure, not appearance.
-3. **Static QML tests**: Qt 5.6 rules that host Qt accepts silently; `Sailfish.WebView` imported only where §5 says; every `model.<role>` a delegate binds exists on its model.
-4. **Packaging checks** (`ci/packaging-lint.sh`): spec parses, desktop entry validates, shell scripts clean, translations compile, every `docs/*.md` a comment points at exists. Missing tool is SKIP locally, failure in CI (`PACKAGING_LINT_STRICT=1`).
-5. **Device smoke test** before every tag, run under `sailjail /usr/bin/harbour-salama`, never from the IDE. Checklist in `docs/TESTING.md`.
+1. **C++ unit tests** (QtTest) per model. `src/` coverage ≥ 80%, enforced in CI.
+2. **QML load tests** against `tests/silica-stubs/`: real page files, driven by `objectName`. Stubs have no layout; prove structure, not looks.
+3. **Static QML tests**: Qt 5.6 rules host Qt accepts silently; `Sailfish.WebView` only where §5 says; every `model.<role>` delegate binds exists on its model.
+4. **Packaging checks** (`ci/packaging-lint.sh`): spec parses, desktop entry valid, shell scripts clean, translations compile, every `docs/*.md` a comment names exists. Missing tool: SKIP locally, fail in CI (`PACKAGING_LINT_STRICT=1`).
+5. **Device smoke test** before every tag, under `sailjail /usr/bin/harbour-salama`, never from IDE.
 
-Tests run one per process. No retries: a test that passes on the second attempt is a defect.
-A bug fix includes a regression test or a written justification in the PR.
+One test per process. No retries: pass on second attempt = defect.
+Bug fix brings regression test or written justification in PR.
 
 ### Harbour gate
 Two checks, kept honest against each other:
 
 | | `ci/harbour-check.sh` | `sfdk check -s harbour` |
 |---|---|---|
-| Runs | every pull request | when the RPM is built |
+| Runs | every PR | on RPM build |
 | Reads | source tree | built package |
 | Authority | no | **yes** |
 
-`ci/harbour-check.sh` reimplements Jolla's `rpmvalidation.sh` logic over the sources: naming, install layout, desktop file, Sailjail keys and permissions, icons, QML imports against the allow-list, linked libraries, RPM metadata, runtime path policy. `ci/harbour/` holds the validator's allow-lists copied verbatim; a CI step warns when they lag upstream. `ci/harbour-check-selftest.sh` breaks each rule in a throwaway tree and asserts the check names it. Anything not in `ci/harbour/waivers.conf` fails.
+`ci/harbour-check.sh` reimplements Jolla's `rpmvalidation.sh` over sources: naming, install layout, desktop file, Sailjail keys/permissions, icons, QML imports vs allow-list, linked libraries, RPM metadata, runtime paths. `ci/harbour/` holds validator allow-lists verbatim; CI step warns when they lag upstream. `ci/harbour-check-selftest.sh` breaks each rule in throwaway tree, asserts check names it. Anything not in `ci/harbour/waivers.conf` fails.
 
 ### Static analysis
-SonarQube Cloud on every pull request. A **report, not a gate**: `make check` decides what merges; nothing Sonar says changes a build's colour. Coverage is measured locally and imported, not measured by the scanner.
+SonarQube Cloud on every PR. **Report, not gate**: `make check` decides merges. Coverage measured locally, imported.
 
 ### Process
 - `main` always releasable. Feature branches, squash merge, linear history.
-- PR requires: green CI, one review, changelog entry.
+- PR needs: green CI, one review, changelog entry.
 - Commit subject imperative, ≤ 72 chars; body says why.
-- Semantic versioning. The version is the spec's; CI builds, validates and publishes each release from a `v` tag on `main`.
-- Dependencies: Harbour allowed list only. Any addition updates `docs/HARBOUR.md` in the same PR.
+- Semver. Version lives in spec; CI builds, validates, publishes each release from `v` tag on `main`.
+- Dependencies: Harbour allowed list only. Addition updates `docs/HARBOUR.md` in same PR.
 
 ## 7. Documentation
 
-Kept in `docs/`. Updated in the PR that changes the subject. No document duplicates another.
+In `docs/`. Updated in PR that changes subject. No duplication.
 
 | File | Content | Limit |
 |---|---|---|
-| `README.md` | Build, check, package in three commands each | 1 page |
-| `HARBOUR.md` | Jolla's rules, how CI gates them, current waivers, Sailjail permissions and why each | 2 pages |
-| `BUILDING.md` | Toolchain pins, lints, test tiers, how a device RPM is built | 2 pages |
+| `README.md` | Build, check, package, three commands each | 1 page |
+| `HARBOUR.md` | Jolla rules, CI gates, waivers, Sailjail permissions + why | 2 pages |
+| `BUILDING.md` | Toolchain pins, lints, test tiers, device RPM build | 2 pages |
 | `RELEASING.md` | Tag, build, validate, submit | 1 page |
+| `TRANSLATING.md` | Filling a catalog | 1 page |
 | `CHANGELOG.md` | Keep-a-Changelog, user-facing entries only | — |
 
-Not maintained: design narratives, roadmaps beyond this file, tutorials, marketing copy.
+Not kept: design narratives, roadmaps beyond this file, tutorials, marketing copy.

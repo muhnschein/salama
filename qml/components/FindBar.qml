@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Searching the page in front, from the menu: a field laid over the navigation bar,
-// with the previous and the next match and a close button beside it. What is typed
-// goes to the page with Enter, and the keyboard goes with it so the match can be seen;
-// the arrows then step through the matches, round the ends of the page. The engine
-// marks each match and scrolls to it itself (embedlite-components
-// jsscripts/embedhelper.js), and what it is told is EngineMessages'
-// (docs/DECISIONS/0021-menu-sheet.md).
+// Engine highlights and scrolls to matches itself (embedlite-components embedhelper.js).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -15,20 +9,15 @@ import harbour.salama 1.0
 Rectangle {
     id: findBar
 
-    // The page in front.
     property Item view: null
-    // The page the bar was opened on, which is the one told when the search ends:
-    // by then another page may be in front.
+    // Page search started on; told on close, since front page may have changed.
     property Item searched: null
     property bool active: false
-    // What was last searched for, which the arrows step through.
     property string term
-    // Whether the page found it; the field says so when it did not.
     property bool found: true
 
     objectName: "findBar"
     visible: active
-    // Opaque, as the bar it lies over is.
     color: Theme.highlightDimmerColor
 
     function open() {
@@ -40,8 +29,6 @@ Rectangle {
         field.forceActiveFocus()
     }
 
-    // The highlight goes from the page with the search, and the next search starts
-    // from its top.
     function close() {
         if (!active) {
             return
@@ -74,15 +61,12 @@ Rectangle {
                                   EngineMessages.findRequest(term, true, backwards))
     }
 
-    // The page's answer to each search and each step.
     function received(message, data) {
         if (message === EngineMessages.findResultMessage) {
             found = EngineMessages.findFound(data)
         }
     }
 
-    // Another page in front -- a tab chosen, or this one closed -- and the search
-    // was that one's.
     onViewChanged: close()
 
     Connections {
@@ -90,8 +74,7 @@ Rectangle {
         onRecvAsyncMessage: findBar.received(message, data)
     }
 
-    // The bar's presses are the bar's: the navigation bar under it keeps none of
-    // them while it is covered.
+    // Swallow presses so covered nav bar gets none.
     MouseArea {
         anchors.fill: parent
     }
@@ -105,9 +88,7 @@ Rectangle {
             right: previousButton.left
             leftMargin: Theme.paddingMedium
             verticalCenter: parent.verticalCenter
-            // Its text on the line the address field's is on: Silica lays a field out
-            // with room for its label and underline, and says how far off centre that
-            // leaves the text.
+            // Silica reports text offset left by label/underline room; aligns with address field.
             verticalCenterOffset: field.textVerticalCenterOffset === undefined
                                   ? 0 : field.textVerticalCenterOffset
         }

@@ -12,28 +12,12 @@ namespace Salama {
 
 namespace {
 
-// What the script answers.
 const QString Playing = QStringLiteral("playing");
 const QString Paused = QStringLiteral("paused");
 
-// The page's own media, and that of its frames from the same site: a frame from
-// another site has a document the page cannot reach, and a null contentDocument says
-// so. Of each element: the tab's muted flag applied to it -- and taken off again only
-// where it was this browser that put it on (salamaMuted); then the command. Paused
-// from here, an element is marked (salamaPaused), and play resumes what is marked and
-// nothing else: the button undoes the pause, it does not start what the page has not.
-// What counts is what makes a sound: an element the page has muted or turned down to
-// nothing, or a video the engine says has no sound track (Gecko's mozHasAudio,
-// undefined on an <audio>, which has nothing else), plays nothing anyone hears.
-// While the application is out of sight (concealed), a video that plays is hidden --
-// its own visibility, so the page's layout stays as it is -- and shown again once the
-// application is back (salamaConcealed keeps what the page had set): Gecko stops
-// decoding the pictures of a video nobody can see, and what plays on is its sound.
-//
-// The answer is JSON: the state, and while something plays or was paused from here what
-// the page says of it for the cover -- its Media Session's title, artist and largest
-// picture (the widest by its sizes; of pictures as wide, the last listed, which is how a
-// page lists them), and failing a picture there, the poster of a video it plays.
+// Muted flag removed only where we set it (salamaMuted); play resumes only what we paused
+// (salamaPaused). concealed: hide playing video via visibility so Gecko stops decoding;
+// salamaConcealed restores page's value.
 const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed = %3;
  var media = [];
  var collect = function (doc) {
@@ -80,8 +64,7 @@ const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed
  if (said.state && !said.artwork && poster) { said.artwork = poster; }
  return JSON.stringify(said);)";
 
-// What the script answered, read. Its JSON, or a state alone, which is also how an
-// answer that went wrong is handed back: as nothing.
+// "" = failed answer.
 struct Answer
 {
     TabModel::MediaState state = TabModel::NoMedia;
@@ -105,8 +88,7 @@ Answer readAnswer(const QVariant &answer)
     }
     read.metadata.title = said.value(QStringLiteral("title")).toString().simplified();
     read.metadata.artist = said.value(QStringLiteral("artist")).toString().simplified();
-    // Only a picture the cover can fetch on its own: not one the page made for itself
-    // (blob:), nor one carried whole in its address (data:), however large.
+    // Cover fetches itself: no blob:, no data:.
     const QUrl artwork(said.value(QStringLiteral("artwork")).toString());
     if (artwork.isValid() &&
         (artwork.scheme() == QLatin1String("https") || artwork.scheme() == QLatin1String("http"))) {
@@ -142,15 +124,13 @@ PageMedia::PageMedia(TabModel *tabs, int queryDelay, QObject *parent)
     m_queryTimer.setSingleShot(true);
     m_queryTimer.setInterval(queryDelay);
     connect(&m_queryTimer, &QTimer::timeout, this, [this]() { request(0, Command::Query); });
-    // A tab being left is paused while its page is still the one on the screen: told
-    // it is hidden, a page may pause itself where nothing here can play it again.
+    // Pause while still on screen: page told it's hidden may pause itself for good.
     connect(m_tabs, &TabModel::activeTabLeaving, this, [this](int tabId) {
         if (m_tabs->mediaState(tabId) == TabModel::MediaPlaying) {
             m_held.insert(tabId);
             request(tabId, Command::Pause);
         }
     });
-    // Back in front, it plays again what was held; and every page is asked.
     m_frontTabId = m_tabs->activeTabId();
     connect(m_tabs, &TabModel::activeTabChanged, this, [this]() {
         if (m_tabs->activeTabId() != m_frontTabId) {
@@ -194,8 +174,7 @@ void PageMedia::answer(int tabId, Command command, const QVariant &answer)
     if (command == Command::Pause || m_tabs->mediaState(tabId) != TabModel::MediaPlaying) {
         return;
     }
-    // One tab plays at a time, and it is the one in front: it pauses the others, and
-    // one behind it that plays while it does is paused.
+    // Front tab pauses others, and any behind that starts meanwhile.
     const int front = m_tabs->activeTabId();
     if (tabId != front) {
         if (m_tabs->mediaState(front) == TabModel::MediaPlaying) {
@@ -227,7 +206,7 @@ void PageMedia::toggleMuted(int tabId)
         return;
     }
     m_tabs->setMuted(tabId, false);
-    // Behind the front the engine holds whatever the page plays: it is played there.
+    // Engine suspends media behind front: front it, play there.
     if (tabId != m_tabs->activeTabId()) {
         m_held.insert(tabId);
         m_tabs->activateTabById(tabId);
@@ -243,8 +222,7 @@ bool PageMedia::isHeard(int tabId) const
 
 void PageMedia::setBackground(bool background)
 {
-    // At once, not with the engine's words: on the way back, the pictures are wanted
-    // the moment the page is.
+    // Not debounced: pictures needed as soon as page shown.
     if (m_background != background) {
         m_background = background;
         request(0, Command::Query);

@@ -14,9 +14,7 @@ namespace Salama {
 class TabModel;
 class TabPersistence;
 
-// The tabs closed most recently, newest first, for opening again from the panel
-// under the grid's foot. Kept to a few dozen and written to the database with the
-// tabs, so what was closed before a restart is still there after it.
+// Recently closed tabs, newest first, capped, persisted.
 class ClosedTabModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -33,7 +31,7 @@ public:
 
     static const int Limit = 30;
 
-    // A null persistence keeps the list in memory only.
+    // Null persistence = memory only.
     ClosedTabModel(TabModel *tabs, TabPersistence *persistence);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -43,11 +41,9 @@ public:
     int count() const;
     const QList<ClosedTab> &closedTabs() const;
 
-    // Opens the tab at this row again, in the current group, and forgets it here.
     Q_INVOKABLE void reopen(int row);
     Q_INVOKABLE void clear();
 
-    // Called by TabModel as a tab closes.
     void record(const Tab &tab);
 
 signals:

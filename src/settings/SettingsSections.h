@@ -17,8 +17,6 @@
 
 namespace Salama {
 
-// The settings file and a section per settings page over it: what Core keeps, and what
-// the tests build over a file of their own.
 class SettingsSections
 {
 public:
@@ -35,10 +33,10 @@ public:
     SitePermissionSettings *sitePermissions();
 
 private:
-    // First, so that it is made before the sections that borrow it and goes after them.
+    // First: sections borrow it.
     QSettings m_file;
     Settings m_general;
-    // Before the search settings, which choose among its engines.
+    // Before m_search, which borrows it.
     SearchEngines m_searchEngines;
     SearchSettings m_search;
     ReaderSettings m_reader;

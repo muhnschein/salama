@@ -1,15 +1,14 @@
 #!/bin/bash
-# ci/packaging-lint.sh — packaging checks (SCOPE.md §7, test tier 4).
+# Packaging checks (SCOPE.md §6, test tier 4):
+#  * spec parses (rpmspec)
+#  * desktop entry validates (desktop-file-validate)
+#  * shell scripts clean (shellcheck)
+#  * translations compile, current (lrelease, lupdate)
+#  * every docs/*.md a comment names exists
+#  * changelog has Unreleased; Sailjail permissions documented
+#  * one version: CMake = spec, changelog has its section
 #
-#  * the spec parses            (rpmspec)
-#  * the desktop entry validates (desktop-file-validate)
-#  * shell scripts are clean     (shellcheck)
-#  * translations compile and are current (lrelease, lupdate)
-#  * every docs/*.md a comment points at exists
-#  * the changelog has an Unreleased section; Sailjail permissions are documented
-#  * one version: CMake's is the spec's, and the changelog has its section
-#
-# A missing tool is SKIP locally and a failure with PACKAGING_LINT_STRICT=1 (CI).
+# Missing tool: SKIP locally, fail with PACKAGING_LINT_STRICT=1 (CI).
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -61,8 +60,7 @@ sources_of() { # catalogue
     grep -o '<source>[^<]*</source>' "$ts" | sort -u
     return 0
 }
-# Compiled as the RPM compiles them, and every warning counts: a plural form too few or a
-# stray tag is a warning to lrelease and a string in English on the phone.
+# Compiled as RPM does; any warning fails (missing plural form or stray tag = English on phone).
 if have lrelease; then
     tmp=$(mktemp -d)
     for ts in "$ROOT"/translations/*.ts; do
@@ -78,13 +76,12 @@ for ts in "$ROOT"/translations/*.ts; do
     [[ $ts == "$TS_SOURCE" ]] && continue
     diff -q <(sources_of "$TS_SOURCE") <(sources_of "$ts") >/dev/null || fail translations "translations/$(basename "$ts")" "source strings differ from harbour-salama.ts; run 'make translations'"
 done
-# Current: regenerated from the source as `make translations` regenerates them, every
-# catalog comes out exactly as committed. A qsTr() added without that is a string missing
-# from forty languages, invisible until someone reads the app in one of them.
+# Current: `make translations` output must equal committed catalogs. Else new qsTr()
+# silently missing from forty languages.
 if have lupdate; then
     tmp=$(mktemp -d)
     cp "$ROOT"/translations/*.ts "$tmp/"
-    # The application's own sources, not the page scripts src/reader/reader.qrc compiles in.
+    # Own sources only, not page scripts src/reader/reader.qrc compiles in.
     if (cd "$ROOT" && lupdate -silent -no-obsolete -locations none -extensions cpp,h,qml qml src -ts "$tmp"/*.ts >/dev/null 2>&1); then
         for ts in "$ROOT"/translations/*.ts; do
             cmp -s "$ts" "$tmp/$(basename "$ts")" || fail translations "translations/$(basename "$ts")" "catalog is stale; run 'make translations' and commit"
@@ -107,9 +104,8 @@ for permission in $permissions; do
     grep -q "\b$permission\b" "$ROOT/docs/HARBOUR.md" 2>/dev/null || fail permissions docs/HARBOUR.md "Sailjail permission '$permission' is not documented"
 done
 
-# 7. One version. The spec's is the one a release is cut from (docs/RELEASING.md); the
-#    host build's CMake project says the same, and the changelog has the section that
-#    becomes the release's text, so a version bumped without its notes stops here.
+# 7. One version. Spec's is release version (docs/RELEASING.md); CMake must match, changelog
+#    must have its section, so bump without notes stops here.
 spec_version=$(sed -n 's/^Version:[[:space:]]*//p' "$SPEC")
 cmake_version=$(sed -n 's/^project(harbour-salama VERSION \([0-9.]*\).*/\1/p' "$ROOT/CMakeLists.txt")
 [[ $cmake_version == "$spec_version" ]] || fail version CMakeLists.txt "project VERSION '$cmake_version' is not the spec's Version '$spec_version'"

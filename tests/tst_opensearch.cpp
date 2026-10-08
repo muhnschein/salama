@@ -9,7 +9,6 @@ using Salama::OpenSearchEngine;
 
 namespace {
 
-// A description as sites write them: the OpenSearch namespace, a name, and what is given.
 QString description(const QString &body, const QString &name = QStringLiteral("Find"))
 {
     return QStringLiteral("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -108,8 +107,7 @@ void tst_opensearch::refusesWhatIsNotUsable()
     QVERIFY(engine.name.isEmpty());
 }
 
-// OpenSearch's other parameters have nothing to be given: the optional ones go, and the
-// rest are empty, which every description allows.
+// Other OpenSearch params: optional dropped, rest empty (every description allows).
 void tst_opensearch::readsTheOtherParameters_data()
 {
     QTest::addColumn<QString>("given");
@@ -151,8 +149,7 @@ void tst_opensearch::readsTheOtherParameters()
     QCOMPARE(engine.urlTemplate, expected);
 }
 
-// A description may keep its parameters apart from the address, in <Param> children,
-// as Firefox's own do.
+// <Param> children kept apart from url, as Firefox's own.
 void tst_opensearch::addsParams()
 {
     OpenSearchEngine engine = OpenSearch::parse(description(QStringLiteral(
@@ -194,7 +191,6 @@ void tst_opensearch::onlyTheFirstShortNameIsTheName()
     QCOMPARE(engine.name, QStringLiteral("Find & Seek"));
 }
 
-// Without a name there is still a place to search, which is what makes it an engine.
 void tst_opensearch::namelessIsStillAnEngine()
 {
     const OpenSearchEngine engine = OpenSearch::parse(QStringLiteral(
@@ -222,10 +218,10 @@ void tst_opensearch::fill()
              QStringLiteral("https://find.example/s?q=a%26b%3Dc%23d&alt=1"));
     QCOMPARE(OpenSearch::fill(address, QStringLiteral("100%")),
              QStringLiteral("https://find.example/s?q=100%25&alt=1"));
-    // What the words are does not read as more of the template.
+    // Search words not re-read as template.
     QCOMPARE(OpenSearch::fill(address, QStringLiteral("{searchTerms}")),
              QStringLiteral("https://find.example/s?q=%7BsearchTerms%7D&alt=1"));
-    // A template with a percent sign of its own is not an argument list.
+    // Template's own % not treated as arg list.
     QCOMPARE(OpenSearch::fill(QStringLiteral("https://find.example/%20/%1?q={searchTerms}"),
                               QStringLiteral("x")),
              QStringLiteral("https://find.example/%20/%1?q=x"));

@@ -15,13 +15,7 @@ namespace Salama {
 class SearchEngines;
 class Storage;
 
-// What a tab with no address shows, in place of a home page: the lists Firefox's home
-// offers, read from the history and the bookmarks (docs/DECISIONS/0032-start-page.md).
-// The sites visited most, one tile per site; the first bookmarks, in their order; and
-// the pages read last. A page of search results is in neither history list: a search is
-// something done, not a site visited, and every search would otherwise make its engine
-// the site visited most. Which lists the page shows is the settings' to say; all three
-// are kept current whatever they say, which costs a few small queries per change.
+// Search result pages excluded, else engine tops list.
 class StartPage : public QObject
 {
     Q_OBJECT
@@ -30,29 +24,22 @@ class StartPage : public QObject
     Q_PROPERTY(Salama::SiteListModel *recentPages READ recentPages CONSTANT)
 
 public:
-    // Two rows of four tiles each, and a handful of rows.
     static const int TopSiteLimit = 8;
     static const int BookmarkLimit = 8;
     static const int RecentPageLimit = 5;
 
-    // `engines` says which pages are results, and is read for as long as the page lives.
+    // `engines` must outlive this.
     StartPage(const Storage &storage, const SearchEngines &engines, QObject *parent = nullptr);
 
     SiteListModel *topSites();
     SiteListModel *bookmarks();
     SiteListModel *recentPages();
 
-    // Reads the three lists again. Core has it done whenever the history or the
-    // bookmarks change.
     Q_INVOKABLE void refresh();
 
-    // What makes two pages one site: the host without "www.", or the whole address
-    // of one that has no host.
     static QString siteOf(const QString &url);
 
 private:
-    // The history's pages in the order given, searches left out, until there are
-    // `limit` of them; with `onePerSite`, only the first page of each site.
     QList<Site> readHistory(const QString &order, int limit, bool onePerSite) const;
     QList<Site> readBookmarks() const;
     static Site siteAt(const QSqlQuery &query);

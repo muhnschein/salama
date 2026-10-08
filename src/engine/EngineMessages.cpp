@@ -26,9 +26,6 @@ bool isWebScheme(const QString &scheme)
     return scheme == QLatin1String("http") || scheme == QLatin1String("https");
 }
 
-// What the link sheet shows of an address: another application's without its scheme --
-// the mailbox, the number -- and a page's host without www, then its path and query as
-// they read, percent signs decoded; a bare host has nothing after it.
 QString shownAddress(const QString &address)
 {
     if (address.isEmpty()) {
@@ -51,16 +48,12 @@ QString shownAddress(const QString &address)
     return SearchSettings::displayAddress(address) + rest;
 }
 
-// nsITypeAheadFind's answers that mean the text is on the page.
 const int FindFound = 0;
 const int FindWrapped = 2;
 
-// The preference that says which cookies are accepted, which is two settings' at once:
-// tracking protection's while it is on, and Site permissions' while it is off
-// (docs/DECISIONS/0039-site-permissions.md).
+// Tracking protection's while on, Site permissions' while off.
 const char *const CookieBehavior = "network.cookie.cookieBehavior";
 
-// One engine preference, and its value at each level of PrivacySettings::TrackingProtection.
 struct TrackingPreference
 {
     const char *name;
@@ -69,20 +62,12 @@ struct TrackingPreference
     QVariant strict;
 };
 
-// Names from gecko-dev modules/libpref/init/StaticPrefList.yaml; Standard's values are
-// that file's defaults as browser/app/profile/firefox.js leaves them, and Strict's are
-// what ContentBlockingPrefs.sys.mjs sets for the features named in firefox.js's
-// browser.contentblocking.features.strict, given in the comments. An engine that
-// does not know a name keeps it as a preference nothing reads.
+// Standard = Firefox defaults; Strict = ContentBlockingPrefs.sys.mjs features. Unknown names
+// inert.
 const QVector<TrackingPreference> &trackingPreferences()
 {
-    // Content classifier features, by their names in kFeatures (gecko-dev
-    // toolkit/components/content-classifier/ContentClassifierService.cpp). Annotating
-    // marks a request as a tracker's, which is what cookie behaviour 5 reads to refuse
-    // a tracker its cookies; blocking cancels the request. "trackers-content" is the
-    // level-2 list, which Firefox annotates in Strict and never blocks. Exception-only
-    // features go last in a blocking list, where they let an earlier match load after
-    // all: "major" for a site that breaks outright, "minor" for one missing an embed.
+    // Annotate = mark tracker (cookie behaviour 5 reads it); block = cancel. Exception features
+    // go last: "major" = site breaks, "minor" = missing embed.
     static const QString standardAnnotation =
         QStringLiteral("trackers,social-trackers,fingerprinters,cryptominers,email-trackers");
     static const QString strictAnnotation =
@@ -95,33 +80,23 @@ const QVector<TrackingPreference> &trackingPreferences()
                        "major-exceptions");
 
     static const QVector<TrackingPreference> preferences{
-        // "cookieBehavior5": BEHAVIOR_PARTITION_FOREIGN, Total Cookie Protection
-        // (netwerk/cookie/nsICookieService.idl). At Off, the reader's own choice of
-        // cookies stands in for the 0 here (trackingProtectionPreferences()).
+        // Total Cookie Protection. At Off, reader's cookie choice replaces 0.
         {CookieBehavior, 0, 5, 5},
         {"privacy.trackingprotection.content.annotation.enabled", false, true, true},
         {"privacy.trackingprotection.content.annotation.engines", QString(), standardAnnotation,
          strictAnnotation},
-        // "fp", "cryptoTP"; and "tp", "stp", "emailTP" in Strict.
         {"privacy.trackingprotection.content.protection.enabled", false, true, true},
         {"privacy.trackingprotection.content.protection.engines", QString(), standardBlocking,
          strictBlocking},
-        // "lvl2": a request on the level-2 list counts as a tracker's.
         {"privacy.annotate_channels.strict_list.enabled", false, false, true},
-        // The allow-lists for sites tracking protection breaks; Strict keeps the one
-        // for sites that break outright.
+        // Strict keeps only outright-breakage allow-list.
         {"privacy.trackingprotection.allow_list.baseline.enabled", true, true, true},
         {"privacy.trackingprotection.allow_list.convenience.enabled", true, true, false},
-        // "fpp"
         {"privacy.fingerprintingProtection", false, false, true},
-        // "qps"
         {"privacy.query_stripping.enabled", false, false, true},
-        // "rpTop"
         {"network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation", false, false,
          true},
-        // "btp": MODE_ENABLED 1; MODE_ENABLED_DRY_RUN 3, which Firefox counts as off
-        // (toolkit/components/antitracking/bouncetrackingprotection/
-        // nsIBounceTrackingProtection.idl).
+        // MODE_ENABLED 1; MODE_ENABLED_DRY_RUN 3 = off per Firefox.
         {"privacy.bounceTrackingProtection.mode", 3, 3, 1},
     };
     return preferences;
@@ -194,9 +169,7 @@ QString EngineMessages::themeColor(const QString &value)
 
     QColor color;
     if (text.startsWith(QLatin1String("rgb"), Qt::CaseInsensitive)) {
-        // rgb(r, g, b) and rgba(r, g, b, a), in either the comma-separated form or the
-        // space-separated one. The channels are the first three numbers in it; what
-        // follows is alpha, which is dropped anyway.
+        // First three numbers = channels; alpha dropped.
         const QRegularExpression number(QStringLiteral("\\d+"));
         QRegularExpressionMatchIterator matches = number.globalMatch(text);
         QList<int> channels;
@@ -207,7 +180,7 @@ QString EngineMessages::themeColor(const QString &value)
             color = QColor(channels.at(0), channels.at(1), channels.at(2));
         }
     } else if (text.startsWith(QLatin1Char('#')) && text.length() == 9) {
-        // #rrggbbaa is CSS; QColor would read the same string as #aarrggbb.
+        // CSS #rrggbbaa; QColor would read as #aarrggbb.
         color = QColor(text.left(7));
     } else if (QColor::isValidColor(text)) {
         color = QColor(text);
@@ -265,8 +238,7 @@ QVariantMap EngineMessages::searchOffered(const QVariant &data)
     const QVariantMap message = data.toMap();
     const QVariantMap engine = message.value(QStringLiteral("engine")).toMap();
     const QString href = engine.value(QStringLiteral("href")).toString();
-    // The page's host rather than the description's: a site may keep its descriptions on
-    // another, and it is the page that was being read.
+    // Page host, not description's: descriptions may live elsewhere.
     const QUrl page(message.value(QStringLiteral("url")).toString(), QUrl::TolerantMode);
     const QString host =
         SearchSettings::displayAddress(page.host().isEmpty() ? href : page.toString());
@@ -344,7 +316,6 @@ bool EngineMessages::findFound(const QVariant &data)
 
 QVariantList EngineMessages::trackingProtectionPreferences(int level, int cookies)
 {
-    // A choice out of range is the default, as SitePermissionSettings reads one back.
     const bool known = cookies >= SitePermissionSettings::CookiesAllowAll &&
                        cookies <= SitePermissionSettings::CookiesBlockAll;
     const int behavior = known ? cookies : int(SitePermissionSettings::CookiesBlockCrossSite);
@@ -368,10 +339,7 @@ QVariantList EngineMessages::trackingProtectionPreferences(int level, int cookie
 QVariantList EngineMessages::sitePermissionPreferences(bool popupsAllowed, bool locationBlocked,
                                                        bool cameraBlocked, bool microphoneBlocked)
 {
-    // A permission's default is nsIPermissionManager's capability for a site with none of
-    // its own: 0 asks, and 2 denies without asking (netwerk PermissionManager reads
-    // "permissions.default.<type>"). A location has two names in the engine's use, and
-    // both are given (SitePermissions::typesOf()).
+    // 0 ask, 2 deny. Location has two engine names, both set.
     const auto asking = [](const char *name, bool blocked) {
         return QVariantMap{
             {QStringLiteral("name"), QLatin1String(name)},
@@ -379,7 +347,6 @@ QVariantList EngineMessages::sitePermissionPreferences(bool popupsAllowed, bool 
         };
     };
     return {
-        // dom.disable_open_during_load is Firefox's "Block pop-up windows".
         QVariantMap{
             {QStringLiteral("name"), QStringLiteral("dom.disable_open_during_load")},
             {QStringLiteral("value"), !popupsAllowed},
@@ -431,7 +398,7 @@ QVariantList EngineMessages::httpsOnlyPreferences(bool httpsOnly)
 QVariantList EngineMessages::dohPreferences(int protection, const QString &provider,
                                             const QStringList &exceptions)
 {
-    // nsIDNSService::MODE_TRROFF, MODE_TRRFIRST, MODE_TRRONLY.
+    // MODE_TRROFF, MODE_TRRFIRST, MODE_TRRONLY.
     int mode = 5;
     if (protection == DohSettings::ProtectionIncreased) {
         mode = 2;

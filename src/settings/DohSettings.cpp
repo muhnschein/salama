@@ -15,8 +15,7 @@ const char *const ExceptionsKey = "dohExceptions";
 
 const char *const HttpsPrefix = "https://";
 
-// Firefox for Android's, by the address Gecko's default names
-// (network.trr.default_provider_uri) and the one Mozilla has from NextDNS.
+// Firefox Android providers: Gecko default (network.trr.default_provider_uri) + NextDNS.
 const char *const CloudflareUrl = "https://mozilla.cloudflare-dns.com/dns-query";
 const char *const NextDnsUrl = "https://firefox.dns.nextdns.io/";
 
@@ -78,8 +77,7 @@ QVariantList DohSettings::providers() const
 
 int DohSettings::providerProblem(const QString &url)
 {
-    // Checked before the address is parsed, as Firefox for Android does: "https:/host"
-    // would otherwise pass as a scheme and a path.
+    // Prefix check before parse, as Firefox Android: else "https:/host" passes.
     if (!url.startsWith(QLatin1String(HttpsPrefix))) {
         return ProviderNotHttps;
     }
@@ -96,12 +94,10 @@ QString DohSettings::domainOf(const QString &text)
     if (typed.isEmpty()) {
         return {};
     }
-    // A scheme, if there is one, is dropped, as Firefox for Android drops it; what is
-    // left is read as the host of an https address.
     const int scheme = typed.indexOf(QLatin1String("://"));
     const QString rest = scheme < 0 ? typed : typed.mid(scheme + 3);
     const QUrl parsed(QLatin1String(HttpsPrefix) + rest, QUrl::StrictMode);
-    // QUrl keeps a host in lower case, as the engine compares it.
+    // QUrl lowercases host, matching engine.
     return parsed.isValid() ? parsed.host() : QString();
 }
 

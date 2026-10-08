@@ -10,8 +10,6 @@
 
 namespace Salama {
 
-// A page the start page offers: where it is, what it is called and its icon, any of
-// the last two possibly empty.
 struct Site
 {
     QString url;
@@ -29,7 +27,6 @@ struct Site
     }
 };
 
-// One of the start page's lists, as StartPage reads it (src/startpage/StartPage.h).
 class SiteListModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -51,8 +48,7 @@ public:
 
     int count() const;
     const QList<Site> &sites() const;
-    // Resets the model, unless the list is the one it already holds: the start page
-    // is read again on every visit, and a list that has not changed is not built again.
+    // No reset if unchanged: refreshed on every change.
     void setSites(const QList<Site> &sites);
 
 signals:

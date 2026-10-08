@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One of the start page's tiles: the site's icon on a rounded square and under it its
-// name -- a bookmark's title, or the host as the bar shows it
-// (docs/DECISIONS/0032-start-page.md). A site whose icon is not known, or does not
-// load, has the first letter of its host on the square instead, as Firefox draws one.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

@@ -11,9 +11,6 @@ namespace Salama {
 
 class TabModel;
 
-// The tab groups, in the order the strip above the grid shows them. The rows are the
-// tab model's own list of groups; this is the shape QML reads it in, and the place the
-// group actions are reached from (docs/DECISIONS/0015-tab-groups.md).
 class TabGroupModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -26,15 +23,11 @@ public:
         Name,
         TabCount,
         Current,
-        // The group every ordinary tab starts in, which is neither renamed nor removed.
         Default,
-        // The previews of the group's most recent tabs, up to PreviewLimit, the most
-        // recent first: the picture of the group on the Tab groups page. A tab with no
-        // preview is an empty string.
+        // Newest first, max PreviewLimit. No preview = ""
         Previews
     };
 
-    // The picture of a group is two previews by two.
     static const int PreviewLimit = 4;
 
     explicit TabGroupModel(TabModel *tabs);
@@ -45,15 +38,11 @@ public:
 
     int count() const;
     Q_INVOKABLE int groupIdAt(int row) const;
-    // Makes the group at this row the current one: the grid shows it, and its most
-    // recent tab comes to the front.
     Q_INVOKABLE void activate(int row);
     Q_INVOKABLE int addGroup(const QString &name);
     Q_INVOKABLE void renameGroup(int groupId, const QString &name);
     Q_INVOKABLE bool removeGroup(int groupId);
-    // Puts the group's tabs in the default group and removes it; the tabs stay open.
     Q_INVOKABLE bool ungroup(int groupId);
-    // Reorder, from the Tab groups page. The default group stays first.
     Q_INVOKABLE bool moveGroup(int from, int to);
     Q_INVOKABLE bool moveTab(int tabId, int groupId);
 

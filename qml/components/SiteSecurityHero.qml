@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// What the top of a site's details says of its connection: a padlock and "Connection is
-// secure" with who vouches for it, or a warning in the error colour and "Connection is not
-// secure" with why -- the certificate's fault when the engine named one, and nothing for
-// an address that never had one -- and, with the warning, what not to do on the site. The
-// shape and the words are sailfish-browser's own for its certificate page
-// (apps/browser/qml/pages/components/CertificateInfo.qml), the icons its own too
-// (docs/DECISIONS/0040-site-details.md).
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -15,14 +7,12 @@ Column {
     id: hero
 
     property bool secure: true
-    // Who vouches for the connection, and why it is not to be trusted when it is not.
     property string verifiedBy
     property string reason
 
     objectName: "siteSecurityHero"
     width: parent.width
     spacing: Theme.paddingMedium
-    // Clear of the page header above it, as a page's first item is.
     topPadding: Theme.paddingLarge * 2
     bottomPadding: Theme.paddingLarge
 

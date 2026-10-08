@@ -1,24 +1,16 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Room at the foot of a picture for what is drawn over it there: as a layer's effect,
-// the picture runs out towards its bottom edge over the band, and whatever is behind
-// it shows through. Eased as piirit's cover eases its faces away under its quick
-// actions -- the strength goes as the square of what is left of the band -- since a
-// straight ramp reads as a wash laid over the picture. Nothing is laid on top: the
-// picture gets out of the way.
-//
-// One gradient, stepped in quarters for the curve.
+// Quadratic ease: linear ramp reads as wash. Gradient stepped in quarters.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 
 OpacityMask {
     id: fade
 
-    // How far up from the bottom edge the picture starts to go, in pixels.
+    // px from bottom.
     property real band: 0
-    // Where that is, down the picture; kept short of the foot so the stops below it
-    // cannot meet and leave the gradient with a pair out of order.
+    // Capped at 0.96 so later stops can't meet and go out of order.
     readonly property real from: height > 0 ? Math.min(0.96, Math.max(0, 1 - band / height))
                                             : 0
 

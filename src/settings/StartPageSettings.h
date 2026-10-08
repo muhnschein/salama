@@ -6,10 +6,6 @@
 
 namespace Salama {
 
-// Settings > Start page: what the start page shows, nothing at all or the sections
-// switched on (docs/DECISIONS/0032-start-page.md). The sections are each on until they
-// are switched off, and keep their switches while the page is blank, for when it is
-// not.
 class StartPageSettings : public SettingsSection
 {
     Q_OBJECT
@@ -19,7 +15,6 @@ class StartPageSettings : public SettingsSection
     Q_PROPERTY(bool recent READ recent WRITE setRecent NOTIFY changed)
 
 public:
-    // Forgets the home page an earlier release kept, whose place the start page took.
     explicit StartPageSettings(QSettings &file, QObject *parent = nullptr);
 
     bool blank() const;

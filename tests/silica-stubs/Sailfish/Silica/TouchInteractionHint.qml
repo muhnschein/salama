@@ -1,6 +1,5 @@
-// Stub: Silica's draws a finger's glow travelling the way a gesture goes, from startX and
-// startY, as often as loops says. These tests draw nothing; the stub keeps what it was
-// told and whether it runs, as start(), restart() and stop() leave it.
+// Stub: Silica gesture glow hint. Draws nothing; keeps settings and running state per
+// start/restart/stop.
 import QtQuick 2.6
 
 Item {

@@ -41,7 +41,6 @@ QVariant role(const HistoryModel &model, int row, int role)
     return model.data(model.index(row, 0), role);
 }
 
-// A page of the history as the table would hold it, last visited at this time.
 void addHistory(const Storage &storage, const QString &url, qint64 date)
 {
     QSqlQuery insert(storage.database());
@@ -220,15 +219,13 @@ void tst_historymodel::prunesAndLimits()
     HistoryModel model(storage);
     QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
     QCOMPARE(model.count(), HistoryModel::DisplayLimit);
-    // What is kept is counted whole, past the page of it the list shows.
+    // pageCount counts all kept, beyond displayed page.
     QCOMPARE(model.pageCount(), HistoryModel::MaxEntries);
-    // Newest first, oldest pruned.
     QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
              QStringLiteral("https://site%1.example/").arg(HistoryModel::MaxEntries + 24));
 }
 
-// The address bar searches every row, not the model's page of them: past the display
-// limit, and whatever the model's own search term.
+// Omnibar searches whole table: past display limit, ignores model search term.
 void tst_historymodel::wholeTable()
 {
     QTemporaryDir dir;
@@ -251,12 +248,10 @@ void tst_historymodel::wholeTable()
     HistoryModel model(storage);
     model.setSearchTerm(QStringLiteral("site1"));
     QVERIFY(model.count() < HistoryModel::DisplayLimit);
-    // The count of what is kept is not the search's.
     QCOMPARE(model.pageCount(), HistoryModel::DisplayLimit + 10);
 
     const QList<HistoryModel::Entry> entries = model.allEntries();
     QCOMPARE(entries.count(), HistoryModel::DisplayLimit + 10);
-    // Newest first, every column.
     const HistoryModel::Entry &newest = entries.first();
     QCOMPARE(newest.url,
              QStringLiteral("https://site%1.example/").arg(HistoryModel::DisplayLimit + 9));
@@ -266,7 +261,6 @@ void tst_historymodel::wholeTable()
     QVERIFY(newest.id > 0);
     QCOMPARE(entries.last().url, QStringLiteral("https://site0.example/"));
 
-    // A visit is there at once; a cleared table has nothing.
     model.visit(QStringLiteral("https://new.example/"), QStringLiteral("New"));
     QCOMPARE(model.allEntries().first().url, QStringLiteral("https://new.example/"));
     QCOMPARE(model.allEntries().first().visitCount, 1);
@@ -274,8 +268,8 @@ void tst_historymodel::wholeTable()
     QVERIFY(model.allEntries().isEmpty());
 }
 
-// Clearing from a time on: the pages last visited then or since go, and what was
-// learnt then or since; nothing, or less, is everything.
+// Clear since time: pages visited then or later go, plus input history learnt since;
+// zero or less = all.
 void tst_historymodel::clearSince()
 {
     QTemporaryDir dir;
@@ -288,7 +282,6 @@ void tst_historymodel::clearSince()
     QCOMPARE(model.count(), 2);
     model.recordInput(QStringLiteral("new"), QStringLiteral("https://new.example/"));
     QCOMPARE(inputsInDatabase(storage), 1);
-    // What would go is counted as it would be taken.
     QCOMPARE(model.countSince(double(now - 60 * minute)), 1);
     QCOMPARE(model.countSince(double(now - 601 * minute)), 2);
     QCOMPARE(model.countSince(0), 2);
@@ -308,8 +301,7 @@ void tst_historymodel::clearSince()
     QCOMPARE(inputsInDatabase(storage), 0);
 }
 
-// Firefox's time ranges, from now; today from local midnight; everything, and anything
-// else, from the beginning.
+// Firefox time ranges from now; today from local midnight; all/unknown from epoch.
 void tst_historymodel::rangeStart()
 {
     const QDateTime now(QDate(2026, 9, 25), QTime(14, 30));
@@ -323,15 +315,13 @@ void tst_historymodel::rangeStart()
     QCOMPARE(HistoryModel::rangeStart(HistoryModel::ClearEverything, now), qint64(0));
     QCOMPARE(HistoryModel::rangeStart(-1, now), qint64(0));
     QCOMPARE(HistoryModel::rangeStart(99, now), qint64(0));
-    // From now, as QML asks for it.
     const double hourAgo = HistoryModel::rangeStart(HistoryModel::ClearLastHour);
     QVERIFY(qAbs(hourAgo - double(QDateTime::currentMSecsSinceEpoch() - hour)) < 60 * 1000);
     QCOMPARE(HistoryModel::rangeStart(HistoryModel::ClearEverything), 0.0);
 }
 
-// Firefox's input history: the text, trimmed and in lower case, and the page; each
-// choice again counts one over nine tenths of what was counted; text that begins with
-// what is typed leads there, the text itself twice as strongly.
+// Firefox input history: text trimmed, lower-cased, + page. Repeat choice: 1 + 0.9 * count.
+// Prefix of typed text leads; exact text 2x.
 void tst_historymodel::learnsWhatWasTyped()
 {
     QTemporaryDir dir;
@@ -349,19 +339,16 @@ void tst_historymodel::learnsWhatWasTyped()
 
     model.recordInput(QStringLiteral("gh"), hub);
     QCOMPARE(model.inputRanks(QStringLiteral("gh"), now).value(hub), 2 * 1.9);
-    // Of two texts leading to one page, the stronger.
     model.recordInput(QStringLiteral("g"), hub);
     QCOMPARE(model.inputRanks(QStringLiteral("g"), now).value(hub), 2.0);
     QCOMPARE(inputsInDatabase(storage), 2);
 
-    // Nothing, and nothing the history would keep, is not learnt.
     model.recordInput(QString(), hub);
     model.recordInput(QStringLiteral("about"), QStringLiteral("about:blank"));
     QCOMPARE(inputsInDatabase(storage), 2);
 }
 
-// Each day since a text was last chosen wears its count by a fortieth, and only the
-// most recently chosen are kept.
+// Rank decays 1/40 per day since last choice; only most recent kept.
 void tst_historymodel::learningWearsDown()
 {
     QTemporaryDir dir;
@@ -374,7 +361,7 @@ void tst_historymodel::learningWearsDown()
         const qint64 later = now + 10 * qint64(24) * 60 * 60 * 1000;
         QVERIFY(qAbs(model.inputRanks(QStringLiteral("a"), later).value(url) -
                      2 * std::pow(0.975, 10)) < 1e-6);
-        // A choice stamped ahead of the clock has not worn at all.
+        // Future-stamped choice: no decay.
         QCOMPARE(model.inputRanks(QStringLiteral("a"), now - 1000).value(url), 2.0);
 
         QSqlQuery insert(storage.database());
@@ -389,14 +376,12 @@ void tst_historymodel::learningWearsDown()
     }
     HistoryModel reopened(storage);
     QCOMPARE(inputsInDatabase(storage), int(HistoryModel::MaxInputs));
-    // The newest stays: the one learnt just now.
     QVERIFY(reopened.inputRanks(QStringLiteral("a"), QDateTime::currentMSecsSinceEpoch())
                 .contains(url));
     QVERIFY(reopened.inputRanks(QStringLiteral("old 0"), QDateTime::currentMSecsSinceEpoch())
                 .isEmpty());
 }
 
-// A page removed takes with it what was learnt leads there; the rest stays.
 void tst_historymodel::learningGoesWithThePage()
 {
     QTemporaryDir dir;
@@ -416,8 +401,6 @@ void tst_historymodel::learningGoesWithThePage()
     QCOMPARE(inputsInDatabase(storage), 0);
 }
 
-// The icon a page loaded with is kept with it, for a page the history holds; the row
-// says so as it changes, and it is read back with the page.
 void tst_historymodel::favicons()
 {
     QTemporaryDir dir;
@@ -434,7 +417,6 @@ void tst_historymodel::favicons()
         QCOMPARE(changed.count(), 1);
         QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Favicon)).toString(),
                  QStringLiteral("https://a.example/icon.png"));
-        // Nothing for a page the history does not hold, or would not keep.
         model.updateFavicon(QStringLiteral("https://b.example/"), QStringLiteral("b.png"));
         model.updateFavicon(QStringLiteral("about:blank"), QStringLiteral("c.png"));
         QCOMPARE(changed.count(), 1);
@@ -444,8 +426,6 @@ void tst_historymodel::favicons()
     QCOMPARE(reopened.allEntries().first().favicon, QStringLiteral("https://a.example/icon.png"));
 }
 
-// The same as remove(), by address, for the start page's rows: found whether the model
-// shows it or not, and what was learnt leads there goes with it.
 void tst_historymodel::removeByUrl()
 {
     QTemporaryDir dir;
@@ -464,7 +444,6 @@ void tst_historymodel::removeByUrl()
     QCOMPARE(rowsInDatabase(storage), 1);
     QCOMPARE(model.inputRanks(QStringLiteral("x"), QDateTime::currentMSecsSinceEpoch()).keys(),
              QList<QString>{QStringLiteral("https://b.example/")});
-    // An address the history does not hold is nothing to remove.
     model.removeUrl(QStringLiteral("https://nowhere.example/"));
     QCOMPARE(resetSpy.count(), 1);
     model.removeUrl(QStringLiteral("https://b.example/"));

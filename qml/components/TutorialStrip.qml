@@ -1,31 +1,19 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The strip of groups at the foot of the tutorial's grid: the new-tab and edit icons in
-// its corners, and two names between -- the group the sketched tabs are in, underlined,
-// named by how many it holds as the real strip names a group without a name, and one
-// other group to carry a tab onto (docs/DECISIONS/0015-tab-groups.md, 0034-tutorial.md).
-//
-// A carried cell asks it what the real strip is asked, through carryOver(), dropTab() and
-// endCarry(), so TabPreview carries a tab here exactly as it does over the real one: the
-// name under the finger is lit, and a tab dropped on it leaves the grid for that group.
+// Same carryOver()/dropTab()/endCarry() API as TabGroupStrip, for TabPreview.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Item {
     id: strip
 
-    // How many tabs the group in front holds.
     property int tabCount: 0
-    // 1 while a carried tab is over the other group's name, -1 otherwise: the group in
-    // front is never lit, since the tab is in it already.
+    // 1 while carried tab over other group, else -1.
     property int dropIndex: -1
 
-    // A tab was dropped on the other group.
     signal tabDropped(int tabId)
 
-    // Where the other group's name is, in the strip's own coordinates: where the
-    // tutorial's hint carries a tab to.
     readonly property point otherCentre: Qt.point(names.x + other.x + other.width / 2,
                                                   height / 2)
 
@@ -55,8 +43,7 @@ Item {
         dropIndex = -1
     }
 
-    // After the finger's release has run its course, as the real strip waits: the cell
-    // leaves the grid, and its handler must not find its context gone under it.
+    // Deferred past release: cell's handler must keep its context.
     Timer {
         id: dropMove
 
@@ -128,7 +115,6 @@ Item {
                 anchors.centerIn: otherLabel
                 width: otherLabel.width + 2 * Theme.paddingMedium
                 height: otherLabel.height + 2 * Theme.paddingSmall
-                // Rounded, as the real strip lights a name a tab is carried over.
                 radius: Theme.paddingSmall
                 color: Theme.rgba(Theme.highlightBackgroundColor,
                                   Theme.highlightBackgroundOpacity)

@@ -1,38 +1,34 @@
 # Harbour
 
-Harbour is the only distribution channel, so Jolla's rules are build rules.
+Harbour only channel, so Jolla's rules are build rules.
 
-## Jolla's rules, and how CI gates them
+## Jolla's rules, CI gates
 
 Two checks, kept honest against each other:
 
 | | `ci/harbour-check.sh` | `sfdk check -s harbour` |
 |---|---|---|
-| Runs | every pull request (`make check`) | when the RPM is built (`rpm` workflow) |
+| Runs | every PR (`make check`) | on RPM build (`rpm` workflow) |
 | Reads | source tree | built package |
 | Authority | no | **yes** |
 
-`ci/harbour-check.sh` reimplements the logic of Jolla's `rpmvalidation.sh`
-(sdk-harbour-rpmvalidator) over the sources: package name, RPM metadata (version,
-release, vendor, scriptlets, triggers, provides, dependency types), QML imports against
-the allow-list, the desktop file and its `[X-Sailjail]` keys and permissions, install
-layout (spec `%files` and CMake destinations), icons, linked libraries, exported
-`main()` and link flags, `Requires`, hardcoded paths and the runtime path policy.
-`ci/harbour-check-selftest.sh` breaks every one of those rules in a throwaway tree and
-asserts the check names it.
+`ci/harbour-check.sh` reimplements Jolla's `rpmvalidation.sh` (sdk-harbour-rpmvalidator)
+over sources: package name, RPM metadata (version, release, vendor, scriptlets, triggers,
+provides, dependency types), QML imports vs allow-list, desktop file + `[X-Sailjail]` keys
+and permissions, install layout (spec `%files`, CMake destinations), icons, linked
+libraries, exported `main()`, link flags, `Requires`, hardcoded paths, runtime path policy.
+`ci/harbour-check-selftest.sh` breaks each rule in throwaway tree, asserts check names it.
 
-`ci/harbour/*.conf` are the validator's allow-lists copied verbatim; `ci/harbour/UPSTREAM`
-records the source and the commit. The `rpm` workflow runs the validator itself, from
-that commit, on the built package (`ci/harbour-validate-rpm.sh`), so the two checks read
-the same rules. The `allow-lists` job in `.github/workflows/ci.yml` warns when upstream
-has moved on; `ci/harbour-allowlists-drift.sh --update` refreshes files and pin together.
-The lists carry the validator's GPL-2.0-or-later licence; CI reads them as data, the
-application never links them.
+`ci/harbour/*.conf`: validator allow-lists verbatim; `ci/harbour/UPSTREAM` pins source and
+commit. `rpm` workflow runs validator from same commit on built package
+(`ci/harbour-validate-rpm.sh`), so both checks read same rules. `allow-lists` job in
+`.github/workflows/ci.yml` warns when upstream moves; `ci/harbour-allowlists-drift.sh --update`
+refreshes files and pin together. Lists are GPL-2.0-or-later; CI reads them as data, app
+never links them.
 
-Anything not in `ci/harbour/waivers.conf` fails, in both checks. A waiver names the
-check id (`requires`, `qml-import`, ... for the source check; `rpm-requires`,
-`rpm-paths`, ... for the validator's sections), the subject and the message, all as
-globs, with the reason as a comment.
+Anything not in `ci/harbour/waivers.conf` fails, both checks. Waiver = check id
+(`requires`, `qml-import`, ... source check; `rpm-requires`, `rpm-paths`, ... validator
+sections), subject, message, all globs, reason as comment.
 
 ## Current waivers
 
@@ -44,40 +40,35 @@ None.
 
 | Permission | Why |
 |---|---|
-| `Internet` | network access for the engine and favicon images |
-| `WebView` | Gecko embedding: `/usr/share/mozilla`, the transfer engine for downloads (required for any `Sailfish.WebView` user) |
-| `Audio` | sound from pages: Sailjail's `Base` profile shuts every application out of PulseAudio (`nosound`) unless it holds this, and `WebView` does not include it, so without it the engine plays video and audio in silence. It also admits the microphone at the PulseAudio level; what a page may record with it is the `Microphone` permission's, below |
-| `Downloads` | the engine saves downloads to `~/Downloads/Salama`, a folder the application creates (`DECISIONS/0025-downloads-folder.md`) |
-| `Pictures` | uploading a photo through the platform picker in web forms |
-| `Videos` | uploading a video through the platform picker |
-| `Music` | uploading an audio file through the platform picker |
-| `Documents` | uploading a document through the platform picker |
-| `MediaIndexing` | the platform picker's Images, Videos, Music and Documents lists: they are Tracker queries, and without talking to `org.freedesktop.Tracker3.Miner.Files` they come up empty, leaving File system the only way to a file. Jolla's browser holds it for the same picker |
-| `Location` | a page's `navigator.geolocation`: the engine's position, which the sandbox admits an application to only with this permission. Without it Site permissions would offer a choice no page could ever use (`DECISIONS/0039-site-permissions.md`) |
-| `Camera` | a page's `getUserMedia` for video: the sandbox admits an application to the camera only with this permission (`DECISIONS/0039-site-permissions.md`) |
-| `Microphone` | a page's `getUserMedia` for audio: recording needs this permission, beside `Audio`'s access to PulseAudio, and a site must still be allowed it (`DECISIONS/0039-site-permissions.md`) |
+| `Internet` | engine network, favicons |
+| `WebView` | Gecko embedding: `/usr/share/mozilla`, transfer engine for downloads (needed by any `Sailfish.WebView` user) |
+| `Audio` | page sound. `Base` profile blocks PulseAudio (`nosound`) without it; `WebView` lacks it, so engine plays silent. Also admits mic at PulseAudio level; recording gated by `Microphone` |
+| `Downloads` | engine saves to `~/Downloads/Salama`, app creates folder |
+| `Pictures` | photo upload via platform picker |
+| `Videos` | video upload via platform picker |
+| `Music` | audio upload via platform picker |
+| `Documents` | document upload via platform picker |
+| `MediaIndexing` | picker's Images/Videos/Music/Documents lists are Tracker queries; without `org.freedesktop.Tracker3.Miner.Files` they're empty, only File system left. Jolla's browser holds it for same reason |
+| `Location` | page `navigator.geolocation`; sandbox admits engine position only with this. Without it Site permissions offers useless choice |
+| `Camera` | page `getUserMedia` video; sandbox gates camera on this |
+| `Microphone` | page `getUserMedia` audio; needed beside `Audio`, site must still be allowed |
 
-`ExecDBus=harbour-salama` lets the system start the browser for the share sheet's call
-on the D-Bus name `io.github.muhnschein.salama` (`DECISIONS/0042-share-target.md`). The
-desktop file's one share method, `link`, takes `text/x-url` alone; the call is answered
-through `QtDBus`, whose library is on the validator's list.
+`ExecDBus=harbour-salama` lets system start browser for share sheet call on D-Bus name
+`io.github.muhnschein.salama`. Desktop file's one share method, `link`, takes `text/x-url`
+only; answered via `QtDBus` (on validator list).
 
-`OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define the writable
-data, cache and config directories; apart from downloads, nothing is stored anywhere
-else. Sharing needs no permission (part of the `Base` set), and neither do notifications:
-`Base` includes `Notifications.permission`, which lets an application talk to
-`org.freedesktop.Notifications` (`DECISIONS/0033-web-notifications.md`). They are shown
-through `Nemo.Notifications 1.0`, on the validator's list of QML imports, and the package
-requires `nemo-qml-plugin-notifications-qt5`, on its list of dependencies. The upload
-picker is Sailfish.Pickers' `ContentPickerPage`: each of its lists needs the folder its files
-are in and `MediaIndexing` to find them (SCOPE.md §9 item 5), verified on the device smoke
-test.
+`OrganizationName=io.github.muhnschein`, `ApplicationName=salama` define writable data,
+cache, config dirs; nothing else stored elsewhere except downloads. Sharing needs no
+permission (`Base`). Notifications neither: `Base` includes `Notifications.permission`
+for `org.freedesktop.Notifications`. Shown via `Nemo.Notifications 1.0` (validator QML
+list); package requires `nemo-qml-plugin-notifications-qt5` (validator dependency list).
+Upload picker is Sailfish.Pickers' `ContentPickerPage`: each list needs its folder
+permission plus `MediaIndexing`; verified in device smoke test.
 
 ## Runtime path policy
 
-Only `QStandardPaths::AppDataLocation`, `AppConfigLocation` and `CacheLocation` are
-written, plus the `Salama` folder in `DownloadLocation`, which the application creates and
-the engine saves downloads to; `QSettings` always gets an explicit file path
-(sailjail-permissions README).
+Writes only `QStandardPaths::AppDataLocation`, `AppConfigLocation`, `CacheLocation`, plus
+`Salama` folder in `DownloadLocation` (app creates, engine saves to). `QSettings` always
+gets explicit file path (sailjail-permissions README).
 `ci/harbour-check.sh` fails on other standard locations and on `/home/nemo` or
 `/home/defaultuser` literals.

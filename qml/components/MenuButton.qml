@@ -1,16 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// One entry of the browser menu: an icon with what it does written under it
-// (docs/DECISIONS/0021-menu-sheet.md). The page's own actions sit on a disc (round),
-// which is lit while the entry is a switch that is on -- this page bookmarked, in its
-// desktop version, in its reader view -- and under a finger. The browser's entries have
-// no disc, and one standing for something under way -- the downloads still coming --
-// has a ring round its icon that fills as it goes (busy, progress).
-//
-// Nothing is washed across the whole entry when it is pressed, as a BackgroundItem
-// would: what lights is the disc, the icon and the name, the way an IconButton lights
-// its icon. A square wash round a disc was a second shape for one press.
+// Menu entry: icon over name; page actions on lit disc (round), busy ring for progress.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -19,18 +10,14 @@ BackgroundItem {
 
     property string iconSource
     property string text
-    // A switch that is on.
     property bool checked: false
-    // The icon on a disc of its own.
     property bool round: false
-    // Something the entry stands for is under way, and how far along it is, from 0 to 1.
+    // progress 0..1.
     property bool busy: false
     property real progress: 0
     readonly property bool lit: highlighted || checked
 
     height: column.height + 2 * Theme.paddingMedium
-    // Nothing to act on -- no page yet -- and it says so, as a disabled Silica
-    // control does.
     opacity: enabled ? 1.0 : Theme.opacityLow
     highlightedColor: "transparent"
 
@@ -41,9 +28,7 @@ BackgroundItem {
         width: parent.width
         spacing: Theme.paddingSmall
 
-        // As tall on every entry, disc or not, so the names along a row line up. The
-        // icons are a step down from Silica's medium size, as the grid's corner buttons
-        // are, so that the disc round one is no bigger than a medium icon.
+        // Same height with or without disc so names line up.
         Item {
             objectName: "menuButtonIconSlot"
             anchors.horizontalCenter: parent.horizontalCenter
@@ -55,14 +40,11 @@ BackgroundItem {
                 anchors.fill: parent
                 radius: width / 2
                 visible: button.round
-                // Lit in the wash Silica marks a pressed or chosen item with.
                 color: button.lit ? Theme.rgba(Theme.highlightBackgroundColor,
                                                Theme.highlightBackgroundOpacity)
                                   : Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
             }
 
-            // Silica's own ring, at half the width it draws itself at, and its track in
-            // the faint primary colour the discs are in.
             ProgressCircle {
                 objectName: "menuButtonProgress"
                 anchors.centerIn: parent
@@ -84,9 +66,7 @@ BackgroundItem {
             }
         }
 
-        // As wide as the entry, with no padding either side: five to a row leave a name a
-        // fifth of the screen, and "Desktop site" in tiny type needs about all of it. The
-        // fade is for a name that does not fit even so.
+        // No padding: five per row, "Desktop site" in tiny type needs nearly full width.
         Label {
             objectName: "menuButtonLabel"
             width: parent.width

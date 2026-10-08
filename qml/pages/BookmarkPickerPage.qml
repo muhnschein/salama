@@ -1,14 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// A bookmark to be taken for something -- the page the cover's quick action opens: every
-// bookmark, narrowed to those that hold each word typed over them as every search in the
-// browser narrows, and a tap picks one. The page says which and goes back; what the
-// choice means is the page that asked's to decide (pages/CoverSettingsPage.qml,
-// docs/DECISIONS/0029-quick-action.md), and backing out of it has picked nothing.
-//
-// The rows are the list of bookmarks' own, without its menu: choosing is all there is to
-// do with one here.
+// Picks bookmark for caller (CoverSettingsPage.qml); backing out picks nothing.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -16,8 +8,7 @@ import harbour.salama 1.0
 Page {
     id: pickerPage
 
-    // What the field over the list holds, which the list is narrowed by. A property of the
-    // page's because the field is the list's header, whose name the page cannot see.
+    // On page: field is list header, whose id page can't see.
     property string query
 
     signal bookmarkPicked(int bookmarkId, string url, string title)
@@ -30,9 +21,7 @@ Page {
 
         objectName: "bookmarkPickerList"
         anchors.fill: parent
-        // Maps rather than the model's rows, so a row reads modelData. Asked again as the
-        // bookmarks change, which is what reading the revision is for: a call alone would
-        // never be.
+        // Maps so row reads modelData. Revision read -> re-query on bookmark change.
         model: (BookmarkModel.revision, BookmarkModel.matching(pickerPage.query))
         header: Column {
             width: parent.width

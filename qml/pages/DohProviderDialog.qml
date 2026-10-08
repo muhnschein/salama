@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// A DNS over HTTPS provider of the reader's own: its address, which has to start with
-// https:// and name a host, as Firefox for Android's Custom provider dialog asks, in its
-// words (docs/DECISIONS/0047-secure-connections.md).
+// Custom DoH provider: must be https:// with host.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -11,7 +8,6 @@ import harbour.salama 1.0
 Dialog {
     id: dialog
 
-    // A DohSettings ProviderProblem.
     readonly property int problem: DohSettings.providerProblem(address.text)
 
     objectName: "dohProviderDialog"

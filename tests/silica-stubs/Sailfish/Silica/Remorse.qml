@@ -1,11 +1,11 @@
-// Stub: remorse timers run to completion immediately so tests observe the action.
+// Stub: remorse completes immediately so tests see action.
 pragma Singleton
 import QtQuick 2.6
 
 QtObject {
     property int popupCount: 0
     property int itemCount: 0
-    // Where the last popup was shown and what it said.
+    // Last popup: where shown, text.
     property Item popupItem: null
     property string popupText
 

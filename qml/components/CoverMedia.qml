@@ -1,17 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// The cover while the tab in front plays something, or is muted: what plays, as the page
-// says it (docs/DECISIONS/0037-cover-is-where-you-were.md).
-//
-// With a picture -- the page's Media Session artwork, or the poster of a video it plays
-// (PageMedia) -- the picture across the top, square or wide as it is drawn, and under it
-// the title, the artist and whether it plays, and where. Without one, the words alone,
-// over the cover's halftone: whether it plays, the site large, and what the page calls
-// what plays, or else its own title. Muted or paused, the picture dims.
-//
-// The picture is fetched and scaled once, to the width it is shown at, when the page names
-// another one; nothing about it moves.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -19,17 +7,14 @@ import harbour.salama 1.0
 Item {
     id: media
 
-    /// Whether the page plays and is heard, which is what the mute beside it shows.
     property bool heard
-    /// What the page says of what plays; any of them may be empty.
+    /// Any may be empty.
     property string title
     property string artist
     property string artwork
-    /// The page itself: its title and address.
     property string pageTitle
     property string url
 
-    /// Whether the picture is there to show. The cover shows its halftone only when not.
     readonly property bool pictured: picture.status === Image.Ready
     readonly property string host: SearchSettings.displayAddress(url)
     readonly property string playState: heard
@@ -41,8 +26,7 @@ Item {
 
     objectName: "coverMedia"
 
-    // Square, or as wide as a video when the picture is clearly wider than tall; cut to
-    // fill either way, and never so tall that the words under it run into the actions.
+    // Capped so words don't hit cover actions.
     Item {
         id: frame
 
@@ -61,7 +45,7 @@ Item {
 
             objectName: "coverMediaArtwork"
             anchors.fill: parent
-            // At the widest it is shown, whichever shape it turns out to be: decoded once.
+            // Decoded once at widest shown size.
             sourceSize.width: media.width
             fillMode: Image.PreserveAspectCrop
             smooth: true
@@ -116,7 +100,6 @@ Item {
         }
     }
 
-    // Without a picture: the words alone, the site large.
     Column {
         objectName: "coverMediaPlain"
         visible: !media.pictured

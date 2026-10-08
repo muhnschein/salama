@@ -12,11 +12,10 @@ namespace Salama {
 
 namespace {
 
-// Descriptions are a few hundred bytes; a site that sends more is not offering one.
+// Real descriptions are ~100s of bytes.
 const int MaxDescription = 64 * 1024;
 
-// In place of the words while a template is checked: a host that it shows up in is a
-// host the words would choose.
+// Substituted for words when checking template: if in host, words would pick host.
 const char *const Probe = "searchtermsprobe";
 
 struct UrlElement
@@ -28,7 +27,6 @@ struct UrlElement
     QVector<QPair<QString, QString>> params;
 };
 
-// A <Url> element, read to its end. The reader is left on that end.
 UrlElement readUrl(QXmlStreamReader &reader)
 {
     const QXmlStreamAttributes attributes = reader.attributes();
@@ -54,7 +52,6 @@ UrlElement readUrl(QXmlStreamReader &reader)
     return url;
 }
 
-// A page of results as a person reads one: not the suggestions' JSON, not a feed.
 bool isResultsPage(const UrlElement &url)
 {
     const bool results =
@@ -63,9 +60,7 @@ bool isResultsPage(const UrlElement &url)
     return url.type == QLatin1String("text/html") && get && results;
 }
 
-// {searchTerms} stays, {searchTerms?} becomes it, and every other parameter is removed:
-// OpenSearch makes each of them optional or leaves the browser to give a default, and
-// nothing here has a count, a language or a start index to give.
+// Other params optional per OpenSearch; nothing to fill them with.
 QString withOnlyTheWords(const QString &text)
 {
     static const QRegularExpression parameter(QStringLiteral("\\{([^{}]*)\\}"));
@@ -93,7 +88,7 @@ QString withParams(QString urlTemplate, const QVector<QPair<QString, QString>> &
         if (param.first.isEmpty()) {
             continue;
         }
-        // Braces and the question mark stay as they are, for withOnlyTheWords() to read.
+        // Keep {}? unencoded for withOnlyTheWords().
         urlTemplate += urlTemplate.contains(QLatin1Char('?')) ? QLatin1Char('&') : QLatin1Char('?');
         urlTemplate += QString::fromLatin1(QUrl::toPercentEncoding(param.first)) +
                        QLatin1Char('=') +
@@ -102,7 +97,6 @@ QString withParams(QString urlTemplate, const QVector<QPair<QString, QString>> &
     return urlTemplate;
 }
 
-// Whether an address with the words in it goes to a host of its own, on the web.
 bool isWebAddress(const QString &urlTemplate)
 {
     QString probed = urlTemplate;
@@ -147,8 +141,7 @@ OpenSearchEngine OpenSearch::parse(const QString &xml)
             }
         }
     }
-    // Text that stops being XML part of the way through is not trusted for what it said
-    // before it did.
+    // Partial XML not trusted even for earlier part.
     if (reader.hasError() || !isTemplate(engine.urlTemplate)) {
         return {};
     }

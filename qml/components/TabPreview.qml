@@ -1,24 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// One cell of the tab grid: the captured page preview with a close button in its
-// top-right corner and, while the page plays something, the tab's mute at its foot.
-// Nothing underneath: the favicon and title that were there made the grid busier than
-// the pictures that say which page is which (docs/DECISIONS/0010-tab-grid-deck.md).
-//
-// Three gestures share the cell, and one MouseArea under the contents tells them
-// apart the way the navigation bar's does. A tap opens the tab. A finger held for a
-// second -- still, or near enough: a thumb held down drifts -- picks the cell up to
-// be carried to another place in the grid, or onto a group in the strip at its
-// foot, which the tab moves into when it is dropped there. A drag to the left slides
-// the cell out and closes the tab when it has gone far enough; released short of
-// that it slides back. A drag up or down is none of these: it is the grid's, to
-// scroll or to hand the page back. The buttons are drawn above the handler and keep
-// their own taps (docs/DECISIONS/0010-tab-grid-deck.md).
-//
-// It is a plain Item rather than a Silica BackgroundItem. That one draws its press
-// and its highlight as a wash across the whole cell, edge to edge; here they are a thin
-// frame round the picture, following its rounded corners.
+// One MouseArea under contents splits gestures: tap opens; ~1 s hold picks up to reorder
+// or drop on group strip; left drag closes past threshold; vertical drag is grid's.
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
@@ -27,62 +11,42 @@ import harbour.salama 1.0
 Item {
     id: preview
 
-    // Its own tap signal: a Silica clicked() comes from MouseArea and carries a mouse
-    // event, which this handler has not got to give it.
+    // MouseArea clicked carries mouse event handler can't supply.
     signal tapped()
     signal closeRequested()
-    // The mute over the picture (docs/DECISIONS/0026-media-controls.md).
     signal muteToggled()
-    // The cell has been carried over another one and the two should trade places.
     signal moveRequested(int from, int to)
 
-    // Where a carried cell can go besides among its neighbours: the strip of groups.
     property Item dropTarget: null
 
-    // True while this cell is being carried, and true from the moment a press turns
-    // into a carry or a swipe until the next press. MouseArea raises released before
-    // clicked, so the first cannot be what keeps the second from opening the tab.
+    // Stay true until next press: released fires before clicked, so it can't suppress tap.
     property bool held: false
     property bool carried: false
-    // True while the cell is being slid out to the left.
     property bool swiping: false
-    // How long a finger holds before the cell comes up, and how far it may drift
-    // sideways meanwhile and still count as holding. Up and down it may drift as far
-    // as the grid lets a finger move before taking it as a drag.
+    // Vertical drift bounded by grid's own drag threshold.
     readonly property int holdInterval: 1000
     readonly property real holdTolerance: Theme.iconSizeSmall
-    // True from the press until the finger has moved too far to be holding.
     property bool holding: false
-    // True once the finger has moved more sideways than up or down, by most of the
-    // distance at which the grid would take it: from then on the touch is the cell's,
-    // a hold or a slide, and never the grid's scroll.
+    // Mostly sideways past most of grid's drag distance: touch is cell's, never grid scroll.
     property bool sideways: false
-    // How far the cell must be slid before letting go closes the tab.
     readonly property real closeDistance: width / 3
-    // The picture's inset from the cell's edges, half the gap between cells, and how
-    // far outside the picture the frame round the active one stands.
     readonly property real inset: Theme.paddingMedium + Theme.paddingSmall / 2
     readonly property real frameGap: Theme.paddingSmall / 2
-    // What the frame below marks: this cell is the active tab, or has a finger. A cell
-    // whose tab has just been closed outlives its row for a moment, and its role is then
-    // undefined, which a bool cannot be.
+    // Cell outliving its closed row sees undefined role; bool can't be.
     readonly property bool highlighted: dragArea.pressed || model.activeTab === true
     readonly property Item grid: GridView.view
 
     objectName: "tabPreview"
     width: GridView.view.cellWidth
     height: GridView.view.cellHeight
-    // A carried cell passes over its neighbours, not under them.
     z: held ? 1 : 0
 
-    // A cell that has been carried or slid must not also open on release.
     function releaseTap() {
         if (!carried) {
             tapped()
         }
     }
 
-    // The hold has run its course: the cell is the finger's to carry.
     function pickUp() {
         holdTimer.stop()
         holding = false
@@ -90,20 +54,17 @@ Item {
         carried = true
     }
 
-    // The finger has moved too far to be holding: the hold is off.
     function letGo() {
         holdTimer.stop()
         holding = false
     }
 
-    // The cell slid this far to the left, by a finger or by a test.
     function swipeTo(x) {
         swiping = true
         carried = true
         content.x = Math.min(0, x)
     }
 
-    // The finger lifted off a slide: closed if it went far enough, back if not.
     function releaseSwipe() {
         swiping = false
         if (-content.x >= closeDistance) {
@@ -137,15 +98,9 @@ Item {
 
         objectName: "tabPreviewGesture"
         anchors.fill: parent
-        // Once the cell is carried or sliding, or the finger has gone sideways, the
-        // grid may not take the drag back. Not before: a flickable that is refused a
-        // touch once gives up on it for good, so a cell that kept every press from the
-        // start left the grid nothing to scroll and nothing to pull the page back with,
-        // for any drag begun on a cell. A drag up or down therefore cancels the hold,
-        // as it does on any Silica list. Sideways is claimed short of the grid's own
-        // drag distance, Qt's rather than Silica's, since that is the one the grid
-        // measures by: a slide that slants would otherwise be the grid's before it
-        // had gone far enough across to be a slide.
+        // Steal only once carried, sliding or sideways: flickable refused a touch gives it
+        // up for good, so stealing from press kills grid scroll and pull-back. Sideways
+        // claimed at 0.75 of Qt's (not Silica's) startDragDistance, which grid measures by.
         preventStealing: preview.held || preview.swiping || preview.sideways
 
         onPressed: {
@@ -165,10 +120,7 @@ Item {
                         && Math.abs(acrossX) > Qt.styleHints.startDragDistance * 0.75) {
                     preview.sideways = true
                 }
-                // Within the tolerance the finger is still holding. Beyond it the
-                // hold is off, and a sideways move is the start of a slide. Leftwards
-                // only -- the grid has nothing to the right -- while an up-and-down
-                // move is the grid's own, and it has usually taken it before here.
+                // Beyond tolerance: hold off; sideways starts slide (left only).
                 if (Math.abs(acrossX) <= preview.holdTolerance
                         && Math.abs(acrossY) <= preview.holdTolerance) {
                     return
@@ -178,8 +130,7 @@ Item {
                     preview.swipeTo(acrossX)
                 }
             } else if (preview.held) {
-                // The contents move, not the cell: the view owns where cells are, and
-                // after a trade the cell underneath has already moved to meet them.
+                // Move contents, not cell: view owns cell positions.
                 content.x = acrossX
                 content.y = acrossY
                 if (preview.dropTarget && preview.dropTarget.carryOver(preview, mouse.x, mouse.y)) {
@@ -213,14 +164,9 @@ Item {
 
         width: parent.width
         height: parent.height
-        // A cell slid away fades as it goes, so the finger sees what letting go
-        // will do.
         opacity: 1 - Math.min(1, -x / preview.width)
-        // A carried cell comes up a little, so the hand knows it has it.
         scale: preview.held ? 1.05 : 1
 
-        // Back into place when released short of closing; not while a finger has
-        // it, and not while it is being slid.
         Behavior on x {
             enabled: !dragArea.pressed && !preview.swiping
 
@@ -236,13 +182,6 @@ Item {
             }
         }
 
-        // What marks the active cell, and the one under a finger: a thin frame just
-        // outside the picture, following its rounded corners, in the highlight background
-        // colour the grid's top edge is drawn in -- as thin as the rule under the current
-        // group's name, which says the same of a group. It was a square wash behind the
-        // picture, as Silica's BackgroundItem draws one, and a square round a rounded
-        // picture was two shapes for one cell. It is the only mark: a border on the box
-        // as well, and the title lit, said it three times over.
         Rectangle {
             objectName: "tabPreviewFrame"
             anchors {
@@ -270,10 +209,7 @@ Item {
             radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
 
-            // Rounded at the corners, picture and all. Clipping is rectangular
-            // whatever the shape of the item doing it, so the corners are cut by a
-            // mask instead; sailfish-browser rounds its own tab previews the same way
-            // (apps/browser/qml/pages/components/TabItem.qml).
+            // Clipping is rectangular, so corners cut by mask.
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Rectangle {
@@ -284,9 +220,6 @@ Item {
                 }
             }
 
-            // The picture runs out towards its foot while the mute is drawn there, so
-            // the glyph sits on the cell's own ground rather than on the page, as a
-            // cover's quick actions sit on the cover's.
             Item {
                 objectName: "tabPreviewPicture"
                 anchors.fill: parent
@@ -295,12 +228,7 @@ Item {
                     band: muteAction.height * 2
                 }
 
-                // As wide as the cell and anchored to its top, at the picture's own
-                // aspect: what shows is then the top of what was last on the screen.
-                // PreserveAspectCrop centres instead, and a screen-shaped picture in a
-                // cell-shaped box centres on the middle of the page -- which is neither
-                // where the reader was at the top of a page nor where they were at its
-                // foot.
+                // Top-anchored at own aspect: PreserveAspectCrop would centre on page middle.
                 Image {
                     objectName: "tabPreviewImage"
                     anchors {
@@ -317,8 +245,6 @@ Item {
                 }
             }
 
-            // Shown until the tab has been displayed at least once, and for a tab on
-            // the start page until its picture is taken.
             Label {
                 objectName: "tabPreviewPlaceholder"
                 anchors.centerIn: parent
@@ -328,11 +254,7 @@ Item {
                 color: Theme.secondaryColor
             }
 
-            // The close button: a plain dark or light disc with a thin cross through it
-            // in the colour set against it, the cross two fifths of the disc across and
-            // as thin as the frame. Drawn here, not the theme's icon-m-clear: that icon
-            // carries a disc of its own at its own transparency, so the glyph alone was
-            // lost on most pages and a disc behind it was a disc inside a disc.
+            // Hand-drawn: icon-m-clear has own translucent disc, lost on pages.
             PreviewButton {
                 objectName: "closeTabButton"
                 markName: "closeTabMark"
@@ -356,8 +278,7 @@ Item {
                 }
             }
 
-            // Centred along the picture's foot, where a cover has its actions. Like the
-            // active role, the two below are undefined for a cell that outlives its row.
+            // Roles undefined for cell outliving its row.
             PreviewMuteAction {
                 id: muteAction
 

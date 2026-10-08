@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// Notifications: whether sites may ask to send them, and the sites allowed and blocked,
-// as Firefox's Notification Settings list them -- under a heading each here, so a site's
-// status is where it is rather than a line under it -- with a way to change it or forget
-// the site, which then asks again the next time it wants to. The list is the engine's
-// own, read as the page opens (docs/DECISIONS/0033-web-notifications.md).
+// List read from engine on open. Forgotten site asks again.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -29,8 +24,7 @@ Page {
                 title: qsTr("Notifications")
             }
 
-            // Firefox's "Block new requests asking to allow notifications", said the way
-            // round a switch that is on reads: what it lets happen.
+            // Firefox's "Block new requests..." inverted so on = allowed.
             TextSwitch {
                 objectName: "sitesCanAskSwitch"
                 //: Whether sites not yet allowed or blocked may ask to send notifications
@@ -40,7 +34,6 @@ Page {
             }
         }
 
-        // The model lists the allowed first and the blocked after them.
         section.property: "allowed"
         section.delegate: SectionHeader {
             objectName: "notificationSiteSection"
@@ -50,7 +43,7 @@ Page {
         delegate: ListItem {
             id: site
 
-            // Held apart from the row, which a change in the menu may remove or move.
+            // Held outside row, which menu change may remove or move.
             readonly property string origin: model.origin
             readonly property bool allowed: model.allowed
             readonly property string host: model.host
@@ -73,9 +66,7 @@ Page {
                 }
             }
 
-            // The site's first letter on a square, as the start page draws a site whose
-            // icon it does not know (components/SiteTile.qml): the engine keeps no icon
-            // with a permission.
+            // Engine keeps no icon with permission.
             Rectangle {
                 id: letter
 

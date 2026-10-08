@@ -9,9 +9,8 @@
 #include <QQuickImageProvider>
 #include <QtQml>
 
-// Silica's plugin adds the "theme" image provider every image://theme/ source comes
-// from. The stub's draws every id as the same grey square, at the size asked for when
-// one is, so that an image the QML shows from the theme loads rather than failing.
+// Stub of Silica "theme" image provider: grey square at requested size, so image://theme/
+// sources load instead of failing.
 class ThemeImageProvider : public QQuickImageProvider
 {
 public:
@@ -33,8 +32,7 @@ public:
     }
 };
 
-// What the WebView stub's grabToImage() hands back as a grab result's image: QML has no
-// way to make a QImage of its own. Size zero is a null image.
+// Image for WebView stub grabToImage(): QML can't make QImage. Size 0 = null image.
 class GrabStub : public QObject
 {
     Q_OBJECT

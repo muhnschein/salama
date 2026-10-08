@@ -1,29 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// What the link sheet lays over the browsing page above itself, laid there rather than
-// in the sheet so that the sheet's slide does not carry it
-// (docs/DECISIONS/0046-link-menu.md): a dim; the page in front as it was, a still of it,
-// while a preview is drawn in its place; and a picture pressed, lifted out of the page and
-// grown to the room above the sheet -- edge to edge for a wide one, as tall as there is
-// room for a tall one -- which two fingers pinch to look closer.
+// Outside sheet so sheet's slide doesn't move it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Item {
     id: overlay
 
-    // Shown while the sheet is.
     property bool shown: false
-    // The room above the sheet: from under the cutout to where the sheet comes up to.
     property real roomTop: 0
     property real roomBottom: 0
-    // A still of the page in front, an ItemGrabResult, and where that page lies; drawn
-    // while stillShown.
+    // ItemGrabResult of front page plus its position; drawn while stillShown.
     property var still: null
     property rect stillRect
     property bool stillShown: false
-    // The address of the picture pressed, or empty.
     property string picture
 
     objectName: "linkMenuOverlay"
@@ -57,7 +48,7 @@ Item {
         width: parent.width
         height: Math.max(0, overlay.roomBottom - overlay.roomTop)
 
-        // Centred, so that a pinch grows it from the middle of what was in reach.
+        // Centred so pinch grows from middle.
         Image {
             id: lifted
 
@@ -83,6 +74,5 @@ Item {
         }
     }
 
-    // A new picture starts at its own size.
     onPictureChanged: lifted.scale = 1.0
 }

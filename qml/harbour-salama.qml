@@ -15,20 +15,8 @@ ApplicationWindow {
     }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
 
-    // What the cover's quick action asks for, as the cover's settings chose it
-    // (docs/DECISIONS/0029-quick-action.md). A search is the address bar opened for a new
-    // tab, empty, with its pane over the page listing the bookmarks until something is
-    // typed, and no tab made until something is chosen (0027-omnibar.md). The bookmarks,
-    // the downloads and the history are their pages, as the menu opens them. One
-    // bookmark is its page: the tab it is open in already, in whichever group, or a new
-    // one; a bookmark that can no longer be found opens the bookmarks, where another is
-    // one tap away.
-    //
-    // Here rather than on the cover because all of it is the browsing page's and the
-    // page stack's, and a cover has neither in its scope. Whatever page is on top --
-    // settings, a dialog -- is popped first, and what lies over the browsing page is put
-    // away with it: the menu sheet, the address being edited, the grid. Each action starts
-    // from the page, whatever was left open when the application was.
+    // Here, not on cover: needs browsing page and page stack. Top pages popped and overlays
+    // cleared first. Search makes no tab until something chosen.
     function quickAction() {
         var page = pageStack.find(function (candidate) {
             return candidate.objectName === "browserPage"
@@ -64,11 +52,8 @@ ApplicationWindow {
         }
     }
 
-    // The quick action's bookmark: by the id it was picked under, and once that is gone
-    // by its address -- the menu's Bookmark, tapped twice, takes a bookmark away and adds
-    // it back under a new id. What the setting keeps of it is brought up to date as it is
-    // found, without a word, so that a bookmark given another title or address is still
-    // found by it after that. 0 when neither finds one.
+    // By picked id, else by address (menu Bookmark twice re-adds under new id). Setting
+    // silently updated when found so renamed/re-addressed bookmark still matches. 0 if neither.
     function findQuickActionBookmark() {
         var id = CoverSettings.quickActionBookmark
         if (!BookmarkModel.hasBookmark(id)) {
@@ -80,10 +65,7 @@ ApplicationWindow {
         return id
     }
 
-    // A notification a page showed was tapped: its tab comes to the front, in its group,
-    // over whatever was left open, and the browser with it -- where Firefox for Android
-    // opens on the tab. The page hears of the tap itself
-    // (docs/DECISIONS/0033-web-notifications.md).
+    // Page handles tap itself.
     function showNotifiedTab(tabId) {
         var page = pageStack.find(function (candidate) {
             return candidate.objectName === "browserPage"
@@ -101,9 +83,6 @@ ApplicationWindow {
         onTabRequested: window.showNotifiedTab(tabId)
     }
 
-    // A link shared to the browser from another application's share sheet: a new tab in
-    // the default group, in front, with the browsing page brought up from under whatever
-    // was over it (docs/DECISIONS/0042-share-target.md).
     function openSharedLink(url) {
         var page = pageStack.find(function (candidate) {
             return candidate.objectName === "browserPage"
@@ -123,20 +102,14 @@ ApplicationWindow {
 
     Component.onCompleted: ShareReceiver.setReady()
 
-    // The tutorial, over the browsing page, until it has come up once: on the first
-    // start, and on the first start of a build that has it, with its first card to start
-    // it or skip it. It counts as shown as it comes up, so one skipped or left by back is
-    // not forced on the reader again; Settings > Tutorial shows it whenever it is asked
-    // for (docs/DECISIONS/0034-tutorial.md).
+    // Counted shown on appearance so skip/back won't force it again.
     function showTutorial() {
         Settings.tutorialShown = true
         pageStack.push(Qt.resolvedUrl("pages/TutorialPage.qml"), { welcome: true },
                        PageStackAction.Immediate)
     }
 
-    // Once the window is made and the browsing page is on the stack: a timer of no
-    // length fires on the first turn of the event loop after that, which is Qt 5.6's
-    // way of saying "next".
+    // Zero-length timer fires next event loop turn (Qt 5.6).
     Timer {
         objectName: "tutorialTimer"
         interval: 0
@@ -144,9 +117,7 @@ ApplicationWindow {
         onTriggered: window.showTutorial()
     }
 
-    // As the bookmarks change, and not only when the action is taken: an address edited
-    // after the bookmark came back under a new id is one the old id's address would no
-    // longer find.
+    // On bookmark change too: edited address after re-add under new id would stop matching.
     Connections {
         target: BookmarkModel
         onRevisionChanged: window.findQuickActionBookmark()

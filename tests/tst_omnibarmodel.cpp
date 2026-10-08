@@ -60,7 +60,6 @@ namespace {
 const qint64 Minute = qint64(60) * 1000;
 const qint64 Day = Minute * 60 * 24;
 
-// Everything the omnibar searches, over one temporary directory.
 struct Sources
 {
     QTemporaryDir dir;
@@ -81,7 +80,6 @@ QVariant role(const OmnibarModel &model, int row, int role)
     return model.data(model.index(row, 0), role);
 }
 
-// Each row as "kind: title", top to bottom.
 QStringList rows(const OmnibarModel &model)
 {
     QStringList rows;
@@ -93,7 +91,6 @@ QStringList rows(const OmnibarModel &model)
     return rows;
 }
 
-// The first row of a kind, or -1.
 int rowOfKind(const OmnibarModel &model, const QString &kind)
 {
     for (int row = 0; row < model.rowCount(); ++row) {
@@ -113,8 +110,6 @@ int countOfKind(const OmnibarModel &model, const QString &kind)
     return count;
 }
 
-// A page of the history as the table would hold it after this many visits, the last
-// this long ago.
 bool addHistory(const Storage &storage, const QString &url, const QString &title, int visits,
                 qint64 age)
 {
@@ -128,7 +123,6 @@ bool addHistory(const Storage &storage, const QString &url, const QString &title
     return insert.exec();
 }
 
-// A download as the engine starts one; returns its row's lasting id.
 int startDownload(DownloadModel &model, int engineId, const QString &name, const QString &url)
 {
     model.observe(model.topic(), QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-start")},
@@ -146,7 +140,7 @@ void downloadMessage(DownloadModel &model, int engineId, const QVariantMap &extr
     model.observe(model.topic(), message);
 }
 
-// A rebuild a source asked for happens once the event loop comes round.
+// Requested rebuild runs on next event loop pass.
 void settle()
 {
     QTest::qWait(10);
@@ -158,7 +152,7 @@ void tst_omnibarmodel::roles()
 {
     Sources sources;
     const QHash<int, QByteArray> names = sources.omnibar.roleNames();
-    // QML binds these by name: none may move.
+    // QML binds by name: none may move.
     const QList<QByteArray> expected{
         "kind",       "title",          "url",      "host",      "markedTitle",   "markedHost",
         "favicon",    "tabId",          "groupId",  "groupName", "groupTabCount", "bookmarked",
@@ -183,7 +177,6 @@ void tst_omnibarmodel::roles()
     QCOMPARE(sources.omnibar.rowCount(sources.omnibar.index(0, 0)), 0);
 }
 
-// Nothing typed lists nothing, and blanks are nothing typed.
 void tst_omnibarmodel::nothingTyped()
 {
     Sources sources;
@@ -219,9 +212,8 @@ void tst_omnibarmodel::nothingTyped()
     QCOMPARE(resultsSpy.count(), 2);
 }
 
-// Every word in one field or another, in every source; one word missing is no match.
-// A host that begins with the first word first, then the rest by frecency: the
-// bookmark, which weighs twice a page, before the tab.
+// Every word across fields, all sources; any missing = no match. Host prefix of first word
+// first, then frecency: bookmark (2x page weight) before tab.
 void tst_omnibarmodel::everyWordAcrossFields()
 {
     Sources sources;
@@ -233,7 +225,6 @@ void tst_omnibarmodel::everyWordAcrossFields()
                        QStringLiteral("World"), 1, Day));
     startDownload(sources.downloads, 1, QStringLiteral("helsinki-map.pdf"),
                   QStringLiteral("https://news.example/files/map.pdf"));
-    // Only one of the two words: listed nowhere.
     sources.bookmarks.add(QStringLiteral("https://tampere.fi/"), QStringLiteral("Tampere news"));
 
     OmnibarModel &omnibar = sources.omnibar;
@@ -249,7 +240,6 @@ void tst_omnibarmodel::everyWordAcrossFields()
     QCOMPARE(omnibar.count(), 0);
 }
 
-// Unicode's case, in every source.
 void tst_omnibarmodel::unicodeCase()
 {
     Sources sources;
@@ -271,7 +261,6 @@ void tst_omnibarmodel::unicodeCase()
                                     }));
 }
 
-// What each kind of row carries, and what it leaves empty.
 void tst_omnibarmodel::rowsSayWhatTheyAre()
 {
     Sources sources;
@@ -293,7 +282,6 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     omnibar.setQuery(QStringLiteral("row"));
     QCOMPARE(omnibar.count(), 4);
 
-    // The tab: no title yet, so its address stands for it.
     const int tabRow = rowOfKind(omnibar, QStringLiteral("tab"));
     QCOMPARE(role(omnibar, tabRow, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("https://www.row.example/tab"));
@@ -325,8 +313,6 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     QCOMPARE(role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::DownloadId)).toInt(), 0);
     QVERIFY(!role(omnibar, bookmarkRow, roleId(OmnibarModel::Role::Date)).toDateTime().isValid());
 
-    // A page of the history with no title shows its address, and when it was visited;
-    // with no icon of its own, its site's, which the tab shows.
     const int historyRow = rowOfKind(omnibar, QStringLiteral("history"));
     QCOMPARE(role(omnibar, historyRow, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("https://row.example/history"));
@@ -340,7 +326,6 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     QVERIFY(visited.isValid());
     QVERIFY(qAbs(visited.msecsTo(QDateTime::currentDateTime()) - Day) < Minute);
 
-    // The download, last: its own lasting id, where it came from, how far it has got.
     QCOMPARE(rowOfKind(omnibar, QStringLiteral("download")), 3);
     QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("row.pdf"));
@@ -359,13 +344,11 @@ void tst_omnibarmodel::rowsSayWhatTheyAre()
     QCOMPARE(role(omnibar, 3, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("<b>row</b>.pdf"));
 
-    // A download with no name at all is called by its address.
     startDownload(sources.downloads, 8, QString(), QStringLiteral("https://row.example/x"));
     omnibar.setQuery(QStringLiteral("row.example/x"));
     QCOMPARE(rows(omnibar), QStringList{QStringLiteral("download: https://row.example/x")});
 }
 
-// Tabs of every group are found, each with the group it is in.
 void tst_omnibarmodel::tabsAcrossGroups()
 {
     Sources sources;
@@ -379,8 +362,6 @@ void tst_omnibarmodel::tabsAcrossGroups()
 
     OmnibarModel &omnibar = sources.omnibar;
     omnibar.setQuery(QStringLiteral("mail"));
-    // Both hosts begin with the word, and both are as fresh: the one in front last
-    // comes first.
     QCOMPARE(rows(omnibar),
              (QStringList{QStringLiteral("tab: Office mail"), QStringLiteral("tab: Home mail")}));
     QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), office);
@@ -393,13 +374,11 @@ void tst_omnibarmodel::tabsAcrossGroups()
     QVERIFY(role(omnibar, 1, roleId(OmnibarModel::Role::GroupName)).toString().isEmpty());
     QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::GroupTabCount)).toInt(), 1);
 
-    // A group renamed is a row changed.
     tabs.renameGroup(work, QStringLiteral("Office"));
     QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::GroupName)).toString(),
                  QStringLiteral("Office"));
 }
 
-// The tab in front is the page the bar is over: never a suggestion, whatever it holds.
 void tst_omnibarmodel::activeTabNotListed()
 {
     Sources sources;
@@ -412,15 +391,13 @@ void tst_omnibarmodel::activeTabNotListed()
     QCOMPARE(omnibar.count(), 1);
     QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), first);
 
-    // Another tab to the front: the list follows.
     tabs.activateTabById(first);
     QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::TabId)).toInt(), second);
     QCOMPARE(omnibar.count(), 1);
 }
 
-// First the hosts that begin with the first word, then the titles and addresses with a
-// word that does, then the rest; within each, frecency, and between equals the order
-// the sources have them in.
+// Rank: host prefix of first word, then title/url word prefix, then rest; within each
+// frecency; ties keep source order.
 void tst_omnibarmodel::rankedByMatch()
 {
     Sources sources;
@@ -441,7 +418,6 @@ void tst_omnibarmodel::rankedByMatch()
                                 QStringLiteral("bookmark: Goodnews"),
                             }));
 
-    // A host that begins with the word ahead of a page visited far more often.
     QVERIFY(addHistory(sources.storage, QStringLiteral("https://often.example/news"),
                        QStringLiteral("Often"), 50, Day));
     QVERIFY(addHistory(sources.storage, QStringLiteral("https://news.seldom.example/"),
@@ -451,18 +427,16 @@ void tst_omnibarmodel::rankedByMatch()
     QVERIFY(found.indexOf(QStringLiteral("history: Seldom")) >= 0);
     QVERIFY(found.indexOf(QStringLiteral("history: Seldom")) <
             found.indexOf(QStringLiteral("history: Often")));
-    // And the one visited often ahead of the bookmarks that match as well.
     QVERIFY(found.indexOf(QStringLiteral("history: Often")) <
             found.indexOf(QStringLiteral("bookmark: Evening")));
 }
 
-// Firefox's: the day the score wears down to 1. Doubling the score is one half-life on;
-// a day older is a day less.
+// Firefox: score = day it decays to 1. Doubling = one half-life later; one day older = one less.
 void tst_omnibarmodel::frecencyWeights()
 {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     const qint64 today = now / Day;
-    // 50 is worn down to 1 in 30 * log2(50) days, 169 and a bit.
+    // 50 -> 1 in 30 * log2(50) days = 169.x.
     QCOMPARE(OmnibarModel::frecency(1, false, now, now), today + 169);
     QCOMPARE(OmnibarModel::frecency(2, false, now, now), today + 199);
     QCOMPARE(OmnibarModel::frecency(1, true, now, now), today + 199);
@@ -470,12 +444,10 @@ void tst_omnibarmodel::frecencyWeights()
     QCOMPARE(OmnibarModel::frecency(1, false, now - Day, now), today + 168);
     QCOMPARE(OmnibarModel::frecency(2, false, now - 30 * Day, now), today + 169);
     QCOMPARE(OmnibarModel::frecency(1, false, now - 3650 * Day, now), today - 3650 + 169);
-    // Never visited is visited once; a use stamped ahead of the clock is one today.
     QCOMPARE(OmnibarModel::frecency(0, false, now, now), today + 169);
     QCOMPARE(OmnibarModel::frecency(1, false, now + 5 * Day, now), today + 169);
 }
 
-// Pages that match as well by visits weighed by their age.
 void tst_omnibarmodel::rankedByFrecency()
 {
     Sources sources;
@@ -504,7 +476,6 @@ void tst_omnibarmodel::rankedByFrecency()
                                     }));
 }
 
-// Eight rows at most, two of them downloads at most, and those last.
 void tst_omnibarmodel::capped()
 {
     QCOMPARE(OmnibarModel::MaxRows, 8);
@@ -532,8 +503,6 @@ void tst_omnibarmodel::capped()
     QCOMPARE(resultsSpy.count(), 1);
     QCOMPARE(omnibar.count(), 8);
     QCOMPARE(omnibar.rowCount(), 8);
-    // Every host begins with the word: the bookmarks weigh most, in their order, and
-    // the newest two files follow.
     for (int i = 0; i < 6; ++i) {
         QCOMPARE(role(omnibar, i, roleId(OmnibarModel::Role::Title)).toString(),
                  QStringLiteral("Bookmark %1").arg(i));
@@ -543,23 +512,20 @@ void tst_omnibarmodel::capped()
     QCOMPARE(role(omnibar, 7, roleId(OmnibarModel::Role::Title)).toString(),
              QStringLiteral("cap-5.pdf"));
 
-    // One file matching leaves the pages seven.
     omnibar.setQuery(QStringLiteral("cap 1"));
     QCOMPARE(omnibar.count(), 8);
     QCOMPARE(countOfKind(omnibar, QStringLiteral("download")), 1);
     QCOMPARE(rows(omnibar).last(), QStringLiteral("download: cap-1.pdf"));
 }
 
-// One row a page, whichever sources hold it: an open tab to switch to before a
-// bookmark before a page of the history. Its visits count however its row is listed,
-// and so does its being bookmarked.
+// One row per page, any sources: tab before bookmark before history. Visits and
+// bookmarked status count whichever row shows.
 void tst_omnibarmodel::onePageOneRow()
 {
     Sources sources;
     sources.tabs.newTab(QStringLiteral("https://shared.example/"));
     sources.tabs.newTab(QStringLiteral("https://front.example/"));
     sources.bookmarks.add(QStringLiteral("https://shared.example/"), QStringLiteral("Shared"));
-    // The page in front is not listed as a tab, so its bookmark is.
     sources.bookmarks.add(QStringLiteral("https://front.example/"), QStringLiteral("Front"));
     sources.bookmarks.add(QStringLiteral("https://bookmark.example/"), QStringLiteral("Mark"));
     QVERIFY(addHistory(sources.storage, QStringLiteral("https://shared.example/"),
@@ -573,8 +539,6 @@ void tst_omnibarmodel::onePageOneRow()
 
     OmnibarModel &omnibar = sources.omnibar;
     omnibar.setQuery(QStringLiteral("example"));
-    // The bookmarks, added today, are fresher than the tab whose last visit was
-    // yesterday; the bookmarked tab weighs more than the page no one bookmarked.
     QCOMPARE(rows(omnibar), (QStringList{
                                 QStringLiteral("bookmark: Front"),
                                 QStringLiteral("bookmark: Mark"),
@@ -584,20 +548,16 @@ void tst_omnibarmodel::onePageOneRow()
     QVERIFY(role(omnibar, 2, roleId(OmnibarModel::Role::Bookmarked)).toBool());
     QVERIFY(!role(omnibar, 3, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 
-    // With the tabs switched off the shared page is its bookmark.
     sources.search.setOmnibarTabs(false);
     QTRY_COMPARE(rows(omnibar).first(), QStringLiteral("bookmark: Shared"));
     QCOMPARE(omnibar.count(), 4);
-    // And with the bookmarks off too, the history, the bookmarked pages still weighing
-    // more.
     sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("history")), 4);
     QCOMPARE(rows(omnibar).last(), QStringLiteral("history: Old page"));
     QVERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 }
 
-// What was chosen after what is typed now comes first, even when the words are not in
-// it -- no more than three such -- the likeliest first.
+// Learnt choices for typed text first, even without word match; max three, likeliest first.
 void tst_omnibarmodel::learntFirst()
 {
     Sources sources;
@@ -614,14 +574,12 @@ void tst_omnibarmodel::learntFirst()
     omnibar.setQuery(QStringLiteral("gh"));
     QCOMPARE(rows(omnibar),
              (QStringList{QStringLiteral("history: GitHub"), QStringLiteral("history: Ghost")}));
-    // Less typed than was learnt still leads there; more does not.
     omnibar.setQuery(QStringLiteral("g"));
     QCOMPARE(rows(omnibar).first(), QStringLiteral("history: GitHub"));
     omnibar.setQuery(QStringLiteral("ghx"));
     QCOMPARE(omnibar.count(), 0);
 
-    // What was typed exactly counts twice what only begins with it: "gi", learnt once
-    // for Ghost, beats "git", learnt twice for GitHub.
+    // Exact typed counts 2x prefix: "gi" once for Ghost beats "git" twice for GitHub.
     omnibar.learn(QStringLiteral("git"), QStringLiteral("https://github.com/"));
     omnibar.learn(QStringLiteral("git"), QStringLiteral("https://github.com/"));
     omnibar.learn(QStringLiteral("gi"), QStringLiteral("https://ghost.example/"));
@@ -629,7 +587,6 @@ void tst_omnibarmodel::learntFirst()
     QCOMPARE(rows(omnibar),
              (QStringList{QStringLiteral("history: Ghost"), QStringLiteral("history: GitHub")}));
 
-    // Three first at most; a fourth learnt takes its place among the rest.
     for (int i = 0; i < 4; ++i) {
         const QString url = QStringLiteral("https://learnt-%1.example/").arg(i);
         QVERIFY(addHistory(sources.storage, url, QStringLiteral("Learnt %1").arg(i), 1, Day));
@@ -649,8 +606,6 @@ void tst_omnibarmodel::learntFirst()
                             }));
 }
 
-// Nothing is learnt while the history is not kept, and what was learnt of a page goes
-// with it.
 void tst_omnibarmodel::learningFollowsTheHistory()
 {
     Sources sources;
@@ -674,9 +629,6 @@ void tst_omnibarmodel::learningFollowsTheHistory()
     QCOMPARE(omnibar.count(), 0);
 }
 
-// A page's own icon first, from wherever it is known -- its tab, its bookmark, its
-// history -- and without one, its site's: a tab's before a bookmark's before the
-// history's newest. A file has none.
 void tst_omnibarmodel::favicons()
 {
     Sources sources;
@@ -705,13 +657,11 @@ void tst_omnibarmodel::favicons()
         return QStringLiteral("(not listed)");
     };
     omnibar.setQuery(QStringLiteral("icon"));
-    // The history's own; its site's from the history; none to be had; a file's none.
     QCOMPARE(iconOf(QStringLiteral("Icon a")), QStringLiteral("a.ico"));
     QCOMPARE(iconOf(QStringLiteral("Icon c")), QStringLiteral("a.ico"));
     QVERIFY(iconOf(QStringLiteral("Icon d")).isEmpty());
     QVERIFY(iconOf(QStringLiteral("icon.pdf")).isEmpty());
 
-    // A tab's icon is its page's, and its site's before the history's.
     sources.tabs.updateTitle(tab, QStringLiteral("Icon b"));
     sources.tabs.updateFavicon(tab, QStringLiteral("b.ico"));
     omnibar.setQuery(QString());
@@ -719,7 +669,6 @@ void tst_omnibarmodel::favicons()
     QCOMPARE(iconOf(QStringLiteral("Icon b")), QStringLiteral("b.ico"));
     QCOMPARE(iconOf(QStringLiteral("Icon c")), QStringLiteral("b.ico"));
     QCOMPARE(iconOf(QStringLiteral("Icon a")), QStringLiteral("a.ico"));
-    // A tab without one takes the history's for its page.
     sources.tabs.updateFavicon(tab, QString());
     sources.history.updateFavicon(QStringLiteral("https://kept.example/b"),
                                   QStringLiteral("b-kept.ico"));
@@ -728,8 +677,6 @@ void tst_omnibarmodel::favicons()
     QCOMPARE(iconOf(QStringLiteral("Icon b")), QStringLiteral("b-kept.ico"));
 }
 
-// The title and the host with every word typed in bold, and escaped; the rows follow
-// what is typed even when it finds the same rows.
 void tst_omnibarmodel::markedWords()
 {
     Sources sources;
@@ -747,7 +694,6 @@ void tst_omnibarmodel::markedWords()
     QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
              QStringLiteral("<b>Forest</b> &lt;walks&gt; &amp; more"));
 
-    // With nothing typed, the new tab's bookmarks, escaped and nothing more.
     omnibar.setQuery(QString());
     omnibar.setBookmarksWhenEmpty(true);
     QCOMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::MarkedTitle)).toString(),
@@ -756,7 +702,6 @@ void tst_omnibarmodel::markedWords()
              QStringLiteral("forest.example"));
 }
 
-// A source switched off in Settings lists nothing.
 void tst_omnibarmodel::sourcesSwitchedOff()
 {
     Sources sources;
@@ -793,7 +738,6 @@ void tst_omnibarmodel::sourcesSwitchedOff()
     QCOMPARE(rows(omnibar), QStringList{QStringLiteral("history: https://off-history.example/")});
 }
 
-// For a new tab, nothing typed lists every bookmark, in their order, and nothing else.
 void tst_omnibarmodel::bookmarksWhenEmpty()
 {
     Sources sources;
@@ -820,19 +764,16 @@ void tst_omnibarmodel::bookmarksWhenEmpty()
              QStringLiteral("Bookmark 11"));
     QVERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
 
-    // Something typed is a search like any other.
     omnibar.setQuery(QStringLiteral("tab"));
     QCOMPARE(rows(omnibar), QStringList{QStringLiteral("tab: https://tab.example/")});
     omnibar.setQuery(QString());
     QCOMPARE(omnibar.count(), 12);
 
-    // The bookmarks follow while they are listed.
     sources.bookmarks.remove(0);
     QTRY_COMPARE(role(omnibar, 0, roleId(OmnibarModel::Role::Title)).toString(),
                  QStringLiteral("Bookmark 1"));
     QCOMPARE(omnibar.count(), 11);
 
-    // The bookmarks switched off in Settings are off here too.
     sources.search.setOmnibarBookmarks(false);
     QTRY_COMPARE(omnibar.count(), 0);
     sources.search.setOmnibarBookmarks(true);
@@ -843,8 +784,6 @@ void tst_omnibarmodel::bookmarksWhenEmpty()
     QCOMPARE(omnibar.count(), 0);
 }
 
-// While there is a query, the list follows every source, and many changes at once are
-// one rebuild.
 void tst_omnibarmodel::rebuildsOnSourceChange()
 {
     Sources sources;
@@ -854,7 +793,6 @@ void tst_omnibarmodel::rebuildsOnSourceChange()
     QSignalSpy resetSpy(&omnibar, &OmnibarModel::modelReset);
     QSignalSpy resultsSpy(&omnibar, &OmnibarModel::resultsChanged);
 
-    // A tab opened, and another in front of it: several signals, one rebuild.
     sources.tabs.newTab(QStringLiteral("https://fresh.example/"));
     const int front = sources.tabs.newTab(QStringLiteral("https://front.example/"));
     QCOMPARE(omnibar.count(), 0);
@@ -872,7 +810,6 @@ void tst_omnibarmodel::rebuildsOnSourceChange()
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("download")), 1);
     QCOMPARE(omnibar.count(), 4);
 
-    // A title arriving can make a match, or change what a row says.
     const int titled = sources.tabs.newTab(QStringLiteral("https://titled.example/"));
     sources.tabs.activateTabById(front);
     settle();
@@ -886,7 +823,6 @@ void tst_omnibarmodel::rebuildsOnSourceChange()
                                 QStringLiteral("Fresh history"));
     QTRY_VERIFY(rows(omnibar).contains(QStringLiteral("history: Fresh history")));
 
-    // Things going.
     sources.tabs.closeTabById(titled);
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("tab")), 1);
     sources.history.remove(0);
@@ -898,7 +834,6 @@ void tst_omnibarmodel::rebuildsOnSourceChange()
     QCOMPARE(omnibar.count(), 1);
 }
 
-// With nothing asked of it, the model does not rebuild for its sources' sake.
 void tst_omnibarmodel::quietWhileNothingIsAsked()
 {
     Sources sources;
@@ -918,7 +853,7 @@ void tst_omnibarmodel::quietWhileNothingIsAsked()
     QCOMPARE(resultsSpy.count(), 0);
     QCOMPARE(omnibar.count(), 0);
 
-    // A query cleared while a rebuild waits: the waiting one finds nothing to do.
+    // Query cleared while rebuild pending: pending one no-ops.
     omnibar.setQuery(QStringLiteral("quiet"));
     QCOMPARE(omnibar.count(), 2);
     sources.bookmarks.add(QStringLiteral("https://quiet-too.example/"), QStringLiteral("Q2"));
@@ -930,8 +865,8 @@ void tst_omnibarmodel::quietWhileNothingIsAsked()
     QCOMPARE(omnibar.count(), 0);
 }
 
-// The same rows built again are changed in place, never reset: a download's progress
-// or a favicon arriving does not tear the row down under a finger.
+// Rebuilt same rows change in place, never reset: progress or favicon update must not
+// destroy row under finger.
 void tst_omnibarmodel::changesInPlace()
 {
     Sources sources;
@@ -954,7 +889,6 @@ void tst_omnibarmodel::changesInPlace()
     QTRY_COMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::Progress)).toInt(), 50);
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.count(), 1);
-    // Only the row that changed is told.
     QCOMPARE(changeSpy.last().at(0).toModelIndex().row(), 1);
     QCOMPARE(changeSpy.last().at(1).toModelIndex().row(), 1);
     QCOMPARE(resultsSpy.count(), 0);
@@ -973,14 +907,12 @@ void tst_omnibarmodel::changesInPlace()
     QCOMPARE(resetSpy.count(), 0);
     QCOMPARE(changeSpy.last().at(0).toModelIndex().row(), 0);
 
-    // A change that changes nothing the rows say says nothing.
     const int changes = changeSpy.count();
     sources.tabs.updateThumbnail(tab, QStringLiteral("/nowhere/tab.png"));
     settle();
     QCOMPARE(changeSpy.count(), changes);
     QCOMPARE(resetSpy.count(), 0);
 
-    // Different rows are a different list.
     sources.bookmarks.add(QStringLiteral("https://report-bookmark.example/"), QString());
     QTRY_COMPARE(resetSpy.count(), 1);
     QCOMPARE(omnibar.count(), 3);

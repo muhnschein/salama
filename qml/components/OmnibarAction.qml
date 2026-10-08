@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-//
-// One of the rows the omnibar keeps directly above the bar, in reach of the thumb that
-// typed: go to what was typed as an address, or search the web for it
-// (docs/DECISIONS/0027-omnibar.md). Laid out as the rows found above it are, the glyph
-// where they have their icon, so that the pane reads as one list.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -13,8 +8,6 @@ BackgroundItem {
 
     property string iconSource
     property string title
-    // Where the row leads, under it in the secondary colour; nothing, and the title
-    // alone is centred.
     property string subtitle
 
     height: Theme.itemSizeMedium

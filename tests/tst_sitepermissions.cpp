@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// The site permissions (docs/DECISIONS/0039-site-permissions.md): the model of what the
-// engine holds, the view of one kind's exceptions, the defaults they are exceptions to,
-// and the two models of the one notifications permission kept in step.
+// Site permissions: model of engine's list, per-kind exceptions view, defaults, and two
+// notification models kept in sync.
 #include "Core.h"
 #include "engine/EnginePermissions.h"
 #include "notifications/NotificationPermissions.h"
@@ -30,8 +29,7 @@ const QString News = QStringLiteral("https://news.example");
 const QString Chat = QStringLiteral("https://chat.example");
 const QString Maps = QStringLiteral("https://maps.example");
 
-// What ContentPermissionManager.js sends, as qtmozembed hands it over: every number a
-// double.
+// ContentPermissionManager.js payload via qtmozembed: every number double.
 QVariantMap permission(const QString &type, const QString &uri, int capability, int expireType = 0)
 {
     return {
@@ -96,7 +94,6 @@ void tst_sitepermissions::kindsAreTheEnginesNames()
     QVERIFY(Salama::permissionTypesOf(99).isEmpty());
     QVERIFY(Salama::permissionTypesOf(-1).isEmpty());
 
-    // Every name leads back to its kind, and a name that is none leads nowhere.
     for (int kind = SitePermissions::Notifications; kind <= SitePermissions::TrackingProtection;
          ++kind) {
         for (const QString &type : Salama::permissionTypesOf(kind)) {
@@ -136,7 +133,6 @@ void tst_sitepermissions::listIsRead()
     QCOMPARE(permissions.revision(), 1);
     QCOMPARE(permissions.rowCount(permissions.index(0)), 0);
 
-    // The row as a delegate reads it: kind, origin, host, and whether it is allowed.
     const QModelIndex first = permissions.index(0);
     QCOMPARE(permissions.data(first, roleId(SitePermissions::Role::Kind)).toInt(),
              int(SitePermissions::Popups));
@@ -150,18 +146,15 @@ void tst_sitepermissions::listIsRead()
     QVERIFY(permissions.data(first, Qt::DisplayRole).isNull());
 }
 
-// What is not a decision of the reader's for good, or not one of the kinds, or not a
-// site, is left out; and so is whatever repeats.
 void tst_sitepermissions::listIgnoresTheRest()
 {
     SitePermissions permissions;
     permissions.observe(
         Topic,
         QVariantList{
-            // For the session, the platform's own refusal; a capability that is neither
-            // allowing nor denying (a cookie's "first party only" is 9, and prompt 3);
-            // a permission of another kind; a page that is no site; a deny of tracking
-            // protection, which Gecko's allow list has no use for.
+            // Session-only; platform's own deny; capability neither allow nor deny (cookie "first
+            // party only" 9, prompt 3); other kind; non-site page; tracking protection deny (Gecko
+            // allow list ignores it).
             permission(QStringLiteral("popup"), News, 2, 1),
             permission(QStringLiteral("cookie"), News, 9),
             permission(QStringLiteral("popup"), Chat, 3),
@@ -169,8 +162,6 @@ void tst_sitepermissions::listIgnoresTheRest()
             permission(QStringLiteral("popup"), QStringLiteral("file:///tmp/x"), 1),
             permission(QStringLiteral("popup"), QStringLiteral("about:blank"), 1),
             permission(QStringLiteral("trackingprotection"), Maps, 2),
-            // Kept: with the principal's attributes after a caret, and a port, and the
-            // first of a repeat; a number the engine sent as text is no number.
             permission(QStringLiteral("camera"),
                        QStringLiteral("https://cam.example^userContextId=1"), 1),
             permission(QStringLiteral("popup"), QStringLiteral("http://Host.Example:8080"), 1),
@@ -192,7 +183,6 @@ void tst_sitepermissions::listIgnoresTheRest()
     QCOMPARE(permissions.decision(SitePermissions::TrackingProtection, Maps),
              int(SitePermissions::Default));
 
-    // Another topic is not the list, and the list as read again is the list, not more.
     permissions.observe(QStringLiteral("embed:download"), QVariantList{});
     QCOMPARE(permissions.rowCount(), 3);
     permissions.observe(Topic, QVariantList{});
@@ -207,7 +197,6 @@ void tst_sitepermissions::listAsAString()
                                        "\"capability\":2,\"expireType\":0}]"));
     QCOMPARE(permissions.rowCount(), 1);
     QCOMPARE(permissions.decision(SitePermissions::Popups, News), int(SitePermissions::Block));
-    // What is no list at all is an empty one.
     permissions.observe(Topic, QStringLiteral("not json"));
     QCOMPARE(permissions.rowCount(), 0);
 }
@@ -224,7 +213,6 @@ void tst_sitepermissions::askedBySiteAndKind()
                                });
     QCOMPARE(permissions.exceptionSiteCount(), 3);
 
-    // By kind: how many sites have an exception of it.
     QCOMPARE(permissions.count(SitePermissions::Popups), 2);
     QCOMPARE(permissions.count(SitePermissions::Cookies), 1);
     QCOMPARE(permissions.count(SitePermissions::Camera), 1);
@@ -232,8 +220,6 @@ void tst_sitepermissions::askedBySiteAndKind()
     QCOMPARE(permissions.count(SitePermissions::Location), 0);
     QCOMPARE(permissions.count(SitePermissions::Notifications), 0);
 
-    // By site: how many exceptions it has, and what each says. Any address of a site is
-    // the site; an address that is none has no decisions.
     QCOMPARE(permissions.originCount(News), 2);
     QCOMPARE(permissions.originCount(QStringLiteral("https://news.example/today?x=1")), 2);
     QCOMPARE(permissions.originCount(Maps), 2);
@@ -248,8 +234,7 @@ void tst_sitepermissions::askedBySiteAndKind()
     QCOMPARE(permissions.decision(SitePermissions::Camera, News), int(SitePermissions::Default));
     QCOMPARE(permissions.decision(SitePermissions::Popups, QStringLiteral("data:text/html,x")),
              int(SitePermissions::Default));
-    // The same host over the other scheme, and the same host on another port, are other
-    // sites, as an origin is.
+    // Other scheme or port = other site (origin).
     QCOMPARE(permissions.decision(SitePermissions::Popups, QStringLiteral("http://news.example")),
              int(SitePermissions::Default));
     QCOMPARE(
@@ -261,8 +246,7 @@ void tst_sitepermissions::askedBySiteAndKind()
     QCOMPARE(Salama::EnginePermissions::hostOf(News), QStringLiteral("news.example"));
 }
 
-// Every change is the engine's own message, as ContentPermissionManager.js reads it,
-// and the model's list moves with it.
+// Every change = engine message as ContentPermissionManager.js reads it; list follows.
 void tst_sitepermissions::settingTellsTheEngine()
 {
     SitePermissions permissions;
@@ -290,7 +274,6 @@ void tst_sitepermissions::settingTellsTheEngine()
     QCOMPARE(decided.at(0).at(1).toString(), News);
     QCOMPARE(decided.at(0).at(2).toInt(), int(SitePermissions::Allow));
 
-    // Blocked: the same row, changed, and the capability the engine reads as a deny.
     permissions.set(SitePermissions::Popups, News, SitePermissions::Block);
     QCOMPARE(sent(requests, 1).value(QStringLiteral("permission")).toInt(), 2);
     QCOMPARE(permissions.rowCount(), 1);
@@ -299,27 +282,23 @@ void tst_sitepermissions::settingTellsTheEngine()
     QCOMPARE(changed.count(), 2);
     QCOMPARE(permissions.revision(), 2);
 
-    // The same again changes no row and says nothing was changed, but still tells the
-    // engine, which may have lost it.
+    // Repeat: no row change or changed signal, but engine told again (may have lost it).
     permissions.set(SitePermissions::Popups, News, SitePermissions::Block);
     QCOMPARE(requests.count(), 3);
     QCOMPARE(data.count(), 1);
     QCOMPARE(changed.count(), 2);
 
-    // Another kind of the same site is another exception.
     permissions.set(SitePermissions::Cookies, News, SitePermissions::Allow);
     QCOMPARE(sent(requests, 3).value(QStringLiteral("type")).toString(), QStringLiteral("cookie"));
     QCOMPARE(permissions.rowCount(), 2);
     QCOMPARE(permissions.exceptionSiteCount(), 1);
     QCOMPARE(permissions.originCount(News), 2);
 
-    // Default is taking the exception away.
     permissions.set(SitePermissions::Popups, News, SitePermissions::Default);
     QCOMPARE(sent(requests, 4).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
     QCOMPARE(permissions.decision(SitePermissions::Popups, News), int(SitePermissions::Default));
     QCOMPARE(decided.last().at(2).toInt(), int(SitePermissions::Default));
 
-    // What is no decision, no site or no kind says nothing to anyone.
     const int before = requests.count();
     permissions.set(SitePermissions::Popups, QStringLiteral("about:blank"), SitePermissions::Allow);
     permissions.set(SitePermissions::Popups, QString(), SitePermissions::Allow);
@@ -330,9 +309,8 @@ void tst_sitepermissions::settingTellsTheEngine()
     QCOMPARE(permissions.rowCount(), 1);
 }
 
-// The platform's prompt writes a location as what the page asked for, "geolocation", and
-// Gecko's own name for it is "geo"; both are written and either is read, so that
-// whichever the engine goes by is the one that is there.
+// Platform prompt writes "geolocation", Gecko uses "geo": write both, read either, so
+// whichever engine uses exists.
 void tst_sitepermissions::aLocationHasTwoNames()
 {
     SitePermissions permissions;
@@ -352,7 +330,6 @@ void tst_sitepermissions::aLocationHasTwoNames()
              QStringLiteral("geolocation"));
     QCOMPARE(sent(requests, 3).value(QStringLiteral("type")).toString(), QStringLiteral("geo"));
 
-    // Read under either name, and as one exception when both are there.
     permissions.observe(Topic, QVariantList{permission(QStringLiteral("geo"), Maps, 1),
                                             permission(QStringLiteral("geolocation"), Maps, 1),
                                             permission(QStringLiteral("geolocation"), News, 2)});
@@ -374,7 +351,6 @@ void tst_sitepermissions::removing()
     QSignalSpy removed(&permissions, &QAbstractItemModel::rowsRemoved);
     QSignalSpy decided(&permissions, &SitePermissions::decided);
 
-    // One: the site follows the default for the kind again, and the others stay.
     permissions.remove(SitePermissions::Popups, QStringLiteral("https://news.example/x"));
     QCOMPARE(requests.count(), 1);
     QCOMPARE(sent(requests, 0).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
@@ -385,12 +361,10 @@ void tst_sitepermissions::removing()
     QCOMPARE(permissions.decision(SitePermissions::Cookies, News), int(SitePermissions::Block));
     QCOMPARE(decided.last().at(2).toInt(), int(SitePermissions::Default));
 
-    // One that was not in the list is still asked of the engine, which may hold it.
     permissions.remove(SitePermissions::Popups, News);
     QCOMPARE(requests.count(), 2);
     QCOMPARE(removed.count(), 1);
 
-    // Every site of a kind.
     permissions.observe(Topic, QVariantList{
                                    permission(QStringLiteral("popup"), News, 1),
                                    permission(QStringLiteral("popup"), Chat, 2),
@@ -405,11 +379,9 @@ void tst_sitepermissions::removing()
                              sent(requests, 3).value(QStringLiteral("uri")).toString()};
     removedSites.sort();
     QCOMPARE(removedSites, (QStringList{Chat, News}));
-    // Nothing of the kind: nothing said.
     permissions.removeAll(SitePermissions::Location);
     QCOMPARE(requests.count(), 4);
 
-    // Every kind of a site.
     permissions.observe(Topic, QVariantList{
                                    permission(QStringLiteral("popup"), News, 1),
                                    permission(QStringLiteral("cookie"), News, 2),
@@ -449,13 +421,11 @@ void tst_sitepermissions::adoptingTellsNobody()
     QCOMPARE(permissions.decision(SitePermissions::Notifications, Chat),
              int(SitePermissions::Block));
     QCOMPARE(changed.count(), 2);
-    // The same again changes nothing.
     permissions.adopt(SitePermissions::Notifications, Chat, SitePermissions::Block);
     QCOMPARE(changed.count(), 2);
     permissions.adopt(SitePermissions::Notifications, Chat, SitePermissions::Default);
     QCOMPARE(permissions.rowCount(), 0);
     QCOMPARE(changed.count(), 3);
-    // Nothing to forget, no site, no kind.
     permissions.adopt(SitePermissions::Notifications, Chat, SitePermissions::Default);
     permissions.adopt(SitePermissions::Notifications, QStringLiteral("about:blank"),
                       SitePermissions::Allow);
@@ -475,8 +445,6 @@ void tst_sitepermissions::refreshAsksForTheList()
     QCOMPARE(sent(requests, 0), (QVariantMap{{QStringLiteral("msg"), QStringLiteral("get-all")}}));
 }
 
-// The view of one kind: the allowed sites first, the blocked after them, each by host,
-// and a site decided on again moves.
 void tst_sitepermissions::exceptionsOfOneKind()
 {
     SitePermissions permissions;
@@ -487,7 +455,6 @@ void tst_sitepermissions::exceptionsOfOneKind()
     popups.setPermissions(&permissions);
     QCOMPARE(popups.kind(), int(SitePermissions::Popups));
     QCOMPARE(popups.permissions(), static_cast<QObject *>(&permissions));
-    // The roles are the model's own.
     QCOMPARE(popups.roleNames(), permissions.roleNames());
 
     permissions.observe(
@@ -499,8 +466,8 @@ void tst_sitepermissions::exceptionsOfOneKind()
                    permission(QStringLiteral("popup"), News, 1),
                    permission(QStringLiteral("popup"), QStringLiteral("http://news.example"), 1),
                });
-    // Only popups; the allowed first, by host, and by origin where the host is the same
-    // (http before https); then the blocked by host.
+    // Popups only; allowed first by host, then origin for same host (http before https);
+    // then blocked by host.
     QCOMPARE(popups.rowCount(), 5);
     QCOMPARE(counts.count(), 1);
     QCOMPARE(popups.rowCount(), 5);
@@ -515,7 +482,6 @@ void tst_sitepermissions::exceptionsOfOneKind()
     QCOMPARE(popups.data(popups.index(4, 0), roleId(SitePermissions::Role::Allowed)).toBool(),
              false);
 
-    // Blocking a site moves its row under the other heading, and unblocking it back.
     QSignalSpy moved(&popups, &QAbstractItemModel::rowsMoved);
     QSignalSpy layout(&popups, &QAbstractItemModel::layoutChanged);
     permissions.set(SitePermissions::Popups, QStringLiteral("https://zed.example"),
@@ -525,7 +491,6 @@ void tst_sitepermissions::exceptionsOfOneKind()
     QCOMPARE(originAt(popups, 4), QStringLiteral("https://zed.example"));
     QCOMPARE(popups.rowCount(), 5);
 
-    // A new exception of the kind joins, of another kind it does not; one taken away goes.
     permissions.set(SitePermissions::Popups, Maps, SitePermissions::Allow);
     permissions.set(SitePermissions::Cookies, Chat, SitePermissions::Allow);
     QCOMPARE(popups.rowCount(), 6);
@@ -534,7 +499,6 @@ void tst_sitepermissions::exceptionsOfOneKind()
     QCOMPARE(popups.rowCount(), 5);
     QVERIFY(counts.count() >= 3);
 
-    // The view of another kind of the same list, and the kind changed on the view.
     SiteExceptions cookies;
     cookies.setPermissions(&permissions);
     cookies.setKind(SitePermissions::Cookies);
@@ -562,15 +526,13 @@ void tst_sitepermissions::exceptionsViewRefusesOtherModels()
     view.setPermissions(&permissions);
     view.setPermissions(&permissions);
     QCOMPARE(changed.count(), 1);
-    // Another SitePermissions is taken in its place.
     SitePermissions again;
     view.setPermissions(&again);
     QCOMPARE(view.permissions(), static_cast<QObject *>(&again));
 }
 
-// The notifications permission has a model of its own, which WebNotifications asks and
-// the notifications page lists, and is one of the site permissions too: what is decided
-// in either is taken in by the other, and the engine is told once.
+// Notifications has own model (WebNotifications asks, notifications page lists) and is
+// also site permission: decision in either reaches other; engine told once.
 void tst_sitepermissions::notificationsAreKeptInStep()
 {
     QTemporaryDir dir;
@@ -580,7 +542,6 @@ void tst_sitepermissions::notificationsAreKeptInStep()
     QSignalSpy toEngine(sites, &SitePermissions::engineRequest);
     QSignalSpy toEngineFromNotifications(notifications, &NotificationPermissions::engineRequest);
 
-    // From the site's details: blocked there, and so for the page that asks.
     sites->set(SitePermissions::Notifications, Chat, SitePermissions::Block);
     QVERIFY(notifications->isBlocked(Chat));
     QCOMPARE(toEngine.count(), 1);
@@ -594,7 +555,6 @@ void tst_sitepermissions::notificationsAreKeptInStep()
     QCOMPARE(notifications->rowCount(), 0);
     QCOMPARE(toEngineFromNotifications.count(), 0);
 
-    // From the notifications' own: the site permissions follow.
     notifications->setAllowed(News, true);
     QCOMPARE(sites->decision(SitePermissions::Notifications, News), int(SitePermissions::Allow));
     QCOMPARE(toEngineFromNotifications.count(), 1);
@@ -603,15 +563,12 @@ void tst_sitepermissions::notificationsAreKeptInStep()
     notifications->remove(News);
     QCOMPARE(sites->decision(SitePermissions::Notifications, News), int(SitePermissions::Default));
     QCOMPARE(sites->exceptionSiteCount(), 0);
-    // Nobody was told twice.
     QCOMPARE(toEngine.count(), 3);
     QCOMPARE(toEngineFromNotifications.count(), 3);
 
-    // Another kind is no business of the notifications'.
     sites->set(SitePermissions::Popups, Chat, SitePermissions::Allow);
     QCOMPARE(notifications->rowCount(), 0);
 
-    // And the engine's list, which both read.
     const QVariantList list{permission(QStringLiteral("desktop-notification"), Maps, 1),
                             permission(QStringLiteral("popup"), Maps, 2)};
     notifications->observe(Topic, list);
@@ -621,8 +578,6 @@ void tst_sitepermissions::notificationsAreKeptInStep()
     QCOMPARE(sites->decision(SitePermissions::Notifications, Maps), int(SitePermissions::Allow));
 }
 
-// The decisions a reader makes for sites that have no decision of their own
-// (docs/DECISIONS/0039-site-permissions.md).
 void tst_sitepermissions::defaults()
 {
     QTemporaryDir dir;
@@ -634,14 +589,12 @@ void tst_sitepermissions::defaults()
     QSignalSpy microphone(sites, &SitePermissionSettings::microphoneBlockedChanged);
     QSignalSpy cookies(sites, &SitePermissionSettings::cookiesChanged);
 
-    // As Firefox has them: pop-ups blocked, the rest asked, and cross-site cookies refused.
     QVERIFY(!sites->popupsAllowed());
     QVERIFY(!sites->locationBlocked());
     QVERIFY(!sites->cameraBlocked());
     QVERIFY(!sites->microphoneBlocked());
     QCOMPARE(sites->cookies(), int(SitePermissionSettings::CookiesBlockCrossSite));
 
-    // Each is its own and says so once.
     sites->setPopupsAllowed(true);
     sites->setPopupsAllowed(true);
     QCOMPARE(popups.count(), 1);
@@ -659,8 +612,6 @@ void tst_sitepermissions::defaults()
     QVERIFY(sites->microphoneBlocked());
     QCOMPARE(camera.count(), 2);
 
-    // The cookies are one of three, by the engine's own numbers, and anything else is
-    // refused.
     QCOMPARE(int(SitePermissionSettings::CookiesAllowAll), 0);
     QCOMPARE(int(SitePermissionSettings::CookiesBlockCrossSite), 1);
     QCOMPARE(int(SitePermissionSettings::CookiesBlockAll), 2);
@@ -696,7 +647,6 @@ void tst_sitepermissions::defaultsPersist()
         QVERIFY(again.sitePermissions()->microphoneBlocked());
         QCOMPARE(again.sitePermissions()->cookies(), int(SitePermissionSettings::CookiesAllowAll));
     }
-    // Written by hand out of range: the default, not a choice the engine has no number for.
     {
         QSettings raw(path, QSettings::IniFormat);
         raw.setValue(QStringLiteral("cookies"), 9);
@@ -706,8 +656,7 @@ void tst_sitepermissions::defaultsPersist()
              int(SitePermissionSettings::CookiesBlockCrossSite));
 }
 
-// Asked each time, whatever the default: the engine's prompt record, for the kinds a page
-// asks for and no other (docs/DECISIONS/0040-site-details.md).
+// Ask each time, any default: engine prompt record, only for kinds pages ask for.
 void tst_sitepermissions::askingEachTime()
 {
     QVERIFY(SitePermissions::canAsk(SitePermissions::Notifications));
@@ -737,7 +686,6 @@ void tst_sitepermissions::askingEachTime()
              int(SitePermissions::Ask));
     QVERIFY(!permissions.data(first, roleId(SitePermissions::Role::Allowed)).toBool());
 
-    // Set from here: the engine is told with its prompt capability, under each name.
     QSignalSpy toEngine(&permissions, &SitePermissions::engineRequest);
     permissions.set(SitePermissions::Location, Maps, SitePermissions::Ask);
     QCOMPARE(permissions.decision(SitePermissions::Location, Maps), int(SitePermissions::Ask));
@@ -746,18 +694,15 @@ void tst_sitepermissions::askingEachTime()
         QCOMPARE(sent(toEngine, i).value(QStringLiteral("msg")).toString(), QStringLiteral("add"));
         QCOMPARE(sent(toEngine, i).value(QStringLiteral("permission")).toInt(), 3);
     }
-    // From allowed to asked is a change of the row, not another row.
     permissions.set(SitePermissions::Camera, Chat, SitePermissions::Allow);
     permissions.set(SitePermissions::Camera, Chat, SitePermissions::Ask);
     QCOMPARE(permissions.decision(SitePermissions::Camera, Chat), int(SitePermissions::Ask));
     QCOMPARE(permissions.rowCount(), 3);
-    // Pop-ups are not asked about: asking for them is following the default.
     toEngine.clear();
     permissions.set(SitePermissions::Popups, Maps, SitePermissions::Ask);
     QCOMPARE(permissions.decision(SitePermissions::Popups, Maps), int(SitePermissions::Default));
     QCOMPARE(sent(toEngine, 0).value(QStringLiteral("msg")).toString(), QStringLiteral("remove"));
 
-    // Listed after the allowed and the blocked.
     permissions.set(SitePermissions::Camera, News, SitePermissions::Block);
     permissions.set(SitePermissions::Camera, Maps, SitePermissions::Allow);
     SiteExceptions camera;
@@ -769,8 +714,6 @@ void tst_sitepermissions::askingEachTime()
     QCOMPARE(originAt(camera, 1), News);
     QCOMPARE(originAt(camera, 2), Chat);
 
-    // The notifications' own list has neither allowed nor blocked of a site asked each
-    // time: read from the engine, or decided in the site's details.
     QTemporaryDir dir;
     Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
     NotificationPermissions *notifications = core.notificationPermissions();
