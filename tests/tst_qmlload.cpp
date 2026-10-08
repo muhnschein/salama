@@ -3072,7 +3072,8 @@ void tst_qmlload::recentlyClosedTabs()
     QObject *panel = find(QStringLiteral("recentlyClosedPanel"));
     QVERIFY(panel != nullptr);
     QVERIFY(!panel->property("open").toBool());
-    QVERIFY(panel->property("modal").toBool());
+    // Own shade, not DockedPanel's modal, which dims handle too (#38).
+    QVERIFY(!panel->property("modal").toBool());
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
@@ -3196,7 +3197,7 @@ void tst_qmlload::browserMenu()
     QObject *menu = find(QStringLiteral("browserMenu"));
     QVERIFY(menu != nullptr);
     QVERIFY(!menu->property("open").toBool());
-    QVERIFY(menu->property("modal").toBool());
+    QVERIFY(!menu->property("modal").toBool());
     QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
     tapBar(QStringLiteral("menu"));
     QVERIFY(menu->property("open").toBool());
@@ -3707,10 +3708,29 @@ void tst_qmlload::menuSheetDoesNotScroll()
     FingerWindow host(root);
     QQuickWindow &window = *host.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto *menu = qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu")));
     tapBar(QStringLiteral("menu"));
-    sheetStaysPut(window, qobject_cast<QQuickItem *>(find(QStringLiteral("browserMenu"))),
-                  find(QStringLiteral("menuSheet")),
+    sheetStaysPut(window, menu, find(QStringLiteral("menuSheet")),
                   qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton"))));
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+
+    // Own shade under sheet, handle over both, so handle drawn undimmed; tap on shade closes.
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    auto *shade = qobject_cast<QQuickItem *>(find(QStringLiteral("menuShade")));
+    auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
+    QCOMPARE(shade->parentItem(), menu->parentItem());
+    QCOMPARE(handle->parentItem(), menu->parentItem());
+    QVERIFY(shade->z() < menu->z());
+    QVERIFY(handle->z() > menu->z());
+    QCOMPARE(handle->opacity(), 1.0);
+    QTRY_COMPARE(shade->opacity(), 1.0);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                      QPoint(int(window.width() / 2), int(menu->y() / 2)));
+    QTRY_VERIFY(!menu->property("open").toBool());
+    QTRY_VERIFY(!shade->isVisible());
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to
@@ -4395,7 +4415,7 @@ void tst_qmlload::linkMenuOnALongPress()
     QObject *view = currentWebView();
     QVERIFY(menu != nullptr);
     QVERIFY(!menu->property("open").toBool());
-    QVERIFY(menu->property("modal").toBool());
+    QVERIFY(!menu->property("modal").toBool());
     QCOMPARE(menu->property("dock").toInt(), 2); // Dock.Bottom
 
     // Platform opener builds menu from view's provider: stand-in file that loads, accepts opener's
@@ -4454,8 +4474,8 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(overlay->z() < menu->property("z").toReal());
     QVERIFY(overlay->property("shown").toBool());
     QTRY_VERIFY(shownIn(find(QStringLiteral("linkMenuDim"))));
-    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("opacity").toReal(),
-             evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal());
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("strength").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityHigh")).toReal());
     QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkAppRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
@@ -4701,13 +4721,14 @@ void tst_qmlload::linkMenuForPictures()
              page->property("height").toReal() - menu->property("height").toReal());
     QCOMPARE(picture->property("width").toReal(), page->property("width").toReal());
     QCOMPARE(picture->property("fillMode").toInt(), 1); // Image.PreserveAspectFit
-    // Picture over sheet's modal shade, fully drawn; backdrop darker than for links (#38).
+    // Picture over sheet and its shade, fully drawn; backdrop darker than for links (#38).
     QVERIFY(area->z() > menu->property("z").toReal());
+    QVERIFY(area->z() > find(QStringLiteral("linkMenuDim"))->property("z").toReal());
     QVERIFY(area->clip());
     QTRY_COMPARE(area->opacity(), 1.0);
     QCOMPARE(picture->property("opacity").toReal(), 1.0);
-    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("opacity").toReal(),
-             evaluate(menu, QStringLiteral("Theme.opacityHigh")).toReal());
+    QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("strength").toReal(),
+             evaluate(menu, QStringLiteral("Theme.opacityOverlay")).toReal());
     QObject *pinch = find(QStringLiteral("linkMenuPinch"));
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.target === parent.children[0]")).toBool(), true);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.maximumScale")).toReal(), 4.0);

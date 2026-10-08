@@ -11,10 +11,14 @@ DockedPanel {
 
     objectName: "recentlyClosedPanel"
     dock: Dock.Bottom
-    modal: true
 
     SheetBackground {
         anchors.fill: parent
+    }
+
+    SheetShade {
+        objectName: "panelShade"
+        edgeOf: panel
     }
 
     SheetGrip {

@@ -33,7 +33,6 @@ DockedPanel {
     width: parent.width
     height: content.height
     dock: Dock.Bottom
-    modal: true
 
     function openPage(page) {
         hide()
@@ -88,6 +87,11 @@ DockedPanel {
         //: Shown for a moment once the menu's copy button has put the page's address on
         //: the clipboard
         text: qsTr("Address copied")
+    }
+
+    SheetShade {
+        objectName: "menuShade"
+        edgeOf: menu
     }
 
     SheetGrip {

@@ -27,7 +27,8 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            color: Theme.rgba(Theme.overlayBackgroundColor, Theme.opacityLow)
+            color: Theme.highlightDimmerColor
+            opacity: Theme.opacityHigh
         }
     }
 

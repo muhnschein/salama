@@ -46,7 +46,6 @@ DockedPanel {
     width: parent.width
     height: content.height
     dock: Dock.Bottom
-    modal: true
     z: 2
 
     function openFor(pressed, page) {
@@ -171,7 +170,8 @@ DockedPanel {
 
         parent: menu.parent
         anchors.fill: parent
-        z: menu.z - 1
+        z: menu.z - 2
+        pictureZ: menu.z + 1
         shown: menu.open
         roomTop: menu.topInset
         roomBottom: parent.height - menu.height
@@ -197,6 +197,13 @@ DockedPanel {
         objectName: "linkCopiedNotice"
         duration: Notice.Short
         verticalOffset: -Theme.itemSizeLarge
+    }
+
+    // Darker behind picture, so eye goes to picture.
+    SheetShade {
+        objectName: "linkMenuDim"
+        edgeOf: menu
+        strength: menu.hasImage ? Theme.opacityOverlay : Theme.opacityHigh
     }
 
     SheetGrip {
