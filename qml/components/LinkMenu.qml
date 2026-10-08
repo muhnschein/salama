@@ -171,8 +171,7 @@ DockedPanel {
         parent: menu.parent
         anchors.fill: parent
         z: menu.z - 2
-        // Over shade's tap catcher too: pinch, not close.
-        pictureZ: menu.z + 2
+        pictureZ: menu.z + 1
         shown: menu.open
         roomTop: menu.topInset
         roomBottom: parent.height - menu.height
@@ -205,6 +204,7 @@ DockedPanel {
         objectName: "linkMenuDim"
         edgeOf: menu
         strength: menu.hasImage ? Theme.opacityOverlay : Theme.opacityHigh
+        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop) : 0
     }
 
     SheetGrip {

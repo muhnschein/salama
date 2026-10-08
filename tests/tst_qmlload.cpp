@@ -3740,18 +3740,20 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QCOMPARE(handle->parentItem(), menu->parentItem());
     QVERIFY(shade->z() < menu->z());
     QVERIFY(shadeOnTop(shade, menu));
-    // Tap catcher over sheet's own outside area, covering only page above sheet.
+    // Press beside sheet caught window-wide, as DockedPanel's modal does: covers sheet exactly.
     auto *tap =
         qobject_cast<QQuickItem *>(findObjects(shade, QStringLiteral("sheetShadeTap")).first());
-    QCOMPARE(tap->parentItem(), menu->parentItem());
-    QVERIFY(tap->z() > menu->z());
-    QCOMPARE(tap->y() + tap->height(), menu->y());
+    QCOMPARE(tap->parentItem(), menu);
+    QCOMPARE(tap->y(), 0.0);
+    QCOMPARE(tap->height(), menu->height());
+    QVERIFY(tap->property("stealPress").toBool());
+    QVERIFY(tap->property("enabled").toBool());
     QVERIFY(handle->z() > menu->z());
     QCOMPARE(handle->opacity(), 1.0);
     QTRY_COMPARE(shade->opacity(), 1.0);
-    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
-                      QPoint(window.width() / 2, int(menu->y() / 2)));
+    evaluate(tap, QStringLiteral("pressedOutside(10, 10)"));
     QTRY_VERIFY(!menu->property("open").toBool());
+    QVERIFY(!tap->property("enabled").toBool());
     QTRY_VERIFY(!shade->isVisible());
 }
 
@@ -4747,20 +4749,31 @@ void tst_qmlload::linkMenuForPictures()
     // Picture over sheet and its shade, fully drawn; backdrop darker than for links (#38).
     QVERIFY(area->z() > menu->property("z").toReal());
     QVERIFY(area->z() > find(QStringLiteral("linkMenuDim"))->property("z").toReal());
-    QVERIFY(area->z() >
-            findObjects(find(QStringLiteral("linkMenuDim")), QStringLiteral("sheetShadeTap"))
-                .first()
-                ->property("z")
-                .toReal());
     QVERIFY(area->clip());
     QTRY_COMPARE(area->opacity(), 1.0);
     QCOMPARE(picture->property("opacity").toReal(), 1.0);
+    // Drawn picture counts as sheet for press-beside: pinch and double tap stay its own.
+    auto *pictureCatch = qobject_cast<QQuickItem *>(
+        findObjects(find(QStringLiteral("linkMenuDim")), QStringLiteral("sheetShadeTap")).first());
+    QCOMPARE(pictureCatch->y(), 0.0);
+    picture->setProperty("visible", true);
+    QObject *overlayItem = find(QStringLiteral("linkMenuOverlay"));
+    QVERIFY(overlayItem->property("pictureShown").toBool());
+    QCOMPARE(pictureCatch->y(),
+             overlayItem->property("pictureTop").toReal() - menu->property("y").toReal());
+    QVERIFY(pictureCatch->y() < 0);
     QCOMPARE(find(QStringLiteral("linkMenuDim"))->property("strength").toReal(),
              evaluate(menu, QStringLiteral("Theme.opacityOverlay")).toReal());
     QObject *pinch = find(QStringLiteral("linkMenuPinch"));
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.target === parent.children[0]")).toBool(), true);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.maximumScale")).toReal(), 4.0);
     QCOMPARE(evaluate(pinch, QStringLiteral("pinch.minimumScale")).toReal(), 1.0);
+    // Double tap zooms in, again zooms back out (#38).
+    QObject *pictureTap = find(QStringLiteral("linkMenuPictureTap"));
+    evaluate(pictureTap, QStringLiteral("doubleClicked(null)"));
+    QTRY_COMPARE(picture->property("scale").toReal(), 2.5);
+    evaluate(pictureTap, QStringLiteral("doubleClicked(null)"));
+    QTRY_COMPARE(picture->property("scale").toReal(), 1.0);
     picture->setProperty("scale", 2.5);
     holdOn(view, heldOn(QString(), QString(), QStringLiteral("https://cdn.example/b.jpg")));
     QCOMPARE(picture->property("scale").toReal(), 1.0);
