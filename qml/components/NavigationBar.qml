@@ -36,6 +36,11 @@ Item {
                                                || (edited && typedText.trim().length > 0))
     // Slim instead of hiding on scroll. Tap restores whole bar; only tap on whole bar edits.
     property bool compact: false
+    // Landscape: every control at slim height; scroll hides whole bar below page foot instead.
+    property bool landscape: false
+    property bool hidden: false
+    // 0 shown .. 1 hidden. Own animation: view resize waits for its end, as for height.
+    property real hiddenAmount: hidden ? 1 : 0
 
     signal accepted(string text, bool inNewTab)
     signal back()
@@ -67,14 +72,27 @@ Item {
     readonly property real slimHeight: Theme.itemSizeSmall
     // 0 slim .. 1 whole. All state differences derive from this so height animation
     // carries everything.
-    readonly property real expansion: (height - slimHeight) / (Theme.itemSizeLarge - slimHeight)
+    readonly property real expansion: landscape ? 1.0 : (height - slimHeight)
+                                                      / (Theme.itemSizeLarge - slimHeight)
     readonly property bool resizing: heightSlide.running
+    readonly property bool sliding: hideSlide.running
 
-    height: compact ? slimHeight : Theme.itemSizeLarge
+    height: compact || landscape ? slimHeight : Theme.itemSizeLarge
+    // Hidden bar's reach would take page foot's touches.
+    visible: !hidden || hiddenAmount < 1
 
     Behavior on height {
         NumberAnimation {
             id: heightSlide
+
+            duration: 200
+            easing.type: Easing.InOutQuad
+        }
+    }
+
+    Behavior on hiddenAmount {
+        NumberAnimation {
+            id: hideSlide
 
             duration: 200
             easing.type: Easing.InOutQuad

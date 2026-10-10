@@ -24,6 +24,7 @@ Item {
     property real footerMargin: 0
     // QuickMozView chrome gesture: engine drops chrome on scroll down, wants it back on scroll up.
     property bool chrome: true
+    property bool atYBeginning: true
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // Display cutout inset handed to engine. Binding like platform's: Binding release restores

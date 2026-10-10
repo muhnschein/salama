@@ -9,6 +9,7 @@ Item {
 
     // False while address edited, find open, or grid out.
     property bool allowed: true
+    readonly property bool downloadShown: downloadBanner.shown
 
     function tabOpened(tabId, title) {
         tabBanner.opened(tabId, title)

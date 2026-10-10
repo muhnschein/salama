@@ -267,6 +267,7 @@ private slots:
     void landscapeBrowsing();
     void landscapeTutorial();
     void landscapeGesturesUnderAFinger();
+    void landscapeBarHides();
 
 private:
     bool loadWindow();
@@ -7670,8 +7671,8 @@ void tst_qmlload::webNotifications()
 
     QVERIFY(
         view->property("messageListeners").toStringList().contains(notifications->messageName()));
-    QCOMPARE(view->property("frameScripts").toStringList(),
-             QStringList{notifications->relayScriptUrl()});
+    QVERIFY(
+        view->property("frameScripts").toStringList().contains(notifications->relayScriptUrl()));
     // Notification shim installed on document arrival and again after load (engine runs no script
     // before view made).
     const auto installs = [view, notifications]() {
@@ -9450,7 +9451,8 @@ void tst_qmlload::landscapeBrowsing()
     QCOMPARE(start->property("columns").toInt(), 8);
 
     QObject *banner = find(QStringLiteral("bannerBar"))->parent();
-    QVERIFY(banner->property("width").toReal() > browser->height());
+    // Portrait width over bar's right end (landscapeBarHides), swipe a third of it.
+    QCOMPARE(banner->property("width").toReal(), browser->height());
     QCOMPARE(banner->property("dismissDistance").toReal(), browser->height() / 3);
 
     // Keyboard shrinks page: deck keeps its height, search results end above keyboard.
@@ -9582,6 +9584,145 @@ void tst_qmlload::landscapeGesturesUnderAFinger()
     }
     turnDevice(Portrait);
     QCOMPARE(browser->rotation(), qreal(0));
+}
+
+// Landscape bar: slim height with every control. Scroll down hides it whole, page takes its
+// height. Back on scroll up, page top, load, page tap off links, editing, find, download banner;
+// fixed toolbar keeps it. Portrait still slims, taps and page top leave it slim.
+void tst_qmlload::landscapeBarHides()
+{
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
+    auto *viewArea = qobject_cast<QQuickItem *>(find(QStringLiteral("viewArea")));
+    QObject *banners = find(QStringLiteral("barBanners"));
+    QObject *findBar = find(QStringLiteral("findBar"));
+    QObject *webView = currentWebView();
+    const EngineMessages *messages = m_core->engineMessages();
+    QVERIFY(
+        webView->property("messageListeners").toStringList().contains(messages->pageTapMessage()));
+    QVERIFY(
+        webView->property("frameScripts").toStringList().contains(messages->pageTapScriptUrl()));
+    const auto pageTapped = [webView, messages]() {
+        QMetaObject::invokeMethod(webView, "recvAsyncMessage",
+                                  Q_ARG(QString, messages->pageTapMessage()),
+                                  Q_ARG(QVariant, QVariantMap()));
+    };
+    const auto scrolledDown = [webView]() {
+        webView->setProperty("atYBeginning", false);
+        webView->setProperty("chrome", false);
+    };
+    const qreal slim = bar->property("slimHeight").toReal();
+
+    // Portrait as before: slim, not hidden; tap and page top leave chrome down.
+    scrolledDown();
+    QVERIFY(bar->property("compact").toBool());
+    QVERIFY(!bar->property("hidden").toBool());
+    pageTapped();
+    webView->setProperty("atYBeginning", true);
+    QVERIFY(!webView->property("chrome").toBool());
+    QTRY_COMPARE(bar->height(), slim);
+    QCOMPARE(viewArea->height(),
+             browser->height() - slim - browser->property("pageCutoutInset").toReal());
+    webView->setProperty("chrome", true);
+    QTRY_COMPARE(bar->height(), evaluate(bar, QStringLiteral("Theme.itemSizeLarge")).toReal());
+
+    turnDevice(Landscape);
+    const qreal pageHeight = browser->height();
+    QTRY_COMPARE(bar->height(), slim);
+    QVERIFY(!bar->property("compact").toBool());
+    QCOMPARE(bar->property("expansion").toReal(), 1.0);
+    for (const char *control : {"backButton", "reloadButton", "menuButton"}) {
+        QVERIFY2(find(QLatin1String(control))->property("visible").toBool(), control);
+    }
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
+             QStringLiteral("menu"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(1)")).toString(), QStringLiteral("back"));
+    QCOMPARE(bar->y() + bar->height(), pageHeight);
+    QCOMPARE(viewArea->height(), pageHeight - slim);
+
+    // Hidden: page gets whole height at once, bar slides below page foot and lets go of touches.
+    const auto hides = [&]() {
+        scrolledDown();
+        QVERIFY(bar->property("hidden").toBool());
+        QVERIFY(!bar->property("compact").toBool());
+        QCOMPARE(viewArea->height(), pageHeight);
+        QTRY_VERIFY(!bar->isVisible());
+        QCOMPARE(bar->y(), pageHeight);
+        QVERIFY(!find(QStringLiteral("navigationBarGesture"))->property("visible").toBool());
+    };
+    // Shown: page keeps whole height until slide ends, then gives bar its row.
+    const auto shows = [&]() {
+        QVERIFY(!bar->property("hidden").toBool());
+        QVERIFY(bar->isVisible());
+        QVERIFY(bar->property("sliding").toBool());
+        QCOMPARE(viewArea->height(), pageHeight);
+        QTRY_COMPARE(bar->y(), pageHeight - slim);
+        QTRY_COMPARE(viewArea->height(), pageHeight - slim);
+    };
+    hides();
+    webView->setProperty("chrome", true);
+    shows();
+
+    hides();
+    pageTapped();
+    QVERIFY(webView->property("chrome").toBool());
+    shows();
+
+    hides();
+    webView->setProperty("atYBeginning", true);
+    QVERIFY(webView->property("chrome").toBool());
+    shows();
+
+    hides();
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    shows();
+
+    hides();
+    evaluate(browser, QStringLiteral("openOmnibar(false)"));
+    QVERIFY(bar->property("editing").toBool());
+    shows();
+    evaluate(bar, QStringLiteral("endEditing()"));
+
+    hides();
+    evaluate(findBar, QStringLiteral("open()"));
+    QVERIFY(findBar->property("active").toBool());
+    shows();
+    evaluate(findBar, QStringLiteral("close()"));
+
+    hides();
+    m_core->settings()->setFixedToolbar(true);
+    shows();
+    m_core->settings()->setFixedToolbar(false);
+
+    // Banner over bar's right end at portrait width; page keeps its height under it.
+    hides();
+    evaluate(viewArea,
+             QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start', id: 1,"
+                            " displayName: 'v86.zip', sourceUrl: 'https://files.example/v86.zip',"
+                            " targetPath: '/tmp/v86.zip', mimeType: 'application/zip',"
+                            " size: 2048})"));
+    QVERIFY(banners->property("downloadShown").toBool());
+    QVERIFY(webView->property("chrome").toBool());
+    shows();
+    const qreal bannerWidth = banners->property("width").toReal();
+    QCOMPARE(bannerWidth,
+             qMin(browser->width(), evaluate(bar, QStringLiteral("Screen.width")).toReal()));
+    QVERIFY(bannerWidth < browser->width() / 2);
+    QCOMPARE(banners->property("x").toReal() + bannerWidth, browser->width());
+    QCOMPARE(banners->property("y").toReal() + banners->property("height").toReal(), bar->y());
+    QCOMPARE(viewArea->height(), pageHeight - slim);
+
+    // Turned while hidden: portrait slims instead.
+    scrolledDown();
+    turnDevice(Portrait);
+    QVERIFY(bar->property("compact").toBool());
+    QVERIFY(!bar->property("hidden").toBool());
+    QTRY_VERIFY(bar->isVisible());
+    QTRY_COMPARE(bar->height(), slim);
+    QCOMPARE(bar->y() + bar->height(), browser->height());
+    QCOMPARE(banners->property("width").toReal(), browser->width());
+    QCOMPARE(banners->property("x").toReal(), qreal(0));
 }
 
 #include "tst_qmlload.moc"

@@ -6,6 +6,7 @@
 #include "settings/Settings.h"
 #include "settings/SitePermissionSettings.h"
 
+#include <QJSEngine>
 #include <QtTest>
 
 using Salama::DohSettings;
@@ -65,6 +66,24 @@ QStringList features(const QVariant &engines)
     return list.isEmpty() ? QStringList() : list.split(QLatin1Char(','));
 }
 
+// Frame script scope: click listener, messages sent, elements that know their controls.
+const char *const FakeFrame = R"(
+var listeners = {}, sent = [];
+function addEventListener(type, listener, capture) {
+  listeners[type] = { listener: listener, capture: capture };
+}
+function sendAsyncMessage(name, data) { sent.push({ name: name, data: data }); }
+function element(insideControl, editable) {
+  return {
+    isContentEditable: !!editable,
+    closest: function (selector) { return insideControl && selector.indexOf('a[href]') >= 0 ? {} : null; }
+  };
+}
+function tap(target, trusted, button) {
+  listeners.click.listener({ target: target, isTrusted: trusted !== false, button: button || 0 });
+}
+)";
+
 const char *const ContentBlocking = "privacy.trackingprotection.content.protection.engines";
 const char *const ContentAnnotation = "privacy.trackingprotection.content.annotation.engines";
 
@@ -87,6 +106,7 @@ private slots:
     void linkTarget_data();
     void linkTarget();
     void linkTargetOfNothing();
+    void pageTapScript();
     void findFound_data();
     void findFound();
     void trackingProtectionNamesTheSamePreferences();
@@ -272,6 +292,37 @@ void tst_enginemessages::linkTargetOfNothing()
             QVERIFY2(it.value().toString().isEmpty(), qPrintable(it.key()));
         }
     }
+}
+
+void tst_enginemessages::pageTapScript()
+{
+    EngineMessages messages;
+    QCOMPARE(messages.pageTapMessage(), QStringLiteral("salama:pagetap"));
+    const QString url = messages.pageTapScriptUrl();
+    QVERIFY(url.startsWith(QLatin1String("data:application/javascript;charset=utf-8,")));
+    QCOMPARE(QUrl::fromPercentEncoding(url.mid(url.indexOf(QLatin1Char(',')) + 1).toLatin1()),
+             messages.pageTapScript());
+
+    QJSEngine engine;
+    QVERIFY(!engine.evaluate(QString::fromUtf8(FakeFrame)).isError());
+    const QJSValue loaded = engine.evaluate(messages.pageTapScript());
+    QVERIFY2(!loaded.isError(), qPrintable(loaded.toString()));
+    const auto js = [&engine](const QString &code) { return engine.evaluate(code); };
+    // Capture: page stopping propagation still taps.
+    QVERIFY(js(QStringLiteral("listeners.click.capture")).toBool());
+
+    js(QStringLiteral("tap(element(false))"));
+    QCOMPARE(js(QStringLiteral("sent.length")).toInt(), 1);
+    QCOMPARE(js(QStringLiteral("sent[0].name")).toString(), messages.pageTapMessage());
+
+    // Link, field, editable, script click, other button, nothing: page's own.
+    js(QStringLiteral("tap(element(true))"));
+    js(QStringLiteral("tap(element(false, true))"));
+    js(QStringLiteral("tap(element(false), false)"));
+    js(QStringLiteral("tap(element(false), true, 1)"));
+    js(QStringLiteral("tap(null)"));
+    js(QStringLiteral("tap({})"));
+    QCOMPARE(js(QStringLiteral("sent.length")).toInt(), 1);
 }
 
 void tst_enginemessages::findRequest()
