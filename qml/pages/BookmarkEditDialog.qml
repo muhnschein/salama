@@ -12,7 +12,7 @@ Dialog {
     property alias title: titleField.text
 
     objectName: "bookmarkEditDialog"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     canAccept: urlField.text.length > 0
     onAccepted: BookmarkModel.edit(bookmarkIndex, urlField.text, titleField.text)
 

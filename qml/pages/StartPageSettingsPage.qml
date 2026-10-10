@@ -12,7 +12,7 @@ Page {
     property SettingNames names: SettingNames {}
 
     objectName: "startPageSettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     SilicaFlickable {
         anchors.fill: parent

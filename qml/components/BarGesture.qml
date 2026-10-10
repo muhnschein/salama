@@ -12,7 +12,8 @@ MouseArea {
 
     property Item bar
 
-    // Window coords: bar rides deck, so bar-relative distance moves with deck -> jitter.
+    // Page coords: bar rides deck, so bar-relative distance moves with deck -> jitter; window
+    // axes turn with landscape page (Silica rotates page, window stays portrait).
     property real pressedY: 0
     property point pressedAt
     property point lastAt
@@ -31,12 +32,21 @@ MouseArea {
 
     height: strip + reach
 
+    // Nearest page: still while deck moves, upright in either orientation.
+    function frame() {
+        var item = gestureArea.parent
+        while (item && item.allowedOrientations === undefined) {
+            item = item.parent
+        }
+        return item
+    }
+
     function sceneY(y) {
-        return gestureArea.mapToItem(null, 0, y).y
+        return gestureArea.mapToItem(frame(), 0, y).y
     }
 
     function scenePoint(mouse) {
-        return gestureArea.mapToItem(null, mouse.x, mouse.y)
+        return gestureArea.mapToItem(frame(), mouse.x, mouse.y)
     }
 
     // Reach press is page's if past shaky-tap distance and not mostly up (up = grid drag).

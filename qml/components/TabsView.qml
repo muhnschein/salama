@@ -17,6 +17,12 @@ Item {
 
     // Silica PullDownMenu adds same to top margin in portrait.
     property real cutoutHeight: 0
+    // Silica shrinks it while keyboard up; grid keeps full height.
+    property real pageHeight: height
+    readonly property GridCells cells: GridCells {
+        width: tabsView.width
+        height: tabsView.height
+    }
     readonly property bool searching: searchField.text.length > 0
                                       && TabSearch.searchTerm.length > 0
     // Escaped term words, as Jolla contacts build for Theme.highlightText().
@@ -82,8 +88,8 @@ Item {
         height: parent.height
         y: -overscroll
         model: GroupTabs
-        cellWidth: width / 2
-        cellHeight: cellWidth + Theme.itemSizeSmall
+        cellWidth: cells.cellWidth
+        cellHeight: cells.cellHeight
         // Explicit vertical: automatic refuses drag when content fits.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
@@ -211,7 +217,8 @@ Item {
         objectName: "tabSearchList"
         y: headRow.height
         width: parent.width
-        height: parent.height - headRow.height - footRow.height
+        // Above keyboard: grid layer is full height.
+        height: Math.min(parent.height, tabsView.pageHeight) - headRow.height - footRow.height
         visible: tabsView.searching
         clip: true
         model: TabSearch

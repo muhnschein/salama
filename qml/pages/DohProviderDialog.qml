@@ -11,6 +11,7 @@ Dialog {
     readonly property int problem: DohSettings.providerProblem(address.text)
 
     objectName: "dohProviderDialog"
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     canAccept: problem === DohSettings.ProviderValid
     onAccepted: DohSettings.provider = address.text
 

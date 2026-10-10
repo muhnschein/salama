@@ -263,6 +263,10 @@ private slots:
     void tutorial();
     void tutorialGrid();
     void tutorialUnderAFinger();
+    void everyPageTurns();
+    void landscapeBrowsing();
+    void landscapeTutorial();
+    void landscapeGesturesUnderAFinger();
 
 private:
     bool loadWindow();
@@ -282,6 +286,8 @@ private:
     void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
+
+    void turnDevice(int orientation) const;
 
     QScopedPointer<QTemporaryDir> m_dir;
     QScopedPointer<Core> m_core;
@@ -9342,6 +9348,240 @@ void tst_qmlload::tutorialUnderAFinger()
     drag(&window, middle, middle + up);
     QVERIFY(!deck->property("tabsOpen").toBool());
     QCOMPARE(step(), QStringLiteral("done"));
+}
+
+namespace {
+
+// Silica's Orientation values (tests/silica-stubs/plugin/enums.h).
+const int Portrait = 1;
+const int Landscape = 2;
+const int PortraitInverted = 4;
+const int LandscapeInverted = 8;
+
+} // namespace
+
+// Stub pages follow window's device orientation where page and window allow it, as Silica.
+void tst_qmlload::turnDevice(int orientation) const
+{
+    m_window->setProperty("deviceOrientation", orientation);
+    settle();
+}
+
+// Every page and dialog turns to either landscape, none upside down: inverted portrait puts
+// cutout under bar. Page pinned portrait (or left at Silica's portrait default) stays upright.
+void tst_qmlload::everyPageTurns()
+{
+    QObject *browser = find(QStringLiteral("browserPage"));
+    const QStringList files = QDir(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages"))
+                                  .entryList({QStringLiteral("*.qml")}, QDir::Files, QDir::Name);
+    QVERIFY(files.count() > 20);
+    for (int orientation : {Landscape, LandscapeInverted}) {
+        turnDevice(orientation);
+        QCOMPARE(browser->property("orientation").toInt(), orientation);
+        QVERIFY(browser->property("isLandscape").toBool());
+        for (const QString &file : files) {
+            if (file == QLatin1String("BrowserPage.qml")) {
+                continue;
+            }
+            evaluate(
+                m_window.data(),
+                QStringLiteral("pageStack.push('%1')")
+                    .arg(QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages/") + file)
+                             .toString()));
+            QObject *page = currentPage();
+            QVERIFY2(page != browser, qPrintable(file));
+            QVERIFY2(page->property("orientation").toInt() == orientation, qPrintable(file));
+            popPage();
+            QCOMPARE(currentPage(), browser);
+        }
+    }
+    turnDevice(PortraitInverted);
+    QCOMPARE(browser->property("orientation").toInt(), Portrait);
+    turnDevice(Portrait);
+    QCOMPARE(browser->property("orientation").toInt(), Portrait);
+}
+
+// Silica keeps landscape page clear of cutout, so no top inset; deck, grid, start page, banner
+// sized for wide, low page; keyboard-shrunk page keeps deck, search list stays above keyboard.
+void tst_qmlload::landscapeBrowsing()
+{
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    m_core->tabs()->newTab(QString());
+    QObject *tabsView = find(QStringLiteral("tabsView"));
+    auto *grid = item("tabGrid");
+    QObject *start = find(QStringLiteral("startPage"));
+    QVERIFY(start != nullptr);
+    const qreal portraitHeight = browser->height();
+    const qreal cutout = browser->property("cutoutHeight").toReal();
+    QVERIFY(cutout > 0);
+    QCOMPARE(browser->property("fullHeight").toReal(), portraitHeight);
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(start->property("columns").toInt(), 4);
+
+    turnDevice(Landscape);
+    QVERIFY(browser->width() > browser->height());
+    QCOMPARE(browser->height(), window->width());
+    QCOMPARE(browser->property("cutoutHeight").toReal(), qreal(0));
+    QCOMPARE(browser->property("cutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    QCOMPARE(item("cutoutBand")->height(), qreal(0));
+    QCOMPARE(item("viewArea")->y(), qreal(0));
+    QCOMPARE(tabsView->property("cutoutHeight").toReal(), qreal(0));
+    QCOMPARE(item("gridHeadRow")->height(),
+             evaluate(browser, QStringLiteral("Theme.itemSizeLarge")).toReal());
+
+    // Deck re-measured: grid layer and page fit landscape page, not portrait's height.
+    QCOMPARE(browser->property("fullHeight").toReal(), browser->height());
+    QCOMPARE(item("gridSlot")->height(), browser->height());
+    QCOMPARE(item("viewArea")->height(), browser->property("viewHeight").toReal());
+    auto *bar = item("navigationBar");
+    QCOMPARE(bar->y() + bar->height(), browser->height());
+
+    // Three page-shaped previews a row, a whole row between head and foot rows.
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 3);
+    const qreal rows =
+        browser->height() - item("gridHeadRow")->height() - item("gridFootRow")->height();
+    QVERIFY(grid->property("cellHeight").toReal() < rows);
+    QVERIFY(grid->property("cellHeight").toReal() > grid->property("cellWidth").toReal() / 3);
+    QCOMPARE(start->property("columns").toInt(), 8);
+
+    QObject *banner = find(QStringLiteral("bannerBar"))->parent();
+    QVERIFY(banner->property("width").toReal() > browser->height());
+    QCOMPARE(banner->property("dismissDistance").toReal(), browser->height() / 3);
+
+    // Keyboard shrinks page: deck keeps its height, search results end above keyboard.
+    const qreal landscapeHeight = browser->height();
+    window->setWidth(landscapeHeight / 2);
+    settle();
+    QCOMPARE(browser->height(), landscapeHeight / 2);
+    QCOMPARE(browser->property("fullHeight").toReal(), landscapeHeight);
+    auto *results = item("tabSearchList");
+    QCOMPARE(results->y() + results->height(), browser->height() - item("gridFootRow")->height());
+    window->setWidth(landscapeHeight);
+    settle();
+
+    turnDevice(Portrait);
+    QCOMPARE(browser->height(), portraitHeight);
+    QCOMPARE(browser->property("fullHeight").toReal(), portraitHeight);
+    QCOMPARE(browser->property("cutoutHeight").toReal(), cutout);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(start->property("columns").toInt(), 4);
+
+    // Open grid turns with page at once, no slide across from old height.
+    pullUpToTabs();
+    QTRY_COMPARE(browser->property("tabsOffset").toReal(), portraitHeight);
+    turnDevice(Landscape);
+    QCOMPARE(browser->property("tabsOffset").toReal(), browser->height());
+    turnDevice(Portrait);
+    QCOMPARE(browser->property("tabsOffset").toReal(), portraitHeight);
+    QVERIFY(browser->property("tabsOpen").toBool());
+}
+
+// Welcome card scrolls on a low page; no cutout gap, three grid columns, sketch leaves room.
+void tst_qmlload::landscapeTutorial()
+{
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
+    QVERIFY(page->property("cutoutHeight").toReal() > 0);
+    auto *flick = item("tutorialCardFlick");
+    auto *column = item("tutorialCardColumn");
+    QVERIFY(flick != nullptr && column != nullptr);
+    QVERIFY(column->y() + column->height() <= flick->height());
+
+    turnDevice(Landscape);
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    window->setWidth(column->height() / 2);
+    settle();
+    QCOMPARE(page->property("cutoutHeight").toReal(), qreal(0));
+    QVERIFY(column->y() > 0);
+    QVERIFY(flick->property("contentHeight").toReal() >= column->y() + column->height());
+    QVERIFY(flick->property("contentHeight").toReal() > flick->height());
+    QVERIFY(item("tutorialSketchPicture")->height() <= page->height() / 4);
+
+    QObject *grid = find(QStringLiteral("tutorialGrid"));
+    auto *view = item("tutorialGridView");
+    QCOMPARE(view->property("cellWidth").toReal(), page->width() / 3);
+    // Third tab ends first row.
+    const QPointF third = evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF();
+    QCOMPARE(third.x(), view->property("cellWidth").toReal() * 2.5);
+    QCOMPARE(third.y(), evaluate(grid, QStringLiteral("cellCentre(0)")).toPointF().y());
+}
+
+// Silica turns landscape page a quarter inside portrait window. Swipe up anywhere along bar opens
+// grid; pull down on grid head returns. Gestures once measured window axes: deck followed only a
+// sideways drift, so on device just bar's right part, under a right thumb's arc, opened grid.
+void tst_qmlload::landscapeGesturesUnderAFinger()
+{
+    for (int i = 0; i < 11; ++i) {
+        m_core->tabs()->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    auto *head = qobject_cast<QQuickItem *>(find(QStringLiteral("gridHeadControls")));
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const qreal threshold = browser->property("pullThreshold").toReal();
+    const auto offset = [browser]() { return browser->property("tabsOffset").toReal(); };
+    const auto onWindow = [browser](const QPointF &at) {
+        return browser->mapToScene(at).toPoint();
+    };
+    const auto swipe = [&](const QPointF &from, const QPointF &to) {
+        const int steps = 24;
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onWindow(from));
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, onWindow(from + (to - from) * step / steps));
+        }
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onWindow(to));
+    };
+
+    for (int orientation : {Landscape, LandscapeInverted}) {
+        turnDevice(orientation);
+        QVERIFY(browser->rotation() != qreal(0));
+        const qreal reach = gesture->property("reach").toReal();
+        const qreal onBar = gesture->mapToItem(browser, QPointF(0, reach)).y() +
+                            gesture->property("strip").toReal() / 2;
+
+        // Tap above bar reaches page where finger is.
+        auto *view = qobject_cast<QQuickItem *>(currentWebView());
+        const int touched = view->property("touches").toList().count();
+        const QPointF tap(200, gesture->mapToItem(browser, QPointF(0, reach / 2)).y());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, onWindow(tap));
+        const QVariantMap began = view->property("touches").toList().value(touched).toMap();
+        const QPointF local = view->mapFromItem(browser, tap);
+        QVERIFY(qAbs(began.value(QStringLiteral("x")).toReal() - local.x()) < 1);
+        QVERIFY(qAbs(began.value(QStringLiteral("y")).toReal() - local.y()) < 1);
+        for (const qreal across : {0.1, 0.5, 0.9}) {
+            const QPointF from(browser->width() * across, onBar);
+            swipe(from, from - QPointF(0, 3 * threshold));
+            QVERIFY2(browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), browser->property("fullHeight").toReal());
+            QTRY_VERIFY(!grid->property("moving").toBool());
+
+            // Scrolled grid: only head's own pull returns, grid's overscroll can't.
+            const qreal scrolled = grid->property("cellHeight").toReal();
+            grid->setProperty("contentY", scrolled);
+            const QPointF pulled =
+                head->mapToItem(browser, QPointF(head->width() * across, head->height() / 2));
+            swipe(pulled, pulled + QPointF(0, 3 * threshold));
+            QVERIFY2(!browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), qreal(0));
+            QCOMPARE(grid->property("contentY").toReal(), scrolled);
+            grid->setProperty("contentY", 0);
+        }
+    }
+    turnDevice(Portrait);
+    QCOMPARE(browser->rotation(), qreal(0));
 }
 
 #include "tst_qmlload.moc"

@@ -29,7 +29,10 @@ WebViewPage {
                                        - (navigationBar.compact || navigationBar.resizing
                                           ? navigationBar.slimHeight : barHeight)
 
-    readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
+    readonly property CutoutInsets cutout: CutoutInsets {
+        view: browserPage.currentView
+        orientation: browserPage.orientation
+    }
     readonly property real cutoutHeight: cutout.height
     readonly property real cutoutInset: cutout.inset
     readonly property real pageCutoutInset: cutout.pageInset
@@ -44,7 +47,7 @@ WebViewPage {
     }
 
     objectName: "browserPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function openUrl(url) {
         if (url.length === 0) {
@@ -160,11 +163,12 @@ WebViewPage {
     }
 
     // Touch taken above bar from page foot, replayed to engine; focus ends address edit.
+    // Position in page coords, as bar gesture reports.
     function touchPage(position, phase) {
         if (!currentView) {
             return
         }
-        var at = currentView.mapFromItem(null, position.x, position.y)
+        var at = currentView.mapFromItem(browserPage, position.x, position.y)
         var touches = [Qt.point(at.x, at.y)]
         if (phase === "start") {
             currentView.forceActiveFocus()
@@ -360,6 +364,7 @@ WebViewPage {
 
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
+            pageHeight: browserPage.height
             // Drawn once drag may start: first drawn frame uploads all previews, stutters drag.
             visible: deck.tabsOffset > 0 || deck.primed
             onPullStarted: deck.beginDrag()

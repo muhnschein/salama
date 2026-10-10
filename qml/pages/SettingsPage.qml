@@ -10,7 +10,7 @@ Page {
     id: settingsPage
 
     objectName: "settingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     // Notification permissions asked of engine.
     property SettingNames names: SettingNames {}

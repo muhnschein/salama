@@ -17,6 +17,7 @@ Dialog {
     property SitePermissionNames siteNames: SitePermissionNames {}
 
     objectName: "siteExceptionDialog"
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     canAccept: origin.length > 0
     // Always ask only for asking kinds.
     onAccepted: SitePermissions.set(kind, origin,

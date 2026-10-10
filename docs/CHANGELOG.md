@@ -6,6 +6,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ## [Unreleased]
 
 ### Added
+- Landscape: every page turns with phone, either way round; upside-down portrait stays upright. Notch gap only in portrait; tab grid three page-shaped previews a row; start page top sites in one row; welcome card scrolls.
 - Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
 - Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.

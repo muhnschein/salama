@@ -11,7 +11,7 @@ Page {
     id: historyPage
 
     objectName: "historySettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     // Choice passed in: dialog gone before remorse ends. Engine clears all or nothing.
     function clearData(range, tabs, history, siteData, cache) {

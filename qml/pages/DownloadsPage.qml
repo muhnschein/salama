@@ -10,7 +10,7 @@ Page {
     id: downloadsPage
 
     objectName: "downloadsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function open(row, openable) {
         if (openable) {

@@ -11,7 +11,7 @@ MouseArea {
 
     property Item field
 
-    // Window coords: row rides deck, which follows finger.
+    // Page coords: row rides deck, which follows finger; window axes turn with landscape page.
     property point pressedAt
     property bool pulling: false
     property bool moved: false
@@ -23,8 +23,17 @@ MouseArea {
     enabled: !field || !field.activeFocus
     preventStealing: pulling
 
+    // Nearest page: still while deck moves, upright in either orientation.
+    function frame() {
+        var item = gesture.parent
+        while (item && item.allowedOrientations === undefined) {
+            item = item.parent
+        }
+        return item
+    }
+
     function scenePoint(mouse) {
-        return gesture.mapToItem(null, mouse.x, mouse.y)
+        return gesture.mapToItem(frame(), mouse.x, mouse.y)
     }
 
     // Silica field's clear button = rightItem, shown when text present.

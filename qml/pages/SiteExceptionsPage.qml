@@ -14,7 +14,7 @@ Page {
     property SitePermissionNames siteNames: SitePermissionNames {}
 
     objectName: "siteExceptionsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     Component.onCompleted: SitePermissions.refresh()
 

@@ -18,6 +18,10 @@ Item {
     signal tabGrouped()
 
     property real cutoutHeight: 0
+    readonly property GridCells cells: GridCells {
+        width: tutorialGrid.width
+        height: tutorialGrid.height
+    }
     readonly property int count: tabs.count
     readonly property Item strip: groupStrip
     property bool moved: false
@@ -41,8 +45,8 @@ Item {
     }
 
     function cellCentre(index) {
-        return Qt.point((index % 2 + 0.5) * view.cellWidth,
-                        headRow.height + (Math.floor(index / 2) + 0.5) * view.cellHeight)
+        return Qt.point((index % cells.columns + 0.5) * view.cellWidth,
+                        headRow.height + (Math.floor(index / cells.columns) + 0.5) * view.cellHeight)
     }
 
     function rowOf(tabId) {
@@ -75,8 +79,8 @@ Item {
         height: parent.height
         y: -overscroll
         model: tabs
-        cellWidth: width / 2
-        cellHeight: cellWidth + Theme.itemSizeSmall
+        cellWidth: cells.cellWidth
+        cellHeight: cells.cellHeight
         // Explicit vertical: automatic refuses drag when content fits.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds

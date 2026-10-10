@@ -9,7 +9,7 @@ Page {
     id: searchSettingsPage
 
     objectName: "searchSettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     SearchEngineInstaller {
         id: installer
