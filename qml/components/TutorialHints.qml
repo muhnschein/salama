@@ -11,6 +11,7 @@ Item {
     property Item bar
     property Item grid
     property Item menu
+    readonly property bool wide: width > height
 
     // Position at deck rest: step changes on finger lift while deck still springs.
     function placeOf(item, point, layer) {
@@ -45,6 +46,8 @@ Item {
             touchHint.interactionMode = TouchInteraction.Pull
             touchHint.direction = TouchInteraction.Up
             touchHint.startY = height - bar.height - touchHint.height / 2
+            // Landscape: a quarter along, as whole bar drags.
+            touchHint.anchors.horizontalCenterOffset = wide ? -width / 4 : 0
         } else if (step === "closeTab") {
             touchHint.direction = TouchInteraction.Left
             touchHint.startX = width * 7 / 8 - touchHint.width / 2
@@ -53,6 +56,11 @@ Item {
             touchHint.direction = TouchInteraction.Right
             touchHint.startX = firstRow.x - touchHint.width / 2
             touchHint.anchors.verticalCenterOffset = firstRow.y - height / 2
+        } else if (step === "groupTab" && wide) {
+            // Rail at left: from grid onto its group row.
+            touchHint.direction = TouchInteraction.Left
+            touchHint.startX = group.x + touchHint.distance - touchHint.width / 2
+            touchHint.anchors.verticalCenterOffset = group.y - height / 2
         } else if (step === "groupTab") {
             touchHint.direction = TouchInteraction.Down
             touchHint.startY = group.y - touchHint.distance - touchHint.height / 2
@@ -61,6 +69,8 @@ Item {
             touchHint.interactionMode = TouchInteraction.Pull
             touchHint.direction = TouchInteraction.Down
             touchHint.startY = height / 3 - touchHint.height / 2
+            // Over grid, right of rail.
+            touchHint.anchors.horizontalCenterOffset = grid.railWidth / 2
         }
         touchHint.restart()
     }

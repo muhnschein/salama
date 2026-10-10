@@ -271,6 +271,11 @@ private slots:
     void everyPageTurns();
     void landscapeBrowsing();
     void landscapeTutorial();
+    void landscapeTutorialBar();
+    void landscapeTutorialMenu();
+    void landscapeTutorialOmnibar();
+    void landscapeTutorialGrid();
+    void landscapeTutorialUnderAFinger();
     void landscapeGesturesUnderAFinger();
     void landscapeBarHides();
     void landscapeOmnibar();
@@ -10267,7 +10272,8 @@ void tst_qmlload::landscapeBrowsing()
     QVERIFY(browser->property("tabsOpen").toBool());
 }
 
-// Welcome card scrolls on a low page; no cutout gap, three grid columns, sketch leaves room.
+// Welcome and recap cards in two columns, no scrolling: mark and heading left, rest right. No
+// cutout gap, sketch leaves room. Upright: one column again.
 void tst_qmlload::landscapeTutorial()
 {
     const auto item = [this](const char *name) {
@@ -10277,28 +10283,503 @@ void tst_qmlload::landscapeTutorial()
     auto *page = qobject_cast<QQuickItem *>(currentPage());
     QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
     QVERIFY(page->property("cutoutHeight").toReal() > 0);
-    auto *flick = item("tutorialCardFlick");
-    auto *column = item("tutorialCardColumn");
-    QVERIFY(flick != nullptr && column != nullptr);
-    QVERIFY(column->y() + column->height() <= flick->height());
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    QObject *welcome = find(QStringLiteral("tutorialWelcome"));
+    QObject *recap = find(QStringLiteral("tutorialRecap"));
+    const auto boxIn = [](QObject *object, QObject *other) {
+        auto *quick = qobject_cast<QQuickItem *>(object);
+        return quick->mapRectToItem(qobject_cast<QQuickItem *>(other),
+                                    QRectF(0, 0, quick->width(), quick->height()));
+    };
+    const auto isUnder = [](QObject *object, QObject *ancestor) {
+        for (QQuickItem *at = qobject_cast<QQuickItem *>(object); at != nullptr;
+             at = at->parentItem()) {
+            if (at == ancestor) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const auto part = [](QObject *card, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(card, QLatin1String(name)).first());
+    };
+    const auto oneColumn = [&](QObject *card) {
+        const QRectF head = boxIn(part(card, "tutorialCardHead"), card);
+        const QRectF body = boxIn(part(card, "tutorialCardBody"), card);
+        return head.left() == body.left() && head.width() == body.width() &&
+               body.top() > head.bottom();
+    };
+    QVERIFY(oneColumn(welcome));
+    QVERIFY(oneColumn(recap));
 
     turnDevice(Landscape);
-    auto *window = qobject_cast<QQuickItem *>(m_window.data());
-    window->setWidth(column->height() / 2);
-    settle();
     QCOMPARE(page->property("cutoutHeight").toReal(), qreal(0));
-    QVERIFY(column->y() > 0);
-    QVERIFY(flick->property("contentHeight").toReal() >= column->y() + column->height());
-    QVERIFY(flick->property("contentHeight").toReal() > flick->height());
+    QTRY_VERIFY(!oneColumn(welcome));
+    for (QObject *card : {welcome, recap}) {
+        auto *flick = part(card, "tutorialCardFlick");
+        auto *column = part(card, "tutorialCardColumn");
+        QCOMPARE(flick->property("contentHeight").toReal(), flick->height());
+        QVERIFY(column->y() > 0);
+        QVERIFY(column->y() + column->height() < flick->height());
+        // Halves side by side, rows overlapping.
+        const QRectF head = boxIn(part(card, "tutorialCardHead"), card);
+        const QRectF body = boxIn(part(card, "tutorialCardBody"), card);
+        QCOMPARE(head.width(), body.width());
+        QVERIFY(head.width() > page->width() / 3);
+        QVERIFY(head.right() < body.left());
+        QVERIFY(body.right() < page->width());
+        QVERIFY(body.top() < head.bottom() && head.top() < body.bottom());
+    }
+    QObject *head = part(welcome, "tutorialCardHead");
+    QObject *body = part(welcome, "tutorialCardBody");
+    QVERIFY(isUnder(part(welcome, "tutorialLogo"), head));
+    QVERIFY(isUnder(part(welcome, "tutorialCardHeading"), head));
+    QVERIFY(isUnder(part(welcome, "tutorialTopics"), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialStartButton")), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialSkipButton")), body));
+    head = part(recap, "tutorialCardHead");
+    body = part(recap, "tutorialCardBody");
+    QVERIFY(isUnder(part(recap, "tutorialCheck"), head));
+    QVERIFY(isUnder(part(recap, "tutorialCardHeading"), head));
+    QVERIFY(isUnder(part(recap, "tutorialCardText"), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialCloseButton")), body));
     QVERIFY(item("tutorialSketchPicture")->height() <= page->height() / 4);
 
+    turnDevice(Portrait);
+    QTRY_VERIFY(oneColumn(welcome));
+    QVERIFY(oneColumn(recap));
+}
+
+namespace {
+
+// Item's box in another's coords.
+QRectF boxIn(QObject *object, QObject *other)
+{
+    auto *item = qobject_cast<QQuickItem *>(object);
+    return item->mapRectToItem(qobject_cast<QQuickItem *>(other),
+                               QRectF(0, 0, item->width(), item->height()));
+}
+
+bool isUnder(QObject *object, QObject *ancestor)
+{
+    for (QQuickItem *item = qobject_cast<QQuickItem *>(object); item != nullptr;
+         item = item->parentItem()) {
+        if (item == ancestor) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+// Turned bar sketch as browsing bar: slim, every control. Words in one line in a low band at top;
+// drag-up hint a quarter along bar (whole bar drags), tap hints on its controls. Upright: as
+// before.
+void tst_qmlload::landscapeTutorialBar()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    click(find(QStringLiteral("tutorialStartButton")));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialBar")));
+    auto *label = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialHintLabel")));
+    auto *line = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialHintLine")));
+    auto *progress = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialProgress")));
+    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
+    QObject *touchHint = find(QStringLiteral("tutorialTouchHint"));
+    const qreal small = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const qreal large = evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal();
+    const auto width = [page]() { return page->property("width").toReal(); };
+    const auto height = [page]() { return page->property("height").toReal(); };
+    const auto hintCentre = [&](QObject *hint) { return boxIn(hint, page).center(); };
+    const auto barPoint = [&](const char *name) {
+        return bar->mapToItem(qobject_cast<QQuickItem *>(page), bar->property(name).toPointF());
+    };
+    const auto setStep = [page](const QString &step) { page->setProperty("step", step); };
+    QCOMPARE(bar->height(), large);
+    QVERIFY(!line->isVisible());
+
+    turnDevice(Landscape);
+    QCOMPARE(bar->height(), small);
+    QCOMPARE(bar->y() + bar->height(), height());
+    QRectF before;
+    for (const char *name :
+         {"tutorialBackIcon", "tutorialAddress", "tutorialReloadIcon", "tutorialMenuIcon"}) {
+        auto *control = qobject_cast<QQuickItem *>(findObjects(bar, QLatin1String(name)).first());
+        QVERIFY2(control->isVisible(), name);
+        const QRectF box = boxIn(control, bar);
+        QVERIFY2(box.top() >= 0 && box.bottom() <= small, name);
+        QVERIFY2(box.left() >= before.right(), name);
+        before = box;
+    }
+    QVERIFY(before.right() <= width());
+
+    // Tap hint on address, words at top in one low band, dots under them.
+    QVERIFY(tapHint->property("running").toBool());
+    QCOMPARE(hintCentre(tapHint), barPoint("addressCentre"));
+    QVERIFY(line->isVisible());
+    QCOMPARE(label->y(), qreal(0));
+    QVERIFY(label->property("invert").toBool());
+    QVERIFY(label->height() < height() / 4);
+    QVERIFY(boxIn(line, page).bottom() < label->height());
+    QVERIFY(progress->y() > label->height());
+    QVERIFY(progress->y() < height() / 3);
+    const auto oneLine = [&]() {
+        for (const QVariant &lesson : page->property("lessons").toList()) {
+            setStep(lesson.toString());
+            const QString text = line->property("text").toString();
+            QCOMPARE(
+                text,
+                evaluate(page, QStringLiteral("stepText('%1')").arg(lesson.toString())).toString());
+            QVERIFY(!text.isEmpty());
+            QVERIFY2(line->property("lineCount").toInt() == 1, qPrintable(text));
+            QVERIFY2(line->property("contentWidth").toReal() <= line->width(), qPrintable(text));
+        }
+    };
+    oneLine();
+    // Narrower turned page: long words shrink to fit.
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const qreal tall = window->height();
+    window->setHeight(tall - width() + 1.5 * height());
+    settle();
+    QCOMPARE(width(), 1.5 * height());
+    oneLine();
+    window->setHeight(tall);
+    settle();
+
+    setStep(QStringLiteral("menu"));
+    QCOMPARE(hintCentre(tapHint), barPoint("menuCentre"));
+
+    // Drag up from a quarter along bar.
+    setStep(QStringLiteral("open"));
+    QVERIFY(touchHint->property("running").toBool());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Up")));
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+             -width() / 4);
+    QCOMPARE(touchHint->property("startY").toReal() + touchHint->property("height").toReal() / 2,
+             height() - small);
+
+    // Turned back mid-step: hint re-placed for upright bar, platform's words again.
+    turnDevice(Portrait);
+    QCOMPARE(bar->height(), large);
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 qreal(0));
+    QCOMPARE(touchHint->property("startY").toReal() + touchHint->property("height").toReal() / 2,
+             height() - large);
+    QVERIFY(!line->isVisible());
+    QCOMPARE(label->property("text").toString(),
+             evaluate(page, QStringLiteral("stepText('open')")).toString());
+    QCOMPARE(label->height(), label->implicitHeight());
+    turnDevice(Landscape);
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 -width() / 4);
+    turnDevice(Portrait);
+}
+
+// Turned menu sketch as menu: one low band, page head at left (over a quarter), upright
+// separator, all nine actions in one row. Upright: head over two rows again.
+void tst_qmlload::landscapeTutorialMenu()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    page->setProperty("step", QStringLiteral("menuOpen"));
+    QObject *menu = find(QStringLiteral("tutorialMenu"));
+    QObject *sheet = find(QStringLiteral("tutorialMenuSheet"));
+    QObject *header = findObjects(menu, QStringLiteral("menuHeader")).first();
+    QObject *pageRow = find(QStringLiteral("tutorialMenuPageRow"));
+    QObject *placeRow = find(QStringLiteral("tutorialMenuPlaceRow"));
+    const auto height = [page]() { return page->property("height").toReal(); };
+    const auto width = [page]() { return page->property("width").toReal(); };
+    const auto iconRows = [&]() {
+        QSet<qreal> rows;
+        for (QObject *icon : findObjects(menu, QStringLiteral("menuButtonIcon"))) {
+            rows.insert(boxIn(icon, page).center().y());
+        }
+        return rows.count();
+    };
+    QTRY_COMPARE(iconRows(), 2);
+
+    turnDevice(Landscape);
+    QTRY_COMPARE(iconRows(), 1);
+    QVERIFY(menu->property("visible").toBool());
+    QVERIFY(menu->property("wide").toBool());
+    const QRectF band = boxIn(sheet, page);
+    QCOMPARE(band.bottom(), height());
+    QVERIFY(band.height() < height() / 3);
+    const QRectF head = boxIn(header, sheet);
+    QCOMPARE(head.left(), qreal(0));
+    QCOMPARE(head.width(), evaluate(menu, QStringLiteral("cells.headWidth")).toReal());
+    QVERIFY(head.width() > width() / 4);
+    QVERIFY(head.width() < width() / 3);
+    const QRectF actions = boxIn(pageRow, sheet);
+    const QRectF places = boxIn(placeRow, sheet);
+    QVERIFY(actions.left() > head.right());
+    QVERIFY(places.left() > actions.right());
+    QCOMPARE(actions.top(), places.top());
+    QVERIFY(places.right() <= width());
+    QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
+    QCOMPARE(iconRows(), 1);
+    // Tap hint over page above band.
+    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
+    QTRY_VERIFY(boxIn(tapHint, page).center().y() < band.top());
+
+    turnDevice(Portrait);
+    QTRY_COMPARE(iconRows(), 2);
+    QVERIFY(!menu->property("wide").toBool());
+    QCOMPARE(boxIn(header, sheet).width(), width());
+    QVERIFY(boxIn(placeRow, sheet).top() > boxIn(pageRow, sheet).bottom());
+    QCOMPARE(iconRows(), 2);
+}
+
+// Turned address entry as omnibar: no go/search rows, go and search are pills in field row
+// before menu; hits sketched in three columns from bottom, Continue above them. Upright: rows.
+void tst_qmlload::landscapeTutorialOmnibar()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
+    evaluate(bar, QStringLiteral("activate('address')"));
+    QCOMPARE(page->property("step").toString(), QStringLiteral("omnibar"));
+    QObject *pane = find(QStringLiteral("tutorialOmnibar"));
+    QObject *go = find(QStringLiteral("tutorialGoAction"));
+    QObject *search = find(QStringLiteral("tutorialSearchAction"));
+    QObject *pills = find(QStringLiteral("tutorialPills"));
+    QObject *field = find(QStringLiteral("tutorialField"));
+    QObject *menuIcon = find(QStringLiteral("tutorialMenuIcon"));
+    QObject *hits = find(QStringLiteral("tutorialHitColumns"));
+    QObject *button = find(QStringLiteral("tutorialContinueButton"));
+    const auto shown = [](QObject *item) { return qobject_cast<QQuickItem *>(item)->isVisible(); };
+    QVERIFY(shown(go) && shown(search));
+    QVERIFY(!shown(pills) && !shown(hits));
+
+    turnDevice(Landscape);
+    QVERIFY(!shown(go) && !shown(search));
+    QVERIFY(shown(pills) && shown(field));
+    const QRectF row = boxIn(bar, page);
+    const QRectF pillBox = boxIn(pills, page);
+    QCOMPARE(pillBox.center().y(), row.center().y());
+    QVERIFY(pillBox.right() < boxIn(menuIcon, page).left());
+    QVERIFY(boxIn(field, page).right() < pillBox.left());
+    QVERIFY(shown(find(QStringLiteral("tutorialGoPill"))));
+    // Pills drawn over bar.
+    QVERIFY(qobject_cast<QQuickItem *>(pane)->z() > qobject_cast<QQuickItem *>(bar)->z());
+    QCOMPARE(find(QStringLiteral("tutorialSearchPill"))->property("label").toString(),
+             m_core->searchEngines()->engineNames().first());
+
+    QVERIFY(shown(hits));
+    const auto spread = [hits]() {
+        QSet<qreal> columns;
+        QSet<qreal> rows;
+        for (QQuickItem *hit : qobject_cast<QQuickItem *>(hits)->childItems()) {
+            if (hit->width() > 0) {
+                columns.insert(hit->x());
+                rows.insert(hit->y());
+            }
+        }
+        return QSize(columns.count(), rows.count());
+    };
+    QTRY_COMPARE(spread(), QSize(3, 2));
+    for (QQuickItem *hit : qobject_cast<QQuickItem *>(hits)->childItems()) {
+        QVERIFY(hit->width() == 0 || hit->width() == std::floor(boxIn(pane, page).width() / 3));
+    }
+    const QRectF hitBox = boxIn(hits, page);
+    QCOMPARE(hitBox.bottom(), row.top());
+    QVERIFY(shown(button));
+    QVERIFY(boxIn(button, page).bottom() < hitBox.top());
+    QVERIFY(boxIn(button, page).top() >
+            boxIn(find(QStringLiteral("tutorialProgress")), page).bottom());
+
+    turnDevice(Portrait);
+    QVERIFY(shown(go) && shown(search));
+    QVERIFY(!shown(pills) && !shown(hits));
+    QCOMPARE(boxIn(field, bar).right(),
+             boxIn(menuIcon, bar).left() -
+                 evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal());
+    QCOMPARE(
+        boxIn(button, page).center(),
+        QRectF(0, 0, page->property("width").toReal(), page->property("height").toReal()).center());
+}
+
+// Turned sketch grid as tab grid: group rail on left fifth (search row, then one row a group,
+// current one marked), three page-shaped previews a row right of it. Drop step's words at foot,
+// group names at rail's top; hint carries tab left onto group row. Upright: strip at foot again.
+void tst_qmlload::landscapeTutorialGrid()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    page->setProperty("step", QStringLiteral("open"));
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
     QObject *grid = find(QStringLiteral("tutorialGrid"));
-    auto *view = item("tutorialGridView");
-    QCOMPARE(view->property("cellWidth").toReal(), page->width() / 3);
-    // Third tab ends first row.
-    const QPointF third = evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF();
-    QCOMPARE(third.x(), view->property("cellWidth").toReal() * 2.5);
-    QCOMPARE(third.y(), evaluate(grid, QStringLiteral("cellCentre(0)")).toPointF().y());
+    QObject *strip = find(QStringLiteral("tutorialStrip"));
+    QObject *rail = find(QStringLiteral("tutorialRail"));
+    QObject *view = find(QStringLiteral("tutorialGridView"));
+    QObject *label = find(QStringLiteral("tutorialHintLabel"));
+    QObject *touchHint = find(QStringLiteral("tutorialTouchHint"));
+    QObject *current = find(QStringLiteral("tutorialCurrentRow"));
+    QObject *other = find(QStringLiteral("tutorialOtherGroup"));
+    const qreal threshold = deck->property("pullThreshold").toReal();
+    const qreal small = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const auto step = [page]() { return page->property("step").toString(); };
+    const auto cells = [&]() { return tutorialCells(grid); };
+    const auto labelAtTop = [&]() {
+        return label->property("invert").toBool() && label->property("y").toReal() == 0;
+    };
+    const auto labelAtFoot = [&]() {
+        return !label->property("invert").toBool() &&
+               label->property("y").toReal() + label->property("height").toReal() == page->height();
+    };
+    const auto shown = [](QObject *item) { return qobject_cast<QQuickItem *>(item)->isVisible(); };
+
+    turnDevice(Landscape);
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    evaluate(bar, QStringLiteral("dragMoved(%1)").arg(threshold + 1));
+    evaluate(bar, QStringLiteral("dragFinished(%1)").arg(threshold + 1));
+    QCOMPARE(step(), QStringLiteral("closeTab"));
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), deck->property("fullHeight").toReal());
+
+    const qreal railWidth = qRound(page->width() / 5);
+    QVERIFY(shown(rail));
+    QCOMPARE(boxIn(rail, grid), QRectF(0, 0, railWidth, page->height()));
+    QCOMPARE(view->property("x").toReal(), railWidth);
+    const qreal cellWidth = view->property("cellWidth").toReal();
+    QCOMPARE(cellWidth, (page->width() - railWidth) / 3);
+    QCOMPARE(view->property("cellHeight").toReal(),
+             qRound(cellWidth * page->height() / page->width()) + small);
+    QCOMPARE(cells().count(), 4);
+    for (int i = 0; i < 3; ++i) {
+        QCOMPARE(cells().at(i)->property("y").toReal(), cells().first()->property("y").toReal());
+        QVERIFY(boxIn(cells().at(i), grid).left() >= railWidth);
+    }
+    QVERIFY(cells().last()->property("y").toReal() > cells().first()->property("y").toReal());
+    QCOMPARE(evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF(),
+             QPointF(railWidth + 2.5 * cellWidth, view->property("cellHeight").toReal() / 2));
+    QCOMPARE(evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF(),
+             boxIn(cells().at(2), grid).center());
+
+    // Rows one under another below search row; current marked.
+    QVERIFY(isUnder(strip, rail));
+    QVERIFY(strip->property("vertical").toBool());
+    QTRY_COMPARE(boxIn(other, rail), QRectF(0, 2 * small, railWidth, small));
+    QCOMPARE(boxIn(current, rail), QRectF(0, small, railWidth, small));
+    QCOMPARE(boxIn(other, rail), QRectF(0, 2 * small, railWidth, small));
+    QVERIFY(shown(find(QStringLiteral("tutorialCurrentAccent"))));
+    QCOMPARE(boxIn(find(QStringLiteral("tutorialPullIndicator")), grid).width(), page->width());
+    QVERIFY(labelAtFoot());
+
+    // Hint from grid onto group row; words at foot, away from it.
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QVERIFY(labelAtFoot());
+    QVERIFY(touchHint->property("running").toBool());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Left")));
+    const QPointF group = boxIn(other, grid).center();
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.verticalCenterOffset")).toReal(),
+             group.y() - page->height() / 2);
+    QCOMPARE(touchHint->property("startX").toReal() + touchHint->property("width").toReal() / 2,
+             group.x() + touchHint->property("distance").toReal());
+
+    // Carried over a row: only other group's takes it.
+    QObject *carried = cells().last();
+    evaluate(carried, QStringLiteral("pickUp()"));
+    evaluate(strip,
+             QStringLiteral("carryOver(groupStrip, otherCentre.x, otherCentre.y - %1)").arg(small));
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    evaluate(strip, QStringLiteral("carryOver(groupStrip, otherCentre.x, otherCentre.y)"));
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    evaluate(strip, QStringLiteral("dropTab(%1)")
+                        .arg(evaluate(carried, QStringLiteral("model.tabId")).toInt()));
+    evaluate(carried, QStringLiteral("drop()"));
+    QTRY_COMPARE(step(), QStringLiteral("close"));
+    QCOMPARE(cells().count(), 3);
+
+    // Pull hint over grid, right of rail.
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+             railWidth / 2);
+
+    turnDevice(Portrait);
+    QVERIFY(!shown(rail));
+    QVERIFY(!strip->property("vertical").toBool());
+    QVERIFY(isUnder(strip, find(QStringLiteral("tutorialGridView"))));
+    QCOMPARE(view->property("x").toReal(), qreal(0));
+    QCOMPARE(view->property("cellWidth").toReal(), page->width() / 2);
+    QCOMPARE(boxIn(strip, grid).bottom(), page->height());
+    QTRY_COMPARE(boxIn(other, strip).height(), boxIn(strip, strip).height());
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 qreal(0));
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QVERIFY(labelAtTop());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Down")));
+}
+
+// Turned tutorial by real finger: drag up from a quarter along bar opens grid; held tab carried
+// onto rail's group row moves there.
+void tst_qmlload::landscapeTutorialUnderAFinger()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    turnDevice(Landscape);
+    QVERIFY(page->rotation() != qreal(0));
+    click(find(QStringLiteral("tutorialStartButton")));
+    QTRY_VERIFY(!find(QStringLiteral("tutorialWelcome"))->property("visible").toBool());
+    page->setProperty("step", QStringLiteral("open"));
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialBarGesture")));
+    QObject *grid = find(QStringLiteral("tutorialGrid"));
+    QObject *strip = find(QStringLiteral("tutorialStrip"));
+    const qreal threshold = deck->property("pullThreshold").toReal();
+    const auto step = [page]() { return page->property("step").toString(); };
+    const auto onWindow = [page](const QPointF &at) { return page->mapToScene(at).toPoint(); };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int i = 1; i <= steps; ++i) {
+            QTest::mouseMove(&window, from + (to - from) * i / steps);
+        }
+    };
+
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF from(page->width() / 4, gesture->mapToItem(page, QPointF(0, reach)).y() +
+                                              gesture->property("strip").toReal() / 2);
+    const QPointF to = from - QPointF(0, 3 * threshold);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onWindow(from));
+    carry(onWindow(from), onWindow(to));
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onWindow(to));
+    QVERIFY(deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("closeTab"));
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), deck->property("fullHeight").toReal());
+    QTRY_VERIFY(!find(QStringLiteral("tutorialGridView"))->property("moving").toBool());
+
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QObject *last = tutorialCells(grid).last();
+    const QPoint hold = centreOf(last);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, hold);
+    QTRY_VERIFY(last->property("held").toBool());
+    const QPoint onCurrent = centreOf(find(QStringLiteral("tutorialCurrentRow")));
+    carry(hold, onCurrent);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    const QPoint onOther = centreOf(find(QStringLiteral("tutorialOtherGroup")));
+    carry(onCurrent, onOther);
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onOther);
+    QTRY_COMPARE(step(), QStringLiteral("close"));
+    QCOMPARE(grid->property("count").toInt(), 3);
+    turnDevice(Portrait);
+    QCOMPARE(page->rotation(), qreal(0));
 }
 
 // Silica turns landscape page a quarter inside portrait window. Swipe up anywhere along bar opens

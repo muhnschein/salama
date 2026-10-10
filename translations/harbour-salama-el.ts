@@ -2041,7 +2041,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Κρατήστε πατημένη μια καρτέλα και, στη συνέχεια, αφήστε τη σε ένα όνομα ομάδας για να τη μετακινήσετε εκεί.</translation>
     </message>
     <message>
