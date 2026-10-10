@@ -5911,14 +5911,17 @@ namespace {
 // Flow of Columns); the order reads the same either way.
 void appendInOrder(QQuickItem *container, QStringList &held)
 {
-    for (QQuickItem *child : container->childItems()) {
+    // Depth first: an unnamed container's items come before its next sibling.
+    QList<QQuickItem *> pending = container->childItems();
+    while (!pending.isEmpty()) {
+        QQuickItem *child = pending.takeFirst();
         if (QString::fromLatin1(child->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader"))) {
             held.append(QLatin1Char('#') + child->property("text").toString());
         } else if (!child->objectName().isEmpty()) {
             held.append(child->objectName());
         } else {
-            appendInOrder(child, held);
+            pending = child->childItems() + pending;
         }
     }
 }
@@ -5926,7 +5929,7 @@ void appendInOrder(QQuickItem *container, QStringList &held)
 // The column the item is in: its ancestor that sits directly in the page's flickable.
 QStringList columnOf(QObject *item)
 {
-    QQuickItem *column = qobject_cast<QQuickItem *>(item);
+    auto *column = qobject_cast<QQuickItem *>(item);
     while (column->parentItem() && column->parentItem()->parentItem() &&
            !column->parentItem()->parentItem()->inherits("QQuickFlickable")) {
         column = column->parentItem();
@@ -5940,7 +5943,7 @@ QStringList columnOf(QObject *item)
 QPointF onPage(QObject *item, QObject *page)
 {
     if (item == nullptr) {
-        return QPointF(qQNaN(), qQNaN());
+        return {qQNaN(), qQNaN()};
     }
     return qobject_cast<QQuickItem *>(item)->mapToItem(qobject_cast<QQuickItem *>(page), QPointF());
 }
@@ -10573,8 +10576,7 @@ void tst_qmlload::landscapeTutorial()
                                     QRectF(0, 0, quick->width(), quick->height()));
     };
     const auto isUnder = [](QObject *object, QObject *ancestor) {
-        for (QQuickItem *at = qobject_cast<QQuickItem *>(object); at != nullptr;
-             at = at->parentItem()) {
+        for (auto *at = qobject_cast<QQuickItem *>(object); at != nullptr; at = at->parentItem()) {
             if (at == ancestor) {
                 return true;
             }
@@ -10633,17 +10635,17 @@ void tst_qmlload::landscapeTutorial()
 
 namespace {
 
-// Item's box in another's coords.
-QRectF boxIn(QObject *object, QObject *other)
+// Item's box in frame's coords.
+QRectF boxIn(QObject *boxed, QObject *frame)
 {
-    auto *item = qobject_cast<QQuickItem *>(object);
-    return item->mapRectToItem(qobject_cast<QQuickItem *>(other),
+    auto *item = qobject_cast<QQuickItem *>(boxed);
+    return item->mapRectToItem(qobject_cast<QQuickItem *>(frame),
                                QRectF(0, 0, item->width(), item->height()));
 }
 
 bool isUnder(QObject *object, QObject *ancestor)
 {
-    for (QQuickItem *item = qobject_cast<QQuickItem *>(object); item != nullptr;
+    for (auto *item = qobject_cast<QQuickItem *>(object); item != nullptr;
          item = item->parentItem()) {
         if (item == ancestor) {
             return true;
