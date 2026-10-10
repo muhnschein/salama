@@ -10,6 +10,12 @@ Item {
     // Site's own title: not translated.
     readonly property string pageTitle: "Sailfish OS"
     readonly property real sheetHeight: sheet.height
+    // Landscape: one band, head at left and all nine actions in a row after it, as menu.
+    readonly property SheetCells cells: SheetCells {
+        width: menu.width
+        height: menu.height
+    }
+    readonly property bool wide: cells.wide
 
     signal dismissed()
 
@@ -52,17 +58,22 @@ Item {
             edgeOf: sheet
         }
 
-        Column {
+        // Portrait: one column, head over rows. Landscape: one row of head and rows.
+        Grid {
             id: content
 
             width: parent.width
+            columns: menu.wide ? 5 : 1
+            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             MenuPageHeader {
                 id: header
 
-                width: parent.width
+                width: menu.wide ? menu.cells.headWidth : parent.width
+                height: menu.wide ? pageRow.height : Theme.itemSizeSmall
+                wide: menu.wide
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
             }
@@ -70,10 +81,23 @@ Item {
             Item {
                 width: parent.width
                 height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
+                visible: !menu.wide
+            }
+
+            MenuSeparator {
+                width: menu.cells.gap
+                height: pageRow.height
+                visible: menu.wide
+                vertical: true
             }
 
             Grid {
-                width: parent.width
+                id: pageRow
+
+                readonly property real cell: menu.wide ? menu.cells.cell : menu.width / 5
+
+                objectName: "tutorialMenuPageRow"
+                width: 5 * cell
                 columns: 5
 
                 Repeater {
@@ -86,7 +110,8 @@ Item {
                     ]
 
                     MenuButton {
-                        width: menu.width / 5
+                        width: pageRow.cell
+                        labelSize: menu.wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
                         round: true
                         enabled: false
                         opacity: 1.0
@@ -97,11 +122,18 @@ Item {
             }
 
             MenuSeparator {
-                width: parent.width
+                width: menu.wide ? menu.cells.gap : parent.width
+                height: menu.wide ? pageRow.height : Theme.paddingLarge
+                vertical: menu.wide
             }
 
             Grid {
-                width: parent.width
+                id: placeRow
+
+                readonly property real cell: menu.wide ? menu.cells.cell : menu.width / 4
+
+                objectName: "tutorialMenuPlaceRow"
+                width: 4 * cell
                 columns: 4
 
                 Repeater {
@@ -113,7 +145,8 @@ Item {
                     ]
 
                     MenuButton {
-                        width: menu.width / 4
+                        width: placeRow.cell
+                        labelSize: menu.wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
                         enabled: false
                         opacity: 1.0
                         iconSource: "image://theme/" + modelData.icon

@@ -104,7 +104,8 @@ Page {
         case "moveTab":
             return qsTr("Hold a tab, then drag it to a new position.")
         case "groupTab":
-            //: The names of the tab groups are in a row at the foot of the grid
+            //: The names of the tab groups are in a row at the foot of the grid, or in a
+            //: column at its left when the phone is turned
             return qsTr("Hold a tab, then drop it on a group name to move it there.")
         case "close":
             //: The grid of tabs is pulled down past its top to bring the page back
@@ -122,6 +123,15 @@ Page {
 
     onStepChanged: updateHints()
     onStatusChanged: updateHints()
+    onOrientationChanged: replaceHints.restart()
+
+    // Once turned layout has settled.
+    Timer {
+        id: replaceHints
+
+        interval: 0
+        onTriggered: tutorialPage.updateHints()
+    }
 
     TabDeck {
         id: deck
@@ -165,13 +175,20 @@ Page {
         }
 
         TutorialOmnibar {
+            id: omnibar
+
             objectName: "tutorialOmnibar"
             width: parent.width
             y: tutorialPage.cutoutHeight
             height: bar.y - y
+            // Landscape: pills over bar's field row.
+            z: landscape ? 1 : 0
             visible: tutorialPage.step === "omnibar"
             typed: "sailfishos.org"
             address: "https://sailfishos.org"
+            landscape: tutorialPage.isLandscape
+            rowHeight: bar.height
+            pillsRight: bar.fieldEnd
         }
 
         TutorialBar {
@@ -182,6 +199,8 @@ Page {
             y: tutorialPage.height - height
             editing: tutorialPage.step === "omnibar"
             typed: "sailfishos.org"
+            landscape: tutorialPage.isLandscape
+            pillsWidth: editing ? omnibar.pillsWidth : 0
             onTapped: {
                 if (tutorialPage.step === "address" && region === "address"
                         || tutorialPage.step === "menu" && region === "menu") {
@@ -257,17 +276,39 @@ Page {
         menu: menu
     }
 
-    // Opposite end from gesture so words don't cover it.
+    // Opposite end from gesture so words don't cover it. Landscape: own line, as platform's wraps,
+    // in a low band; group names at top of rail, so drop step's words at foot.
     InteractionHintLabel {
         id: label
 
         readonly property bool atTop: ["closeTab", "moveTab", "close"].indexOf(tutorialPage.step) < 0
+                                      && (tutorialPage.isPortrait || tutorialPage.step !== "groupTab")
 
         objectName: "tutorialHintLabel"
         y: atTop ? 0 : parent.height - height
+        height: tutorialPage.isLandscape
+                ? line.height + 2 * Theme.paddingLarge + Theme.itemSizeExtraSmall : implicitHeight
         invert: atTop
         opacity: tutorialPage.saying ? 1.0 : 0.0
-        text: tutorialPage.stepText(tutorialPage.step)
+        text: tutorialPage.isLandscape ? "" : tutorialPage.stepText(tutorialPage.step)
+
+        Label {
+            id: line
+
+            objectName: "tutorialHintLine"
+            x: Theme.horizontalPageMargin
+            y: label.atTop ? 2 * Theme.paddingLarge : Theme.itemSizeExtraSmall
+            width: parent.width - 2 * x
+            visible: tutorialPage.isLandscape
+            horizontalAlignment: Text.AlignHCenter
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: Theme.fontSizeSmall
+            truncationMode: TruncationMode.Fade
+            font.pixelSize: Theme.fontSizeExtraLarge
+            font.family: Theme.fontFamilyHeading
+            color: Theme.highlightColor
+            text: tutorialPage.stepText(tutorialPage.step)
+        }
 
         Behavior on opacity {
             FadeAnimation {
