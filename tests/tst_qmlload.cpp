@@ -270,6 +270,7 @@ private slots:
     void landscapeTutorial();
     void landscapeGesturesUnderAFinger();
     void landscapeBarHides();
+    void landscapeOmnibar();
 
 private:
     bool loadWindow();
@@ -10075,6 +10076,138 @@ void tst_qmlload::landscapeBarHides()
     QCOMPARE(bar->y() + bar->height(), browser->height());
     QCOMPARE(banners->property("width").toReal(), browser->width());
     QCOMPARE(banners->property("x").toReal(), qreal(0));
+}
+
+// Landscape omnibar: keyboard leaves room for few rows, so no go/search rows; pills sit in field
+// row before menu and field shrinks for them. Hits fill three columns from bottom left, column by
+// column, then sideways.
+void tst_qmlload::landscapeOmnibar()
+{
+    plantForest(m_core.data());
+    QObject *root = m_window.data();
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    auto *browser = item("browserPage");
+    auto *bar = item("navigationBar");
+    auto *pane = item("omnibarView");
+    auto *field = item("addressField");
+    auto *list = item("omnibarResults");
+    auto *grid = item("omnibarColumns");
+    auto *pills = item("omnibarPills");
+    auto *goPill = item("omnibarGoPill");
+    auto *searchPill = item("omnibarSearchPill");
+    QObject *webView = currentWebView();
+    const auto cells = [this, root]() {
+        QList<QQuickItem *> rows;
+        for (QObject *row : findObjects(root, QStringLiteral("omnibarResult"))) {
+            auto *cell = qobject_cast<QQuickItem *>(row);
+            if (cell->isVisible()) {
+                rows.append(cell);
+            }
+        }
+        std::sort(rows.begin(), rows.end(), [this](QQuickItem *a, QQuickItem *b) {
+            return evaluate(a, QStringLiteral("index")).toInt() <
+                   evaluate(b, QStringLiteral("index")).toInt();
+        });
+        return rows;
+    };
+    const auto at = [pane](QQuickItem *cell) { return cell->mapToItem(pane, QPointF(0, 0)); };
+
+    turnDevice(Landscape);
+    typeIntoBar(root, QStringLiteral("forest"));
+    settle();
+    QVERIFY(pane->isVisible());
+    QVERIFY(!item("omnibarGoAction")->isVisible());
+    QVERIFY(!item("omnibarSearchAction")->isVisible());
+    QCOMPARE(item("omnibarActions")->height(), qreal(0));
+    QVERIFY(!list->isVisible());
+    QVERIFY(grid->isVisible());
+
+    // Five hits: two rows, column by column from bottom left.
+    const QList<QQuickItem *> hits = cells();
+    QCOMPARE(hits.count(), 5);
+    const qreal cellWidth = grid->property("cellWidth").toReal();
+    const qreal cellHeight = grid->property("cellHeight").toReal();
+    QCOMPARE(cellWidth, qreal(qFloor(pane->width() / 3)));
+    QVERIFY(cellHeight >=
+            evaluate(pane, QStringLiteral("Theme.itemSizeExtraSmall")).toReal() * 0.8);
+    QCOMPARE(grid->height(), 2 * cellHeight);
+    QCOMPARE(grid->y() + grid->height(), pane->height());
+    const QList<QPointF> spots{{0, 1}, {0, 0}, {1, 1}, {1, 0}, {2, 1}};
+    for (int i = 0; i < hits.count(); ++i) {
+        QCOMPARE(at(hits.at(i)),
+                 QPointF(spots.at(i).x() * cellWidth, grid->y() + spots.at(i).y() * cellHeight));
+        QCOMPARE(hits.at(i)->width(), cellWidth);
+        QVERIFY(hits.at(i)->property("compact").toBool());
+    }
+    QCOMPARE(findObjects(hits.first(), QStringLiteral("omnibarResultTitle"))
+                 .first()
+                 ->property("font")
+                 .value<QFont>()
+                 .pixelSize(),
+             int(evaluate(pane, QStringLiteral("Theme.fontSizeSmall")).toReal()));
+
+    // Search pill names engine, in field row before menu; field ends before pills.
+    const QString engine =
+        m_core->searchEngines()->engineNames().at(m_core->searchSettings()->engineIndex());
+    QVERIFY(pills->isVisible());
+    QVERIFY(searchPill->isVisible());
+    QVERIFY(!goPill->isVisible());
+    QCOMPARE(searchPill->property("label").toString(), engine);
+    const QRectF onBar = pills->mapRectToItem(bar, QRectF(0, 0, pills->width(), pills->height()));
+    QCOMPARE(onBar.right(), bar->property("fieldEnd").toReal());
+    QCOMPARE(onBar.center().y(), bar->height() / 2);
+    QVERIFY(onBar.right() < item("menuButton")->x());
+    QCOMPARE(field->x() + field->width(), bar->property("fieldRight").toReal());
+    QVERIFY(field->x() + field->width() < onBar.left());
+    QVERIFY(field->width() > bar->width() / 2);
+    click(searchPill);
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(),
+             QUrl(m_core->searchSettings()->searchUrl(QStringLiteral("forest"))));
+    QCOMPARE(field->x() + field->width(), bar->property("fieldEnd").toReal());
+
+    typeIntoBar(root, QStringLiteral("forest.example/path"));
+    QVERIFY(goPill->isVisible());
+    QVERIFY(!item("omnibarGoAction")->isVisible());
+    QCOMPARE(item("omnibarActions")->height(), qreal(0));
+    QVERIFY(goPill->x() + goPill->width() < searchPill->x());
+    QCOMPARE(pills->width(), searchPill->x() + searchPill->width());
+    QCOMPARE(goPill->x(), qreal(0));
+    click(goPill);
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/path")));
+
+    // Keyboard leaves one row: hits go on sideways past the third column.
+    const qreal landscapeHeight = browser->height();
+    typeIntoBar(root, QStringLiteral("forest"));
+    window->setWidth(bar->height() + cellHeight * 1.2);
+    settle();
+    QCOMPARE(grid->property("rows").toInt(), 1);
+    QCOMPARE(grid->height(), grid->property("cellHeight").toReal());
+    QVERIFY(grid->property("contentWidth").toReal() >= 5 * cellWidth);
+    const QList<QQuickItem *> row = cells();
+    QVERIFY(row.count() > 3);
+    for (int i = 0; i < row.count(); ++i) {
+        QCOMPARE(at(row.at(i)).x(), i * cellWidth);
+        QVERIFY(qAbs(at(row.at(i)).y() - grid->y()) < 0.5);
+    }
+    window->setWidth(landscapeHeight);
+    settle();
+
+    turnDevice(Portrait);
+    settle();
+    QVERIFY(list->isVisible());
+    QVERIFY(!grid->isVisible());
+    QVERIFY(item("omnibarSearchAction")->isVisible());
+    QVERIFY(!pills->isVisible());
+    QCOMPARE(field->x() + field->width(), bar->property("fieldEnd").toReal());
+    QCOMPARE(cells().count(), m_core->omnibar()->count());
+    QCOMPARE(at(cells().at(1)).x(), qreal(0));
+    QVERIFY(at(cells().at(1)).y() < at(cells().at(0)).y());
+    evaluate(bar, QStringLiteral("endEditing()"));
 }
 
 #include "tst_qmlload.moc"

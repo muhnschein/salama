@@ -314,6 +314,7 @@ WebViewPage {
             compact: browserPage.barCompact && !browserPage.isLandscape
             landscape: browserPage.isLandscape
             hidden: browserPage.barHidden
+            pillsWidth: omnibar.pillsWidth
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()
             onReloadOrStop: browserPage.reloadOrStop()
@@ -365,6 +366,9 @@ WebViewPage {
             active: navigationBar.paneUp
             text: navigationBar.typedText
             forNewTab: navigationBar.forNewTab
+            landscape: browserPage.isLandscape
+            rowHeight: navigationBar.height
+            pillsRight: navigationBar.fieldEnd
             onGoRequested: browserPage.openChosen(url, forNewTab)
             onSearchRequested: browserPage.openChosen(url, forNewTab)
             onUrlChosen: browserPage.openChosen(url, forNewTab)

@@ -65,7 +65,11 @@ Item {
                                                       addressRight - width / 2)
 
     readonly property real fieldLeft: Theme.paddingMedium
-    readonly property real fieldRight: menuIcon.x - Theme.paddingMedium
+    readonly property real fieldEnd: menuIcon.x - Theme.paddingMedium
+    // Omnibar's landscape go/search pills sit between field and menu.
+    property real pillsWidth: 0
+    readonly property real fieldRight: fieldEnd - (pillsWidth > 0 ? pillsWidth + Theme.paddingMedium
+                                                                  : 0)
 
     // Bar sits in system edge-swipe strip; its height is gesture start area, so slim gives
     // up only a quarter.
