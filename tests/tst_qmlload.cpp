@@ -186,6 +186,9 @@ private slots:
     void tabGroupsCarryAndUngroup();
     void tabSearch();
     void tabsDropOntoGroups();
+    void landscapeTabGroupRail();
+    void landscapeRailUnderAFinger();
+    void landscapeTabSearch();
     void previewGestures();
     void gridGesturesUnderAFinger();
     void gridHeadPullUnderAFinger();
@@ -2207,6 +2210,433 @@ void tst_qmlload::tabsDropOntoGroups()
     QCOMPARE(tabs->currentGroupId(), home);
     QCOMPARE(tabs->activeTabId(), first);
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+}
+
+// Landscape grid: no head or foot row; group rail left of grid, a fifth of page wide, with
+// search field on top, one row per group and + and edit at its foot. Grid fills rest.
+void tst_qmlload::landscapeTabGroupRail()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    const int portrait = 1;
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->currentGroupId(), home);
+    auto *browser = item("browserPage");
+    auto *view = item("tabsView");
+    auto *grid = item("tabGrid");
+    auto *rail = item("tabGroupRail");
+    auto *headRow = item("gridHeadRow");
+    auto *footRow = item("gridFootRow");
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    QVERIFY(rail != nullptr);
+    pullUpToTabs();
+    QCOMPARE(rail->width(), qreal(0));
+    QVERIFY(!rail->isVisible());
+    const qreal small = evaluate(view, QStringLiteral("Theme.itemSizeSmall")).toReal();
+
+    turnDevice(landscape);
+    QVERIFY(browser->property("tabsOpen").toBool());
+    QCOMPARE(view->width(), browser->width());
+    QCOMPARE(view->height(), browser->height());
+    const qreal railWidth = qRound(view->width() / 5);
+    QVERIFY(rail->isVisible());
+    QCOMPARE(rail->width(), railWidth);
+    QCOMPARE(rail->height(), view->height());
+    QCOMPARE(rail->mapToItem(view, QPointF(0, 0)), QPointF(0, 0));
+    QCOMPARE(rail->property("color"), headRow->property("color"));
+    auto *glass = item("railGlass");
+    QCOMPARE(glass->parentItem(), rail);
+    QCOMPARE(glass->property("source"), item("gridHeadGlass")->property("source"));
+    QCOMPARE(glass->width(), rail->width());
+    QCOMPARE(glass->height(), rail->height());
+    QVERIFY(!headRow->isVisible());
+    QVERIFY(!footRow->isVisible());
+    QCOMPARE(grid->property("headerItem").value<QQuickItem *>()->height(), qreal(0));
+    QCOMPARE(grid->property("footerItem").value<QQuickItem *>()->height(), qreal(0));
+
+    // Three page-shaped previews a row over area right of rail, full height.
+    QCOMPARE(grid->x(), railWidth);
+    QCOMPARE(grid->width(), view->width() - railWidth);
+    QCOMPARE(grid->height(), view->height());
+    const qreal cellWidth = grid->property("cellWidth").toReal();
+    QCOMPARE(cellWidth, grid->width() / 3);
+    QCOMPARE(grid->property("cellHeight").toReal(),
+             qRound(cellWidth * view->height() / view->width()) + small);
+    QVERIFY(grid->property("cellHeight").toReal() < view->height());
+    QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 2);
+    for (QObject *preview : previews) {
+        auto *cell = qobject_cast<QQuickItem *>(preview);
+        QVERIFY(cell->mapToItem(view, QPointF(0, 0)).x() >= railWidth - 0.5);
+    }
+    auto *indicator = item("gridPullIndicator");
+    QVERIFY(indicator->isVisible());
+    QCOMPARE(indicator->mapToItem(view, QPointF(0, 0)), QPointF(0, 0));
+    QCOMPARE(indicator->width(), view->width());
+    QVERIFY(indicator->height() > 0);
+
+    // Search field tops rail; pull there returns to page.
+    auto *railHead = item("railHead");
+    QCOMPARE(railHead->parentItem(), rail);
+    QCOMPARE(railHead->y(), qreal(0));
+    QCOMPARE(railHead->height(), small);
+    auto *field = item("tabSearchField");
+    QVERIFY(railHead->isAncestorOf(field));
+    QCOMPARE(field->width(), railWidth);
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search tabs"));
+    QCOMPARE(item("gridHeadControls")->height(), small);
+    auto *pull = item("railHeadPull");
+    QCOMPARE(pull->parentItem(), railHead);
+    QCOMPARE(pull->property("field").value<QQuickItem *>(), field);
+    QVERIFY(pull->z() > item("gridHeadControls")->z());
+    QCOMPARE(pull->height(), railHead->height());
+
+    // One row per group under it; current lit, accent on rail's edge.
+    QVERIFY(strip->property("vertical").toBool());
+    auto *stripItem = qobject_cast<QQuickItem *>(strip);
+    QVERIFY(rail->isAncestorOf(stripItem));
+    QCOMPARE(stripItem->mapToItem(rail, QPointF(0, 0)), QPointF(0, small));
+    QCOMPARE(stripItem->height(), rail->height() - small);
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupItem")));
+    QCOMPARE(rows.count(), 2);
+    const QString highlight =
+        evaluate(view, QStringLiteral("'' + Theme.highlightColor")).toString();
+    const QString primary = evaluate(view, QStringLiteral("'' + Theme.primaryColor")).toString();
+    const auto part = [](QObject *row, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(row, QLatin1String(name)).first());
+    };
+    for (int i = 0; i < rows.count(); ++i) {
+        auto *row = qobject_cast<QQuickItem *>(rows.at(i));
+        QCOMPARE(row->width(), railWidth);
+        QCOMPARE(row->height(), small);
+        QCOMPARE(part(row, "tabGroupLabel")->property("font").value<QFont>().pixelSize(),
+                 evaluate(view, QStringLiteral("Theme.fontSizeMedium")).toInt());
+        QVERIFY(!part(row, "tabGroupUnderline")->isVisible());
+        auto *accent = part(row, "tabGroupAccent");
+        QCOMPARE(accent->isVisible(), i == 0);
+        QCOMPARE(accent->x() + accent->width(), row->width());
+        QCOMPARE(accent->height(), row->height());
+        QVERIFY(part(row, "tabGroupLabel")->width() < railWidth);
+    }
+    QCOMPARE(part(rows.at(0), "tabGroupLabel")->property("text").toString(),
+             QStringLiteral("2 tab(s)"));
+    QCOMPARE(part(rows.at(0), "tabGroupLabel")->property("color").value<QColor>().name(),
+             QColor(highlight).name());
+    QVERIFY(!part(rows.at(0), "tabGroupCount")->isVisible());
+    QCOMPARE(part(rows.at(1), "tabGroupLabel")->property("text").toString(),
+             QStringLiteral("Work"));
+    QCOMPARE(part(rows.at(1), "tabGroupLabel")->property("color").value<QColor>().name(),
+             QColor(primary).name());
+    QVERIFY(part(rows.at(1), "tabGroupCount")->isVisible());
+    QCOMPARE(part(rows.at(1), "tabGroupCount")->property("text").toString(), QStringLiteral("0"));
+    evaluate(strip, QStringLiteral("select(1)"));
+    QCOMPARE(tabs->currentGroupId(), work);
+    QVERIFY(part(rows.at(1), "tabGroupAccent")->isVisible());
+    QVERIFY(!part(rows.at(0), "tabGroupAccent")->isVisible());
+    evaluate(strip, QStringLiteral("select(0)"));
+
+    // + and edit at rail foot, nothing else; names fill rail above them.
+    auto *add = item("newTabButton");
+    auto *edit = item("editGroupsButton");
+    for (QQuickItem *button : {add, edit}) {
+        QVERIFY(rail->isAncestorOf(button));
+        QCOMPARE(button->height(), small);
+        QCOMPARE(button->mapToItem(rail, QPointF(0, button->height())).y(), rail->height());
+    }
+    QVERIFY(add->mapToItem(rail, QPointF(add->width(), 0)).x() < railWidth / 2);
+    QVERIFY(edit->mapToItem(rail, QPointF(0, 0)).x() > railWidth / 2);
+    auto *names = item("tabGroupList");
+    QCOMPARE(names->width(), railWidth);
+    QCOMPARE(names->mapToItem(rail, QPointF(0, names->height())).y(),
+             add->mapToItem(rail, QPointF(0, 0)).y());
+    QMetaObject::invokeMethod(add, "pressAndHold");
+    QVERIFY(find(QStringLiteral("recentlyClosedPanel"))->property("open").toBool());
+    evaluate(find(QStringLiteral("recentlyClosedPanel")), QStringLiteral("hide()"));
+    click(edit);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    popPage();
+    QCOMPARE(currentPage(), browser);
+    click(add);
+    QCOMPARE(tabs->count(), 3);
+    QVERIFY(!browser->property("tabsOpen").toBool());
+
+    // Back upright: head row, foot strip and two columns.
+    pullUpToTabs();
+    turnDevice(portrait);
+    QVERIFY(!rail->isVisible());
+    QVERIFY(headRow->isVisible());
+    QVERIFY(footRow->isVisible());
+    QVERIFY(headRow->isAncestorOf(field));
+    QCOMPARE(field->width(), headRow->width());
+    QCOMPARE(item("gridHeadControls")->height(),
+             evaluate(view, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    QVERIFY(pull->z() <= item("gridHeadPull")->z());
+    QCOMPARE(indicator->parentItem(), headRow);
+    QCOMPARE(indicator->width(), headRow->width());
+    QVERIFY(footRow->isAncestorOf(stripItem));
+    QVERIFY(!strip->property("vertical").toBool());
+    QCOMPARE(stripItem->height(), footRow->height());
+    QCOMPARE(add->height(), footRow->height());
+    QCOMPARE(grid->x(), qreal(0));
+    QCOMPARE(grid->width(), browser->width());
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(grid->property("cellHeight").toReal(), browser->width() / 2 + small);
+    QCOMPARE(grid->property("headerItem").value<QQuickItem *>()->height(), headRow->height());
+    QCOMPARE(grid->property("footerItem").value<QQuickItem *>()->height(), footRow->height());
+    rows = findAll(QStringLiteral("tabGroupItem"));
+    QVERIFY(part(rows.at(0), "tabGroupUnderline")->isVisible());
+    QVERIFY(!part(rows.at(0), "tabGroupAccent")->isVisible());
+    QCOMPARE(rows.at(0)->property("height").toReal(), footRow->height());
+}
+
+// Under a finger, turned: tap rail row switches group; held tab dropped on rail group moves
+// there; long list scrolls to keep current group in view.
+void tst_qmlload::landscapeRailUnderAFinger()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    // FingerWindow's job; it's defined further down.
+    struct Host
+    {
+        QQuickItem *root = nullptr;
+        QQuickWindow window;
+        ~Host()
+        {
+            root->setParentItem(nullptr);
+        }
+    } host;
+    host.root = qobject_cast<QQuickItem *>(m_window.data());
+    host.window.resize(int(host.root->width()), int(host.root->height()));
+    host.root->setParentItem(host.window.contentItem());
+    host.window.show();
+    QQuickWindow &window = host.window;
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    turnDevice(landscape);
+    pullUpToTabs();
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+
+    const auto centre = [](QObject *object) {
+        auto *item = qobject_cast<QQuickItem *>(object);
+        return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint();
+    };
+    const auto rowLabel = [this](int index) {
+        return findObjects(byRow(findAll(QStringLiteral("tabGroupItem"))).at(index),
+                           QStringLiteral("tabGroupLabel"))
+            .first();
+    };
+    const auto cellOf = [this](int tabId) -> QObject * {
+        for (QObject *cell : findAll(QStringLiteral("tabPreview"))) {
+            if (evaluate(cell, QStringLiteral("model.tabId")).toInt() == tabId) {
+                return cell;
+            }
+        }
+        return nullptr;
+    };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, from + (to - from) * step / steps);
+        }
+    };
+
+    // Rows lay out once drawn: one under another below search row.
+    auto *rail = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupRail")));
+    const qreal small = evaluate(rail, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupItem")));
+    for (int i = 0; i < rows.count(); ++i) {
+        QCOMPARE(qobject_cast<QQuickItem *>(rows.at(i))->mapToItem(rail, QPointF(0, 0)),
+                 QPointF(0, small * (i + 1)));
+    }
+    QCOMPARE(evaluate(strip, QStringLiteral("groupAt(10, %1)").arg(small * 1.5)).toInt(), 1);
+    QCOMPARE(evaluate(strip, QStringLiteral("groupAt(10, %1)").arg(small * 0.5)).toInt(), 0);
+
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centre(rowLabel(1)));
+    QCOMPARE(tabs->currentGroupId(), work);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 0);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centre(rowLabel(0)));
+    QCOMPARE(tabs->currentGroupId(), home);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    QObject *cell = cellOf(first);
+    QPoint at = centre(cell);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, at);
+    QTest::mouseMove(&window, at + QPoint(2, 2));
+    QTRY_VERIFY(cell->property("held").toBool());
+    const QPoint homeRow = centre(rowLabel(0));
+    carry(at, homeRow);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    const QPoint workRow = centre(rowLabel(1));
+    carry(homeRow, workRow);
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    QVERIFY(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("visible").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, workRow);
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
+    QCOMPARE(tabs->tabCountInGroup(home), 1);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Pull down on rail's search row returns to page.
+    const qreal threshold = page->property("pullThreshold").toReal();
+    const QPoint head = centre(find(QStringLiteral("railHead")));
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, head);
+    const QPointF down = qobject_cast<QQuickItem *>(page)->mapToScene(QPointF(0, 3 * threshold)) -
+                         qobject_cast<QQuickItem *>(page)->mapToScene(QPointF(0, 0));
+    for (int step = 1; step <= 24; ++step) {
+        QTest::mouseMove(&window, head + (down * step / 24).toPoint());
+    }
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, head + down.toPoint());
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
+
+    for (int i = 0; i < 12; ++i) {
+        tabs->addGroup(QStringLiteral("Group number %1").arg(i));
+    }
+    pullUpToTabs();
+    tabs->groupModel()->activate(13);
+    auto *names = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupList")));
+    QTRY_VERIFY(names->property("interactive").toBool());
+    QTRY_COMPARE(names->property("contentY").toReal(),
+                 names->property("contentHeight").toReal() - names->height());
+    tabs->groupModel()->activate(0);
+    QTRY_COMPARE(names->property("contentY").toReal(), qreal(0));
+    turnDevice(1);
+}
+
+// Turned, search results sit right of rail in two columns of low rows, end above keyboard;
+// rail stays. Cleared field brings grid back. Upright: one list under head row again.
+void tst_qmlload::landscapeTabSearch()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(1);
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    tabs->groupModel()->activate(0);
+    tabs->updateTitle(first, QStringLiteral("Office hours"));
+    tabs->updateTitle(second, QStringLiteral("Office mail"));
+    const QString picture = m_dir->path() + QStringLiteral("/office.png");
+    QImage(8, 8, QImage::Format_RGB32).save(picture);
+    tabs->updateThumbnail(second, picture);
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    auto *view = qobject_cast<QQuickItem *>(find(QStringLiteral("tabsView")));
+    auto *rail = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupRail")));
+    QObject *field = find(QStringLiteral("tabSearchField"));
+    QObject *debounce = find(QStringLiteral("searchDebounce"));
+    auto *found = qobject_cast<QQuickItem *>(find(QStringLiteral("tabSearchGrid")));
+    auto *list = qobject_cast<QQuickItem *>(find(QStringLiteral("tabSearchList")));
+    QVERIFY(found != nullptr);
+    auto *cells = find(QStringLiteral("tabGrid"))->property("contentItem").value<QQuickItem *>();
+    const qreal small = evaluate(view, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const auto search = [&](const QString &term) {
+        field->setProperty("text", term);
+        QMetaObject::invokeMethod(debounce, "triggered");
+    };
+    pullUpToTabs();
+    turnDevice(landscape);
+    const qreal railWidth = rail->width();
+    QVERIFY(railWidth > 0);
+
+    QVERIFY(!found->isVisible());
+    search(QStringLiteral("office"));
+    QVERIFY(found->isVisible());
+    QVERIFY(!list->isVisible());
+    QVERIFY(!cells->isVisible());
+    QVERIFY(rail->isVisible());
+    QCOMPARE(found->mapToItem(view, QPointF(0, 0)), QPointF(railWidth, 0));
+    QCOMPARE(found->width(), view->width() - railWidth);
+    QCOMPARE(found->height(), browser->height());
+    QCOMPARE(found->property("cellWidth").toReal(), found->width() / 2);
+    QCOMPARE(found->property("cellHeight").toReal(), small);
+    QVERIFY(findObjects(list, QStringLiteral("tabSearchDelegate")).isEmpty());
+    QList<QObject *> results = findObjects(found, QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 2);
+    std::sort(results.begin(), results.end(), [](QObject *one, QObject *other) {
+        return one->property("x").toReal() < other->property("x").toReal();
+    });
+    QCOMPARE(results.at(0)->property("x").toReal(), qreal(0));
+    QCOMPARE(results.at(1)->property("x").toReal(), found->width() / 2);
+    QCOMPARE(results.at(1)->property("y").toReal(), results.at(0)->property("y").toReal());
+    const auto line = [](QObject *result, const char *name) {
+        return findObjects(result, QLatin1String(name)).first();
+    };
+    const QString highlight =
+        evaluate(field, QStringLiteral("'' + Theme.highlightColor")).toString();
+    for (QObject *result : results) {
+        QCOMPARE(result->property("width").toReal(), found->width() / 2);
+        QCOMPARE(result->property("height").toReal(), small);
+        QVERIFY(!line(result, "tabSearchGroupHeader")->property("visible").toBool());
+        QVERIFY(!line(result, "tabSearchItem")->property("visible").toBool());
+        QCOMPARE(line(result, "tabSearchCompactItem")->property("height").toReal(), small);
+        QVERIFY(line(result, "tabSearchPicture")->property("height").toReal() < small);
+    }
+    QCOMPARE(line(results.at(0), "tabSearchCompactTitle")->property("text").toString(),
+             QStringLiteral("<font color=\"%1\">Office</font> hours").arg(highlight));
+    QCOMPARE(line(results.at(0), "tabSearchHost")->property("text").toString(),
+             QStringLiteral("qwant.com"));
+    QCOMPARE(line(results.at(0), "tabSearchGroup")->property("text").toString(),
+             QStringLiteral("1 tab(s)"));
+    QCOMPARE(line(results.at(1), "tabSearchHost")->property("text").toString(),
+             QStringLiteral("two.example"));
+    QCOMPARE(line(results.at(1), "tabSearchGroup")->property("text").toString(),
+             QStringLiteral("Work"));
+    QCOMPARE(line(results.at(1), "tabSearchThumbnail")->property("source").toUrl(),
+             QUrl::fromLocalFile(picture));
+
+    // Keyboard shrinks page: results end above it, rail keeps full height.
+    const qreal landscapeHeight = browser->height();
+    window->setWidth(landscapeHeight / 2);
+    settle();
+    QCOMPARE(browser->height(), landscapeHeight / 2);
+    QCOMPARE(found->mapToItem(view, QPointF(0, found->height())).y(), browser->height());
+    QCOMPARE(rail->height(), landscapeHeight);
+    QVERIFY(qobject_cast<QQuickItem *>(field)->isVisible());
+    window->setWidth(landscapeHeight);
+    settle();
+
+    field->setProperty("text", QString());
+    QVERIFY(!found->isVisible());
+    QVERIFY(cells->isVisible());
+    search(QStringLiteral("mail"));
+    results = findObjects(found, QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
+    click(line(results.at(0), "tabSearchCompactItem"));
+    QVERIFY(!browser->property("tabsOpen").toBool());
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QVERIFY(field->property("text").toString().isEmpty());
+
+    pullUpToTabs();
+    turnDevice(1);
+    search(QStringLiteral("office"));
+    QVERIFY(list->isVisible());
+    QVERIFY(!found->isVisible());
+    QCOMPARE(list->x(), qreal(0));
+    QCOMPARE(list->width(), view->width());
+    QCOMPARE(list->y(), find(QStringLiteral("gridHeadRow"))->property("height").toReal());
+    QVERIFY(findObjects(found, QStringLiteral("tabSearchDelegate")).isEmpty());
+    results = byRow(findObjects(list, QStringLiteral("tabSearchDelegate")));
+    QCOMPARE(results.count(), 2);
+    QVERIFY(line(results.at(0), "tabSearchItem")->property("visible").toBool());
+    QVERIFY(findObjects(results.at(0), QStringLiteral("tabSearchCompactItem")).isEmpty());
 }
 
 void tst_qmlload::previewGestures()
@@ -9431,8 +9861,10 @@ void tst_qmlload::landscapeBrowsing()
     QCOMPARE(item("cutoutBand")->height(), qreal(0));
     QCOMPARE(item("viewArea")->y(), qreal(0));
     QCOMPARE(tabsView->property("cutoutHeight").toReal(), qreal(0));
-    QCOMPARE(item("gridHeadRow")->height(),
-             evaluate(browser, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    QVERIFY(!item("gridHeadRow")->isVisible());
+    QVERIFY(!item("gridFootRow")->isVisible());
+    const qreal railWidth = item("tabGroupRail")->width();
+    QCOMPARE(railWidth, qreal(qRound(browser->width() / 5)));
 
     // Deck re-measured: grid layer and page fit landscape page, not portrait's height.
     QCOMPARE(browser->property("fullHeight").toReal(), browser->height());
@@ -9441,11 +9873,9 @@ void tst_qmlload::landscapeBrowsing()
     auto *bar = item("navigationBar");
     QCOMPARE(bar->y() + bar->height(), browser->height());
 
-    // Three page-shaped previews a row, a whole row between head and foot rows.
-    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 3);
-    const qreal rows =
-        browser->height() - item("gridHeadRow")->height() - item("gridFootRow")->height();
-    QVERIFY(grid->property("cellHeight").toReal() < rows);
+    // Three page-shaped previews a row right of group rail, a whole row on the page.
+    QCOMPARE(grid->property("cellWidth").toReal(), (browser->width() - railWidth) / 3);
+    QVERIFY(grid->property("cellHeight").toReal() < browser->height());
     QVERIFY(grid->property("cellHeight").toReal() > grid->property("cellWidth").toReal() / 3);
     QCOMPARE(start->property("columns").toInt(), 8);
 
@@ -9459,8 +9889,8 @@ void tst_qmlload::landscapeBrowsing()
     settle();
     QCOMPARE(browser->height(), landscapeHeight / 2);
     QCOMPARE(browser->property("fullHeight").toReal(), landscapeHeight);
-    auto *results = item("tabSearchList");
-    QCOMPARE(results->y() + results->height(), browser->height() - item("gridFootRow")->height());
+    auto *results = item("tabSearchGrid");
+    QCOMPARE(results->y() + results->height(), browser->height());
     window->setWidth(landscapeHeight);
     settle();
 

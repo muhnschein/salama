@@ -55,6 +55,8 @@ QVariant TabSearchModel::data(const QModelIndex &index, int role) const
         return m_tabs->tabCountInGroup(row.groupId);
     case Role::GroupStart:
         return row.groupStart;
+    case Role::Thumbnail:
+        return tab.thumbnail;
     default:
         return {};
     }
@@ -71,6 +73,7 @@ QHash<int, QByteArray> TabSearchModel::roleNames() const
         {roleId(Role::GroupName), QByteArrayLiteral("groupName")},
         {roleId(Role::GroupTabCount), QByteArrayLiteral("groupTabCount")},
         {roleId(Role::GroupStart), QByteArrayLiteral("groupStart")},
+        {roleId(Role::Thumbnail), QByteArrayLiteral("thumbnail")},
     };
 }
 
