@@ -26,6 +26,15 @@ DockedPanel {
     // Overscroll is half finger travel (rubber band); x2 so sheet follows finger.
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
+    // Landscape: one band, head at left and all nine actions in a row after it.
+    readonly property SheetCells cells: SheetCells {
+        width: menu.width
+        height: menu.parent ? menu.parent.height : 0
+    }
+    readonly property bool wide: cells.wide
+    readonly property real pageCell: wide ? cells.cell : width / 5
+    readonly property real placeCell: wide ? cells.cell : width / 4
+    readonly property real labelSize: wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
 
     signal findRequested()
 
@@ -114,17 +123,22 @@ DockedPanel {
             }
         }
 
-        Column {
+        // Portrait: one column, head over rows. Landscape: one row of head and rows.
+        Grid {
             id: content
 
             width: parent.width
+            columns: menu.wide ? 5 : 1
+            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             MenuPageHeader {
                 id: header
 
-                width: parent.width
+                width: menu.wide ? menu.cells.headWidth : parent.width
+                height: menu.wide ? pageRow.height : Theme.itemSizeSmall
+                wide: menu.wide
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
@@ -142,16 +156,28 @@ DockedPanel {
                 objectName: "menuHeaderGap"
                 width: parent.width
                 height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
+                visible: !menu.wide
+            }
+
+            MenuSeparator {
+                width: menu.cells.gap
+                height: pageRow.height
+                visible: menu.wide
+                vertical: true
+                lineName: "menuHeadDivider"
             }
 
             Grid {
+                id: pageRow
+
                 objectName: "menuPageRow"
-                width: parent.width
+                width: 5 * menu.pageCell
                 columns: 5
 
                 MenuButton {
                     objectName: "findMenuButton"
-                    width: menu.width / 5
+                    width: menu.pageCell
+                    labelSize: menu.labelSize
                     round: true
                     enabled: menu.hasPage && menu.view !== null
                     iconSource: "image://theme/icon-m-search-on-page"
@@ -164,7 +190,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "bookmarkMenuButton"
-                    width: menu.width / 5
+                    width: menu.pageCell
+                    labelSize: menu.labelSize
                     round: true
                     enabled: menu.hasPage
                     checked: BookmarkModel.activeUrlBookmarked
@@ -184,7 +211,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "shareMenuButton"
-                    width: menu.width / 5
+                    width: menu.pageCell
+                    labelSize: menu.labelSize
                     round: true
                     enabled: menu.hasPage
                     iconSource: "image://theme/icon-m-share"
@@ -198,7 +226,8 @@ DockedPanel {
                 // Lasts view's life: view unloaded past loaded-page limit returns as phone.
                 MenuButton {
                     objectName: "desktopMenuButton"
-                    width: menu.width / 5
+                    width: menu.pageCell
+                    labelSize: menu.labelSize
                     round: true
                     enabled: menu.hasPage && menu.view !== null
                     checked: menu.view !== null && menu.view.desktopMode === true
@@ -212,7 +241,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "readerMenuButton"
-                    width: menu.width / 5
+                    width: menu.pageCell
+                    labelSize: menu.labelSize
                     round: true
                     enabled: menu.reader !== null && (menu.reader.readerable || menu.reader.active)
                     checked: menu.reader !== null && menu.reader.active
@@ -226,18 +256,21 @@ DockedPanel {
             }
 
             MenuSeparator {
-                width: parent.width
+                width: menu.wide ? menu.cells.gap : parent.width
+                height: menu.wide ? pageRow.height : Theme.paddingLarge
+                vertical: menu.wide
                 lineName: "menuSeparator"
             }
 
             Grid {
                 objectName: "menuBrowserRow"
-                width: parent.width
+                width: 4 * menu.placeCell
                 columns: 4
 
                 MenuButton {
                     objectName: "bookmarksMenuButton"
-                    width: menu.width / 4
+                    width: menu.placeCell
+                    labelSize: menu.labelSize
                     iconSource: "image://theme/icon-m-favorite-selected"
                     text: qsTr("Bookmarks")
                     onClicked: menu.openPage("BookmarksPage.qml")
@@ -245,7 +278,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "historyMenuButton"
-                    width: menu.width / 4
+                    width: menu.placeCell
+                    labelSize: menu.labelSize
                     iconSource: "image://theme/icon-m-history"
                     text: qsTr("History")
                     onClicked: menu.openPage("HistoryPage.qml")
@@ -253,7 +287,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "downloadsMenuButton"
-                    width: menu.width / 4
+                    width: menu.placeCell
+                    labelSize: menu.labelSize
                     busy: DownloadModel.runningCount > 0
                     progress: DownloadModel.runningProgress / 100
                     iconSource: "image://theme/icon-m-downloads"
@@ -263,7 +298,8 @@ DockedPanel {
 
                 MenuButton {
                     objectName: "settingsMenuButton"
-                    width: menu.width / 4
+                    width: menu.placeCell
+                    labelSize: menu.labelSize
                     iconSource: "image://theme/icon-m-setting"
                     text: qsTr("Settings")
                     onClicked: menu.openPage("SettingsPage.qml")

@@ -38,6 +38,15 @@ DockedPanel {
 
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
+    // Landscape: the menu's band, actions in the menu's cells, preview toggle where its
+    // Settings sits and preview floating above sheet.
+    readonly property SheetCells cells: SheetCells {
+        width: menu.width
+        height: menu.parent ? menu.parent.height : 0
+    }
+    readonly property bool wide: cells.wide
+    readonly property real cell: wide ? cells.cell : width / 4
+    readonly property real labelSize: wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
 
     signal openRequested(string url, bool inNewTab)
     signal openedBehind(int tabId, string title)
@@ -204,7 +213,10 @@ DockedPanel {
         objectName: "linkMenuDim"
         edgeOf: menu
         strength: menu.hasImage ? Theme.opacityOverlay : Theme.opacityHigh
-        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop) : 0
+        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop)
+                                    : preview.floating && Settings.linkPreview
+                                      && menu.previewOffered
+                                      ? Math.max(0, menu.y - preview.floatingTop) : 0
     }
 
     SheetGrip {
@@ -225,22 +237,41 @@ DockedPanel {
             }
         }
 
-        Column {
+        // As the menu's: portrait one column, landscape one row.
+        Grid {
             id: content
 
             width: parent.width
+            columns: menu.wide ? 5 : 1
+            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             LinkMenuHeader {
-                width: parent.width
+                width: menu.wide ? menu.cells.headWidth : parent.width
+                height: menu.wide ? actions.rowHeight : Theme.itemSizeSmall
+                wide: menu.wide
                 target: menu.target
                 appIcon: menu.forApp ? menu.appIcon(menu.target.scheme) : ""
                 onCopyRequested: menu.copyPressed()
             }
 
+            MenuSeparator {
+                width: menu.cells.gap
+                height: actions.rowHeight
+                visible: menu.wide
+                vertical: true
+                lineName: "linkMenuHeadDivider"
+            }
+
             LinkPreview {
+                id: preview
+
                 width: parent.width
+                room: menu.wide ? overlay.room : null
+                slot: menu.wide ? previewSlot : null
+                aspect: menu.view !== null && menu.view.height > 0
+                        ? menu.view.width / menu.view.height : 1
                 offered: menu.previewOffered
                 shown: menu.previewShown
                 pageView: menu.previewView
@@ -251,9 +282,28 @@ DockedPanel {
                 }
             }
 
+            // Wide: Settings' cell is the ninth, after eight and a separator.
             LinkActions {
-                width: parent.width
+                id: actions
+
+                width: menu.wide ? 8 * menu.cell : parent.width
                 sheet: menu
+            }
+
+            MenuSeparator {
+                width: menu.cells.gap
+                height: actions.rowHeight
+                visible: menu.wide && menu.previewOffered
+                vertical: true
+                lineName: "linkPreviewDivider"
+            }
+
+            Item {
+                id: previewSlot
+
+                width: menu.cell
+                height: actions.rowHeight
+                visible: menu.wide && menu.previewOffered
             }
         }
     }

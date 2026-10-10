@@ -13,6 +13,8 @@ Item {
     property string title
     property string favicon
     property bool tlsBroken: false
+    // Landscape band's head: narrow and tall, so title takes two lines.
+    property bool wide: false
     readonly property bool hasPage: url.length > 0
     readonly property string host: hasPage ? SearchSettings.displayAddress(url) : ""
     // Empty band above and below drawn content; sheet sizes gaps by ink, not item.
@@ -101,7 +103,10 @@ Item {
             text: !header.hasPage ? qsTr("Start page")
                                   : header.title.length > 0 ? header.title : header.host
             textFormat: Text.PlainText
-            truncationMode: TruncationMode.Fade
+            wrapMode: header.wide ? Text.Wrap : Text.NoWrap
+            maximumLineCount: 2
+            // Fade cuts lines' right ends alike; second line ends in an ellipsis instead.
+            truncationMode: header.wide ? TruncationMode.Elide : TruncationMode.Fade
             font.pixelSize: Theme.fontSizeSmall
         }
 
