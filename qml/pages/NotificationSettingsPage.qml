@@ -9,7 +9,7 @@ Page {
     id: notificationsPage
 
     objectName: "notificationSettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     Component.onCompleted: NotificationPermissions.refresh()
 

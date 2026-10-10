@@ -9,7 +9,7 @@ Page {
     id: historyPage
 
     objectName: "historyPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function open(url, inNewTab) {
         var browser = pageStack.find(function (page) {

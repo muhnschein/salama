@@ -12,7 +12,7 @@ Dialog {
     property alias name: nameField.text
 
     objectName: "tabGroupDialog"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     onAccepted: {
         if (groupId > 0) {
             TabGroups.renameGroup(groupId, nameField.text)

@@ -4,7 +4,6 @@
 // content is sketch, no real tabs touched. Each step waits for its gesture.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
-import harbour.salama 1.0
 import "../components"
 
 Page {
@@ -23,12 +22,11 @@ Page {
     // Also during pane explanation (no hint).
     readonly property bool saying: hinting || step === "omnibar"
 
-    readonly property real cutoutHeight: Settings.cutoutGuard && Screen.topCutout
-                                         ? Math.max(0, Screen.topCutout.y + Screen.topCutout.height)
-                                         : 0
+    readonly property CutoutInsets cutout: CutoutInsets { orientation: tutorialPage.orientation }
+    readonly property real cutoutHeight: cutout.inset
 
     objectName: "tutorialPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function begin() {
         recapShown = false
@@ -146,8 +144,10 @@ Page {
             spacing: Theme.paddingLarge
 
             Rectangle {
+                objectName: "tutorialSketchPicture"
                 width: parent.width
-                height: width / 2
+                // Landscape: leaves sketch lines room.
+                height: Math.min(width / 2, tutorialPage.height / 4)
                 radius: Theme.paddingMedium
                 color: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
             }

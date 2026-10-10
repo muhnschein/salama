@@ -19,7 +19,9 @@ Item {
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
     property bool primed: false
 
-    // Max height seen: resizing engine view mid-animation stretches content; keyboard covers.
+    // Max height seen in this orientation: resizing engine view mid-animation stretches
+    // content; keyboard covers. Keyboard never makes portrait page wider than tall, so a
+    // flip of that is a rotation.
     property real fullHeight: 0
 
     readonly property real pullThreshold: Theme.itemSizeLarge
@@ -31,7 +33,13 @@ Item {
     y: -tabsOffset
 
     function measure() {
-        if (pageHeight > fullHeight) {
+        if ((fullHeight > width) !== (pageHeight > width)) {
+            // Rotated: jump, no spring sliding open grid across.
+            var spring = deckSpring.enabled
+            deckSpring.enabled = false
+            fullHeight = pageHeight
+            deckSpring.enabled = spring
+        } else if (pageHeight > fullHeight) {
             fullHeight = pageHeight
         }
     }

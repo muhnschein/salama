@@ -29,7 +29,10 @@ WebViewPage {
                                        - (navigationBar.compact || navigationBar.resizing
                                           ? navigationBar.slimHeight : barHeight)
 
-    readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
+    readonly property CutoutInsets cutout: CutoutInsets {
+        view: browserPage.currentView
+        orientation: browserPage.orientation
+    }
     readonly property real cutoutHeight: cutout.height
     readonly property real cutoutInset: cutout.inset
     readonly property real pageCutoutInset: cutout.pageInset
@@ -44,7 +47,7 @@ WebViewPage {
     }
 
     objectName: "browserPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function openUrl(url) {
         if (url.length === 0) {
@@ -360,6 +363,7 @@ WebViewPage {
 
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
+            pageHeight: browserPage.height
             // Drawn once drag may start: first drawn frame uploads all previews, stutters drag.
             visible: deck.tabsOffset > 0 || deck.primed
             onPullStarted: deck.beginDrag()

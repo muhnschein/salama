@@ -14,7 +14,8 @@ SilicaFlickable {
                                            && StartPage.bookmarks.count > 0
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
-    readonly property int columns: 4
+    // Landscape: all top sites (StartPage::TopSiteLimit) in one row.
+    readonly property int columns: width > height ? 8 : 4
 
     signal openRequested(string url)
     signal newTabRequested(string url)

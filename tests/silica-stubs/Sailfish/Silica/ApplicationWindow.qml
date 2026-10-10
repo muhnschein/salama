@@ -6,6 +6,8 @@ Item {
     property var initialPage
     property var cover
     property int allowedOrientations: 0
+    // Tests turn device; pages follow where they and window allow it.
+    property int deviceOrientation: 1
     property alias pageStack: stack
     property Item coverItem: null
     property int activateCount: 0
@@ -24,6 +26,8 @@ Item {
         id: stack
 
         anchors.fill: parent
+        deviceOrientation: appWindow.deviceOrientation
+        windowOrientations: appWindow.allowedOrientations
     }
 
     Component.onCompleted: {

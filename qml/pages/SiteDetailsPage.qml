@@ -47,7 +47,7 @@ Page {
     readonly property int exceptions: (SitePermissions.revision, SitePermissions.originCount(origin))
 
     objectName: "siteDetailsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     // Reread on open: site may have asked since.
     Component.onCompleted: SitePermissions.refresh()
