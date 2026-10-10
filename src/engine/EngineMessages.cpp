@@ -278,15 +278,11 @@ QString EngineMessages::pageTapMessage() const
     return QStringLiteral("salama:pagetap");
 }
 
-QString EngineMessages::pageTapScript() const
-{
-    return QString::fromUtf8(PageTapTemplate).arg(pageTapMessage());
-}
-
 QString EngineMessages::pageTapScriptUrl() const
 {
+    const QString script = QString::fromUtf8(PageTapTemplate).arg(pageTapMessage());
     return QStringLiteral("data:application/javascript;charset=utf-8,") +
-           QString::fromLatin1(QUrl::toPercentEncoding(pageTapScript()));
+           QString::fromLatin1(QUrl::toPercentEncoding(script));
 }
 
 QVariantMap EngineMessages::linkTarget(const QVariant &data)

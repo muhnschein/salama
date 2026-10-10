@@ -70,12 +70,11 @@ public:
     // Platform WebView already listens, no registration needed.
     QString contextMenuMessage() const;
 
-    // Needs addMessageListener. Sent by pageTapScript on a tap off links and fields.
+    // Needs addMessageListener. Sent by pageTapScriptUrl's script on a tap off links and fields.
     QString pageTapMessage() const;
 
     // Frame script, not page script: page can't remove or fake it. Click only follows a tap
     // (pan, pinch, long press, double-tap zoom send none).
-    QString pageTapScript() const;
     QString pageTapScriptUrl() const;
 
     // All keys present. link "" for javascript:; kind "page", "app" (isExternalUrl) or "".

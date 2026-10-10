@@ -300,12 +300,12 @@ void tst_enginemessages::pageTapScript()
     QCOMPARE(messages.pageTapMessage(), QStringLiteral("salama:pagetap"));
     const QString url = messages.pageTapScriptUrl();
     QVERIFY(url.startsWith(QLatin1String("data:application/javascript;charset=utf-8,")));
-    QCOMPARE(QUrl::fromPercentEncoding(url.mid(url.indexOf(QLatin1Char(',')) + 1).toLatin1()),
-             messages.pageTapScript());
+    const QString script =
+        QUrl::fromPercentEncoding(url.mid(url.indexOf(QLatin1Char(',')) + 1).toLatin1());
 
     QJSEngine engine;
     QVERIFY(!engine.evaluate(QString::fromUtf8(FakeFrame)).isError());
-    const QJSValue loaded = engine.evaluate(messages.pageTapScript());
+    const QJSValue loaded = engine.evaluate(script);
     QVERIFY2(!loaded.isError(), qPrintable(loaded.toString()));
     const auto js = [&engine](const QString &code) { return engine.evaluate(code); };
     // Capture: page stopping propagation still taps.
