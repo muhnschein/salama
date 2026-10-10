@@ -14,6 +14,8 @@ Page {
     property string title
     property Item view
     property SitePermissionNames siteNames: SitePermissionNames {}
+    // Landscape: the connection on the left, what the site may do on the right.
+    readonly property real columnWidth: isLandscape ? width / 2 : width
 
     readonly property string origin: SitePermissions.originOf(url)
     readonly property bool https: url.indexOf("https://") === 0
@@ -86,56 +88,80 @@ Page {
                 description: detailsPage.title
             }
 
-            SiteSecurityHero {
-                secure: detailsPage.secure
-                verifiedBy: detailsPage.secure && detailsPage.security
-                            ? detailsPage.security.issuerDisplayName || "" : ""
-                reason: detailsPage.reason
-            }
-
-            SiteConnectionDetails {
-                security: detailsPage.https ? detailsPage.security : null
-            }
-
-            SectionHeader {
-                objectName: "siteTrackingSection"
-                visible: detailsPage.origin.length > 0
-                text: detailsPage.siteNames.kindName(SitePermissions.TrackingProtection)
-            }
-
-            SiteTrackingSwitch {
-                visible: detailsPage.origin.length > 0
-                origin: detailsPage.origin
-                view: detailsPage.view
-                blockedTrackers: !!detailsPage.security && !!detailsPage.security.blockedTrackingContent
-            }
-
-            SectionHeader {
-                objectName: "sitePermissionsSection"
-                visible: detailsPage.origin.length > 0
-                //: Heading over what the site may do
-                text: qsTr("Permissions")
-            }
-
-            Repeater {
-                model: detailsPage.origin.length > 0
-                       ? [SitePermissions.Notifications, SitePermissions.Popups,
-                          SitePermissions.Cookies, SitePermissions.Location,
-                          SitePermissions.Camera, SitePermissions.Microphone]
-                       : []
-
-                SiteDecisionRow {
-                    objectName: "siteDecisionRow"
-                    width: column.width
-                    visible: modelData !== SitePermissions.Cookies || detailsPage.cookiesShown
-                    kind: modelData
-                    origin: detailsPage.origin
-                }
-            }
-
-            Item {
+            Flow {
                 width: parent.width
-                height: Theme.paddingLarge
+
+                Column {
+                    id: connection
+
+                    width: detailsPage.columnWidth
+
+                    SiteSecurityHero {
+                        compact: detailsPage.isLandscape
+                        secure: detailsPage.secure
+                        verifiedBy: detailsPage.secure && detailsPage.security
+                                    ? detailsPage.security.issuerDisplayName || "" : ""
+                        reason: detailsPage.reason
+                    }
+
+                    SiteConnectionDetails {
+                        security: detailsPage.https ? detailsPage.security : null
+                    }
+
+                    SectionHeader {
+                        objectName: "siteTrackingSection"
+                        visible: detailsPage.origin.length > 0
+                        text: detailsPage.siteNames.kindName(SitePermissions.TrackingProtection)
+                    }
+
+                    SiteTrackingSwitch {
+                        visible: detailsPage.origin.length > 0
+                        origin: detailsPage.origin
+                        view: detailsPage.view
+                        blockedTrackers: !!detailsPage.security
+                                         && !!detailsPage.security.blockedTrackingContent
+                    }
+                }
+
+                Column {
+                    id: permissions
+
+                    width: detailsPage.columnWidth
+
+                    SectionHeader {
+                        objectName: "sitePermissionsSection"
+                        visible: detailsPage.origin.length > 0
+                        //: Heading over what the site may do
+                        text: qsTr("Permissions")
+                    }
+
+                    // Two a row on landscape.
+                    Flow {
+                        width: parent.width
+
+                        Repeater {
+                            model: detailsPage.origin.length > 0
+                                   ? [SitePermissions.Notifications, SitePermissions.Popups,
+                                      SitePermissions.Cookies, SitePermissions.Location,
+                                      SitePermissions.Camera, SitePermissions.Microphone]
+                                   : []
+
+                            SiteDecisionRow {
+                                objectName: "siteDecisionRow"
+                                width: permissions.width / (detailsPage.isLandscape ? 2 : 1)
+                                visible: modelData !== SitePermissions.Cookies
+                                         || detailsPage.cookiesShown
+                                kind: modelData
+                                origin: detailsPage.origin
+                            }
+                        }
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: Theme.paddingLarge
+                    }
+                }
             }
         }
 

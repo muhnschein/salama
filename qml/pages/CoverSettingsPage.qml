@@ -27,6 +27,9 @@ Page {
     // Names picked bookmark even when action isn't bookmark now.
     readonly property bool bookmarkPicked: CoverSettings.quickActionBookmark > 0
                                            || CoverSettings.quickActionBookmarkUrl.length > 0
+    // Landscape: the rows on the left, the cover on the right.
+    readonly property real columnX: isLandscape ? width / 2 : 0
+    readonly property real columnWidth: isLandscape ? width / 2 : width
 
     function glyphOf(action) {
         return ["", "search", "bookmarks", CoverSettings.quickActionIcon, "downloads",
@@ -73,169 +76,190 @@ Page {
                 title: qsTr("Cover")
             }
 
-            // 2/3 real cover width: rows start on screen, glyph still legible.
-            QuickActionPreview {
-                objectName: "coverPreview"
-                x: (parent.width - width) / 2
-                width: Math.min(Theme.coverSizeLarge.width * 2 / 3,
-                                parent.width - 2 * Theme.horizontalPageMargin)
-                glyph: coverSettingsPage.glyph
-                onDark: coverSettingsPage.onDark
-            }
+            // Cover first in portrait, rows first in landscape, so both are placed by their
+            // geometry: a Flow lays its children out in order.
+            Item {
+                id: body
 
-            SectionHeader {
-                //: The one action offered on the cover on the home screen
-                text: qsTr("Quick action")
-            }
+                width: parent.width
+                height: coverSettingsPage.isLandscape
+                        ? Math.max(cover.height, controls.height)
+                        : cover.height + controls.height
 
-            Label {
-                objectName: "quickActionExplained"
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                bottomPadding: Theme.paddingMedium
-                wrapMode: Text.Wrap
-                textFormat: Text.PlainText
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryHighlightColor
-                //: The cover is the app's picture on the Sailfish home screen while it runs
-                //: in the background; a quick action is an icon on it that a tap does
-                //: something with. The mute button is the playing tab's own.
-                text: qsTr("The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.")
-            }
+                // 2/3 real cover width: rows start on screen, glyph still legible.
+                QuickActionPreview {
+                    id: cover
 
-            Repeater {
-                model: [
-                    { "action": CoverSettings.QuickActionNone, "key": "none" },
-                    { "action": CoverSettings.QuickActionSearch, "key": "search" },
-                    { "action": CoverSettings.QuickActionBookmarks, "key": "bookmarks" },
-                    { "action": CoverSettings.QuickActionBookmark, "key": "bookmark" },
-                    { "action": CoverSettings.QuickActionDownloads, "key": "downloads" },
-                    { "action": CoverSettings.QuickActionHistory, "key": "history" }
-                ]
+                    objectName: "coverPreview"
+                    x: coverSettingsPage.columnX + (coverSettingsPage.columnWidth - width) / 2
+                    width: Math.min(Theme.coverSizeLarge.width * 2 / 3,
+                                    coverSettingsPage.columnWidth - 2 * Theme.horizontalPageMargin)
+                    glyph: coverSettingsPage.glyph
+                    onDark: coverSettingsPage.onDark
+                }
 
-                BackgroundItem {
-                    id: actionRow
+                Column {
+                    id: controls
 
-                    readonly property int action: modelData.action
-                    readonly property bool chosen: CoverSettings.quickAction === action
-                    readonly property bool lit: chosen || highlighted
-                    readonly property string rowGlyph: coverSettingsPage.glyphOf(action)
-                    readonly property string detail: action === CoverSettings.QuickActionBookmark
-                                                     && coverSettingsPage.bookmarkPicked
-                                                     ? coverSettingsPage.names.quickActionValue(
-                                                           action, coverSettingsPage.bookmarkId,
-                                                           coverSettingsPage.bookmarkTitle)
-                                                     : ""
+                    width: coverSettingsPage.columnWidth
+                    y: coverSettingsPage.isLandscape ? 0 : cover.height
 
-                    objectName: "quickAction-" + modelData.key
-                    width: column.width
-                    height: detail.length > 0 ? Theme.itemSizeMedium : Theme.itemSizeSmall
-                    onClicked: coverSettingsPage.choose(action)
+                    SectionHeader {
+                        //: The one action offered on the cover on the home screen
+                        text: qsTr("Quick action")
+                    }
 
-                    Item {
-                        id: glyphSlot
-
+                    Label {
+                        objectName: "quickActionExplained"
                         x: Theme.horizontalPageMargin
-                        width: Theme.iconSizeMedium
-                        height: parent.height
-
-                        Icon {
-                            objectName: "quickActionGlyph"
-                            anchors.centerIn: parent
-                            visible: actionRow.rowGlyph.length > 0
-                            width: Theme.iconSizeSmall
-                            height: width
-                            source: actionRow.rowGlyph.length > 0
-                                    ? coverSettingsPage.iconSource(actionRow.rowGlyph) : ""
-                            highlighted: actionRow.lit
-                        }
-
-                        // Dot keeps place for no-action row.
-                        Rectangle {
-                            anchors.centerIn: parent
-                            visible: actionRow.rowGlyph.length === 0
-                            width: Theme.paddingSmall
-                            height: width
-                            radius: width / 2
-                            color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
-                        }
+                        width: parent.width - 2 * Theme.horizontalPageMargin
+                        bottomPadding: Theme.paddingMedium
+                        wrapMode: Text.Wrap
+                        textFormat: Text.PlainText
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: Theme.secondaryHighlightColor
+                        //: The cover is the app's picture on the Sailfish home screen while it runs
+                        //: in the background; a quick action is an icon on it that a tap does
+                        //: something with. The mute button is the playing tab's own.
+                        text: qsTr("The cover on the home screen offers one action. While a tab plays, its mute button sits beside it.")
                     }
-
-                    Column {
-                        anchors {
-                            left: glyphSlot.right
-                            right: parent.right
-                            leftMargin: Theme.paddingMedium
-                            rightMargin: Theme.horizontalPageMargin
-                            verticalCenter: parent.verticalCenter
-                        }
-
-                        Label {
-                            objectName: "quickActionName"
-                            width: parent.width
-                            text: coverSettingsPage.names.quickAction(actionRow.action)
-                            truncationMode: TruncationMode.Fade
-                            color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
-                        }
-
-                        Label {
-                            objectName: "quickActionDetail"
-                            width: parent.width
-                            visible: text.length > 0
-                            text: actionRow.detail
-                            textFormat: Text.PlainText
-                            truncationMode: TruncationMode.Fade
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            color: actionRow.lit ? Theme.secondaryHighlightColor
-                                                 : Theme.secondaryColor
-                        }
-                    }
-                }
-            }
-
-            // Same files cover uses, so pick = what's seen.
-            Column {
-                objectName: "quickActionIconPicker"
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * x
-                visible: CoverSettings.quickAction === CoverSettings.QuickActionBookmark
-                topPadding: Theme.paddingMedium
-                spacing: Theme.paddingSmall
-
-                Label {
-                    width: parent.width
-                    font.pixelSize: Theme.fontSizeExtraSmall
-                    color: Theme.secondaryColor
-                    //: Over the glyphs a bookmark's quick action can wear on the cover
-                    text: qsTr("Its icon on the cover")
-                }
-
-                Grid {
-                    id: icons
-
-                    readonly property int room: Math.max(1, Math.floor(parent.width
-                                                                       / Theme.itemSizeSmall))
-                    readonly property int glyphs: CoverSettings.quickActionIcons.length
-
-                    objectName: "quickActionIcons"
-                    columns: Math.ceil(glyphs / Math.ceil(glyphs / room))
 
                     Repeater {
-                        model: CoverSettings.quickActionIcons
+                        model: [
+                            { "action": CoverSettings.QuickActionNone, "key": "none" },
+                            { "action": CoverSettings.QuickActionSearch, "key": "search" },
+                            { "action": CoverSettings.QuickActionBookmarks, "key": "bookmarks" },
+                            { "action": CoverSettings.QuickActionBookmark, "key": "bookmark" },
+                            { "action": CoverSettings.QuickActionDownloads, "key": "downloads" },
+                            { "action": CoverSettings.QuickActionHistory, "key": "history" }
+                        ]
 
                         BackgroundItem {
-                            objectName: "quickActionIcon-" + modelData
-                            width: Theme.itemSizeSmall
-                            height: width
-                            highlighted: down || CoverSettings.quickActionIcon === modelData
-                            onClicked: CoverSettings.quickActionIcon = modelData
+                            id: actionRow
 
-                            Image {
-                                objectName: "quickActionIconImage"
-                                anchors.centerIn: parent
-                                width: Theme.iconSizeSmall
-                                height: width
-                                source: coverSettingsPage.iconSource(modelData)
+                            readonly property int action: modelData.action
+                            readonly property bool chosen: CoverSettings.quickAction === action
+                            readonly property bool lit: chosen || highlighted
+                            readonly property string rowGlyph: coverSettingsPage.glyphOf(action)
+                            readonly property string detail:
+                                action === CoverSettings.QuickActionBookmark
+                                && coverSettingsPage.bookmarkPicked
+                                ? coverSettingsPage.names.quickActionValue(
+                                      action, coverSettingsPage.bookmarkId,
+                                      coverSettingsPage.bookmarkTitle)
+                                : ""
+
+                            objectName: "quickAction-" + modelData.key
+                            width: controls.width
+                            height: detail.length > 0 ? Theme.itemSizeMedium : Theme.itemSizeSmall
+                            onClicked: coverSettingsPage.choose(action)
+
+                            Item {
+                                id: glyphSlot
+
+                                x: Theme.horizontalPageMargin
+                                width: Theme.iconSizeMedium
+                                height: parent.height
+
+                                Icon {
+                                    objectName: "quickActionGlyph"
+                                    anchors.centerIn: parent
+                                    visible: actionRow.rowGlyph.length > 0
+                                    width: Theme.iconSizeSmall
+                                    height: width
+                                    source: actionRow.rowGlyph.length > 0
+                                            ? coverSettingsPage.iconSource(actionRow.rowGlyph) : ""
+                                    highlighted: actionRow.lit
+                                }
+
+                                // Dot keeps place for no-action row.
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    visible: actionRow.rowGlyph.length === 0
+                                    width: Theme.paddingSmall
+                                    height: width
+                                    radius: width / 2
+                                    color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
+                                }
+                            }
+
+                            Column {
+                                anchors {
+                                    left: glyphSlot.right
+                                    right: parent.right
+                                    leftMargin: Theme.paddingMedium
+                                    rightMargin: Theme.horizontalPageMargin
+                                    verticalCenter: parent.verticalCenter
+                                }
+
+                                Label {
+                                    objectName: "quickActionName"
+                                    width: parent.width
+                                    text: coverSettingsPage.names.quickAction(actionRow.action)
+                                    truncationMode: TruncationMode.Fade
+                                    color: actionRow.lit ? Theme.highlightColor : Theme.primaryColor
+                                }
+
+                                Label {
+                                    objectName: "quickActionDetail"
+                                    width: parent.width
+                                    visible: text.length > 0
+                                    text: actionRow.detail
+                                    textFormat: Text.PlainText
+                                    truncationMode: TruncationMode.Fade
+                                    font.pixelSize: Theme.fontSizeExtraSmall
+                                    color: actionRow.lit ? Theme.secondaryHighlightColor
+                                                         : Theme.secondaryColor
+                                }
+                            }
+                        }
+                    }
+
+                    // Same files cover uses, so pick = what's seen.
+                    Column {
+                        objectName: "quickActionIconPicker"
+                        x: Theme.horizontalPageMargin
+                        width: parent.width - 2 * x
+                        visible: CoverSettings.quickAction === CoverSettings.QuickActionBookmark
+                        topPadding: Theme.paddingMedium
+                        spacing: Theme.paddingSmall
+
+                        Label {
+                            width: parent.width
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                            //: Over the glyphs a bookmark's quick action can wear on the cover
+                            text: qsTr("Its icon on the cover")
+                        }
+
+                        Grid {
+                            id: icons
+
+                            readonly property int room:
+                                Math.max(1, Math.floor(parent.width / Theme.itemSizeSmall))
+                            readonly property int glyphs: CoverSettings.quickActionIcons.length
+
+                            objectName: "quickActionIcons"
+                            columns: Math.ceil(glyphs / Math.ceil(glyphs / room))
+
+                            Repeater {
+                                model: CoverSettings.quickActionIcons
+
+                                BackgroundItem {
+                                    objectName: "quickActionIcon-" + modelData
+                                    width: Theme.itemSizeSmall
+                                    height: width
+                                    highlighted: down || CoverSettings.quickActionIcon === modelData
+                                    onClicked: CoverSettings.quickActionIcon = modelData
+
+                                    Image {
+                                        objectName: "quickActionIconImage"
+                                        anchors.centerIn: parent
+                                        width: Theme.iconSizeSmall
+                                        height: width
+                                        source: coverSettingsPage.iconSource(modelData)
+                                    }
+                                }
                             }
                         }
                     }
