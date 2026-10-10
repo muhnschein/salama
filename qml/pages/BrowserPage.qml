@@ -163,11 +163,12 @@ WebViewPage {
     }
 
     // Touch taken above bar from page foot, replayed to engine; focus ends address edit.
+    // Position in page coords, as bar gesture reports.
     function touchPage(position, phase) {
         if (!currentView) {
             return
         }
-        var at = currentView.mapFromItem(null, position.x, position.y)
+        var at = currentView.mapFromItem(browserPage, position.x, position.y)
         var touches = [Qt.point(at.x, at.y)]
         if (phase === "start") {
             currentView.forceActiveFocus()

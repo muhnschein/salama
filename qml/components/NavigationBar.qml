@@ -47,7 +47,7 @@ Item {
     signal dragStarted()
     signal dragMoved(real distance)
     signal dragFinished(real distance)
-    // Reach touch that turned out page's. Window coords.
+    // Reach touch that turned out page's. Page coords.
     signal pageTouchStarted(point position)
     signal pageTouchMoved(point position)
     signal pageTouchEnded(point position)

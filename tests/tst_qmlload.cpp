@@ -266,6 +266,7 @@ private slots:
     void everyPageTurns();
     void landscapeBrowsing();
     void landscapeTutorial();
+    void landscapeGesturesUnderAFinger();
 
 private:
     bool loadWindow();
@@ -9513,6 +9514,74 @@ void tst_qmlload::landscapeTutorial()
     const QPointF third = evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF();
     QCOMPARE(third.x(), view->property("cellWidth").toReal() * 2.5);
     QCOMPARE(third.y(), evaluate(grid, QStringLiteral("cellCentre(0)")).toPointF().y());
+}
+
+// Silica turns landscape page a quarter inside portrait window. Swipe up anywhere along bar opens
+// grid; pull down on grid head returns. Gestures once measured window axes: deck followed only a
+// sideways drift, so on device just bar's right part, under a right thumb's arc, opened grid.
+void tst_qmlload::landscapeGesturesUnderAFinger()
+{
+    for (int i = 0; i < 11; ++i) {
+        m_core->tabs()->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    auto *head = qobject_cast<QQuickItem *>(find(QStringLiteral("gridHeadControls")));
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const qreal threshold = browser->property("pullThreshold").toReal();
+    const auto offset = [browser]() { return browser->property("tabsOffset").toReal(); };
+    const auto onWindow = [browser](const QPointF &at) {
+        return browser->mapToScene(at).toPoint();
+    };
+    const auto swipe = [&](const QPointF &from, const QPointF &to) {
+        const int steps = 24;
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onWindow(from));
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, onWindow(from + (to - from) * step / steps));
+        }
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onWindow(to));
+    };
+
+    for (int orientation : {Landscape, LandscapeInverted}) {
+        turnDevice(orientation);
+        QVERIFY(browser->rotation() != qreal(0));
+        const qreal reach = gesture->property("reach").toReal();
+        const qreal onBar = gesture->mapToItem(browser, QPointF(0, reach)).y() +
+                            gesture->property("strip").toReal() / 2;
+
+        // Tap above bar reaches page where finger is.
+        auto *view = qobject_cast<QQuickItem *>(currentWebView());
+        const int touched = view->property("touches").toList().count();
+        const QPointF tap(200, gesture->mapToItem(browser, QPointF(0, reach / 2)).y());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, onWindow(tap));
+        const QVariantMap began = view->property("touches").toList().value(touched).toMap();
+        const QPointF local = view->mapFromItem(browser, tap);
+        QVERIFY(qAbs(began.value(QStringLiteral("x")).toReal() - local.x()) < 1);
+        QVERIFY(qAbs(began.value(QStringLiteral("y")).toReal() - local.y()) < 1);
+        for (const qreal across : {0.1, 0.5, 0.9}) {
+            const QPointF from(browser->width() * across, onBar);
+            swipe(from, from - QPointF(0, 3 * threshold));
+            QVERIFY2(browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), browser->property("fullHeight").toReal());
+            QTRY_VERIFY(!grid->property("moving").toBool());
+
+            // Scrolled grid: only head's own pull returns, grid's overscroll can't.
+            const qreal scrolled = grid->property("cellHeight").toReal();
+            grid->setProperty("contentY", scrolled);
+            const QPointF pulled =
+                head->mapToItem(browser, QPointF(head->width() * across, head->height() / 2));
+            swipe(pulled, pulled + QPointF(0, 3 * threshold));
+            QVERIFY2(!browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), qreal(0));
+            QCOMPARE(grid->property("contentY").toReal(), scrolled);
+            grid->setProperty("contentY", 0);
+        }
+    }
+    turnDevice(Portrait);
+    QCOMPARE(browser->rotation(), qreal(0));
 }
 
 #include "tst_qmlload.moc"
