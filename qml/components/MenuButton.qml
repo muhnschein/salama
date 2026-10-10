@@ -15,6 +15,8 @@ BackgroundItem {
     // progress 0..1.
     property bool busy: false
     property real progress: 0
+    // Landscape band's cells are wider than a fifth of the portrait width.
+    property real labelSize: Theme.fontSizeTiny
     readonly property bool lit: highlighted || checked
 
     height: column.height + 2 * Theme.paddingMedium
@@ -73,7 +75,7 @@ BackgroundItem {
             horizontalAlignment: Text.AlignHCenter
             text: button.text
             truncationMode: TruncationMode.Fade
-            font.pixelSize: Theme.fontSizeTiny
+            font.pixelSize: button.labelSize
             color: button.lit ? Theme.highlightColor : Theme.primaryColor
         }
     }

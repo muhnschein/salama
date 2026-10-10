@@ -20,6 +20,8 @@ Item {
     // Drawn picture's top, in parent's coordinates.
     readonly property bool pictureShown: lifted.visible
     readonly property real pictureTop: pictureArea.y + pinchArea.y
+    // Room above sheet, over its shade: landscape link preview floats here too.
+    readonly property Item room: pictureArea
 
     objectName: "linkMenuOverlay"
     visible: opacity > 0

@@ -1,20 +1,31 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
+//
+// Portrait: rows under each other. Landscape: one row of the sheet's band cells.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
-Column {
+Grid {
+    id: actions
+
     property Item sheet
+    // Whichever rows are shown, all one height.
+    readonly property real rowHeight: Math.max(pageRow.height, appRow.height, imageRow.height)
+
+    columns: sheet.wide ? 3 : 1
 
     Grid {
+        id: pageRow
+
         objectName: "linkPageRow"
-        width: parent.width
+        width: 4 * sheet.cell
         columns: 4
         visible: sheet.opensPage
 
         MenuButton {
             objectName: "newTabLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-tab-new"
             //: The link sheet's action: the link in a new tab, brought to the front
@@ -27,7 +38,8 @@ Column {
 
         MenuButton {
             objectName: "backgroundTabLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-tabs"
             //: The link sheet's action: the link in a new tab, left behind the one in front
@@ -37,7 +49,8 @@ Column {
 
         MenuButton {
             objectName: "shareLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-share"
             text: qsTr("Share")
@@ -46,7 +59,8 @@ Column {
 
         MenuButton {
             objectName: "saveLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-downloads"
             //: The link sheet's action: what the link leads to, downloaded
@@ -56,14 +70,17 @@ Column {
     }
 
     Grid {
+        id: appRow
+
         objectName: "linkAppRow"
-        width: parent.width
+        width: 4 * sheet.cell
         columns: 4
         visible: sheet.forApp
 
         MenuButton {
             objectName: "appLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: sheet.appIcon(sheet.target.scheme)
             text: sheet.appAction(sheet.target.scheme)
@@ -75,7 +92,8 @@ Column {
 
         MenuButton {
             objectName: "shareAppLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-share"
             text: qsTr("Share")
@@ -83,37 +101,26 @@ Column {
         }
     }
 
-    Item {
-        width: parent.width
-        height: Theme.paddingLarge
+    MenuSeparator {
+        width: sheet.wide ? sheet.cells.gap : sheet.width
+        height: sheet.wide ? actions.rowHeight : Theme.paddingLarge
         visible: sheet.hasLink && sheet.hasImage
-
-        Row {
-            objectName: "linkMenuSeparator"
-            anchors.centerIn: parent
-
-            Separator {
-                width: sheet.width / 2 - Theme.horizontalPageMargin
-                color: Theme.primaryColor
-                rotation: 180
-            }
-
-            Separator {
-                width: sheet.width / 2 - Theme.horizontalPageMargin
-                color: Theme.primaryColor
-            }
-        }
+        vertical: sheet.wide
+        lineName: "linkMenuSeparator"
     }
 
     Grid {
+        id: imageRow
+
         objectName: "linkImageRow"
-        width: parent.width
+        width: 4 * sheet.cell
         columns: 4
         visible: sheet.hasImage
 
         MenuButton {
             objectName: "openImageButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-file-image"
             //: The link sheet's action: the picture alone, in a new tab
@@ -126,7 +133,8 @@ Column {
 
         MenuButton {
             objectName: "saveImageButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-downloads"
             //: The link sheet's action: the picture, downloaded
@@ -136,7 +144,8 @@ Column {
 
         MenuButton {
             objectName: "copyImageLinkButton"
-            width: sheet.width / 4
+            width: sheet.cell
+            labelSize: sheet.labelSize
             round: true
             iconSource: "image://theme/icon-m-clipboard"
             //: The link sheet's action: the picture's address, put on the clipboard
