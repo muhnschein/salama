@@ -10,6 +10,8 @@ Page {
     id: startPageSettings
 
     property SettingNames names: SettingNames {}
+    // Landscape: the choices on the left, the picture on the right.
+    readonly property real columnWidth: isLandscape ? width / 2 : width
 
     objectName: "startPageSettingsPage"
     allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
@@ -27,65 +29,77 @@ Page {
                 title: qsTr("Start page")
             }
 
-            TextSwitch {
-                objectName: "startPageSitesSwitch"
-                automaticCheck: false
-                text: startPageSettings.names.startPage(false)
-                checked: !StartPageSettings.blank
-                onClicked: StartPageSettings.blank = false
-            }
-
-            TextSwitch {
-                objectName: "startPageBlankSwitch"
-                automaticCheck: false
-                text: startPageSettings.names.startPage(true)
-                checked: StartPageSettings.blank
-                onClicked: StartPageSettings.blank = true
-            }
-
-            SectionHeader {
-                //: The parts of the start page, each switched on or off
-                text: qsTr("Sections")
-            }
-
-            TextSwitch {
-                objectName: "startPageTopSitesSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Frequently visited")
-                checked: StartPageSettings.topSites
-                onCheckedChanged: StartPageSettings.topSites = checked
-            }
-
-            TextSwitch {
-                objectName: "startPageBookmarksSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Bookmarks")
-                checked: StartPageSettings.bookmarks
-                onCheckedChanged: StartPageSettings.bookmarks = checked
-            }
-
-            TextSwitch {
-                objectName: "startPageRecentSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Recently visited")
-                checked: StartPageSettings.recent
-                onCheckedChanged: StartPageSettings.recent = checked
-            }
-
-            SectionHeader {
-                //: Over a picture of what a new tab will show
-                text: qsTr("Preview")
-            }
-
-            Item {
+            Flow {
                 width: parent.width
-                height: Theme.paddingLarge
-            }
 
-            StartPagePreview {
-                width: parent.width
-                screenWidth: startPageSettings.width
-                screenHeight: startPageSettings.height
+                Column {
+                    width: startPageSettings.columnWidth
+
+                    TextSwitch {
+                        objectName: "startPageSitesSwitch"
+                        automaticCheck: false
+                        text: startPageSettings.names.startPage(false)
+                        checked: !StartPageSettings.blank
+                        onClicked: StartPageSettings.blank = false
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageBlankSwitch"
+                        automaticCheck: false
+                        text: startPageSettings.names.startPage(true)
+                        checked: StartPageSettings.blank
+                        onClicked: StartPageSettings.blank = true
+                    }
+
+                    SectionHeader {
+                        //: The parts of the start page, each switched on or off
+                        text: qsTr("Sections")
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageTopSitesSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Frequently visited")
+                        checked: StartPageSettings.topSites
+                        onCheckedChanged: StartPageSettings.topSites = checked
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageBookmarksSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Bookmarks")
+                        checked: StartPageSettings.bookmarks
+                        onCheckedChanged: StartPageSettings.bookmarks = checked
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageRecentSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Recently visited")
+                        checked: StartPageSettings.recent
+                        onCheckedChanged: StartPageSettings.recent = checked
+                    }
+                }
+
+                Column {
+                    width: startPageSettings.columnWidth
+
+                    SectionHeader {
+                        //: Over a picture of what a new tab will show
+                        text: qsTr("Preview")
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: Theme.paddingLarge
+                    }
+
+                    StartPagePreview {
+                        width: parent.width
+                        screenWidth: startPageSettings.width
+                        screenHeight: startPageSettings.height
+                    }
+                }
             }
         }
 

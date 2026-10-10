@@ -66,6 +66,11 @@ const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
 const char *const ChatSite = "https://chat.example";
 // Start page of tests, in only tab.
 const char *const FirstPage = "https://www.qwant.com/";
+// Silica's Orientation values (tests/silica-stubs/plugin/enums.h).
+const int Portrait = 1;
+const int Landscape = 2;
+const int PortraitInverted = 4;
+const int LandscapeInverted = 8;
 
 } // namespace
 
@@ -226,6 +231,8 @@ private slots:
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void landscapeSettingsPage();
+    void landscapePreviewPages();
     void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
@@ -264,6 +271,7 @@ private slots:
     void siteDetailsConnection();
     void siteDetailsTrackingProtection();
     void siteDetailsPermissions();
+    void landscapeSiteDetails();
     void tutorialOnFirstStart();
     void tutorial();
     void tutorialGrid();
@@ -5892,20 +5900,69 @@ void tst_qmlload::bookmarksPage()
 
 namespace {
 
-// Settings column contents in order: objectName per item, section header as "#text".
-// Declaration order, not y: Column only places items on polish, never happens windowless.
-QStringList columnOf(QObject *item)
+// Column contents in order: objectName per item, section header as "#text". Declaration
+// order, not y: Column only places items on polish, never happens windowless. Unnamed
+// containers are looked through, since a landscape page lays its items in two columns (a
+// Flow of Columns); the order reads the same either way.
+void appendInOrder(QQuickItem *container, QStringList &held)
 {
-    QStringList held;
-    for (QQuickItem *child : qobject_cast<QQuickItem *>(item)->parentItem()->childItems()) {
+    for (QQuickItem *child : container->childItems()) {
         if (QString::fromLatin1(child->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader"))) {
             held.append(QLatin1Char('#') + child->property("text").toString());
         } else if (!child->objectName().isEmpty()) {
             held.append(child->objectName());
+        } else {
+            appendInOrder(child, held);
         }
     }
+}
+
+// The column the item is in: its ancestor that sits directly in the page's flickable.
+QStringList columnOf(QObject *item)
+{
+    QQuickItem *column = qobject_cast<QQuickItem *>(item);
+    while (column->parentItem() && column->parentItem()->parentItem() &&
+           !column->parentItem()->parentItem()->inherits("QQuickFlickable")) {
+        column = column->parentItem();
+    }
+    QStringList held;
+    appendInOrder(column, held);
     return held;
+}
+
+// Where an item's top left corner sits on a page, in the page's own coordinates; NaN for none.
+QPointF onPage(QObject *item, QObject *page)
+{
+    if (item == nullptr) {
+        return QPointF(qQNaN(), qQNaN());
+    }
+    return qobject_cast<QQuickItem *>(item)->mapToItem(qobject_cast<QQuickItem *>(page), QPointF());
+}
+
+// The section header with this text, wherever it is on the page.
+QObject *sectionHeader(QObject *page, const QString &text)
+{
+    for (QObject *object : findObjects(page, QString())) {
+        if (QString::fromLatin1(object->metaObject()->className())
+                .startsWith(QLatin1String("SectionHeader")) &&
+            object->property("text").toString() == text) {
+            return object;
+        }
+    }
+    return nullptr;
+}
+
+// Column and Flow place their items when polished, and only a frame of a shown window polishes:
+// after a turn, positions are read once two frames have passed.
+void layOut(QQuickWindow &window)
+{
+    QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
+    for (int frame = 0; frame < 2; ++frame) {
+        const int seen = frames.count();
+        window.update();
+        QTRY_VERIFY(frames.count() > seen);
+    }
 }
 
 } // namespace
@@ -6106,6 +6163,169 @@ void tst_qmlload::settingsPage()
     QCOMPARE(lastDark(), 1);
     colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+}
+
+// Landscape: each heading spans the page, and the entries under it flow two a row, the left one
+// at the page's edge and the right one at its middle, a row's two on one y. Portrait is one
+// column again, each entry the page's width under the one before.
+void tst_qmlload::landscapeSettingsPage()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    const auto below = [&at](const QString &upper, const QString &lower) {
+        QVERIFY2(at(lower).y() > at(upper).y(), qPrintable(lower));
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    for (const QString &heading : {QStringLiteral("Browsing"), QStringLiteral("Appearance"),
+                                   QStringLiteral("Privacy"), QStringLiteral("Help")}) {
+        QObject *header = sectionHeader(page, heading);
+        QVERIFY2(header != nullptr, qPrintable(heading));
+        QCOMPARE(header->property("width").toReal(), width);
+        QCOMPARE(onPage(header, page).x(), qreal(0));
+    }
+
+    const QList<QStringList> rows{
+        {QStringLiteral("startPageSettingsEntry"), QStringLiteral("searchSettingsEntry")},
+        {QStringLiteral("readerSettingsEntry"), QStringLiteral("coverSettingsEntry")},
+        {QStringLiteral("websiteColorsCombo"), QStringLiteral("notchGuardCombo")},
+        {QStringLiteral("fixedToolbarSwitch")},
+        {QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry")},
+        {QStringLiteral("trackingSettingsEntry"), QStringLiteral("globalPrivacyControlSwitch")},
+        {QStringLiteral("javascriptSwitch"), QStringLiteral("sitePermissionsSettingsEntry")},
+        {QStringLiteral("historySettingsEntry")},
+        {QStringLiteral("tutorialSettingsEntry")},
+    };
+    for (const QStringList &row : rows) {
+        const qreal y = at(row.first()).y();
+        for (int i = 0; i < row.count(); ++i) {
+            const QPointF point = at(row.at(i));
+            QVERIFY2(qAbs(point.x() - (i == 0 ? qreal(0) : width / 2)) < 1, qPrintable(row.at(i)));
+            QVERIFY2(qAbs(point.y() - y) < 1, qPrintable(row.at(i)));
+        }
+    }
+    // Each row below the one before it.
+    below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("readerSettingsEntry"));
+    below(QStringLiteral("readerSettingsEntry"), QStringLiteral("websiteColorsCombo"));
+    below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("trackingSettingsEntry"));
+    below(QStringLiteral("trackingSettingsEntry"), QStringLiteral("javascriptSwitch"));
+    below(QStringLiteral("javascriptSwitch"), QStringLiteral("historySettingsEntry"));
+    below(QStringLiteral("historySettingsEntry"), QStringLiteral("tutorialSettingsEntry"));
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (const QStringList &row : rows) {
+        for (const QString &name : row) {
+            QCOMPARE(at(name).x(), qreal(0));
+            QCOMPARE(find(name)->property("width").toReal(), portraitWidth);
+        }
+    }
+    below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("searchSettingsEntry"));
+    below(QStringLiteral("readerSettingsEntry"), QStringLiteral("coverSettingsEntry"));
+    below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry"));
+}
+
+// Landscape: on the start page, the reader view and the cover, the choices sit in the left
+// column and the picture in the right one, both starting under the page header. Portrait is
+// one column, the picture under the choices, the cover's over them, as it was.
+void tst_qmlload::landscapePreviewPages()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const auto at = [this](QObject *page, const QString &name) { return onPage(find(name), page); };
+
+    QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(settings->objectName(), QStringLiteral("settingsPage"));
+    {
+        click(find(QStringLiteral("startPageSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("startPageSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *frame = find(QStringLiteral("startPagePreviewFrame"));
+        QObject *picture = sectionHeader(page, QStringLiteral("Preview"));
+        QVERIFY(picture != nullptr);
+        QCOMPARE(at(page, QStringLiteral("startPageSitesSwitch")).y(), onPage(picture, page).y());
+        QVERIFY(at(page, QStringLiteral("startPageRecentSwitch")).x() < width / 2);
+        QVERIFY(onPage(sectionHeader(page, QStringLiteral("Sections")), page).x() < width / 2);
+        QVERIFY(onPage(picture, page).x() >= width / 2);
+        QVERIFY(onPage(frame, page).x() >= width / 2);
+        QVERIFY(onPage(frame, page).x() + frame->property("width").toReal() <= width);
+        // The picture takes its column less the page margin either side.
+        const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+        QVERIFY(qAbs(onPage(frame, page).x() - (width / 2 + margin)) < 1);
+        QVERIFY(qAbs(onPage(frame, page).x() + frame->property("width").toReal() -
+                     (width - margin)) < 1);
+        turnDevice(Portrait);
+        layOut(window);
+        QVERIFY(onPage(frame, page).y() > at(page, QStringLiteral("startPageRecentSwitch")).y());
+        QCOMPARE(frame->property("width").toReal(), page->property("width").toReal() / 2);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
+    {
+        click(find(QStringLiteral("readerSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("readerSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *preview = find(QStringLiteral("readerPreview"));
+        QObject *slider = find(QStringLiteral("readerTextSizeSlider"));
+        QVERIFY(onPage(findAll(QStringLiteral("readerColorsChoice")).first(), page).x() <
+                width / 2);
+        QVERIFY(onPage(slider, page).x() < width / 2);
+        QVERIFY(onPage(preview, page).x() >= width / 2);
+        QVERIFY(onPage(preview, page).x() + preview->property("width").toReal() <= width);
+        QCOMPARE(onPage(preview, page).y(),
+                 onPage(sectionHeader(page, QStringLiteral("Colours")), page).y());
+        turnDevice(Portrait);
+        layOut(window);
+        const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+        QVERIFY(onPage(preview, page).y() > onPage(slider, page).y());
+        QCOMPARE(onPage(preview, page).x(), margin);
+        QCOMPARE(preview->property("width").toReal(),
+                 page->property("width").toReal() - 2 * margin);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
+    {
+        click(find(QStringLiteral("coverSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *cover = find(QStringLiteral("coverPreview"));
+        QVERIFY(onPage(cover, page).x() >= width / 2);
+        QVERIFY(onPage(cover, page).x() + cover->property("width").toReal() <= width);
+        QVERIFY(at(page, QStringLiteral("quickAction-none")).x() < width / 2);
+        QCOMPARE(find(QStringLiteral("quickAction-none"))->property("width").toReal(), width / 2);
+        QCOMPARE(onPage(cover, page).y(),
+                 onPage(sectionHeader(page, QStringLiteral("Quick action")), page).y());
+        turnDevice(Portrait);
+        layOut(window);
+        const qreal portraitWidth = page->property("width").toReal();
+        QVERIFY(onPage(cover, page).y() < at(page, QStringLiteral("quickAction-none")).y());
+        QCOMPARE(at(page, QStringLiteral("quickAction-none")).x(), qreal(0));
+        QCOMPARE(find(QStringLiteral("quickAction-none"))->property("width").toReal(),
+                 portraitWidth);
+        QCOMPARE(onPage(cover, page).x() + cover->property("width").toReal() / 2,
+                 portraitWidth / 2);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
 }
 
 // sailfish-browser's Appearance/Privacy rows, its wording, and effect on page and engine.
@@ -9554,8 +9774,9 @@ void tst_qmlload::siteDetailsPermissions()
     QCOMPARE(textOf(page, "sitePermissionsSection"), QStringLiteral("Permissions"));
     QCOMPARE(textOf(page, "siteTrackingSection"), QStringLiteral("Tracking protection"));
     QCOMPARE(findAll(QStringLiteral("siteDecisionRow")).count(), 6);
+    // In declaration order: a hidden row is not placed, so its y would not order it.
     QStringList names;
-    for (QObject *candidate : byRow(findAll(QStringLiteral("siteDecisionRow")))) {
+    for (QObject *candidate : findAll(QStringLiteral("siteDecisionRow"))) {
         names.append(textOf(candidate, "siteDecisionName"));
     }
     QCOMPARE(names, (QStringList{QStringLiteral("Notifications"), QStringLiteral("Pop-ups"),
@@ -9681,6 +9902,75 @@ void tst_qmlload::siteDetailsPermissions()
     QVERIFY(!rowShown(SitePermissions::Cookies));
     QCOMPARE(reloads(), afterSwitch + 1);
     QVERIFY(find(QStringLiteral("siteTrackingSwitch"))->property("checked").toBool());
+}
+
+// Landscape: the connection on the left, its security compact with the icon beside its words,
+// and the Permissions on the right, two a row. Portrait is one column, the icon above its words.
+void tst_qmlload::landscapeSiteDetails()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("menuHeaderDetails")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("siteDetailsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    QObject *hero = find(QStringLiteral("siteSecurityHero"));
+    QObject *icon = find(QStringLiteral("siteSecurityIcon"));
+    QObject *title = find(QStringLiteral("siteSecurityTitle"));
+    QObject *permissions = find(QStringLiteral("sitePermissionsSection"));
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QCOMPARE(hero->property("topPadding").toReal(),
+             evaluate(page, QStringLiteral("Theme.paddingLarge")).toReal());
+    QVERIFY(at(QStringLiteral("siteSecurityIcon")).x() + icon->property("width").toReal() <=
+            at(QStringLiteral("siteSecurityTitle")).x());
+    QVERIFY(at(QStringLiteral("siteSecurityIcon")).y() <
+            at(QStringLiteral("siteSecurityTitle")).y() + title->property("height").toReal());
+    QVERIFY(at(QStringLiteral("siteSecurityTitle")).y() <
+            at(QStringLiteral("siteSecurityIcon")).y() + icon->property("height").toReal());
+
+    QVERIFY(at(QStringLiteral("siteSecurityTitle")).x() < width / 2);
+    QVERIFY(at(QStringLiteral("siteTrackingSwitch")).x() < width / 2);
+    QVERIFY(onPage(permissions, page).x() >= width / 2);
+    QCOMPARE(onPage(permissions, page).y(), at(QStringLiteral("siteSecurityHero")).y());
+
+    // The rows the site has: Cookies is hidden until tracking protection lets it show.
+    QList<QObject *> rows;
+    for (QObject *row : findAll(QStringLiteral("siteDecisionRow"))) {
+        if (qobject_cast<QQuickItem *>(row)->isVisible()) {
+            rows.append(row);
+        }
+    }
+    QCOMPARE(rows.count(), 5);
+    QCOMPARE(textOf(rows.at(1), "siteDecisionName"), QStringLiteral("Pop-ups"));
+    QCOMPARE(rows.first()->property("width").toReal(), width / 4);
+    QCOMPARE(onPage(rows.at(0), page).x(), width / 2);
+    QCOMPARE(onPage(rows.at(1), page).x(), width * 3 / 4);
+    QCOMPARE(onPage(rows.at(1), page).y(), onPage(rows.at(0), page).y());
+    QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(0), page).y());
+    QCOMPARE(onPage(rows.at(2), page).x(), width / 2);
+    QCOMPARE(onPage(rows.at(3), page).y(), onPage(rows.at(2), page).y());
+    QCOMPARE(onPage(rows.at(3), page).x(), width * 3 / 4);
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QCOMPARE(hero->property("topPadding").toReal(),
+             evaluate(page, QStringLiteral("Theme.paddingLarge * 2")).toReal());
+    QCOMPARE(onPage(icon, page).x() + icon->property("width").toReal() / 2, portraitWidth / 2);
+    QVERIFY(onPage(icon, page).y() + icon->property("height").toReal() <=
+            at(QStringLiteral("siteSecurityTitle")).y());
+    QVERIFY(at(QStringLiteral("siteTrackingSwitch")).y() < onPage(permissions, page).y());
+    for (QObject *row : rows) {
+        QCOMPARE(onPage(row, page).x(), qreal(0));
+        QCOMPARE(row->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(rows.at(1), page).y() > onPage(rows.at(0), page).y());
+    QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(1), page).y());
 }
 
 QTEST_MAIN(tst_qmlload)
@@ -10133,16 +10423,6 @@ void tst_qmlload::tutorialUnderAFinger()
     QVERIFY(!deck->property("tabsOpen").toBool());
     QCOMPARE(step(), QStringLiteral("done"));
 }
-
-namespace {
-
-// Silica's Orientation values (tests/silica-stubs/plugin/enums.h).
-const int Portrait = 1;
-const int Landscape = 2;
-const int PortraitInverted = 4;
-const int LandscapeInverted = 8;
-
-} // namespace
 
 // Stub pages follow window's device orientation where page and window allow it, as Silica.
 void tst_qmlload::turnDevice(int orientation) const

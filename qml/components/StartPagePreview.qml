@@ -13,7 +13,10 @@ Item {
     // Settings page size = browsing page size in portrait.
     property real screenWidth
     property real screenHeight
-    readonly property real miniature: 0.5
+    // Half the screen, or less where it is given less width (a column on landscape), with the
+    // page margin either side.
+    readonly property real miniature: Math.min(0.5, (width - 2 * Theme.horizontalPageMargin)
+                                                    / screenWidth)
     readonly property bool blank: StartPageSettings.blank
     readonly property bool showsTopSites: !blank && StartPageSettings.topSites
     readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
