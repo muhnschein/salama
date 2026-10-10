@@ -32,7 +32,8 @@ public:
         GroupId,
         GroupName,
         GroupTabCount,
-        GroupStart
+        GroupStart,
+        Thumbnail
     };
 
     explicit TabSearchModel(TabModel *tabs, QObject *parent = nullptr);
