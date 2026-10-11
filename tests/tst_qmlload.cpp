@@ -272,6 +272,8 @@ private slots:
     void siteDetailsTrackingProtection();
     void siteDetailsPermissions();
     void landscapeSiteDetails();
+    void landscapeSearchSettings();
+    void landscapeHistorySettings();
     void tutorialOnFirstStart();
     void tutorial();
     void tutorialGrid();
@@ -9996,6 +9998,122 @@ void tst_qmlload::landscapeSiteDetails()
     }
     QVERIFY(onPage(rows.at(1), page).y() > onPage(rows.at(0), page).y());
     QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(1), page).y());
+}
+
+// Landscape: the engines (and those found while browsing) in the left column, the address bar's
+// suggestions in the right, both starting under the page header. Portrait is one column, the
+// suggestions under the engines, as it was.
+void tst_qmlload::landscapeSearchSettings()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("searchSettingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    // The columns are unnamed (columnOf() looks through them): reached from what they hold.
+    const auto columnHolding = [this](const QString &name) -> QObject * {
+        return qobject_cast<QQuickItem *>(find(name))->parentItem();
+    };
+    QObject *engines = columnHolding(QStringLiteral("foundSearchEngines"));
+    QObject *suggestions = columnHolding(QStringLiteral("omnibarTabsSwitch"));
+    QObject *engineHeader = sectionHeader(page, QStringLiteral("Search engine"));
+    QObject *suggestionsHeader = sectionHeader(page, QStringLiteral("Address bar suggestions"));
+    QVERIFY(engineHeader != nullptr);
+    QVERIFY(suggestionsHeader != nullptr);
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    QCOMPARE(onPage(engines, page).x(), qreal(0));
+    QCOMPARE(onPage(suggestions, page).x(), width / 2);
+    QCOMPARE(onPage(suggestions, page).y(), onPage(engines, page).y());
+    QCOMPARE(engines->property("width").toReal(), width / 2);
+    QCOMPARE(suggestions->property("width").toReal(), width / 2);
+    QVERIFY(onPage(engineHeader, page).x() < width / 2);
+    QVERIFY(at(QStringLiteral("foundSearchEngines")).x() < width / 2);
+    QVERIFY(onPage(suggestionsHeader, page).x() > width / 2);
+    QCOMPARE(onPage(suggestionsHeader, page).y(), onPage(engineHeader, page).y());
+    for (const QString &name :
+         {QStringLiteral("omnibarTabsSwitch"), QStringLiteral("omnibarBookmarksSwitch"),
+          QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch")}) {
+        QVERIFY2(qAbs(at(name).x() - width / 2) < 1, qPrintable(name));
+    }
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (QObject *column : {engines, suggestions}) {
+        QCOMPARE(onPage(column, page).x(), qreal(0));
+        QCOMPARE(column->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(suggestions, page).y() >=
+            onPage(engines, page).y() + engines->property("height").toReal());
+    QVERIFY(onPage(suggestionsHeader, page).y() > onPage(engineHeader, page).y());
+    QCOMPARE(at(QStringLiteral("omnibarDownloadsSwitch")).x(), qreal(0));
+}
+
+// Landscape: the two switches in the left column, what is kept on the phone and the clearing
+// button, centred, in the right, both starting under the page header. Portrait is one column,
+// the button centred on the page, as it was.
+void tst_qmlload::landscapeHistorySettings()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("historySettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("historySettingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    const auto columnHolding = [this](const QString &name) -> QObject * {
+        return qobject_cast<QQuickItem *>(find(name))->parentItem();
+    };
+    QObject *switches = columnHolding(QStringLiteral("rememberHistorySwitch"));
+    QObject *kept = columnHolding(QStringLiteral("keptHistory"));
+    QObject *button = find(QStringLiteral("clearDataButton"));
+    QObject *keptHeader = sectionHeader(page, QStringLiteral("Kept on this phone"));
+    QVERIFY(keptHeader != nullptr);
+    const auto buttonCentre = [&]() {
+        return onPage(button, page).x() + button->property("width").toReal() / 2;
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    QCOMPARE(onPage(switches, page).x(), qreal(0));
+    QCOMPARE(onPage(kept, page).x(), width / 2);
+    QCOMPARE(onPage(kept, page).y(), onPage(switches, page).y());
+    QCOMPARE(switches->property("width").toReal(), width / 2);
+    QCOMPARE(kept->property("width").toReal(), width / 2);
+    QCOMPARE(at(QStringLiteral("rememberHistorySwitch")).x(), qreal(0));
+    QCOMPARE(at(QStringLiteral("clearHistoryOnCloseSwitch")).x(), qreal(0));
+    QVERIFY(onPage(keptHeader, page).x() > width / 2);
+    QCOMPARE(onPage(keptHeader, page).y(), at(QStringLiteral("rememberHistorySwitch")).y());
+    for (const QString &name : {QStringLiteral("keptHistory"), QStringLiteral("keptDownloads"),
+                                QStringLiteral("keptClosedTabs"), QStringLiteral("keptOpenTabs")}) {
+        QCOMPARE(at(name).x(), width / 2);
+    }
+    QVERIFY(qAbs(buttonCentre() - width * 3 / 4) < 1);
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (QObject *column : {switches, kept}) {
+        QCOMPARE(onPage(column, page).x(), qreal(0));
+        QCOMPARE(column->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(kept, page).y() >=
+            onPage(switches, page).y() + switches->property("height").toReal());
+    QVERIFY(onPage(keptHeader, page).y() > at(QStringLiteral("clearHistoryOnCloseSwitch")).y());
+    QCOMPARE(at(QStringLiteral("keptOpenTabs")).x(), qreal(0));
+    QVERIFY(qAbs(buttonCentre() - portraitWidth / 2) < 1);
 }
 
 QTEST_MAIN(tst_qmlload)
