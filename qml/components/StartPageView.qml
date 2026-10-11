@@ -14,8 +14,14 @@ SilicaFlickable {
                                            && StartPage.bookmarks.count > 0
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
-    // Landscape: all top sites (StartPage::TopSiteLimit) in one row.
-    readonly property int columns: width > height ? 8 : 4
+    readonly property bool landscape: width > height
+    readonly property int sections: (showsTopSites ? 1 : 0) + (showsBookmarks ? 1 : 0)
+                                    + (showsRecentPages ? 1 : 0)
+    // Landscape: one column per section, tiles portrait-sized (Screen.width is portrait's),
+    // at most StartPage::TopSiteLimit a row.
+    readonly property real columnWidth: landscape ? width / Math.max(1, sections) : width
+    readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
+    readonly property int columns: landscape ? Math.max(1, Math.min(8, fittingTiles)) : 4
 
     signal openRequested(string url)
     signal newTabRequested(string url)
@@ -23,17 +29,19 @@ SilicaFlickable {
     objectName: "startPage"
     contentHeight: column.height
 
-    Column {
+    // Grid, not Flow: a fractional column width never wraps.
+    Grid {
         id: column
 
         width: parent.width
+        columns: startPage.landscape ? Math.max(1, startPage.sections) : 1
         topPadding: Theme.paddingLarge
         // Clear of nav bar reach, which takes presses for grid drag.
         bottomPadding: Theme.itemSizeSmall
 
         Column {
             objectName: "topSitesSection"
-            width: parent.width
+            width: startPage.columnWidth
             visible: startPage.showsTopSites
 
             SectionHeader {
@@ -49,7 +57,7 @@ SilicaFlickable {
 
                     SiteTile {
                         objectName: "topSiteTile"
-                        width: startPage.width / startPage.columns
+                        width: startPage.columnWidth / startPage.columns
                         url: model.url
                         favicon: model.favicon
                         onClicked: startPage.openRequested(model.url)
@@ -60,7 +68,7 @@ SilicaFlickable {
 
         Column {
             objectName: "bookmarksSection"
-            width: parent.width
+            width: startPage.columnWidth
             visible: startPage.showsBookmarks
 
             SectionHeader {
@@ -76,7 +84,7 @@ SilicaFlickable {
 
                     SiteTile {
                         objectName: "bookmarkTile"
-                        width: startPage.width / startPage.columns
+                        width: startPage.columnWidth / startPage.columns
                         url: model.url
                         title: model.title
                         favicon: model.favicon
@@ -88,7 +96,7 @@ SilicaFlickable {
 
         Column {
             objectName: "recentPagesSection"
-            width: parent.width
+            width: startPage.columnWidth
             visible: startPage.showsRecentPages
 
             SectionHeader {
