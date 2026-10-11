@@ -11614,8 +11614,10 @@ void tst_qmlload::landscapeTutorialMenu()
     QTRY_COMPARE(iconRows(), 2);
 
     turnDevice(Landscape);
-    QTRY_VERIFY(!bar->property("resizing").toBool());
-    QTRY_VERIFY(boxIn(pageRow, sheet).top() > boxIn(header, sheet).bottom());
+    // Grid lays its rows out as its columns change, before they turn to icon beside name, and
+    // sizes to them again only on a frame's polish.
+    drawn(*host.window());
+    QVERIFY(boxIn(pageRow, sheet).top() > boxIn(header, sheet).bottom());
     QVERIFY(menu->property("visible").toBool());
     QVERIFY(menu->property("wide").toBool());
     const QRectF side = boxIn(sheet, page);
