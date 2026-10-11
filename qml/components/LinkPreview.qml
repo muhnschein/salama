@@ -4,8 +4,8 @@
 // View from browsing page: only it imports Sailfish.WebView (SCOPE.md §5). Engine renders
 // all views into one picture, so sheet swaps in still of pressed page first.
 //
-// Landscape: band has no room for frame, so frame floats centred in room above sheet (where a
-// pressed picture is lifted to), page shaped; toggle becomes a cell at band's right end.
+// Landscape: sheet has no room for frame, so frame floats centred in room above sheet (where a
+// pressed picture is lifted to), page shaped; toggle row stays in the sheet.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -18,10 +18,8 @@ Column {
     property bool shown: false
     property Component pageView
     property real frameHeight: 0
-    // Landscape only: room above sheet frame floats in, cell slot toggle fills, page's
-    // width / height.
+    // Landscape only: room above sheet frame floats in, page's width / height.
     property Item room: null
-    property Item slot: null
     property real aspect: 1
     readonly property bool floating: room !== null
     // Floating frame's top, in room's parent's coordinates.
@@ -30,7 +28,7 @@ Column {
     signal openRequested()
 
     objectName: "linkPreview"
-    visible: offered && !floating
+    visible: offered
 
     BackgroundItem {
         objectName: "linkPreviewToggle"
@@ -39,8 +37,6 @@ Column {
         onClicked: Settings.linkPreview = !Settings.linkPreview
 
         Label {
-            id: toggleLabel
-
             objectName: "linkPreviewToggleLabel"
             anchors {
                 left: parent.left
@@ -121,18 +117,5 @@ Column {
             anchors.fill: parent
             onClicked: preview.openRequested()
         }
-    }
-
-    // Eye as Silica's password field draws it: open shows, struck through hides.
-    MenuButton {
-        objectName: "linkPreviewCell"
-        parent: preview.slot
-        width: parent ? parent.width : 0
-        visible: preview.offered && preview.slot !== null
-        labelSize: Theme.fontSizeExtraSmall
-        iconSource: Settings.linkPreview ? "image://theme/icon-splus-hide-password"
-                                         : "image://theme/icon-splus-show-password"
-        text: toggleLabel.text
-        onClicked: Settings.linkPreview = !Settings.linkPreview
     }
 }

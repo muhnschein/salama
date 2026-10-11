@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Line fading out to both ends: Silica Separator fades right only, so two, left mirrored.
-// Vertical: same line turned a quarter, between head and actions of a landscape sheet's band.
+// Vertical: same line turned a quarter, between head and rows of a landscape sheet.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

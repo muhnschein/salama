@@ -4331,10 +4331,10 @@ QRectF onPage(QQuickItem *page, QQuickItem *item)
     return item->mapRectToItem(page, QRectF(0, 0, item->width(), item->height()));
 }
 
-// Landscape band has nothing to scroll and a drag up moves nothing; pull down, along page (across
+// Landscape sheet has nothing to scroll and a drag up moves nothing; pull down, along page (across
 // window), still puts sheet away.
-void bandStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu, QQuickItem *sheet,
-                  QQuickItem *grabbed)
+void turnedSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu,
+                         QQuickItem *sheet, QQuickItem *grabbed)
 {
     QVERIFY(menu->property("open").toBool());
     QTRY_VERIFY(!sheet->property("moving").toBool());
@@ -4367,9 +4367,10 @@ void bandStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu, QQui
 
 } // namespace
 
-// Landscape menu sheet is one low band: page head at left, then all nine actions in one row in
-// today's order, page's five on discs, a separator, browser's four. Head still opens site details,
-// shade still closes, band does not scroll. Back in portrait, head over two rows again.
+// Landscape menu sheet: page head at left, an upright separator, then portrait's two rows in the
+// block beside it, page's five on discs in fifths of it, a level separator, browser's four in
+// quarters, so German names fit unfaded. Head as tall as both rows, still opens site details,
+// shade still closes, sheet does not scroll. Back in portrait, head over two rows again.
 void tst_qmlload::menuSheetInLandscape()
 {
     const int portrait = 1; // Silica's Orientation values.
@@ -4396,33 +4397,44 @@ void tst_qmlload::menuSheetInLandscape()
     QVERIFY(menu->property("open").toBool());
     drawn(window);
     QCOMPARE(menu->width(), page->width());
-    QVERIFY(menu->height() < page->height() / 4);
+    QVERIFY(menu->height() < page->height() / 3);
     QCOMPARE(menu->y(), page->height() - menu->height());
 
     QQuickItem *header = item("menuHeader");
     const QRectF head = rect(header);
     QCOMPARE(head.x(), qreal(0));
+    QCOMPARE(head.width(), evaluate(menu, QStringLiteral("cells.headWidth")).toReal());
     QVERIFY(head.width() > page->width() / 4);
     QVERIFY(head.width() < page->width() / 3);
     QCOMPARE(header->property("wide").toBool(), true);
     QCOMPARE(item("menuPageTitle")->property("maximumLineCount").toInt(), 2);
     QVERIFY(evaluate(item("menuPageTitle"), QStringLiteral("wrapMode === Text.Wrap")).toBool());
     QVERIFY(!item("menuHeaderGap")->isVisible());
-    const QRectF first = rect(item(actions[0]));
-    QCOMPARE(head.height(), first.height());
-    QCOMPARE(head.y(), first.y());
     QVERIFY(rect(item("copyAddressButton")).right() <= head.right());
+
+    // Rows begin one separator's room past head and take the rest of the width.
+    const QRectF first = rect(item(actions[0]));
+    const QRectF places = rect(item(actions[5]));
+    const qreal gap = evaluate(menu, QStringLiteral("cells.gap")).toReal();
+    QCOMPARE(first.x(), head.right() + gap);
+    const qreal block = page->width() - first.x();
+    QCOMPARE(block, evaluate(menu, QStringLiteral("cells.block")).toReal());
+    // Head spans both rows, its tile centred against them.
+    QCOMPARE(head.y(), first.y());
+    QCOMPARE(head.bottom(), places.bottom());
+    QCOMPARE(rect(item("menuPageTile")).center().y(), (first.y() + places.bottom()) / 2);
 
     const qreal dimmed = evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal();
     const qreal labelSize = evaluate(menu, QStringLiteral("Theme.fontSizeExtraSmall")).toReal();
-    qreal edge = head.right();
     for (int i = 0; i < 9; ++i) {
         QQuickItem *button = item(actions[i]);
         const QRectF cell = rect(button);
-        QVERIFY2(cell.y() == first.y(), actions[i]);
-        QVERIFY2(cell.x() >= edge, actions[i]);
-        QCOMPARE(cell.width(), first.width());
-        QCOMPARE(button->property("round").toBool(), i < 5);
+        const bool pageAction = i < 5;
+        // Page's five a row in fifths, browser's four the row under it in quarters.
+        QVERIFY2(cell.y() == (pageAction ? first.y() : places.y()), actions[i]);
+        QCOMPARE(cell.width(), block / (pageAction ? 5 : 4));
+        QCOMPARE(cell.x(), first.x() + (pageAction ? i : i - 5) * cell.width());
+        QCOMPARE(button->property("round").toBool(), pageAction);
         QCOMPARE(findObjects(button, QStringLiteral("menuButtonLabel"))
                      .first()
                      ->property("font")
@@ -4430,21 +4442,57 @@ void tst_qmlload::menuSheetInLandscape()
                      .pixelSize(),
                  int(labelSize));
         QCOMPARE(button->opacity(), button->isEnabled() ? 1.0 : dimmed);
-        edge = cell.right();
     }
-    QVERIFY(edge <= page->width());
-    QCOMPARE(edge, page->width());
+    QVERIFY(places.y() > rect(item("readerMenuButton")).bottom());
+    QCOMPARE(rect(item("readerMenuButton")).right(), page->width());
+    QCOMPARE(rect(item("settingsMenuButton")).right(), page->width());
+    // Far wider than the cells of nine actions in one row.
+    QVERIFY(first.width() > 1.5 * (page->width() - head.right()) / 9);
     QVERIFY(!item("readerMenuButton")->isEnabled());
 
-    // Separators upright: one after head, one between page's and browser's actions.
-    const auto upright = [&rect](QQuickItem *line, qreal after, qreal before) {
-        QQuickItem *separator = line->parentItem();
-        return separator->isVisible() && line->rotation() == 90 && rect(separator).x() >= after &&
-               rect(separator).right() <= before && rect(separator).height() > 0;
+    // German names, the longest the menu has, fit their cells: nothing to fade. Also on a page
+    // only 72 label sizes wide, as the phone they faded on in nine cells a row (2160 px, 30 px).
+    const char *const german[] = {"Seitensuche", "Merken",      "Teilen",
+                                  "PC-Version",  "Leseansicht", "Lesezeichen",
+                                  "Chronik",     "Downloads",   "Einstellungen"};
+    const auto faded = [&]() {
+        QStringList names;
+        for (int i = 0; i < 9; ++i) {
+            QQuickItem *button = item(actions[i]);
+            QObject *label = findObjects(button, QStringLiteral("menuButtonLabel")).first();
+            const QString text = button->property("text").toString();
+            button->setProperty("text", QString::fromUtf8(german[i]));
+            if (label->property("implicitWidth").toReal() > label->property("width").toReal()) {
+                names << QString::fromUtf8(german[i]);
+            }
+            button->setProperty("text", text);
+        }
+        return names.join(QLatin1Char(' '));
     };
-    QVERIFY(upright(item("menuHeadDivider"), head.right(), first.x()));
-    QVERIFY(upright(item("menuSeparator"), rect(item("readerMenuButton")).right(),
-                    rect(item("bookmarksMenuButton")).x()));
+    QCOMPARE(faded(), QString());
+    const qreal tall = root->height();
+    root->setHeight(tall - page->width() + 72 * labelSize);
+    settle();
+    QCOMPARE(page->width(), 72 * labelSize);
+    const QString narrowFaded = faded();
+    root->setHeight(tall);
+    settle();
+    QCOMPARE(narrowFaded, QString());
+    drawn(window);
+
+    // Upright separator after head, as tall as both rows; level one between the rows.
+    QQuickItem *divider = item("menuHeadDivider")->parentItem();
+    QVERIFY(divider->isVisible());
+    QCOMPARE(item("menuHeadDivider")->rotation(), qreal(90));
+    QCOMPARE(rect(divider).x(), head.right());
+    QCOMPARE(rect(divider).right(), first.x());
+    QCOMPARE(rect(divider).height(), head.height());
+    QQuickItem *between = item("menuSeparator")->parentItem();
+    QCOMPARE(item("menuSeparator")->rotation(), qreal(0));
+    QCOMPARE(rect(between).x(), first.x());
+    QCOMPARE(rect(between).width(), block);
+    QVERIFY(rect(between).y() >= rect(item("readerMenuButton")).bottom());
+    QVERIFY(rect(between).bottom() <= places.y());
 
     // Grip on edge, shade beside sheet, press there closes.
     auto *handle = item("menuDragHandle");
@@ -4463,7 +4511,7 @@ void tst_qmlload::menuSheetInLandscape()
 
     tapBar(QStringLiteral("menu"));
     drawn(window);
-    bandStaysPut(window, page, menu, item("menuSheet"), item("historyMenuButton"));
+    turnedSheetStaysPut(window, page, menu, item("menuSheet"), item("shareMenuButton"));
     if (QTest::currentTestFailed()) {
         return;
     }
@@ -5681,10 +5729,10 @@ void tst_qmlload::linkPreview()
     QCOMPARE(errors.all(), QString());
 }
 
-// Landscape link sheet is the menu's band: link head at left, link's actions in the menu's cells,
-// preview toggle (an eye) where Settings sits. Preview leaves the sheet: floats above it over the
-// dimmed page, centred and page shaped, and a tap on it still opens the link. Back in portrait,
-// toggle row and preview in the sheet again.
+// Landscape link sheet as the menu: link head at left where the menu's head is, then portrait's
+// rows beside it in the menu's block, preview toggle row over the link's actions, which sit in the
+// menu's place cells. Preview leaves the sheet: floats above it over the dimmed page, centred and
+// page shaped, and a tap on it still opens the link. Back in portrait, preview in the sheet again.
 void tst_qmlload::linkSheetInLandscape()
 {
     const int portrait = 1; // Silica's Orientation values.
@@ -5706,54 +5754,66 @@ void tst_qmlload::linkSheetInLandscape()
     QVERIFY(m_core->settings()->linkPreview());
 
     turnDevice(landscape);
-    // Menu's cells, for the link's actions to line up with.
+    // Menu's head and place cells, for the link's to line up with.
     tapBar(QStringLiteral("menu"));
     drawn(window);
+    const QRectF menuHead = rect(item("menuHeader"));
     QList<QRectF> cells;
-    for (const char *name : {"findMenuButton", "bookmarkMenuButton", "shareMenuButton",
-                             "desktopMenuButton", "settingsMenuButton"}) {
+    for (const char *name : {"bookmarksMenuButton", "historyMenuButton", "downloadsMenuButton",
+                             "settingsMenuButton"}) {
         cells << rect(item(name));
     }
     evaluate(browserMenu, QStringLiteral("hide()"));
+    const qreal block = page->width() - cells.first().x();
+    // Same cells' x and width, any row.
+    const auto inCell = [&cells, &rect](QQuickItem *button, int at) {
+        const QRectF cell = rect(button);
+        return cell.x() == cells.at(at).x() && cell.width() == cells.at(at).width();
+    };
 
     holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
     QVERIFY(menu->property("open").toBool());
     drawn(window);
-    QVERIFY(menu->height() < page->height() / 4);
+    QVERIFY(menu->height() < page->height() / 3);
     QCOMPARE(menu->y(), page->height() - menu->height());
     const QRectF head = rect(item("linkMenuHeader"));
     QCOMPARE(head.x(), qreal(0));
+    QCOMPARE(head.width(), menuHead.width());
     QCOMPARE(head.right(),
              cells.first().x() - evaluate(menu, QStringLiteral("cells.gap")).toReal());
     QVERIFY(rect(item("copyLinkButton")).right() <= head.right());
     QCOMPARE(item("linkMenuTitle")->property("maximumLineCount").toInt(), 2);
     QVERIFY(evaluate(item("linkMenuTitle"), QStringLiteral("wrapMode === Text.Wrap")).toBool());
-    QVERIFY(item("linkMenuHeadDivider")->parentItem()->isVisible());
+    QQuickItem *headDivider = item("linkMenuHeadDivider")->parentItem();
+    QVERIFY(headDivider->isVisible());
     QCOMPARE(item("linkMenuHeadDivider")->rotation(), qreal(90));
+    QCOMPARE(rect(headDivider).x(), head.right());
+    QCOMPARE(rect(headDivider).height(), head.height());
+
+    // Toggle row first, as in portrait, across the block; link's actions under it, a quarter each.
+    auto *toggle = item("linkPreviewToggle");
+    QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(toggle->isVisible());
+    const QRectF toggleRow = rect(toggle);
+    QCOMPARE(toggleRow.x(), cells.first().x());
+    QCOMPARE(toggleRow.width(), block);
+    QCOMPARE(item("linkPreviewToggleLabel")->property("text").toString(),
+             QStringLiteral("Hide preview"));
+    QCOMPARE(item("linkPreviewFrame")->height(), qreal(0));
     const char *const actions[] = {"newTabLinkButton", "backgroundTabLinkButton", "shareLinkButton",
                                    "saveLinkButton"};
+    const QRectF newTab = rect(item(actions[0]));
+    QVERIFY(newTab.y() >= toggleRow.bottom());
     for (int i = 0; i < 4; ++i) {
         QQuickItem *button = item(actions[i]);
-        QVERIFY2(rect(button) == cells.at(i), actions[i]);
+        QVERIFY2(inCell(button, i), actions[i]);
+        QVERIFY2(rect(button).y() == newTab.y(), actions[i]);
+        QCOMPARE(button->width(), block / 4);
         QVERIFY(button->property("round").toBool());
     }
-    QCOMPARE(head.y(), cells.first().y());
-    QCOMPARE(head.height(), cells.first().height());
-
-    // Toggle: Settings' cell, behind an upright separator; eye struck through hides.
-    auto *toggle = item("linkPreviewCell");
-    QVERIFY(toggle->isVisible());
-    QCOMPARE(rect(toggle), cells.last());
-    QCOMPARE(toggle->property("text").toString(), QStringLiteral("Hide preview"));
-    QCOMPARE(toggle->property("iconSource").toString(),
-             QStringLiteral("image://theme/icon-splus-hide-password"));
-    QVERIFY(!toggle->property("round").toBool());
-    QQuickItem *divider = item("linkPreviewDivider")->parentItem();
-    QVERIFY(divider->isVisible());
-    QCOMPARE(item("linkPreviewDivider")->rotation(), qreal(90));
-    QVERIFY(rect(divider).x() >= rect(item("saveLinkButton")).right());
-    QVERIFY(rect(divider).right() <= rect(toggle).x());
-    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    // Head spans toggle row and actions.
+    QCOMPARE(head.y(), toggleRow.y());
+    QCOMPARE(head.bottom(), newTab.bottom());
 
     // Preview above sheet, not in it: page shaped, centred, as large as room allows.
     auto *frame = item("linkPreviewPage");
@@ -5785,58 +5845,66 @@ void tst_qmlload::linkSheetInLandscape()
     QCOMPARE(view->property("url").toString(), ridge);
     QCOMPARE(m_core->tabs()->count(), 1);
 
-    // Hidden: dimmed page only, toggle says Show.
+    // Hidden: dimmed page only, toggle says Show, sheet as before.
     holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    const qreal sheetHeight = menu->height();
     click(toggle);
     QVERIFY(menu->property("open").toBool());
     QVERIFY(!m_core->settings()->linkPreview());
     QVERIFY(!frame->isVisible());
     QVERIFY(!menu->property("previewShown").toBool());
-    QCOMPARE(toggle->property("text").toString(), QStringLiteral("Show preview"));
-    QCOMPARE(toggle->property("iconSource").toString(),
-             QStringLiteral("image://theme/icon-splus-show-password"));
+    QCOMPARE(item("linkPreviewToggleLabel")->property("text").toString(),
+             QStringLiteral("Show preview"));
     QCOMPARE(pressBeside->y(), qreal(0));
     drawn(window);
-    bandStaysPut(window, page, menu, item("linkMenuSheet"), item("newTabLinkButton"));
+    QCOMPARE(menu->height(), sheetHeight);
+    turnedSheetStaysPut(window, page, menu, item("linkMenuSheet"), item("linkMenuHeader"));
     if (QTest::currentTestFailed()) {
         return;
     }
     m_core->settings()->setLinkPreview(true);
 
-    // Other app's link: its actions in the same cells, no toggle.
+    // Other app's link: its actions in the same cells, no toggle row, head as tall as the row.
     holdOn(view, heldOn(QStringLiteral("mailto:walks@trails.example")));
     QCOMPARE(menu->y(), page->height() - menu->height());
     drawn(window);
-    QCOMPARE(rect(item("appLinkButton")), cells.at(0));
-    QCOMPARE(rect(item("shareAppLinkButton")), cells.at(1));
-    QVERIFY(!toggle->isVisible());
-    QVERIFY(!item("linkPreviewDivider")->parentItem()->isVisible());
+    QVERIFY(inCell(item("appLinkButton"), 0));
+    QVERIFY(inCell(item("shareAppLinkButton"), 1));
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
     QVERIFY(!frame->isVisible());
+    QCOMPARE(rect(item("linkMenuHeader")).height(), item("appLinkButton")->height());
     QVERIFY(menu->height() < page->height() / 4);
     evaluate(menu, QStringLiteral("hide()"));
 
-    // Picture link: link's actions, upright separator, picture's, all in one row.
+    // Picture link: link's actions, a level separator, picture's in the row under them.
     holdOn(view, heldOn(ridge, QString(), QStringLiteral("https://cdn.example/photos/ridge.jpg")));
     drawn(window);
-    QVERIFY(!toggle->isVisible());
-    QCOMPARE(item("linkMenuSeparator")->rotation(), qreal(90));
-    qreal edge = head.right();
-    for (const char *name : {"newTabLinkButton", "saveLinkButton", "openImageButton",
-                             "saveImageButton", "copyImageLinkButton"}) {
-        const QRectF cell = rect(item(name));
-        QVERIFY2(cell.y() == cells.first().y(), name);
-        QVERIFY2(cell.x() >= edge, name);
-        edge = cell.right();
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    QQuickItem *imageLine = item("linkMenuSeparator")->parentItem();
+    QVERIFY(imageLine->isVisible());
+    QCOMPARE(item("linkMenuSeparator")->rotation(), qreal(0));
+    QCOMPARE(rect(imageLine).x(), cells.first().x());
+    QCOMPARE(rect(imageLine).width(), block);
+    const QRectF linkRow = rect(item("newTabLinkButton"));
+    const QRectF imageRow = rect(item("openImageButton"));
+    QVERIFY(rect(imageLine).y() >= linkRow.bottom());
+    QVERIFY(imageRow.y() >= rect(imageLine).bottom());
+    const char *const pictureActions[] = {"openImageButton", "saveImageButton",
+                                          "copyImageLinkButton"};
+    for (int i = 0; i < 3; ++i) {
+        QQuickItem *button = item(pictureActions[i]);
+        QVERIFY2(inCell(button, i), pictureActions[i]);
+        QVERIFY2(rect(button).y() == imageRow.y(), pictureActions[i]);
     }
-    QVERIFY(edge <= page->width());
-    QVERIFY(menu->height() < page->height() / 4);
+    QCOMPARE(rect(item("linkMenuHeader")).y(), linkRow.y());
+    QCOMPARE(rect(item("linkMenuHeader")).bottom(), imageRow.bottom());
+    QVERIFY(menu->height() < page->height() / 3);
     evaluate(menu, QStringLiteral("hide()"));
 
     turnDevice(portrait);
     holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
     drawn(window);
     QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
-    QVERIFY(!toggle->isVisible());
     QVERIFY(!item("linkMenuHeadDivider")->parentItem()->isVisible());
     QCOMPARE(frame->parentItem(), item("linkPreviewFrame"));
     QVERIFY(menu->isAncestorOf(frame));
@@ -11177,8 +11245,9 @@ void tst_qmlload::landscapeTutorialBar()
     turnDevice(Portrait);
 }
 
-// Turned menu sketch as menu: one low band, page head at left (over a quarter), upright
-// separator, all nine actions in one row. Upright: head over two rows again.
+// Turned menu sketch as menu: page head at left (over a quarter), upright separator, then the two
+// rows beside it, page's five in fifths of the block, places' four in quarters under them.
+// Upright: head over the two rows again.
 void tst_qmlload::landscapeTutorialMenu()
 {
     evaluate(m_window.data(), QStringLiteral("showTutorial()"));
@@ -11204,7 +11273,7 @@ void tst_qmlload::landscapeTutorialMenu()
     QTRY_COMPARE(iconRows(), 2);
 
     turnDevice(Landscape);
-    QTRY_COMPARE(iconRows(), 1);
+    QTRY_VERIFY(boxIn(pageRow, sheet).left() > boxIn(header, sheet).right());
     QVERIFY(menu->property("visible").toBool());
     QVERIFY(menu->property("wide").toBool());
     const QRectF band = boxIn(sheet, page);
@@ -11215,22 +11284,34 @@ void tst_qmlload::landscapeTutorialMenu()
     QCOMPARE(head.width(), evaluate(menu, QStringLiteral("cells.headWidth")).toReal());
     QVERIFY(head.width() > width() / 4);
     QVERIFY(head.width() < width() / 3);
+    const qreal block = evaluate(menu, QStringLiteral("cells.block")).toReal();
     const QRectF actions = boxIn(pageRow, sheet);
     const QRectF places = boxIn(placeRow, sheet);
-    QVERIFY(actions.left() > head.right());
-    QVERIFY(places.left() > actions.right());
-    QCOMPARE(actions.top(), places.top());
-    QVERIFY(places.right() <= width());
+    QCOMPARE(actions.left(), head.right() + evaluate(menu, QStringLiteral("cells.gap")).toReal());
+    QCOMPARE(places.left(), actions.left());
+    QCOMPARE(actions.width(), block);
+    QCOMPARE(places.width(), block);
+    QCOMPARE(places.right(), width());
+    QVERIFY(places.top() > actions.bottom());
+    // Head spans both rows.
+    QCOMPARE(head.top(), actions.top());
+    QCOMPARE(head.bottom(), places.bottom());
     QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
-    QCOMPARE(iconRows(), 1);
+    QCOMPARE(iconRows(), 2);
+    // Labels as wide as their cells.
+    for (QObject *label : findObjects(pageRow, QStringLiteral("menuButtonLabel"))) {
+        QCOMPARE(label->property("width").toReal(), block / 5);
+    }
+    for (QObject *label : findObjects(placeRow, QStringLiteral("menuButtonLabel"))) {
+        QCOMPARE(label->property("width").toReal(), block / 4);
+    }
     // Tap hint over page above band.
     QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
     QTRY_VERIFY(boxIn(tapHint, page).center().y() < band.top());
 
     turnDevice(Portrait);
-    QTRY_COMPARE(iconRows(), 2);
+    QTRY_COMPARE(boxIn(header, sheet).width(), width());
     QVERIFY(!menu->property("wide").toBool());
-    QCOMPARE(boxIn(header, sheet).width(), width());
     QVERIFY(boxIn(placeRow, sheet).top() > boxIn(pageRow, sheet).bottom());
     QCOMPARE(iconRows(), 2);
 }

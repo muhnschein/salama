@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Bottom sheet's band in landscape, shared by menu and link sheet so their actions line up:
-// head at left, a separator, then nine equal cells in one row with one more separator among
-// them. Portrait: no band, the sheets stack head over rows.
+// Bottom sheet in landscape, shared by menu and link sheet so their actions line up: head at
+// left, a separator, then portrait's rows stacked in the block beside it. Portrait: the sheets
+// stack head over rows.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -15,7 +15,8 @@ QtObject {
     readonly property bool wide: width > height
     // Room a vertical separator takes.
     readonly property real gap: Theme.paddingLarge
-    // Whole pixels, so head, cells and separators add up to the width exactly.
-    readonly property real cell: Math.floor((width * 0.72 - 2 * gap) / 9)
-    readonly property real headWidth: width - 9 * cell - 2 * gap
+    // Rows' width: a multiple of 20 px, so fifths and quarters are whole pixels and head,
+    // separator and rows add up to the width exactly.
+    readonly property real block: Math.floor((width * 0.72 - gap) / 20) * 20
+    readonly property real headWidth: width - gap - block
 }

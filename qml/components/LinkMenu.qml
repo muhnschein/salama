@@ -38,14 +38,15 @@ DockedPanel {
 
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
-    // Landscape: the menu's band, actions in the menu's cells, preview toggle where its
-    // Settings sits and preview floating above sheet.
+    // Landscape: as the menu, head at left, portrait's rows beside it in the cells of the
+    // menu's places; preview floats above sheet.
     readonly property SheetCells cells: SheetCells {
         width: menu.width
         height: menu.parent ? menu.parent.height : 0
     }
     readonly property bool wide: cells.wide
-    readonly property real cell: wide ? cells.cell : width / 4
+    readonly property real rowsWidth: wide ? cells.block : width
+    readonly property real cell: rowsWidth / 4
     readonly property real labelSize: wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
 
     signal openRequested(string url, bool inNewTab)
@@ -237,19 +238,19 @@ DockedPanel {
             }
         }
 
-        // As the menu's: portrait one column, landscape one row.
+        // As the menu's: portrait one column, landscape head beside rows.
         Grid {
             id: content
 
             width: parent.width
-            columns: menu.wide ? 5 : 1
+            columns: menu.wide ? 3 : 1
             verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             LinkMenuHeader {
                 width: menu.wide ? menu.cells.headWidth : parent.width
-                height: menu.wide ? actions.rowHeight : Theme.itemSizeSmall
+                height: menu.wide ? rows.height : Theme.itemSizeSmall
                 wide: menu.wide
                 target: menu.target
                 appIcon: menu.forApp ? menu.appIcon(menu.target.scheme) : ""
@@ -258,52 +259,38 @@ DockedPanel {
 
             MenuSeparator {
                 width: menu.cells.gap
-                height: actions.rowHeight
+                height: rows.height
                 visible: menu.wide
                 vertical: true
                 lineName: "linkMenuHeadDivider"
             }
 
-            LinkPreview {
-                id: preview
+            Column {
+                id: rows
 
-                width: parent.width
-                room: menu.wide ? overlay.room : null
-                slot: menu.wide ? previewSlot : null
-                aspect: menu.view !== null && menu.view.height > 0
-                        ? menu.view.width / menu.view.height : 1
-                offered: menu.previewOffered
-                shown: menu.previewShown
-                pageView: menu.previewView
-                frameHeight: Math.round(menu.parent.height / 3)
-                onOpenRequested: {
-                    menu.hide()
-                    menu.openRequested(menu.target.link, false)
+                width: menu.rowsWidth
+
+                LinkPreview {
+                    id: preview
+
+                    width: parent.width
+                    room: menu.wide ? overlay.room : null
+                    aspect: menu.view !== null && menu.view.height > 0
+                            ? menu.view.width / menu.view.height : 1
+                    offered: menu.previewOffered
+                    shown: menu.previewShown
+                    pageView: menu.previewView
+                    frameHeight: Math.round(menu.parent.height / 3)
+                    onOpenRequested: {
+                        menu.hide()
+                        menu.openRequested(menu.target.link, false)
+                    }
                 }
-            }
 
-            // Wide: Settings' cell is the ninth, after eight and a separator.
-            LinkActions {
-                id: actions
-
-                width: menu.wide ? 8 * menu.cell : parent.width
-                sheet: menu
-            }
-
-            MenuSeparator {
-                width: menu.cells.gap
-                height: actions.rowHeight
-                visible: menu.wide && menu.previewOffered
-                vertical: true
-                lineName: "linkPreviewDivider"
-            }
-
-            Item {
-                id: previewSlot
-
-                width: menu.cell
-                height: actions.rowHeight
-                visible: menu.wide && menu.previewOffered
+                LinkActions {
+                    width: parent.width
+                    sheet: menu
+                }
             }
         }
     }

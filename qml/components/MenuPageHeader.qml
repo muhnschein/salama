@@ -13,7 +13,7 @@ Item {
     property string title
     property string favicon
     property bool tlsBroken: false
-    // Landscape band's head: narrow and tall, so title takes two lines.
+    // Landscape head: narrow and tall, so title takes two lines.
     property bool wide: false
     readonly property bool hasPage: url.length > 0
     readonly property string host: hasPage ? SearchSettings.displayAddress(url) : ""

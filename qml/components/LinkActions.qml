@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Portrait: rows under each other. Landscape: one row of the sheet's band cells.
+// Rows under each other, in the sheet's cells.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
-Grid {
+Column {
     id: actions
 
     property Item sheet
-    // Whichever rows are shown, all one height.
-    readonly property real rowHeight: Math.max(pageRow.height, appRow.height, imageRow.height)
-
-    columns: sheet.wide ? 3 : 1
 
     Grid {
         id: pageRow
@@ -102,10 +98,8 @@ Grid {
     }
 
     MenuSeparator {
-        width: sheet.wide ? sheet.cells.gap : sheet.width
-        height: sheet.wide ? actions.rowHeight : Theme.paddingLarge
+        width: actions.width
         visible: sheet.hasLink && sheet.hasImage
-        vertical: sheet.wide
         lineName: "linkMenuSeparator"
     }
 

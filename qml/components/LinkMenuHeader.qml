@@ -11,7 +11,7 @@ Item {
     // EngineMessages.linkTarget() map.
     property var target
     property string appIcon
-    // Landscape band's head: narrow and tall, so title takes two lines.
+    // Landscape head: narrow and tall, so title takes two lines.
     property bool wide: false
 
     readonly property bool hasTitle: target.title.length > 0

@@ -15,7 +15,7 @@ BackgroundItem {
     // progress 0..1.
     property bool busy: false
     property real progress: 0
-    // Landscape band's cells are wider than a fifth of the portrait width.
+    // Landscape cells are wider than portrait's.
     property real labelSize: Theme.fontSizeTiny
     readonly property bool lit: highlighted || checked
 
