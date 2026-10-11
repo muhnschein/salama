@@ -2092,6 +2092,10 @@ void tst_qmlload::tabSearch()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     pullUpToTabs();
+    // Opening grid grabs a preview; its write lands as tab data change, which resets search rows
+    // and frees delegates held below. Let it land first.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
 
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
