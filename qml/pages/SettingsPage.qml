@@ -45,7 +45,6 @@ Page {
             }
 
             SectionHeader {
-                width: parent.width
                 text: qsTr("Browsing")
             }
 
@@ -72,7 +71,6 @@ Page {
             }
 
             SectionHeader {
-                width: parent.width
                 text: qsTr("Appearance")
             }
 
@@ -162,7 +160,6 @@ Page {
             }
 
             SectionHeader {
-                width: parent.width
                 text: qsTr("Privacy")
             }
 
@@ -237,7 +234,6 @@ Page {
             }
 
             SectionHeader {
-                width: parent.width
                 text: qsTr("Help")
             }
 

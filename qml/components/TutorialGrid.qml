@@ -100,7 +100,7 @@ Item {
                     leftMargin: Theme.horizontalPageMargin
                     verticalCenter: parent.verticalCenter
                 }
-                width: Theme.iconSizeMedium
+                width: Theme.iconSizeSmallPlus
                 height: width
                 source: "image://theme/icon-m-search"
             }

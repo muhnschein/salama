@@ -277,6 +277,8 @@ private slots:
     void tutorialGrid();
     void tutorialUnderAFinger();
     void everyPageTurns();
+    void sectionHeadersInset();
+    void deckTurnsEitherWay();
     void landscapeBrowsing();
     void landscapeTutorial();
     void landscapeTutorialBar();
@@ -2306,7 +2308,15 @@ void tst_qmlload::landscapeTabGroupRail()
     auto *field = item("tabSearchField");
     QVERIFY(railHead->isAncestorOf(field));
     QCOMPARE(field->width(), railWidth);
-    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search tabs"));
+    // Narrow rail: Silica's own "Search" (stub mirrors it), smaller type and icon.
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search"));
+    QCOMPARE(field->property("font").value<QFont>().pixelSize(),
+             evaluate(view, QStringLiteral("Theme.fontSizeMedium")).toInt());
+    const auto searchIcon = [field]() {
+        return field->property("leftItem").value<QQuickItem *>()->size();
+    };
+    const qreal smallIcon = evaluate(view, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QCOMPARE(searchIcon(), QSizeF(smallIcon, smallIcon));
     QCOMPARE(item("gridHeadControls")->height(), small);
     auto *pull = item("railHeadPull");
     QCOMPARE(pull->parentItem(), railHead);
@@ -2391,6 +2401,11 @@ void tst_qmlload::landscapeTabGroupRail()
     QVERIFY(footRow->isVisible());
     QVERIFY(headRow->isAncestorOf(field));
     QCOMPARE(field->width(), headRow->width());
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search tabs"));
+    QCOMPARE(field->property("font").value<QFont>().pixelSize(),
+             evaluate(view, QStringLiteral("Theme.fontSizeLarge")).toInt());
+    const qreal mediumIcon = evaluate(view, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    QCOMPARE(searchIcon(), QSizeF(mediumIcon, mediumIcon));
     QCOMPARE(item("gridHeadControls")->height(),
              evaluate(view, QStringLiteral("Theme.itemSizeLarge")).toReal());
     QVERIFY(pull->z() <= item("gridHeadPull")->z());
@@ -6173,9 +6188,10 @@ void tst_qmlload::settingsPage()
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 }
 
-// Landscape: each heading spans the page, and the entries under it flow two a row, the left one
-// at the page's edge and the right one at its middle, a row's two on one y. Portrait is one
-// column again, each entry the page's width under the one before.
+// Landscape: each heading spans the page inside Silica's margins (sectionHeadersInset), and the
+// entries under it flow two a row, the left one at the page's edge and the right one at its
+// middle, a row's two on one y. Portrait is one column again, each entry the page's width under
+// the one before.
 void tst_qmlload::landscapeSettingsPage()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -6192,12 +6208,13 @@ void tst_qmlload::landscapeSettingsPage()
     layOut(window);
     const qreal width = page->property("width").toReal();
     QVERIFY(width > page->property("height").toReal());
+    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
     for (const QString &heading : {QStringLiteral("Browsing"), QStringLiteral("Appearance"),
                                    QStringLiteral("Privacy"), QStringLiteral("Help")}) {
         QObject *header = sectionHeader(page, heading);
         QVERIFY2(header != nullptr, qPrintable(heading));
-        QCOMPARE(header->property("width").toReal(), width);
-        QCOMPARE(onPage(header, page).x(), qreal(0));
+        QCOMPARE(header->property("width").toReal(), width - 2 * margin);
+        QCOMPARE(onPage(header, page).x(), margin);
     }
 
     const QList<QStringList> rows{
@@ -10473,6 +10490,91 @@ void tst_qmlload::everyPageTurns()
     QCOMPARE(browser->property("orientation").toInt(), Portrait);
 }
 
+// Silica insets SectionHeader a page margin each side, text right-aligned: widened to its
+// column, header pushes its text a margin off page. Every page, both ways up.
+void tst_qmlload::sectionHeadersInset()
+{
+    QObject *browser = find(QStringLiteral("browserPage"));
+    const qreal margin = evaluate(browser, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const QStringList files = QDir(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages"))
+                                  .entryList({QStringLiteral("*.qml")}, QDir::Files, QDir::Name);
+    int headers = 0;
+    for (int orientation : {Portrait, Landscape}) {
+        turnDevice(orientation);
+        for (const QString &file : files) {
+            if (file == QLatin1String("BrowserPage.qml")) {
+                continue;
+            }
+            evaluate(
+                m_window.data(),
+                QStringLiteral("pageStack.push('%1')")
+                    .arg(QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages/") + file)
+                             .toString()));
+            QList<QQuickItem *> pending = qobject_cast<QQuickItem *>(currentPage())->childItems();
+            while (!pending.isEmpty()) {
+                QQuickItem *item = pending.takeFirst();
+                pending += item->childItems();
+                if (!QLatin1String(item->metaObject()->className())
+                         .startsWith(QLatin1String("SectionHeader"))) {
+                    continue;
+                }
+                ++headers;
+                QVERIFY2(item->x() + item->width() <= item->parentItem()->width() - margin + 0.5,
+                         qPrintable(file + QLatin1Char(' ') + item->property("text").toString()));
+            }
+            popPage();
+            QCOMPARE(currentPage(), browser);
+        }
+    }
+    QVERIFY(headers > 10);
+    turnDevice(Portrait);
+}
+
+// Silica turns page width before height (PageOrientationTransition's PropertyAction), and
+// pushed page may meet either first. Deck re-measures on turn whichever side moves first;
+// keyboard still leaves its height.
+void tst_qmlload::deckTurnsEitherWay()
+{
+    QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QStringLiteral(
+                                                 SALAMA_SOURCE_DIR "/qml/components/TabDeck.qml")));
+    QScopedPointer<QObject> deck(component.create());
+    QVERIFY2(deck, qPrintable(component.errorString()));
+    const qreal narrow = 540;
+    const qreal tall = 1170;
+    const auto turn = [&deck](bool widthFirst, qreal width, qreal height) {
+        if (widthFirst) {
+            deck->setProperty("width", width);
+            deck->setProperty("pageHeight", height);
+        } else {
+            deck->setProperty("pageHeight", height);
+            deck->setProperty("width", width);
+        }
+        return deck->property("fullHeight").toReal();
+    };
+    const auto keyboard = [&deck](qreal height) {
+        deck->setProperty("pageHeight", height / 2);
+        const qreal kept = deck->property("fullHeight").toReal();
+        deck->setProperty("pageHeight", height);
+        return kept;
+    };
+    QCOMPARE(turn(true, narrow, tall), tall);
+    // Open grid turns at once, no spring from either side's step.
+    deck->setProperty("tabsOpen", true);
+    for (const bool widthFirst : {true, false}) {
+        QCOMPARE(turn(widthFirst, tall, narrow), narrow);
+        QCOMPARE(deck->property("tabsOffset").toReal(), narrow);
+        QCOMPARE(keyboard(narrow), narrow);
+        QCOMPARE(turn(widthFirst, narrow, tall), tall);
+        QCOMPARE(deck->property("tabsOffset").toReal(), tall);
+        QCOMPARE(keyboard(tall), tall);
+    }
+    // Pushed already turned.
+    for (const bool widthFirst : {true, false}) {
+        deck.reset(component.create());
+        QCOMPARE(turn(widthFirst, tall, narrow), narrow);
+    }
+}
+
 // Silica keeps landscape page clear of cutout, so no top inset; deck, grid, start page, banner
 // sized for wide, low page; keyboard-shrunk page keeps deck, search list stays above keyboard.
 void tst_qmlload::landscapeBrowsing()
@@ -10850,6 +10952,12 @@ void tst_qmlload::landscapeTutorialOmnibar()
     QCOMPARE(pillBox.center().y(), row.center().y());
     QVERIFY(pillBox.right() < boxIn(menuIcon, page).left());
     QVERIFY(boxIn(field, page).right() < pillBox.left());
+    // Field line as AddressField's: from text's start, right under it, inside slim row.
+    QObject *fieldText = find(QStringLiteral("tutorialFieldText"));
+    QObject *fieldLine = find(QStringLiteral("tutorialFieldLine"));
+    QCOMPARE(boxIn(fieldLine, page).left(), boxIn(fieldText, page).left());
+    QCOMPARE(boxIn(fieldLine, page).top(), boxIn(fieldText, page).bottom());
+    QVERIFY(boxIn(fieldLine, page).bottom() < row.bottom());
     QVERIFY(shown(find(QStringLiteral("tutorialGoPill"))));
     // Pills drawn over bar.
     QVERIFY(qobject_cast<QQuickItem *>(pane)->z() > qobject_cast<QQuickItem *>(bar)->z());
@@ -10885,6 +10993,10 @@ void tst_qmlload::landscapeTutorialOmnibar()
     QCOMPARE(boxIn(field, bar).right(),
              boxIn(menuIcon, bar).left() -
                  evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal());
+    QCOMPARE(boxIn(fieldLine, bar).left(), boxIn(field, bar).left());
+    QCOMPARE(boxIn(fieldLine, bar).bottom(),
+             boxIn(bar, bar).bottom() -
+                 evaluate(page, QStringLiteral("Theme.paddingLarge")).toReal());
     QCOMPARE(
         boxIn(button, page).center(),
         QRectF(0, 0, page->property("width").toReal(), page->property("height").toReal()).center());

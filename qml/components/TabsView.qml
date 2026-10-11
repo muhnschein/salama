@@ -240,16 +240,31 @@ Item {
             SearchField {
                 id: searchField
 
+                // Silica's own placeholder, "Search" in Silica's catalogs: rail is narrow.
+                property string searchWord
+
                 objectName: "tabSearchField"
                 anchors {
                     left: parent.left
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                placeholderText: qsTr("Search tabs")
+                font.pixelSize: tabsView.wide ? Theme.fontSizeMedium : Theme.fontSizeLarge
+                leftItem: Icon {
+                    width: tabsView.wide ? Theme.iconSizeSmallPlus : Theme.iconSizeMedium
+                    height: width
+                    sourceSize: Qt.size(width, height)
+                    source: "image://theme/icon-m-search"
+                }
                 EnterKey.iconSource: "image://theme/icon-m-enter-close"
                 EnterKey.onClicked: focus = false
                 onTextChanged: searchDebounce.restart()
+                Component.onCompleted: {
+                    searchWord = placeholderText
+                    placeholderText = Qt.binding(function() {
+                        return tabsView.wide ? searchWord : qsTr("Search tabs")
+                    })
+                }
             }
         }
 

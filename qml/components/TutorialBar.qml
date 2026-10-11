@@ -96,6 +96,9 @@ Item {
         visible: tutorialBar.editing
 
         Label {
+            id: fieldText
+
+            objectName: "tutorialFieldText"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -107,13 +110,14 @@ Item {
             truncationMode: TruncationMode.Fade
         }
 
+        // Landscape, as AddressField: line from text's start, right under it; slim bar
+        // leaves no room below.
         Rectangle {
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                bottomMargin: Theme.paddingLarge
-            }
+            objectName: "tutorialFieldLine"
+            x: tutorialBar.landscape ? fieldText.x : 0
+            y: tutorialBar.landscape ? fieldText.y + fieldText.height
+                                     : parent.height - Theme.paddingLarge - height
+            width: parent.width - x - (tutorialBar.landscape ? Theme.paddingMedium : 0)
             height: Theme._lineWidth
             color: Theme.highlightColor
         }
