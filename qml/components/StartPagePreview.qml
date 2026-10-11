@@ -10,7 +10,7 @@ import harbour.salama 1.0
 Item {
     id: preview
 
-    // Settings page size = browsing page size in portrait.
+    // Settings page size = browsing page size, in either orientation.
     property real screenWidth
     property real screenHeight
     // Half the screen, or less where it is given less width (a column on landscape), with the
@@ -21,7 +21,15 @@ Item {
     readonly property bool showsTopSites: !blank && StartPageSettings.topSites
     readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
-    readonly property int columns: 4
+    // Landscape as on the start page: top sites over bookmarks in the left half, recent pages in
+    // the right one, a half with nothing to show leaving the other the whole width; tiles
+    // portrait-sized. Empty sections still drawn here, so only the switches count.
+    readonly property bool landscape: screenWidth > screenHeight
+    readonly property bool showsTiles: showsTopSites || showsBookmarks
+    readonly property bool halves: landscape && showsTiles && showsRecentPages
+    readonly property real columnWidth: halves ? screenWidth / 2 : screenWidth
+    readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
+    readonly property int columns: landscape ? Math.max(1, Math.min(8, fittingTiles)) : 4
     readonly property color ink: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
 
     objectName: "startPagePreview"
@@ -63,105 +71,112 @@ Item {
             Item {
                 id: screen
 
+                objectName: "startPagePreviewScreen"
                 width: preview.screenWidth
                 height: preview.screenHeight
                 scale: preview.miniature
                 transformOrigin: Item.TopLeft
                 enabled: false
 
-                Column {
+                Grid {
                     width: parent.width
+                    columns: preview.halves ? 2 : 1
                     topPadding: Theme.paddingLarge
 
                     Column {
-                        objectName: "startPagePreviewTopSites"
-                        width: parent.width
-                        visible: preview.showsTopSites
+                        width: preview.columnWidth
+                        visible: preview.showsTiles
 
-                        SectionHeader {
-                            text: qsTr("Frequently visited")
-                        }
+                        Column {
+                            objectName: "startPagePreviewTopSites"
+                            width: parent.width
+                            visible: preview.showsTopSites
 
-                        Grid {
-                            columns: preview.columns
-
-                            Repeater {
-                                model: StartPage.topSites
-
-                                SiteTile {
-                                    objectName: "startPagePreviewTile"
-                                    width: screen.width / preview.columns
-                                    url: model.url
-                                    favicon: model.favicon
-                                }
+                            SectionHeader {
+                                text: qsTr("Frequently visited")
                             }
 
-                            Repeater {
-                                model: StartPage.topSites.count > 0 ? 0 : preview.columns
+                            Grid {
+                                columns: preview.columns
 
-                                SiteTile {
-                                    objectName: "startPagePreviewSpareTile"
-                                    width: screen.width / preview.columns
+                                Repeater {
+                                    model: StartPage.topSites
 
-                                    Rectangle {
-                                        anchors {
-                                            horizontalCenter: parent.horizontalCenter
-                                            bottom: parent.bottom
-                                            bottomMargin: Theme.paddingMedium
-                                                          + Theme.fontSizeExtraSmall / 2
+                                    SiteTile {
+                                        objectName: "startPagePreviewTile"
+                                        width: preview.columnWidth / preview.columns
+                                        url: model.url
+                                        favicon: model.favicon
+                                    }
+                                }
+
+                                Repeater {
+                                    model: StartPage.topSites.count > 0 ? 0 : preview.columns
+
+                                    SiteTile {
+                                        objectName: "startPagePreviewSpareTile"
+                                        width: preview.columnWidth / preview.columns
+
+                                        Rectangle {
+                                            anchors {
+                                                horizontalCenter: parent.horizontalCenter
+                                                bottom: parent.bottom
+                                                bottomMargin: Theme.paddingMedium
+                                                              + Theme.fontSizeExtraSmall / 2
+                                            }
+                                            width: Theme.itemSizeMedium * (0.6 + 0.1 * (index % 3))
+                                            height: Theme.paddingSmall
+                                            radius: height / 2
+                                            color: preview.ink
                                         }
-                                        width: Theme.itemSizeMedium * (0.6 + 0.1 * (index % 3))
-                                        height: Theme.paddingSmall
-                                        radius: height / 2
-                                        color: preview.ink
                                     }
                                 }
                             }
                         }
-                    }
 
-                    Column {
-                        objectName: "startPagePreviewBookmarks"
-                        width: parent.width
-                        visible: preview.showsBookmarks
+                        Column {
+                            objectName: "startPagePreviewBookmarks"
+                            width: parent.width
+                            visible: preview.showsBookmarks
 
-                        SectionHeader {
-                            text: qsTr("Bookmarks")
-                        }
-
-                        Grid {
-                            columns: preview.columns
-
-                            Repeater {
-                                model: StartPage.bookmarks
-
-                                SiteTile {
-                                    objectName: "startPagePreviewTile"
-                                    width: screen.width / preview.columns
-                                    url: model.url
-                                    title: model.title
-                                    favicon: model.favicon
-                                }
+                            SectionHeader {
+                                text: qsTr("Bookmarks")
                             }
 
-                            Repeater {
-                                model: StartPage.bookmarks.count > 0 ? 0 : preview.columns
+                            Grid {
+                                columns: preview.columns
 
-                                SiteTile {
-                                    objectName: "startPagePreviewSpareTile"
-                                    width: screen.width / preview.columns
+                                Repeater {
+                                    model: StartPage.bookmarks
 
-                                    Rectangle {
-                                        anchors {
-                                            horizontalCenter: parent.horizontalCenter
-                                            bottom: parent.bottom
-                                            bottomMargin: Theme.paddingMedium
-                                                          + Theme.fontSizeExtraSmall / 2
+                                    SiteTile {
+                                        objectName: "startPagePreviewTile"
+                                        width: preview.columnWidth / preview.columns
+                                        url: model.url
+                                        title: model.title
+                                        favicon: model.favicon
+                                    }
+                                }
+
+                                Repeater {
+                                    model: StartPage.bookmarks.count > 0 ? 0 : preview.columns
+
+                                    SiteTile {
+                                        objectName: "startPagePreviewSpareTile"
+                                        width: preview.columnWidth / preview.columns
+
+                                        Rectangle {
+                                            anchors {
+                                                horizontalCenter: parent.horizontalCenter
+                                                bottom: parent.bottom
+                                                bottomMargin: Theme.paddingMedium
+                                                              + Theme.fontSizeExtraSmall / 2
+                                            }
+                                            width: Theme.itemSizeMedium * (0.8 - 0.1 * (index % 2))
+                                            height: Theme.paddingSmall
+                                            radius: height / 2
+                                            color: preview.ink
                                         }
-                                        width: Theme.itemSizeMedium * (0.8 - 0.1 * (index % 2))
-                                        height: Theme.paddingSmall
-                                        radius: height / 2
-                                        color: preview.ink
                                     }
                                 }
                             }
@@ -170,7 +185,7 @@ Item {
 
                     Column {
                         objectName: "startPagePreviewRecent"
-                        width: parent.width
+                        width: preview.columnWidth
                         visible: preview.showsRecentPages
 
                         SectionHeader {
@@ -182,7 +197,7 @@ Item {
 
                             TabRow {
                                 objectName: "startPagePreviewRow"
-                                width: screen.width
+                                width: preview.columnWidth
                                 title: model.title
                                 subtitle: model.url
                                 icon: model.favicon
@@ -194,7 +209,7 @@ Item {
 
                             Item {
                                 objectName: "startPagePreviewSpareRow"
-                                width: screen.width
+                                width: preview.columnWidth
                                 height: Theme.itemSizeMedium
 
                                 Rectangle {
@@ -220,14 +235,14 @@ Item {
                                     spacing: Theme.paddingMedium
 
                                     Rectangle {
-                                        width: screen.width * (0.5 - 0.08 * index)
+                                        width: preview.columnWidth * (0.5 - 0.08 * index)
                                         height: Theme.paddingMedium
                                         radius: height / 2
                                         color: preview.ink
                                     }
 
                                     Rectangle {
-                                        width: screen.width * (0.3 + 0.05 * index)
+                                        width: preview.columnWidth * (0.3 + 0.05 * index)
                                         height: Theme.paddingSmall
                                         radius: height / 2
                                         color: preview.ink
@@ -242,7 +257,8 @@ Item {
                     objectName: "startPagePreviewBar"
                     anchors.bottom: parent.bottom
                     width: parent.width
-                    height: Theme.itemSizeLarge
+                    // Landscape bar slim, as on the browsing page.
+                    height: preview.landscape ? Theme.itemSizeSmall : Theme.itemSizeLarge
                     color: Theme.highlightDimmerColor
 
                     DragHandle {

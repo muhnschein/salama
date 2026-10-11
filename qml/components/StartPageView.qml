@@ -15,11 +15,12 @@ SilicaFlickable {
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
     readonly property bool landscape: width > height
-    readonly property int sections: (showsTopSites ? 1 : 0) + (showsBookmarks ? 1 : 0)
-                                    + (showsRecentPages ? 1 : 0)
-    // Landscape: one column per section, tiles portrait-sized (Screen.width is portrait's),
-    // at most StartPage::TopSiteLimit a row.
-    readonly property real columnWidth: landscape ? width / Math.max(1, sections) : width
+    readonly property bool showsTiles: showsTopSites || showsBookmarks
+    // Landscape: top sites over bookmarks in the left half, recent pages in the right one; a half
+    // with nothing to show leaves the other the whole width. Tiles portrait-sized (Screen.width
+    // is portrait's), at most StartPage::TopSiteLimit a row.
+    readonly property bool halves: landscape && showsTiles && showsRecentPages
+    readonly property real columnWidth: halves ? width / 2 : width
     readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
     readonly property int columns: landscape ? Math.max(1, Math.min(8, fittingTiles)) : 4
 
@@ -29,66 +30,72 @@ SilicaFlickable {
     objectName: "startPage"
     contentHeight: column.height
 
-    // Grid, not Flow: a fractional column width never wraps.
+    // Grid, not Flow: a fractional column width never wraps. As tall as the taller half.
     Grid {
         id: column
 
         width: parent.width
-        columns: startPage.landscape ? Math.max(1, startPage.sections) : 1
+        columns: startPage.halves ? 2 : 1
         topPadding: Theme.paddingLarge
         // Clear of nav bar reach, which takes presses for grid drag.
         bottomPadding: Theme.itemSizeSmall
 
+        // Left half in landscape: top sites over bookmarks.
         Column {
-            objectName: "topSitesSection"
             width: startPage.columnWidth
-            visible: startPage.showsTopSites
+            visible: startPage.showsTiles
 
-            SectionHeader {
-                text: qsTr("Frequently visited")
-            }
+            Column {
+                objectName: "topSitesSection"
+                width: startPage.columnWidth
+                visible: startPage.showsTopSites
 
-            Grid {
-                width: parent.width
-                columns: startPage.columns
+                SectionHeader {
+                    text: qsTr("Frequently visited")
+                }
 
-                Repeater {
-                    model: StartPage.topSites
+                Grid {
+                    width: parent.width
+                    columns: startPage.columns
 
-                    SiteTile {
-                        objectName: "topSiteTile"
-                        width: startPage.columnWidth / startPage.columns
-                        url: model.url
-                        favicon: model.favicon
-                        onClicked: startPage.openRequested(model.url)
+                    Repeater {
+                        model: StartPage.topSites
+
+                        SiteTile {
+                            objectName: "topSiteTile"
+                            width: startPage.columnWidth / startPage.columns
+                            url: model.url
+                            favicon: model.favicon
+                            onClicked: startPage.openRequested(model.url)
+                        }
                     }
                 }
             }
-        }
 
-        Column {
-            objectName: "bookmarksSection"
-            width: startPage.columnWidth
-            visible: startPage.showsBookmarks
+            Column {
+                objectName: "bookmarksSection"
+                width: startPage.columnWidth
+                visible: startPage.showsBookmarks
 
-            SectionHeader {
-                text: qsTr("Bookmarks")
-            }
+                SectionHeader {
+                    text: qsTr("Bookmarks")
+                }
 
-            Grid {
-                width: parent.width
-                columns: startPage.columns
+                Grid {
+                    width: parent.width
+                    columns: startPage.columns
 
-                Repeater {
-                    model: StartPage.bookmarks
+                    Repeater {
+                        model: StartPage.bookmarks
 
-                    SiteTile {
-                        objectName: "bookmarkTile"
-                        width: startPage.columnWidth / startPage.columns
-                        url: model.url
-                        title: model.title
-                        favicon: model.favicon
-                        onClicked: startPage.openRequested(model.url)
+                        SiteTile {
+                            objectName: "bookmarkTile"
+                            width: startPage.columnWidth / startPage.columns
+                            url: model.url
+                            title: model.title
+                            favicon: model.favicon
+                            onClicked: startPage.openRequested(model.url)
+                        }
                     }
                 }
             }

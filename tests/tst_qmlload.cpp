@@ -234,6 +234,7 @@ private slots:
     void settingsPage();
     void landscapeSettingsPage();
     void landscapePreviewPages();
+    void landscapeStartPagePreview();
     void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
@@ -6494,6 +6495,185 @@ void tst_qmlload::landscapePreviewPages()
     }
 }
 
+// Start page settings' picture in landscape: a landscape screen in halves as on the start page,
+// top sites over bookmarks left, recent pages right, a half with nothing to show leaving the
+// other the whole width; each switch moves the picture's sections as it moves the page's. Upright:
+// the portrait picture, stacked, four tiles a row.
+void tst_qmlload::landscapeStartPagePreview()
+{
+    for (int i = 0; i < 8; ++i) {
+        m_core->history()->visit(QStringLiteral("https://site%1.example/").arg(i),
+                                 QStringLiteral("Site %1").arg(i));
+        m_core->bookmarks()->add(QStringLiteral("https://mark%1.example/").arg(i),
+                                 QStringLiteral("Mark %1").arg(i));
+    }
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    m_core->tabs()->newTab(QString());
+    auto *start = qobject_cast<QQuickItem *>(find(QStringLiteral("startPage")));
+    QVERIFY(start != nullptr);
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("startPageSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("startPageSettingsPage"));
+    auto *frame = qobject_cast<QQuickItem *>(find(QStringLiteral("startPagePreviewFrame")));
+    auto *screen = qobject_cast<QQuickItem *>(find(QStringLiteral("startPagePreviewScreen")));
+    QObject *preview = find(QStringLiteral("startPagePreview"));
+    QVERIFY(frame != nullptr && screen != nullptr && preview != nullptr);
+    const QStringList pictured{QStringLiteral("startPagePreviewTopSites"),
+                               QStringLiteral("startPagePreviewBookmarks"),
+                               QStringLiteral("startPagePreviewRecent")};
+    const QStringList sections{QStringLiteral("topSitesSection"),
+                               QStringLiteral("bookmarksSection"),
+                               QStringLiteral("recentPagesSection")};
+    const auto item = [this](const QString &name) {
+        return qobject_cast<QQuickItem *>(find(name));
+    };
+    // Unscaled, on the picture's screen; as drawn, on the frame; and on the real start page.
+    const auto drawn = [&](const QString &name) { return onPage(screen, item(name)); };
+    const auto shrunk = [&](const QString &name) { return onPage(frame, item(name)); };
+    const auto real = [&](const QString &name) { return onPage(start, item(name)); };
+    const auto perRow = [this](qreal columnWidth) {
+        const qreal portraitTile =
+            evaluate(m_window.data(), QStringLiteral("Screen.width")).toReal() / 4;
+        return qBound(1, int(columnWidth / portraitTile), 8);
+    };
+    // Every shown section of the picture spans the same share of its screen as on the page.
+    const auto compareShares = [&]() {
+        for (int i = 0; i < pictured.count(); ++i) {
+            const bool shown = find(pictured.at(i))->property("visible").toBool();
+            QCOMPARE(shown, find(sections.at(i))->property("visible").toBool());
+            if (!shown) {
+                continue;
+            }
+            QCOMPARE(drawn(pictured.at(i)).x() / screen->width(),
+                     real(sections.at(i)).x() / start->width());
+            QCOMPARE(drawn(pictured.at(i)).width() / screen->width(),
+                     real(sections.at(i)).width() / start->width());
+        }
+    };
+    const auto alike = [&]() {
+        compareShares();
+        return !QTest::currentTestFailed();
+    };
+    const auto check = [this](const QString &name, bool on) {
+        find(name)->setProperty("checked", on);
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    const qreal height = page->property("height").toReal();
+    QVERIFY(width > height);
+    // Landscape screen, as big as the page, scaled into the right column.
+    QCOMPARE(screen->width(), width);
+    QCOMPARE(screen->height(), height);
+    QVERIFY(frame->width() > frame->height());
+    const qreal scale = screen->scale();
+    QVERIFY(scale < 0.5);
+    QCOMPARE(frame->width(), width * scale);
+    QCOMPARE(frame->height(), height * scale);
+
+    const qreal half = width / 2;
+    const QRectF topSites = drawn(pictured.at(0));
+    const QRectF bookmarks = drawn(pictured.at(1));
+    const QRectF recent = drawn(pictured.at(2));
+    QCOMPARE(topSites.x(), qreal(0));
+    QCOMPARE(topSites.width(), half);
+    QCOMPARE(bookmarks.x(), qreal(0));
+    QCOMPARE(bookmarks.width(), half);
+    QCOMPARE(bookmarks.y(), topSites.bottom());
+    QCOMPARE(recent.x(), half);
+    QCOMPARE(recent.width(), half);
+    QCOMPARE(recent.y(), topSites.y());
+    // Drawn at the picture's scale: halves of the frame.
+    QCOMPARE(shrunk(pictured.at(2)).x() - shrunk(pictured.at(0)).x(), frame->width() / 2);
+    QCOMPARE(shrunk(pictured.at(2)).width(), frame->width() / 2);
+    QCOMPARE(shrunk(pictured.at(0)).width(), frame->width() / 2);
+    QCOMPARE(preview->property("columns").toInt(), perRow(half));
+    QCOMPARE(preview->property("columns").toInt(), 4);
+    const QList<QObject *> tiles = findAll(QStringLiteral("startPagePreviewTile"));
+    QCOMPARE(tiles.count(), 16);
+    for (QObject *tile : tiles) {
+        const QRectF at = onPage(screen, qobject_cast<QQuickItem *>(tile));
+        QCOMPARE(at.width(), half / 4);
+        QVERIFY(at.right() <= half);
+    }
+    const QList<QObject *> rows = findAll(QStringLiteral("startPagePreviewRow"));
+    QCOMPARE(rows.count(), 5);
+    for (QObject *row : rows) {
+        const QRectF at = onPage(screen, qobject_cast<QQuickItem *>(row));
+        QCOMPARE(at.x(), half);
+        QCOMPARE(at.width(), half);
+    }
+    QVERIFY(alike());
+    // Slim bar, as on the browsing page in landscape.
+    const qreal slim = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    QTRY_COMPARE(find(QStringLiteral("navigationBar"))->property("height").toReal(), slim);
+    QCOMPARE(find(QStringLiteral("startPagePreviewBar"))->property("height").toReal(), slim);
+
+    // Recent pages off: tiles across the whole picture.
+    check(QStringLiteral("startPageRecentSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(0)).width(), width);
+    QCOMPARE(drawn(pictured.at(1)).width(), width);
+    QCOMPARE(drawn(pictured.at(1)).x(), qreal(0));
+    QCOMPARE(preview->property("columns").toInt(), 8);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(tiles.first())).width(), width / 8);
+    QVERIFY(alike());
+    check(QStringLiteral("startPageRecentSwitch"), true);
+
+    // One tile section off: still halves.
+    check(QStringLiteral("startPageBookmarksSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(0)).width(), half);
+    QCOMPARE(drawn(pictured.at(2)).x(), half);
+    QVERIFY(alike());
+
+    // Tile sections off: recent pages across the whole picture.
+    check(QStringLiteral("startPageTopSitesSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(2)).x(), qreal(0));
+    QCOMPARE(drawn(pictured.at(2)).width(), width);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(rows.first())).width(), width);
+    QVERIFY(alike());
+
+    // Blank: nothing but the bar, as on the page.
+    check(QStringLiteral("startPageTopSitesSwitch"), true);
+    check(QStringLiteral("startPageBookmarksSwitch"), true);
+    click(find(QStringLiteral("startPageBlankSwitch")));
+    layOut(window);
+    for (const QString &name : pictured) {
+        QVERIFY2(!find(name)->property("visible").toBool(), qPrintable(name));
+    }
+    QVERIFY(find(QStringLiteral("startPagePreviewBar"))->property("visible").toBool());
+    QVERIFY(alike());
+    click(find(QStringLiteral("startPageSitesSwitch")));
+
+    // Upright: the portrait picture, stacked full width, four tiles a row, tall bar.
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(frame->width() < frame->height());
+    QCOMPARE(screen->width(), portraitWidth);
+    QCOMPARE(screen->scale(), 0.5);
+    for (int i = 0; i < pictured.count(); ++i) {
+        const QRectF at = drawn(pictured.at(i));
+        QCOMPARE(at.x(), qreal(0));
+        QCOMPARE(at.width(), portraitWidth);
+        if (i > 0) {
+            QCOMPARE(at.y(), drawn(pictured.at(i - 1)).bottom());
+        }
+    }
+    QCOMPARE(preview->property("columns").toInt(), 4);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(tiles.first())).width(), portraitWidth / 4);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(rows.first())).width(), portraitWidth);
+    QCOMPARE(find(QStringLiteral("startPagePreviewBar"))->property("height").toReal(),
+             evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    QVERIFY(alike());
+}
+
 // sailfish-browser's Appearance/Privacy rows, its wording, and effect on page and engine.
 void tst_qmlload::sailfishBrowserSettings()
 {
@@ -10914,8 +11094,9 @@ void tst_qmlload::landscapeBrowsing()
     QVERIFY(browser->property("tabsOpen").toBool());
 }
 
-// Landscape start page: shown sections side by side, a column each, tiles portrait-sized, all on
-// the page without scrolling. Upright: stacked, four tiles a row.
+// Landscape start page in halves: top sites over bookmarks left, recent pages right, tiles
+// portrait-sized; a half with nothing to show leaves the other the whole width. Upright: stacked,
+// four tiles a row.
 void tst_qmlload::landscapeStartPage()
 {
     for (int i = 0; i < 8; ++i) {
@@ -10973,55 +11154,74 @@ void tst_qmlload::landscapeStartPage()
         QVERIFY2(find(name)->property("visible").toBool(), qPrintable(name));
     }
     const qreal width = start->width();
-    const qreal third = width / 3;
-    for (int i = 0; i < names.count(); ++i) {
-        const QRectF at = box(names.at(i));
-        QCOMPARE(at.x(), i * third);
-        QCOMPARE(at.width(), third);
-        QCOMPARE(at.y(), box(names.first()).y());
-    }
-    QCOMPARE(start->property("columns").toInt(), perRow(third));
-    QCOMPARE(perRow(third), 3);
-    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 3));
-    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 3));
+    const qreal half = width / 2;
+    const QRectF topSites = box(names.at(0));
+    const QRectF bookmarks = box(names.at(1));
+    const QRectF recent = box(names.at(2));
+    // Left half: top sites over bookmarks. Right half: recent pages, level with top sites.
+    QCOMPARE(topSites.x(), qreal(0));
+    QCOMPARE(topSites.width(), half);
+    QCOMPARE(bookmarks.x(), qreal(0));
+    QCOMPARE(bookmarks.width(), half);
+    QCOMPARE(bookmarks.y(), topSites.bottom());
+    QCOMPARE(recent.x(), half);
+    QCOMPARE(recent.width(), half);
+    QCOMPARE(recent.y(), topSites.y());
+    QCOMPARE(perRow(half), 4);
+    QCOMPARE(start->property("columns").toInt(), perRow(half));
+    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
+    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 4));
     QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
-    // Everything on the page unscrolled; content as tall as tallest column plus padding.
+    // Content as tall as the taller half plus padding.
     QCOMPARE(start->property("contentY").toReal(), qreal(0));
-    qreal tallest = 0;
-    for (const QString &name : names) {
-        tallest = qMax(tallest, box(name).height());
-        QVERIFY2(box(name).bottom() <= start->height(), qPrintable(name));
-    }
+    const qreal left = bookmarks.bottom() - topSites.top();
+    const qreal right = recent.height();
     QObject *browser = find(QStringLiteral("browserPage"));
     const qreal padding =
         evaluate(browser, QStringLiteral("Theme.paddingLarge + Theme.itemSizeSmall")).toReal();
     QVERIFY(padding > 0);
-    QCOMPARE(start->property("contentHeight").toReal(), tallest + padding);
+    QCOMPARE(start->property("contentHeight").toReal(), qMax(left, right) + padding);
 
-    // Section off: two columns, wider, more tiles a row.
+    // One tile section off: still halves, top sites alone on the left.
     m_core->startPageSettings()->setBookmarks(false);
     layOut(window);
     QVERIFY(!find(names.at(1))->property("visible").toBool());
-    const qreal half = width / 2;
     QCOMPARE(box(names.at(0)).x(), qreal(0));
-    QCOMPARE(box(names.at(2)).x(), half);
     QCOMPARE(box(names.at(0)).width(), half);
+    QCOMPARE(box(names.at(2)).x(), half);
     QCOMPARE(box(names.at(2)).width(), half);
     QCOMPARE(box(names.at(2)).y(), box(names.at(0)).y());
-    QCOMPARE(perRow(half), 4);
     QCOMPARE(start->property("columns").toInt(), 4);
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
-    QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+    m_core->startPageSettings()->setBookmarks(true);
 
-    // One section: whole width, all top sites in a row.
+    // Recent pages off: no empty right half, tiles across the whole width, all top sites a row.
     m_core->startPageSettings()->setRecent(false);
     layOut(window);
+    QVERIFY(!find(names.at(2))->property("visible").toBool());
+    QCOMPARE(box(names.at(0)).x(), qreal(0));
     QCOMPARE(box(names.at(0)).width(), width);
+    QCOMPARE(box(names.at(1)).x(), qreal(0));
+    QCOMPARE(box(names.at(1)).width(), width);
+    QCOMPARE(box(names.at(1)).y(), box(names.at(0)).bottom());
+    QCOMPARE(perRow(width), 8);
     QCOMPARE(start->property("columns").toInt(), 8);
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 8));
-    QCOMPARE(start->property("contentHeight").toReal(), box(names.at(0)).height() + padding);
-    m_core->startPageSettings()->setBookmarks(true);
+    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 8));
+    QCOMPARE(start->property("contentHeight").toReal(),
+             box(names.at(1)).bottom() - box(names.at(0)).top() + padding);
     m_core->startPageSettings()->setRecent(true);
+
+    // Tile sections off: no empty left half, recent pages across the whole width.
+    m_core->startPageSettings()->setTopSites(false);
+    m_core->startPageSettings()->setBookmarks(false);
+    layOut(window);
+    QCOMPARE(box(names.at(2)).x(), qreal(0));
+    QCOMPARE(box(names.at(2)).width(), width);
+    QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+    QCOMPARE(start->property("contentHeight").toReal(), box(names.at(2)).height() + padding);
+    m_core->startPageSettings()->setTopSites(true);
+    m_core->startPageSettings()->setBookmarks(true);
 
     turnDevice(Portrait);
     layOut(window);
