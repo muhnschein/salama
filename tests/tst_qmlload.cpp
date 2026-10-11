@@ -204,6 +204,7 @@ private slots:
     void barReachUnderAFinger();
     void barDragStartsWithoutAStutter();
     void barStaysSlimWhileDragged();
+    void barResizesPageAtRest();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -3472,6 +3473,75 @@ void tst_qmlload::barStaysSlimWhileDragged()
     QVERIFY(!bar->property("resizing").toBool());
     QCOMPARE(viewArea->property("height").toReal(), viewHeight);
     webView->setProperty("chrome", true);
+}
+
+// Device: page resized as bar slimmed or hid mid-scroll, scroll stuttered. Page keeps its size
+// while it moves and takes bar's new space at rest; page colour fills below slimmed or hidden bar.
+void tst_qmlload::barResizesPageAtRest()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *viewArea = find(QStringLiteral("viewArea"));
+    QObject *fill = find(QStringLiteral("pageFootFill"));
+    QObject *webView = currentWebView();
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    const qreal fullBar = bar->property("height").toReal();
+    const qreal slimBar = bar->property("slimHeight").toReal();
+    const qreal inset = page->property("pageCutoutInset").toReal();
+    const auto viewHeight = [viewArea]() { return viewArea->property("height").toReal(); };
+    const auto pageHeight = [page]() { return page->property("height").toReal(); };
+    const auto fillHeight = [fill]() { return fill->property("height").toReal(); };
+    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
+    QVERIFY(!fill->property("visible").toBool());
+
+    // Flung down: bar slims, page keeps size, its colour under bar; resized once it rests.
+    webView->setProperty("moving", true);
+    webView->setProperty("chrome", false);
+    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
+    QVERIFY(fill->property("visible").toBool());
+    QCOMPARE(fill->property("y").toReal(), pageHeight() - fullBar);
+    QCOMPARE(fillHeight(), fullBar);
+    QCOMPARE(fill->property("color").value<QColor>(),
+             webView->property("backgroundColor").value<QColor>());
+    webView->setProperty("moving", false);
+    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
+    QVERIFY(!fill->property("visible").toBool());
+
+    // Dragged up: bar grows over page foot until finger lifts.
+    webView->setProperty("dragging", true);
+    webView->setProperty("chrome", true);
+    QTRY_COMPARE(bar->property("height").toReal(), fullBar);
+    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
+    webView->setProperty("dragging", false);
+    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
+
+    // Not moving (tap, load, keyboard): resized as before.
+    webView->setProperty("chrome", false);
+    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
+    webView->setProperty("chrome", true);
+    QTRY_COMPARE(viewHeight(), pageHeight() - fullBar - inset);
+
+    // Landscape: hidden mid-fling leaves page colour where bar was; shown overlaps foot.
+    turnDevice(Landscape);
+    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+    QCOMPARE(viewHeight(), pageHeight() - slimBar);
+    webView->setProperty("moving", true);
+    webView->setProperty("atYBeginning", false);
+    webView->setProperty("chrome", false);
+    QVERIFY(bar->property("hidden").toBool());
+    QCOMPARE(viewHeight(), pageHeight() - slimBar);
+    QCOMPARE(fillHeight(), slimBar);
+    webView->setProperty("moving", false);
+    QCOMPARE(viewHeight(), pageHeight());
+    webView->setProperty("moving", true);
+    webView->setProperty("chrome", true);
+    QTRY_COMPARE(bar->property("y").toReal(), pageHeight() - slimBar);
+    QCOMPARE(viewHeight(), pageHeight());
+    webView->setProperty("moving", false);
+    QTRY_COMPARE(viewHeight(), pageHeight() - slimBar);
+    webView->setProperty("atYBeginning", true);
+    turnDevice(Portrait);
 }
 
 // Reach above bar overlaps page foot (player seek bar, buttons). Keeps only drag up (opens grid);

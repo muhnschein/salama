@@ -26,13 +26,21 @@ WebViewPage {
     // Mid-animation view sized to slim or hidden end: per-frame resize relaid out page
     // (keyboard stretch). Landscape banners float over page's right end.
     readonly property real barHeight: navigationBar.height
-    readonly property real barSpace: {
+    readonly property real barTarget: {
         if (navigationBar.hidden || navigationBar.sliding) {
             return 0
         }
         return navigationBar.compact || navigationBar.resizing ? navigationBar.slimHeight
                                                                : barHeight
     }
+    // Each resize relays page out: done mid-scroll, it stuttered the scroll (device). Page keeps
+    // its size while it moves and takes bar's new space once it rests; meanwhile a slimmed or
+    // hidden bar leaves page colour below it, a grown one overlaps page foot.
+    readonly property bool pageMoving: !!currentView
+                                       && (currentView.moving === true
+                                           || currentView.dragging === true)
+    property real restingBarSpace: 0
+    readonly property real barSpace: pageMoving ? restingBarSpace : barTarget
     readonly property real viewHeight: fullHeight - (isLandscape ? 0 : banners.height) - barSpace
 
     readonly property CutoutInsets cutout: CutoutInsets {
@@ -230,7 +238,11 @@ WebViewPage {
         onTriggered: browserPage.trimMemory()
     }
 
+    // Space page last took at rest; held while it moves.
+    onBarSpaceChanged: restingBarSpace = barSpace
+
     Component.onCompleted: {
+        restingBarSpace = barSpace
         WebEngineSettings.pixelRatio = pageZoom()
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
@@ -299,6 +311,20 @@ WebViewPage {
                 anchors.fill: parent
                 onOpenRequested: browserPage.openUrl(url)
             }
+        }
+
+        // Bar slimmed or hidden while page moves: page's own colour under it until page rests.
+        Rectangle {
+            objectName: "pageFootFill"
+            anchors {
+                left: parent.left
+                right: parent.right
+            }
+            y: viewArea.y + viewArea.height
+            height: Math.max(0, browserPage.height - y)
+            visible: browserPage.pageMoving
+            color: browserPage.currentView && browserPage.currentView.backgroundColor
+                   ? browserPage.currentView.backgroundColor : Theme.highlightDimmerColor
         }
 
         NavigationBar {

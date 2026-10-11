@@ -25,6 +25,10 @@ Item {
     // QuickMozView chrome gesture: engine drops chrome on scroll down, wants it back on scroll up.
     property bool chrome: true
     property bool atYBeginning: true
+    // QuickMozView: page panned or flung; finger on page.
+    property bool moving: false
+    property bool dragging: false
+    property color backgroundColor: "white"
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // Display cutout inset handed to engine. Binding like platform's: Binding release restores
