@@ -6,6 +6,11 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Rectangle {
+    id: background
+
+    // Side sheet: edge line down its left side too.
+    property bool side: false
+
     objectName: "sheetBackground"
     color: Theme.highlightDimmerColor
 
@@ -41,6 +46,18 @@ Rectangle {
             top: parent.top
         }
         height: Theme._lineWidth
+        color: Theme.rgba(Theme.highlightColor, Theme.opacityFaint)
+    }
+
+    Rectangle {
+        objectName: "sheetSideEdge"
+        anchors {
+            left: parent.left
+            top: parent.top
+            bottom: parent.bottom
+        }
+        width: Theme._lineWidth
+        visible: background.side
         color: Theme.rgba(Theme.highlightColor, Theme.opacityFaint)
     }
 }

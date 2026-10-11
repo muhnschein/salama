@@ -26,7 +26,9 @@ Item {
     function show(step) {
         stop()
         if (step === "address" || step === "menu" || step === "menuOpen") {
-            var target = Qt.point(width / 2, (height - menu.sheetHeight) / 2)
+            // Over page beside sheet: above it, or left of side sheet.
+            var target = menu.wide ? Qt.point((width - menu.sheetWidth) / 2, menu.barTop / 2)
+                                   : Qt.point(width / 2, (height - menu.sheetHeight) / 2)
             if (step === "address") {
                 target = placeOf(bar, bar.addressCentre, bar.parent)
             } else if (step === "menu") {

@@ -4366,12 +4366,67 @@ void turnedSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *men
     QTRY_COMPARE(sheet->y(), qreal(0));
 }
 
+// Side sheet has nothing to scroll and a drag left moves nothing. Drag right, along page (across
+// window), moves sheet, row under finger: past a short way puts sheet away, short of it returns.
+void sideSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu, QQuickItem *sheet,
+                       QQuickItem *grabbed)
+{
+    QVERIFY(menu->property("open").toBool());
+    QTRY_VERIFY(!sheet->property("moving").toBool());
+    QCOMPARE(sheet->property("contentWidth").toReal(), sheet->width());
+    const qreal openX = menu->x();
+    const qreal openY = menu->y();
+    QCOMPARE(openX, page->width() - menu->width());
+    const qreal restX = sheet->property("contentX").toReal();
+    const QPointF grab = grabbed->mapToItem(page, QPointF(1, grabbed->height() / 2));
+    const auto at = [page](const QPointF &point) { return page->mapToScene(point).toPoint(); };
+    const auto drag = [&window, &at, grab](qreal by) {
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, at(grab));
+        for (int step = 1; step <= 12; ++step) {
+            QTest::mouseMove(&window, at(grab + QPointF(by * step / 12, 0)));
+        }
+    };
+    drag(-240);
+    QVERIFY(qAbs(sheet->property("contentX").toReal() - restX) < 0.5);
+    QCOMPARE(menu->x(), openX);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab - QPointF(240, 0)));
+    QVERIFY(menu->property("open").toBool());
+
+    const qreal closeDistance = menu->property("closeDistance").toReal();
+    QVERIFY(closeDistance > 0);
+    QVERIFY(closeDistance <= menu->width() / 3);
+    const int slack = QGuiApplication::styleHints()->startDragDistance() + 1;
+    const int shortPull = int(closeDistance / 2);
+    const qreal grabbedX = onPage(page, grabbed).x();
+    drag(shortPull);
+    const qreal travelled = menu->x() - openX;
+    QVERIFY(travelled <= shortPull);
+    QVERIFY2(travelled > (shortPull - slack) / 2.0, qPrintable(QString::number(travelled)));
+    QVERIFY(qAbs(onPage(page, grabbed).x() - grabbedX - travelled) < 1);
+    QCOMPARE(menu->y(), openY);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab + QPointF(shortPull, 0)));
+    QTRY_COMPARE(menu->x(), openX);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(onPage(page, grabbed).x(), grabbedX);
+
+    const qreal pull = 2 * closeDistance;
+    QVERIFY(grab.x() + pull < page->width());
+    drag(pull);
+    QVERIFY(menu->x() > openX + closeDistance);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab + QPointF(pull, 0)));
+    QTRY_VERIFY(!menu->property("open").toBool());
+    // Pull springs back before sheet comes in again.
+    QTRY_COMPARE(sheet->x(), qreal(0));
+}
+
 } // namespace
 
-// Landscape menu sheet: page head at left, an upright separator, then portrait's two rows in the
-// block beside it, page's five on discs in fifths of it, a level separator, browser's four in
-// quarters, so German names fit unfaded. Head as tall as both rows, still opens site details,
-// shade still closes, sheet does not scroll. Back in portrait, head over two rows again.
+// Landscape menu: side sheet at page's right edge, standing on bar, as tall as its content, 42%
+// of page wide in whole pixels. Head across its top as in portrait, a level line under it, then
+// page's five in a left column and browser's four in a right one, an upright line between: list
+// rows, icon at left (in line with head's tile), name beside it in small type. German names fit
+// unfaded, also on a page shaped as the phone's. Grip upright on its left edge; press beside it
+// closes, as does a drag right. Turned while open, it stays open, placed for the new edge.
 void tst_qmlload::menuSheetInLandscape()
 {
     const int portrait = 1; // Silica's Orientation values.
@@ -4385,7 +4440,14 @@ void tst_qmlload::menuSheetInLandscape()
     };
     auto *page = item("browserPage");
     auto *menu = item("browserMenu");
+    auto *bar = item("navigationBar");
     const auto rect = [page](QQuickItem *of) { return onPage(page, of); };
+    const auto theme = [this, menu](const char *name) {
+        return evaluate(menu, QStringLiteral("Theme.") + QLatin1String(name)).toReal();
+    };
+    const auto part = [](QQuickItem *button, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(button, QLatin1String(name)).first());
+    };
     const char *const actions[] = {
         "findMenuButton",    "bookmarkMenuButton",  "shareMenuButton",
         "desktopMenuButton", "readerMenuButton",    "bookmarksMenuButton",
@@ -4393,66 +4455,102 @@ void tst_qmlload::menuSheetInLandscape()
     m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(), QStringLiteral("Qwant"));
 
     turnDevice(landscape);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
     QVERIFY(page->width() > page->height());
     tapBar(QStringLiteral("menu"));
     QVERIFY(menu->property("open").toBool());
     drawn(window);
-    QCOMPARE(menu->width(), page->width());
-    QVERIFY(menu->height() < page->height() / 3);
-    QCOMPARE(menu->y(), page->height() - menu->height());
 
+    // Docked right, standing on bar, which stays in sight under it.
+    QCOMPARE(menu->property("dock").toInt(), evaluate(menu, QStringLiteral("Dock.Right")).toInt());
+    const QRectF sheet = rect(menu);
+    const QRectF barBox = rect(bar);
+    QVERIFY(barBox.height() > 0);
+    QCOMPARE(barBox.bottom(), page->height());
+    QCOMPARE(sheet.right(), page->width());
+    QCOMPARE(sheet.bottom(), barBox.top());
+    const qreal gap = theme("paddingLarge");
+    const qreal column = std::floor((page->width() * 0.42 - gap) / 2);
+    QCOMPARE(sheet.width(), 2 * column + gap);
+    QVERIFY(qAbs(sheet.width() - 0.42 * page->width()) <= 2);
+    const qreal row = theme("itemSizeSmall");
+    const qreal padding = theme("paddingMedium");
+
+    // Head across sheet's top, as in portrait: title on one line, copy at right.
     QQuickItem *header = item("menuHeader");
     const QRectF head = rect(header);
-    QCOMPARE(head.x(), qreal(0));
-    QCOMPARE(head.width(), evaluate(menu, QStringLiteral("cells.headWidth")).toReal());
-    QVERIFY(head.width() > page->width() / 4);
-    QVERIFY(head.width() < page->width() / 3);
-    QCOMPARE(header->property("wide").toBool(), true);
-    QCOMPARE(item("menuPageTitle")->property("maximumLineCount").toInt(), 2);
-    QVERIFY(evaluate(item("menuPageTitle"), QStringLiteral("wrapMode === Text.Wrap")).toBool());
+    QCOMPARE(head.x(), sheet.x());
+    QCOMPARE(head.width(), sheet.width());
+    QCOMPARE(head.y(), sheet.y() + padding);
+    QCOMPARE(head.height(), theme("itemSizeSmall"));
+    QCOMPARE(item("menuPageTitle")->property("lineCount").toInt(), 1);
+    QVERIFY(rect(item("copyAddressButton")).right() <= sheet.right());
+    QVERIFY(rect(item("copyAddressButton")).left() > sheet.center().x());
     QVERIFY(!item("menuHeaderGap")->isVisible());
-    QVERIFY(rect(item("copyAddressButton")).right() <= head.right());
+    QQuickItem *headLine = item("menuHeadDivider")->parentItem();
+    QVERIFY(headLine->isVisible());
+    QCOMPARE(item("menuHeadDivider")->rotation(), qreal(0));
+    QCOMPARE(rect(headLine).x(), sheet.x());
+    QCOMPARE(rect(headLine).width(), sheet.width());
+    QCOMPARE(rect(headLine).y(), head.bottom());
 
-    // Rows begin one separator's room past head and take the rest of the width.
+    // As tall as its content: head, line, five rows, padding; nothing over the bar.
     const QRectF first = rect(item(actions[0]));
-    const QRectF places = rect(item(actions[5]));
-    const qreal gap = evaluate(menu, QStringLiteral("cells.gap")).toReal();
-    QCOMPARE(first.x(), head.right() + gap);
-    const qreal block = page->width() - first.x();
-    QCOMPARE(block, evaluate(menu, QStringLiteral("cells.block")).toReal());
-    // Head spans both rows, its tile centred against them.
-    QCOMPARE(head.y(), first.y());
-    QCOMPARE(head.bottom(), places.bottom());
-    QCOMPARE(rect(item("menuPageTile")).center().y(), (first.y() + places.bottom()) / 2);
+    QCOMPARE(first.y(), rect(headLine).bottom());
+    QCOMPARE(sheet.height(), padding + head.height() + rect(headLine).height() + 5 * row + padding);
+    QVERIFY(sheet.height() <= barBox.top());
+    QVERIFY(sheet.top() > 0);
 
-    const qreal dimmed = evaluate(menu, QStringLiteral("Theme.opacityLow")).toReal();
-    const qreal labelSize = evaluate(menu, QStringLiteral("Theme.fontSizeExtraSmall")).toReal();
+    // Page's five down the left column, browser's four down the right: list rows, icon at left
+    // in line with head's tile, name beside it.
+    const qreal dimmed = theme("opacityLow");
+    const qreal tileX = rect(item("menuPageTile")).center().x() - sheet.x();
     for (int i = 0; i < 9; ++i) {
         QQuickItem *button = item(actions[i]);
         const QRectF cell = rect(button);
         const bool pageAction = i < 5;
-        // Page's five a row in fifths, browser's four the row under it in quarters.
-        QVERIFY2(cell.y() == (pageAction ? first.y() : places.y()), actions[i]);
-        QCOMPARE(cell.width(), block / (pageAction ? 5 : 4));
-        QCOMPARE(cell.x(), first.x() + (pageAction ? i : i - 5) * cell.width());
+        const int at = pageAction ? i : i - 5;
+        QVERIFY2(cell.x() == (pageAction ? sheet.x() : sheet.x() + column + gap), actions[i]);
+        QCOMPARE(cell.width(), column);
+        QCOMPARE(cell.height(), row);
+        QCOMPARE(cell.y(), first.y() + at * row);
         QCOMPARE(button->property("round").toBool(), pageAction);
-        QCOMPARE(findObjects(button, QStringLiteral("menuButtonLabel"))
-                     .first()
-                     ->property("font")
-                     .value<QFont>()
-                     .pixelSize(),
-                 int(labelSize));
+        QCOMPARE(part(button, "menuButtonDisc")->isVisible(), pageAction);
         QCOMPARE(button->opacity(), button->isEnabled() ? 1.0 : dimmed);
+        const QRectF slot = rect(part(button, "menuButtonIconSlot"));
+        QQuickItem *label = part(button, "menuButtonLabel");
+        const QRectF name = rect(label);
+        QVERIFY2(slot.right() < name.left(), actions[i]);
+        QCOMPARE(slot.center().y(), cell.center().y());
+        QVERIFY2(qAbs(name.center().y() - cell.center().y()) <= 0.5, actions[i]);
+        QCOMPARE(slot.center().x() - cell.x(), tileX);
+        QVERIFY2(name.right() <= cell.right(), actions[i]);
+        QCOMPARE(label->property("horizontalAlignment").toInt(), int(Qt::AlignLeft));
+        QCOMPARE(label->property("font").value<QFont>().pixelSize(), int(theme("fontSizeSmall")));
     }
-    QVERIFY(places.y() > rect(item("readerMenuButton")).bottom());
-    QCOMPARE(rect(item("readerMenuButton")).right(), page->width());
+    QCOMPARE(rect(item("menuPageRow")), QRectF(sheet.x(), first.y(), column, 5 * row));
+    QCOMPARE(rect(item("menuBrowserRow")),
+             QRectF(sheet.x() + column + gap, first.y(), column, 4 * row));
+    QCOMPARE(rect(item("readerMenuButton")).bottom(), sheet.bottom() - padding);
     QCOMPARE(rect(item("settingsMenuButton")).right(), page->width());
-    // Far wider than the cells of nine actions in one row.
-    QVERIFY(first.width() > 1.5 * (page->width() - head.right()) / 9);
     QVERIFY(!item("readerMenuButton")->isEnabled());
+    // Upright line between the columns, as tall as page's five.
+    QQuickItem *between = item("menuSeparator")->parentItem();
+    QCOMPARE(item("menuSeparator")->rotation(), qreal(90));
+    QCOMPARE(rect(between), QRectF(sheet.x() + column, first.y(), gap, 5 * row));
+    // Checked lights disc and name, as in portrait.
+    QObject *view = currentWebView();
+    view->setProperty("desktopMode", true);
+    QQuickItem *desktop = item("desktopMenuButton");
+    QVERIFY(desktop->property("checked").toBool());
+    QCOMPARE(part(desktop, "menuButtonLabel")->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QVERIFY(part(desktop, "menuButtonDisc")->property("color").value<QColor>() !=
+            part(item(actions[0]), "menuButtonDisc")->property("color").value<QColor>());
+    view->setProperty("desktopMode", false);
 
-    // German names, the longest the menu has, fit their cells: nothing to fade. Also on a page
-    // only 72 label sizes wide, as the phone they faded on in nine cells a row (2160 px, 30 px).
+    // German names, the longest the menu has, fit their rows: nothing to fade. Also on a page
+    // shaped as the phone's: 2:1, 72 extra small type sizes wide (2160 px, 30 px).
     const char *const german[] = {"Seitensuche", "Merken",      "Teilen",
                                   "PC-Version",  "Leseansicht", "Lesezeichen",
                                   "Chronik",     "Downloads",   "Einstellungen"};
@@ -4460,7 +4558,7 @@ void tst_qmlload::menuSheetInLandscape()
         QStringList names;
         for (int i = 0; i < 9; ++i) {
             QQuickItem *button = item(actions[i]);
-            QObject *label = findObjects(button, QStringLiteral("menuButtonLabel")).first();
+            QObject *label = part(button, "menuButtonLabel");
             const QString text = button->property("text").toString();
             button->setProperty("text", QString::fromUtf8(german[i]));
             if (label->property("implicitWidth").toReal() > label->property("width").toReal()) {
@@ -4471,38 +4569,52 @@ void tst_qmlload::menuSheetInLandscape()
         return names.join(QLatin1Char(' '));
     };
     QCOMPARE(faded(), QString());
-    const qreal tall = root->height();
-    root->setHeight(tall - page->width() + 72 * labelSize);
+    const qreal unit = theme("fontSizeExtraSmall");
+    const QSizeF full(root->width(), root->height());
+    root->setHeight(full.height() - page->width() + 72 * unit);
+    root->setWidth(36 * unit);
     settle();
-    QCOMPARE(page->width(), 72 * labelSize);
-    const QString narrowFaded = faded();
-    root->setHeight(tall);
-    settle();
-    QCOMPARE(narrowFaded, QString());
     drawn(window);
+    QCOMPARE(page->width(), 72 * unit);
+    QCOMPARE(page->height(), 36 * unit);
+    const QString narrowFaded = faded();
+    const QRectF narrowSheet = rect(menu);
+    const QRectF narrowBar = rect(bar);
+    root->setWidth(full.width());
+    root->setHeight(full.height());
+    settle();
+    drawn(window);
+    QCOMPARE(narrowFaded, QString());
+    QCOMPARE(narrowSheet.right(), 72 * unit);
+    QCOMPARE(narrowSheet.bottom(), narrowBar.top());
+    QCOMPARE(narrowSheet.height(), sheet.height());
+    QVERIFY(narrowSheet.top() > 0);
+    QCOMPARE(rect(menu), sheet);
 
-    // Upright separator after head, as tall as both rows; level one between the rows.
-    QQuickItem *divider = item("menuHeadDivider")->parentItem();
-    QVERIFY(divider->isVisible());
-    QCOMPARE(item("menuHeadDivider")->rotation(), qreal(90));
-    QCOMPARE(rect(divider).x(), head.right());
-    QCOMPARE(rect(divider).right(), first.x());
-    QCOMPARE(rect(divider).height(), head.height());
-    QQuickItem *between = item("menuSeparator")->parentItem();
-    QCOMPARE(item("menuSeparator")->rotation(), qreal(0));
-    QCOMPARE(rect(between).x(), first.x());
-    QCOMPARE(rect(between).width(), block);
-    QVERIFY(rect(between).y() >= rect(item("readerMenuButton")).bottom());
-    QVERIFY(rect(between).bottom() <= places.y());
-
-    // Grip on edge, shade beside sheet, press there closes.
+    // Grip upright, centred on sheet's left edge line.
     auto *handle = item("menuDragHandle");
-    QCOMPARE(rect(handle).center().x(), page->width() / 2);
-    auto *tap = qobject_cast<QQuickItem *>(
-        findObjects(item("menuShade"), QStringLiteral("sheetShadeTap")).first());
+    const QRectF grip = rect(handle);
+    QVERIFY(handle->isVisible());
+    QVERIFY(grip.height() > grip.width());
+    QCOMPARE(grip.center().x(), sheet.x() + theme("_lineWidth") / 2);
+    QCOMPARE(grip.center().y(), sheet.center().y());
+    auto *sideEdge = part(menu, "sheetSideEdge");
+    QVERIFY(sideEdge->isVisible());
+    QCOMPARE(rect(sideEdge).x(), sheet.x());
+    QCOMPARE(rect(sideEdge).height(), sheet.height());
+
+    // Shade beside sheet: press there closes.
+    auto *tap = part(item("menuShade"), "sheetShadeTap");
     QCOMPARE(tap->height(), menu->height());
+    QCOMPARE(tap->width(), menu->width());
     evaluate(tap, QStringLiteral("pressedOutside(10, 10)"));
     QVERIFY(!menu->property("open").toBool());
+    tapBar(QStringLiteral("menu"));
+    QTRY_COMPARE(item("menuShade")->opacity(), 1.0);
+    const QPoint beside = page->mapToScene(QPointF(sheet.x() / 2, sheet.center().y())).toPoint();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QVERIFY(!menu->property("open").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, beside);
 
     tapBar(QStringLiteral("menu"));
     click(item("menuHeaderDetails"));
@@ -4512,18 +4624,36 @@ void tst_qmlload::menuSheetInLandscape()
 
     tapBar(QStringLiteral("menu"));
     drawn(window);
-    turnedSheetStaysPut(window, page, menu, item("menuSheet"), item("shareMenuButton"));
+    QCOMPARE(rect(menu), sheet);
+    sideSheetStaysPut(window, page, menu, item("menuSheet"), item("shareMenuButton"));
     if (QTest::currentTestFailed()) {
         return;
     }
 
+    // Turned while open: stays open, as the new orientation's sheet.
     turnDevice(portrait);
+    QVERIFY(page->height() > page->width());
     tapBar(QStringLiteral("menu"));
     drawn(window);
-    QVERIFY(page->height() > page->width());
-    QVERIFY(!header->property("wide").toBool());
+    QCOMPARE(menu->y(), page->height() - menu->height());
+    turnDevice(landscape);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    drawn(window);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(rect(menu), sheet);
+    QVERIFY(handle->isVisible());
+    QCOMPARE(rect(handle), grip);
+    turnDevice(portrait);
+    drawn(window);
+    QVERIFY(menu->property("open").toBool());
+
+    // Upright: bottom sheet, head over two rows of icons over names.
+    QCOMPARE(menu->property("dock").toInt(), evaluate(menu, QStringLiteral("Dock.Bottom")).toInt());
+    QCOMPARE(menu->x(), qreal(0));
+    QCOMPARE(menu->width(), page->width());
+    QCOMPARE(menu->y(), page->height() - menu->height());
     QCOMPARE(header->width(), menu->width());
-    QCOMPARE(header->height(), evaluate(menu, QStringLiteral("Theme.itemSizeSmall")).toReal());
+    QCOMPARE(header->height(), theme("itemSizeSmall"));
     QVERIFY(item("menuHeaderGap")->isVisible());
     QVERIFY(!item("menuHeadDivider")->parentItem()->isVisible());
     QCOMPARE(item("menuSeparator")->rotation(), qreal(0));
@@ -4533,13 +4663,16 @@ void tst_qmlload::menuSheetInLandscape()
     QCOMPARE(item("settingsMenuButton")->width(), menu->width() / 4);
     QVERIFY(rect(item("bookmarksMenuButton")).y() > rect(item("readerMenuButton")).bottom());
     QCOMPARE(rect(item("bookmarksMenuButton")).x(), qreal(0));
-    QCOMPARE(findObjects(item("findMenuButton"), QStringLiteral("menuButtonLabel"))
-                 .first()
+    QQuickItem *findSlot = part(item("findMenuButton"), "menuButtonIconSlot");
+    QVERIFY(rect(findSlot).bottom() < rect(part(item("findMenuButton"), "menuButtonLabel")).y());
+    QCOMPARE(part(item("findMenuButton"), "menuButtonLabel")
                  ->property("font")
                  .value<QFont>()
                  .pixelSize(),
-             int(evaluate(menu, QStringLiteral("Theme.fontSizeTiny")).toReal()));
-    QCOMPARE(menu->y(), page->height() - menu->height());
+             int(theme("fontSizeTiny")));
+    QCOMPARE(rect(handle).center().x(), page->width() / 2);
+    QVERIFY(rect(handle).width() > rect(handle).height());
+    evaluate(menu, QStringLiteral("hide()"));
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to
@@ -5730,10 +5863,10 @@ void tst_qmlload::linkPreview()
     QCOMPARE(errors.all(), QString());
 }
 
-// Landscape link sheet as the menu: link head at left where the menu's head is, then portrait's
-// rows beside it in the menu's block, preview toggle row over the link's actions, which sit in the
-// menu's place cells. Preview leaves the sheet: floats above it over the dimmed page, centred and
-// page shaped, and a tap on it still opens the link. Back in portrait, preview in the sheet again.
+// Landscape link sheet: link head at left, then portrait's rows beside it in the sheet's block,
+// preview toggle row over the link's actions, which sit in quarters of the block. Preview leaves
+// the sheet: floats above it over the dimmed page, centred and page shaped, and a tap on it still
+// opens the link. Back in portrait, preview in the sheet again.
 void tst_qmlload::linkSheetInLandscape()
 {
     const int portrait = 1; // Silica's Orientation values.
@@ -5748,24 +5881,19 @@ void tst_qmlload::linkSheetInLandscape()
     };
     auto *page = item("browserPage");
     auto *menu = item("linkMenu");
-    auto *browserMenu = item("browserMenu");
     QObject *view = currentWebView();
     const auto rect = [page](QQuickItem *of) { return onPage(page, of); };
     const QString ridge = QStringLiteral("https://trails.example/walks/ridge-loop");
     QVERIFY(m_core->settings()->linkPreview());
 
     turnDevice(landscape);
-    // Menu's head and place cells, for the link's to line up with.
-    tapBar(QStringLiteral("menu"));
-    drawn(window);
-    const QRectF menuHead = rect(item("menuHeader"));
+    // Sheet's head and cells: rows' block at right, a quarter each.
+    const qreal block = evaluate(menu, QStringLiteral("cells.block")).toReal();
+    const QRectF menuHead(0, 0, evaluate(menu, QStringLiteral("cells.headWidth")).toReal(), 0);
     QList<QRectF> cells;
-    for (const char *name : {"bookmarksMenuButton", "historyMenuButton", "downloadsMenuButton",
-                             "settingsMenuButton"}) {
-        cells << rect(item(name));
+    for (int at = 0; at < 4; ++at) {
+        cells << QRectF(page->width() - block + at * block / 4, 0, block / 4, 0);
     }
-    evaluate(browserMenu, QStringLiteral("hide()"));
-    const qreal block = page->width() - cells.first().x();
     // Same cells' x and width, any row.
     const auto inCell = [&cells, &rect](QQuickItem *button, int at) {
         const QRectF cell = rect(button);
@@ -11445,9 +11573,10 @@ void tst_qmlload::landscapeTutorialBar()
     turnDevice(Portrait);
 }
 
-// Turned menu sketch as menu: page head at left (over a quarter), upright separator, then the two
-// rows beside it, page's five in fifths of the block, places' four in quarters under them.
-// Upright: head over the two rows again.
+// Turned menu sketch as menu: side sheet at right, standing on bar, as wide and tall as the
+// menu's; head across its top, page's five down the left column, places' four down the right,
+// icon left of each name. Tap hint over the page left of it, words and dots above it, also on a
+// page shaped as the phone's. Upright: bottom sheet, head over two rows again.
 void tst_qmlload::landscapeTutorialMenu()
 {
     evaluate(m_window.data(), QStringLiteral("showTutorial()"));
@@ -11458,11 +11587,19 @@ void tst_qmlload::landscapeTutorialMenu()
     page->setProperty("step", QStringLiteral("menuOpen"));
     QObject *menu = find(QStringLiteral("tutorialMenu"));
     QObject *sheet = find(QStringLiteral("tutorialMenuSheet"));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
     QObject *header = findObjects(menu, QStringLiteral("menuHeader")).first();
     QObject *pageRow = find(QStringLiteral("tutorialMenuPageRow"));
     QObject *placeRow = find(QStringLiteral("tutorialMenuPlaceRow"));
+    QObject *browserMenu = find(QStringLiteral("browserMenu"));
+    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
+    QObject *label = find(QStringLiteral("tutorialHintLabel"));
+    QObject *progress = find(QStringLiteral("tutorialProgress"));
     const auto height = [page]() { return page->property("height").toReal(); };
     const auto width = [page]() { return page->property("width").toReal(); };
+    const auto theme = [this, menu](const char *name) {
+        return evaluate(menu, QStringLiteral("Theme.") + QLatin1String(name)).toReal();
+    };
     const auto iconRows = [&]() {
         QSet<qreal> rows;
         for (QObject *icon : findObjects(menu, QStringLiteral("menuButtonIcon"))) {
@@ -11473,45 +11610,77 @@ void tst_qmlload::landscapeTutorialMenu()
     QTRY_COMPARE(iconRows(), 2);
 
     turnDevice(Landscape);
-    QTRY_VERIFY(boxIn(pageRow, sheet).left() > boxIn(header, sheet).right());
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    QTRY_VERIFY(boxIn(pageRow, sheet).top() > boxIn(header, sheet).bottom());
     QVERIFY(menu->property("visible").toBool());
     QVERIFY(menu->property("wide").toBool());
-    const QRectF band = boxIn(sheet, page);
-    QCOMPARE(band.bottom(), height());
-    QVERIFY(band.height() < height() / 3);
+    const QRectF side = boxIn(sheet, page);
+    QCOMPARE(side.right(), width());
+    QCOMPARE(side.bottom(), boxIn(bar, page).top());
+    QVERIFY(side.top() > 0);
+    // As the menu's: same rule, same rows.
+    QCOMPARE(find(QStringLiteral("browserPage"))->property("width").toReal(), width());
+    QCOMPARE(side.width(), browserMenu->property("width").toReal());
+    const qreal column = std::floor((width() * 0.42 - theme("paddingLarge")) / 2);
+    QCOMPARE(side.width(), 2 * column + theme("paddingLarge"));
+    QCOMPARE(side.height(), browserMenu->property("height").toReal());
     const QRectF head = boxIn(header, sheet);
     QCOMPARE(head.left(), qreal(0));
-    QCOMPARE(head.width(), evaluate(menu, QStringLiteral("cells.headWidth")).toReal());
-    QVERIFY(head.width() > width() / 4);
-    QVERIFY(head.width() < width() / 3);
-    const qreal block = evaluate(menu, QStringLiteral("cells.block")).toReal();
+    QCOMPARE(head.width(), side.width());
     const QRectF actions = boxIn(pageRow, sheet);
     const QRectF places = boxIn(placeRow, sheet);
-    QCOMPARE(actions.left(), head.right() + evaluate(menu, QStringLiteral("cells.gap")).toReal());
-    QCOMPARE(places.left(), actions.left());
-    QCOMPARE(actions.width(), block);
-    QCOMPARE(places.width(), block);
-    QCOMPARE(places.right(), width());
-    QVERIFY(places.top() > actions.bottom());
-    // Head spans both rows.
-    QCOMPARE(head.top(), actions.top());
-    QCOMPARE(head.bottom(), places.bottom());
+    const qreal row = theme("itemSizeSmall");
+    QCOMPARE(actions, QRectF(0, actions.top(), column, 5 * row));
+    QCOMPARE(places, QRectF(column + theme("paddingLarge"), actions.top(), column, 4 * row));
+    QCOMPARE(actions.bottom(), side.height() - theme("paddingMedium"));
+    // Five rows of icons, two columns; each name right of its icon, in small type.
     QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
-    QCOMPARE(iconRows(), 2);
-    // Labels as wide as their cells.
-    for (QObject *label : findObjects(pageRow, QStringLiteral("menuButtonLabel"))) {
-        QCOMPARE(label->property("width").toReal(), block / 5);
+    QCOMPARE(iconRows(), 5);
+    for (QObject *found : findObjects(menu, QStringLiteral("menuButtonLabel"))) {
+        auto *caption = qobject_cast<QQuickItem *>(found);
+        QQuickItem *entry = caption->parentItem()->parentItem();
+        QObject *slot = findObjects(entry, QStringLiteral("menuButtonIconSlot")).first();
+        QVERIFY(boxIn(slot, page).right() < boxIn(caption, page).left());
+        QCOMPARE(boxIn(slot, page).center().y(), boxIn(entry, page).center().y());
+        QCOMPARE(entry->height(), row);
+        QCOMPARE(caption->property("font").value<QFont>().pixelSize(), int(theme("fontSizeSmall")));
     }
-    for (QObject *label : findObjects(placeRow, QStringLiteral("menuButtonLabel"))) {
-        QCOMPARE(label->property("width").toReal(), block / 4);
-    }
-    // Tap hint over page above band.
-    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
-    QTRY_VERIFY(boxIn(tapHint, page).center().y() < band.top());
+
+    // Hints clear of sheet: tap over page left of it, words and dots above it.
+    const auto clear = [&]() {
+        const QRectF sheetBox = boxIn(sheet, page);
+        const QPointF tap = boxIn(tapHint, page).center();
+        QVERIFY(tapHint->property("running").toBool());
+        QVERIFY2(tap.x() < sheetBox.left() - theme("itemSizeExtraLarge"),
+                 qPrintable(QString::number(tap.x())));
+        QCOMPARE(tap.x(), sheetBox.left() / 2);
+        QVERIFY(tap.y() < boxIn(bar, page).top());
+        QVERIFY(boxIn(label, page).bottom() < sheetBox.top());
+        QVERIFY(boxIn(progress, page).bottom() < sheetBox.top());
+    };
+    QTRY_VERIFY(boxIn(tapHint, page).center().x() < side.left());
+    clear();
+    // Phone's page: 2:1, 72 extra small type sizes wide.
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const QSizeF full(window->width(), window->height());
+    const qreal unit = theme("fontSizeExtraSmall");
+    window->setHeight(full.height() - width() + 72 * unit);
+    window->setWidth(36 * unit);
+    settle();
+    QCOMPARE(width(), 72 * unit);
+    QCOMPARE(height(), 36 * unit);
+    // Hints placed anew, as on turning.
+    evaluate(page, QStringLiteral("updateHints()"));
+    clear();
+    window->setWidth(full.width());
+    window->setHeight(full.height());
+    settle();
 
     turnDevice(Portrait);
     QTRY_COMPARE(boxIn(header, sheet).width(), width());
     QVERIFY(!menu->property("wide").toBool());
+    QCOMPARE(boxIn(sheet, page).bottom(), height());
+    QCOMPARE(boxIn(sheet, page).width(), width());
     QVERIFY(boxIn(placeRow, sheet).top() > boxIn(pageRow, sheet).bottom());
     QCOMPARE(iconRows(), 2);
 }

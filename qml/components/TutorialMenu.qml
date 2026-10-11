@@ -7,16 +7,17 @@ Item {
     id: menu
 
     property bool open: false
+    // Bar's top: side sheet stands on it.
+    property real barTop: height
     // Site's own title: not translated.
     readonly property string pageTitle: "Sailfish OS"
     readonly property real sheetHeight: sheet.height
-    // Landscape: head at left, portrait's rows beside it, as menu.
-    readonly property SheetCells cells: SheetCells {
-        width: menu.width
-        height: menu.height
-    }
-    readonly property bool wide: cells.wide
-    readonly property real rowsWidth: wide ? cells.block : width
+    readonly property real sheetWidth: sheet.width
+    // Landscape: side sheet above bar's right end, as menu.
+    readonly property bool wide: width > height
+    readonly property real gap: Theme.paddingLarge
+    readonly property real column: Math.floor((width * 0.42 - gap) / 2)
+    readonly property real labelSize: wide ? Theme.fontSizeSmall : Theme.fontSizeTiny
 
     signal dismissed()
 
@@ -28,7 +29,7 @@ Item {
             left: parent.left
             right: parent.right
             top: parent.top
-            bottom: sheet.top
+            bottom: menu.wide ? parent.bottom : sheet.top
         }
         onClicked: menu.dismissed()
 
@@ -43,12 +44,17 @@ Item {
         id: sheet
 
         objectName: "tutorialMenuSheet"
-        anchors.bottom: parent.bottom
-        width: parent.width
-        height: content.height
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            bottomMargin: menu.wide ? parent.height - menu.barTop : 0
+        }
+        width: menu.wide ? 2 * menu.column + menu.gap : parent.width
+        height: menu.wide ? Math.min(content.height, menu.barTop) : content.height
 
         SheetBackground {
             anchors.fill: parent
+            side: menu.wide
         }
 
         MouseArea {
@@ -57,24 +63,21 @@ Item {
 
         SheetGrip {
             edgeOf: sheet
+            upright: menu.wide
         }
 
-        // Portrait: one column, head over rows. Landscape: head beside rows.
-        Grid {
+        // As menu's: head over rows; side sheet's rows in two columns under a line.
+        Column {
             id: content
 
             width: parent.width
-            columns: menu.wide ? 3 : 1
-            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             MenuPageHeader {
                 id: header
 
-                width: menu.wide ? menu.cells.headWidth : parent.width
-                height: menu.wide ? rows.height : Theme.itemSizeSmall
-                wide: menu.wide
+                width: parent.width
                 url: "https://sailfishos.org"
                 title: menu.pageTitle
             }
@@ -86,25 +89,21 @@ Item {
             }
 
             MenuSeparator {
-                width: menu.cells.gap
-                height: rows.height
+                width: parent.width
                 visible: menu.wide
-                vertical: true
             }
 
-            Column {
-                id: rows
-
-                width: menu.rowsWidth
+            Grid {
+                columns: menu.wide ? 3 : 1
 
                 Grid {
                     id: pageRow
 
-                    readonly property real cell: menu.rowsWidth / 5
+                    readonly property real cell: menu.wide ? menu.column : menu.width / 5
 
                     objectName: "tutorialMenuPageRow"
-                    width: 5 * cell
-                    columns: 5
+                    width: menu.wide ? cell : 5 * cell
+                    columns: menu.wide ? 1 : 5
 
                     Repeater {
                         model: [
@@ -117,7 +116,8 @@ Item {
 
                         MenuButton {
                             width: pageRow.cell
-                            labelSize: menu.wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
+                            labelSize: menu.labelSize
+                            across: menu.wide
                             round: true
                             enabled: false
                             opacity: 1.0
@@ -128,17 +128,19 @@ Item {
                 }
 
                 MenuSeparator {
-                    width: parent.width
+                    width: menu.wide ? menu.gap : menu.width
+                    height: menu.wide ? pageRow.height : Theme.paddingLarge
+                    vertical: menu.wide
                 }
 
                 Grid {
                     id: placeRow
 
-                    readonly property real cell: menu.rowsWidth / 4
+                    readonly property real cell: menu.wide ? menu.column : menu.width / 4
 
                     objectName: "tutorialMenuPlaceRow"
-                    width: 4 * cell
-                    columns: 4
+                    width: menu.wide ? cell : 4 * cell
+                    columns: menu.wide ? 1 : 4
 
                     Repeater {
                         model: [
@@ -150,7 +152,8 @@ Item {
 
                         MenuButton {
                             width: placeRow.cell
-                            labelSize: menu.wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
+                            labelSize: menu.labelSize
+                            across: menu.wide
                             enabled: false
                             opacity: 1.0
                             iconSource: "image://theme/" + modelData.icon

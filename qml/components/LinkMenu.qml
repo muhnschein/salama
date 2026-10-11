@@ -38,8 +38,8 @@ DockedPanel {
 
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
-    // Landscape: as the menu, head at left, portrait's rows beside it in the cells of the
-    // menu's places; preview floats above sheet.
+    // Landscape: head at left, portrait's rows beside it, actions in quarters; preview floats
+    // above sheet.
     readonly property SheetCells cells: SheetCells {
         width: menu.width
         height: menu.parent ? menu.parent.height : 0
@@ -238,7 +238,7 @@ DockedPanel {
             }
         }
 
-        // As the menu's: portrait one column, landscape head beside rows.
+        // Portrait: one column, head over rows. Landscape: head beside rows.
         Grid {
             id: content
 

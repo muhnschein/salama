@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Own pull: DockedPanel drag ignores pulls begun on icons, so icons sit in a SilicaFlickable
-// whose overscroll drives sheet.
+// whose overscroll drives sheet. Landscape: side sheet above bar, rows of icon and label.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.Share 1.0
@@ -12,6 +12,8 @@ DockedPanel {
     id: menu
 
     property Item view: null
+    // Bar's top on page: side sheet stands on it.
+    property real barTop: parent ? parent.height : 0
     readonly property bool hasPage: TabModel.activeUrl.length > 0
     readonly property QtObject reader: view !== null && view.reader ? view.reader : null
     // Never for reader view: no connection behind it.
@@ -25,24 +27,23 @@ DockedPanel {
     }
     // Overscroll is half finger travel (rubber band); x2 so sheet follows finger.
     readonly property real pull: 2 * sheet.overscroll
-    readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
-    // Landscape: head at left, portrait's rows beside it.
-    readonly property SheetCells cells: SheetCells {
-        width: menu.width
-        height: menu.parent ? menu.parent.height : 0
-    }
-    readonly property bool wide: cells.wide
-    readonly property real rowsWidth: wide ? cells.block : width
-    readonly property real pageCell: rowsWidth / 5
-    readonly property real placeCell: rowsWidth / 4
-    readonly property real labelSize: wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
+    readonly property real closeDistance: Math.min((side ? width : height) / 3,
+                                                   Theme.itemSizeLarge)
+    readonly property bool side: !!parent && parent.width > parent.height
+    // Side sheet: two columns in 42% of page, so page still reads beside it and every
+    // translation's names fit in small type on a 2:1 phone. Whole pixels.
+    readonly property real column: Math.floor(((parent ? parent.width : 0) * 0.42 - gap) / 2)
+    readonly property real gap: Theme.paddingLarge
+    readonly property real pageCell: side ? column : width / 5
+    readonly property real placeCell: side ? column : width / 4
+    readonly property real labelSize: side ? Theme.fontSizeSmall : Theme.fontSizeTiny
 
     signal findRequested()
 
     objectName: "browserMenu"
-    width: parent.width
-    height: content.height
-    dock: Dock.Bottom
+    width: side ? 2 * column + gap : parent.width
+    height: side ? Math.min(content.height, barTop) : content.height
+    dock: side ? Dock.Right : Dock.Bottom
     // Shade sits one under: over page, so taps beside sheet reach it.
     z: 2
 
@@ -61,12 +62,29 @@ DockedPanel {
                        })
     }
 
+    // DockedPanel leaves side sheet's y alone but zeroes it on turning, before this runs.
+    function stand() {
+        if (side) {
+            y = barTop - height
+        }
+    }
+
     // Not once closing: DockedPanel moves it then.
     onPullChanged: {
-        if (open) {
+        if (!open) {
+            return
+        }
+        if (side) {
+            x = parent.width - width + pull
+        } else {
             y = parent.height - height + pull
         }
     }
+    onDockChanged: stand()
+    onHeightChanged: stand()
+    onBarTopChanged: stand()
+    onOpenChanged: stand()
+    Component.onCompleted: stand()
 
     Connections {
         target: TabModel
@@ -87,6 +105,7 @@ DockedPanel {
 
     SheetBackground {
         anchors.fill: parent
+        side: menu.side
     }
 
     // Over nav bar: sheet already hidden by then.
@@ -109,6 +128,7 @@ DockedPanel {
     SheetGrip {
         objectName: "menuDragHandle"
         edgeOf: menu
+        upright: menu.side
     }
 
     SheetFlickable {
@@ -117,6 +137,7 @@ DockedPanel {
         objectName: "menuSheet"
         width: parent.width
         height: parent.height
+        across: menu.side
         contentHeight: content.height
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
@@ -124,22 +145,18 @@ DockedPanel {
             }
         }
 
-        // Portrait: one column, head over rows. Landscape: head beside rows.
-        Grid {
+        // Head over rows. Side sheet: a line under head, then page's and browser's columns.
+        Column {
             id: content
 
             width: parent.width
-            columns: menu.wide ? 3 : 1
-            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             MenuPageHeader {
                 id: header
 
-                width: menu.wide ? menu.cells.headWidth : parent.width
-                height: menu.wide ? rows.height : Theme.itemSizeSmall
-                wide: menu.wide
+                width: parent.width
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
@@ -157,33 +174,32 @@ DockedPanel {
                 objectName: "menuHeaderGap"
                 width: parent.width
                 height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
-                visible: !menu.wide
+                visible: !menu.side
             }
 
             MenuSeparator {
-                width: menu.cells.gap
-                height: rows.height
-                visible: menu.wide
-                vertical: true
+                width: parent.width
+                visible: menu.side
                 lineName: "menuHeadDivider"
             }
 
-            Column {
+            Grid {
                 id: rows
 
-                width: menu.rowsWidth
+                columns: menu.side ? 3 : 1
 
                 Grid {
                     id: pageRow
 
                     objectName: "menuPageRow"
-                    width: 5 * menu.pageCell
-                    columns: 5
+                    width: menu.side ? menu.column : 5 * menu.pageCell
+                    columns: menu.side ? 1 : 5
 
                     MenuButton {
                         objectName: "findMenuButton"
                         width: menu.pageCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         round: true
                         enabled: menu.hasPage && menu.view !== null
                         iconSource: "image://theme/icon-m-search-on-page"
@@ -198,6 +214,7 @@ DockedPanel {
                         objectName: "bookmarkMenuButton"
                         width: menu.pageCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         round: true
                         enabled: menu.hasPage
                         checked: BookmarkModel.activeUrlBookmarked
@@ -219,6 +236,7 @@ DockedPanel {
                         objectName: "shareMenuButton"
                         width: menu.pageCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         round: true
                         enabled: menu.hasPage
                         iconSource: "image://theme/icon-m-share"
@@ -234,6 +252,7 @@ DockedPanel {
                         objectName: "desktopMenuButton"
                         width: menu.pageCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         round: true
                         enabled: menu.hasPage && menu.view !== null
                         checked: menu.view !== null && menu.view.desktopMode === true
@@ -249,6 +268,7 @@ DockedPanel {
                         objectName: "readerMenuButton"
                         width: menu.pageCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         round: true
                         enabled: menu.reader !== null && (menu.reader.readerable || menu.reader.active)
                         checked: menu.reader !== null && menu.reader.active
@@ -261,20 +281,24 @@ DockedPanel {
                     }
                 }
 
+                // Side sheet: upright, between the columns.
                 MenuSeparator {
-                    width: parent.width
+                    width: menu.side ? menu.gap : menu.width
+                    height: menu.side ? pageRow.height : Theme.paddingLarge
+                    vertical: menu.side
                     lineName: "menuSeparator"
                 }
 
                 Grid {
                     objectName: "menuBrowserRow"
-                    width: 4 * menu.placeCell
-                    columns: 4
+                    width: menu.side ? menu.column : 4 * menu.placeCell
+                    columns: menu.side ? 1 : 4
 
                     MenuButton {
                         objectName: "bookmarksMenuButton"
                         width: menu.placeCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         iconSource: "image://theme/icon-m-favorite-selected"
                         text: qsTr("Bookmarks")
                         onClicked: menu.openPage("BookmarksPage.qml")
@@ -284,6 +308,7 @@ DockedPanel {
                         objectName: "historyMenuButton"
                         width: menu.placeCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         iconSource: "image://theme/icon-m-history"
                         text: qsTr("History")
                         onClicked: menu.openPage("HistoryPage.qml")
@@ -293,6 +318,7 @@ DockedPanel {
                         objectName: "downloadsMenuButton"
                         width: menu.placeCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         busy: DownloadModel.runningCount > 0
                         progress: DownloadModel.runningProgress / 100
                         iconSource: "image://theme/icon-m-downloads"
@@ -304,6 +330,7 @@ DockedPanel {
                         objectName: "settingsMenuButton"
                         width: menu.placeCell
                         labelSize: menu.labelSize
+                        across: menu.side
                         iconSource: "image://theme/icon-m-setting"
                         text: qsTr("Settings")
                         onClicked: menu.openPage("SettingsPage.qml")

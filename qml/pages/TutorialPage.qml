@@ -263,6 +263,7 @@ Page {
 
         objectName: "tutorialMenu"
         anchors.fill: parent
+        barTop: bar.y
         open: tutorialPage.step === "menuOpen"
         onDismissed: tutorialPage.next()
     }

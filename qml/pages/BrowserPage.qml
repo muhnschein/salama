@@ -425,6 +425,7 @@ WebViewPage {
         id: browserMenu
 
         view: browserPage.currentView
+        barTop: navigationBar.y
         onFindRequested: findBar.open()
     }
 
