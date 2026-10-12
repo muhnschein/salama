@@ -296,6 +296,12 @@ private slots:
     void landscapeOmnibar();
     void sideSheetLeavesWithItsPage();
     void cutoutStripInLandscape();
+    void frameHoldOverBarResize();
+    void frameHoldOverTurn();
+    void frameHoldWithLateFrames();
+    void previewFillsItsCell();
+    void previewStandsInForUndrawnPage();
+    void pictureWaitsForFirstPaint();
 
 private:
     bool loadWindow();
@@ -1715,28 +1721,33 @@ void tst_qmlload::tabGrid()
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
 
-    QTRY_VERIFY(!m_core->tabs()
-                     ->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::Thumbnail))
-                     .toString()
-                     .isEmpty());
-    QVERIFY(!findObjects(previews.at(1), QStringLiteral("tabPreviewPlaceholder"))
-                 .first()
-                 ->property("visible")
-                 .toBool());
-    QVERIFY(findObjects(previews.at(0), QStringLiteral("tabPreviewPlaceholder"))
-                .first()
-                ->property("visible")
-                .toBool());
+    // Both pictured: front one as grid opened, first one as it was left for new tab.
+    for (int row : {0, 1}) {
+        QTRY_VERIFY(!m_core->tabs()
+                         ->data(m_core->tabs()->index(row, 0), roleId(TabModel::Role::Thumbnail))
+                         .toString()
+                         .isEmpty());
+        for (const char *standIn : {"tabPreviewPlaceholder", "tabPreviewSite"}) {
+            QVERIFY(!findObjects(previews.at(row), QLatin1String(standIn))
+                         .first()
+                         ->property("visible")
+                         .toBool());
+        }
+    }
 
+    // Left from grid: pictured as grid opened already.
+    QObject *secondView = currentWebView();
+    const int secondGrabs = secondView->property("grabCount").toInt();
     QMetaObject::invokeMethod(previews.at(0), "tapped");
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
     QVERIFY(!page->property("tabsOpen").toBool());
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), QLatin1String(FirstPage));
+    QCOMPARE(secondView->property("grabCount").toInt(), secondGrabs);
 
     QObject *homeView = currentWebView();
-    QCOMPARE(homeView->property("grabCount").toInt(), 0);
-    pullUpToTabs();
     QCOMPARE(homeView->property("grabCount").toInt(), 1);
+    pullUpToTabs();
+    QCOMPARE(homeView->property("grabCount").toInt(), 2);
 
     previews = findAll(QStringLiteral("tabPreview"));
     click(findObjects(previews.at(1), QStringLiteral("closeTabButton")).first());
@@ -2573,6 +2584,9 @@ void tst_qmlload::landscapeTabSearch()
     tabs->groupModel()->activate(1);
     const int second = tabs->newTab(QStringLiteral("https://two.example/"));
     tabs->groupModel()->activate(0);
+    // Second tab pictured as it was left: let that land before giving it its own picture.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
     const QString picture = m_dir->path() + QStringLiteral("/office.png");
@@ -12368,6 +12382,395 @@ void tst_qmlload::cutoutStripInLandscape()
         }
     }
     turnDevice(Portrait);
+}
+
+// Device: page stretched a moment as bar slimmed at rest: engine draws its last frame at view's
+// new size until it draws one. Last frame stays unscaled over page colour until engine reports
+// page's new shape, a finger moves page, or patience runs out.
+void tst_qmlload::frameHoldOverBarResize()
+{
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *image = find(QStringLiteral("frameHoldImage"));
+    QObject *fill = find(QStringLiteral("frameHoldFill"));
+    QObject *webView = currentWebView();
+    const auto holding = [hold]() { return hold->property("holding").toBool(); };
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    const auto viewSize = [webView]() {
+        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
+    };
+    // Engine's visible part at half zoom, scrolled down by top.
+    const auto reportArea = [webView](const QSizeF &size, qreal top) {
+        webView->setProperty("contentRect", QRectF(0, top, size.width() / 2, size.height() / 2));
+    };
+    const auto barAtRest = [bar, hold]() {
+        QTRY_VERIFY(!bar->property("resizing").toBool());
+        QTRY_VERIFY(!hold->property("holding").toBool());
+    };
+    barAtRest();
+    reportArea(viewSize(), 0);
+
+    // Never drawn: nothing to stretch, no frame taken.
+    webView->setProperty("painted", false);
+    int taken = grabs();
+    QSizeF before = viewSize();
+    webView->setProperty("chrome", false);
+    QVERIFY(viewSize() != before);
+    QCOMPARE(grabs(), taken);
+    QVERIFY(!holding());
+    webView->setProperty("chrome", true);
+    barAtRest();
+
+    // Drawn: frame taken before view resizes, shown at its own size over page colour.
+    webView->setProperty("painted", true);
+    reportArea(viewSize(), 0);
+    taken = grabs();
+    before = viewSize();
+    webView->setProperty("chrome", false);
+    QVERIFY(viewSize() != before);
+    QCOMPARE(grabs(), taken + 1);
+    QCOMPARE(webView->property("lastGrabSize").toSizeF(), before);
+    QVERIFY(holding());
+    QVERIFY(hold->property("visible").toBool());
+    QCOMPARE(hold->property("opacity").toReal(), 1.0);
+    QCOMPARE(image->property("source").toUrl(),
+             QUrl(QStringLiteral("image://grab/%1").arg(taken + 1)));
+    QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()), before);
+    QCOMPARE(fill->property("color").value<QColor>(),
+             webView->property("backgroundColor").value<QColor>());
+    QVERIFY(hold->property("clip").toBool());
+
+    // Preview not taken from stretched frame.
+    evaluate(webView, QStringLiteral("captureThumbnail()"));
+    QCOMPARE(grabs(), taken + 1);
+
+    // Scroll at old shape: engine not there yet.
+    reportArea(before, 40);
+    QTest::qWait(300);
+    QVERIFY(holding());
+
+    // New shape: let go once engine had time to draw it; frame fades and goes.
+    reportArea(viewSize(), 40);
+    QVERIFY(holding());
+    QTRY_VERIFY(!holding());
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    QCOMPARE(image->property("source").toUrl(), QUrl());
+
+    // Finger on page lets go at once.
+    webView->setProperty("chrome", true);
+    QTRY_VERIFY(holding());
+    webView->setProperty("dragging", true);
+    QVERIFY(!holding());
+    webView->setProperty("dragging", false);
+    barAtRest();
+
+    // New document: frame isn't of it.
+    webView->setProperty("chrome", false);
+    QVERIFY(holding());
+    webView->setProperty("painted", false);
+    QVERIFY(!holding());
+    webView->setProperty("painted", true);
+    webView->setProperty("chrome", true);
+    barAtRest();
+
+    // Engine silent: let go after patience.
+    webView->setProperty("chrome", false);
+    QVERIFY(holding());
+    QTest::qWait(500);
+    QVERIFY(holding());
+    QTRY_VERIFY_WITH_TIMEOUT(!holding(), 3000);
+    webView->setProperty("chrome", true);
+    barAtRest();
+    webView->setProperty("painted", false);
+}
+
+// Device: page stretched for a second or two after a turn, much worse than for bar. Frame taken
+// as Silica starts fading page out, still upright; held over turned view until engine reports
+// page turned. No turn after all: frame dropped, later resize not held with it.
+void tst_qmlload::frameHoldOverTurn()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *image = find(QStringLiteral("frameHoldImage"));
+    QObject *webView = currentWebView();
+    const auto holding = [hold]() { return hold->property("holding").toBool(); };
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    const auto viewSize = [webView]() {
+        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
+    };
+    const auto reportArea = [webView](const QSizeF &size) {
+        webView->setProperty("contentRect", QRectF(0, 0, size.width() / 2, size.height() / 2));
+    };
+    webView->setProperty("painted", true);
+
+    for (int orientation : {Landscape, Portrait}) {
+        QTRY_VERIFY(!holding());
+        reportArea(viewSize());
+        const QSizeF before = viewSize();
+        const int taken = grabs();
+        page->setProperty("orientationTransitionRunning", true);
+        QCOMPARE(grabs(), taken + 1);
+        QVERIFY(!holding());
+        turnDevice(orientation);
+        QVERIFY(viewSize() != before);
+        QVERIFY(holding());
+        QCOMPARE(image->property("source").toUrl(),
+                 QUrl(QStringLiteral("image://grab/%1").arg(taken + 1)));
+        QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()),
+                 before);
+        page->setProperty("orientationTransitionRunning", false);
+        // Bar's own change in turn: held already, no frame of turned view.
+        QTRY_VERIFY(!find(QStringLiteral("navigationBar"))->property("resizing").toBool());
+        QCOMPARE(grabs(), taken + 1);
+        QVERIFY(holding());
+        reportArea(viewSize());
+        QTRY_VERIFY(!holding());
+    }
+
+    // Transition but no turn: frame dropped, not held over some later resize.
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    page->setProperty("orientationTransitionRunning", true);
+    page->setProperty("orientationTransitionRunning", false);
+    QVERIFY(hold->property("armed").toBool());
+    QCOMPARE(image->property("source").toUrl(),
+             QUrl(QStringLiteral("image://grab/%1").arg(grabs())));
+    QTRY_VERIFY_WITH_TIMEOUT(!hold->property("armed").toBool(), 3000);
+    QCOMPARE(image->property("source").toUrl(), QUrl());
+    QVERIFY(!holding());
+    webView->setProperty("painted", false);
+}
+
+// Device: previews letterboxed (taken turned). Picture fills its cell whatever shape it was
+// taken at, cut at foot and right so page's head and start stay.
+void tst_qmlload::previewFillsItsCell()
+{
+    TabModel *tabs = m_core->tabs();
+    QImage wide(400, 100, QImage::Format_ARGB32_Premultiplied);
+    wide.fill(Qt::red);
+    QImage tall(100, 400, QImage::Format_ARGB32_Premultiplied);
+    tall.fill(Qt::blue);
+    for (const QImage &picture : {wide, tall}) {
+        const int tabId = tabs->newTabBehind(QStringLiteral("https://shapes.example/"), QString());
+        QVERIFY(tabs->storeThumbnail(tabId, QVariant::fromValue(picture)));
+    }
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
+    pullUpToTabs();
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 3);
+    for (int row : {1, 2}) {
+        auto *image = qobject_cast<QQuickItem *>(
+            findObjects(previews.at(row), QStringLiteral("tabPreviewImage")).first());
+        auto *shot = qobject_cast<QQuickItem *>(
+            findObjects(previews.at(row), QStringLiteral("tabPreviewShot")).first());
+        QTRY_VERIFY(evaluate(image, QStringLiteral("status === Image.Ready")).toBool());
+        QVERIFY(image->isVisible());
+        QCOMPARE(image->size(), shot->size());
+        QVERIFY(evaluate(image, QStringLiteral("fillMode === Image.PreserveAspectCrop "
+                                               "&& horizontalAlignment === Image.AlignLeft "
+                                               "&& verticalAlignment === Image.AlignTop"))
+                    .toBool());
+        // Cut, not squeezed: one side fits, other runs past.
+        const qreal paintedWidth = image->property("paintedWidth").toReal();
+        const qreal paintedHeight = image->property("paintedHeight").toReal();
+        QVERIFY(row == 1 ? paintedWidth > image->width() : paintedHeight > image->height());
+        QCOMPARE(row == 1 ? paintedHeight : paintedWidth,
+                 row == 1 ? image->height() : image->width());
+    }
+}
+
+// Device: previews missing. Page never drawn (opened behind, not shown since restart): engine
+// draws only page in front, so site's icon, else its initial, and title stand in.
+void tst_qmlload::previewStandsInForUndrawnPage()
+{
+    TabModel *tabs = m_core->tabs();
+    const QString heron = QStringLiteral("https://birds.example/heron");
+    const QString moss = QStringLiteral("https://moss.example/");
+    tabs->newTabBehind(heron, QStringLiteral("Grey heron"));
+    const int mossTab = tabs->newTabBehind(moss, QString());
+    tabs->updateFavicon(mossTab, QStringLiteral("image://theme/icon-m-favicon"));
+    pullUpToTabs();
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 3);
+    const auto part = [&previews](int row, const char *name) {
+        return findObjects(previews.at(row), QLatin1String(name)).first();
+    };
+    const auto shown = [&part](int row, const char *name) {
+        return qobject_cast<QQuickItem *>(part(row, name))->isVisible();
+    };
+
+    QVERIFY(shown(1, "tabPreviewSite"));
+    QVERIFY(!shown(1, "tabPreviewPlaceholder"));
+    QVERIFY(!shown(1, "tabPreviewImage"));
+    QCOMPARE(part(1, "tabPreviewTitle")->property("text").toString(), QStringLiteral("Grey heron"));
+    QVERIFY(shown(1, "tabPreviewLetter"));
+    QVERIFY(!shown(1, "tabPreviewIcon"));
+    QCOMPARE(part(1, "tabPreviewLetter")->property("text").toString(),
+             SearchSettings::displayAddress(heron).left(1).toUpper());
+
+    // No title: address. Icon over initial once loaded.
+    QVERIFY(shown(2, "tabPreviewSite"));
+    QCOMPARE(part(2, "tabPreviewTitle")->property("text").toString(),
+             SearchSettings::displayAddress(moss));
+    QTRY_VERIFY(shown(2, "tabPreviewIcon"));
+    QVERIFY(!shown(2, "tabPreviewLetter"));
+    QCOMPARE(part(2, "tabPreviewIcon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-favicon"));
+
+    // Front page pictured as grid opened: no stand-in.
+    tabs->thumbnailWriter()->waitForDone();
+    QTRY_VERIFY(shown(0, "tabPreviewImage"));
+    QVERIFY(!shown(0, "tabPreviewSite"));
+}
+
+// Device: previews missing or of previous page: load ended before engine painted new document.
+// Picture waits for first paint. Page left any way but grid (address pane's tab row, banner,
+// link) pictured as it goes.
+void tst_qmlload::pictureWaitsForFirstPaint()
+{
+    QObject *webView = currentWebView();
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    QCOMPARE(grabs(), 0);
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 0);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+    QCOMPARE(webView->property("lastGrabSize").toSize().width(),
+             int(webView->property("width").toReal() / 2));
+
+    // Painted again: pictured already.
+    webView->setProperty("painted", false);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+
+    // Painted mid-load: picture at load end, once.
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 2);
+
+    // Load restarted before paint: earlier wait dropped.
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 2);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 3);
+
+    TabModel *tabs = m_core->tabs();
+    const int left = tabs->activeTabId();
+    const int other = tabs->newTabBehind(QStringLiteral("https://other.example/"), QString());
+    QCOMPARE(grabs(), 3);
+    QVERIFY(tabs->activateTabById(other));
+    QCOMPARE(grabs(), 4);
+    tabs->thumbnailWriter()->waitForDone();
+    QTRY_VERIFY(!tabs->data(tabs->index(tabs->indexOf(left), 0), roleId(TabModel::Role::Thumbnail))
+                     .toString()
+                     .isEmpty());
+}
+
+// Device's grab answers a frame or two later. Bar's change waits for frame; frame come after
+// view resized may be stretched one, so page colour alone; other tab meanwhile: change goes
+// through, late frame dropped.
+void tst_qmlload::frameHoldWithLateFrames()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *image = find(QStringLiteral("frameHoldImage"));
+    QObject *webView = currentWebView();
+    const auto holding = [hold]() { return hold->property("holding").toBool(); };
+    const auto viewSize = [webView]() {
+        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
+    };
+    const auto finish = [this, webView]() { evaluate(webView, QStringLiteral("finishGrabs()")); };
+    const auto barAtRest = [bar, hold]() {
+        QTRY_VERIFY(!bar->property("resizing").toBool());
+        QTRY_VERIFY(!hold->property("holding").toBool());
+    };
+    webView->setProperty("painted", true);
+    webView->setProperty("grabLater", true);
+    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
+    barAtRest();
+
+    // Bar: view keeps size until frame comes.
+    QSizeF before = viewSize();
+    webView->setProperty("chrome", false);
+    QVERIFY(hold->property("grabbing").toBool());
+    QCOMPARE(viewSize(), before);
+    QVERIFY(!holding());
+    finish();
+    QVERIFY(viewSize() != before);
+    QVERIFY(holding());
+    QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()), before);
+    QVERIFY(!image->property("source").toUrl().isEmpty());
+    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
+    webView->setProperty("chrome", true);
+    barAtRest();
+    finish();
+    barAtRest();
+
+    // Turn outruns frame: page colour only, frame never shown.
+    before = viewSize();
+    page->setProperty("orientationTransitionRunning", true);
+    QVERIFY(hold->property("grabbing").toBool());
+    turnDevice(Landscape);
+    QVERIFY(holding());
+    QCOMPARE(image->property("source").toUrl(), QUrl());
+    finish();
+    QVERIFY(holding());
+    QCOMPARE(image->property("source").toUrl(), QUrl());
+    page->setProperty("orientationTransitionRunning", false);
+    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
+    QTRY_VERIFY(!holding());
+    turnDevice(Portrait);
+    finish();
+    barAtRest();
+    QVERIFY(!hold->property("visible").toBool());
+
+    // Other tab while frame awaited: bar's change made, late frame not held over other tab.
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://second.example/"));
+    currentWebView()->setProperty("chrome", false);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    QVERIFY(tabs->activateTabById(first));
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    finish();
+    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
+    barAtRest();
+    const qreal space = page->property("barSpace").toReal();
+    webView->setProperty("chrome", false);
+    QVERIFY(hold->property("grabbing").toBool());
+    QCOMPARE(page->property("barSpace").toReal(), space);
+    QVERIFY(tabs->activateTabById(second));
+    QVERIFY(!hold->property("grabbing").toBool());
+    QCOMPARE(page->property("barSpace").toReal(), page->property("barTarget").toReal());
+    QVERIFY(page->property("barSpace").toReal() < space);
+
+    // Frame asked of this tab meanwhile: other tab's late one doesn't answer it.
+    QObject *secondView = currentWebView();
+    secondView->setProperty("painted", true);
+    secondView->setProperty("grabLater", true);
+    secondView->setProperty("chrome", true);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    QVERIFY(hold->property("grabbing").toBool());
+    const qreal slim = page->property("barSpace").toReal();
+    finish();
+    QVERIFY(hold->property("grabbing").toBool());
+    QVERIFY(!holding());
+    QCOMPARE(page->property("barSpace").toReal(), slim);
+    QCOMPARE(image->property("source").toUrl(), QUrl());
+    evaluate(secondView, QStringLiteral("finishGrabs()"));
+    QVERIFY(page->property("barSpace").toReal() > slim);
+    QVERIFY(holding());
+    QVERIFY(!image->property("source").toUrl().isEmpty());
 }
 
 #include "tst_qmlload.moc"

@@ -29,6 +29,11 @@ Item {
     property bool moving: false
     property bool dragging: false
     property color backgroundColor: "white"
+    // QuickMozView: engine drew document once (false again from load start); visible part of
+    // page in CSS pixels, its shape the view's once engine laid page out at view's size.
+    // Engine's painted is bool; undefined here for tests not about painting.
+    property var painted
+    property rect contentRect
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // Display cutout inset handed to engine. Binding like platform's: Binding release restores
@@ -166,22 +171,45 @@ Item {
 
     // Replaces QQuickItem::grabToImage: offscreen platform has no scene graph. Sync callback,
     // blank image of asked size; null image when grabSaveFails.
+    // Device's grab answers a frame or two later: held until finishGrabs().
+    property bool grabLater: false
+    property var laterGrabs: []
+
+    function finishGrabs() {
+        var waiting = laterGrabs
+        laterGrabs = []
+        for (var i = 0; i < waiting.length; ++i) {
+            waiting[i]()
+        }
+    }
+
     function grabToImage(callback, targetSize) {
         grabCount += 1
         lastGrabSize = targetSize
         if (grabFails) {
             return false
         }
-        callback({
-                     "image": GrabStub.image(webView.grabSaveFails ? 0 : targetSize.width,
-                                             webView.grabSaveFails ? 0 : targetSize.height),
-                     "url": "image://grab/" + grabCount,
-                     "saveToFile": function (path) {
-                         webView.lastGrabPath = path
-                         return !webView.grabSaveFails
-                     }
-                 })
+        if (grabLater) {
+            var count = grabCount
+            var list = laterGrabs
+            list.push(function () { callback(grabResult(count, targetSize)) })
+            laterGrabs = list
+            return true
+        }
+        callback(grabResult(grabCount, targetSize))
         return true
+    }
+
+    function grabResult(count, targetSize) {
+        return {
+            "image": GrabStub.image(webView.grabSaveFails ? 0 : targetSize.width,
+                                    webView.grabSaveFails ? 0 : targetSize.height),
+            "url": "image://grab/" + count,
+            "saveToFile": function (path) {
+                webView.lastGrabPath = path
+                return !webView.grabSaveFails
+            }
+        }
     }
 
     function runJavaScript(script, callback, errorCallback) {

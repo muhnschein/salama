@@ -39,8 +39,8 @@ WebViewPage {
     readonly property bool pageMoving: !!currentView
                                        && (currentView.moving === true
                                            || currentView.dragging === true)
-    property real restingBarSpace: 0
-    readonly property real barSpace: pageMoving ? restingBarSpace : barTarget
+    // Space page took when it last rested.
+    property real barSpace: 0
     readonly property real viewHeight: fullHeight - (isLandscape ? 0 : banners.height) - barSpace
 
     readonly property CutoutInsets cutout: CutoutInsets {
@@ -162,7 +162,6 @@ WebViewPage {
     function openChosen(url, inNewTab) {
         navigationBar.endEditing()
         if (inNewTab && url.length > 0) {
-            captureCurrent()
             TabModel.newTab(url)
         } else {
             openUrl(url)
@@ -238,11 +237,29 @@ WebViewPage {
         onTriggered: browserPage.trimMemory()
     }
 
-    // Space page last took at rest; held while it moves.
-    onBarSpaceChanged: restingBarSpace = barSpace
+    // Engine's frame taken first: it stays unscaled until engine draws page at new size.
+    function settleBar() {
+        if (pageMoving || barSpace === barTarget) {
+            return
+        }
+        frameHold.take(function () {
+            if (!browserPage.pageMoving) {
+                browserPage.barSpace = browserPage.barTarget
+            }
+        })
+    }
+
+    onBarTargetChanged: settleBar()
+    onPageMovingChanged: settleBar()
+    // Silica fades page out, turns it, fades it in: frame taken while page still upright.
+    onOrientationTransitionRunningChanged: {
+        if (orientationTransitionRunning) {
+            frameHold.take()
+        }
+    }
 
     Component.onCompleted: {
-        restingBarSpace = barSpace
+        barSpace = barTarget
         WebEngineSettings.pixelRatio = pageZoom()
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
@@ -254,8 +271,15 @@ WebViewPage {
         updateCurrentView()
     }
 
+    // Page left by any way (address pane, banner, link): its picture for grid. Grid open: taken
+    // as it opened.
     Connections {
         target: TabModel
+        onActiveTabLeaving: {
+            if (!browserPage.tabsOpen && !browserPage.dragging) {
+                browserPage.captureCurrent()
+            }
+        }
         onActiveTabChanged: browserPage.updateCurrentView()
         onCountChanged: browserPage.ensureTab()
     }
@@ -310,6 +334,13 @@ WebViewPage {
 
                 anchors.fill: parent
                 onOpenRequested: browserPage.openUrl(url)
+            }
+
+            FrameHold {
+                id: frameHold
+
+                anchors.fill: parent
+                view: browserPage.currentView
             }
         }
 
@@ -504,15 +535,10 @@ WebViewPage {
                 }
             }
 
-            function captureThumbnail() {
-                if (!isCurrent) {
-                    return
-                }
-                // Half size: GPU readback at gesture start. Encode/write off GUI thread in model.
-                grabToImage(function (result) {
-                    TabModel.storeThumbnail(tabId, result.image)
-                }, Qt.size(width / 2, height / 2))
+            property PagePicture picture: PagePicture {
+                view: webView; pageTabId: tabId; current: isCurrent; held: frameHold.holding
             }
+            function captureThumbnail() { picture.capture() }
 
             property ReaderMode reader: ReaderMode { view: webView }
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
@@ -536,7 +562,6 @@ WebViewPage {
                 } else {
                     fetchFavicon()
                     fetchThemeColor()
-                    captureThumbnail()
                 }
             }
             Component.onCompleted: {

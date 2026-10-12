@@ -13,6 +13,8 @@ Item {
 
     property int allowedOrientations: 0
     property int status: 0
+    // As Silica: true while page fades out, turns and fades in.
+    property bool orientationTransitionRunning: false
     // As Silica: device's when page and window allow it, else portrait. Stack carries both.
     readonly property int orientation: {
         var device = parent && parent.deviceOrientation !== undefined ? parent.deviceOrientation : 1

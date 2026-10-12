@@ -1850,10 +1850,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Không có bản xem trước</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Trang chủ</translation>
     </message>

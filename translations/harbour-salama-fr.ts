@@ -1872,10 +1872,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Aucun aperçu</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Page d&apos;accueil</translation>
     </message>

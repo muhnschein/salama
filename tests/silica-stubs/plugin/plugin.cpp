@@ -10,7 +10,7 @@
 #include <QtQml>
 
 // Stub of Silica "theme" image provider: grey square at requested size, so image://theme/
-// sources load instead of failing.
+// sources load instead of failing. Also serves WebView stub grabToImage() urls (image://grab/).
 class ThemeImageProvider : public QQuickImageProvider
 {
 public:
@@ -78,6 +78,7 @@ public:
     {
         Q_UNUSED(uri)
         engine->addImageProvider(QStringLiteral("theme"), new ThemeImageProvider);
+        engine->addImageProvider(QStringLiteral("grab"), new ThemeImageProvider);
     }
 };
 
