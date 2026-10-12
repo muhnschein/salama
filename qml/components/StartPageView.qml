@@ -15,6 +15,8 @@ SilicaFlickable {
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
     readonly property int columns: 4
+    // Tiles past the chosen rows hidden; Grid skips hidden items.
+    readonly property int topSiteTiles: StartPageSettings.topSiteRows * columns
 
     signal openRequested(string url)
     signal newTabRequested(string url)
@@ -49,6 +51,7 @@ SilicaFlickable {
                     SiteTile {
                         objectName: "topSiteTile"
                         width: startPage.width / startPage.columns
+                        visible: index < startPage.topSiteTiles
                         url: model.url
                         favicon: model.favicon
                         onClicked: startPage.openRequested(model.url)

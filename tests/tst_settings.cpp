@@ -741,6 +741,7 @@ void tst_settings::startPage()
         QVERIFY(settings.startPage()->topSites());
         QVERIFY(settings.startPage()->bookmarks());
         QVERIFY(settings.startPage()->recent());
+        QCOMPARE(settings.startPage()->topSiteRows(), 2);
 
         QSignalSpy spy(settings.startPage(), &StartPageSettings::changed);
         settings.startPage()->setTopSites(true);
@@ -755,12 +756,31 @@ void tst_settings::startPage()
         QCOMPARE(spy.count(), 4);
         settings.startPage()->setRecent(true);
         QCOMPARE(spy.count(), 5);
+
+        settings.startPage()->setTopSiteRows(2);
+        settings.startPage()->setTopSiteRows(0);
+        settings.startPage()->setTopSiteRows(3);
+        QCOMPARE(spy.count(), 5);
+        QCOMPARE(settings.startPage()->topSiteRows(), 2);
+        settings.startPage()->setTopSiteRows(1);
+        settings.startPage()->setTopSiteRows(1);
+        QCOMPARE(spy.count(), 6);
     }
-    Sections reloaded(path);
-    QVERIFY(reloaded.startPage()->blank());
-    QVERIFY(!reloaded.startPage()->topSites());
-    QVERIFY(!reloaded.startPage()->bookmarks());
-    QVERIFY(reloaded.startPage()->recent());
+    {
+        Sections reloaded(path);
+        QVERIFY(reloaded.startPage()->blank());
+        QVERIFY(!reloaded.startPage()->topSites());
+        QVERIFY(!reloaded.startPage()->bookmarks());
+        QVERIFY(reloaded.startPage()->recent());
+        QCOMPARE(reloaded.startPage()->topSiteRows(), 1);
+    }
+    {
+        // Hand-edited file: out of range reads the default.
+        QSettings file(path, QSettings::IniFormat);
+        file.setValue(QStringLiteral("startPageTopSiteRows"), 5);
+    }
+    Sections edited(path);
+    QCOMPARE(edited.startPage()->topSiteRows(), 2);
 }
 
 void tst_settings::retiresTheHomePage()

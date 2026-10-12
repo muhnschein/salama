@@ -26,6 +26,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Reader view's Ambience look, now default: article like Sailfish page, ambience colours and typeface, light right-aligned title. Old Ambience now Automatic; its users get new look; Light, Sepia, Dark kept.
 - Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind.
 - Settings > Start page shows half-size live new-tab preview under switches.
+- Settings > Start page > Frequently visited: Rows, one or two (default) rows of tiles.
 - Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads entry wears progress ring.
 - Tab groups reorderable: drag by bars at row end. "N tabs" stays first.
 - Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
