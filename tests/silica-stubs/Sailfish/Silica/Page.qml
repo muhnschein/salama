@@ -6,9 +6,9 @@ Item {
     width: !parent ? 0 : isPortrait ? parent.width : parent.height - Screen.topCutout.height
     height: !parent ? 0 : isPortrait ? parent.height : parent.width
     // As Silica: landscape page turned a quarter inside portrait window, so window axes are
-    // page's only when upright.
+    // page's only when upright; moved down by half the cutout it lost, so clear of window's top.
     x: !parent || isPortrait ? 0 : (parent.width - width) / 2
-    y: !parent || isPortrait ? 0 : (parent.height - height) / 2
+    y: !parent || isPortrait ? 0 : (parent.height - height + Screen.topCutout.height) / 2
     rotation: orientation === 2 ? 90 : orientation === 8 ? 270 : 0
 
     property int allowedOrientations: 0

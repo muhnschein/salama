@@ -421,6 +421,10 @@ WebViewPage {
         }
     }
 
+    CutoutStrip {
+        objectName: "cutoutStrip"
+    }
+
     BrowserMenu {
         id: browserMenu
 

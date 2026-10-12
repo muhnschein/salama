@@ -294,6 +294,8 @@ private slots:
     void landscapeGesturesUnderAFinger();
     void landscapeBarHides();
     void landscapeOmnibar();
+    void sideSheetLeavesWithItsPage();
+    void cutoutStripInLandscape();
 
 private:
     bool loadWindow();
@@ -12284,6 +12286,88 @@ void tst_qmlload::landscapeOmnibar()
     QCOMPARE(at(cells().at(1)).x(), qreal(0));
     QVERIFY(at(cells().at(1)).y() < at(cells().at(0)).y());
     evaluate(bar, QStringLiteral("endEditing()"));
+}
+
+// Side sheet sliding out right while its page slides out left stood still on screen, over the
+// page coming in: it leaves with its page instead and shuts at once when that is out of sight.
+// Bottom sheet still slides down.
+void tst_qmlload::sideSheetLeavesWithItsPage()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    const auto open = [menu]() { return menu->property("open").toBool(); };
+    const auto atOnce = [menu]() { return menu->property("hiddenAtOnce").toBool(); };
+    const int inactive = 0; // Silica's PageStatus values.
+    const int active = 2;
+    const int deactivating = 3;
+    turnDevice(Landscape);
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(open());
+    evaluate(menu, QStringLiteral("leave()"));
+    QVERIFY(open());
+    page->setProperty("status", deactivating);
+    QVERIFY(open());
+    page->setProperty("status", inactive);
+    QVERIFY(!open());
+    QVERIFY(atOnce());
+    QVERIFY(!menu->property("leaving").toBool());
+    page->setProperty("status", active);
+
+    for (const char *button : {"settingsMenuButton", "historyMenuButton"}) {
+        tapBar(QStringLiteral("menu"));
+        QVERIFY(open());
+        click(find(QLatin1String(button)));
+        QVERIFY(currentPage() != page);
+        QVERIFY(!open());
+        QVERIFY(atOnce());
+        popPage();
+        QCOMPARE(currentPage(), page);
+        QVERIFY(!open());
+    }
+    tapBar(QStringLiteral("menu"));
+    evaluate(menu, QStringLiteral("openSiteDetails()"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteDetailsPage"));
+    QVERIFY(!open());
+    QVERIFY(atOnce());
+    popPage();
+
+    turnDevice(Portrait);
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("settingsMenuButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("settingsPage"));
+    QVERIFY(!open());
+    QVERIFY(!atOnce());
+    QVERIFY(!menu->property("leaving").toBool());
+}
+
+// Landscape: black strip over window's wallpaper beside cutout, which Silica keeps pages clear
+// of, on whichever side device's top is turned to; none upright. Tutorial's page too.
+void tst_qmlload::cutoutStripInLandscape()
+{
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const QRectF band(0, 0, window->width(), 90); // Stub's cutout: window's top 90 px.
+    const auto scene = [](QObject *of) {
+        auto *item = qobject_cast<QQuickItem *>(of);
+        return item->mapRectToScene(QRectF(0, 0, item->width(), item->height()));
+    };
+    for (const char *name : {"cutoutStrip", "tutorialCutoutStrip"}) {
+        if (qstrcmp(name, "tutorialCutoutStrip") == 0) {
+            evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+        }
+        QObject *strip = find(QLatin1String(name));
+        QVERIFY2(strip != nullptr, name);
+        QObject *page = currentPage();
+        QCOMPARE(strip->property("color").value<QColor>(), QColor(Qt::black));
+        turnDevice(Portrait);
+        QVERIFY(!strip->property("visible").toBool());
+        for (int orientation : {Landscape, LandscapeInverted}) {
+            turnDevice(orientation);
+            QVERIFY2(strip->property("visible").toBool(), name);
+            QCOMPARE(scene(strip), band);
+            QCOMPARE(scene(page).top(), band.bottom());
+        }
+    }
+    turnDevice(Portrait);
 }
 
 #include "tst_qmlload.moc"

@@ -47,14 +47,27 @@ DockedPanel {
     // Shade sits one under: over page, so taps beside sheet reach it.
     z: 2
 
+    // Side sheet would slide out right while its page slides out left, so on screen it would
+    // stand still over the page coming in. It leaves with its page instead, shut at once when
+    // the page is out of sight. Bottom sheet slides down as page slides away.
+    property bool leaving: false
+
+    function leave() {
+        if (side) {
+            leaving = true
+        } else {
+            hide()
+        }
+    }
+
     function openPage(page) {
-        hide()
+        leave()
         pageStack.push(Qt.resolvedUrl("../pages/" + page))
     }
 
     // Page reads view via bindings that survive view going away.
     function openSiteDetails() {
-        hide()
+        leave()
         pageStack.push(Qt.resolvedUrl("../pages/SiteDetailsPage.qml"), {
                            "url": TabModel.activeUrl,
                            "title": TabModel.activeTitle,
@@ -89,6 +102,16 @@ DockedPanel {
     Connections {
         target: TabModel
         onActiveTabChanged: menu.hide()
+    }
+
+    Connections {
+        target: menu.leaving ? menu.parent : null
+        onStatusChanged: {
+            if (menu.parent.status === PageStatus.Inactive) {
+                menu.leaving = false
+                menu.hide(true)
+            }
+        }
     }
 
     ShareAction {

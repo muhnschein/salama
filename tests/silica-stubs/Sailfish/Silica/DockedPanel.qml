@@ -15,11 +15,16 @@ Item {
     property int animationDuration: 0
     property bool expanded: open
 
+    // Last hide skipped Silica's slide out.
+    property bool hiddenAtOnce: false
+
     function show() {
+        hiddenAtOnce = false
         open = true
     }
 
-    function hide() {
+    function hide(immediate) {
+        hiddenAtOnce = !!immediate
         open = false
     }
 

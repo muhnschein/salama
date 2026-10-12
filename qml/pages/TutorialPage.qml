@@ -133,6 +133,8 @@ Page {
         onTriggered: tutorialPage.updateHints()
     }
 
+    CutoutStrip { objectName: "tutorialCutoutStrip" }
+
     TabDeck {
         id: deck
 
