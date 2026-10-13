@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Engine draws its last frame stretched to the view's new size until it draws one at that
-// size: after a turn, for a second or two on heavy pages (device). Bar's change: as Chrome on
-// Android, frame taken before it stays unscaled at top left over page colour. Turn: page colour
-// alone, upright frame in turned view read as one more movement (device). Held until engine
-// lays page out at new size; it then reports a visible area of the new shape.
+// Engine draws its last frame stretched to the view's new size until it draws one at that size:
+// after a turn, for a second or two on heavy pages (device). Turn: page colour over turned view
+// (upright frame in it read as one more movement, device), held until engine reports a visible
+// area of the view's own shape. Engine first lays page out at new size but old rotation (its
+// rotation waits out a filter): that area is the view's shape on its side, still held. Bar
+// changes no longer resize page.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -17,19 +18,13 @@ Item {
     property int patience: 1500
 
     property bool holding: false
-    // Frame taken, change to come.
+    // Turn coming, resize to hold.
     property bool armed: false
-    property bool grabbing: false
-    // Frame asked for; one answering an older ask (other tab since) is dropped.
-    property int ticket: 0
-    property var pendingApply: null
-    property var shot: null
-    property size frameSize: Qt.size(0, 0)
-    // Shape of engine's visible area at last resize: a new one means engine drew new size.
-    property real staleAspect: 0
 
-    readonly property rect area: view && view.contentRect ? view.contentRect : Qt.rect(0, 0, 0, 0)
-    // Finger on page: page must follow it. New document: frame isn't of it.
+    // Engine reports it every scroll frame: read only while holding, no JS per frame otherwise.
+    readonly property rect area: holding && view && view.contentRect ? view.contentRect
+                                                                     : Qt.rect(0, 0, 0, 0)
+    // Finger on page: page must follow it. New document: nothing of the old to cover.
     readonly property bool interrupted: !!view && (view.moving === true || view.dragging === true
                                                    || view.pinching === true
                                                    || view.painted === false)
@@ -46,7 +41,7 @@ Item {
 
     // Turn coming: page colour over view once it turns.
     function cover() {
-        if (grabbing || holding || armed || !usable()) {
+        if (holding || armed || !usable()) {
             return
         }
         fade.stop()
@@ -55,89 +50,27 @@ Item {
         disarm.restart()
     }
 
-    // Takes engine's frame, then runs apply (the change), if any. Frame already held or
-    // taken: change runs at once.
-    function take(apply) {
-        if (grabbing) {
-            if (apply) {
-                pendingApply = apply
-            }
-            return
-        }
-        if (holding || armed || !usable()) {
-            if (apply) {
-                apply()
-            }
-            return
-        }
-        var source = view
-        var size = Qt.size(view.width, view.height)
-        var asked = ++ticket
-        pendingApply = apply ? apply : null
-        grabbing = true
-        if (!view.grabToImage(function (result) { hold.grabbed(asked, source, size, result) },
-                              size)) {
-            grabbing = false
-            runPending()
-        }
-    }
-
-    function grabbed(asked, source, size, result) {
-        if (asked !== ticket) {
-            return
-        }
-        grabbing = false
-        // Last hold still fading: its frame goes now.
-        if (!holding) {
-            fade.stop()
-            opacity = 0
-        }
-        // View changed or resized before frame came: it may be stretched one. Colour only.
-        var current = view === source && view.width === size.width && view.height === size.height
-        shot = current ? result : null
-        frameSize = size
-        if (current && !holding) {
-            armed = true
-            disarm.restart()
-        }
-        runPending()
-    }
-
-    function runPending() {
-        var apply = pendingApply
-        pendingApply = null
-        if (apply) {
-            apply()
-            // Change left view's size: nothing to hold.
-            if (!holding) {
-                armed = false
-                disarm.stop()
-            }
-        }
-    }
-
     function viewResized() {
         if (holding) {
-            staleAspect = aspect(area.width, area.height)
             settle.stop()
-        } else if (armed || grabbing) {
-            if (grabbing) {
-                shot = null
-            }
+            checkArea()
+        } else if (armed) {
             armed = false
             disarm.stop()
-            staleAspect = aspect(area.width, area.height)
             holding = true
             fade.stop()
             opacity = 1
             patienceTimer.restart()
+            checkArea()
         }
     }
 
+    // Started once, not again on each later report: busy page reports every frame (device).
     function checkArea() {
-        var shape = aspect(area.width, area.height)
-        if (holding && shape > 0 && Math.abs(shape - staleAspect) > shape / 500) {
-            settle.restart()
+        var shape = aspect(view ? view.width : 0, view ? view.height : 0)
+        if (holding && !settle.running && shape > 0
+                && Math.abs(aspect(area.width, area.height) - shape) <= shape / 100) {
+            settle.start()
         }
     }
 
@@ -151,31 +84,26 @@ Item {
         fade.restart()
     }
 
-    // Other tab: its own frame, nothing of this one's. Change waiting on frame runs now.
+    // Other tab, finger on page, new document: gone at once, no fade over page that moves.
     function drop() {
-        ++ticket
         holding = false
         armed = false
-        grabbing = false
         settle.stop()
         patienceTimer.stop()
         disarm.stop()
         fade.stop()
         opacity = 0
-        shot = null
-        runPending()
     }
 
     objectName: "frameHold"
     opacity: 0
     visible: opacity > 0 && !!view && view.visible
-    clip: true
 
     onViewChanged: drop()
     onAreaChanged: checkArea()
     onInterruptedChanged: {
         if (interrupted) {
-            release()
+            drop()
         }
     }
 
@@ -189,7 +117,7 @@ Item {
     Timer {
         id: settle
 
-        interval: 100
+        interval: 50
         onTriggered: hold.release()
     }
 
@@ -200,17 +128,12 @@ Item {
         onTriggered: hold.release()
     }
 
-    // Turn or change that never came.
+    // Turn that never came.
     Timer {
         id: disarm
 
         interval: 1000
-        onTriggered: {
-            hold.armed = false
-            if (!hold.holding) {
-                hold.shot = null
-            }
-        }
+        onTriggered: hold.armed = false
     }
 
     // Heavy page goes on redrawing a second or two after (device): slow fade lets it settle.
@@ -222,11 +145,6 @@ Item {
         property: "opacity"
         to: 0
         duration: 600
-        onRunningChanged: {
-            if (!running && !hold.holding) {
-                hold.shot = null
-            }
-        }
     }
 
     Rectangle {
@@ -234,12 +152,5 @@ Item {
         anchors.fill: parent
         color: hold.view && hold.view.backgroundColor ? hold.view.backgroundColor
                                                       : Theme.highlightDimmerColor
-    }
-
-    Image {
-        objectName: "frameHoldImage"
-        width: hold.frameSize.width
-        height: hold.frameSize.height
-        source: hold.shot ? hold.shot.url : ""
     }
 }

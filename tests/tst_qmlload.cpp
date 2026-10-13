@@ -205,7 +205,7 @@ private slots:
     void barReachUnderAFinger();
     void barDragStartsWithoutAStutter();
     void barStaysSlimWhileDragged();
-    void barResizesPageAtRest();
+    void barOverlapsPageFoot();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -297,9 +297,7 @@ private slots:
     void landscapeOmnibar();
     void sideSheetLeavesWithItsPage();
     void cutoutStripInLandscape();
-    void frameHoldOverBarResize();
     void frameHoldOverTurn();
-    void frameHoldWithLateFrames();
     void previewFillsItsCell();
     void previewStandsInForUndrawnPage();
     void pictureWaitsForFirstPaint();
@@ -1468,12 +1466,14 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(fullBar > 0);
     QVERIFY(inset > 0);
 
-    // View sits between cutout and bar so first/last line never hidden. Overlay bar left last
-    // rows unreachable on device.
+    // View sits between cutout and slim bar: first line never hidden, last ones only under the
+    // whole bar's extra height, slimmed away by scrolling down. Bar over whole page foot left
+    // last rows unreachable on device; resizing for each bar change stuttered and flashed.
+    const qreal slimBar = bar->property("slimHeight").toReal();
     QObject *viewArea = find(QStringLiteral("viewArea"));
     QCOMPARE(viewArea->property("y").toReal(), inset);
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - slimBar - inset);
     QCOMPARE(find(QStringLiteral("cutoutBand"))->property("height").toReal(), inset);
     QCOMPARE(bar->property("y").toReal(), pageHeight - fullBar);
     QVERIFY(webView->property("chromeGestureEnabled").toBool());
@@ -1481,9 +1481,12 @@ void tst_qmlload::barDoesNotCoverThePage()
     QCOMPARE(webView->property("chromeGestureThreshold").toReal(),
              evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
     QCOMPARE(webView->property("safeAreaTop").toReal(), qreal(0));
+    // Platform's landscape side inset: Silica already keeps landscape page clear of cutout.
+    webView->setProperty("cutoutSafeAreaSide", 90);
+    QCOMPARE(webView->property("safeAreaLeft").toReal(), qreal(0));
+    QCOMPARE(webView->property("safeAreaRight").toReal(), qreal(0));
+    webView->setProperty("cutoutSafeAreaSide", 0);
 
-    // View sized for slim height from first frame: resizes once, not every animation frame.
-    const qreal slimBar = bar->property("slimHeight").toReal();
     QVERIFY(slimBar < fullBar);
     QVERIFY(slimBar > fullBar * 0.6);
     webView->setProperty("chrome", false);
@@ -1525,7 +1528,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(!bar->property("compact").toBool());
     webView->setProperty("loading", false);
     QTRY_COMPARE(bar->property("height").toReal(), fullBar);
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
     QVERIFY(addressLabel->property("font").value<QFont>().pixelSize() > slimSize);
     QCOMPARE(background->property("color").value<QColor>().alpha(), 255);
     QVERIFY(find(QStringLiteral("menuButton"))->property("visible").toBool());
@@ -3481,11 +3484,24 @@ void tst_qmlload::barDragStartsWithoutAStutter()
     QTRY_COMPARE(offset(), qreal(0));
     QVERIFY(!grid->property("visible").toBool());
 
+    // Reach lies over page foot, mostly tapped and scrolled (device): no picture, no grid for
+    // that; both once finger heads up, still ahead of drag.
+    const int before = webView->property("grabCount").toInt();
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
-    QVERIFY(grid->property("visible").toBool());
+    QVERIFY(!grid->property("visible").toBool());
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
     QVERIFY(!grid->property("visible").toBool());
     drag(&window, QPoint(x, inReach), QPoint(x + 10 * shake, inReach));
+    QVERIFY(!grid->property("visible").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), before);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    y = inReach;
+    while (!grid->property("visible").toBool()) {
+        QTest::mouseMove(&window, QPoint(x, --y));
+    }
+    QVERIFY(!gesture->property("dragging").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), before + 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, y));
     QVERIFY(!grid->property("visible").toBool());
 
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
@@ -3533,66 +3549,58 @@ void tst_qmlload::barStaysSlimWhileDragged()
     webView->setProperty("chrome", true);
 }
 
-// Device: page resized as bar slimmed mid-scroll, scroll stuttered. Page keeps its size while it
-// moves and takes bar's new space at rest; page colour fills below slimmed bar.
-void tst_qmlload::barResizesPageAtRest()
+// Device: page resized as bar slimmed or grew: mid-scroll it stuttered, at rest it still showed
+// page colour before content. Page always ends at slim bar's top, whole bar overlaps its foot, as
+// stock browser's toolbar overlays its page: no resize, no frame grabbed, nothing held over page.
+void tst_qmlload::barOverlapsPageFoot()
 {
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *viewArea = find(QStringLiteral("viewArea"));
-    QObject *fill = find(QStringLiteral("pageFootFill"));
+    QObject *hold = find(QStringLiteral("frameHold"));
     QObject *webView = currentWebView();
+    webView->setProperty("painted", true);
     QTRY_VERIFY(!bar->property("resizing").toBool());
     const qreal fullBar = bar->property("height").toReal();
     const qreal slimBar = bar->property("slimHeight").toReal();
+    QVERIFY(fullBar > slimBar);
     const qreal inset = page->property("pageCutoutInset").toReal();
     const auto viewHeight = [viewArea]() { return viewArea->property("height").toReal(); };
     const auto pageHeight = [page]() { return page->property("height").toReal(); };
-    const auto fillHeight = [fill]() { return fill->property("height").toReal(); };
-    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
-    QVERIFY(!fill->property("visible").toBool());
+    const auto barTop = [bar]() { return bar->property("y").toReal(); };
+    const int grabs = webView->property("grabCount").toInt();
+    const qreal height = pageHeight() - slimBar - inset;
+    QCOMPARE(viewHeight(), height);
+    QCOMPARE(barTop(), pageHeight() - fullBar);
 
-    // Flung down: bar slims, page keeps size, its colour under bar; resized once it rests.
-    webView->setProperty("moving", true);
-    webView->setProperty("chrome", false);
-    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
-    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
-    QVERIFY(fill->property("visible").toBool());
-    QCOMPARE(fill->property("y").toReal(), pageHeight() - fullBar);
-    QCOMPARE(fillHeight(), fullBar);
-    QCOMPARE(fill->property("color").value<QColor>(),
-             webView->property("backgroundColor").value<QColor>());
-    webView->setProperty("moving", false);
-    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
-    QVERIFY(!fill->property("visible").toBool());
+    // Flung down, at rest, dragged up, tapped: bar slims and grows, page keeps its size.
+    for (const char *moving : {"moving", "dragging", ""}) {
+        if (*moving != '\0') {
+            webView->setProperty(moving, true);
+        }
+        webView->setProperty("chrome", false);
+        QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+        QCOMPARE(viewHeight(), height);
+        QCOMPARE(barTop(), inset + viewHeight());
+        if (*moving != '\0') {
+            webView->setProperty(moving, false);
+        }
+        QCOMPARE(viewHeight(), height);
+        webView->setProperty("chrome", true);
+        QTRY_COMPARE(bar->property("height").toReal(), fullBar);
+        QCOMPARE(viewHeight(), height);
+    }
+    QCOMPARE(webView->property("grabCount").toInt(), grabs);
+    QVERIFY(!hold->property("visible").toBool());
 
-    // Dragged up: bar grows over page foot until finger lifts.
-    webView->setProperty("dragging", true);
-    webView->setProperty("chrome", true);
-    QTRY_COMPARE(bar->property("height").toReal(), fullBar);
-    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
-    webView->setProperty("dragging", false);
-    QCOMPARE(viewHeight(), pageHeight() - fullBar - inset);
-
-    // Not moving (tap, load, keyboard): resized as before.
-    webView->setProperty("chrome", false);
-    QCOMPARE(viewHeight(), pageHeight() - slimBar - inset);
-    webView->setProperty("chrome", true);
-    QTRY_COMPARE(viewHeight(), pageHeight() - fullBar - inset);
-
-    // Landscape: bar stays, page keeps its size through fling and rest.
+    // Landscape: bar stays slim, page as before.
     turnDevice(Landscape);
     QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+    QTRY_VERIFY(!hold->property("visible").toBool());
     QCOMPARE(viewHeight(), pageHeight() - slimBar);
-    webView->setProperty("moving", true);
-    webView->setProperty("chrome", false);
-    QCOMPARE(bar->property("y").toReal(), pageHeight() - slimBar);
-    QCOMPARE(fillHeight(), slimBar);
-    webView->setProperty("moving", false);
-    QCOMPARE(viewHeight(), pageHeight() - slimBar);
-    QVERIFY(!bar->property("resizing").toBool());
-    webView->setProperty("chrome", true);
     turnDevice(Portrait);
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    webView->setProperty("painted", false);
 }
 
 // Reach above bar overlaps page foot (player seek bar, buttons). Keeps only drag up (opens grid);
@@ -3620,7 +3628,10 @@ void tst_qmlload::barReachUnderAFinger()
     const QPointF local = view->mapFromScene(QPointF(200, inReach));
     QCOMPARE(touch(0).value(QStringLiteral("x")).toReal(), local.x());
     QCOMPARE(touch(0).value(QStringLiteral("y")).toReal(), local.y());
-    QVERIFY(local.y() > view->height() - reach && local.y() < view->height());
+    // Over page foot: above whole bar, which overlaps the page by its height beyond slim.
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    const qreal overlap = bar->property("height").toReal() - bar->property("slimHeight").toReal();
+    QVERIFY(local.y() > view->height() - overlap - reach && local.y() < view->height());
     QVERIFY(view->hasActiveFocus());
     QVERIFY(!page->property("tabsOpen").toBool());
 
@@ -6096,8 +6107,8 @@ void tst_qmlload::linkSheetInLandscape()
     QCOMPARE(errors.all(), QString());
 }
 
-// Page ends where bar banners begin (one or two), regains room when gone: banner never covers
-// page foot.
+// Page ends where bar banners begin over slim bar (one or two), regains room when gone: banner
+// covers page foot only as far as the whole bar does, riding on it.
 void tst_qmlload::bannersEndThePage()
 {
     QObject *page = find(QStringLiteral("browserPage"));
@@ -6110,11 +6121,13 @@ void tst_qmlload::bannersEndThePage()
     const qreal pageHeight = page->property("height").toReal();
     const qreal inset = page->property("pageCutoutInset").toReal();
     const qreal fullBar = bar->property("height").toReal();
+    const qreal growth = fullBar - bar->property("slimHeight").toReal();
+    QVERIFY(growth > 0);
     const auto pageEnd = [viewArea]() {
         return viewArea->property("y").toReal() + viewArea->property("height").toReal();
     };
     QCOMPARE(banners->property("height").toReal(), 0.0);
-    QCOMPARE(pageEnd(), pageHeight - fullBar);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth);
 
     evaluate(viewArea, QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
                                       " id: 1, displayName: 'a.pdf', size: 0})"));
@@ -6122,16 +6135,16 @@ void tst_qmlload::bannersEndThePage()
     const qreal one = downloads->property("height").toReal();
     QVERIFY(one > 0);
     QCOMPARE(banners->property("height").toReal(), one);
-    QCOMPARE(pageEnd(), banners->property("y").toReal());
-    QCOMPARE(pageEnd(), pageHeight - fullBar - one);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - one - inset);
+    QCOMPARE(pageEnd(), banners->property("y").toReal() + growth);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth - one);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar + growth - one - inset);
 
     const int behind =
         m_core->tabs()->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
     evaluate(banners, QStringLiteral("tabOpened(%1, 'B')").arg(behind));
     QTRY_VERIFY(opened->property("visible").toBool());
     QCOMPARE(banners->property("height").toReal(), 2 * one);
-    QCOMPARE(pageEnd(), banners->property("y").toReal());
+    QCOMPARE(pageEnd(), banners->property("y").toReal() + growth);
     QCOMPARE(banners->property("y").toReal() + 2 * one, bar->property("y").toReal());
 
     evaluate(opened, QStringLiteral("dismiss()"));
@@ -6139,7 +6152,7 @@ void tst_qmlload::bannersEndThePage()
     QTRY_VERIFY(!opened->property("visible").toBool());
     QTRY_VERIFY(!downloads->property("visible").toBool());
     QCOMPARE(banners->property("height").toReal(), 0.0);
-    QCOMPARE(pageEnd(), pageHeight - fullBar);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth);
 }
 
 void tst_qmlload::historyPage()
@@ -12416,115 +12429,16 @@ void tst_qmlload::cutoutStripInLandscape()
     turnDevice(Portrait);
 }
 
-// Device: page stretched a moment as bar slimmed at rest: engine draws its last frame at view's
-// new size until it draws one. Last frame stays unscaled over page colour until engine reports
-// page's new shape, a finger moves page, or patience runs out.
-void tst_qmlload::frameHoldOverBarResize()
-{
-    QObject *bar = find(QStringLiteral("navigationBar"));
-    QObject *hold = find(QStringLiteral("frameHold"));
-    QObject *image = find(QStringLiteral("frameHoldImage"));
-    QObject *fill = find(QStringLiteral("frameHoldFill"));
-    QObject *webView = currentWebView();
-    const auto holding = [hold]() { return hold->property("holding").toBool(); };
-    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
-    const auto viewSize = [webView]() {
-        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
-    };
-    // Engine's visible part at half zoom, scrolled down by top.
-    const auto reportArea = [webView](const QSizeF &size, qreal top) {
-        webView->setProperty("contentRect", QRectF(0, top, size.width() / 2, size.height() / 2));
-    };
-    const auto barAtRest = [bar, hold]() {
-        QTRY_VERIFY(!bar->property("resizing").toBool());
-        QTRY_VERIFY(!hold->property("holding").toBool());
-    };
-    barAtRest();
-    reportArea(viewSize(), 0);
-
-    // Never drawn: nothing to stretch, no frame taken.
-    webView->setProperty("painted", false);
-    int taken = grabs();
-    QSizeF before = viewSize();
-    webView->setProperty("chrome", false);
-    QVERIFY(viewSize() != before);
-    QCOMPARE(grabs(), taken);
-    QVERIFY(!holding());
-    webView->setProperty("chrome", true);
-    barAtRest();
-
-    // Drawn: frame taken before view resizes, shown at its own size over page colour.
-    webView->setProperty("painted", true);
-    reportArea(viewSize(), 0);
-    taken = grabs();
-    before = viewSize();
-    webView->setProperty("chrome", false);
-    QVERIFY(viewSize() != before);
-    QCOMPARE(grabs(), taken + 1);
-    QCOMPARE(webView->property("lastGrabSize").toSizeF(), before);
-    QVERIFY(holding());
-    QVERIFY(hold->property("visible").toBool());
-    QCOMPARE(hold->property("opacity").toReal(), 1.0);
-    QCOMPARE(image->property("source").toUrl(),
-             QUrl(QStringLiteral("image://grab/%1").arg(taken + 1)));
-    QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()), before);
-    QCOMPARE(fill->property("color").value<QColor>(),
-             webView->property("backgroundColor").value<QColor>());
-    QVERIFY(hold->property("clip").toBool());
-
-    // Preview not taken from stretched frame.
-    evaluate(webView, QStringLiteral("captureThumbnail()"));
-    QCOMPARE(grabs(), taken + 1);
-
-    // Scroll at old shape: engine not there yet.
-    reportArea(before, 40);
-    QTest::qWait(300);
-    QVERIFY(holding());
-
-    // New shape: let go once engine had time to draw it; frame fades and goes.
-    reportArea(viewSize(), 40);
-    QVERIFY(holding());
-    QTRY_VERIFY(!holding());
-    QTRY_VERIFY(!hold->property("visible").toBool());
-    QCOMPARE(image->property("source").toUrl(), QUrl());
-
-    // Finger on page lets go at once.
-    webView->setProperty("chrome", true);
-    QTRY_VERIFY(holding());
-    webView->setProperty("dragging", true);
-    QVERIFY(!holding());
-    webView->setProperty("dragging", false);
-    barAtRest();
-
-    // New document: frame isn't of it.
-    webView->setProperty("chrome", false);
-    QVERIFY(holding());
-    webView->setProperty("painted", false);
-    QVERIFY(!holding());
-    webView->setProperty("painted", true);
-    webView->setProperty("chrome", true);
-    barAtRest();
-
-    // Engine silent: let go after patience.
-    webView->setProperty("chrome", false);
-    QVERIFY(holding());
-    QTest::qWait(500);
-    QVERIFY(holding());
-    QTRY_VERIFY_WITH_TIMEOUT(!holding(), 3000);
-    webView->setProperty("chrome", true);
-    barAtRest();
-    webView->setProperty("painted", false);
-}
-
-// Device: page stretched for a second or two after a turn, much worse than for bar. Page colour
-// alone over turned view until engine reports page turned (upright frame in turned view read as
-// one more movement, device), then a slow fade over its last redraws. No turn after all: later
-// resize not held.
+// Device: page stretched for a second or two after a turn. Page colour alone over turned view
+// until engine reports an area of view's own shape (upright frame in turned view read as one
+// more movement, device), then a slow fade over its last redraws. Busy page's later reports do
+// not put that off (held near two seconds, device). Patience run out lets go; finger on page,
+// new document, other tab drop it at once, fade too; no turn after all: later resize not held.
+// Engine's visible area, reported every scroll frame, read only while holding.
 void tst_qmlload::frameHoldOverTurn()
 {
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *hold = find(QStringLiteral("frameHold"));
-    QObject *image = find(QStringLiteral("frameHoldImage"));
     QObject *fill = find(QStringLiteral("frameHoldFill"));
     QObject *fade = find(QStringLiteral("frameHoldFade"));
     QObject *webView = currentWebView();
@@ -12533,8 +12447,20 @@ void tst_qmlload::frameHoldOverTurn()
     const auto viewSize = [webView]() {
         return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
     };
-    const auto reportArea = [webView](const QSizeF &size) {
-        webView->setProperty("contentRect", QRectF(0, 0, size.width() / 2, size.height() / 2));
+    const auto reportArea = [webView](const QSizeF &size, qreal top = 0) {
+        webView->setProperty("contentRect", QRectF(0, top, size.width() / 2, size.height() / 2));
+    };
+    const auto transition = [page](bool running) {
+        page->setProperty("orientationTransitionRunning", running);
+    };
+    // Turned with page colour over it, as Silica's transition ends.
+    const auto turnHeld = [&](int orientation) {
+        QTRY_VERIFY(!hold->property("visible").toBool());
+        reportArea(viewSize());
+        transition(true);
+        turnDevice(orientation);
+        transition(false);
+        QVERIFY(holding());
     };
     webView->setProperty("painted", true);
 
@@ -12543,7 +12469,7 @@ void tst_qmlload::frameHoldOverTurn()
         reportArea(viewSize());
         const QSizeF before = viewSize();
         const int taken = grabs();
-        page->setProperty("orientationTransitionRunning", true);
+        transition(true);
         QCOMPARE(grabs(), taken);
         QVERIFY(!holding());
         turnDevice(orientation);
@@ -12551,35 +12477,81 @@ void tst_qmlload::frameHoldOverTurn()
         QVERIFY(holding());
         QVERIFY(hold->property("visible").toBool());
         QCOMPARE(hold->property("opacity").toReal(), 1.0);
-        QCOMPARE(image->property("source").toUrl(), QUrl());
         QCOMPARE(fill->property("color").value<QColor>(),
                  webView->property("backgroundColor").value<QColor>());
-        page->setProperty("orientationTransitionRunning", false);
-        // Bar's own change in turn: held already, no frame of turned view.
+        transition(false);
         QTRY_VERIFY(!find(QStringLiteral("navigationBar"))->property("resizing").toBool());
         QCOMPARE(grabs(), taken);
         QVERIFY(holding());
-        reportArea(viewSize());
-        QTRY_VERIFY(!holding());
+        // Scrolled at old shape: engine not there yet.
+        reportArea(before, 40);
+        QTest::qWait(300);
+        QVERIFY(holding());
+        // Laid out at new size, old rotation: view's shape on its side, still held.
+        reportArea(before.transposed());
+        QTest::qWait(300);
+        QVERIFY(holding());
+        // Turned. Busy page reports again every frame: let go all the same.
+        for (int frame = 0; holding() && frame < 20; ++frame) {
+            reportArea(viewSize(), frame);
+            QTest::qWait(20);
+        }
+        QVERIFY(!holding());
         // Fades slowly over engine's last redraws.
         QVERIFY(hold->property("visible").toBool());
         QVERIFY(fade->property("running").toBool());
         QVERIFY(fade->property("duration").toInt() >= 500);
     }
 
+    // Not holding: scroll frames' visible area not read.
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    reportArea(viewSize(), 120);
+    QCOMPARE(hold->property("area").toRectF(), QRectF());
+
+    // Finger on page, new document, other tab: gone at once, no fade over moving page.
+    turnHeld(Landscape);
+    webView->setProperty("dragging", true);
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("dragging", false);
+    turnHeld(Portrait);
+    reportArea(viewSize());
+    QTRY_VERIFY(fade->property("running").toBool());
+    webView->setProperty("moving", true);
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("moving", false);
+    turnHeld(Landscape);
+    webView->setProperty("painted", false);
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("painted", true);
+    turnHeld(Portrait);
+    evaluate(hold, QStringLiteral("view = null"));
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    evaluate(hold,
+             QStringLiteral("view = Qt.binding(function() { return browserPage.currentView })"));
+    QCOMPARE(hold->property("view").value<QObject *>(), webView);
+
+    // Engine silent: let go after patience.
+    turnHeld(Landscape);
+    QTest::qWait(500);
+    QVERIFY(holding());
+    QTRY_VERIFY_WITH_TIMEOUT(!holding(), 3000);
+
     // Transition but no turn: later resize not held.
     QTRY_VERIFY(!hold->property("visible").toBool());
-    page->setProperty("orientationTransitionRunning", true);
-    page->setProperty("orientationTransitionRunning", false);
+    transition(true);
+    transition(false);
     QVERIFY(hold->property("armed").toBool());
     QTRY_VERIFY_WITH_TIMEOUT(!hold->property("armed").toBool(), 3000);
     QVERIFY(!holding());
 
     // Never drawn: nothing to stretch.
     webView->setProperty("painted", false);
-    page->setProperty("orientationTransitionRunning", true);
+    transition(true);
     QVERIFY(!hold->property("armed").toBool());
-    page->setProperty("orientationTransitionRunning", false);
+    transition(false);
 }
 
 // Device: previews letterboxed (taken turned). Picture fills its cell whatever shape it was
@@ -12715,107 +12687,6 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     QTRY_VERIFY(!tabs->data(tabs->index(tabs->indexOf(left), 0), roleId(TabModel::Role::Thumbnail))
                      .toString()
                      .isEmpty());
-}
-
-// Device's grab answers a frame or two later. Bar's change waits for frame; frame come after
-// view resized may be stretched one, so page colour alone; other tab meanwhile: change goes
-// through, late frame dropped.
-void tst_qmlload::frameHoldWithLateFrames()
-{
-    QObject *page = find(QStringLiteral("browserPage"));
-    QObject *bar = find(QStringLiteral("navigationBar"));
-    QObject *hold = find(QStringLiteral("frameHold"));
-    QObject *image = find(QStringLiteral("frameHoldImage"));
-    QObject *webView = currentWebView();
-    const auto holding = [hold]() { return hold->property("holding").toBool(); };
-    const auto viewSize = [webView]() {
-        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
-    };
-    const auto finish = [this, webView]() { evaluate(webView, QStringLiteral("finishGrabs()")); };
-    const auto barAtRest = [bar, hold]() {
-        QTRY_VERIFY(!bar->property("resizing").toBool());
-        QTRY_VERIFY(!hold->property("holding").toBool());
-    };
-    webView->setProperty("painted", true);
-    webView->setProperty("grabLater", true);
-    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
-    barAtRest();
-
-    // Bar: view keeps size until frame comes.
-    QSizeF before = viewSize();
-    webView->setProperty("chrome", false);
-    QVERIFY(hold->property("grabbing").toBool());
-    QCOMPARE(viewSize(), before);
-    QVERIFY(!holding());
-    finish();
-    QVERIFY(viewSize() != before);
-    QVERIFY(holding());
-    QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()), before);
-    QVERIFY(!image->property("source").toUrl().isEmpty());
-    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
-    webView->setProperty("chrome", true);
-    barAtRest();
-    finish();
-    barAtRest();
-
-    // Turn outruns bar's frame: page colour only, frame never shown.
-    webView->setProperty("chrome", false);
-    QVERIFY(hold->property("grabbing").toBool());
-    page->setProperty("orientationTransitionRunning", true);
-    turnDevice(Landscape);
-    QVERIFY(holding());
-    QCOMPARE(image->property("source").toUrl(), QUrl());
-    finish();
-    QVERIFY(holding());
-    QCOMPARE(image->property("source").toUrl(), QUrl());
-    page->setProperty("orientationTransitionRunning", false);
-    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
-    QTRY_VERIFY(!holding());
-    webView->setProperty("chrome", true);
-    turnDevice(Portrait);
-    QTRY_VERIFY(!bar->property("resizing").toBool());
-    finish();
-    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
-    barAtRest();
-    QTRY_VERIFY(!hold->property("visible").toBool());
-
-    // Other tab while frame awaited: bar's change made, late frame not held over other tab.
-    TabModel *tabs = m_core->tabs();
-    const int first = tabs->activeTabId();
-    const int second = tabs->newTab(QStringLiteral("https://second.example/"));
-    currentWebView()->setProperty("chrome", false);
-    QTRY_VERIFY(!bar->property("resizing").toBool());
-    QVERIFY(tabs->activateTabById(first));
-    QTRY_VERIFY(!bar->property("resizing").toBool());
-    finish();
-    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
-    barAtRest();
-    const qreal space = page->property("barSpace").toReal();
-    webView->setProperty("chrome", false);
-    QVERIFY(hold->property("grabbing").toBool());
-    QCOMPARE(page->property("barSpace").toReal(), space);
-    QVERIFY(tabs->activateTabById(second));
-    QVERIFY(!hold->property("grabbing").toBool());
-    QCOMPARE(page->property("barSpace").toReal(), page->property("barTarget").toReal());
-    QVERIFY(page->property("barSpace").toReal() < space);
-
-    // Frame asked of this tab meanwhile: other tab's late one doesn't answer it.
-    QObject *secondView = currentWebView();
-    secondView->setProperty("painted", true);
-    secondView->setProperty("grabLater", true);
-    secondView->setProperty("chrome", true);
-    QTRY_VERIFY(!bar->property("resizing").toBool());
-    QVERIFY(hold->property("grabbing").toBool());
-    const qreal slim = page->property("barSpace").toReal();
-    finish();
-    QVERIFY(hold->property("grabbing").toBool());
-    QVERIFY(!holding());
-    QCOMPARE(page->property("barSpace").toReal(), slim);
-    QCOMPARE(image->property("source").toUrl(), QUrl());
-    evaluate(secondView, QStringLiteral("finishGrabs()"));
-    QVERIFY(page->property("barSpace").toReal() > slim);
-    QVERIFY(holding());
-    QVERIFY(!image->property("source").toUrl().isEmpty());
 }
 
 #include "tst_qmlload.moc"

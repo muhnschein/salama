@@ -54,9 +54,9 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ### Fixed
 - Menu sheet: opaque handle sits on top edge as on nav bar, page header as far from first row as rows from each other. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
-- Scrolling no longer stutters as bar slims or grows: page resized once it comes to rest, not mid-scroll.
-- Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
-- Page no longer stretched after turning phone or as bar slims at rest: turned page covered in its colour, bar's change keeps last picture unscaled over page colour as in Chrome, until page redrawn at new size (at most 1.5 s), then a slow fade over its last redraws; touching page lets go at once.
+- Scrolling no longer stutters or flashes page colour as bar slims or grows: page ends at slim bar's top, whole bar overlaps its foot, page never resized for bar.
+- Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag; press on page foot near bar prepares nothing until finger heads up.
+- Page no longer stretched after turning phone: turned page covered in its colour until page laid out turned (at most 1.5 s), then a slow fade over its last redraws; touching page removes cover at once.
 - Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken when tab left by address pane, banner or link.
 
 ### Removed

@@ -23,20 +23,12 @@ WebViewPage {
     property alias fullHeight: deck.fullHeight
     property alias pullThreshold: deck.pullThreshold
 
-    // Mid-animation view sized to slim or hidden end: per-frame resize relaid out page
-    // (keyboard stretch). Landscape banners float over page's right end.
-    readonly property real barHeight: navigationBar.height
-    readonly property real barTarget: navigationBar.compact || navigationBar.resizing
-                                      ? navigationBar.slimHeight : barHeight
-    // Each resize relays page out: done mid-scroll, it stuttered the scroll (device). Page keeps
-    // its size while it moves and takes bar's new space once it rests; meanwhile a slimmed or
-    // hidden bar leaves page colour below it, a grown one overlaps page foot.
-    readonly property bool pageMoving: !!currentView
-                                       && (currentView.moving === true
-                                           || currentView.dragging === true)
-    // Space page took when it last rested.
-    property real barSpace: 0
-    readonly property real viewHeight: fullHeight - (isLandscape ? 0 : banners.height) - barSpace
+    // Page always ends at slim bar's top; whole bar overlaps its foot, as stock browser's toolbar
+    // overlays its page. Each resize relays page out and repaints it: as bar slimmed or grew it
+    // stuttered scroll, done at rest it still showed page colour before content (device).
+    // Landscape banners float over page's right end.
+    readonly property real viewHeight: fullHeight - (isLandscape ? 0 : banners.height)
+                                       - navigationBar.slimHeight
 
     readonly property CutoutInsets cutout: CutoutInsets {
         view: browserPage.currentView
@@ -231,20 +223,6 @@ WebViewPage {
         onTriggered: browserPage.trimMemory()
     }
 
-    // Engine's frame taken first: it stays unscaled until engine draws page at new size.
-    function settleBar() {
-        if (pageMoving || barSpace === barTarget) {
-            return
-        }
-        frameHold.take(function () {
-            if (!browserPage.pageMoving) {
-                browserPage.barSpace = browserPage.barTarget
-            }
-        })
-    }
-
-    onBarTargetChanged: settleBar()
-    onPageMovingChanged: settleBar()
     // Silica fades page out, turns it, fades it in: page colour over view till engine turns it.
     onOrientationTransitionRunningChanged: {
         if (orientationTransitionRunning) {
@@ -253,7 +231,6 @@ WebViewPage {
     }
 
     Component.onCompleted: {
-        barSpace = barTarget
         WebEngineSettings.pixelRatio = pageZoom()
         WebEngineSettings.downloadDir = DownloadModel.directory
         WebEngineSettings.useDownloadDir = true
@@ -336,20 +313,6 @@ WebViewPage {
                 anchors.fill: parent
                 view: browserPage.currentView
             }
-        }
-
-        // Bar slimmed or hidden while page moves: page's own colour under it until page rests.
-        Rectangle {
-            objectName: "pageFootFill"
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            y: viewArea.y + viewArea.height
-            height: Math.max(0, browserPage.height - y)
-            visible: browserPage.pageMoving
-            color: browserPage.currentView && browserPage.currentView.backgroundColor
-                   ? browserPage.currentView.backgroundColor : Theme.highlightDimmerColor
         }
 
         NavigationBar {
