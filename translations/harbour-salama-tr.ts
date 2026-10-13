@@ -1732,6 +1732,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>Over a picture of what a new tab will show</extracomment>
         <translation>Önizleme</translation>
     </message>
+    <message>
+        <source>Rows</source>
+        <extracomment>How many rows of frequently visited sites the start page shows</extracomment>
+        <translation>Satırlar</translation>
+    </message>
 </context>
 <context>
     <name>StartPageView</name>

@@ -8,6 +8,7 @@ namespace {
 
 const char *const BlankKey = "startPageBlank";
 const char *const TopSitesKey = "startPageTopSites";
+const char *const TopSiteRowsKey = "startPageTopSiteRows";
 const char *const BookmarksKey = "startPageBookmarks";
 const char *const RecentKey = "startPageRecent";
 // Legacy home page url, unread; removed on load.
@@ -43,6 +44,18 @@ bool StartPageSettings::topSites() const
 void StartPageSettings::setTopSites(bool shown)
 {
     if (setFlag(TopSitesKey, shown)) {
+        emit changed();
+    }
+}
+
+int StartPageSettings::topSiteRows() const
+{
+    return choice(TopSiteRowsKey, MaxTopSiteRows, MinTopSiteRows, MaxTopSiteRows);
+}
+
+void StartPageSettings::setTopSiteRows(int rows)
+{
+    if (setChoice(TopSiteRowsKey, rows, MaxTopSiteRows, MinTopSiteRows, MaxTopSiteRows)) {
         emit changed();
     }
 }

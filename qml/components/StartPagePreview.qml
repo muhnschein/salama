@@ -19,6 +19,7 @@ Item {
     readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
     readonly property int columns: 4
+    readonly property int topSiteTiles: StartPageSettings.topSiteRows * columns
     readonly property color ink: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
 
     objectName: "startPagePreview"
@@ -88,13 +89,14 @@ Item {
                                 SiteTile {
                                     objectName: "startPagePreviewTile"
                                     width: screen.width / preview.columns
+                                    visible: index < preview.topSiteTiles
                                     url: model.url
                                     favicon: model.favicon
                                 }
                             }
 
                             Repeater {
-                                model: StartPage.topSites.count > 0 ? 0 : preview.columns
+                                model: StartPage.topSites.count > 0 ? 0 : preview.topSiteTiles
 
                                 SiteTile {
                                     objectName: "startPagePreviewSpareTile"
@@ -135,6 +137,7 @@ Item {
                                 SiteTile {
                                     objectName: "startPagePreviewTile"
                                     width: screen.width / preview.columns
+                                    visible: index < preview.topSiteTiles
                                     url: model.url
                                     title: model.title
                                     favicon: model.favicon
