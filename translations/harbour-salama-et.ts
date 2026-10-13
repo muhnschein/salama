@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Hoiab veebisaidi sisu ekraani sälgust eemal. Automaatne laseb kohandatud veebisaitidel sälgu ala kasutada, kuid hoiab sisu siiski nähtaval.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Püsiv tööriistariba</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Näita alati alumist tööriistariba</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Luba JavaScript</translation>
     </message>

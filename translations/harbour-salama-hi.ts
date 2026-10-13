@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>वेबसाइट की सामग्री को स्क्रीन के नॉच से दूर रखता है। स्वचालित विकल्प अनुकूलित वेबसाइटों को नॉच वाले हिस्से का इस्तेमाल करने देता है, और सामग्री फिर भी साफ़ दिखती रहती है।</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>स्थिर टूलबार</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>नीचे वाला टूलबार हमेशा दिखाएँ</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript सक्षम करें</translation>
     </message>

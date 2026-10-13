@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Pitää sivuston sisällön poissa näytön loven alta. Automaattinen antaa siihen sovitettujen sivustojen käyttää loven aluetta ja pitää sisällön silti näkyvissä.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Kiinteä työkalupalkki</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Näytä alapalkki aina</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ota JavaScript käyttöön</translation>
     </message>

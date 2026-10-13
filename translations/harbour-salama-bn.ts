@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ওয়েবসাইটের কন্টেন্ট স্ক্রিনের নচ থেকে দূরে রাখে। স্বয়ংক্রিয় মোডে উপযোগী করে তৈরি ওয়েবসাইটগুলি নচের জায়গা ব্যবহার করতে পারে, তবে কন্টেন্ট পরিষ্কার দেখা যায়।</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>স্থির টুলবার</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>নিচের টুলবার সবসময় দেখান</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript চালু করুন</translation>
     </message>

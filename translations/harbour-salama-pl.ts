@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Odsuwa treść stron od wycięcia w ekranie. „Auto” pozwala dostosowanym stronom korzystać z obszaru wycięcia, nie zasłaniając treści.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Stały pasek narzędzi</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Zawsze pokazuj dolny pasek narzędzi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Włącz JavaScript</translation>
     </message>

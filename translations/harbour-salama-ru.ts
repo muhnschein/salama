@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Не даёт содержимому сайтов заходить под вырез экрана. В режиме «Авто» адаптированные сайты могут использовать область выреза, а содержимое остаётся видимым.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Закреплённая панель инструментов</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Всегда показывать нижнюю панель инструментов</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Включить JavaScript</translation>
     </message>

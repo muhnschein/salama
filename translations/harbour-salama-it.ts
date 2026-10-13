@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Tiene i contenuti dei siti web lontani dal notch dello schermo. Automatico consente ai siti web adattati di usare l&apos;area del notch mantenendo i contenuti visibili.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra degli strumenti fissa</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Mostra sempre la barra degli strumenti in basso</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Attiva JavaScript</translation>
     </message>

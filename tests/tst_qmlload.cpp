@@ -6264,8 +6264,11 @@ void appendInOrder(QQuickItem *container, QStringList &held)
 QStringList columnOf(QObject *item)
 {
     auto *column = qobject_cast<QQuickItem *>(item);
+    const auto pageFlickable = [](const QQuickItem *of) {
+        return of->inherits("QQuickFlickable") && of->property("interactive").toBool();
+    };
     while (column->parentItem() && column->parentItem()->parentItem() &&
-           !column->parentItem()->parentItem()->inherits("QQuickFlickable")) {
+           !pageFlickable(column->parentItem()->parentItem())) {
         column = column->parentItem();
     }
     QStringList held;
@@ -6280,6 +6283,21 @@ QPointF onPage(QObject *item, QObject *page)
         return {qQNaN(), qQNaN()};
     }
     return qobject_cast<QQuickItem *>(item)->mapToItem(qobject_cast<QQuickItem *>(page), QPointF());
+}
+
+// Where a Silica menu opened on the item spreads, in the page's coordinates: ContextMenu (a
+// ComboBox's too) spans its nearest Flickable from that one's left edge.
+QRectF menuSpan(QObject *item, QObject *page)
+{
+    QQuickItem *flickable = qobject_cast<QQuickItem *>(item)->parentItem();
+    while (flickable != nullptr && !flickable->inherits("QQuickFlickable")) {
+        flickable = flickable->parentItem();
+    }
+    if (flickable == nullptr) {
+        return {};
+    }
+    return flickable->mapRectToItem(qobject_cast<QQuickItem *>(page),
+                                    QRectF(0, 0, flickable->width(), flickable->height()));
 }
 
 // The section header with this text, wherever it is on the page.
@@ -6331,7 +6349,6 @@ void tst_qmlload::settingsPage()
         QStringLiteral("coverSettingsEntry"),
         QStringLiteral("websiteColorsCombo"),
         QStringLiteral("notchGuardCombo"),
-        QStringLiteral("fixedToolbarSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("httpsOnlySettingsEntry"),
         QStringLiteral("dohSettingsEntry"),
@@ -6540,7 +6557,6 @@ void tst_qmlload::landscapeSettingsPage()
         {QStringLiteral("startPageSettingsEntry"), QStringLiteral("searchSettingsEntry")},
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("coverSettingsEntry")},
         {QStringLiteral("websiteColorsCombo"), QStringLiteral("notchGuardCombo")},
-        {QStringLiteral("fixedToolbarSwitch")},
         {QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry")},
         {QStringLiteral("trackingSettingsEntry"), QStringLiteral("globalPrivacyControlSwitch")},
         {QStringLiteral("javascriptSwitch"), QStringLiteral("sitePermissionsSettingsEntry")},
@@ -6554,6 +6570,12 @@ void tst_qmlload::landscapeSettingsPage()
             QVERIFY2(qAbs(point.x() - (i == 0 ? qreal(0) : width / 2)) < 1, qPrintable(row.at(i)));
             QVERIFY2(qAbs(point.y() - y) < 1, qPrintable(row.at(i)));
         }
+    }
+    // Device: combo menus spread over both columns, under the right one. Each keeps to its own.
+    for (const QString &name : rows.at(2)) {
+        const QRectF span = menuSpan(find(name), page);
+        QVERIFY2(qAbs(span.x() - at(name).x()) < 1, qPrintable(name));
+        QVERIFY2(qAbs(span.width() - width / 2) < 1, qPrintable(name));
     }
     // Each row below the one before it.
     below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("readerSettingsEntry"));
@@ -6603,6 +6625,10 @@ void tst_qmlload::landscapePreviewPages()
         QCOMPARE(at(page, QStringLiteral("startPageSitesSwitch")).y(), onPage(picture, page).y());
         QVERIFY(at(page, QStringLiteral("startPageRecentSwitch")).x() < width / 2);
         QVERIFY(onPage(sectionHeader(page, QStringLiteral("Sections")), page).x() < width / 2);
+        // Device: Rows menu spread over both columns, under the preview. Keeps to its column.
+        const QRectF rowsMenu = menuSpan(find(QStringLiteral("startPageTopSiteRowsCombo")), page);
+        QCOMPARE(rowsMenu.x(), qreal(0));
+        QVERIFY(qAbs(rowsMenu.width() - width / 2) < 1);
         QVERIFY(onPage(picture, page).x() >= width / 2);
         QVERIFY(onPage(frame, page).x() >= width / 2);
         QVERIFY(onPage(frame, page).x() + frame->property("width").toReal() <= width);
@@ -6862,8 +6888,7 @@ void tst_qmlload::sailfishBrowserSettings()
                                       " - Theme.itemSizeExtraSmall) / 2)"))
             .toReal();
     for (const QString &name :
-         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("globalPrivacyControlSwitch"),
-          QStringLiteral("javascriptSwitch")}) {
+         {QStringLiteral("globalPrivacyControlSwitch"), QStringLiteral("javascriptSwitch")}) {
         QObject *control = find(name);
         QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
                  qPrintable(name));
@@ -6907,13 +6932,9 @@ void tst_qmlload::sailfishBrowserSettings()
     guard->setProperty("currentIndex", int(Settings::NotchGuardAutomatic));
     QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
 
-    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
-    QVERIFY(!toolbar->property("checked").toBool());
-    toolbar->setProperty("checked", true);
-    QVERIFY(m_core->settings()->fixedToolbar());
+    // No fixed toolbar: landscape bar stays put, portrait slims.
+    QVERIFY(find(QStringLiteral("fixedToolbarSwitch")) == nullptr);
     webView->setProperty("chrome", false);
-    QVERIFY(!browser->property("barCompact").toBool());
-    toolbar->setProperty("checked", false);
     QVERIFY(browser->property("barCompact").toBool());
     webView->setProperty("chrome", true);
 
@@ -11380,6 +11401,10 @@ void tst_qmlload::landscapeStartPage()
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
     QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 4));
     QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+    // Device (#46): a row's menu spread over both halves. Keeps to the right one.
+    const QRectF rowMenu = menuSpan(findAll(QStringLiteral("recentPageRow")).first(), start);
+    QCOMPARE(rowMenu.x(), half);
+    QCOMPARE(rowMenu.width(), half);
     // Content as tall as the taller half plus padding.
     QCOMPARE(start->property("contentY").toReal(), qreal(0));
     const qreal left = bookmarks.bottom() - topSites.top();

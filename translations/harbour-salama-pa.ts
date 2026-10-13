@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ਵੈੱਬਸਾਈਟ ਦੀ ਸਮੱਗਰੀ ਨੂੰ ਸਕ੍ਰੀਨ ਦੇ ਨੌਚ ਤੋਂ ਦੂਰ ਰੱਖਦਾ ਹੈ। ਆਟੋਮੈਟਿਕ ਚੋਣ ਢਾਲੀਆਂ ਗਈਆਂ ਵੈੱਬਸਾਈਟਾਂ ਨੂੰ ਨੌਚ ਵਾਲਾ ਹਿੱਸਾ ਵਰਤਣ ਦਿੰਦੀ ਹੈ, ਅਤੇ ਸਮੱਗਰੀ ਫਿਰ ਵੀ ਸਾਫ਼ ਦਿਸਦੀ ਰਹਿੰਦੀ ਹੈ।</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>ਸਥਿਰ ਟੂਲਬਾਰ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>ਹੇਠਲੀ ਟੂਲਬਾਰ ਹਮੇਸ਼ਾ ਦਿਖਾਓ</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ਚਾਲੂ ਕਰੋ</translation>
     </message>

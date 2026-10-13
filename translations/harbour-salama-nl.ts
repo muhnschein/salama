@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Houdt website-inhoud weg van de notch van het scherm. “Auto” laat aangepaste websites het notchgebied gebruiken zonder dat inhoud wordt bedekt.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Vaste werkbalk</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Onderste werkbalk altijd tonen</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript inschakelen</translation>
     </message>

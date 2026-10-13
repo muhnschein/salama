@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Drží obsah webů mimo výřez displeje. „Auto“ nechá přizpůsobené weby využít oblast výřezu, aniž by byl obsah zakrytý.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Pevná lišta</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vždy zobrazovat dolní lištu</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Povolit JavaScript</translation>
     </message>

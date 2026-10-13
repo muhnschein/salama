@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Κρατά το περιεχόμενο των ιστοτόπων μακριά από την εγκοπή της οθόνης. Η επιλογή «Αυτόματο» επιτρέπει στους προσαρμοσμένους ιστοτόπους να χρησιμοποιούν την περιοχή της εγκοπής, διατηρώντας το περιεχόμενο ορατό.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Σταθερή γραμμή εργαλείων</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Πάντα εμφάνιση της κάτω γραμμής εργαλείων</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ενεργοποίηση JavaScript</translation>
     </message>

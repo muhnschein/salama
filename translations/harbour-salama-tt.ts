@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Сайт эчтәлеген экрандагы уемнан читтә тота. «Автоматик» җайлаштырылган сайтларга, эчтәлекне каплатмыйча, уем өлкәсен кулланырга мөмкинлек бирә.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Беркетелгән кораллар панеле</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Аскы кораллар панелен һәрвакыт күрсәтә</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript&apos;ны кабызырга</translation>
     </message>

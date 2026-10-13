@@ -101,61 +101,58 @@ Page {
                 }
 
                 // Index = stored value.
-                SettingsComboBox {
+                MenuScope {
                     width: settingsPage.columnWidth
-                    objectName: "websiteColorsCombo"
-                    iconSource: "image://theme/icon-m-night"
-                    label: qsTr("Preferred color scheme")
-                    description: qsTr("The website style to use when available")
-                    currentIndex: Settings.websiteColors
-                    menu: ContextMenu {
-                        MenuItem {
-                            text: settingsPage.names.websiteColors(Settings.WebsiteColorsAutomatic)
-                        }
 
-                        MenuItem {
-                            text: settingsPage.names.websiteColors(Settings.WebsiteColorsLight)
-                        }
+                    SettingsComboBox {
+                        objectName: "websiteColorsCombo"
+                        iconSource: "image://theme/icon-m-night"
+                        label: qsTr("Preferred color scheme")
+                        description: qsTr("The website style to use when available")
+                        currentIndex: Settings.websiteColors
+                        menu: ContextMenu {
+                            MenuItem {
+                                text: settingsPage.names.websiteColors(Settings.WebsiteColorsAutomatic)
+                            }
 
-                        MenuItem {
-                            text: settingsPage.names.websiteColors(Settings.WebsiteColorsDark)
+                            MenuItem {
+                                text: settingsPage.names.websiteColors(Settings.WebsiteColorsLight)
+                            }
+
+                            MenuItem {
+                                text: settingsPage.names.websiteColors(Settings.WebsiteColorsDark)
+                            }
                         }
+                        onCurrentIndexChanged: Settings.websiteColors = currentIndex
                     }
-                    onCurrentIndexChanged: Settings.websiteColors = currentIndex
                 }
 
-                SettingsComboBox {
+                MenuScope {
                     width: settingsPage.columnWidth
-                    objectName: "notchGuardCombo"
-                    iconSource: "image://theme/icon-m-display"
-                    label: qsTr("Notch guard")
-                    description: qsTr("Keeps website content away from the screen notch. Automatic "
-                                      + "lets adapted websites use the notch area while keeping "
-                                      + "content clear.")
-                    currentIndex: Settings.notchGuard
-                    menu: ContextMenu {
-                        MenuItem {
-                            text: settingsPage.names.notchGuard(Settings.NotchGuardAutomatic)
-                        }
 
-                        MenuItem {
-                            text: settingsPage.names.notchGuard(Settings.NotchGuardForced)
-                        }
+                    SettingsComboBox {
+                        objectName: "notchGuardCombo"
+                        iconSource: "image://theme/icon-m-display"
+                        label: qsTr("Notch guard")
+                        description: qsTr("Keeps website content away from the screen notch. Automatic "
+                                          + "lets adapted websites use the notch area while keeping "
+                                          + "content clear.")
+                        currentIndex: Settings.notchGuard
+                        menu: ContextMenu {
+                            MenuItem {
+                                text: settingsPage.names.notchGuard(Settings.NotchGuardAutomatic)
+                            }
 
-                        MenuItem {
-                            text: settingsPage.names.notchGuard(Settings.NotchGuardDisabled)
+                            MenuItem {
+                                text: settingsPage.names.notchGuard(Settings.NotchGuardForced)
+                            }
+
+                            MenuItem {
+                                text: settingsPage.names.notchGuard(Settings.NotchGuardDisabled)
+                            }
                         }
+                        onCurrentIndexChanged: Settings.notchGuard = currentIndex
                     }
-                    onCurrentIndexChanged: Settings.notchGuard = currentIndex
-                }
-
-                SettingsSwitch {
-                    width: settingsPage.columnWidth
-                    objectName: "fixedToolbarSwitch"
-                    text: qsTr("Fixed toolbar")
-                    description: qsTr("Always show the bottom toolbar")
-                    checked: Settings.fixedToolbar
-                    onCheckedChanged: Settings.fixedToolbar = checked
                 }
             }
 

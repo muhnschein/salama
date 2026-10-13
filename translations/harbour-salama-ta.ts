@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>வலைத்தள உள்ளடக்கத்தைத் திரையின் நாட்ச் பகுதியிலிருந்து விலக்கி வைக்கிறது. தானியங்கு என்பதில், இதற்கேற்ப அமைந்த வலைத்தளங்கள் உள்ளடக்கத்தை மறைக்காமல் நாட்ச் பகுதியைப் பயன்படுத்தலாம்.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>நிலைத்த கருவிப்பட்டை</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>கீழ்க் கருவிப்பட்டையை எப்போதும் காட்டு</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ஐ இயக்கு</translation>
     </message>

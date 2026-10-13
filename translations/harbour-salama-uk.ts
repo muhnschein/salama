@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Не дає вмісту сайтів заходити під виріз екрана. У режимі «Авто» адаптовані сайти можуть використовувати область вирізу, а вміст залишається видимим.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Закріплена панель інструментів</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Завжди показувати нижню панель інструментів</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Увімкнути JavaScript</translation>
     </message>

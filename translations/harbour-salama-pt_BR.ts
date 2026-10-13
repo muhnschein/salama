@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Mantém o conteúdo dos sites longe do recorte da tela. Automático permite que sites adaptados usem a área do recorte sem cobrir o conteúdo.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra de ferramentas fixa</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Sempre mostrar a barra de ferramentas inferior</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ativar JavaScript</translation>
     </message>

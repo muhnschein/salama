@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Håller webbplatsers innehåll borta från skärmutskärningen. Automatisk låter anpassade webbplatser använda området vid utskärningen men håller innehållet fritt.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fast verktygsfält</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Visa alltid verktygsfältet längst ner</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Aktivera JavaScript</translation>
     </message>

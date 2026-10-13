@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Tur vietnes saturu atstatus no ekrāna izgriezuma. Automātiskais režīms ļauj pielāgotām vietnēm izmantot izgriezuma laukumu, saglabājot saturu redzamu.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fiksēta rīkjosla</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vienmēr rādīt apakšējo rīkjoslu</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Iespējot JavaScript</translation>
     </message>

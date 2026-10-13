@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>संकेतस्थळाचा मजकूर स्क्रीनच्या नॉचपासून दूर ठेवते. स्वयंचलित पर्याय अनुकूल केलेल्या संकेतस्थळांना नॉचजवळचा भाग वापरू देतो, आणि तरीही मजकूर स्पष्ट दिसत राहतो.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>स्थिर साधनपट्टी</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>तळाची साधनपट्टी नेहमी दाखवा</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript सक्षम करा</translation>
     </message>

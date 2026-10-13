@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>让网站内容避开屏幕刘海。“自动”允许已适配的网站使用刘海区域，同时保证内容不被遮挡。</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>固定工具栏</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>始终显示底部工具栏</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>启用 JavaScript</translation>
     </message>

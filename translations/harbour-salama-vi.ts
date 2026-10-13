@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Giữ nội dung trang web tránh xa phần tai thỏ của màn hình. Chế độ Tự động cho phép các trang web đã được điều chỉnh dùng vùng tai thỏ mà nội dung vẫn không bị che.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Thanh công cụ cố định</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Luôn hiện thanh công cụ ở dưới cùng</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Bật JavaScript</translation>
     </message>

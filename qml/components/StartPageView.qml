@@ -104,7 +104,8 @@ SilicaFlickable {
             }
         }
 
-        Column {
+        // Row menus keep to this half.
+        MenuScope {
             objectName: "recentPagesSection"
             width: startPage.columnWidth
             visible: startPage.showsRecentPages

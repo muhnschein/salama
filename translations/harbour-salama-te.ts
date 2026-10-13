@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>వెబ్‌సైటు విషయాన్ని స్క్రీన్ నాచ్‌కు దూరంగా ఉంచుతుంది. ఆటోమేటిక్‌లో, దానికి అనుగుణంగా తయారైన వెబ్‌సైట్లు విషయాన్ని కప్పివేయకుండా నాచ్ ప్రాంతాన్ని వాడుకోవచ్చు.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>స్థిర పనిముట్లపట్టీ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>కింది పనిముట్లపట్టీని ఎల్లప్పుడూ చూపించు</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ను ప్రారంభించు</translation>
     </message>

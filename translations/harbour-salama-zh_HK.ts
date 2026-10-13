@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>讓網站內容避開螢幕凹口。「自動」允許已針對凹口調整的網站使用凹口區域，同時確保內容不被遮擋。</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>固定工具列</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>總是顯示底部工具列</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>啟用 JavaScript</translation>
     </message>

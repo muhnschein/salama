@@ -32,7 +32,8 @@ Page {
             Flow {
                 width: parent.width
 
-                Column {
+                // Rows menu keeps to this column.
+                MenuScope {
                     width: startPageSettings.columnWidth
 
                     TextSwitch {

@@ -1404,14 +1404,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Vsebino spletnih mest drži stran od izreza zaslona. Možnost »Samodejno« prilagojenim spletnim mestom dovoli uporabo območja izreza, vsebina pa ostane nezakrita.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fiksna orodna vrstica</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vedno prikaži spodnjo orodno vrstico</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Omogoči JavaScript</translation>
     </message>

@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Mantiene el contenido de los sitios web alejado de la muesca de la pantalla. Automático permite a los sitios web adaptados usar la zona de la muesca sin que el contenido quede tapado.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra de herramientas fija</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Mostrar siempre la barra de herramientas inferior</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Activar JavaScript</translation>
     </message>

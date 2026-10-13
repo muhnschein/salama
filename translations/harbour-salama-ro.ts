@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Ține conținutul site-urilor departe de decupajul ecranului. „Automat” permite site-urilor adaptate să folosească zona decupajului, păstrând totodată conținutul liber.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Bară de instrumente fixă</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Afișează întotdeauna bara de instrumente de jos</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Activează JavaScript</translation>
     </message>

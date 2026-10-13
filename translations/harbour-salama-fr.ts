@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Éloigne le contenu des sites web de l&apos;encoche de l&apos;écran. Automatique permet aux sites web adaptés d&apos;utiliser la zone de l&apos;encoche tout en gardant le contenu dégagé.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barre d&apos;outils fixe</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Toujours afficher la barre d&apos;outils du bas</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Activer JavaScript</translation>
     </message>

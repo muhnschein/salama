@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Holder websteders indhold væk fra hakket i skærmen. Automatisk lader tilpassede websteder bruge området ved hakket og holder samtidig indholdet frit.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fast værktøjslinje</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vis altid værktøjslinjen nederst</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Aktivér JavaScript</translation>
     </message>

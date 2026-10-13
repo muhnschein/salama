@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Hält Website-Inhalte von der Notch fern. „Auto“ lässt angepasste Websites den Bereich der Notch nutzen, ohne dass Inhalte verdeckt werden.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Feste Symbolleiste</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Untere Symbolleiste immer anzeigen</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript aktivieren</translation>
     </message>

@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Държи съдържанието на сайтовете далеч от изреза на екрана. „Авто“ позволява на пригодените сайтове да използват областта на изреза, като съдържанието остава видимо.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Фиксирана лента с инструменти</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Постоянно показване на долната лента с инструменти</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Включване на JavaScript</translation>
     </message>
