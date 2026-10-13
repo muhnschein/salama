@@ -23,9 +23,10 @@ $(BUILD)/CMakeCache.txt: CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt 
 build: configure
 	cmake --build $(BUILD) -j $(JOBS)
 
-# One process per test, serial, no retries (second-attempt pass = defect).
+# One process per test, serial, no retries (second-attempt pass = defect). Timeout guards hangs:
+# tst_qmlload waits on real animations and timers, past 120 s now.
 test: build
-	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 120
+	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 300
 
 # Drop compiler-made exception branches no test can take (632 of 1732; dragged imported
 # Sonar coverage down). Line coverage gate unaffected.

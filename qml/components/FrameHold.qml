@@ -2,9 +2,10 @@
 // Copyright (c) 2026 salama contributors
 //
 // Engine draws its last frame stretched to the view's new size until it draws one at that
-// size: after a turn, for a second or two on heavy pages (device). As Chrome on Android: taken
-// before the change, last frame stays unscaled at top left over page colour until engine lays
-// page out at new size. Engine then reports a visible area of the new shape.
+// size: after a turn, for a second or two on heavy pages (device). Bar's change: as Chrome on
+// Android, frame taken before it stays unscaled at top left over page colour. Turn: page colour
+// alone, upright frame in turned view read as one more movement (device). Held until engine
+// lays page out at new size; it then reports a visible area of the new shape.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -41,6 +42,17 @@ Item {
     function usable() {
         return !!view && view.painted === true && view.visible && view.width > 0
                 && view.height > 0
+    }
+
+    // Turn coming: page colour over view once it turns.
+    function cover() {
+        if (grabbing || holding || armed || !usable()) {
+            return
+        }
+        fade.stop()
+        opacity = 0
+        armed = true
+        disarm.restart()
     }
 
     // Takes engine's frame, then runs apply (the change), if any. Frame already held or
@@ -188,7 +200,7 @@ Item {
         onTriggered: hold.release()
     }
 
-    // Frame taken for a turn that never came.
+    // Turn or change that never came.
     Timer {
         id: disarm
 
@@ -201,13 +213,15 @@ Item {
         }
     }
 
+    // Heavy page goes on redrawing a second or two after (device): slow fade lets it settle.
     NumberAnimation {
         id: fade
 
+        objectName: "frameHoldFade"
         target: hold
         property: "opacity"
         to: 0
-        duration: 120
+        duration: 600
         onRunningChanged: {
             if (!running && !hold.holding) {
                 hold.shot = null

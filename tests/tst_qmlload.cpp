@@ -12484,14 +12484,17 @@ void tst_qmlload::frameHoldOverBarResize()
     webView->setProperty("painted", false);
 }
 
-// Device: page stretched for a second or two after a turn, much worse than for bar. Frame taken
-// as Silica starts fading page out, still upright; held over turned view until engine reports
-// page turned. No turn after all: frame dropped, later resize not held with it.
+// Device: page stretched for a second or two after a turn, much worse than for bar. Page colour
+// alone over turned view until engine reports page turned (upright frame in turned view read as
+// one more movement, device), then a slow fade over its last redraws. No turn after all: later
+// resize not held.
 void tst_qmlload::frameHoldOverTurn()
 {
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *hold = find(QStringLiteral("frameHold"));
     QObject *image = find(QStringLiteral("frameHoldImage"));
+    QObject *fill = find(QStringLiteral("frameHoldFill"));
+    QObject *fade = find(QStringLiteral("frameHoldFade"));
     QObject *webView = currentWebView();
     const auto holding = [hold]() { return hold->property("holding").toBool(); };
     const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
@@ -12509,35 +12512,42 @@ void tst_qmlload::frameHoldOverTurn()
         const QSizeF before = viewSize();
         const int taken = grabs();
         page->setProperty("orientationTransitionRunning", true);
-        QCOMPARE(grabs(), taken + 1);
+        QCOMPARE(grabs(), taken);
         QVERIFY(!holding());
         turnDevice(orientation);
         QVERIFY(viewSize() != before);
         QVERIFY(holding());
-        QCOMPARE(image->property("source").toUrl(),
-                 QUrl(QStringLiteral("image://grab/%1").arg(taken + 1)));
-        QCOMPARE(QSizeF(image->property("width").toReal(), image->property("height").toReal()),
-                 before);
+        QVERIFY(hold->property("visible").toBool());
+        QCOMPARE(hold->property("opacity").toReal(), 1.0);
+        QCOMPARE(image->property("source").toUrl(), QUrl());
+        QCOMPARE(fill->property("color").value<QColor>(),
+                 webView->property("backgroundColor").value<QColor>());
         page->setProperty("orientationTransitionRunning", false);
         // Bar's own change in turn: held already, no frame of turned view.
         QTRY_VERIFY(!find(QStringLiteral("navigationBar"))->property("resizing").toBool());
-        QCOMPARE(grabs(), taken + 1);
+        QCOMPARE(grabs(), taken);
         QVERIFY(holding());
         reportArea(viewSize());
         QTRY_VERIFY(!holding());
+        // Fades slowly over engine's last redraws.
+        QVERIFY(hold->property("visible").toBool());
+        QVERIFY(fade->property("running").toBool());
+        QVERIFY(fade->property("duration").toInt() >= 500);
     }
 
-    // Transition but no turn: frame dropped, not held over some later resize.
+    // Transition but no turn: later resize not held.
     QTRY_VERIFY(!hold->property("visible").toBool());
     page->setProperty("orientationTransitionRunning", true);
     page->setProperty("orientationTransitionRunning", false);
     QVERIFY(hold->property("armed").toBool());
-    QCOMPARE(image->property("source").toUrl(),
-             QUrl(QStringLiteral("image://grab/%1").arg(grabs())));
     QTRY_VERIFY_WITH_TIMEOUT(!hold->property("armed").toBool(), 3000);
-    QCOMPARE(image->property("source").toUrl(), QUrl());
     QVERIFY(!holding());
+
+    // Never drawn: nothing to stretch.
     webView->setProperty("painted", false);
+    page->setProperty("orientationTransitionRunning", true);
+    QVERIFY(!hold->property("armed").toBool());
+    page->setProperty("orientationTransitionRunning", false);
 }
 
 // Device: previews letterboxed (taken turned). Picture fills its cell whatever shape it was
@@ -12716,10 +12726,10 @@ void tst_qmlload::frameHoldWithLateFrames()
     finish();
     barAtRest();
 
-    // Turn outruns frame: page colour only, frame never shown.
-    before = viewSize();
-    page->setProperty("orientationTransitionRunning", true);
+    // Turn outruns bar's frame: page colour only, frame never shown.
+    webView->setProperty("chrome", false);
     QVERIFY(hold->property("grabbing").toBool());
+    page->setProperty("orientationTransitionRunning", true);
     turnDevice(Landscape);
     QVERIFY(holding());
     QCOMPARE(image->property("source").toUrl(), QUrl());
@@ -12729,10 +12739,13 @@ void tst_qmlload::frameHoldWithLateFrames()
     page->setProperty("orientationTransitionRunning", false);
     webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
     QTRY_VERIFY(!holding());
+    webView->setProperty("chrome", true);
     turnDevice(Portrait);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
     finish();
+    webView->setProperty("contentRect", QRectF(0, 0, viewSize().width(), viewSize().height()));
     barAtRest();
-    QVERIFY(!hold->property("visible").toBool());
+    QTRY_VERIFY(!hold->property("visible").toBool());
 
     // Other tab while frame awaited: bar's change made, late frame not held over other tab.
     TabModel *tabs = m_core->tabs();

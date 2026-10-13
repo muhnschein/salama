@@ -56,7 +56,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Scrolling no longer stutters as bar slims, grows, hides or shows: page resized once it comes to rest, not mid-scroll.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
-- Page no longer stretched after turning phone or as bar slims or hides at rest: as in Chrome, last picture stays unscaled over page colour until page redrawn at new size, for at most 1.5 s; touching page lets go at once.
+- Page no longer stretched after turning phone or as bar slims or hides at rest: turned page covered in its colour, bar's change keeps last picture unscaled over page colour as in Chrome, until page redrawn at new size (at most 1.5 s), then a slow fade over its last redraws; touching page lets go at once.
 - Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken when tab left by address pane, banner or link.
 
 ### Removed

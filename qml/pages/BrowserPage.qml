@@ -251,10 +251,10 @@ WebViewPage {
 
     onBarTargetChanged: settleBar()
     onPageMovingChanged: settleBar()
-    // Silica fades page out, turns it, fades it in: frame taken while page still upright.
+    // Silica fades page out, turns it, fades it in: page colour over view till engine turns it.
     onOrientationTransitionRunningChanged: {
         if (orientationTransitionRunning) {
-            frameHold.take()
+            frameHold.cover()
         }
     }
 
