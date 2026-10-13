@@ -30,6 +30,7 @@ Item {
     readonly property real columnWidth: halves ? screenWidth / 2 : screenWidth
     readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
     readonly property int columns: landscape ? Math.max(1, Math.min(8, fittingTiles)) : 4
+    readonly property int topSiteTiles: StartPageSettings.topSiteRows * columns
     readonly property color ink: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
 
     objectName: "startPagePreview"
@@ -105,13 +106,14 @@ Item {
                                     SiteTile {
                                         objectName: "startPagePreviewTile"
                                         width: preview.columnWidth / preview.columns
+                                        visible: index < preview.topSiteTiles
                                         url: model.url
                                         favicon: model.favicon
                                     }
                                 }
 
                                 Repeater {
-                                    model: StartPage.topSites.count > 0 ? 0 : preview.columns
+                                    model: StartPage.topSites.count > 0 ? 0 : preview.topSiteTiles
 
                                     SiteTile {
                                         objectName: "startPagePreviewSpareTile"
@@ -152,6 +154,7 @@ Item {
                                     SiteTile {
                                         objectName: "startPagePreviewTile"
                                         width: preview.columnWidth / preview.columns
+                                        visible: index < preview.topSiteTiles
                                         url: model.url
                                         title: model.title
                                         favicon: model.favicon

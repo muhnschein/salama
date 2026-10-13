@@ -172,6 +172,7 @@ private slots:
     void startsQuiet();
     void firstStartShowsTheStartPage();
     void startPage();
+    void startPageTopSiteRows();
     void addressBarNavigates();
     void omnibar();
     void omnibarFollowsItsSources();
@@ -820,6 +821,41 @@ void tst_qmlload::startPage()
     QCOMPARE(tabs->count(), 2);
     QCOMPARE(tabs->activeUrl(), QStringLiteral("https://sailfishos.org/"));
     QVERIFY(currentWebView() != nullptr);
+}
+
+// Frequently visited: two rows of tiles by default, one when chosen; tiles past the rows hidden,
+// most visited kept.
+void tst_qmlload::startPageTopSiteRows()
+{
+    QVERIFY(startWithoutTabs());
+    StartPageSettings *settings = m_core->startPageSettings();
+    QCOMPARE(settings->topSiteRows(), 2);
+    for (int i = 0; i < 6; ++i) {
+        const QString url = QStringLiteral("https://site%1.example/").arg(i);
+        for (int visit = 0; visit < 6 - i; ++visit) {
+            m_core->history()->visit(url, url);
+        }
+    }
+    const auto shownTiles = [this]() {
+        QStringList names;
+        for (QObject *tile : findAll(QStringLiteral("topSiteTile"))) {
+            if (tile->property("visible").toBool()) {
+                names.append(findObjects(tile, QStringLiteral("siteTileName"))
+                                 .first()
+                                 ->property("text")
+                                 .toString());
+            }
+        }
+        return names;
+    };
+    const QStringList all{QStringLiteral("site0.example"), QStringLiteral("site1.example"),
+                          QStringLiteral("site2.example"), QStringLiteral("site3.example"),
+                          QStringLiteral("site4.example"), QStringLiteral("site5.example")};
+    QCOMPARE(shownTiles(), all);
+    settings->setTopSiteRows(1);
+    QCOMPARE(shownTiles(), all.mid(0, 4));
+    settings->setTopSiteRows(2);
+    QCOMPARE(shownTiles(), all);
 }
 
 void tst_qmlload::addressBarNavigates()
@@ -6934,10 +6970,15 @@ void tst_qmlload::startPageSettingsPage()
     const QStringList sections{QStringLiteral("startPageTopSitesSwitch"),
                                QStringLiteral("startPageBookmarksSwitch"),
                                QStringLiteral("startPageRecentSwitch")};
-    const QStringList layout =
-        QStringList{QStringLiteral("startPageSitesSwitch"), QStringLiteral("startPageBlankSwitch"),
-                    QStringLiteral("#Sections")} +
-        sections + QStringList{QStringLiteral("#Preview"), QStringLiteral("startPagePreview")};
+    const QStringList layout = QStringList{QStringLiteral("startPageSitesSwitch"),
+                                           QStringLiteral("startPageBlankSwitch"),
+                                           QStringLiteral("#Sections"),
+                                           QStringLiteral("startPageTopSitesSwitch"),
+                                           QStringLiteral("startPageTopSiteRowsCombo"),
+                                           QStringLiteral("startPageBookmarksSwitch"),
+                                           QStringLiteral("startPageRecentSwitch"),
+                                           QStringLiteral("#Preview"),
+                                           QStringLiteral("startPagePreview")};
     QCOMPARE(columnOf(sites), layout);
 
     QVERIFY(!sites->property("automaticCheck").toBool());
@@ -6963,9 +7004,27 @@ void tst_qmlload::startPageSettingsPage()
     QVERIFY(shown(QStringLiteral("startPagePreviewTopSites")));
     QVERIFY(shown(QStringLiteral("startPagePreviewBookmarks")));
     QVERIFY(shown(QStringLiteral("startPagePreviewRecent")));
-    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 8);
+    // Two rows of frequently visited, one of bookmarks.
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 12);
     QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareRow")).count(), 3);
     QVERIFY(findAll(QStringLiteral("startPagePreviewTile")).isEmpty());
+
+    // Rows: two by default, one chosen; preview follows.
+    QObject *rowsCombo = find(QStringLiteral("startPageTopSiteRowsCombo"));
+    QVERIFY(shown(QStringLiteral("startPageTopSiteRowsCombo")));
+    QVERIFY(rowsCombo->property("enabled").toBool());
+    QCOMPARE(rowsCombo->property("label").toString(), QStringLiteral("Rows"));
+    QCOMPARE(rowsCombo->property("currentIndex").toInt(), 1);
+    rowsCombo->setProperty("currentIndex", 0);
+    QCOMPARE(settings->topSiteRows(), 1);
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 8);
+    settings->setTopSiteRows(2);
+    QCOMPARE(rowsCombo->property("currentIndex").toInt(), 1);
+    QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 12);
+    find(QStringLiteral("startPageTopSitesSwitch"))->setProperty("checked", false);
+    QVERIFY(!shown(QStringLiteral("startPageTopSiteRowsCombo")));
+    find(QStringLiteral("startPageTopSitesSwitch"))->setProperty("checked", true);
+    QVERIFY(shown(QStringLiteral("startPageTopSiteRowsCombo")));
 
     m_core->history()->visit(QStringLiteral("https://example.org/"), QStringLiteral("Example"));
     QCOMPARE(findAll(QStringLiteral("startPagePreviewSpareTile")).count(), 4);
@@ -7000,6 +7059,7 @@ void tst_qmlload::startPageSettingsPage()
     for (const QString &name : sections) {
         QVERIFY2(!find(name)->property("enabled").toBool(), qPrintable(name));
     }
+    QVERIFY(!rowsCombo->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("startPageRecentSwitch"))->property("checked").toBool());
     QVERIFY(!shown(QStringLiteral("startPagePreviewRecent")));
     QVERIFY(shown(QStringLiteral("startPagePreviewBar")));
@@ -11287,6 +11347,13 @@ void tst_qmlload::landscapeStartPage()
         checkRows(section, item, count, tilesPerRow);
         return !QTest::currentTestFailed();
     };
+    const auto shownTiles = [this]() {
+        int shown = 0;
+        for (QObject *tile : findAll(QStringLiteral("topSiteTile"))) {
+            shown += tile->property("visible").toBool() ? 1 : 0;
+        }
+        return shown;
+    };
 
     turnDevice(Landscape);
     layOut(window);
@@ -11334,6 +11401,10 @@ void tst_qmlload::landscapeStartPage()
     QCOMPARE(box(names.at(2)).y(), box(names.at(0)).y());
     QCOMPARE(start->property("columns").toInt(), 4);
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
+    // One row chosen: one row of the half's tiles.
+    m_core->startPageSettings()->setTopSiteRows(1);
+    QCOMPARE(shownTiles(), 4);
+    m_core->startPageSettings()->setTopSiteRows(2);
     m_core->startPageSettings()->setBookmarks(true);
 
     // Recent pages off: no empty right half, tiles across the whole width, all top sites a row.
@@ -11351,6 +11422,10 @@ void tst_qmlload::landscapeStartPage()
     QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 8));
     QCOMPARE(start->property("contentHeight").toReal(),
              box(names.at(1)).bottom() - box(names.at(0)).top() + padding);
+    // One row chosen: a row is the whole width's tiles.
+    m_core->startPageSettings()->setTopSiteRows(1);
+    QCOMPARE(shownTiles(), 8);
+    m_core->startPageSettings()->setTopSiteRows(2);
     m_core->startPageSettings()->setRecent(true);
 
     // Tile sections off: no empty left half, recent pages across the whole width.

@@ -64,6 +64,27 @@ Page {
                         onCheckedChanged: StartPageSettings.topSites = checked
                     }
 
+                    // Shown while frequently visited is on. Index = rows - 1.
+                    ComboBox {
+                        objectName: "startPageTopSiteRowsCombo"
+                        width: parent.width
+                        visible: StartPageSettings.topSites
+                        enabled: !StartPageSettings.blank
+                        //: How many rows of frequently visited sites the start page shows
+                        label: qsTr("Rows")
+                        currentIndex: StartPageSettings.topSiteRows - 1
+                        menu: ContextMenu {
+                            MenuItem {
+                                text: Number(1).toLocaleString(Qt.locale(), "f", 0)
+                            }
+
+                            MenuItem {
+                                text: Number(2).toLocaleString(Qt.locale(), "f", 0)
+                            }
+                        }
+                        onCurrentIndexChanged: StartPageSettings.topSiteRows = currentIndex + 1
+                    }
+
                     TextSwitch {
                         objectName: "startPageBookmarksSwitch"
                         enabled: !StartPageSettings.blank

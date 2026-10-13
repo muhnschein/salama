@@ -23,6 +23,8 @@ SilicaFlickable {
     readonly property real columnWidth: halves ? width / 2 : width
     readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
     readonly property int columns: landscape ? Math.max(1, Math.min(8, fittingTiles)) : 4
+    // Tiles past the chosen rows hidden; Grid skips hidden items.
+    readonly property int topSiteTiles: StartPageSettings.topSiteRows * columns
 
     signal openRequested(string url)
     signal newTabRequested(string url)
@@ -64,6 +66,7 @@ SilicaFlickable {
                         SiteTile {
                             objectName: "topSiteTile"
                             width: startPage.columnWidth / startPage.columns
+                            visible: index < startPage.topSiteTiles
                             url: model.url
                             favicon: model.favicon
                             onClicked: startPage.openRequested(model.url)
