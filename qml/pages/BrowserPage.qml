@@ -26,13 +26,8 @@ WebViewPage {
     // Mid-animation view sized to slim or hidden end: per-frame resize relaid out page
     // (keyboard stretch). Landscape banners float over page's right end.
     readonly property real barHeight: navigationBar.height
-    readonly property real barTarget: {
-        if (navigationBar.hidden || navigationBar.sliding) {
-            return 0
-        }
-        return navigationBar.compact || navigationBar.resizing ? navigationBar.slimHeight
-                                                               : barHeight
-    }
+    readonly property real barTarget: navigationBar.compact || navigationBar.resizing
+                                      ? navigationBar.slimHeight : barHeight
     // Each resize relays page out: done mid-scroll, it stuttered the scroll (device). Page keeps
     // its size while it moves and takes bar's new space once it rests; meanwhile a slimmed or
     // hidden bar leaves page colour below it, a grown one overlaps page foot.
@@ -51,16 +46,16 @@ WebViewPage {
     readonly property real cutoutInset: cutout.inset
     readonly property real pageCutoutInset: cutout.pageInset
 
-    // Not during deck drag: mid-drag resize relaid out page.
+    // Not during deck drag: mid-drag resize relaid out page. Landscape bar already slim and
+    // stays: hiding it on scroll, page's redraw at rest and the fade over it disoriented (device).
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || findBar.active || Settings.fixedToolbar) {
+        if (!currentView || isLandscape || navigationBar.editing || findBar.active
+                || Settings.fixedToolbar) {
             return false
         }
         // undefined on engine without chrome gesture -> bar unchanged.
         return currentView.chrome === false
     }
-    // Landscape: hide whole, every row counts on low page; portrait slims.
-    readonly property bool barHidden: barCompact && isLandscape
 
     objectName: "browserPage"
     allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
@@ -364,13 +359,12 @@ WebViewPage {
             objectName: "navigationBar"
             width: parent.width
             // Page height, not layer's: Silica shrinks page for keyboard, field must follow.
-            y: browserPage.height - height + hiddenAmount * height
+            y: browserPage.height - height
 
             view: browserPage.currentView
             canGoBack: browserPage.canGoBack
-            compact: browserPage.barCompact && !browserPage.isLandscape
+            compact: browserPage.barCompact
             landscape: browserPage.isLandscape
-            hidden: browserPage.barHidden
             pillsWidth: omnibar.pillsWidth
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()
@@ -399,11 +393,6 @@ WebViewPage {
             y: navigationBar.y - height
             allowed: !navigationBar.editing && !findBar.active && !browserPage.tabsOpen
                      && !browserPage.dragging
-            onDownloadShownChanged: {
-                if (downloadShown && browserPage.currentView) {
-                    browserPage.currentView.viewChrome.reveal()
-                }
-            }
         }
 
         FindBar {
@@ -491,7 +480,6 @@ WebViewPage {
             property ViewChrome viewChrome: ViewChrome {
                 view: webView
                 cutoutInset: browserPage.pageCutoutInset
-                revealing: browserPage.isLandscape
             }
 
             // Engine doesn't expose it; C++ validates colour.

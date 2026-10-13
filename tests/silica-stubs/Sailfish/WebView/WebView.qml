@@ -24,7 +24,6 @@ Item {
     property real footerMargin: 0
     // QuickMozView chrome gesture: engine drops chrome on scroll down, wants it back on scroll up.
     property bool chrome: true
-    property bool atYBeginning: true
     // QuickMozView: page panned or flung; finger on page.
     property bool moving: false
     property bool dragging: false

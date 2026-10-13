@@ -27,8 +27,6 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
     Q_PROPERTY(QString searchOfferedMessage READ searchOfferedMessage CONSTANT)
     Q_PROPERTY(QString contextMenuMessage READ contextMenuMessage CONSTANT)
-    Q_PROPERTY(QString pageTapMessage READ pageTapMessage CONSTANT)
-    Q_PROPERTY(QString pageTapScriptUrl READ pageTapScriptUrl CONSTANT)
 
 public:
     explicit EngineMessages(QObject *parent = nullptr);
@@ -69,13 +67,6 @@ public:
 
     // Platform WebView already listens, no registration needed.
     QString contextMenuMessage() const;
-
-    // Needs addMessageListener. Sent by pageTapScriptUrl's script on a tap off links and fields.
-    QString pageTapMessage() const;
-
-    // Frame script, not page script: page can't remove or fake it. Click only follows a tap
-    // (pan, pinch, long press, double-tap zoom send none).
-    QString pageTapScriptUrl() const;
 
     // All keys present. link "" for javascript:; kind "page", "app" (isExternalUrl) or "".
     Q_INVOKABLE static QVariantMap linkTarget(const QVariant &data);

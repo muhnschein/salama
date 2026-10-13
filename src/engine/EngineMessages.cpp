@@ -51,25 +51,6 @@ QString shownAddress(const QString &address)
 const int FindFound = 0;
 const int FindWrapped = 2;
 
-// Links navigate, fields bring keyboard: tap there is the page's.
-const char *const PageTapTemplate = R"((function () {
-    "use strict";
-    var message = "%1";
-    var controls = "a[href], area[href], button, input, select, textarea, label, summary";
-    addEventListener("click", function (event) {
-        var target = event.target;
-        if (!event.isTrusted || event.button !== 0 || !target
-                || typeof target.closest !== "function") {
-            return;
-        }
-        if (target.isContentEditable || target.closest(controls)) {
-            return;
-        }
-        sendAsyncMessage(message, {});
-    }, true);
-})();
-)";
-
 // Tracking protection's while on, Site permissions' while off.
 const char *const CookieBehavior = "network.cookie.cookieBehavior";
 
@@ -271,18 +252,6 @@ QVariantMap EngineMessages::searchOffered(const QVariant &data)
 QString EngineMessages::contextMenuMessage() const
 {
     return QStringLiteral("Content:ContextMenu");
-}
-
-QString EngineMessages::pageTapMessage() const
-{
-    return QStringLiteral("salama:pagetap");
-}
-
-QString EngineMessages::pageTapScriptUrl() const
-{
-    const QString script = QString::fromUtf8(PageTapTemplate).arg(pageTapMessage());
-    return QStringLiteral("data:application/javascript;charset=utf-8,") +
-           QString::fromLatin1(QUrl::toPercentEncoding(script));
 }
 
 QVariantMap EngineMessages::linkTarget(const QVariant &data)
