@@ -23,20 +23,25 @@ WebViewPage {
     property alias fullHeight: deck.fullHeight
     property alias pullThreshold: deck.pullThreshold
 
-    // Mid-animation view sized to slim end: per-frame resize relaid out page (keyboard stretch).
-    readonly property real barHeight: navigationBar.height
-    readonly property real viewHeight: fullHeight - banners.height
-                                       - (navigationBar.compact || navigationBar.resizing
-                                          ? navigationBar.slimHeight : barHeight)
+    // Page always ends at slim bar's top; whole bar overlaps its foot, as stock browser's toolbar
+    // overlays its page. Each resize relays page out and repaints it: as bar slimmed or grew it
+    // stuttered scroll, done at rest it still showed page colour before content (device).
+    // Landscape banners float over page's right end.
+    readonly property real viewHeight: fullHeight - (isLandscape ? 0 : banners.height)
+                                       - navigationBar.slimHeight
 
-    readonly property CutoutInsets cutout: CutoutInsets { view: browserPage.currentView }
+    readonly property CutoutInsets cutout: CutoutInsets {
+        view: browserPage.currentView
+        orientation: browserPage.orientation
+    }
     readonly property real cutoutHeight: cutout.height
     readonly property real cutoutInset: cutout.inset
     readonly property real pageCutoutInset: cutout.pageInset
 
-    // Not during deck drag: mid-drag resize relaid out page.
+    // Not during deck drag: mid-drag resize relaid out page. Landscape bar already slim and
+    // stays: hiding it on scroll, page's redraw at rest and the fade over it disoriented (device).
     readonly property bool barCompact: {
-        if (!currentView || navigationBar.editing || findBar.active || Settings.fixedToolbar) {
+        if (!currentView || isLandscape || navigationBar.editing || findBar.active) {
             return false
         }
         // undefined on engine without chrome gesture -> bar unchanged.
@@ -44,7 +49,7 @@ WebViewPage {
     }
 
     objectName: "browserPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function openUrl(url) {
         if (url.length === 0) {
@@ -143,7 +148,6 @@ WebViewPage {
     function openChosen(url, inNewTab) {
         navigationBar.endEditing()
         if (inNewTab && url.length > 0) {
-            captureCurrent()
             TabModel.newTab(url)
         } else {
             openUrl(url)
@@ -160,11 +164,12 @@ WebViewPage {
     }
 
     // Touch taken above bar from page foot, replayed to engine; focus ends address edit.
+    // Position in page coords, as bar gesture reports.
     function touchPage(position, phase) {
         if (!currentView) {
             return
         }
-        var at = currentView.mapFromItem(null, position.x, position.y)
+        var at = currentView.mapFromItem(browserPage, position.x, position.y)
         var touches = [Qt.point(at.x, at.y)]
         if (phase === "start") {
             currentView.forceActiveFocus()
@@ -218,6 +223,13 @@ WebViewPage {
         onTriggered: browserPage.trimMemory()
     }
 
+    // Silica fades page out, turns it, fades it in: page colour over view till engine turns it.
+    onOrientationTransitionRunningChanged: {
+        if (orientationTransitionRunning) {
+            frameHold.cover()
+        }
+    }
+
     Component.onCompleted: {
         WebEngineSettings.pixelRatio = pageZoom()
         WebEngineSettings.downloadDir = DownloadModel.directory
@@ -230,8 +242,15 @@ WebViewPage {
         updateCurrentView()
     }
 
+    // Page left by any way (address pane, banner, link): its picture for grid. Grid open: taken
+    // as it opened.
     Connections {
         target: TabModel
+        onActiveTabLeaving: {
+            if (!browserPage.tabsOpen && !browserPage.dragging) {
+                browserPage.captureCurrent()
+            }
+        }
         onActiveTabChanged: browserPage.updateCurrentView()
         onCountChanged: browserPage.ensureTab()
     }
@@ -287,6 +306,13 @@ WebViewPage {
                 anchors.fill: parent
                 onOpenRequested: browserPage.openUrl(url)
             }
+
+            FrameHold {
+                id: frameHold
+
+                anchors.fill: parent
+                view: browserPage.currentView
+            }
         }
 
         NavigationBar {
@@ -300,6 +326,8 @@ WebViewPage {
             view: browserPage.currentView
             canGoBack: browserPage.canGoBack
             compact: browserPage.barCompact
+            landscape: browserPage.isLandscape
+            pillsWidth: omnibar.pillsWidth
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()
             onReloadOrStop: browserPage.reloadOrStop()
@@ -318,10 +346,12 @@ WebViewPage {
             onPageTouchEnded: browserPage.touchPage(position, "end")
         }
 
+        // Landscape: portrait width over bar's right end, not stretched across.
         BarBanners {
             id: banners
 
-            width: parent.width
+            width: browserPage.isLandscape ? Math.min(parent.width, Screen.width) : parent.width
+            x: parent.width - width
             y: navigationBar.y - height
             allowed: !navigationBar.editing && !findBar.active && !browserPage.tabsOpen
                      && !browserPage.dragging
@@ -344,6 +374,9 @@ WebViewPage {
             active: navigationBar.paneUp
             text: navigationBar.typedText
             forNewTab: navigationBar.forNewTab
+            landscape: browserPage.isLandscape
+            rowHeight: navigationBar.height
+            pillsRight: navigationBar.fieldEnd
             onGoRequested: browserPage.openChosen(url, forNewTab)
             onSearchRequested: browserPage.openChosen(url, forNewTab)
             onUrlChosen: browserPage.openChosen(url, forNewTab)
@@ -360,6 +393,7 @@ WebViewPage {
 
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
+            pageHeight: browserPage.height
             // Drawn once drag may start: first drawn frame uploads all previews, stutters drag.
             visible: deck.tabsOffset > 0 || deck.primed
             onPullStarted: deck.beginDrag()
@@ -369,10 +403,15 @@ WebViewPage {
         }
     }
 
+    CutoutStrip {
+        objectName: "cutoutStrip"
+    }
+
     BrowserMenu {
         id: browserMenu
 
         view: browserPage.currentView
+        barTop: navigationBar.y
         onFindRequested: findBar.open()
     }
 
@@ -446,15 +485,10 @@ WebViewPage {
                 }
             }
 
-            function captureThumbnail() {
-                if (!isCurrent) {
-                    return
-                }
-                // Half size: GPU readback at gesture start. Encode/write off GUI thread in model.
-                grabToImage(function (result) {
-                    TabModel.storeThumbnail(tabId, result.image)
-                }, Qt.size(width / 2, height / 2))
+            property PagePicture picture: PagePicture {
+                view: webView; pageTabId: tabId; current: isCurrent; held: frameHold.holding
             }
+            function captureThumbnail() { picture.capture() }
 
             property ReaderMode reader: ReaderMode { view: webView }
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }
@@ -478,7 +512,6 @@ WebViewPage {
                 } else {
                     fetchFavicon()
                     fetchThemeColor()
-                    captureThumbnail()
                 }
             }
             Component.onCompleted: {

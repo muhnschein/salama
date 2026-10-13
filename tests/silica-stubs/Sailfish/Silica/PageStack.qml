@@ -8,6 +8,9 @@ Item {
     property Item currentPage: null
     property int depth: 0
     property bool busy: false
+    // Window's, for pages' orientation.
+    property int deviceOrientation: 1
+    property int windowOrientations: 15
 
     function instantiate(page, properties) {
         var component = (typeof page === "object" && page.createObject) ? page

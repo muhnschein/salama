@@ -19,8 +19,13 @@ Item {
     property real tabsOffset: dragging ? dragOffset : (tabsOpen ? fullHeight : 0)
     property bool primed: false
 
-    // Max height seen: resizing engine view mid-animation stretches content; keyboard covers.
+    // Max height seen in this orientation: resizing engine view mid-animation stretches
+    // content; keyboard covers. Keyboard never makes portrait page wider than tall, so a
+    // flip of that is a rotation.
     property real fullHeight: 0
+    // Shape at last flip. Silica turns width before height: square halfway counts as tall,
+    // either way round the max then settles it.
+    property bool measuredTall: true
 
     readonly property real pullThreshold: Theme.itemSizeLarge
 
@@ -31,11 +36,19 @@ Item {
     y: -tabsOffset
 
     function measure() {
-        if (pageHeight > fullHeight) {
-            fullHeight = pageHeight
+        var tall = pageHeight >= width
+        var height = tall === measuredTall ? Math.max(fullHeight, pageHeight) : pageHeight
+        measuredTall = tall
+        if (height !== fullHeight) {
+            // Rotated, or second side of turn: jump, no spring sliding open grid across.
+            var spring = deckSpring.enabled
+            deckSpring.enabled = false
+            fullHeight = height
+            deckSpring.enabled = spring
         }
     }
 
+    onWidthChanged: measure()
     onPageHeightChanged: measure()
     Component.onCompleted: measure()
 

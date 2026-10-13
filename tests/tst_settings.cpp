@@ -64,7 +64,7 @@ private slots:
     void notchGuard();
     void notchGuardOfAnEarlierRelease_data();
     void notchGuardOfAnEarlierRelease();
-    void fixedToolbar();
+    void fixedToolbarOfAnEarlierReleaseForgotten();
     void linkPreview();
     void contentSwitches();
     void globalPrivacyControlTakesDoNotTracksPlace_data();
@@ -88,7 +88,6 @@ void tst_settings::defaults()
     // Automatic by default, as sailfish-browser: cutout over page's first line isn't design.
     QCOMPARE(settings.general()->notchGuard(), int(Settings::NotchGuardAutomatic));
     QVERIFY(settings.general()->cutoutGuard());
-    QVERIFY(!settings.general()->fixedToolbar());
     QVERIFY(settings.general()->linkPreview());
     QVERIFY(!settings.privacy()->globalPrivacyControl());
     QVERIFY(settings.privacy()->javascript());
@@ -951,19 +950,22 @@ void tst_settings::notchGuardOfAnEarlierRelease()
     QCOMPARE(reloaded.general()->notchGuard(), expected);
 }
 
-void tst_settings::fixedToolbar()
+// Setting gone: earlier release's choice dropped from file, not left behind.
+void tst_settings::fixedToolbarOfAnEarlierReleaseForgotten()
 {
     QTemporaryDir dir;
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     {
-        Sections settings(path);
-        QSignalSpy spy(settings.general(), &Settings::fixedToolbarChanged);
-        settings.general()->setFixedToolbar(true);
-        settings.general()->setFixedToolbar(true);
-        QCOMPARE(spy.count(), 1);
+        QSettings old(path, QSettings::IniFormat);
+        old.setValue(QStringLiteral("fixedToolbar"), true);
+        old.setValue(QStringLiteral("linkPreview"), false);
     }
-    Sections reloaded(path);
-    QVERIFY(reloaded.general()->fixedToolbar());
+    {
+        Sections settings(path);
+    }
+    QSettings file(path, QSettings::IniFormat);
+    QVERIFY(!file.contains(QStringLiteral("fixedToolbar")));
+    QCOMPARE(file.value(QStringLiteral("linkPreview")).toBool(), false);
 }
 
 void tst_settings::linkPreview()

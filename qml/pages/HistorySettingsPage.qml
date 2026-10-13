@@ -11,7 +11,9 @@ Page {
     id: historyPage
 
     objectName: "historySettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
+    // Landscape: the switches on the left, what is kept and the clearing on the right.
+    readonly property real columnWidth: isLandscape ? width / 2 : width
 
     // Choice passed in: dialog gone before remorse ends. Engine clears all or nothing.
     function clearData(range, tabs, history, siteData, cache) {
@@ -59,68 +61,81 @@ Page {
                 title: qsTr("History")
             }
 
-            // Off keeps existing history until cleared.
-            TextSwitch {
-                objectName: "rememberHistorySwitch"
-                text: qsTr("Remember browsing history")
-                checked: PrivacySettings.rememberHistory
-                onCheckedChanged: PrivacySettings.rememberHistory = checked
-            }
-
-            TextSwitch {
-                objectName: "clearHistoryOnCloseSwitch"
-                text: qsTr("Clear history when closed")
-                description: qsTr("With it, the list of downloads and the recently closed tabs")
-                checked: PrivacySettings.clearHistoryOnClose
-                onCheckedChanged: PrivacySettings.clearHistoryOnClose = checked
-            }
-
-            SectionHeader {
-                //: What browsing has left on the phone, counted
-                text: qsTr("Kept on this phone")
-            }
-
-            DetailItem {
-                objectName: "keptHistory"
-                label: qsTr("History")
-                //: How many pages the history keeps
-                value: qsTr("%n page(s)", "", HistoryModel.pageCount)
-            }
-
-            DetailItem {
-                objectName: "keptDownloads"
-                label: qsTr("Downloads")
-                //: How many downloads the list of them keeps
-                value: qsTr("%n file(s)", "", DownloadModel.count)
-            }
-
-            DetailItem {
-                objectName: "keptClosedTabs"
-                label: qsTr("Recently closed")
-                //: How many closed tabs can be opened again
-                value: qsTr("%n tab(s)", "", ClosedTabs.count)
-            }
-
-            DetailItem {
-                objectName: "keptOpenTabs"
-                label: qsTr("Open tabs")
-                //: How many tabs are open, and in how many groups: "17, in 5 groups"
-                value: TabGroups.count > 1 ? qsTr("%1, in %n group(s)", "", TabGroups.count)
-                                             .arg(TabModel.count)
-                                           : qsTr("%n tab(s)", "", TabModel.count)
-            }
-
-            Item {
+            Flow {
                 width: parent.width
-                height: Theme.paddingLarge
-            }
 
-            // Button, not row: acts, doesn't navigate.
-            Button {
-                objectName: "clearDataButton"
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Clear browsing data")
-                onClicked: historyPage.openClearData()
+                Column {
+                    width: historyPage.columnWidth
+
+                    // Off keeps existing history until cleared.
+                    TextSwitch {
+                        objectName: "rememberHistorySwitch"
+                        text: qsTr("Remember browsing history")
+                        checked: PrivacySettings.rememberHistory
+                        onCheckedChanged: PrivacySettings.rememberHistory = checked
+                    }
+
+                    TextSwitch {
+                        objectName: "clearHistoryOnCloseSwitch"
+                        text: qsTr("Clear history when closed")
+                        description:
+                            qsTr("With it, the list of downloads and the recently closed tabs")
+                        checked: PrivacySettings.clearHistoryOnClose
+                        onCheckedChanged: PrivacySettings.clearHistoryOnClose = checked
+                    }
+                }
+
+                Column {
+                    width: historyPage.columnWidth
+
+                    SectionHeader {
+                        //: What browsing has left on the phone, counted
+                        text: qsTr("Kept on this phone")
+                    }
+
+                    DetailItem {
+                        objectName: "keptHistory"
+                        label: qsTr("History")
+                        //: How many pages the history keeps
+                        value: qsTr("%n page(s)", "", HistoryModel.pageCount)
+                    }
+
+                    DetailItem {
+                        objectName: "keptDownloads"
+                        label: qsTr("Downloads")
+                        //: How many downloads the list of them keeps
+                        value: qsTr("%n file(s)", "", DownloadModel.count)
+                    }
+
+                    DetailItem {
+                        objectName: "keptClosedTabs"
+                        label: qsTr("Recently closed")
+                        //: How many closed tabs can be opened again
+                        value: qsTr("%n tab(s)", "", ClosedTabs.count)
+                    }
+
+                    DetailItem {
+                        objectName: "keptOpenTabs"
+                        label: qsTr("Open tabs")
+                        //: How many tabs are open, and in how many groups: "17, in 5 groups"
+                        value: TabGroups.count > 1 ? qsTr("%1, in %n group(s)", "", TabGroups.count)
+                                                     .arg(TabModel.count)
+                                                   : qsTr("%n tab(s)", "", TabModel.count)
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: Theme.paddingLarge
+                    }
+
+                    // Button, not row: acts, doesn't navigate.
+                    Button {
+                        objectName: "clearDataButton"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Clear browsing data")
+                        onClicked: historyPage.openClearData()
+                    }
+                }
             }
         }
 

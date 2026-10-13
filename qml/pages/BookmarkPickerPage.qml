@@ -14,7 +14,7 @@ Page {
     signal bookmarkPicked(int bookmarkId, string url, string title)
 
     objectName: "bookmarkPickerPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     SilicaListView {
         id: pickerList

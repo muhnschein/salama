@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>让网站内容避开屏幕刘海。“自动”允许已适配的网站使用刘海区域，同时保证内容不被遮挡。</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>固定工具栏</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>始终显示底部工具栏</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>启用 JavaScript</translation>
     </message>
@@ -1855,10 +1847,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>无预览</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>起始页</translation>
     </message>
@@ -2023,7 +2011,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>长按标签页，然后将其放到群组名称上，即可移入该群组。</translation>
     </message>
     <message>

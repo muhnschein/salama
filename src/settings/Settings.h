@@ -12,7 +12,6 @@ class Settings : public SettingsSection
     Q_PROPERTY(int notchGuard READ notchGuard WRITE setNotchGuard NOTIFY notchGuardChanged)
     // Guard not Disabled: tab grid head row + tutorial sketch avoid cutout.
     Q_PROPERTY(bool cutoutGuard READ cutoutGuard NOTIFY notchGuardChanged)
-    Q_PROPERTY(bool fixedToolbar READ fixedToolbar WRITE setFixedToolbar NOTIFY fixedToolbarChanged)
     Q_PROPERTY(
         int websiteColors READ websiteColors WRITE setWebsiteColors NOTIFY websiteColorsChanged)
     Q_PROPERTY(
@@ -45,9 +44,6 @@ public:
     void setNotchGuard(int guard);
     bool cutoutGuard() const;
 
-    bool fixedToolbar() const;
-    void setFixedToolbar(bool fixed);
-
     int websiteColors() const;
     void setWebsiteColors(int colors);
 
@@ -62,7 +58,6 @@ public:
 
 signals:
     void notchGuardChanged();
-    void fixedToolbarChanged();
     void websiteColorsChanged();
     void tutorialShownChanged();
     void linkPreviewChanged();

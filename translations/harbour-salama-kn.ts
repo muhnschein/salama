@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ವೆಬ್‌ಸೈಟ್ ವಿಷಯವನ್ನು ಪರದೆಯ ನಾಚ್‌ನಿಂದ ದೂರವಿಡುತ್ತದೆ. ಸ್ವಯಂಚಾಲಿತ ಆಯ್ಕೆಯು ಹೊಂದಿಸಲಾದ ವೆಬ್‌ಸೈಟ್‌ಗಳಿಗೆ ನಾಚ್ ಪ್ರದೇಶವನ್ನು ಬಳಸಲು ಬಿಡುತ್ತದೆ, ಆದರೆ ವಿಷಯವು ಅಡ್ಡಿಯಿಲ್ಲದೆ ಕಾಣುವಂತೆ ಇಡುತ್ತದೆ.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>ಸ್ಥಿರ ಉಪಕರಣಪಟ್ಟಿ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>ಕೆಳಗಿನ ಉಪಕರಣಪಟ್ಟಿಯನ್ನು ಯಾವಾಗಲೂ ತೋರಿಸಿ</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ಸಕ್ರಿಯಗೊಳಿಸಿ</translation>
     </message>
@@ -1877,10 +1869,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>ಮುನ್ನೋಟವಿಲ್ಲ</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>ಪ್ರಾರಂಭ ಪುಟ</translation>
     </message>
@@ -2046,7 +2034,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>ಟ್ಯಾಬ್ ಅನ್ನು ಒತ್ತಿ ಹಿಡಿದು, ಅದನ್ನು ಆ ಗುಂಪಿಗೆ ಸರಿಸಲು ಗುಂಪಿನ ಹೆಸರಿನ ಮೇಲೆ ಬಿಡಿ.</translation>
     </message>
     <message>
