@@ -57,7 +57,8 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Scrolling no longer stutters or flashes page colour as bar slims or grows: page ends at slim bar's top, whole bar overlaps its foot, page never resized for bar.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag; press on page foot near bar prepares nothing until finger heads up.
 - Page no longer stretched after turning phone: turned page covered in its colour until page laid out turned (at most 1.5 s), then a slow fade over its last redraws; touching page removes cover at once.
-- Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken when tab left by address pane, banner or link.
+- Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken as tab is left (any way) only if page scrolled, zoomed or changed since.
+- Switching and opening tabs quicker: no page picture when last one still shows page, tab search builds its rows only while searching. Bar slims and grows without laying address out again each frame. Turning no longer lays out closed tab grid in turn itself.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.

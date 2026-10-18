@@ -206,6 +206,7 @@ private slots:
     void barDragStartsWithoutAStutter();
     void barStaysSlimWhileDragged();
     void barOverlapsPageFoot();
+    void barSlideLaysNothingOut();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -284,6 +285,7 @@ private slots:
     void everyPageTurns();
     void sectionHeadersInset();
     void deckTurnsEitherWay();
+    void hiddenGridWaitsOutTurn();
     void landscapeBrowsing();
     void landscapeStartPage();
     void landscapeTutorial();
@@ -1783,8 +1785,14 @@ void tst_qmlload::tabGrid()
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), QLatin1String(FirstPage));
     QCOMPARE(secondView->property("grabCount").toInt(), secondGrabs);
 
+    // Grid opened over page unchanged since its picture: none taken; scrolled since: taken.
     QObject *homeView = currentWebView();
     QCOMPARE(homeView->property("grabCount").toInt(), 1);
+    pullUpToTabs();
+    QCOMPARE(homeView->property("grabCount").toInt(), 1);
+    pullDownToBrowser();
+    homeView->setProperty("moving", true);
+    homeView->setProperty("moving", false);
     pullUpToTabs();
     QCOMPARE(homeView->property("grabCount").toInt(), 2);
 
@@ -2149,8 +2157,11 @@ void tst_qmlload::tabSearch()
     tabs->thumbnailWriter()->waitForDone();
     settle();
 
+    // No rows until searched: every tab change reset them, a hidden list made them all again.
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     QObject *view = find(QStringLiteral("tabsView"));
     QObject *field = find(QStringLiteral("tabSearchField"));
     QObject *found = find(QStringLiteral("tabSearchList"));
@@ -2628,8 +2639,9 @@ void tst_qmlload::landscapeTabSearch()
     settle();
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
+    // Half a portrait page.
     const QString picture = m_dir->path() + QStringLiteral("/office.png");
-    QImage(8, 8, QImage::Format_RGB32).save(picture);
+    QImage(540, 1170, QImage::Format_RGB32).save(picture);
     tabs->updateThumbnail(second, picture);
     auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
     auto *window = qobject_cast<QQuickItem *>(m_window.data());
@@ -2652,6 +2664,7 @@ void tst_qmlload::landscapeTabSearch()
     QVERIFY(railWidth > 0);
 
     QVERIFY(!found->isVisible());
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     search(QStringLiteral("office"));
     QVERIFY(found->isVisible());
     QVERIFY(!list->isVisible());
@@ -2694,8 +2707,14 @@ void tst_qmlload::landscapeTabSearch()
              QStringLiteral("two.example"));
     QCOMPARE(line(results.at(1), "tabSearchGroup")->property("text").toString(),
              QStringLiteral("Work"));
-    QCOMPARE(line(results.at(1), "tabSearchThumbnail")->property("source").toUrl(),
-             QUrl::fromLocalFile(picture));
+    auto *thumbnail = qobject_cast<QQuickItem *>(line(results.at(1), "tabSearchThumbnail"));
+    QCOMPARE(thumbnail->property("source").toUrl(), QUrl::fromLocalFile(picture));
+    // Decoded about cell size, covering it, not at picture's.
+    QTRY_VERIFY(thumbnail->isVisible());
+    const QSizeF decoded(thumbnail->implicitWidth(), thumbnail->implicitHeight());
+    QVERIFY(decoded.width() >= thumbnail->width());
+    QVERIFY(decoded.width() <= 2 * thumbnail->width());
+    QVERIFY(decoded.height() >= thumbnail->height());
 
     // Keyboard shrinks page: results end above it, rail keeps full height.
     const qreal landscapeHeight = browser->height();
@@ -3485,7 +3504,9 @@ void tst_qmlload::barDragStartsWithoutAStutter()
     QVERIFY(!grid->property("visible").toBool());
 
     // Reach lies over page foot, mostly tapped and scrolled (device): no picture, no grid for
-    // that; both once finger heads up, still ahead of drag.
+    // that; both once finger heads up, still ahead of drag. Page scrolled since last picture.
+    webView->setProperty("moving", true);
+    webView->setProperty("moving", false);
     const int before = webView->property("grabCount").toInt();
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
     QVERIFY(!grid->property("visible").toBool());
@@ -3601,6 +3622,62 @@ void tst_qmlload::barOverlapsPageFoot()
     turnDevice(Portrait);
     QTRY_VERIFY(!hold->property("visible").toBool());
     webView->setProperty("painted", false);
+}
+
+// Bar's slide only moves and scales: host text and mute drawn at full size and scaled (new font
+// size each frame laid text out each frame), closed address pane and portrait menu stay put.
+// At rest: true size, unscaled.
+void tst_qmlload::barSlideLaysNothingOut()
+{
+    // Real window: bar row laid out on draw.
+    FingerWindow fingers(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(fingers.window()));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
+    QObject *row = find(QStringLiteral("addressRow"));
+    auto *host = qobject_cast<QQuickItem *>(find(QStringLiteral("addressLabel")));
+    auto *mute = qobject_cast<QQuickItem *>(find(QStringLiteral("muteButton")));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QObject *pane = find(QStringLiteral("omnibarView"));
+    QObject *webView = currentWebView();
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    const int slimFont = int(evaluate(bar, QStringLiteral("Theme.fontSizeSmall")).toReal());
+    const int fullFont = int(evaluate(bar, QStringLiteral("Theme.fontSizeMedium")).toReal());
+    const qreal slimIcon = evaluate(bar, QStringLiteral("Theme.iconSizeSmall")).toReal();
+    const qreal fullIcon = evaluate(bar, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QVERIFY(slimFont < fullFont);
+    QVERIFY(slimIcon < fullIcon);
+    const qreal menuTop = menu->property("barTop").toReal();
+    const qreal paneHeight = pane->property("height").toReal();
+    const qreal paneRow = pane->property("rowHeight").toReal();
+    const auto font = [host]() { return host->property("font").value<QFont>().pixelSize(); };
+    const auto hostCentre = [host, bar]() {
+        return host->mapToItem(bar, QPointF(host->width() / 2, 0)).x();
+    };
+    QCOMPARE(font(), fullFont);
+
+    for (const bool slim : {true, false}) {
+        webView->setProperty("chrome", !slim);
+        QVERIFY(bar->property("resizing").toBool());
+        QSet<qreal> scales;
+        while (bar->property("resizing").toBool()) {
+            QCOMPARE(font(), fullFont);
+            QCOMPARE(mute->width(), fullIcon);
+            // Drawn at bar's size.
+            QVERIFY(qAbs(host->scale() * fullFont - row->property("fontSize").toReal()) < 0.01);
+            QVERIFY(qAbs(mute->scale() * fullIcon - row->property("iconSize").toReal()) < 0.01);
+            QCOMPARE(menu->property("barTop").toReal(), menuTop);
+            QCOMPARE(pane->property("height").toReal(), paneHeight);
+            QCOMPARE(pane->property("rowHeight").toReal(), paneRow);
+            scales.insert(host->scale());
+            QTest::qWait(16);
+        }
+        QVERIFY(scales.count() > 2);
+        QCOMPARE(font(), slim ? slimFont : fullFont);
+        QCOMPARE(mute->width(), slim ? slimIcon : fullIcon);
+        QCOMPARE(host->scale(), 1.0);
+        QCOMPARE(mute->scale(), 1.0);
+        QTRY_VERIFY(qAbs(hostCentre() - bar->width() / 2) <= 0.5);
+    }
 }
 
 // Reach above bar overlaps page foot (player seek bar, buttons). Keeps only drag up (opens grid);
@@ -8823,6 +8900,13 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
                               Q_ARG(QVariant, Qt::ApplicationActive));
     QCOMPARE(webView->property("grabCount").toInt(), grabs);
 
+    // Picture from load end shows page as it is: none taken.
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    QCOMPARE(webView->property("grabCount").toInt(), grabs);
+
+    webView->setProperty("moving", true);
+    webView->setProperty("moving", false);
     QMetaObject::invokeMethod(page, "applicationStateChanged",
                               Q_ARG(QVariant, Qt::ApplicationInactive));
     QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
@@ -11122,10 +11206,18 @@ void tst_qmlload::tutorialUnderAFinger()
 }
 
 // Stub pages follow window's device orientation where page and window allow it, as Silica.
+// Hidden grids take turned size once turn is over (hiddenGridWaitsOutTurn()); later checks read
+// them laid out.
 void tst_qmlload::turnDevice(int orientation) const
 {
     m_window->setProperty("deviceOrientation", orientation);
     settle();
+    for (QObject *deck :
+         findAll(QStringLiteral("tabDeck")) + findAll(QStringLiteral("tutorialDeck"))) {
+        auto *slot = deck->findChild<QQuickItem *>(QStringLiteral("gridSlot"));
+        QTRY_VERIFY(slot->width() == deck->property("width").toReal() &&
+                    slot->height() == deck->property("fullHeight").toReal());
+    }
 }
 
 // Every page and dialog turns to either landscape, none upside down: inverted portrait puts
@@ -11245,6 +11337,50 @@ void tst_qmlload::deckTurnsEitherWay()
         deck.reset(component.create());
         QCOMPARE(turn(widthFirst, tall, narrow), narrow);
     }
+}
+
+// Hidden grid keeps its size through turn, takes new one once turn is over: laid out in turn's
+// frame, it remade every preview and held up engine's resize. Grid shown or about to be (drag
+// primed): at once.
+void tst_qmlload::hiddenGridWaitsOutTurn()
+{
+    QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QStringLiteral(
+                                                 SALAMA_SOURCE_DIR "/qml/components/TabDeck.qml")));
+    QScopedPointer<QObject> deck(component.create());
+    QVERIFY2(deck, qPrintable(component.errorString()));
+    auto *slot = deck->findChild<QQuickItem *>(QStringLiteral("gridSlot"));
+    QVERIFY(slot != nullptr);
+    const qreal narrow = 540;
+    const qreal tall = 1170;
+    const QSizeF upright(narrow, tall);
+    const QSizeF sideways(tall, narrow);
+    const auto turn = [&deck](const QSizeF &size) {
+        deck->setProperty("width", size.width());
+        deck->setProperty("pageHeight", size.height());
+    };
+    const auto slotSize = [slot]() { return QSizeF(slot->width(), slot->height()); };
+
+    // First size at once.
+    turn(upright);
+    QCOMPARE(slotSize(), upright);
+    turn(sideways);
+    QCOMPARE(slotSize(), upright);
+    QCOMPARE(slot->y(), narrow);
+    QTRY_COMPARE(slotSize(), sideways);
+
+    // Drag primed while waiting: sized then.
+    turn(upright);
+    QCOMPARE(slotSize(), sideways);
+    QVERIFY(QMetaObject::invokeMethod(deck.data(), "prime"));
+    QVERIFY(deck->property("gridShown").toBool());
+    QCOMPARE(slotSize(), upright);
+    QVERIFY(QMetaObject::invokeMethod(deck.data(), "unprime"));
+
+    // Open grid turns with page.
+    deck->setProperty("tabsOpen", true);
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), tall);
+    turn(sideways);
+    QCOMPARE(slotSize(), sideways);
 }
 
 // Silica keeps landscape page clear of cutout, so no top inset; deck, grid, start page, banner
@@ -12677,16 +12813,62 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     webView->setProperty("loading", false);
     QCOMPARE(grabs(), 3);
 
+    // Left with picture from load end: none taken. Each switch took one, and readback, encode
+    // and model's refresh made switch four times the work.
     TabModel *tabs = m_core->tabs();
     const int left = tabs->activeTabId();
     const int other = tabs->newTabBehind(QStringLiteral("https://other.example/"), QString());
     QCOMPARE(grabs(), 3);
     QVERIFY(tabs->activateTabById(other));
-    QCOMPARE(grabs(), 4);
+    QCOMPARE(grabs(), 3);
+    QVERIFY(tabs->activateTabById(left));
+    const auto leave = [&]() {
+        const int before = grabs();
+        tabs->activateTabById(other);
+        const int taken = grabs() - before;
+        tabs->activateTabById(left);
+        return taken;
+    };
+    QCOMPARE(leave(), 0);
+
+    // Scrolled or zoomed since: taken as page is left, once.
+    for (const char *gesture : {"moving", "pinching"}) {
+        webView->setProperty(gesture, true);
+        webView->setProperty(gesture, false);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 0);
+    }
     tabs->thumbnailWriter()->waitForDone();
     QTRY_VERIFY(!tabs->data(tabs->index(tabs->indexOf(left), 0), roleId(TabModel::Role::Thumbnail))
                      .toString()
                      .isEmpty());
+
+    // Grab or picture failed: tried again next time.
+    for (const char *failure : {"grabFails", "grabSaveFails"}) {
+        webView->setProperty("moving", true);
+        webView->setProperty("moving", false);
+        webView->setProperty(failure, true);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 1);
+        webView->setProperty(failure, false);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 0);
+    }
+
+    // Address changed in page, or view resized (keyboard): taken.
+    webView->setProperty("url", QUrl(QStringLiteral("https://example.org/#more")));
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 0);
+    webView->setProperty("height", webView->property("height").toReal() - 100);
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 0);
+
+    // Left mid-load: taken; load end takes its own.
+    webView->setProperty("loading", true);
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 1);
+    webView->setProperty("loading", false);
+    QCOMPARE(leave(), 0);
 }
 
 #include "tst_qmlload.moc"

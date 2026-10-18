@@ -79,6 +79,9 @@ Column {
                     fillMode: Image.PreserveAspectCrop
                     verticalAlignment: Image.AlignTop
                     asynchronous: true
+                    // Decoded just wide enough to cover cell, a landscape page's wider picture
+                    // too: whole picture is half a page. Width alone, as both fit it inside.
+                    sourceSize.width: Math.ceil(width * 3 / 2)
                     source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
                     visible: status === Image.Ready
                 }

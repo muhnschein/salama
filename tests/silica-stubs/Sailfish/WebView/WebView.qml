@@ -24,9 +24,10 @@ Item {
     property real footerMargin: 0
     // QuickMozView chrome gesture: engine drops chrome on scroll down, wants it back on scroll up.
     property bool chrome: true
-    // QuickMozView: page panned or flung; finger on page.
+    // QuickMozView: page panned or flung; finger on page; two fingers zooming.
     property bool moving: false
     property bool dragging: false
+    property bool pinching: false
     property color backgroundColor: "white"
     // QuickMozView: engine drew document once (false again from load start); visible part of
     // page in CSS pixels, its shape the view's once engine laid page out at view's size.

@@ -293,7 +293,9 @@ Item {
         height: Math.min(parent.height, tabsView.pageHeight) - headRow.height - footRow.height
         visible: tabsView.searching && !tabsView.wide
         clip: true
-        model: tabsView.wide ? null : TabSearch
+        // Only while searching: model resets on every tab change, a hidden list made all its
+        // rows again each time (several per page load, measured).
+        model: tabsView.searching && !tabsView.wide ? TabSearch : null
 
         delegate: TabSearchDelegate {
             match: tabsView.searchMatch
@@ -316,7 +318,7 @@ Item {
         height: Math.min(parent.height, tabsView.pageHeight)
         visible: tabsView.searching && tabsView.wide
         clip: true
-        model: tabsView.wide ? TabSearch : null
+        model: tabsView.searching && tabsView.wide ? TabSearch : null
         cellWidth: width / 2
         cellHeight: Theme.itemSizeSmall
 

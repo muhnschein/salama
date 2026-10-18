@@ -102,7 +102,7 @@ WebViewPage {
 
     function captureCurrent() {
         if (currentView) {
-            currentView.captureThumbnail()
+            currentView.refreshPicture()
         } else {
             startPageLayer.capture()
         }
@@ -242,8 +242,8 @@ WebViewPage {
         updateCurrentView()
     }
 
-    // Page left by any way (address pane, banner, link): its picture for grid. Grid open: taken
-    // as it opened.
+    // Page left by any way (address pane, banner, link): its picture for grid, if page changed
+    // since. Grid open: taken as it opened.
     Connections {
         target: TabModel
         onActiveTabLeaving: {
@@ -370,12 +370,13 @@ WebViewPage {
 
             width: parent.width
             y: browserPage.cutoutInset
-            height: navigationBar.y - y
+            // Closed pane doesn't follow bar's slide: its grid and pills re-laid out every frame.
+            height: active ? navigationBar.y - y : 0
             active: navigationBar.paneUp
             text: navigationBar.typedText
             forNewTab: navigationBar.forNewTab
             landscape: browserPage.isLandscape
-            rowHeight: navigationBar.height
+            rowHeight: active ? navigationBar.height : 0
             pillsRight: navigationBar.fieldEnd
             onGoRequested: browserPage.openChosen(url, forNewTab)
             onSearchRequested: browserPage.openChosen(url, forNewTab)
@@ -394,8 +395,7 @@ WebViewPage {
             anchors.fill: parent
             cutoutHeight: browserPage.cutoutInset
             pageHeight: browserPage.height
-            // Drawn once drag may start: first drawn frame uploads all previews, stutters drag.
-            visible: deck.tabsOffset > 0 || deck.primed
+            visible: deck.gridShown
             onPullStarted: deck.beginDrag()
             onPulled: deck.dragTo(browserPage.height - distance)
             onPullFinished: deck.settle(distance <= deck.pullThreshold)
@@ -411,7 +411,8 @@ WebViewPage {
         id: browserMenu
 
         view: browserPage.currentView
-        barTop: navigationBar.y
+        // Side sheet only: in portrait bar's slide moved it every frame for nothing.
+        barTop: side ? navigationBar.y : browserPage.height
         onFindRequested: findBar.open()
     }
 
@@ -488,7 +489,7 @@ WebViewPage {
             property PagePicture picture: PagePicture {
                 view: webView; pageTabId: tabId; current: isCurrent; held: frameHold.holding
             }
-            function captureThumbnail() { picture.capture() }
+            function refreshPicture() { picture.refresh() }
 
             property ReaderMode reader: ReaderMode { view: webView }
             property PageMediaLink media: PageMediaLink { view: webView; pageTabId: tabId }

@@ -277,6 +277,7 @@ Item {
                   + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion
         iconSize: Theme.iconSizeSmall
                   + (Theme.iconSizeSmallPlus - Theme.iconSizeSmall) * navigationBar.expansion
+        sliding: navigationBar.resizing
     }
 
     AddressField {
