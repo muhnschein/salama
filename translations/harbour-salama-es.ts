@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Mantiene el contenido de los sitios web alejado de la muesca de la pantalla. Automático permite a los sitios web adaptados usar la zona de la muesca sin que el contenido quede tapado.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra de herramientas fija</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Mostrar siempre la barra de herramientas inferior</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Activar JavaScript</translation>
     </message>
@@ -1877,10 +1869,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Sin vista previa</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Página de inicio</translation>
     </message>
@@ -2046,7 +2034,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Mantén pulsada una pestaña y suéltala sobre el nombre de un grupo para moverla allí.</translation>
     </message>
     <message>

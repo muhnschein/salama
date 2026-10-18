@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>வலைத்தள உள்ளடக்கத்தைத் திரையின் நாட்ச் பகுதியிலிருந்து விலக்கி வைக்கிறது. தானியங்கு என்பதில், இதற்கேற்ப அமைந்த வலைத்தளங்கள் உள்ளடக்கத்தை மறைக்காமல் நாட்ச் பகுதியைப் பயன்படுத்தலாம்.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>நிலைத்த கருவிப்பட்டை</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>கீழ்க் கருவிப்பட்டையை எப்போதும் காட்டு</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ஐ இயக்கு</translation>
     </message>
@@ -1877,10 +1869,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>முன்தோற்றம் இல்லை</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>தொடக்கப் பக்கம்</translation>
     </message>
@@ -2046,7 +2034,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>ஒரு கீற்றை அழுத்திப் பிடித்து, பின்னர் ஒரு குழுவின் பெயரின் மீது விட்டு அந்தக் குழுவுக்கு நகர்த்துங்கள்.</translation>
     </message>
     <message>

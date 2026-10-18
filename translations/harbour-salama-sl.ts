@@ -1404,14 +1404,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Vsebino spletnih mest drži stran od izreza zaslona. Možnost »Samodejno« prilagojenim spletnim mestom dovoli uporabo območja izreza, vsebina pa ostane nezakrita.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fiksna orodna vrstica</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vedno prikaži spodnjo orodno vrstico</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Omogoči JavaScript</translation>
     </message>
@@ -1921,10 +1913,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Ni predogleda</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Domača stran</translation>
     </message>
@@ -2092,7 +2080,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Pridrži zavihek in ga nato spusti na ime skupine, da ga premakneš vanjo.</translation>
     </message>
     <message>

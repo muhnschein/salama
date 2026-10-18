@@ -12,7 +12,8 @@ MouseArea {
 
     property Item bar
 
-    // Window coords: bar rides deck, so bar-relative distance moves with deck -> jitter.
+    // Page coords: bar rides deck, so bar-relative distance moves with deck -> jitter; window
+    // axes turn with landscape page (Silica rotates page, window stays portrait).
     property real pressedY: 0
     property point pressedAt
     property point lastAt
@@ -23,6 +24,8 @@ MouseArea {
     property bool pressedOnBar: false
     property bool forwarding: false
     property bool heldDown: false
+    // Grid's first-show cost (page picture, grid primed) paid ahead of drag.
+    property bool armed: false
     property string pressedRegion: ""
     // Off under omnibar pane: forwarding would hit covered page.
     property bool reaching: true
@@ -31,12 +34,35 @@ MouseArea {
 
     height: strip + reach
 
+    // Nearest page: still while deck moves, upright in either orientation.
+    function frame() {
+        var item = gestureArea.parent
+        while (item && item.allowedOrientations === undefined) {
+            item = item.parent
+        }
+        return item
+    }
+
     function sceneY(y) {
-        return gestureArea.mapToItem(null, 0, y).y
+        return gestureArea.mapToItem(frame(), 0, y).y
     }
 
     function scenePoint(mouse) {
-        return gestureArea.mapToItem(null, mouse.x, mouse.y)
+        return gestureArea.mapToItem(frame(), mouse.x, mouse.y)
+    }
+
+    function arm() {
+        if (!armed) {
+            armed = true
+            bar.dragArmed()
+        }
+    }
+
+    function disarm() {
+        if (armed) {
+            armed = false
+            bar.dragDisarmed()
+        }
     }
 
     // Reach press is page's if past shaky-tap distance and not mostly up (up = grid drag).
@@ -59,8 +85,12 @@ MouseArea {
         heldDown = false
         pressedOnBar = mouse.y >= reach
         pressedRegion = pressedOnBar ? bar.regionAt(mouse.x) : ""
-        // Arm on press so grid's first-show cost paid before motion, not in first drag frame.
-        bar.dragArmed()
+        armed = false
+        // On bar: arm on press, so cost paid before motion, not in drag's first frame. Reach
+        // covers page foot, mostly tapped and scrolled: arm only once finger heads up.
+        if (pressedOnBar) {
+            arm()
+        }
     }
     // Reach only. On bar slow tap still tap: rejecting makes MouseArea emit clicked on release.
     onPressAndHold: {
@@ -78,12 +108,16 @@ MouseArea {
         }
         if (!dragging && !pressedOnBar && !heldDown && isPageMove(pressedAt, lastAt)) {
             forwarding = true
-            bar.dragDisarmed()
+            disarm()
             bar.pageTouchStarted(pressedAt)
             bar.pageTouchMoved(lastAt)
             return
         }
+        if (!dragging && pressedY - lastAt.y > Theme.startDragDistance / 2) {
+            arm()
+        }
         if (!dragging && pressedY - lastAt.y > Theme.startDragDistance) {
+            arm()
             dragging = true
             caughtY = lastAt.y
             pressedRegion = ""
@@ -103,9 +137,10 @@ MouseArea {
             bar.pageTouchEnded(at)
         }
         if (dragging) {
+            armed = false
             bar.dragFinished(distance)
-        } else if (!forwarding) {
-            bar.dragDisarmed()
+        } else {
+            disarm()
         }
         forwarding = false
         pressedRegion = ""
@@ -113,9 +148,10 @@ MouseArea {
     // Grab stolen (system edge gesture): finish at 0 so page springs back.
     onCanceled: {
         if (dragging) {
+            armed = false
             bar.dragFinished(0)
-        } else if (!forwarding) {
-            bar.dragDisarmed()
+        } else {
+            disarm()
         }
         if (forwarding) {
             bar.pageTouchEnded(lastAt)

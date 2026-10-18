@@ -13,7 +13,7 @@ Dialog {
     property int refusal: WebNotifications.NotNow
 
     objectName: "notificationPermissionDialog"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     onAccepted: WebNotifications.answer(tabId, WebNotifications.Allow)
     onRejected: WebNotifications.answer(tabId, refusal)

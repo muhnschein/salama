@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>वेबसाइट की सामग्री को स्क्रीन के नॉच से दूर रखता है। स्वचालित विकल्प अनुकूलित वेबसाइटों को नॉच वाले हिस्से का इस्तेमाल करने देता है, और सामग्री फिर भी साफ़ दिखती रहती है।</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>स्थिर टूलबार</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>नीचे वाला टूलबार हमेशा दिखाएँ</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript सक्षम करें</translation>
     </message>
@@ -1877,10 +1869,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>कोई पूर्वावलोकन नहीं</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>शुरुआती पेज</translation>
     </message>
@@ -2046,7 +2034,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>किसी टैब को दबाकर रखें, फिर उसे वहाँ ले जाने के लिए किसी समूह के नाम पर छोड़ें।</translation>
     </message>
     <message>

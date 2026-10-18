@@ -3,7 +3,7 @@
 //
 // Silica TabBar geometry rebuilt from public API: TabBar is in Sailfish.Silica.private and
 // needs TabView, neither Harbour-allowed. Whole foot is drop zone while carrying, so no
-// trades with cells under it.
+// trades with cells under it. Vertical (landscape rail): one name a row, + and edit at foot.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -22,6 +22,7 @@ Item {
                                           : null
     // -1 none. Never current group.
     property int dropIndex: -1
+    property bool vertical: false
 
     objectName: "tabGroupStrip"
 
@@ -38,7 +39,11 @@ Item {
         var inRow = mapToItem(row, x, y)
         for (var i = 0; i < buttons.count; ++i) {
             var button = buttons.itemAt(i)
-            if (button && inRow.x >= button.x && inRow.x < button.x + button.width) {
+            if (!button) {
+                continue
+            }
+            var along = vertical ? inRow.y - button.y : inRow.x - button.x
+            if (along >= 0 && along < (vertical ? button.height : button.width)) {
                 return i
             }
         }
@@ -96,7 +101,7 @@ Item {
             verticalCenter: parent.verticalCenter
         }
         width: Theme.iconSizeSmallPlus + 2 * Theme.paddingMedium
-        height: parent.height
+        height: strip.vertical ? Theme.itemSizeSmall : parent.height
         icon.source: "image://theme/icon-m-add"
         icon.sourceSize: Qt.size(Theme.iconSizeSmallPlus, Theme.iconSizeSmallPlus)
         onClicked: strip.newTabRequested()
@@ -113,7 +118,7 @@ Item {
             verticalCenter: parent.verticalCenter
         }
         width: Theme.iconSizeSmallPlus + 2 * Theme.paddingMedium
-        height: parent.height
+        height: newTabButton.height
         icon.source: "image://theme/icon-m-edit"
         icon.sourceSize: Qt.size(Theme.iconSizeSmallPlus, Theme.iconSizeSmallPlus)
         onClicked: strip.editRequested()
@@ -133,19 +138,27 @@ Item {
             bottom: parent.bottom
         }
         clip: true
-        contentWidth: row.width
-        contentHeight: height
+        contentWidth: strip.vertical ? width : row.width
+        contentHeight: strip.vertical ? row.height : height
         boundsBehavior: Flickable.StopAtBounds
-        flickableDirection: Flickable.HorizontalFlick
-        // Not interactive when names fit, so stray sideways drag goes nowhere.
-        interactive: contentWidth > width
+        flickableDirection: strip.vertical ? Flickable.VerticalFlick : Flickable.HorizontalFlick
+        // Not interactive when names fit, so stray drag goes nowhere.
+        interactive: strip.vertical ? contentHeight > height : contentWidth > width
         contentX: {
             var button = strip.currentButton
-            if (!button) {
+            if (!button || strip.vertical) {
                 return 0
             }
             return Math.max(0, Math.min(contentWidth - width,
                                         button.x + (button.width - width) / 2))
+        }
+        contentY: {
+            var button = strip.currentButton
+            if (!button || !strip.vertical) {
+                return 0
+            }
+            return Math.max(0, Math.min(contentHeight - height,
+                                        button.y + (button.height - height) / 2))
         }
 
         Behavior on contentX {
@@ -157,11 +170,24 @@ Item {
             }
         }
 
-        Row {
+        Behavior on contentY {
+            enabled: !flick.moving
+
+            NumberAnimation {
+                duration: 200
+                easing.type: Easing.InOutQuad
+            }
+        }
+
+        // One row, or one column when vertical.
+        Grid {
             id: row
 
             // Half slack to first and last button centres a fitting row.
             readonly property real extraMargin: {
+                if (strip.vertical) {
+                    return 0
+                }
                 var total = 0
                 for (var i = 0; i < row.children.length; ++i) {
                     total += row.children[i].contentWidth || 0
@@ -169,7 +195,9 @@ Item {
                 return Math.max(0, flick.width - total) / 2
             }
 
-            height: flick.height
+            rows: strip.vertical ? 0 : 1
+            columns: strip.vertical ? 1 : 0
+            height: strip.vertical ? implicitHeight : flick.height
 
             Repeater {
                 id: buttons
@@ -184,9 +212,10 @@ Item {
                     readonly property real contentWidth: label.implicitWidth + 2 * Theme.paddingLarge
 
                     objectName: "tabGroupItem"
-                    width: contentWidth + (index === 0 ? row.extraMargin : 0)
-                           + (index === buttons.count - 1 ? row.extraMargin : 0)
-                    height: row.height
+                    width: strip.vertical ? flick.width
+                                          : contentWidth + (index === 0 ? row.extraMargin : 0)
+                                            + (index === buttons.count - 1 ? row.extraMargin : 0)
+                    height: strip.vertical ? Theme.itemSizeSmall : row.height
 
                     Rectangle {
                         objectName: "tabGroupDropHighlight"
@@ -205,6 +234,9 @@ Item {
                         objectName: "tabGroupLabel"
                         // Outer buttons hug inside edge so slack stays outside name.
                         x: {
+                            if (strip.vertical) {
+                                return Theme.horizontalPageMargin
+                            }
                             if (buttons.count > 1 && index === 0) {
                                 return button.width - width - Theme.paddingLarge
                             }
@@ -214,6 +246,10 @@ Item {
                             return (button.width - width) / 2
                         }
                         y: (button.height - height) / 2
+                        width: strip.vertical ? countLabel.x - x - Theme.paddingMedium
+                                              : implicitWidth
+                        truncationMode: strip.vertical ? TruncationMode.Fade
+                                                       : TruncationMode.None
                         text: model.name.length > 0 ? model.name
                                                     : qsTr("%n tab(s)", "", model.tabCount)
                         font.pixelSize: Theme.fontSizeMedium
@@ -228,7 +264,31 @@ Item {
                         width: label.width
                         height: Theme._lineWidth
                         color: Theme.highlightColor
-                        visible: button.current
+                        visible: button.current && !strip.vertical
+                    }
+
+                    // Unnamed group's name is already its count.
+                    Label {
+                        id: countLabel
+
+                        objectName: "tabGroupCount"
+                        x: button.width - width - Theme.horizontalPageMargin
+                        y: (button.height - height) / 2
+                        visible: strip.vertical && model.name.length > 0
+                        width: visible ? implicitWidth : 0
+                        text: model.tabCount
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: button.current || button.target || tap.pressed
+                               ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                    }
+
+                    Rectangle {
+                        objectName: "tabGroupAccent"
+                        x: button.width - width
+                        width: Theme.paddingSmall
+                        height: button.height
+                        color: Theme.highlightColor
+                        visible: button.current && strip.vertical
                     }
 
                     MouseArea {
@@ -248,7 +308,7 @@ Item {
 
         objectName: "tabGroupLeftFade"
         sourceItem: flick
-        enabled: flick.interactive && flick.pastLeft > 0
+        enabled: !strip.vertical && flick.interactive && flick.pastLeft > 0
         direction: OpacityRamp.RightToLeft
         slope: Math.max(1 + 20 * flick.width / Screen.width,
                         flick.width / Math.max(1, flick.pastLeft))
@@ -258,10 +318,31 @@ Item {
     OpacityRampEffect {
         objectName: "tabGroupRightFade"
         sourceItem: leftFade.enabled ? leftFade : flick
-        enabled: flick.interactive && flick.pastRight > 0
+        enabled: !strip.vertical && flick.interactive && flick.pastRight > 0
         direction: OpacityRamp.LeftToRight
         slope: Math.max(1 + 20 * flick.width / Screen.width,
                         flick.width / Math.max(1, flick.pastRight))
         offset: 1 - 1 / slope
+    }
+
+    states: State {
+        when: strip.vertical
+
+        AnchorChanges {
+            target: newTabButton
+            anchors.verticalCenter: undefined
+            anchors.bottom: strip.bottom
+        }
+        AnchorChanges {
+            target: editButton
+            anchors.verticalCenter: undefined
+            anchors.bottom: strip.bottom
+        }
+        AnchorChanges {
+            target: flick
+            anchors.left: strip.left
+            anchors.right: strip.right
+            anchors.bottom: newTabButton.top
+        }
     }
 }

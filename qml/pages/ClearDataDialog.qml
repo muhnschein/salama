@@ -17,7 +17,7 @@ Dialog {
     property alias clearCache: cacheSwitch.checked
 
     objectName: "clearDataDialog"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     canAccept: clearTabs || clearHistory || clearSiteData || clearCache
 
     // Closed tabs go only with everything. Counts reread on history change.

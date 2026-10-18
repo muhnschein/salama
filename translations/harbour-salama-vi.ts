@@ -1350,14 +1350,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Giữ nội dung trang web tránh xa phần tai thỏ của màn hình. Chế độ Tự động cho phép các trang web đã được điều chỉnh dùng vùng tai thỏ mà nội dung vẫn không bị che.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Thanh công cụ cố định</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Luôn hiện thanh công cụ ở dưới cùng</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Bật JavaScript</translation>
     </message>
@@ -1855,10 +1847,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Không có bản xem trước</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Trang chủ</translation>
     </message>
@@ -2023,7 +2011,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Chạm và giữ một thẻ, rồi thả vào tên một nhóm để chuyển thẻ sang nhóm đó.</translation>
     </message>
     <message>

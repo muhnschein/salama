@@ -1368,14 +1368,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>വെബ്‌സൈറ്റ് ഉള്ളടക്കം സ്ക്രീനിലെ നോച്ചിൽ നിന്ന് അകറ്റി നിർത്തുന്നു. സ്വയമേവ എന്ന ക്രമീകരണം, അനുയോജ്യമാക്കിയ വെബ്‌സൈറ്റുകളെ ഉള്ളടക്കം മറയാതെ നിലനിർത്തിക്കൊണ്ട് നോച്ച് ഭാഗം ഉപയോഗിക്കാൻ അനുവദിക്കുന്നു.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>സ്ഥിരമായ ടൂൾബാർ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>താഴെയുള്ള ടൂൾബാർ എപ്പോഴും കാണിക്കുക</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript പ്രവർത്തനക്ഷമമാക്കുക</translation>
     </message>
@@ -1877,10 +1869,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>തിരനോട്ടമില്ല</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>ആരംഭ താൾ</translation>
     </message>
@@ -2046,7 +2034,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>ഒരു ടാബിൽ അമർത്തിപ്പിടിച്ച്, ഒരു കൂട്ടത്തിന്റെ പേരിൽ വിട്ട് അതിനെ ആ കൂട്ടത്തിലേക്ക് മാറ്റുക.</translation>
     </message>
     <message>

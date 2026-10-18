@@ -66,6 +66,11 @@ const char *const RootQml = SALAMA_SOURCE_DIR "/qml/harbour-salama.qml";
 const char *const ChatSite = "https://chat.example";
 // Start page of tests, in only tab.
 const char *const FirstPage = "https://www.qwant.com/";
+// Silica's Orientation values (tests/silica-stubs/plugin/enums.h).
+const int Portrait = 1;
+const int Landscape = 2;
+const int PortraitInverted = 4;
+const int LandscapeInverted = 8;
 
 } // namespace
 
@@ -187,6 +192,9 @@ private slots:
     void tabGroupsCarryAndUngroup();
     void tabSearch();
     void tabsDropOntoGroups();
+    void landscapeTabGroupRail();
+    void landscapeRailUnderAFinger();
+    void landscapeTabSearch();
     void previewGestures();
     void gridGesturesUnderAFinger();
     void gridHeadPullUnderAFinger();
@@ -197,6 +205,8 @@ private slots:
     void barReachUnderAFinger();
     void barDragStartsWithoutAStutter();
     void barStaysSlimWhileDragged();
+    void barOverlapsPageFoot();
+    void barSlideLaysNothingOut();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
     void restoredTabsLoadLazily();
@@ -206,6 +216,7 @@ private slots:
     void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
     void menuSheetDoesNotScroll();
+    void menuSheetInLandscape();
     void findInPage();
     void readerView();
     void downloadsPage();
@@ -218,10 +229,14 @@ private slots:
     void linkMenuForPictures();
     void linkSheetsDoNotScroll();
     void linkPreview();
+    void linkSheetInLandscape();
     void bannersEndThePage();
     void historyPage();
     void bookmarksPage();
     void settingsPage();
+    void landscapeSettingsPage();
+    void landscapePreviewPages();
+    void landscapeStartPagePreview();
     void sailfishBrowserSettings();
     void startPageSettingsPage();
     void searchSettingsPage();
@@ -260,10 +275,34 @@ private slots:
     void siteDetailsConnection();
     void siteDetailsTrackingProtection();
     void siteDetailsPermissions();
+    void landscapeSiteDetails();
+    void landscapeSearchSettings();
+    void landscapeHistorySettings();
     void tutorialOnFirstStart();
     void tutorial();
     void tutorialGrid();
     void tutorialUnderAFinger();
+    void everyPageTurns();
+    void sectionHeadersInset();
+    void deckTurnsEitherWay();
+    void hiddenGridWaitsOutTurn();
+    void landscapeBrowsing();
+    void landscapeStartPage();
+    void landscapeTutorial();
+    void landscapeTutorialBar();
+    void landscapeTutorialMenu();
+    void landscapeTutorialOmnibar();
+    void landscapeTutorialGrid();
+    void landscapeTutorialUnderAFinger();
+    void landscapeGesturesUnderAFinger();
+    void landscapeBarStaysPut();
+    void landscapeOmnibar();
+    void sideSheetLeavesWithItsPage();
+    void cutoutStripInLandscape();
+    void frameHoldOverTurn();
+    void previewFillsItsCell();
+    void previewStandsInForUndrawnPage();
+    void pictureWaitsForFirstPaint();
 
 private:
     bool loadWindow();
@@ -283,6 +322,8 @@ private:
     void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
+
+    void turnDevice(int orientation) const;
 
     QScopedPointer<QTemporaryDir> m_dir;
     QScopedPointer<Core> m_core;
@@ -1427,12 +1468,14 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(fullBar > 0);
     QVERIFY(inset > 0);
 
-    // View sits between cutout and bar so first/last line never hidden. Overlay bar left last
-    // rows unreachable on device.
+    // View sits between cutout and slim bar: first line never hidden, last ones only under the
+    // whole bar's extra height, slimmed away by scrolling down. Bar over whole page foot left
+    // last rows unreachable on device; resizing for each bar change stuttered and flashed.
+    const qreal slimBar = bar->property("slimHeight").toReal();
     QObject *viewArea = find(QStringLiteral("viewArea"));
     QCOMPARE(viewArea->property("y").toReal(), inset);
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - slimBar - inset);
     QCOMPARE(find(QStringLiteral("cutoutBand"))->property("height").toReal(), inset);
     QCOMPARE(bar->property("y").toReal(), pageHeight - fullBar);
     QVERIFY(webView->property("chromeGestureEnabled").toBool());
@@ -1440,9 +1483,12 @@ void tst_qmlload::barDoesNotCoverThePage()
     QCOMPARE(webView->property("chromeGestureThreshold").toReal(),
              evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
     QCOMPARE(webView->property("safeAreaTop").toReal(), qreal(0));
+    // Platform's landscape side inset: Silica already keeps landscape page clear of cutout.
+    webView->setProperty("cutoutSafeAreaSide", 90);
+    QCOMPARE(webView->property("safeAreaLeft").toReal(), qreal(0));
+    QCOMPARE(webView->property("safeAreaRight").toReal(), qreal(0));
+    webView->setProperty("cutoutSafeAreaSide", 0);
 
-    // View sized for slim height from first frame: resizes once, not every animation frame.
-    const qreal slimBar = bar->property("slimHeight").toReal();
     QVERIFY(slimBar < fullBar);
     QVERIFY(slimBar > fullBar * 0.6);
     webView->setProperty("chrome", false);
@@ -1484,7 +1530,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(!bar->property("compact").toBool());
     webView->setProperty("loading", false);
     QTRY_COMPARE(bar->property("height").toReal(), fullBar);
-    QCOMPARE(viewArea->property("height").toReal(), pageHeight - fullBar - inset);
+    QCOMPARE(viewArea->property("height").toReal(), pageHeight - slimBar - inset);
     QVERIFY(addressLabel->property("font").value<QFont>().pixelSize() > slimSize);
     QCOMPARE(background->property("color").value<QColor>().alpha(), 255);
     QVERIFY(find(QStringLiteral("menuButton"))->property("visible").toBool());
@@ -1716,28 +1762,39 @@ void tst_qmlload::tabGrid()
     QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
     QCOMPARE(previews.count(), 2);
 
-    QTRY_VERIFY(!m_core->tabs()
-                     ->data(m_core->tabs()->index(1, 0), roleId(TabModel::Role::Thumbnail))
-                     .toString()
-                     .isEmpty());
-    QVERIFY(!findObjects(previews.at(1), QStringLiteral("tabPreviewPlaceholder"))
-                 .first()
-                 ->property("visible")
-                 .toBool());
-    QVERIFY(findObjects(previews.at(0), QStringLiteral("tabPreviewPlaceholder"))
-                .first()
-                ->property("visible")
-                .toBool());
+    // Both pictured: front one as grid opened, first one as it was left for new tab.
+    for (int row : {0, 1}) {
+        QTRY_VERIFY(!m_core->tabs()
+                         ->data(m_core->tabs()->index(row, 0), roleId(TabModel::Role::Thumbnail))
+                         .toString()
+                         .isEmpty());
+        for (const char *standIn : {"tabPreviewPlaceholder", "tabPreviewSite"}) {
+            QVERIFY(!findObjects(previews.at(row), QLatin1String(standIn))
+                         .first()
+                         ->property("visible")
+                         .toBool());
+        }
+    }
 
+    // Left from grid: pictured as grid opened already.
+    QObject *secondView = currentWebView();
+    const int secondGrabs = secondView->property("grabCount").toInt();
     QMetaObject::invokeMethod(previews.at(0), "tapped");
     QCOMPARE(m_core->tabs()->activeTabIndex(), 0);
     QVERIFY(!page->property("tabsOpen").toBool());
     QCOMPARE(currentWebView()->property("url").toUrl().toString(), QLatin1String(FirstPage));
+    QCOMPARE(secondView->property("grabCount").toInt(), secondGrabs);
 
+    // Grid opened over page unchanged since its picture: none taken; scrolled since: taken.
     QObject *homeView = currentWebView();
-    QCOMPARE(homeView->property("grabCount").toInt(), 0);
+    QCOMPARE(homeView->property("grabCount").toInt(), 1);
     pullUpToTabs();
     QCOMPARE(homeView->property("grabCount").toInt(), 1);
+    pullDownToBrowser();
+    homeView->setProperty("moving", true);
+    homeView->setProperty("moving", false);
+    pullUpToTabs();
+    QCOMPARE(homeView->property("grabCount").toInt(), 2);
 
     previews = findAll(QStringLiteral("tabPreview"));
     click(findObjects(previews.at(1), QStringLiteral("closeTabButton")).first());
@@ -2095,9 +2152,16 @@ void tst_qmlload::tabSearch()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     pullUpToTabs();
+    // Opening grid grabs a preview; its write lands as tab data change, which resets search rows
+    // and frees delegates held below. Let it land first.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
 
+    // No rows until searched: every tab change reset them, a hidden list made them all again.
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     QObject *view = find(QStringLiteral("tabsView"));
     QObject *field = find(QStringLiteral("tabSearchField"));
     QObject *found = find(QStringLiteral("tabSearchList"));
@@ -2237,6 +2301,457 @@ void tst_qmlload::tabsDropOntoGroups()
     QCOMPARE(tabs->currentGroupId(), home);
     QCOMPARE(tabs->activeTabId(), first);
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+}
+
+// Landscape grid: no head or foot row; group rail left of grid, a fifth of page wide, with
+// search field on top, one row per group and + and edit at its foot. Grid fills rest.
+void tst_qmlload::landscapeTabGroupRail()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    const int portrait = 1;
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QCOMPARE(tabs->currentGroupId(), home);
+    auto *browser = item("browserPage");
+    auto *view = item("tabsView");
+    auto *grid = item("tabGrid");
+    auto *rail = item("tabGroupRail");
+    auto *headRow = item("gridHeadRow");
+    auto *footRow = item("gridFootRow");
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    QVERIFY(rail != nullptr);
+    pullUpToTabs();
+    QCOMPARE(rail->width(), qreal(0));
+    QVERIFY(!rail->isVisible());
+    const qreal small = evaluate(view, QStringLiteral("Theme.itemSizeSmall")).toReal();
+
+    turnDevice(landscape);
+    QVERIFY(browser->property("tabsOpen").toBool());
+    QCOMPARE(view->width(), browser->width());
+    QCOMPARE(view->height(), browser->height());
+    const qreal railWidth = qRound(view->width() / 5);
+    QVERIFY(rail->isVisible());
+    QCOMPARE(rail->width(), railWidth);
+    QCOMPARE(rail->height(), view->height());
+    QCOMPARE(rail->mapToItem(view, QPointF(0, 0)), QPointF(0, 0));
+    QCOMPARE(rail->property("color"), headRow->property("color"));
+    auto *glass = item("railGlass");
+    QCOMPARE(glass->parentItem(), rail);
+    QCOMPARE(glass->property("source"), item("gridHeadGlass")->property("source"));
+    QCOMPARE(glass->width(), rail->width());
+    QCOMPARE(glass->height(), rail->height());
+    QVERIFY(!headRow->isVisible());
+    QVERIFY(!footRow->isVisible());
+    QCOMPARE(grid->property("headerItem").value<QQuickItem *>()->height(), qreal(0));
+    QCOMPARE(grid->property("footerItem").value<QQuickItem *>()->height(), qreal(0));
+
+    // Three page-shaped previews a row over area right of rail, full height.
+    QCOMPARE(grid->x(), railWidth);
+    QCOMPARE(grid->width(), view->width() - railWidth);
+    QCOMPARE(grid->height(), view->height());
+    const qreal cellWidth = grid->property("cellWidth").toReal();
+    QCOMPARE(cellWidth, grid->width() / 3);
+    QCOMPARE(grid->property("cellHeight").toReal(),
+             qRound(cellWidth * view->height() / view->width()) + small);
+    QVERIFY(grid->property("cellHeight").toReal() < view->height());
+    QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 2);
+    for (QObject *preview : previews) {
+        auto *cell = qobject_cast<QQuickItem *>(preview);
+        QVERIFY(cell->mapToItem(view, QPointF(0, 0)).x() >= railWidth - 0.5);
+    }
+    auto *indicator = item("gridPullIndicator");
+    QVERIFY(indicator->isVisible());
+    QCOMPARE(indicator->mapToItem(view, QPointF(0, 0)), QPointF(0, 0));
+    QCOMPARE(indicator->width(), view->width());
+    QVERIFY(indicator->height() > 0);
+
+    // Search field tops rail; pull there returns to page.
+    auto *railHead = item("railHead");
+    QCOMPARE(railHead->parentItem(), rail);
+    QCOMPARE(railHead->y(), qreal(0));
+    QCOMPARE(railHead->height(), small);
+    auto *field = item("tabSearchField");
+    QVERIFY(railHead->isAncestorOf(field));
+    QCOMPARE(field->width(), railWidth);
+    // Narrow rail: Silica's own "Search" (stub mirrors it), smaller type and icon.
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search"));
+    QCOMPARE(field->property("font").value<QFont>().pixelSize(),
+             evaluate(view, QStringLiteral("Theme.fontSizeMedium")).toInt());
+    const auto searchIcon = [field]() {
+        return field->property("leftItem").value<QQuickItem *>()->size();
+    };
+    const qreal smallIcon = evaluate(view, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QCOMPARE(searchIcon(), QSizeF(smallIcon, smallIcon));
+    QCOMPARE(item("gridHeadControls")->height(), small);
+    auto *pull = item("railHeadPull");
+    QCOMPARE(pull->parentItem(), railHead);
+    QCOMPARE(pull->property("field").value<QQuickItem *>(), field);
+    QVERIFY(pull->z() > item("gridHeadControls")->z());
+    QCOMPARE(pull->height(), railHead->height());
+
+    // One row per group under it; current lit, accent on rail's edge.
+    QVERIFY(strip->property("vertical").toBool());
+    auto *stripItem = qobject_cast<QQuickItem *>(strip);
+    QVERIFY(rail->isAncestorOf(stripItem));
+    QCOMPARE(stripItem->mapToItem(rail, QPointF(0, 0)), QPointF(0, small));
+    QCOMPARE(stripItem->height(), rail->height() - small);
+    QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupItem")));
+    QCOMPARE(rows.count(), 2);
+    const QString highlight =
+        evaluate(view, QStringLiteral("'' + Theme.highlightColor")).toString();
+    const QString primary = evaluate(view, QStringLiteral("'' + Theme.primaryColor")).toString();
+    const auto part = [](QObject *row, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(row, QLatin1String(name)).first());
+    };
+    for (int i = 0; i < rows.count(); ++i) {
+        auto *row = qobject_cast<QQuickItem *>(rows.at(i));
+        QCOMPARE(row->width(), railWidth);
+        QCOMPARE(row->height(), small);
+        QCOMPARE(part(row, "tabGroupLabel")->property("font").value<QFont>().pixelSize(),
+                 evaluate(view, QStringLiteral("Theme.fontSizeMedium")).toInt());
+        QVERIFY(!part(row, "tabGroupUnderline")->isVisible());
+        auto *accent = part(row, "tabGroupAccent");
+        QCOMPARE(accent->isVisible(), i == 0);
+        QCOMPARE(accent->x() + accent->width(), row->width());
+        QCOMPARE(accent->height(), row->height());
+        QVERIFY(part(row, "tabGroupLabel")->width() < railWidth);
+    }
+    QCOMPARE(part(rows.at(0), "tabGroupLabel")->property("text").toString(),
+             QStringLiteral("2 tab(s)"));
+    QCOMPARE(part(rows.at(0), "tabGroupLabel")->property("color").value<QColor>().name(),
+             QColor(highlight).name());
+    QVERIFY(!part(rows.at(0), "tabGroupCount")->isVisible());
+    QCOMPARE(part(rows.at(1), "tabGroupLabel")->property("text").toString(),
+             QStringLiteral("Work"));
+    QCOMPARE(part(rows.at(1), "tabGroupLabel")->property("color").value<QColor>().name(),
+             QColor(primary).name());
+    QVERIFY(part(rows.at(1), "tabGroupCount")->isVisible());
+    QCOMPARE(part(rows.at(1), "tabGroupCount")->property("text").toString(), QStringLiteral("0"));
+    evaluate(strip, QStringLiteral("select(1)"));
+    QCOMPARE(tabs->currentGroupId(), work);
+    QVERIFY(part(rows.at(1), "tabGroupAccent")->isVisible());
+    QVERIFY(!part(rows.at(0), "tabGroupAccent")->isVisible());
+    evaluate(strip, QStringLiteral("select(0)"));
+
+    // + and edit at rail foot, nothing else; names fill rail above them.
+    auto *add = item("newTabButton");
+    auto *edit = item("editGroupsButton");
+    for (QQuickItem *button : {add, edit}) {
+        QVERIFY(rail->isAncestorOf(button));
+        QCOMPARE(button->height(), small);
+        QCOMPARE(button->mapToItem(rail, QPointF(0, button->height())).y(), rail->height());
+    }
+    QVERIFY(add->mapToItem(rail, QPointF(add->width(), 0)).x() < railWidth / 2);
+    QVERIFY(edit->mapToItem(rail, QPointF(0, 0)).x() > railWidth / 2);
+    auto *names = item("tabGroupList");
+    QCOMPARE(names->width(), railWidth);
+    QCOMPARE(names->mapToItem(rail, QPointF(0, names->height())).y(),
+             add->mapToItem(rail, QPointF(0, 0)).y());
+    QMetaObject::invokeMethod(add, "pressAndHold");
+    QVERIFY(find(QStringLiteral("recentlyClosedPanel"))->property("open").toBool());
+    evaluate(find(QStringLiteral("recentlyClosedPanel")), QStringLiteral("hide()"));
+    click(edit);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tabGroupsPage"));
+    popPage();
+    QCOMPARE(currentPage(), browser);
+    click(add);
+    QCOMPARE(tabs->count(), 3);
+    QVERIFY(!browser->property("tabsOpen").toBool());
+
+    // Back upright: head row, foot strip and two columns.
+    pullUpToTabs();
+    turnDevice(portrait);
+    QVERIFY(!rail->isVisible());
+    QVERIFY(headRow->isVisible());
+    QVERIFY(footRow->isVisible());
+    QVERIFY(headRow->isAncestorOf(field));
+    QCOMPARE(field->width(), headRow->width());
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search tabs"));
+    QCOMPARE(field->property("font").value<QFont>().pixelSize(),
+             evaluate(view, QStringLiteral("Theme.fontSizeLarge")).toInt());
+    const qreal mediumIcon = evaluate(view, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    QCOMPARE(searchIcon(), QSizeF(mediumIcon, mediumIcon));
+    QCOMPARE(item("gridHeadControls")->height(),
+             evaluate(view, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    QVERIFY(pull->z() <= item("gridHeadPull")->z());
+    QCOMPARE(indicator->parentItem(), headRow);
+    QCOMPARE(indicator->width(), headRow->width());
+    QVERIFY(footRow->isAncestorOf(stripItem));
+    QVERIFY(!strip->property("vertical").toBool());
+    QCOMPARE(stripItem->height(), footRow->height());
+    QCOMPARE(add->height(), footRow->height());
+    QCOMPARE(grid->x(), qreal(0));
+    QCOMPARE(grid->width(), browser->width());
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(grid->property("cellHeight").toReal(), browser->width() / 2 + small);
+    QCOMPARE(grid->property("headerItem").value<QQuickItem *>()->height(), headRow->height());
+    QCOMPARE(grid->property("footerItem").value<QQuickItem *>()->height(), footRow->height());
+    rows = findAll(QStringLiteral("tabGroupItem"));
+    QVERIFY(part(rows.at(0), "tabGroupUnderline")->isVisible());
+    QVERIFY(!part(rows.at(0), "tabGroupAccent")->isVisible());
+    QCOMPARE(rows.at(0)->property("height").toReal(), footRow->height());
+}
+
+// Under a finger, turned: tap rail row switches group; held tab dropped on rail group moves
+// there; long list scrolls to keep current group in view.
+void tst_qmlload::landscapeRailUnderAFinger()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    TabModel *tabs = m_core->tabs();
+    const int home = tabs->defaultGroupId();
+    const int first = tabs->activeTabId();
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(0);
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *strip = find(QStringLiteral("tabGroupStrip"));
+    // FingerWindow's job; it's defined further down.
+    struct Host
+    {
+        QQuickItem *root = nullptr;
+        QQuickWindow window;
+        ~Host()
+        {
+            root->setParentItem(nullptr);
+        }
+    } host;
+    host.root = qobject_cast<QQuickItem *>(m_window.data());
+    host.window.resize(int(host.root->width()), int(host.root->height()));
+    host.root->setParentItem(host.window.contentItem());
+    host.window.show();
+    QQuickWindow &window = host.window;
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    turnDevice(landscape);
+    pullUpToTabs();
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), page->property("fullHeight").toReal());
+
+    const auto centre = [](QObject *object) {
+        auto *item = qobject_cast<QQuickItem *>(object);
+        return item->mapToScene(QPointF(item->width() / 2, item->height() / 2)).toPoint();
+    };
+    const auto rowLabel = [this](int index) {
+        return findObjects(byRow(findAll(QStringLiteral("tabGroupItem"))).at(index),
+                           QStringLiteral("tabGroupLabel"))
+            .first();
+    };
+    const auto cellOf = [this](int tabId) -> QObject * {
+        for (QObject *cell : findAll(QStringLiteral("tabPreview"))) {
+            if (evaluate(cell, QStringLiteral("model.tabId")).toInt() == tabId) {
+                return cell;
+            }
+        }
+        return nullptr;
+    };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, from + (to - from) * step / steps);
+        }
+    };
+
+    // Rows lay out once drawn: one under another below search row.
+    auto *rail = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupRail")));
+    const qreal small = evaluate(rail, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const QList<QObject *> rows = byRow(findAll(QStringLiteral("tabGroupItem")));
+    for (int i = 0; i < rows.count(); ++i) {
+        QCOMPARE(qobject_cast<QQuickItem *>(rows.at(i))->mapToItem(rail, QPointF(0, 0)),
+                 QPointF(0, small * (i + 1)));
+    }
+    QCOMPARE(evaluate(strip, QStringLiteral("groupAt(10, %1)").arg(small * 1.5)).toInt(), 1);
+    QCOMPARE(evaluate(strip, QStringLiteral("groupAt(10, %1)").arg(small * 0.5)).toInt(), 0);
+
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centre(rowLabel(1)));
+    QCOMPARE(tabs->currentGroupId(), work);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 0);
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, centre(rowLabel(0)));
+    QCOMPARE(tabs->currentGroupId(), home);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 2);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    QObject *cell = cellOf(first);
+    QPoint at = centre(cell);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, at);
+    QTest::mouseMove(&window, at + QPoint(2, 2));
+    QTRY_VERIFY(cell->property("held").toBool());
+    const QPoint homeRow = centre(rowLabel(0));
+    carry(at, homeRow);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    const QPoint workRow = centre(rowLabel(1));
+    carry(homeRow, workRow);
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    QVERIFY(findAll(QStringLiteral("tabGroupDropHighlight")).at(1)->property("visible").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, workRow);
+    QTRY_COMPARE(tabs->tabCountInGroup(work), 1);
+    QCOMPARE(tabs->tabCountInGroup(home), 1);
+    QCOMPARE(tabs->currentGroupId(), home);
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    QTRY_COMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
+    QVERIFY(page->property("tabsOpen").toBool());
+
+    // Pull down on rail's search row returns to page.
+    const qreal threshold = page->property("pullThreshold").toReal();
+    const QPoint head = centre(find(QStringLiteral("railHead")));
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, head);
+    const QPointF down = qobject_cast<QQuickItem *>(page)->mapToScene(QPointF(0, 3 * threshold)) -
+                         qobject_cast<QQuickItem *>(page)->mapToScene(QPointF(0, 0));
+    for (int step = 1; step <= 24; ++step) {
+        QTest::mouseMove(&window, head + (down * step / 24).toPoint());
+    }
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, head + down.toPoint());
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QTRY_COMPARE(page->property("tabsOffset").toReal(), qreal(0));
+
+    for (int i = 0; i < 12; ++i) {
+        tabs->addGroup(QStringLiteral("Group number %1").arg(i));
+    }
+    pullUpToTabs();
+    tabs->groupModel()->activate(13);
+    auto *names = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupList")));
+    QTRY_VERIFY(names->property("interactive").toBool());
+    QTRY_COMPARE(names->property("contentY").toReal(),
+                 names->property("contentHeight").toReal() - names->height());
+    tabs->groupModel()->activate(0);
+    QTRY_COMPARE(names->property("contentY").toReal(), qreal(0));
+    turnDevice(1);
+}
+
+// Turned, search results sit right of rail in two columns of low rows, end above keyboard;
+// rail stays. Cleared field brings grid back. Upright: one list under head row again.
+void tst_qmlload::landscapeTabSearch()
+{
+    const int landscape = 2; // Silica Orientation.Landscape (silica-stubs/plugin/enums.h)
+    TabModel *tabs = m_core->tabs();
+    const int first = tabs->activeTabId();
+    const int work = tabs->addGroup(QStringLiteral("Work"));
+    tabs->groupModel()->activate(1);
+    const int second = tabs->newTab(QStringLiteral("https://two.example/"));
+    tabs->groupModel()->activate(0);
+    // Second tab pictured as it was left: let that land before giving it its own picture.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
+    tabs->updateTitle(first, QStringLiteral("Office hours"));
+    tabs->updateTitle(second, QStringLiteral("Office mail"));
+    // Half a portrait page.
+    const QString picture = m_dir->path() + QStringLiteral("/office.png");
+    QImage(540, 1170, QImage::Format_RGB32).save(picture);
+    tabs->updateThumbnail(second, picture);
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    auto *view = qobject_cast<QQuickItem *>(find(QStringLiteral("tabsView")));
+    auto *rail = qobject_cast<QQuickItem *>(find(QStringLiteral("tabGroupRail")));
+    QObject *field = find(QStringLiteral("tabSearchField"));
+    QObject *debounce = find(QStringLiteral("searchDebounce"));
+    auto *found = qobject_cast<QQuickItem *>(find(QStringLiteral("tabSearchGrid")));
+    auto *list = qobject_cast<QQuickItem *>(find(QStringLiteral("tabSearchList")));
+    QVERIFY(found != nullptr);
+    auto *cells = find(QStringLiteral("tabGrid"))->property("contentItem").value<QQuickItem *>();
+    const qreal small = evaluate(view, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const auto search = [&](const QString &term) {
+        field->setProperty("text", term);
+        QMetaObject::invokeMethod(debounce, "triggered");
+    };
+    pullUpToTabs();
+    turnDevice(landscape);
+    const qreal railWidth = rail->width();
+    QVERIFY(railWidth > 0);
+
+    QVERIFY(!found->isVisible());
+    QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
+    search(QStringLiteral("office"));
+    QVERIFY(found->isVisible());
+    QVERIFY(!list->isVisible());
+    QVERIFY(!cells->isVisible());
+    QVERIFY(rail->isVisible());
+    QCOMPARE(found->mapToItem(view, QPointF(0, 0)), QPointF(railWidth, 0));
+    QCOMPARE(found->width(), view->width() - railWidth);
+    QCOMPARE(found->height(), browser->height());
+    QCOMPARE(found->property("cellWidth").toReal(), found->width() / 2);
+    QCOMPARE(found->property("cellHeight").toReal(), small);
+    QVERIFY(findObjects(list, QStringLiteral("tabSearchDelegate")).isEmpty());
+    QList<QObject *> results = findObjects(found, QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 2);
+    std::sort(results.begin(), results.end(), [](QObject *one, QObject *other) {
+        return one->property("x").toReal() < other->property("x").toReal();
+    });
+    QCOMPARE(results.at(0)->property("x").toReal(), qreal(0));
+    QCOMPARE(results.at(1)->property("x").toReal(), found->width() / 2);
+    QCOMPARE(results.at(1)->property("y").toReal(), results.at(0)->property("y").toReal());
+    const auto line = [](QObject *result, const char *name) {
+        return findObjects(result, QLatin1String(name)).first();
+    };
+    const QString highlight =
+        evaluate(field, QStringLiteral("'' + Theme.highlightColor")).toString();
+    for (QObject *result : results) {
+        QCOMPARE(result->property("width").toReal(), found->width() / 2);
+        QCOMPARE(result->property("height").toReal(), small);
+        QVERIFY(!line(result, "tabSearchGroupHeader")->property("visible").toBool());
+        QVERIFY(!line(result, "tabSearchItem")->property("visible").toBool());
+        QCOMPARE(line(result, "tabSearchCompactItem")->property("height").toReal(), small);
+        QVERIFY(line(result, "tabSearchPicture")->property("height").toReal() < small);
+    }
+    QCOMPARE(line(results.at(0), "tabSearchCompactTitle")->property("text").toString(),
+             QStringLiteral("<font color=\"%1\">Office</font> hours").arg(highlight));
+    QCOMPARE(line(results.at(0), "tabSearchHost")->property("text").toString(),
+             QStringLiteral("qwant.com"));
+    QCOMPARE(line(results.at(0), "tabSearchGroup")->property("text").toString(),
+             QStringLiteral("1 tab(s)"));
+    QCOMPARE(line(results.at(1), "tabSearchHost")->property("text").toString(),
+             QStringLiteral("two.example"));
+    QCOMPARE(line(results.at(1), "tabSearchGroup")->property("text").toString(),
+             QStringLiteral("Work"));
+    auto *thumbnail = qobject_cast<QQuickItem *>(line(results.at(1), "tabSearchThumbnail"));
+    QCOMPARE(thumbnail->property("source").toUrl(), QUrl::fromLocalFile(picture));
+    // Decoded about cell size, covering it, not at picture's.
+    QTRY_VERIFY(thumbnail->isVisible());
+    const QSizeF decoded(thumbnail->implicitWidth(), thumbnail->implicitHeight());
+    QVERIFY(decoded.width() >= thumbnail->width());
+    QVERIFY(decoded.width() <= 2 * thumbnail->width());
+    QVERIFY(decoded.height() >= thumbnail->height());
+
+    // Keyboard shrinks page: results end above it, rail keeps full height.
+    const qreal landscapeHeight = browser->height();
+    window->setWidth(landscapeHeight / 2);
+    settle();
+    QCOMPARE(browser->height(), landscapeHeight / 2);
+    QCOMPARE(found->mapToItem(view, QPointF(0, found->height())).y(), browser->height());
+    QCOMPARE(rail->height(), landscapeHeight);
+    QVERIFY(qobject_cast<QQuickItem *>(field)->isVisible());
+    window->setWidth(landscapeHeight);
+    settle();
+
+    field->setProperty("text", QString());
+    QVERIFY(!found->isVisible());
+    QVERIFY(cells->isVisible());
+    search(QStringLiteral("mail"));
+    results = findObjects(found, QStringLiteral("tabSearchDelegate"));
+    QCOMPARE(results.count(), 1);
+    click(line(results.at(0), "tabSearchCompactItem"));
+    QVERIFY(!browser->property("tabsOpen").toBool());
+    QCOMPARE(tabs->activeTabId(), second);
+    QCOMPARE(tabs->currentGroupId(), work);
+    QVERIFY(field->property("text").toString().isEmpty());
+
+    pullUpToTabs();
+    turnDevice(1);
+    search(QStringLiteral("office"));
+    QVERIFY(list->isVisible());
+    QVERIFY(!found->isVisible());
+    QCOMPARE(list->x(), qreal(0));
+    QCOMPARE(list->width(), view->width());
+    QCOMPARE(list->y(), find(QStringLiteral("gridHeadRow"))->property("height").toReal());
+    QVERIFY(findObjects(found, QStringLiteral("tabSearchDelegate")).isEmpty());
+    results = byRow(findObjects(list, QStringLiteral("tabSearchDelegate")));
+    QCOMPARE(results.count(), 2);
+    QVERIFY(line(results.at(0), "tabSearchItem")->property("visible").toBool());
+    QVERIFY(findObjects(results.at(0), QStringLiteral("tabSearchCompactItem")).isEmpty());
 }
 
 void tst_qmlload::previewGestures()
@@ -2988,11 +3503,26 @@ void tst_qmlload::barDragStartsWithoutAStutter()
     QTRY_COMPARE(offset(), qreal(0));
     QVERIFY(!grid->property("visible").toBool());
 
+    // Reach lies over page foot, mostly tapped and scrolled (device): no picture, no grid for
+    // that; both once finger heads up, still ahead of drag. Page scrolled since last picture.
+    webView->setProperty("moving", true);
+    webView->setProperty("moving", false);
+    const int before = webView->property("grabCount").toInt();
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
-    QVERIFY(grid->property("visible").toBool());
+    QVERIFY(!grid->property("visible").toBool());
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
     QVERIFY(!grid->property("visible").toBool());
     drag(&window, QPoint(x, inReach), QPoint(x + 10 * shake, inReach));
+    QVERIFY(!grid->property("visible").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), before);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    y = inReach;
+    while (!grid->property("visible").toBool()) {
+        QTest::mouseMove(&window, QPoint(x, --y));
+    }
+    QVERIFY(!gesture->property("dragging").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), before + 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, y));
     QVERIFY(!grid->property("visible").toBool());
 
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
@@ -3040,6 +3570,116 @@ void tst_qmlload::barStaysSlimWhileDragged()
     webView->setProperty("chrome", true);
 }
 
+// Device: page resized as bar slimmed or grew: mid-scroll it stuttered, at rest it still showed
+// page colour before content. Page always ends at slim bar's top, whole bar overlaps its foot, as
+// stock browser's toolbar overlays its page: no resize, no frame grabbed, nothing held over page.
+void tst_qmlload::barOverlapsPageFoot()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *viewArea = find(QStringLiteral("viewArea"));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *webView = currentWebView();
+    webView->setProperty("painted", true);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    const qreal fullBar = bar->property("height").toReal();
+    const qreal slimBar = bar->property("slimHeight").toReal();
+    QVERIFY(fullBar > slimBar);
+    const qreal inset = page->property("pageCutoutInset").toReal();
+    const auto viewHeight = [viewArea]() { return viewArea->property("height").toReal(); };
+    const auto pageHeight = [page]() { return page->property("height").toReal(); };
+    const auto barTop = [bar]() { return bar->property("y").toReal(); };
+    const int grabs = webView->property("grabCount").toInt();
+    const qreal height = pageHeight() - slimBar - inset;
+    QCOMPARE(viewHeight(), height);
+    QCOMPARE(barTop(), pageHeight() - fullBar);
+
+    // Flung down, at rest, dragged up, tapped: bar slims and grows, page keeps its size.
+    for (const char *moving : {"moving", "dragging", ""}) {
+        if (*moving != '\0') {
+            webView->setProperty(moving, true);
+        }
+        webView->setProperty("chrome", false);
+        QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+        QCOMPARE(viewHeight(), height);
+        QCOMPARE(barTop(), inset + viewHeight());
+        if (*moving != '\0') {
+            webView->setProperty(moving, false);
+        }
+        QCOMPARE(viewHeight(), height);
+        webView->setProperty("chrome", true);
+        QTRY_COMPARE(bar->property("height").toReal(), fullBar);
+        QCOMPARE(viewHeight(), height);
+    }
+    QCOMPARE(webView->property("grabCount").toInt(), grabs);
+    QVERIFY(!hold->property("visible").toBool());
+
+    // Landscape: bar stays slim, page as before.
+    turnDevice(Landscape);
+    QTRY_COMPARE(bar->property("height").toReal(), slimBar);
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    QCOMPARE(viewHeight(), pageHeight() - slimBar);
+    turnDevice(Portrait);
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    webView->setProperty("painted", false);
+}
+
+// Bar's slide only moves and scales: host text and mute drawn at full size and scaled (new font
+// size each frame laid text out each frame), closed address pane and portrait menu stay put.
+// At rest: true size, unscaled.
+void tst_qmlload::barSlideLaysNothingOut()
+{
+    // Real window: bar row laid out on draw.
+    FingerWindow fingers(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(fingers.window()));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
+    QObject *row = find(QStringLiteral("addressRow"));
+    auto *host = qobject_cast<QQuickItem *>(find(QStringLiteral("addressLabel")));
+    auto *mute = qobject_cast<QQuickItem *>(find(QStringLiteral("muteButton")));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QObject *pane = find(QStringLiteral("omnibarView"));
+    QObject *webView = currentWebView();
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    const int slimFont = int(evaluate(bar, QStringLiteral("Theme.fontSizeSmall")).toReal());
+    const int fullFont = int(evaluate(bar, QStringLiteral("Theme.fontSizeMedium")).toReal());
+    const qreal slimIcon = evaluate(bar, QStringLiteral("Theme.iconSizeSmall")).toReal();
+    const qreal fullIcon = evaluate(bar, QStringLiteral("Theme.iconSizeSmallPlus")).toReal();
+    QVERIFY(slimFont < fullFont);
+    QVERIFY(slimIcon < fullIcon);
+    const qreal menuTop = menu->property("barTop").toReal();
+    const qreal paneHeight = pane->property("height").toReal();
+    const qreal paneRow = pane->property("rowHeight").toReal();
+    const auto font = [host]() { return host->property("font").value<QFont>().pixelSize(); };
+    const auto hostCentre = [host, bar]() {
+        return host->mapToItem(bar, QPointF(host->width() / 2, 0)).x();
+    };
+    QCOMPARE(font(), fullFont);
+
+    for (const bool slim : {true, false}) {
+        webView->setProperty("chrome", !slim);
+        QVERIFY(bar->property("resizing").toBool());
+        QSet<qreal> scales;
+        while (bar->property("resizing").toBool()) {
+            QCOMPARE(font(), fullFont);
+            QCOMPARE(mute->width(), fullIcon);
+            // Drawn at bar's size.
+            QVERIFY(qAbs(host->scale() * fullFont - row->property("fontSize").toReal()) < 0.01);
+            QVERIFY(qAbs(mute->scale() * fullIcon - row->property("iconSize").toReal()) < 0.01);
+            QCOMPARE(menu->property("barTop").toReal(), menuTop);
+            QCOMPARE(pane->property("height").toReal(), paneHeight);
+            QCOMPARE(pane->property("rowHeight").toReal(), paneRow);
+            scales.insert(host->scale());
+            QTest::qWait(16);
+        }
+        QVERIFY(scales.count() > 2);
+        QCOMPARE(font(), slim ? slimFont : fullFont);
+        QCOMPARE(mute->width(), slim ? slimIcon : fullIcon);
+        QCOMPARE(host->scale(), 1.0);
+        QCOMPARE(mute->scale(), 1.0);
+        QTRY_VERIFY(qAbs(hostCentre() - bar->width() / 2) <= 0.5);
+    }
+}
+
 // Reach above bar overlaps page foot (player seek bar, buttons). Keeps only drag up (opens grid);
 // tap, sideways/down drag go to page. Held press kept: handle sits in reach.
 void tst_qmlload::barReachUnderAFinger()
@@ -3065,7 +3705,10 @@ void tst_qmlload::barReachUnderAFinger()
     const QPointF local = view->mapFromScene(QPointF(200, inReach));
     QCOMPARE(touch(0).value(QStringLiteral("x")).toReal(), local.x());
     QCOMPARE(touch(0).value(QStringLiteral("y")).toReal(), local.y());
-    QVERIFY(local.y() > view->height() - reach && local.y() < view->height());
+    // Over page foot: above whole bar, which overlaps the page by its height beyond slim.
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    const qreal overlap = bar->property("height").toReal() - bar->property("slimHeight").toReal();
+    QVERIFY(local.y() > view->height() - overlap - reach && local.y() < view->height());
     QVERIFY(view->hasActiveFocus());
     QVERIFY(!page->property("tabsOpen").toBool());
 
@@ -3805,6 +4448,368 @@ void tst_qmlload::menuSheetDoesNotScroll()
     QVERIFY(!menu->property("open").toBool());
     QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, beside);
     QTRY_VERIFY(!shade->isVisible());
+}
+
+namespace {
+
+// Two frames drawn, so positioners have laid out what changed.
+void drawn(QQuickWindow &window)
+{
+    QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
+    for (int frame = 0; frame < 2; ++frame) {
+        const int seen = frames.count();
+        window.update();
+        QTRY_VERIFY(frames.count() > seen);
+    }
+}
+
+// Item's rectangle on page: landscape page lies turned in window.
+QRectF onPage(QQuickItem *page, QQuickItem *item)
+{
+    return item->mapRectToItem(page, QRectF(0, 0, item->width(), item->height()));
+}
+
+// Landscape sheet has nothing to scroll and a drag up moves nothing; pull down, along page (across
+// window), still puts sheet away.
+void turnedSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu,
+                         QQuickItem *sheet, QQuickItem *grabbed)
+{
+    QVERIFY(menu->property("open").toBool());
+    QTRY_VERIFY(!sheet->property("moving").toBool());
+    QCOMPARE(sheet->property("contentHeight").toReal(), sheet->height());
+    const qreal openY = menu->y();
+    const qreal restY = sheet->property("contentY").toReal();
+    const QPointF grab = grabbed->mapToItem(page, QPointF(grabbed->width() / 2, 1));
+    const auto at = [page](const QPointF &point) { return page->mapToScene(point).toPoint(); };
+    const auto drag = [&window, &at, grab](qreal by) {
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, at(grab));
+        for (int step = 1; step <= 12; ++step) {
+            QTest::mouseMove(&window, at(grab + QPointF(0, by * step / 12)));
+        }
+    };
+    drag(-240);
+    QVERIFY(qAbs(sheet->property("contentY").toReal() - restY) < 0.5);
+    QCOMPARE(menu->y(), openY);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab - QPointF(0, 240)));
+    QVERIFY(menu->property("open").toBool());
+
+    const qreal pull = 2 * menu->property("closeDistance").toReal();
+    QVERIFY(grab.y() + pull < page->height());
+    drag(pull);
+    QVERIFY(menu->y() > openY);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab + QPointF(0, pull)));
+    QTRY_VERIFY(!menu->property("open").toBool());
+    // Pull springs back before sheet comes up again.
+    QTRY_COMPARE(sheet->y(), qreal(0));
+}
+
+// Side sheet has nothing to scroll and a drag left moves nothing. Drag right, along page (across
+// window), moves sheet, row under finger: past a short way puts sheet away, short of it returns.
+void sideSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu, QQuickItem *sheet,
+                       QQuickItem *grabbed)
+{
+    QVERIFY(menu->property("open").toBool());
+    QTRY_VERIFY(!sheet->property("moving").toBool());
+    QCOMPARE(sheet->property("contentWidth").toReal(), sheet->width());
+    const qreal openX = menu->x();
+    const qreal openY = menu->y();
+    QCOMPARE(openX, page->width() - menu->width());
+    const qreal restX = sheet->property("contentX").toReal();
+    const QPointF grab = grabbed->mapToItem(page, QPointF(1, grabbed->height() / 2));
+    const auto at = [page](const QPointF &point) { return page->mapToScene(point).toPoint(); };
+    const auto drag = [&window, &at, grab](qreal by) {
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, at(grab));
+        for (int step = 1; step <= 12; ++step) {
+            QTest::mouseMove(&window, at(grab + QPointF(by * step / 12, 0)));
+        }
+    };
+    drag(-240);
+    QVERIFY(qAbs(sheet->property("contentX").toReal() - restX) < 0.5);
+    QCOMPARE(menu->x(), openX);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab - QPointF(240, 0)));
+    QVERIFY(menu->property("open").toBool());
+
+    const qreal closeDistance = menu->property("closeDistance").toReal();
+    QVERIFY(closeDistance > 0);
+    QVERIFY(closeDistance <= menu->width() / 3);
+    const int slack = QGuiApplication::styleHints()->startDragDistance() + 1;
+    const int shortPull = int(closeDistance / 2);
+    const qreal grabbedX = onPage(page, grabbed).x();
+    drag(shortPull);
+    const qreal travelled = menu->x() - openX;
+    QVERIFY(travelled <= shortPull);
+    QVERIFY2(travelled > (shortPull - slack) / 2.0, qPrintable(QString::number(travelled)));
+    QVERIFY(qAbs(onPage(page, grabbed).x() - grabbedX - travelled) < 1);
+    QCOMPARE(menu->y(), openY);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab + QPointF(shortPull, 0)));
+    QTRY_COMPARE(menu->x(), openX);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(onPage(page, grabbed).x(), grabbedX);
+
+    const qreal pull = 2 * closeDistance;
+    QVERIFY(grab.x() + pull < page->width());
+    drag(pull);
+    QVERIFY(menu->x() > openX + closeDistance);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, at(grab + QPointF(pull, 0)));
+    QTRY_VERIFY(!menu->property("open").toBool());
+    // Pull springs back before sheet comes in again.
+    QTRY_COMPARE(sheet->x(), qreal(0));
+}
+
+} // namespace
+
+// Landscape menu: side sheet at page's right edge, standing on bar, as tall as its content, 42%
+// of page wide in whole pixels. Head across its top as in portrait, a level line under it, then
+// page's five in a left column and browser's four in a right one, an upright line between: list
+// rows, icon at left (in line with head's tile), name beside it in small type. German names fit
+// unfaded, also on a page shaped as the phone's. Grip upright on its left edge; press beside it
+// closes, as does a drag right. Turned while open, it stays open, placed for the new edge.
+void tst_qmlload::menuSheetInLandscape()
+{
+    const int portrait = 1; // Silica's Orientation values.
+    const int landscape = 2;
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *page = item("browserPage");
+    auto *menu = item("browserMenu");
+    auto *bar = item("navigationBar");
+    const auto rect = [page](QQuickItem *of) { return onPage(page, of); };
+    const auto theme = [this, menu](const char *name) {
+        return evaluate(menu, QStringLiteral("Theme.") + QLatin1String(name)).toReal();
+    };
+    const auto part = [](QQuickItem *button, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(button, QLatin1String(name)).first());
+    };
+    const char *const actions[] = {
+        "findMenuButton",    "bookmarkMenuButton",  "shareMenuButton",
+        "desktopMenuButton", "readerMenuButton",    "bookmarksMenuButton",
+        "historyMenuButton", "downloadsMenuButton", "settingsMenuButton"};
+    m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(), QStringLiteral("Qwant"));
+
+    turnDevice(landscape);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    QVERIFY(page->width() > page->height());
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    drawn(window);
+
+    // Docked right, standing on bar, which stays in sight under it.
+    QCOMPARE(menu->property("dock").toInt(), evaluate(menu, QStringLiteral("Dock.Right")).toInt());
+    const QRectF sheet = rect(menu);
+    const QRectF barBox = rect(bar);
+    QVERIFY(barBox.height() > 0);
+    QCOMPARE(barBox.bottom(), page->height());
+    QCOMPARE(sheet.right(), page->width());
+    QCOMPARE(sheet.bottom(), barBox.top());
+    const qreal gap = theme("paddingLarge");
+    const qreal column = std::floor((page->width() * 0.42 - gap) / 2);
+    QCOMPARE(sheet.width(), 2 * column + gap);
+    QVERIFY(qAbs(sheet.width() - 0.42 * page->width()) <= 2);
+    const qreal row = theme("itemSizeSmall");
+    const qreal padding = theme("paddingMedium");
+
+    // Head across sheet's top, as in portrait: title on one line, copy at right.
+    QQuickItem *header = item("menuHeader");
+    const QRectF head = rect(header);
+    QCOMPARE(head.x(), sheet.x());
+    QCOMPARE(head.width(), sheet.width());
+    QCOMPARE(head.y(), sheet.y() + padding);
+    QCOMPARE(head.height(), theme("itemSizeSmall"));
+    QCOMPARE(item("menuPageTitle")->property("lineCount").toInt(), 1);
+    QVERIFY(rect(item("copyAddressButton")).right() <= sheet.right());
+    QVERIFY(rect(item("copyAddressButton")).left() > sheet.center().x());
+    QVERIFY(!item("menuHeaderGap")->isVisible());
+    QQuickItem *headLine = item("menuHeadDivider")->parentItem();
+    QVERIFY(headLine->isVisible());
+    QCOMPARE(item("menuHeadDivider")->rotation(), qreal(0));
+    QCOMPARE(rect(headLine).x(), sheet.x());
+    QCOMPARE(rect(headLine).width(), sheet.width());
+    QCOMPARE(rect(headLine).y(), head.bottom());
+
+    // As tall as its content: head, line, five rows, padding; nothing over the bar.
+    const QRectF first = rect(item(actions[0]));
+    QCOMPARE(first.y(), rect(headLine).bottom());
+    QCOMPARE(sheet.height(), padding + head.height() + rect(headLine).height() + 5 * row + padding);
+    QVERIFY(sheet.height() <= barBox.top());
+    QVERIFY(sheet.top() > 0);
+
+    // Page's five down the left column, browser's four down the right: list rows, icon at left
+    // in line with head's tile, name beside it.
+    const qreal dimmed = theme("opacityLow");
+    const qreal tileX = rect(item("menuPageTile")).center().x() - sheet.x();
+    for (int i = 0; i < 9; ++i) {
+        QQuickItem *button = item(actions[i]);
+        const QRectF cell = rect(button);
+        const bool pageAction = i < 5;
+        const int at = pageAction ? i : i - 5;
+        QVERIFY2(cell.x() == (pageAction ? sheet.x() : sheet.x() + column + gap), actions[i]);
+        QCOMPARE(cell.width(), column);
+        QCOMPARE(cell.height(), row);
+        QCOMPARE(cell.y(), first.y() + at * row);
+        QCOMPARE(button->property("round").toBool(), pageAction);
+        QCOMPARE(part(button, "menuButtonDisc")->isVisible(), pageAction);
+        QCOMPARE(button->opacity(), button->isEnabled() ? 1.0 : dimmed);
+        const QRectF slot = rect(part(button, "menuButtonIconSlot"));
+        QQuickItem *label = part(button, "menuButtonLabel");
+        const QRectF name = rect(label);
+        QVERIFY2(slot.right() < name.left(), actions[i]);
+        QCOMPARE(slot.center().y(), cell.center().y());
+        QVERIFY2(qAbs(name.center().y() - cell.center().y()) <= 0.5, actions[i]);
+        QCOMPARE(slot.center().x() - cell.x(), tileX);
+        QVERIFY2(name.right() <= cell.right(), actions[i]);
+        QCOMPARE(label->property("horizontalAlignment").toInt(), int(Qt::AlignLeft));
+        QCOMPARE(label->property("font").value<QFont>().pixelSize(), int(theme("fontSizeSmall")));
+    }
+    QCOMPARE(rect(item("menuPageRow")), QRectF(sheet.x(), first.y(), column, 5 * row));
+    QCOMPARE(rect(item("menuBrowserRow")),
+             QRectF(sheet.x() + column + gap, first.y(), column, 4 * row));
+    QCOMPARE(rect(item("readerMenuButton")).bottom(), sheet.bottom() - padding);
+    QCOMPARE(rect(item("settingsMenuButton")).right(), page->width());
+    QVERIFY(!item("readerMenuButton")->isEnabled());
+    // Upright line between the columns, as tall as page's five.
+    QQuickItem *between = item("menuSeparator")->parentItem();
+    QCOMPARE(item("menuSeparator")->rotation(), qreal(90));
+    QCOMPARE(rect(between), QRectF(sheet.x() + column, first.y(), gap, 5 * row));
+    // Checked lights disc and name, as in portrait.
+    QObject *view = currentWebView();
+    view->setProperty("desktopMode", true);
+    QQuickItem *desktop = item("desktopMenuButton");
+    QVERIFY(desktop->property("checked").toBool());
+    QCOMPARE(part(desktop, "menuButtonLabel")->property("color").value<QColor>(),
+             evaluate(menu, QStringLiteral("Theme.highlightColor")).value<QColor>());
+    QVERIFY(part(desktop, "menuButtonDisc")->property("color").value<QColor>() !=
+            part(item(actions[0]), "menuButtonDisc")->property("color").value<QColor>());
+    view->setProperty("desktopMode", false);
+
+    // German names, the longest the menu has, fit their rows: nothing to fade. Also on a page
+    // shaped as the phone's: 2:1, 72 extra small type sizes wide (2160 px, 30 px).
+    const char *const german[] = {"Seitensuche", "Merken",      "Teilen",
+                                  "PC-Version",  "Leseansicht", "Lesezeichen",
+                                  "Chronik",     "Downloads",   "Einstellungen"};
+    const auto faded = [&]() {
+        QStringList names;
+        for (int i = 0; i < 9; ++i) {
+            QQuickItem *button = item(actions[i]);
+            QObject *label = part(button, "menuButtonLabel");
+            const QString text = button->property("text").toString();
+            button->setProperty("text", QString::fromUtf8(german[i]));
+            if (label->property("implicitWidth").toReal() > label->property("width").toReal()) {
+                names << QString::fromUtf8(german[i]);
+            }
+            button->setProperty("text", text);
+        }
+        return names.join(QLatin1Char(' '));
+    };
+    QCOMPARE(faded(), QString());
+    const qreal unit = theme("fontSizeExtraSmall");
+    const QSizeF full(root->width(), root->height());
+    root->setHeight(full.height() - page->width() + 72 * unit);
+    root->setWidth(36 * unit);
+    settle();
+    drawn(window);
+    QCOMPARE(page->width(), 72 * unit);
+    QCOMPARE(page->height(), 36 * unit);
+    const QString narrowFaded = faded();
+    const QRectF narrowSheet = rect(menu);
+    const QRectF narrowBar = rect(bar);
+    root->setWidth(full.width());
+    root->setHeight(full.height());
+    settle();
+    drawn(window);
+    QCOMPARE(narrowFaded, QString());
+    QCOMPARE(narrowSheet.right(), 72 * unit);
+    QCOMPARE(narrowSheet.bottom(), narrowBar.top());
+    QCOMPARE(narrowSheet.height(), sheet.height());
+    QVERIFY(narrowSheet.top() > 0);
+    QCOMPARE(rect(menu), sheet);
+
+    // Grip upright, centred on sheet's left edge line.
+    auto *handle = item("menuDragHandle");
+    const QRectF grip = rect(handle);
+    QVERIFY(handle->isVisible());
+    QVERIFY(grip.height() > grip.width());
+    QCOMPARE(grip.center().x(), sheet.x() + theme("_lineWidth") / 2);
+    QCOMPARE(grip.center().y(), sheet.center().y());
+    auto *sideEdge = part(menu, "sheetSideEdge");
+    QVERIFY(sideEdge->isVisible());
+    QCOMPARE(rect(sideEdge).x(), sheet.x());
+    QCOMPARE(rect(sideEdge).height(), sheet.height());
+
+    // Shade beside sheet: press there closes.
+    auto *tap = part(item("menuShade"), "sheetShadeTap");
+    QCOMPARE(tap->height(), menu->height());
+    QCOMPARE(tap->width(), menu->width());
+    evaluate(tap, QStringLiteral("pressedOutside(10, 10)"));
+    QVERIFY(!menu->property("open").toBool());
+    tapBar(QStringLiteral("menu"));
+    QTRY_COMPARE(item("menuShade")->opacity(), 1.0);
+    const QPoint beside = page->mapToScene(QPointF(sheet.x() / 2, sheet.center().y())).toPoint();
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, beside);
+    QVERIFY(!menu->property("open").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, beside);
+
+    tapBar(QStringLiteral("menu"));
+    click(item("menuHeaderDetails"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteDetailsPage"));
+    QVERIFY(!menu->property("open").toBool());
+    popPage();
+
+    tapBar(QStringLiteral("menu"));
+    drawn(window);
+    QCOMPARE(rect(menu), sheet);
+    sideSheetStaysPut(window, page, menu, item("menuSheet"), item("shareMenuButton"));
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+
+    // Turned while open: stays open, as the new orientation's sheet.
+    turnDevice(portrait);
+    QVERIFY(page->height() > page->width());
+    tapBar(QStringLiteral("menu"));
+    drawn(window);
+    QCOMPARE(menu->y(), page->height() - menu->height());
+    turnDevice(landscape);
+    QTRY_VERIFY(!bar->property("resizing").toBool());
+    drawn(window);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(rect(menu), sheet);
+    QVERIFY(handle->isVisible());
+    QCOMPARE(rect(handle), grip);
+    turnDevice(portrait);
+    drawn(window);
+    QVERIFY(menu->property("open").toBool());
+
+    // Upright: bottom sheet, head over two rows of icons over names.
+    QCOMPARE(menu->property("dock").toInt(), evaluate(menu, QStringLiteral("Dock.Bottom")).toInt());
+    QCOMPARE(menu->x(), qreal(0));
+    QCOMPARE(menu->width(), page->width());
+    QCOMPARE(menu->y(), page->height() - menu->height());
+    QCOMPARE(header->width(), menu->width());
+    QCOMPARE(header->height(), theme("itemSizeSmall"));
+    QVERIFY(item("menuHeaderGap")->isVisible());
+    QVERIFY(!item("menuHeadDivider")->parentItem()->isVisible());
+    QCOMPARE(item("menuSeparator")->rotation(), qreal(0));
+    QCOMPARE(item("menuSeparator")->parentItem()->width(), menu->width());
+    QVERIFY(rect(header).bottom() <= rect(item("findMenuButton")).y());
+    QCOMPARE(item("findMenuButton")->width(), menu->width() / 5);
+    QCOMPARE(item("settingsMenuButton")->width(), menu->width() / 4);
+    QVERIFY(rect(item("bookmarksMenuButton")).y() > rect(item("readerMenuButton")).bottom());
+    QCOMPARE(rect(item("bookmarksMenuButton")).x(), qreal(0));
+    QQuickItem *findSlot = part(item("findMenuButton"), "menuButtonIconSlot");
+    QVERIFY(rect(findSlot).bottom() < rect(part(item("findMenuButton"), "menuButtonLabel")).y());
+    QCOMPARE(part(item("findMenuButton"), "menuButtonLabel")
+                 ->property("font")
+                 .value<QFont>()
+                 .pixelSize(),
+             int(theme("fontSizeTiny")));
+    QCOMPARE(rect(handle).center().x(), page->width() / 2);
+    QVERIFY(rect(handle).width() > rect(handle).height());
+    evaluate(menu, QStringLiteral("hide()"));
 }
 
 // Find bar over nav bar; search/step are engine messages to page; answers on name page told to
@@ -4995,8 +6000,192 @@ void tst_qmlload::linkPreview()
     QCOMPARE(errors.all(), QString());
 }
 
-// Page ends where bar banners begin (one or two), regains room when gone: banner never covers
-// page foot.
+// Landscape link sheet: link head at left, then portrait's rows beside it in the sheet's block,
+// preview toggle row over the link's actions, which sit in quarters of the block. Preview leaves
+// the sheet: floats above it over the dimmed page, centred and page shaped, and a tap on it still
+// opens the link. Back in portrait, preview in the sheet again.
+void tst_qmlload::linkSheetInLandscape()
+{
+    const int portrait = 1; // Silica's Orientation values.
+    const int landscape = 2;
+    ScriptErrors errors;
+    auto *root = qobject_cast<QQuickItem *>(m_window.data());
+    FingerWindow host(root);
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *page = item("browserPage");
+    auto *menu = item("linkMenu");
+    QObject *view = currentWebView();
+    const auto rect = [page](QQuickItem *of) { return onPage(page, of); };
+    const QString ridge = QStringLiteral("https://trails.example/walks/ridge-loop");
+    QVERIFY(m_core->settings()->linkPreview());
+
+    turnDevice(landscape);
+    // Sheet's head and cells: rows' block at right, a quarter each.
+    const qreal block = evaluate(menu, QStringLiteral("cells.block")).toReal();
+    const QRectF menuHead(0, 0, evaluate(menu, QStringLiteral("cells.headWidth")).toReal(), 0);
+    QList<QRectF> cells;
+    for (int at = 0; at < 4; ++at) {
+        cells << QRectF(page->width() - block + at * block / 4, 0, block / 4, 0);
+    }
+    // Same cells' x and width, any row.
+    const auto inCell = [&cells, &rect](QQuickItem *button, int at) {
+        const QRectF cell = rect(button);
+        return cell.x() == cells.at(at).x() && cell.width() == cells.at(at).width();
+    };
+
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    QVERIFY(menu->property("open").toBool());
+    drawn(window);
+    QVERIFY(menu->height() < page->height() / 3);
+    QCOMPARE(menu->y(), page->height() - menu->height());
+    const QRectF head = rect(item("linkMenuHeader"));
+    QCOMPARE(head.x(), qreal(0));
+    QCOMPARE(head.width(), menuHead.width());
+    QCOMPARE(head.right(),
+             cells.first().x() - evaluate(menu, QStringLiteral("cells.gap")).toReal());
+    QVERIFY(rect(item("copyLinkButton")).right() <= head.right());
+    QCOMPARE(item("linkMenuTitle")->property("maximumLineCount").toInt(), 2);
+    QVERIFY(evaluate(item("linkMenuTitle"), QStringLiteral("wrapMode === Text.Wrap")).toBool());
+    QQuickItem *headDivider = item("linkMenuHeadDivider")->parentItem();
+    QVERIFY(headDivider->isVisible());
+    QCOMPARE(item("linkMenuHeadDivider")->rotation(), qreal(90));
+    QCOMPARE(rect(headDivider).x(), head.right());
+    QCOMPARE(rect(headDivider).height(), head.height());
+
+    // Toggle row first, as in portrait, across the block; link's actions under it, a quarter each.
+    auto *toggle = item("linkPreviewToggle");
+    QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(toggle->isVisible());
+    const QRectF toggleRow = rect(toggle);
+    QCOMPARE(toggleRow.x(), cells.first().x());
+    QCOMPARE(toggleRow.width(), block);
+    QCOMPARE(item("linkPreviewToggleLabel")->property("text").toString(),
+             QStringLiteral("Hide preview"));
+    QCOMPARE(item("linkPreviewFrame")->height(), qreal(0));
+    const char *const actions[] = {"newTabLinkButton", "backgroundTabLinkButton", "shareLinkButton",
+                                   "saveLinkButton"};
+    const QRectF newTab = rect(item(actions[0]));
+    QVERIFY(newTab.y() >= toggleRow.bottom());
+    for (int i = 0; i < 4; ++i) {
+        QQuickItem *button = item(actions[i]);
+        QVERIFY2(inCell(button, i), actions[i]);
+        QVERIFY2(rect(button).y() == newTab.y(), actions[i]);
+        QCOMPARE(button->width(), block / 4);
+        QVERIFY(button->property("round").toBool());
+    }
+    // Head spans toggle row and actions.
+    QCOMPARE(head.y(), toggleRow.y());
+    QCOMPARE(head.bottom(), newTab.bottom());
+
+    // Preview above sheet, not in it: page shaped, centred, as large as room allows.
+    auto *frame = item("linkPreviewPage");
+    QVERIFY(frame->isVisible());
+    QVERIFY(!menu->isAncestorOf(frame));
+    QTRY_VERIFY(menu->property("previewShown").toBool());
+    QVERIFY(item("linkPreviewLoader")->property("active").toBool());
+    const QRectF floating = rect(frame);
+    const qreal margin = evaluate(menu, QStringLiteral("Theme.paddingLarge")).toReal();
+    QVERIFY(floating.y() >= margin);
+    QVERIFY(floating.bottom() <= menu->y() - margin);
+    QCOMPARE(floating.center().x(), page->width() / 2);
+    QCOMPARE(floating.center().y(), menu->y() / 2);
+    QCOMPARE(floating.width() / floating.height(),
+             view->property("width").toReal() / view->property("height").toReal());
+    const qreal sideMargin = evaluate(menu, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    QVERIFY(qFuzzyCompare(floating.height(), menu->y() - 2 * margin) ||
+            qFuzzyCompare(floating.width(), page->width() - 2 * sideMargin));
+    QVERIFY(floating.width() > page->width() / 2);
+    QVERIFY(unclipped(frame));
+    // Over shade, and counts as sheet for a press beside it.
+    QVERIFY(frame->parentItem()->z() > item("linkMenuDim")->z());
+    auto *pressBeside = qobject_cast<QQuickItem *>(
+        findObjects(item("linkMenuDim"), QStringLiteral("sheetShadeTap")).first());
+    QCOMPARE(pressBeside->y(), floating.y() - menu->y());
+
+    evaluate(find(QStringLiteral("linkPreviewTap")), QStringLiteral("clicked(null)"));
+    QVERIFY(!menu->property("open").toBool());
+    QCOMPARE(view->property("url").toString(), ridge);
+    QCOMPARE(m_core->tabs()->count(), 1);
+
+    // Hidden: dimmed page only, toggle says Show, sheet as before.
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    const qreal sheetHeight = menu->height();
+    click(toggle);
+    QVERIFY(menu->property("open").toBool());
+    QVERIFY(!m_core->settings()->linkPreview());
+    QVERIFY(!frame->isVisible());
+    QVERIFY(!menu->property("previewShown").toBool());
+    QCOMPARE(item("linkPreviewToggleLabel")->property("text").toString(),
+             QStringLiteral("Show preview"));
+    QCOMPARE(pressBeside->y(), qreal(0));
+    drawn(window);
+    QCOMPARE(menu->height(), sheetHeight);
+    turnedSheetStaysPut(window, page, menu, item("linkMenuSheet"), item("linkMenuHeader"));
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+    m_core->settings()->setLinkPreview(true);
+
+    // Other app's link: its actions in the same cells, no toggle row, head as tall as the row.
+    holdOn(view, heldOn(QStringLiteral("mailto:walks@trails.example")));
+    QCOMPARE(menu->y(), page->height() - menu->height());
+    drawn(window);
+    QVERIFY(inCell(item("appLinkButton"), 0));
+    QVERIFY(inCell(item("shareAppLinkButton"), 1));
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(!frame->isVisible());
+    QCOMPARE(rect(item("linkMenuHeader")).height(), item("appLinkButton")->height());
+    QVERIFY(menu->height() < page->height() / 4);
+    evaluate(menu, QStringLiteral("hide()"));
+
+    // Picture link: link's actions, a level separator, picture's in the row under them.
+    holdOn(view, heldOn(ridge, QString(), QStringLiteral("https://cdn.example/photos/ridge.jpg")));
+    drawn(window);
+    QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
+    QQuickItem *imageLine = item("linkMenuSeparator")->parentItem();
+    QVERIFY(imageLine->isVisible());
+    QCOMPARE(item("linkMenuSeparator")->rotation(), qreal(0));
+    QCOMPARE(rect(imageLine).x(), cells.first().x());
+    QCOMPARE(rect(imageLine).width(), block);
+    const QRectF linkRow = rect(item("newTabLinkButton"));
+    const QRectF imageRow = rect(item("openImageButton"));
+    QVERIFY(rect(imageLine).y() >= linkRow.bottom());
+    QVERIFY(imageRow.y() >= rect(imageLine).bottom());
+    const char *const pictureActions[] = {"openImageButton", "saveImageButton",
+                                          "copyImageLinkButton"};
+    for (int i = 0; i < 3; ++i) {
+        QQuickItem *button = item(pictureActions[i]);
+        QVERIFY2(inCell(button, i), pictureActions[i]);
+        QVERIFY2(rect(button).y() == imageRow.y(), pictureActions[i]);
+    }
+    QCOMPARE(rect(item("linkMenuHeader")).y(), linkRow.y());
+    QCOMPARE(rect(item("linkMenuHeader")).bottom(), imageRow.bottom());
+    QVERIFY(menu->height() < page->height() / 3);
+    evaluate(menu, QStringLiteral("hide()"));
+
+    turnDevice(portrait);
+    holdOn(view, heldOn(ridge, QStringLiteral("The ridge loop")));
+    drawn(window);
+    QVERIFY(shownIn(find(QStringLiteral("linkPreview"))));
+    QVERIFY(!item("linkMenuHeadDivider")->parentItem()->isVisible());
+    QCOMPARE(frame->parentItem(), item("linkPreviewFrame"));
+    QVERIFY(menu->isAncestorOf(frame));
+    QCOMPARE(frame->height(), qRound(page->height() / 3) * 1.0);
+    QCOMPARE(item("linkMenuHeader")->width(), menu->width());
+    QVERIFY(rect(item("linkMenuHeader")).bottom() <= rect(item("linkPreviewToggle")).y());
+    QVERIFY(rect(frame).bottom() <= rect(item("newTabLinkButton")).y());
+    QCOMPARE(item("newTabLinkButton")->width(), menu->width() / 4);
+    QCOMPARE(rect(item("newTabLinkButton")).x(), qreal(0));
+    QVERIFY(menu->height() > page->height() / 3);
+    QCOMPARE(errors.all(), QString());
+}
+
+// Page ends where bar banners begin over slim bar (one or two), regains room when gone: banner
+// covers page foot only as far as the whole bar does, riding on it.
 void tst_qmlload::bannersEndThePage()
 {
     QObject *page = find(QStringLiteral("browserPage"));
@@ -5009,11 +6198,13 @@ void tst_qmlload::bannersEndThePage()
     const qreal pageHeight = page->property("height").toReal();
     const qreal inset = page->property("pageCutoutInset").toReal();
     const qreal fullBar = bar->property("height").toReal();
+    const qreal growth = fullBar - bar->property("slimHeight").toReal();
+    QVERIFY(growth > 0);
     const auto pageEnd = [viewArea]() {
         return viewArea->property("y").toReal() + viewArea->property("height").toReal();
     };
     QCOMPARE(banners->property("height").toReal(), 0.0);
-    QCOMPARE(pageEnd(), pageHeight - fullBar);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth);
 
     evaluate(viewArea, QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
                                       " id: 1, displayName: 'a.pdf', size: 0})"));
@@ -5021,16 +6212,16 @@ void tst_qmlload::bannersEndThePage()
     const qreal one = downloads->property("height").toReal();
     QVERIFY(one > 0);
     QCOMPARE(banners->property("height").toReal(), one);
-    QCOMPARE(pageEnd(), banners->property("y").toReal());
-    QCOMPARE(pageEnd(), pageHeight - fullBar - one);
-    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - one - inset);
+    QCOMPARE(pageEnd(), banners->property("y").toReal() + growth);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth - one);
+    QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar + growth - one - inset);
 
     const int behind =
         m_core->tabs()->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
     evaluate(banners, QStringLiteral("tabOpened(%1, 'B')").arg(behind));
     QTRY_VERIFY(opened->property("visible").toBool());
     QCOMPARE(banners->property("height").toReal(), 2 * one);
-    QCOMPARE(pageEnd(), banners->property("y").toReal());
+    QCOMPARE(pageEnd(), banners->property("y").toReal() + growth);
     QCOMPARE(banners->property("y").toReal() + 2 * one, bar->property("y").toReal());
 
     evaluate(opened, QStringLiteral("dismiss()"));
@@ -5038,7 +6229,7 @@ void tst_qmlload::bannersEndThePage()
     QTRY_VERIFY(!opened->property("visible").toBool());
     QTRY_VERIFY(!downloads->property("visible").toBool());
     QCOMPARE(banners->property("height").toReal(), 0.0);
-    QCOMPARE(pageEnd(), pageHeight - fullBar);
+    QCOMPARE(pageEnd(), pageHeight - fullBar + growth);
 }
 
 void tst_qmlload::historyPage()
@@ -5138,20 +6329,90 @@ void tst_qmlload::bookmarksPage()
 
 namespace {
 
-// Settings column contents in order: objectName per item, section header as "#text".
-// Declaration order, not y: Column only places items on polish, never happens windowless.
-QStringList columnOf(QObject *item)
+// Column contents in order: objectName per item, section header as "#text". Declaration
+// order, not y: Column only places items on polish, never happens windowless. Unnamed
+// containers are looked through, since a landscape page lays its items in two columns (a
+// Flow of Columns); the order reads the same either way.
+void appendInOrder(QQuickItem *container, QStringList &held)
 {
-    QStringList held;
-    for (QQuickItem *child : qobject_cast<QQuickItem *>(item)->parentItem()->childItems()) {
+    // Depth first: an unnamed container's items come before its next sibling.
+    QList<QQuickItem *> pending = container->childItems();
+    while (!pending.isEmpty()) {
+        QQuickItem *child = pending.takeFirst();
         if (QString::fromLatin1(child->metaObject()->className())
                 .startsWith(QLatin1String("SectionHeader"))) {
             held.append(QLatin1Char('#') + child->property("text").toString());
         } else if (!child->objectName().isEmpty()) {
             held.append(child->objectName());
+        } else {
+            pending = child->childItems() + pending;
         }
     }
+}
+
+// The column the item is in: its ancestor that sits directly in the page's flickable.
+QStringList columnOf(QObject *item)
+{
+    auto *column = qobject_cast<QQuickItem *>(item);
+    const auto pageFlickable = [](const QQuickItem *of) {
+        return of->inherits("QQuickFlickable") && of->property("interactive").toBool();
+    };
+    while (column->parentItem() && column->parentItem()->parentItem() &&
+           !pageFlickable(column->parentItem()->parentItem())) {
+        column = column->parentItem();
+    }
+    QStringList held;
+    appendInOrder(column, held);
     return held;
+}
+
+// Where an item's top left corner sits on a page, in the page's own coordinates; NaN for none.
+QPointF onPage(QObject *item, QObject *page)
+{
+    if (item == nullptr) {
+        return {qQNaN(), qQNaN()};
+    }
+    return qobject_cast<QQuickItem *>(item)->mapToItem(qobject_cast<QQuickItem *>(page), QPointF());
+}
+
+// Where a Silica menu opened on the item spreads, in the page's coordinates: ContextMenu (a
+// ComboBox's too) spans its nearest Flickable from that one's left edge.
+QRectF menuSpan(QObject *item, QObject *page)
+{
+    QQuickItem *flickable = qobject_cast<QQuickItem *>(item)->parentItem();
+    while (flickable != nullptr && !flickable->inherits("QQuickFlickable")) {
+        flickable = flickable->parentItem();
+    }
+    if (flickable == nullptr) {
+        return {};
+    }
+    return flickable->mapRectToItem(qobject_cast<QQuickItem *>(page),
+                                    QRectF(0, 0, flickable->width(), flickable->height()));
+}
+
+// The section header with this text, wherever it is on the page.
+QObject *sectionHeader(QObject *page, const QString &text)
+{
+    for (QObject *object : findObjects(page, QString())) {
+        if (QString::fromLatin1(object->metaObject()->className())
+                .startsWith(QLatin1String("SectionHeader")) &&
+            object->property("text").toString() == text) {
+            return object;
+        }
+    }
+    return nullptr;
+}
+
+// Column and Flow place their items when polished, and only a frame of a shown window polishes:
+// after a turn, positions are read once two frames have passed.
+void layOut(QQuickWindow &window)
+{
+    QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
+    for (int frame = 0; frame < 2; ++frame) {
+        const int seen = frames.count();
+        window.update();
+        QTRY_VERIFY(frames.count() > seen);
+    }
 }
 
 } // namespace
@@ -5178,7 +6439,6 @@ void tst_qmlload::settingsPage()
         QStringLiteral("coverSettingsEntry"),
         QStringLiteral("websiteColorsCombo"),
         QStringLiteral("notchGuardCombo"),
-        QStringLiteral("fixedToolbarSwitch"),
         QStringLiteral("#Privacy"),
         QStringLiteral("httpsOnlySettingsEntry"),
         QStringLiteral("dohSettingsEntry"),
@@ -5354,6 +6614,359 @@ void tst_qmlload::settingsPage()
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 }
 
+// Landscape: each heading spans the page inside Silica's margins (sectionHeadersInset), and the
+// entries under it flow two a row, the left one at the page's edge and the right one at its
+// middle, a row's two on one y. Portrait is one column again, each entry the page's width under
+// the one before.
+void tst_qmlload::landscapeSettingsPage()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    const auto below = [&at](const QString &upper, const QString &lower) {
+        QVERIFY2(at(lower).y() > at(upper).y(), qPrintable(lower));
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    for (const QString &heading : {QStringLiteral("Browsing"), QStringLiteral("Appearance"),
+                                   QStringLiteral("Privacy"), QStringLiteral("Help")}) {
+        QObject *header = sectionHeader(page, heading);
+        QVERIFY2(header != nullptr, qPrintable(heading));
+        QCOMPARE(header->property("width").toReal(), width - 2 * margin);
+        QCOMPARE(onPage(header, page).x(), margin);
+    }
+
+    const QList<QStringList> rows{
+        {QStringLiteral("startPageSettingsEntry"), QStringLiteral("searchSettingsEntry")},
+        {QStringLiteral("readerSettingsEntry"), QStringLiteral("coverSettingsEntry")},
+        {QStringLiteral("websiteColorsCombo"), QStringLiteral("notchGuardCombo")},
+        {QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry")},
+        {QStringLiteral("trackingSettingsEntry"), QStringLiteral("globalPrivacyControlSwitch")},
+        {QStringLiteral("javascriptSwitch"), QStringLiteral("sitePermissionsSettingsEntry")},
+        {QStringLiteral("historySettingsEntry")},
+        {QStringLiteral("tutorialSettingsEntry")},
+    };
+    for (const QStringList &row : rows) {
+        const qreal y = at(row.first()).y();
+        for (int i = 0; i < row.count(); ++i) {
+            const QPointF point = at(row.at(i));
+            QVERIFY2(qAbs(point.x() - (i == 0 ? qreal(0) : width / 2)) < 1, qPrintable(row.at(i)));
+            QVERIFY2(qAbs(point.y() - y) < 1, qPrintable(row.at(i)));
+        }
+    }
+    // Device: combo menus spread over both columns, under the right one. Each keeps to its own.
+    for (const QString &name : rows.at(2)) {
+        const QRectF span = menuSpan(find(name), page);
+        QVERIFY2(qAbs(span.x() - at(name).x()) < 1, qPrintable(name));
+        QVERIFY2(qAbs(span.width() - width / 2) < 1, qPrintable(name));
+    }
+    // Each row below the one before it.
+    below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("readerSettingsEntry"));
+    below(QStringLiteral("readerSettingsEntry"), QStringLiteral("websiteColorsCombo"));
+    below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("trackingSettingsEntry"));
+    below(QStringLiteral("trackingSettingsEntry"), QStringLiteral("javascriptSwitch"));
+    below(QStringLiteral("javascriptSwitch"), QStringLiteral("historySettingsEntry"));
+    below(QStringLiteral("historySettingsEntry"), QStringLiteral("tutorialSettingsEntry"));
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (const QStringList &row : rows) {
+        for (const QString &name : row) {
+            QCOMPARE(at(name).x(), qreal(0));
+            QCOMPARE(find(name)->property("width").toReal(), portraitWidth);
+        }
+    }
+    below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("searchSettingsEntry"));
+    below(QStringLiteral("readerSettingsEntry"), QStringLiteral("coverSettingsEntry"));
+    below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry"));
+}
+
+// Landscape: on the start page, the reader view and the cover, the choices sit in the left
+// column and the picture in the right one, both starting under the page header. Portrait is
+// one column, the picture under the choices, the cover's over them, as it was.
+void tst_qmlload::landscapePreviewPages()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const auto at = [this](QObject *page, const QString &name) { return onPage(find(name), page); };
+
+    QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
+    QCOMPARE(settings->objectName(), QStringLiteral("settingsPage"));
+    {
+        click(find(QStringLiteral("startPageSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("startPageSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *frame = find(QStringLiteral("startPagePreviewFrame"));
+        QObject *picture = sectionHeader(page, QStringLiteral("Preview"));
+        QVERIFY(picture != nullptr);
+        QCOMPARE(at(page, QStringLiteral("startPageSitesSwitch")).y(), onPage(picture, page).y());
+        QVERIFY(at(page, QStringLiteral("startPageRecentSwitch")).x() < width / 2);
+        QVERIFY(onPage(sectionHeader(page, QStringLiteral("Sections")), page).x() < width / 2);
+        // Device: Rows menu spread over both columns, under the preview. Keeps to its column.
+        const QRectF rowsMenu = menuSpan(find(QStringLiteral("startPageTopSiteRowsCombo")), page);
+        QCOMPARE(rowsMenu.x(), qreal(0));
+        QVERIFY(qAbs(rowsMenu.width() - width / 2) < 1);
+        QVERIFY(onPage(picture, page).x() >= width / 2);
+        QVERIFY(onPage(frame, page).x() >= width / 2);
+        QVERIFY(onPage(frame, page).x() + frame->property("width").toReal() <= width);
+        // The picture takes its column less the page margin either side.
+        const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+        QVERIFY(qAbs(onPage(frame, page).x() - (width / 2 + margin)) < 1);
+        QVERIFY(qAbs(onPage(frame, page).x() + frame->property("width").toReal() -
+                     (width - margin)) < 1);
+        turnDevice(Portrait);
+        layOut(window);
+        QVERIFY(onPage(frame, page).y() > at(page, QStringLiteral("startPageRecentSwitch")).y());
+        QCOMPARE(frame->property("width").toReal(), page->property("width").toReal() / 2);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
+    {
+        click(find(QStringLiteral("readerSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("readerSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *preview = find(QStringLiteral("readerPreview"));
+        QObject *slider = find(QStringLiteral("readerTextSizeSlider"));
+        QVERIFY(onPage(findAll(QStringLiteral("readerColorsChoice")).first(), page).x() <
+                width / 2);
+        QVERIFY(onPage(slider, page).x() < width / 2);
+        QVERIFY(onPage(preview, page).x() >= width / 2);
+        QVERIFY(onPage(preview, page).x() + preview->property("width").toReal() <= width);
+        QCOMPARE(onPage(preview, page).y(),
+                 onPage(sectionHeader(page, QStringLiteral("Colours")), page).y());
+        turnDevice(Portrait);
+        layOut(window);
+        const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+        QVERIFY(onPage(preview, page).y() > onPage(slider, page).y());
+        QCOMPARE(onPage(preview, page).x(), margin);
+        QCOMPARE(preview->property("width").toReal(),
+                 page->property("width").toReal() - 2 * margin);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
+    {
+        click(find(QStringLiteral("coverSettingsEntry")));
+        QObject *page = currentPage();
+        QCOMPARE(page->objectName(), QStringLiteral("coverSettingsPage"));
+        turnDevice(Landscape);
+        layOut(window);
+        const qreal width = page->property("width").toReal();
+        QObject *cover = find(QStringLiteral("coverPreview"));
+        QVERIFY(onPage(cover, page).x() >= width / 2);
+        QVERIFY(onPage(cover, page).x() + cover->property("width").toReal() <= width);
+        QVERIFY(at(page, QStringLiteral("quickAction-none")).x() < width / 2);
+        QCOMPARE(find(QStringLiteral("quickAction-none"))->property("width").toReal(), width / 2);
+        QCOMPARE(onPage(cover, page).y(),
+                 onPage(sectionHeader(page, QStringLiteral("Quick action")), page).y());
+        turnDevice(Portrait);
+        layOut(window);
+        const qreal portraitWidth = page->property("width").toReal();
+        QVERIFY(onPage(cover, page).y() < at(page, QStringLiteral("quickAction-none")).y());
+        QCOMPARE(at(page, QStringLiteral("quickAction-none")).x(), qreal(0));
+        QCOMPARE(find(QStringLiteral("quickAction-none"))->property("width").toReal(),
+                 portraitWidth);
+        QCOMPARE(onPage(cover, page).x() + cover->property("width").toReal() / 2,
+                 portraitWidth / 2);
+        popPage();
+        QCOMPARE(currentPage(), settings);
+    }
+}
+
+// Start page settings' picture in landscape: a landscape screen in halves as on the start page,
+// top sites over bookmarks left, recent pages right, a half with nothing to show leaving the
+// other the whole width; each switch moves the picture's sections as it moves the page's. Upright:
+// the portrait picture, stacked, four tiles a row.
+void tst_qmlload::landscapeStartPagePreview()
+{
+    for (int i = 0; i < 8; ++i) {
+        m_core->history()->visit(QStringLiteral("https://site%1.example/").arg(i),
+                                 QStringLiteral("Site %1").arg(i));
+        m_core->bookmarks()->add(QStringLiteral("https://mark%1.example/").arg(i),
+                                 QStringLiteral("Mark %1").arg(i));
+    }
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    m_core->tabs()->newTab(QString());
+    auto *start = qobject_cast<QQuickItem *>(find(QStringLiteral("startPage")));
+    QVERIFY(start != nullptr);
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("startPageSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("startPageSettingsPage"));
+    auto *frame = qobject_cast<QQuickItem *>(find(QStringLiteral("startPagePreviewFrame")));
+    auto *screen = qobject_cast<QQuickItem *>(find(QStringLiteral("startPagePreviewScreen")));
+    QObject *preview = find(QStringLiteral("startPagePreview"));
+    QVERIFY(frame != nullptr && screen != nullptr && preview != nullptr);
+    const QStringList pictured{QStringLiteral("startPagePreviewTopSites"),
+                               QStringLiteral("startPagePreviewBookmarks"),
+                               QStringLiteral("startPagePreviewRecent")};
+    const QStringList sections{QStringLiteral("topSitesSection"),
+                               QStringLiteral("bookmarksSection"),
+                               QStringLiteral("recentPagesSection")};
+    const auto item = [this](const QString &name) {
+        return qobject_cast<QQuickItem *>(find(name));
+    };
+    // Unscaled, on the picture's screen; as drawn, on the frame; and on the real start page.
+    const auto drawn = [&](const QString &name) { return onPage(screen, item(name)); };
+    const auto shrunk = [&](const QString &name) { return onPage(frame, item(name)); };
+    const auto real = [&](const QString &name) { return onPage(start, item(name)); };
+    const auto perRow = [this](qreal columnWidth) {
+        const qreal portraitTile =
+            evaluate(m_window.data(), QStringLiteral("Screen.width")).toReal() / 4;
+        return qBound(1, int(columnWidth / portraitTile), 8);
+    };
+    // Every shown section of the picture spans the same share of its screen as on the page.
+    const auto compareShares = [&]() {
+        for (int i = 0; i < pictured.count(); ++i) {
+            const bool shown = find(pictured.at(i))->property("visible").toBool();
+            QCOMPARE(shown, find(sections.at(i))->property("visible").toBool());
+            if (!shown) {
+                continue;
+            }
+            QCOMPARE(drawn(pictured.at(i)).x() / screen->width(),
+                     real(sections.at(i)).x() / start->width());
+            QCOMPARE(drawn(pictured.at(i)).width() / screen->width(),
+                     real(sections.at(i)).width() / start->width());
+        }
+    };
+    const auto alike = [&]() {
+        compareShares();
+        return !QTest::currentTestFailed();
+    };
+    const auto check = [this](const QString &name, bool on) {
+        find(name)->setProperty("checked", on);
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    const qreal height = page->property("height").toReal();
+    QVERIFY(width > height);
+    // Landscape screen, as big as the page, scaled into the right column.
+    QCOMPARE(screen->width(), width);
+    QCOMPARE(screen->height(), height);
+    QVERIFY(frame->width() > frame->height());
+    const qreal scale = screen->scale();
+    QVERIFY(scale < 0.5);
+    QCOMPARE(frame->width(), width * scale);
+    QCOMPARE(frame->height(), height * scale);
+
+    const qreal half = width / 2;
+    const QRectF topSites = drawn(pictured.at(0));
+    const QRectF bookmarks = drawn(pictured.at(1));
+    const QRectF recent = drawn(pictured.at(2));
+    QCOMPARE(topSites.x(), qreal(0));
+    QCOMPARE(topSites.width(), half);
+    QCOMPARE(bookmarks.x(), qreal(0));
+    QCOMPARE(bookmarks.width(), half);
+    QCOMPARE(bookmarks.y(), topSites.bottom());
+    QCOMPARE(recent.x(), half);
+    QCOMPARE(recent.width(), half);
+    QCOMPARE(recent.y(), topSites.y());
+    // Drawn at the picture's scale: halves of the frame.
+    QCOMPARE(shrunk(pictured.at(2)).x() - shrunk(pictured.at(0)).x(), frame->width() / 2);
+    QCOMPARE(shrunk(pictured.at(2)).width(), frame->width() / 2);
+    QCOMPARE(shrunk(pictured.at(0)).width(), frame->width() / 2);
+    QCOMPARE(preview->property("columns").toInt(), perRow(half));
+    QCOMPARE(preview->property("columns").toInt(), 4);
+    const QList<QObject *> tiles = findAll(QStringLiteral("startPagePreviewTile"));
+    QCOMPARE(tiles.count(), 16);
+    for (QObject *tile : tiles) {
+        const QRectF at = onPage(screen, qobject_cast<QQuickItem *>(tile));
+        QCOMPARE(at.width(), half / 4);
+        QVERIFY(at.right() <= half);
+    }
+    const QList<QObject *> rows = findAll(QStringLiteral("startPagePreviewRow"));
+    QCOMPARE(rows.count(), 5);
+    for (QObject *row : rows) {
+        const QRectF at = onPage(screen, qobject_cast<QQuickItem *>(row));
+        QCOMPARE(at.x(), half);
+        QCOMPARE(at.width(), half);
+    }
+    QVERIFY(alike());
+    // Slim bar, as on the browsing page in landscape.
+    const qreal slim = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    QTRY_COMPARE(find(QStringLiteral("navigationBar"))->property("height").toReal(), slim);
+    QCOMPARE(find(QStringLiteral("startPagePreviewBar"))->property("height").toReal(), slim);
+
+    // Recent pages off: tiles across the whole picture.
+    check(QStringLiteral("startPageRecentSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(0)).width(), width);
+    QCOMPARE(drawn(pictured.at(1)).width(), width);
+    QCOMPARE(drawn(pictured.at(1)).x(), qreal(0));
+    QCOMPARE(preview->property("columns").toInt(), 8);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(tiles.first())).width(), width / 8);
+    QVERIFY(alike());
+    check(QStringLiteral("startPageRecentSwitch"), true);
+
+    // One tile section off: still halves.
+    check(QStringLiteral("startPageBookmarksSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(0)).width(), half);
+    QCOMPARE(drawn(pictured.at(2)).x(), half);
+    QVERIFY(alike());
+
+    // Tile sections off: recent pages across the whole picture.
+    check(QStringLiteral("startPageTopSitesSwitch"), false);
+    layOut(window);
+    QCOMPARE(drawn(pictured.at(2)).x(), qreal(0));
+    QCOMPARE(drawn(pictured.at(2)).width(), width);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(rows.first())).width(), width);
+    QVERIFY(alike());
+
+    // Blank: nothing but the bar, as on the page.
+    check(QStringLiteral("startPageTopSitesSwitch"), true);
+    check(QStringLiteral("startPageBookmarksSwitch"), true);
+    click(find(QStringLiteral("startPageBlankSwitch")));
+    layOut(window);
+    for (const QString &name : pictured) {
+        QVERIFY2(!find(name)->property("visible").toBool(), qPrintable(name));
+    }
+    QVERIFY(find(QStringLiteral("startPagePreviewBar"))->property("visible").toBool());
+    QVERIFY(alike());
+    click(find(QStringLiteral("startPageSitesSwitch")));
+
+    // Upright: the portrait picture, stacked full width, four tiles a row, tall bar.
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(frame->width() < frame->height());
+    QCOMPARE(screen->width(), portraitWidth);
+    QCOMPARE(screen->scale(), 0.5);
+    for (int i = 0; i < pictured.count(); ++i) {
+        const QRectF at = drawn(pictured.at(i));
+        QCOMPARE(at.x(), qreal(0));
+        QCOMPARE(at.width(), portraitWidth);
+        if (i > 0) {
+            QCOMPARE(at.y(), drawn(pictured.at(i - 1)).bottom());
+        }
+    }
+    QCOMPARE(preview->property("columns").toInt(), 4);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(tiles.first())).width(), portraitWidth / 4);
+    QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(rows.first())).width(), portraitWidth);
+    QCOMPARE(find(QStringLiteral("startPagePreviewBar"))->property("height").toReal(),
+             evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal());
+    QVERIFY(alike());
+}
+
 // sailfish-browser's Appearance/Privacy rows, its wording, and effect on page and engine.
 void tst_qmlload::sailfishBrowserSettings()
 {
@@ -5365,8 +6978,7 @@ void tst_qmlload::sailfishBrowserSettings()
                                       " - Theme.itemSizeExtraSmall) / 2)"))
             .toReal();
     for (const QString &name :
-         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("globalPrivacyControlSwitch"),
-          QStringLiteral("javascriptSwitch")}) {
+         {QStringLiteral("globalPrivacyControlSwitch"), QStringLiteral("javascriptSwitch")}) {
         QObject *control = find(name);
         QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
                  qPrintable(name));
@@ -5410,13 +7022,9 @@ void tst_qmlload::sailfishBrowserSettings()
     guard->setProperty("currentIndex", int(Settings::NotchGuardAutomatic));
     QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
 
-    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
-    QVERIFY(!toolbar->property("checked").toBool());
-    toolbar->setProperty("checked", true);
-    QVERIFY(m_core->settings()->fixedToolbar());
+    // No fixed toolbar: landscape bar stays put, portrait slims.
+    QVERIFY(find(QStringLiteral("fixedToolbarSwitch")) == nullptr);
     webView->setProperty("chrome", false);
-    QVERIFY(!browser->property("barCompact").toBool());
-    toolbar->setProperty("checked", false);
     QVERIFY(browser->property("barCompact").toBool());
     webView->setProperty("chrome", true);
 
@@ -7292,6 +8900,13 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
                               Q_ARG(QVariant, Qt::ApplicationActive));
     QCOMPARE(webView->property("grabCount").toInt(), grabs);
 
+    // Picture from load end shows page as it is: none taken.
+    QMetaObject::invokeMethod(page, "applicationStateChanged",
+                              Q_ARG(QVariant, Qt::ApplicationInactive));
+    QCOMPARE(webView->property("grabCount").toInt(), grabs);
+
+    webView->setProperty("moving", true);
+    webView->setProperty("moving", false);
     QMetaObject::invokeMethod(page, "applicationStateChanged",
                               Q_ARG(QVariant, Qt::ApplicationInactive));
     QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
@@ -7724,8 +9339,8 @@ void tst_qmlload::webNotifications()
 
     QVERIFY(
         view->property("messageListeners").toStringList().contains(notifications->messageName()));
-    QCOMPARE(view->property("frameScripts").toStringList(),
-             QStringList{notifications->relayScriptUrl()});
+    QVERIFY(
+        view->property("frameScripts").toStringList().contains(notifications->relayScriptUrl()));
     // Notification shim installed on document arrival and again after load (engine runs no script
     // before view made).
     const auto installs = [view, notifications]() {
@@ -8824,8 +10439,9 @@ void tst_qmlload::siteDetailsPermissions()
     QCOMPARE(textOf(page, "sitePermissionsSection"), QStringLiteral("Permissions"));
     QCOMPARE(textOf(page, "siteTrackingSection"), QStringLiteral("Tracking protection"));
     QCOMPARE(findAll(QStringLiteral("siteDecisionRow")).count(), 6);
+    // In declaration order: a hidden row is not placed, so its y would not order it.
     QStringList names;
-    for (QObject *candidate : byRow(findAll(QStringLiteral("siteDecisionRow")))) {
+    for (QObject *candidate : findAll(QStringLiteral("siteDecisionRow"))) {
         names.append(textOf(candidate, "siteDecisionName"));
     }
     QCOMPARE(names, (QStringList{QStringLiteral("Notifications"), QStringLiteral("Pop-ups"),
@@ -8951,6 +10567,191 @@ void tst_qmlload::siteDetailsPermissions()
     QVERIFY(!rowShown(SitePermissions::Cookies));
     QCOMPARE(reloads(), afterSwitch + 1);
     QVERIFY(find(QStringLiteral("siteTrackingSwitch"))->property("checked").toBool());
+}
+
+// Landscape: the connection on the left, its security compact with the icon beside its words,
+// and the Permissions on the right, two a row. Portrait is one column, the icon above its words.
+void tst_qmlload::landscapeSiteDetails()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("menuHeaderDetails")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("siteDetailsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    QObject *hero = find(QStringLiteral("siteSecurityHero"));
+    QObject *icon = find(QStringLiteral("siteSecurityIcon"));
+    QObject *title = find(QStringLiteral("siteSecurityTitle"));
+    QObject *permissions = find(QStringLiteral("sitePermissionsSection"));
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QCOMPARE(hero->property("topPadding").toReal(),
+             evaluate(page, QStringLiteral("Theme.paddingLarge")).toReal());
+    QVERIFY(at(QStringLiteral("siteSecurityIcon")).x() + icon->property("width").toReal() <=
+            at(QStringLiteral("siteSecurityTitle")).x());
+    QVERIFY(at(QStringLiteral("siteSecurityIcon")).y() <
+            at(QStringLiteral("siteSecurityTitle")).y() + title->property("height").toReal());
+    QVERIFY(at(QStringLiteral("siteSecurityTitle")).y() <
+            at(QStringLiteral("siteSecurityIcon")).y() + icon->property("height").toReal());
+
+    QVERIFY(at(QStringLiteral("siteSecurityTitle")).x() < width / 2);
+    QVERIFY(at(QStringLiteral("siteTrackingSwitch")).x() < width / 2);
+    QVERIFY(onPage(permissions, page).x() >= width / 2);
+    QCOMPARE(onPage(permissions, page).y(), at(QStringLiteral("siteSecurityHero")).y());
+
+    // The rows the site has: Cookies is hidden until tracking protection lets it show.
+    QList<QObject *> rows;
+    for (QObject *row : findAll(QStringLiteral("siteDecisionRow"))) {
+        if (qobject_cast<QQuickItem *>(row)->isVisible()) {
+            rows.append(row);
+        }
+    }
+    QCOMPARE(rows.count(), 5);
+    QCOMPARE(textOf(rows.at(1), "siteDecisionName"), QStringLiteral("Pop-ups"));
+    QCOMPARE(rows.first()->property("width").toReal(), width / 4);
+    QCOMPARE(onPage(rows.at(0), page).x(), width / 2);
+    QCOMPARE(onPage(rows.at(1), page).x(), width * 3 / 4);
+    QCOMPARE(onPage(rows.at(1), page).y(), onPage(rows.at(0), page).y());
+    QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(0), page).y());
+    QCOMPARE(onPage(rows.at(2), page).x(), width / 2);
+    QCOMPARE(onPage(rows.at(3), page).y(), onPage(rows.at(2), page).y());
+    QCOMPARE(onPage(rows.at(3), page).x(), width * 3 / 4);
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QCOMPARE(hero->property("topPadding").toReal(),
+             evaluate(page, QStringLiteral("Theme.paddingLarge * 2")).toReal());
+    QCOMPARE(onPage(icon, page).x() + icon->property("width").toReal() / 2, portraitWidth / 2);
+    QVERIFY(onPage(icon, page).y() + icon->property("height").toReal() <=
+            at(QStringLiteral("siteSecurityTitle")).y());
+    QVERIFY(at(QStringLiteral("siteTrackingSwitch")).y() < onPage(permissions, page).y());
+    for (QObject *row : rows) {
+        QCOMPARE(onPage(row, page).x(), qreal(0));
+        QCOMPARE(row->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(rows.at(1), page).y() > onPage(rows.at(0), page).y());
+    QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(1), page).y());
+}
+
+// Landscape: the engines (and those found while browsing) in the left column, the address bar's
+// suggestions in the right, both starting under the page header. Portrait is one column, the
+// suggestions under the engines, as it was.
+void tst_qmlload::landscapeSearchSettings()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("searchSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("searchSettingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    // The columns are unnamed (columnOf() looks through them): reached from what they hold.
+    const auto columnHolding = [this](const QString &name) -> QObject * {
+        return qobject_cast<QQuickItem *>(find(name))->parentItem();
+    };
+    QObject *engines = columnHolding(QStringLiteral("foundSearchEngines"));
+    QObject *suggestions = columnHolding(QStringLiteral("omnibarTabsSwitch"));
+    QObject *engineHeader = sectionHeader(page, QStringLiteral("Search engine"));
+    QObject *suggestionsHeader = sectionHeader(page, QStringLiteral("Address bar suggestions"));
+    QVERIFY(engineHeader != nullptr);
+    QVERIFY(suggestionsHeader != nullptr);
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    QCOMPARE(onPage(engines, page).x(), qreal(0));
+    QCOMPARE(onPage(suggestions, page).x(), width / 2);
+    QCOMPARE(onPage(suggestions, page).y(), onPage(engines, page).y());
+    QCOMPARE(engines->property("width").toReal(), width / 2);
+    QCOMPARE(suggestions->property("width").toReal(), width / 2);
+    QVERIFY(onPage(engineHeader, page).x() < width / 2);
+    QVERIFY(at(QStringLiteral("foundSearchEngines")).x() < width / 2);
+    QVERIFY(onPage(suggestionsHeader, page).x() > width / 2);
+    QCOMPARE(onPage(suggestionsHeader, page).y(), onPage(engineHeader, page).y());
+    for (const QString &name :
+         {QStringLiteral("omnibarTabsSwitch"), QStringLiteral("omnibarBookmarksSwitch"),
+          QStringLiteral("omnibarHistorySwitch"), QStringLiteral("omnibarDownloadsSwitch")}) {
+        QVERIFY2(qAbs(at(name).x() - width / 2) < 1, qPrintable(name));
+    }
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (QObject *column : {engines, suggestions}) {
+        QCOMPARE(onPage(column, page).x(), qreal(0));
+        QCOMPARE(column->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(suggestions, page).y() >=
+            onPage(engines, page).y() + engines->property("height").toReal());
+    QVERIFY(onPage(suggestionsHeader, page).y() > onPage(engineHeader, page).y());
+    QCOMPARE(at(QStringLiteral("omnibarDownloadsSwitch")).x(), qreal(0));
+}
+
+// Landscape: the two switches in the left column, what is kept on the phone and the clearing
+// button, centred, in the right, both starting under the page header. Portrait is one column,
+// the button centred on the page, as it was.
+void tst_qmlload::landscapeHistorySettings()
+{
+    FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("historySettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("historySettingsPage"));
+    const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
+    const auto columnHolding = [this](const QString &name) -> QObject * {
+        return qobject_cast<QQuickItem *>(find(name))->parentItem();
+    };
+    QObject *switches = columnHolding(QStringLiteral("rememberHistorySwitch"));
+    QObject *kept = columnHolding(QStringLiteral("keptHistory"));
+    QObject *button = find(QStringLiteral("clearDataButton"));
+    QObject *keptHeader = sectionHeader(page, QStringLiteral("Kept on this phone"));
+    QVERIFY(keptHeader != nullptr);
+    const auto buttonCentre = [&]() {
+        return onPage(button, page).x() + button->property("width").toReal() / 2;
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    const qreal width = page->property("width").toReal();
+    QVERIFY(width > page->property("height").toReal());
+    QCOMPARE(onPage(switches, page).x(), qreal(0));
+    QCOMPARE(onPage(kept, page).x(), width / 2);
+    QCOMPARE(onPage(kept, page).y(), onPage(switches, page).y());
+    QCOMPARE(switches->property("width").toReal(), width / 2);
+    QCOMPARE(kept->property("width").toReal(), width / 2);
+    QCOMPARE(at(QStringLiteral("rememberHistorySwitch")).x(), qreal(0));
+    QCOMPARE(at(QStringLiteral("clearHistoryOnCloseSwitch")).x(), qreal(0));
+    QVERIFY(onPage(keptHeader, page).x() > width / 2);
+    QCOMPARE(onPage(keptHeader, page).y(), at(QStringLiteral("rememberHistorySwitch")).y());
+    for (const QString &name : {QStringLiteral("keptHistory"), QStringLiteral("keptDownloads"),
+                                QStringLiteral("keptClosedTabs"), QStringLiteral("keptOpenTabs")}) {
+        QCOMPARE(at(name).x(), width / 2);
+    }
+    QVERIFY(qAbs(buttonCentre() - width * 3 / 4) < 1);
+
+    turnDevice(Portrait);
+    layOut(window);
+    const qreal portraitWidth = page->property("width").toReal();
+    QVERIFY(portraitWidth < width);
+    for (QObject *column : {switches, kept}) {
+        QCOMPARE(onPage(column, page).x(), qreal(0));
+        QCOMPARE(column->property("width").toReal(), portraitWidth);
+    }
+    QVERIFY(onPage(kept, page).y() >=
+            onPage(switches, page).y() + switches->property("height").toReal());
+    QVERIFY(onPage(keptHeader, page).y() > at(QStringLiteral("clearHistoryOnCloseSwitch")).y());
+    QCOMPARE(at(QStringLiteral("keptOpenTabs")).x(), qreal(0));
+    QVERIFY(qAbs(buttonCentre() - portraitWidth / 2) < 1);
 }
 
 QTEST_MAIN(tst_qmlload)
@@ -9402,6 +11203,1672 @@ void tst_qmlload::tutorialUnderAFinger()
     drag(&window, middle, middle + up);
     QVERIFY(!deck->property("tabsOpen").toBool());
     QCOMPARE(step(), QStringLiteral("done"));
+}
+
+// Stub pages follow window's device orientation where page and window allow it, as Silica.
+// Hidden grids take turned size once turn is over (hiddenGridWaitsOutTurn()); later checks read
+// them laid out.
+void tst_qmlload::turnDevice(int orientation) const
+{
+    m_window->setProperty("deviceOrientation", orientation);
+    settle();
+    for (QObject *deck :
+         findAll(QStringLiteral("tabDeck")) + findAll(QStringLiteral("tutorialDeck"))) {
+        auto *slot = deck->findChild<QQuickItem *>(QStringLiteral("gridSlot"));
+        QTRY_VERIFY(slot->width() == deck->property("width").toReal() &&
+                    slot->height() == deck->property("fullHeight").toReal());
+    }
+}
+
+// Every page and dialog turns to either landscape, none upside down: inverted portrait puts
+// cutout under bar. Page pinned portrait (or left at Silica's portrait default) stays upright.
+void tst_qmlload::everyPageTurns()
+{
+    QObject *browser = find(QStringLiteral("browserPage"));
+    const QStringList files = QDir(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages"))
+                                  .entryList({QStringLiteral("*.qml")}, QDir::Files, QDir::Name);
+    QVERIFY(files.count() > 20);
+    for (int orientation : {Landscape, LandscapeInverted}) {
+        turnDevice(orientation);
+        QCOMPARE(browser->property("orientation").toInt(), orientation);
+        QVERIFY(browser->property("isLandscape").toBool());
+        for (const QString &file : files) {
+            if (file == QLatin1String("BrowserPage.qml")) {
+                continue;
+            }
+            evaluate(
+                m_window.data(),
+                QStringLiteral("pageStack.push('%1')")
+                    .arg(QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages/") + file)
+                             .toString()));
+            QObject *page = currentPage();
+            QVERIFY2(page != browser, qPrintable(file));
+            QVERIFY2(page->property("orientation").toInt() == orientation, qPrintable(file));
+            popPage();
+            QCOMPARE(currentPage(), browser);
+        }
+    }
+    turnDevice(PortraitInverted);
+    QCOMPARE(browser->property("orientation").toInt(), Portrait);
+    turnDevice(Portrait);
+    QCOMPARE(browser->property("orientation").toInt(), Portrait);
+}
+
+// Silica insets SectionHeader a page margin each side, text right-aligned: widened to its
+// column, header pushes its text a margin off page. Every page, both ways up.
+void tst_qmlload::sectionHeadersInset()
+{
+    QObject *browser = find(QStringLiteral("browserPage"));
+    const qreal margin = evaluate(browser, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const QStringList files = QDir(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages"))
+                                  .entryList({QStringLiteral("*.qml")}, QDir::Files, QDir::Name);
+    int headers = 0;
+    for (int orientation : {Portrait, Landscape}) {
+        turnDevice(orientation);
+        for (const QString &file : files) {
+            if (file == QLatin1String("BrowserPage.qml")) {
+                continue;
+            }
+            evaluate(
+                m_window.data(),
+                QStringLiteral("pageStack.push('%1')")
+                    .arg(QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/qml/pages/") + file)
+                             .toString()));
+            QList<QQuickItem *> pending = qobject_cast<QQuickItem *>(currentPage())->childItems();
+            while (!pending.isEmpty()) {
+                QQuickItem *item = pending.takeFirst();
+                pending += item->childItems();
+                if (!QLatin1String(item->metaObject()->className())
+                         .startsWith(QLatin1String("SectionHeader"))) {
+                    continue;
+                }
+                ++headers;
+                QVERIFY2(item->x() + item->width() <= item->parentItem()->width() - margin + 0.5,
+                         qPrintable(file + QLatin1Char(' ') + item->property("text").toString()));
+            }
+            popPage();
+            QCOMPARE(currentPage(), browser);
+        }
+    }
+    QVERIFY(headers > 10);
+    turnDevice(Portrait);
+}
+
+// Silica turns page width before height (PageOrientationTransition's PropertyAction), and
+// pushed page may meet either first. Deck re-measures on turn whichever side moves first;
+// keyboard still leaves its height.
+void tst_qmlload::deckTurnsEitherWay()
+{
+    QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QStringLiteral(
+                                                 SALAMA_SOURCE_DIR "/qml/components/TabDeck.qml")));
+    QScopedPointer<QObject> deck(component.create());
+    QVERIFY2(deck, qPrintable(component.errorString()));
+    const qreal narrow = 540;
+    const qreal tall = 1170;
+    const auto turn = [&deck](bool widthFirst, qreal width, qreal height) {
+        if (widthFirst) {
+            deck->setProperty("width", width);
+            deck->setProperty("pageHeight", height);
+        } else {
+            deck->setProperty("pageHeight", height);
+            deck->setProperty("width", width);
+        }
+        return deck->property("fullHeight").toReal();
+    };
+    const auto keyboard = [&deck](qreal height) {
+        deck->setProperty("pageHeight", height / 2);
+        const qreal kept = deck->property("fullHeight").toReal();
+        deck->setProperty("pageHeight", height);
+        return kept;
+    };
+    QCOMPARE(turn(true, narrow, tall), tall);
+    // Open grid turns at once, no spring from either side's step.
+    deck->setProperty("tabsOpen", true);
+    for (const bool widthFirst : {true, false}) {
+        QCOMPARE(turn(widthFirst, tall, narrow), narrow);
+        QCOMPARE(deck->property("tabsOffset").toReal(), narrow);
+        QCOMPARE(keyboard(narrow), narrow);
+        QCOMPARE(turn(widthFirst, narrow, tall), tall);
+        QCOMPARE(deck->property("tabsOffset").toReal(), tall);
+        QCOMPARE(keyboard(tall), tall);
+    }
+    // Pushed already turned.
+    for (const bool widthFirst : {true, false}) {
+        deck.reset(component.create());
+        QCOMPARE(turn(widthFirst, tall, narrow), narrow);
+    }
+}
+
+// Hidden grid keeps its size through turn, takes new one once turn is over: laid out in turn's
+// frame, it remade every preview and held up engine's resize. Grid shown or about to be (drag
+// primed): at once.
+void tst_qmlload::hiddenGridWaitsOutTurn()
+{
+    QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QStringLiteral(
+                                                 SALAMA_SOURCE_DIR "/qml/components/TabDeck.qml")));
+    QScopedPointer<QObject> deck(component.create());
+    QVERIFY2(deck, qPrintable(component.errorString()));
+    auto *slot = deck->findChild<QQuickItem *>(QStringLiteral("gridSlot"));
+    QVERIFY(slot != nullptr);
+    const qreal narrow = 540;
+    const qreal tall = 1170;
+    const QSizeF upright(narrow, tall);
+    const QSizeF sideways(tall, narrow);
+    const auto turn = [&deck](const QSizeF &size) {
+        deck->setProperty("width", size.width());
+        deck->setProperty("pageHeight", size.height());
+    };
+    const auto slotSize = [slot]() { return QSizeF(slot->width(), slot->height()); };
+
+    // First size at once.
+    turn(upright);
+    QCOMPARE(slotSize(), upright);
+    turn(sideways);
+    QCOMPARE(slotSize(), upright);
+    QCOMPARE(slot->y(), narrow);
+    QTRY_COMPARE(slotSize(), sideways);
+
+    // Drag primed while waiting: sized then.
+    turn(upright);
+    QCOMPARE(slotSize(), sideways);
+    QVERIFY(QMetaObject::invokeMethod(deck.data(), "prime"));
+    QVERIFY(deck->property("gridShown").toBool());
+    QCOMPARE(slotSize(), upright);
+    QVERIFY(QMetaObject::invokeMethod(deck.data(), "unprime"));
+
+    // Open grid turns with page.
+    deck->setProperty("tabsOpen", true);
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), tall);
+    turn(sideways);
+    QCOMPARE(slotSize(), sideways);
+}
+
+// Silica keeps landscape page clear of cutout, so no top inset; deck, grid, start page, banner
+// sized for wide, low page; keyboard-shrunk page keeps deck, search list stays above keyboard.
+void tst_qmlload::landscapeBrowsing()
+{
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    m_core->tabs()->newTab(QString());
+    QObject *tabsView = find(QStringLiteral("tabsView"));
+    auto *grid = item("tabGrid");
+    QObject *start = find(QStringLiteral("startPage"));
+    QVERIFY(start != nullptr);
+    const qreal portraitHeight = browser->height();
+    const qreal cutout = browser->property("cutoutHeight").toReal();
+    QVERIFY(cutout > 0);
+    QCOMPARE(browser->property("fullHeight").toReal(), portraitHeight);
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(start->property("columns").toInt(), 4);
+
+    turnDevice(Landscape);
+    QVERIFY(browser->width() > browser->height());
+    QCOMPARE(browser->height(), window->width());
+    QCOMPARE(browser->property("cutoutHeight").toReal(), qreal(0));
+    QCOMPARE(browser->property("cutoutInset").toReal(), qreal(0));
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), qreal(0));
+    QCOMPARE(item("cutoutBand")->height(), qreal(0));
+    QCOMPARE(item("viewArea")->y(), qreal(0));
+    QCOMPARE(tabsView->property("cutoutHeight").toReal(), qreal(0));
+    QVERIFY(!item("gridHeadRow")->isVisible());
+    QVERIFY(!item("gridFootRow")->isVisible());
+    const qreal railWidth = item("tabGroupRail")->width();
+    QCOMPARE(railWidth, qreal(qRound(browser->width() / 5)));
+
+    // Deck re-measured: grid layer and page fit landscape page, not portrait's height.
+    QCOMPARE(browser->property("fullHeight").toReal(), browser->height());
+    QCOMPARE(item("gridSlot")->height(), browser->height());
+    QCOMPARE(item("viewArea")->height(), browser->property("viewHeight").toReal());
+    auto *bar = item("navigationBar");
+    QCOMPARE(bar->y() + bar->height(), browser->height());
+
+    // Three page-shaped previews a row right of group rail, a whole row on the page.
+    QCOMPARE(grid->property("cellWidth").toReal(), (browser->width() - railWidth) / 3);
+    QVERIFY(grid->property("cellHeight").toReal() < browser->height());
+    QVERIFY(grid->property("cellHeight").toReal() > grid->property("cellWidth").toReal() / 3);
+    // Start page in columns: landscapeStartPage.
+
+    QObject *banner = find(QStringLiteral("bannerBar"))->parent();
+    // Portrait width over bar's right end (landscapeBarStaysPut), swipe a third of it.
+    QCOMPARE(banner->property("width").toReal(), browser->height());
+    QCOMPARE(banner->property("dismissDistance").toReal(), browser->height() / 3);
+
+    // Keyboard shrinks page: deck keeps its height, search results end above keyboard.
+    const qreal landscapeHeight = browser->height();
+    window->setWidth(landscapeHeight / 2);
+    settle();
+    QCOMPARE(browser->height(), landscapeHeight / 2);
+    QCOMPARE(browser->property("fullHeight").toReal(), landscapeHeight);
+    auto *results = item("tabSearchGrid");
+    QCOMPARE(results->y() + results->height(), browser->height());
+    window->setWidth(landscapeHeight);
+    settle();
+
+    turnDevice(Portrait);
+    QCOMPARE(browser->height(), portraitHeight);
+    QCOMPARE(browser->property("fullHeight").toReal(), portraitHeight);
+    QCOMPARE(browser->property("cutoutHeight").toReal(), cutout);
+    QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
+    QCOMPARE(grid->property("cellWidth").toReal(), browser->width() / 2);
+    QCOMPARE(start->property("columns").toInt(), 4);
+
+    // Open grid turns with page at once, no slide across from old height.
+    pullUpToTabs();
+    QTRY_COMPARE(browser->property("tabsOffset").toReal(), portraitHeight);
+    turnDevice(Landscape);
+    QCOMPARE(browser->property("tabsOffset").toReal(), browser->height());
+    turnDevice(Portrait);
+    QCOMPARE(browser->property("tabsOffset").toReal(), portraitHeight);
+    QVERIFY(browser->property("tabsOpen").toBool());
+}
+
+// Landscape start page in halves: top sites over bookmarks left, recent pages right, tiles
+// portrait-sized; a half with nothing to show leaves the other the whole width. Upright: stacked,
+// four tiles a row.
+void tst_qmlload::landscapeStartPage()
+{
+    for (int i = 0; i < 8; ++i) {
+        m_core->history()->visit(QStringLiteral("https://site%1.example/").arg(i),
+                                 QStringLiteral("Site %1").arg(i));
+        m_core->bookmarks()->add(QStringLiteral("https://mark%1.example/").arg(i),
+                                 QStringLiteral("Mark %1").arg(i));
+    }
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    m_core->tabs()->newTab(QString());
+    auto *start = qobject_cast<QQuickItem *>(find(QStringLiteral("startPage")));
+    QVERIFY(start != nullptr);
+    const QStringList names{QStringLiteral("topSitesSection"), QStringLiteral("bookmarksSection"),
+                            QStringLiteral("recentPagesSection")};
+    const auto box = [this, start](const QString &name) {
+        return onPage(start, qobject_cast<QQuickItem *>(find(name)));
+    };
+    // Portrait-width tiles that fit a column, at most a row of all top sites.
+    const auto perRow = [this](qreal columnWidth) {
+        const qreal portraitTile =
+            evaluate(m_window.data(), QStringLiteral("Screen.width")).toReal() / 4;
+        return qBound(1, int(columnWidth / portraitTile), 8);
+    };
+    // Each tile list in rows of the expected count, every item inside its section's column.
+    const auto checkRows = [&](const QString &section, const QString &item, int count,
+                               int tilesPerRow) {
+        const QRectF column = box(section);
+        const QList<QObject *> items = findAll(item);
+        QCOMPARE(items.count(), count);
+        for (int i = 0; i < count; ++i) {
+            const QRectF at = onPage(start, qobject_cast<QQuickItem *>(items.at(i)));
+            QVERIFY2(column.contains(at), qPrintable(item));
+            if (tilesPerRow == 0) {
+                QCOMPARE(at.width(), column.width());
+                continue;
+            }
+            QCOMPARE(at.width(), column.width() / tilesPerRow);
+            const QRectF first = onPage(start, qobject_cast<QQuickItem *>(items.first()));
+            QCOMPARE(at.x(), column.x() + (i % tilesPerRow) * at.width());
+            QCOMPARE(at.y() > first.y(), i >= tilesPerRow);
+        }
+    };
+    const auto filled = [&](const QString &section, const QString &item, int count,
+                            int tilesPerRow) {
+        checkRows(section, item, count, tilesPerRow);
+        return !QTest::currentTestFailed();
+    };
+    const auto shownTiles = [this]() {
+        int shown = 0;
+        for (QObject *tile : findAll(QStringLiteral("topSiteTile"))) {
+            shown += tile->property("visible").toBool() ? 1 : 0;
+        }
+        return shown;
+    };
+
+    turnDevice(Landscape);
+    layOut(window);
+    QVERIFY(start->width() > start->height());
+    for (const QString &name : names) {
+        QVERIFY2(find(name)->property("visible").toBool(), qPrintable(name));
+    }
+    const qreal width = start->width();
+    const qreal half = width / 2;
+    const QRectF topSites = box(names.at(0));
+    const QRectF bookmarks = box(names.at(1));
+    const QRectF recent = box(names.at(2));
+    // Left half: top sites over bookmarks. Right half: recent pages, level with top sites.
+    QCOMPARE(topSites.x(), qreal(0));
+    QCOMPARE(topSites.width(), half);
+    QCOMPARE(bookmarks.x(), qreal(0));
+    QCOMPARE(bookmarks.width(), half);
+    QCOMPARE(bookmarks.y(), topSites.bottom());
+    QCOMPARE(recent.x(), half);
+    QCOMPARE(recent.width(), half);
+    QCOMPARE(recent.y(), topSites.y());
+    QCOMPARE(perRow(half), 4);
+    QCOMPARE(start->property("columns").toInt(), perRow(half));
+    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
+    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 4));
+    QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+    // Device (#46): a row's menu spread over both halves. Keeps to the right one.
+    const QRectF rowMenu = menuSpan(findAll(QStringLiteral("recentPageRow")).first(), start);
+    QCOMPARE(rowMenu.x(), half);
+    QCOMPARE(rowMenu.width(), half);
+    // Content as tall as the taller half plus padding.
+    QCOMPARE(start->property("contentY").toReal(), qreal(0));
+    const qreal left = bookmarks.bottom() - topSites.top();
+    const qreal right = recent.height();
+    QObject *browser = find(QStringLiteral("browserPage"));
+    const qreal padding =
+        evaluate(browser, QStringLiteral("Theme.paddingLarge + Theme.itemSizeSmall")).toReal();
+    QVERIFY(padding > 0);
+    QCOMPARE(start->property("contentHeight").toReal(), qMax(left, right) + padding);
+
+    // One tile section off: still halves, top sites alone on the left.
+    m_core->startPageSettings()->setBookmarks(false);
+    layOut(window);
+    QVERIFY(!find(names.at(1))->property("visible").toBool());
+    QCOMPARE(box(names.at(0)).x(), qreal(0));
+    QCOMPARE(box(names.at(0)).width(), half);
+    QCOMPARE(box(names.at(2)).x(), half);
+    QCOMPARE(box(names.at(2)).width(), half);
+    QCOMPARE(box(names.at(2)).y(), box(names.at(0)).y());
+    QCOMPARE(start->property("columns").toInt(), 4);
+    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
+    // One row chosen: one row of the half's tiles.
+    m_core->startPageSettings()->setTopSiteRows(1);
+    QCOMPARE(shownTiles(), 4);
+    m_core->startPageSettings()->setTopSiteRows(2);
+    m_core->startPageSettings()->setBookmarks(true);
+
+    // Recent pages off: no empty right half, tiles across the whole width, all top sites a row.
+    m_core->startPageSettings()->setRecent(false);
+    layOut(window);
+    QVERIFY(!find(names.at(2))->property("visible").toBool());
+    QCOMPARE(box(names.at(0)).x(), qreal(0));
+    QCOMPARE(box(names.at(0)).width(), width);
+    QCOMPARE(box(names.at(1)).x(), qreal(0));
+    QCOMPARE(box(names.at(1)).width(), width);
+    QCOMPARE(box(names.at(1)).y(), box(names.at(0)).bottom());
+    QCOMPARE(perRow(width), 8);
+    QCOMPARE(start->property("columns").toInt(), 8);
+    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 8));
+    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 8));
+    QCOMPARE(start->property("contentHeight").toReal(),
+             box(names.at(1)).bottom() - box(names.at(0)).top() + padding);
+    // One row chosen: a row is the whole width's tiles.
+    m_core->startPageSettings()->setTopSiteRows(1);
+    QCOMPARE(shownTiles(), 8);
+    m_core->startPageSettings()->setTopSiteRows(2);
+    m_core->startPageSettings()->setRecent(true);
+
+    // Tile sections off: no empty left half, recent pages across the whole width.
+    m_core->startPageSettings()->setTopSites(false);
+    m_core->startPageSettings()->setBookmarks(false);
+    layOut(window);
+    QCOMPARE(box(names.at(2)).x(), qreal(0));
+    QCOMPARE(box(names.at(2)).width(), width);
+    QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+    QCOMPARE(start->property("contentHeight").toReal(), box(names.at(2)).height() + padding);
+    m_core->startPageSettings()->setTopSites(true);
+    m_core->startPageSettings()->setBookmarks(true);
+
+    turnDevice(Portrait);
+    layOut(window);
+    QVERIFY(start->width() < start->height());
+    for (int i = 0; i < names.count(); ++i) {
+        const QRectF at = box(names.at(i));
+        QCOMPARE(at.x(), qreal(0));
+        QCOMPARE(at.width(), start->width());
+        if (i > 0) {
+            QCOMPARE(at.y(), box(names.at(i - 1)).bottom());
+        }
+    }
+    QCOMPARE(start->property("columns").toInt(), 4);
+    QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
+    QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 4));
+    QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
+}
+
+// Welcome and recap cards in two columns, no scrolling: mark and heading left, rest right. No
+// cutout gap, sketch leaves room. Upright: one column again.
+void tst_qmlload::landscapeTutorial()
+{
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
+    QVERIFY(page->property("cutoutHeight").toReal() > 0);
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    QObject *welcome = find(QStringLiteral("tutorialWelcome"));
+    QObject *recap = find(QStringLiteral("tutorialRecap"));
+    const auto boxIn = [](QObject *object, QObject *other) {
+        auto *quick = qobject_cast<QQuickItem *>(object);
+        return quick->mapRectToItem(qobject_cast<QQuickItem *>(other),
+                                    QRectF(0, 0, quick->width(), quick->height()));
+    };
+    const auto isUnder = [](QObject *object, QObject *ancestor) {
+        for (auto *at = qobject_cast<QQuickItem *>(object); at != nullptr; at = at->parentItem()) {
+            if (at == ancestor) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const auto part = [](QObject *card, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(card, QLatin1String(name)).first());
+    };
+    const auto oneColumn = [&](QObject *card) {
+        const QRectF head = boxIn(part(card, "tutorialCardHead"), card);
+        const QRectF body = boxIn(part(card, "tutorialCardBody"), card);
+        return head.left() == body.left() && head.width() == body.width() &&
+               body.top() > head.bottom();
+    };
+    QVERIFY(oneColumn(welcome));
+    QVERIFY(oneColumn(recap));
+
+    turnDevice(Landscape);
+    QCOMPARE(page->property("cutoutHeight").toReal(), qreal(0));
+    QTRY_VERIFY(!oneColumn(welcome));
+    for (QObject *card : {welcome, recap}) {
+        auto *flick = part(card, "tutorialCardFlick");
+        auto *column = part(card, "tutorialCardColumn");
+        QCOMPARE(flick->property("contentHeight").toReal(), flick->height());
+        QVERIFY(column->y() > 0);
+        QVERIFY(column->y() + column->height() < flick->height());
+        // Halves side by side, rows overlapping.
+        const QRectF head = boxIn(part(card, "tutorialCardHead"), card);
+        const QRectF body = boxIn(part(card, "tutorialCardBody"), card);
+        QCOMPARE(head.width(), body.width());
+        QVERIFY(head.width() > page->width() / 3);
+        QVERIFY(head.right() < body.left());
+        QVERIFY(body.right() < page->width());
+        QVERIFY(body.top() < head.bottom() && head.top() < body.bottom());
+    }
+    QObject *head = part(welcome, "tutorialCardHead");
+    QObject *body = part(welcome, "tutorialCardBody");
+    QVERIFY(isUnder(part(welcome, "tutorialLogo"), head));
+    QVERIFY(isUnder(part(welcome, "tutorialCardHeading"), head));
+    QVERIFY(isUnder(part(welcome, "tutorialTopics"), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialStartButton")), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialSkipButton")), body));
+    head = part(recap, "tutorialCardHead");
+    body = part(recap, "tutorialCardBody");
+    QVERIFY(isUnder(part(recap, "tutorialCheck"), head));
+    QVERIFY(isUnder(part(recap, "tutorialCardHeading"), head));
+    QVERIFY(isUnder(part(recap, "tutorialCardText"), body));
+    QVERIFY(isUnder(find(QStringLiteral("tutorialCloseButton")), body));
+    QVERIFY(item("tutorialSketchPicture")->height() <= page->height() / 4);
+
+    turnDevice(Portrait);
+    QTRY_VERIFY(oneColumn(welcome));
+    QVERIFY(oneColumn(recap));
+}
+
+namespace {
+
+// Item's box in frame's coords.
+QRectF boxIn(QObject *boxed, QObject *frame)
+{
+    auto *item = qobject_cast<QQuickItem *>(boxed);
+    return item->mapRectToItem(qobject_cast<QQuickItem *>(frame),
+                               QRectF(0, 0, item->width(), item->height()));
+}
+
+bool isUnder(QObject *object, QObject *ancestor)
+{
+    for (auto *item = qobject_cast<QQuickItem *>(object); item != nullptr;
+         item = item->parentItem()) {
+        if (item == ancestor) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
+// Turned bar sketch as browsing bar: slim, every control. Words in one line in a low band at top;
+// drag-up hint a quarter along bar (whole bar drags), tap hints on its controls. Upright: as
+// before.
+void tst_qmlload::landscapeTutorialBar()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    click(find(QStringLiteral("tutorialStartButton")));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialBar")));
+    auto *label = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialHintLabel")));
+    auto *line = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialHintLine")));
+    auto *progress = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialProgress")));
+    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
+    QObject *touchHint = find(QStringLiteral("tutorialTouchHint"));
+    const qreal small = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const qreal large = evaluate(page, QStringLiteral("Theme.itemSizeLarge")).toReal();
+    const auto width = [page]() { return page->property("width").toReal(); };
+    const auto height = [page]() { return page->property("height").toReal(); };
+    const auto hintCentre = [&](QObject *hint) { return boxIn(hint, page).center(); };
+    const auto barPoint = [&](const char *name) {
+        return bar->mapToItem(qobject_cast<QQuickItem *>(page), bar->property(name).toPointF());
+    };
+    const auto setStep = [page](const QString &step) { page->setProperty("step", step); };
+    QCOMPARE(bar->height(), large);
+    QVERIFY(!line->isVisible());
+
+    turnDevice(Landscape);
+    QCOMPARE(bar->height(), small);
+    QCOMPARE(bar->y() + bar->height(), height());
+    QRectF before;
+    for (const char *name :
+         {"tutorialBackIcon", "tutorialAddress", "tutorialReloadIcon", "tutorialMenuIcon"}) {
+        auto *control = qobject_cast<QQuickItem *>(findObjects(bar, QLatin1String(name)).first());
+        QVERIFY2(control->isVisible(), name);
+        const QRectF box = boxIn(control, bar);
+        QVERIFY2(box.top() >= 0 && box.bottom() <= small, name);
+        QVERIFY2(box.left() >= before.right(), name);
+        before = box;
+    }
+    QVERIFY(before.right() <= width());
+
+    // Tap hint on address, words at top in one low band, dots under them.
+    QVERIFY(tapHint->property("running").toBool());
+    QCOMPARE(hintCentre(tapHint), barPoint("addressCentre"));
+    QVERIFY(line->isVisible());
+    QCOMPARE(label->y(), qreal(0));
+    QVERIFY(label->property("invert").toBool());
+    QVERIFY(label->height() < height() / 4);
+    QVERIFY(boxIn(line, page).bottom() < label->height());
+    QVERIFY(progress->y() > label->height());
+    QVERIFY(progress->y() < height() / 3);
+    const auto oneLine = [&]() {
+        for (const QVariant &lesson : page->property("lessons").toList()) {
+            setStep(lesson.toString());
+            const QString text = line->property("text").toString();
+            QCOMPARE(
+                text,
+                evaluate(page, QStringLiteral("stepText('%1')").arg(lesson.toString())).toString());
+            QVERIFY(!text.isEmpty());
+            QVERIFY2(line->property("lineCount").toInt() == 1, qPrintable(text));
+            QVERIFY2(line->property("contentWidth").toReal() <= line->width(), qPrintable(text));
+        }
+    };
+    oneLine();
+    // Narrower turned page: long words shrink to fit.
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const qreal tall = window->height();
+    window->setHeight(tall - width() + 1.5 * height());
+    settle();
+    QCOMPARE(width(), 1.5 * height());
+    oneLine();
+    window->setHeight(tall);
+    settle();
+
+    setStep(QStringLiteral("menu"));
+    QCOMPARE(hintCentre(tapHint), barPoint("menuCentre"));
+
+    // Drag up from a quarter along bar.
+    setStep(QStringLiteral("open"));
+    QVERIFY(touchHint->property("running").toBool());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Up")));
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+             -width() / 4);
+    QCOMPARE(touchHint->property("startY").toReal() + touchHint->property("height").toReal() / 2,
+             height() - small);
+
+    // Turned back mid-step: hint re-placed for upright bar, platform's words again.
+    turnDevice(Portrait);
+    QCOMPARE(bar->height(), large);
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 qreal(0));
+    QCOMPARE(touchHint->property("startY").toReal() + touchHint->property("height").toReal() / 2,
+             height() - large);
+    QVERIFY(!line->isVisible());
+    QCOMPARE(label->property("text").toString(),
+             evaluate(page, QStringLiteral("stepText('open')")).toString());
+    QCOMPARE(label->height(), label->implicitHeight());
+    turnDevice(Landscape);
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 -width() / 4);
+    turnDevice(Portrait);
+}
+
+// Turned menu sketch as menu: side sheet at right, standing on bar, as wide and tall as the
+// menu's; head across its top, page's five down the left column, places' four down the right,
+// icon left of each name. Tap hint over the page left of it, words and dots above it, also on a
+// page shaped as the phone's. Upright: bottom sheet, head over two rows again.
+void tst_qmlload::landscapeTutorialMenu()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    page->setProperty("step", QStringLiteral("menuOpen"));
+    QObject *menu = find(QStringLiteral("tutorialMenu"));
+    QObject *sheet = find(QStringLiteral("tutorialMenuSheet"));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
+    QObject *header = findObjects(menu, QStringLiteral("menuHeader")).first();
+    QObject *pageRow = find(QStringLiteral("tutorialMenuPageRow"));
+    QObject *placeRow = find(QStringLiteral("tutorialMenuPlaceRow"));
+    QObject *browserMenu = find(QStringLiteral("browserMenu"));
+    QObject *tapHint = find(QStringLiteral("tutorialTapHint"));
+    QObject *label = find(QStringLiteral("tutorialHintLabel"));
+    QObject *progress = find(QStringLiteral("tutorialProgress"));
+    const auto height = [page]() { return page->property("height").toReal(); };
+    const auto width = [page]() { return page->property("width").toReal(); };
+    const auto theme = [this, menu](const char *name) {
+        return evaluate(menu, QStringLiteral("Theme.") + QLatin1String(name)).toReal();
+    };
+    const auto iconRows = [&]() {
+        QSet<qreal> rows;
+        for (QObject *icon : findObjects(menu, QStringLiteral("menuButtonIcon"))) {
+            rows.insert(boxIn(icon, page).center().y());
+        }
+        return rows.count();
+    };
+    QTRY_COMPARE(iconRows(), 2);
+
+    turnDevice(Landscape);
+    // Grid lays its rows out as its columns change, before they turn to icon beside name, and
+    // sizes to them again only on a frame's polish.
+    drawn(*host.window());
+    QVERIFY(boxIn(pageRow, sheet).top() > boxIn(header, sheet).bottom());
+    QVERIFY(menu->property("visible").toBool());
+    QVERIFY(menu->property("wide").toBool());
+    const QRectF side = boxIn(sheet, page);
+    QCOMPARE(side.right(), width());
+    QCOMPARE(side.bottom(), boxIn(bar, page).top());
+    QVERIFY(side.top() > 0);
+    // As the menu's: same rule, same rows.
+    QCOMPARE(find(QStringLiteral("browserPage"))->property("width").toReal(), width());
+    QCOMPARE(side.width(), browserMenu->property("width").toReal());
+    const qreal column = std::floor((width() * 0.42 - theme("paddingLarge")) / 2);
+    QCOMPARE(side.width(), 2 * column + theme("paddingLarge"));
+    QCOMPARE(side.height(), browserMenu->property("height").toReal());
+    const QRectF head = boxIn(header, sheet);
+    QCOMPARE(head.left(), qreal(0));
+    QCOMPARE(head.width(), side.width());
+    const QRectF actions = boxIn(pageRow, sheet);
+    const QRectF places = boxIn(placeRow, sheet);
+    const qreal row = theme("itemSizeSmall");
+    QCOMPARE(actions, QRectF(0, actions.top(), column, 5 * row));
+    QCOMPARE(places, QRectF(column + theme("paddingLarge"), actions.top(), column, 4 * row));
+    QCOMPARE(actions.bottom(), side.height() - theme("paddingMedium"));
+    // Five rows of icons, two columns; each name right of its icon, in small type.
+    QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
+    QCOMPARE(iconRows(), 5);
+    for (QObject *found : findObjects(menu, QStringLiteral("menuButtonLabel"))) {
+        auto *caption = qobject_cast<QQuickItem *>(found);
+        QQuickItem *entry = caption->parentItem()->parentItem();
+        QObject *slot = findObjects(entry, QStringLiteral("menuButtonIconSlot")).first();
+        QVERIFY(boxIn(slot, page).right() < boxIn(caption, page).left());
+        QCOMPARE(boxIn(slot, page).center().y(), boxIn(entry, page).center().y());
+        QCOMPARE(entry->height(), row);
+        QCOMPARE(caption->property("font").value<QFont>().pixelSize(), int(theme("fontSizeSmall")));
+    }
+
+    // Hints clear of sheet: tap over page left of it, words and dots above it.
+    const auto clear = [&]() {
+        const QRectF sheetBox = boxIn(sheet, page);
+        const QPointF tap = boxIn(tapHint, page).center();
+        QVERIFY(tapHint->property("running").toBool());
+        QVERIFY2(tap.x() < sheetBox.left() - theme("itemSizeExtraLarge"),
+                 qPrintable(QString::number(tap.x())));
+        QCOMPARE(tap.x(), sheetBox.left() / 2);
+        QVERIFY(tap.y() < boxIn(bar, page).top());
+        QVERIFY(boxIn(label, page).bottom() < sheetBox.top());
+        QVERIFY(boxIn(progress, page).bottom() < sheetBox.top());
+    };
+    QTRY_VERIFY(boxIn(tapHint, page).center().x() < side.left());
+    clear();
+    // Phone's page: 2:1, 72 extra small type sizes wide.
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const QSizeF full(window->width(), window->height());
+    const qreal unit = theme("fontSizeExtraSmall");
+    window->setHeight(full.height() - width() + 72 * unit);
+    window->setWidth(36 * unit);
+    settle();
+    QCOMPARE(width(), 72 * unit);
+    QCOMPARE(height(), 36 * unit);
+    // Hints placed anew, as on turning.
+    evaluate(page, QStringLiteral("updateHints()"));
+    clear();
+    window->setWidth(full.width());
+    window->setHeight(full.height());
+    settle();
+
+    turnDevice(Portrait);
+    QTRY_COMPARE(boxIn(header, sheet).width(), width());
+    QVERIFY(!menu->property("wide").toBool());
+    QCOMPARE(boxIn(sheet, page).bottom(), height());
+    QCOMPARE(boxIn(sheet, page).width(), width());
+    QVERIFY(boxIn(placeRow, sheet).top() > boxIn(pageRow, sheet).bottom());
+    QCOMPARE(iconRows(), 2);
+}
+
+// Turned address entry as omnibar: no go/search rows, go and search are pills in field row
+// before menu; hits sketched in three columns from bottom, Continue above them. Upright: rows.
+void tst_qmlload::landscapeTutorialOmnibar()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    QObject *page = currentPage();
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
+    evaluate(bar, QStringLiteral("activate('address')"));
+    QCOMPARE(page->property("step").toString(), QStringLiteral("omnibar"));
+    QObject *pane = find(QStringLiteral("tutorialOmnibar"));
+    QObject *go = find(QStringLiteral("tutorialGoAction"));
+    QObject *search = find(QStringLiteral("tutorialSearchAction"));
+    QObject *pills = find(QStringLiteral("tutorialPills"));
+    QObject *field = find(QStringLiteral("tutorialField"));
+    QObject *menuIcon = find(QStringLiteral("tutorialMenuIcon"));
+    QObject *hits = find(QStringLiteral("tutorialHitColumns"));
+    QObject *button = find(QStringLiteral("tutorialContinueButton"));
+    const auto shown = [](QObject *item) { return qobject_cast<QQuickItem *>(item)->isVisible(); };
+    QVERIFY(shown(go) && shown(search));
+    QVERIFY(!shown(pills) && !shown(hits));
+
+    turnDevice(Landscape);
+    QVERIFY(!shown(go) && !shown(search));
+    QVERIFY(shown(pills) && shown(field));
+    const QRectF row = boxIn(bar, page);
+    const QRectF pillBox = boxIn(pills, page);
+    QCOMPARE(pillBox.center().y(), row.center().y());
+    QVERIFY(pillBox.right() < boxIn(menuIcon, page).left());
+    QVERIFY(boxIn(field, page).right() < pillBox.left());
+    // Field line as AddressField's: from text's start, right under it, inside slim row.
+    QObject *fieldText = find(QStringLiteral("tutorialFieldText"));
+    QObject *fieldLine = find(QStringLiteral("tutorialFieldLine"));
+    QCOMPARE(boxIn(fieldLine, page).left(), boxIn(fieldText, page).left());
+    QCOMPARE(boxIn(fieldLine, page).top(), boxIn(fieldText, page).bottom());
+    QVERIFY(boxIn(fieldLine, page).bottom() < row.bottom());
+    QVERIFY(shown(find(QStringLiteral("tutorialGoPill"))));
+    // Pills drawn over bar.
+    QVERIFY(qobject_cast<QQuickItem *>(pane)->z() > qobject_cast<QQuickItem *>(bar)->z());
+    QCOMPARE(find(QStringLiteral("tutorialSearchPill"))->property("label").toString(),
+             m_core->searchEngines()->engineNames().first());
+
+    QVERIFY(shown(hits));
+    const auto spread = [hits]() {
+        QSet<qreal> columns;
+        QSet<qreal> rows;
+        for (QQuickItem *hit : qobject_cast<QQuickItem *>(hits)->childItems()) {
+            if (hit->width() > 0) {
+                columns.insert(hit->x());
+                rows.insert(hit->y());
+            }
+        }
+        return QSize(columns.count(), rows.count());
+    };
+    QTRY_COMPARE(spread(), QSize(3, 2));
+    for (QQuickItem *hit : qobject_cast<QQuickItem *>(hits)->childItems()) {
+        QVERIFY(hit->width() == 0 || hit->width() == std::floor(boxIn(pane, page).width() / 3));
+    }
+    const QRectF hitBox = boxIn(hits, page);
+    QCOMPARE(hitBox.bottom(), row.top());
+    QVERIFY(shown(button));
+    QVERIFY(boxIn(button, page).bottom() < hitBox.top());
+    QVERIFY(boxIn(button, page).top() >
+            boxIn(find(QStringLiteral("tutorialProgress")), page).bottom());
+
+    turnDevice(Portrait);
+    QVERIFY(shown(go) && shown(search));
+    QVERIFY(!shown(pills) && !shown(hits));
+    QCOMPARE(boxIn(field, bar).right(),
+             boxIn(menuIcon, bar).left() -
+                 evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal());
+    QCOMPARE(boxIn(fieldLine, bar).left(), boxIn(field, bar).left());
+    QCOMPARE(boxIn(fieldLine, bar).bottom(),
+             boxIn(bar, bar).bottom() -
+                 evaluate(page, QStringLiteral("Theme.paddingLarge")).toReal());
+    QCOMPARE(
+        boxIn(button, page).center(),
+        QRectF(0, 0, page->property("width").toReal(), page->property("height").toReal()).center());
+}
+
+// Turned sketch grid as tab grid: group rail on left fifth (search row, then one row a group,
+// current one marked), three page-shaped previews a row right of it. Drop step's words at foot,
+// group names at rail's top; hint carries tab left onto group row. Upright: strip at foot again.
+void tst_qmlload::landscapeTutorialGrid()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    FingerWindow host(m_window.data());
+    QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+    click(find(QStringLiteral("tutorialStartButton")));
+    page->setProperty("step", QStringLiteral("open"));
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    QObject *bar = find(QStringLiteral("tutorialBar"));
+    QObject *grid = find(QStringLiteral("tutorialGrid"));
+    QObject *strip = find(QStringLiteral("tutorialStrip"));
+    QObject *rail = find(QStringLiteral("tutorialRail"));
+    QObject *view = find(QStringLiteral("tutorialGridView"));
+    QObject *label = find(QStringLiteral("tutorialHintLabel"));
+    QObject *touchHint = find(QStringLiteral("tutorialTouchHint"));
+    QObject *current = find(QStringLiteral("tutorialCurrentRow"));
+    QObject *other = find(QStringLiteral("tutorialOtherGroup"));
+    const qreal threshold = deck->property("pullThreshold").toReal();
+    const qreal small = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
+    const auto step = [page]() { return page->property("step").toString(); };
+    const auto cells = [&]() { return tutorialCells(grid); };
+    const auto labelAtTop = [&]() {
+        return label->property("invert").toBool() && label->property("y").toReal() == 0;
+    };
+    const auto labelAtFoot = [&]() {
+        return !label->property("invert").toBool() &&
+               label->property("y").toReal() + label->property("height").toReal() == page->height();
+    };
+    const auto shown = [](QObject *item) { return qobject_cast<QQuickItem *>(item)->isVisible(); };
+
+    turnDevice(Landscape);
+    evaluate(bar, QStringLiteral("dragStarted()"));
+    evaluate(bar, QStringLiteral("dragMoved(%1)").arg(threshold + 1));
+    evaluate(bar, QStringLiteral("dragFinished(%1)").arg(threshold + 1));
+    QCOMPARE(step(), QStringLiteral("closeTab"));
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), deck->property("fullHeight").toReal());
+
+    const qreal railWidth = qRound(page->width() / 5);
+    QVERIFY(shown(rail));
+    QCOMPARE(boxIn(rail, grid), QRectF(0, 0, railWidth, page->height()));
+    QCOMPARE(view->property("x").toReal(), railWidth);
+    const qreal cellWidth = view->property("cellWidth").toReal();
+    QCOMPARE(cellWidth, (page->width() - railWidth) / 3);
+    QCOMPARE(view->property("cellHeight").toReal(),
+             qRound(cellWidth * page->height() / page->width()) + small);
+    QCOMPARE(cells().count(), 4);
+    for (int i = 0; i < 3; ++i) {
+        QCOMPARE(cells().at(i)->property("y").toReal(), cells().first()->property("y").toReal());
+        QVERIFY(boxIn(cells().at(i), grid).left() >= railWidth);
+    }
+    QVERIFY(cells().last()->property("y").toReal() > cells().first()->property("y").toReal());
+    QCOMPARE(evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF(),
+             QPointF(railWidth + 2.5 * cellWidth, view->property("cellHeight").toReal() / 2));
+    QCOMPARE(evaluate(grid, QStringLiteral("cellCentre(2)")).toPointF(),
+             boxIn(cells().at(2), grid).center());
+
+    // Rows one under another below search row; current marked.
+    QVERIFY(isUnder(strip, rail));
+    QVERIFY(strip->property("vertical").toBool());
+    QTRY_COMPARE(boxIn(other, rail), QRectF(0, 2 * small, railWidth, small));
+    QCOMPARE(boxIn(current, rail), QRectF(0, small, railWidth, small));
+    QCOMPARE(boxIn(other, rail), QRectF(0, 2 * small, railWidth, small));
+    QVERIFY(shown(find(QStringLiteral("tutorialCurrentAccent"))));
+    QCOMPARE(boxIn(find(QStringLiteral("tutorialPullIndicator")), grid).width(), page->width());
+    QVERIFY(labelAtFoot());
+
+    // Hint from grid onto group row; words at foot, away from it.
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QVERIFY(labelAtFoot());
+    QVERIFY(touchHint->property("running").toBool());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Left")));
+    const QPointF group = boxIn(other, grid).center();
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.verticalCenterOffset")).toReal(),
+             group.y() - page->height() / 2);
+    QCOMPARE(touchHint->property("startX").toReal() + touchHint->property("width").toReal() / 2,
+             group.x() + touchHint->property("distance").toReal());
+
+    // Carried over a row: only other group's takes it.
+    QObject *carried = cells().last();
+    evaluate(carried, QStringLiteral("pickUp()"));
+    evaluate(strip,
+             QStringLiteral("carryOver(groupStrip, otherCentre.x, otherCentre.y - %1)").arg(small));
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    evaluate(strip, QStringLiteral("carryOver(groupStrip, otherCentre.x, otherCentre.y)"));
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    evaluate(strip, QStringLiteral("dropTab(%1)")
+                        .arg(evaluate(carried, QStringLiteral("model.tabId")).toInt()));
+    evaluate(carried, QStringLiteral("drop()"));
+    QTRY_COMPARE(step(), QStringLiteral("close"));
+    QCOMPARE(cells().count(), 3);
+
+    // Pull hint over grid, right of rail.
+    QCOMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+             railWidth / 2);
+
+    turnDevice(Portrait);
+    QVERIFY(!shown(rail));
+    QVERIFY(!strip->property("vertical").toBool());
+    QVERIFY(isUnder(strip, find(QStringLiteral("tutorialGridView"))));
+    QCOMPARE(view->property("x").toReal(), qreal(0));
+    QCOMPARE(view->property("cellWidth").toReal(), page->width() / 2);
+    QCOMPARE(boxIn(strip, grid).bottom(), page->height());
+    QTRY_COMPARE(boxIn(other, strip).height(), boxIn(strip, strip).height());
+    QTRY_COMPARE(evaluate(touchHint, QStringLiteral("anchors.horizontalCenterOffset")).toReal(),
+                 qreal(0));
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QVERIFY(labelAtTop());
+    QCOMPARE(touchHint->property("direction"),
+             evaluate(page, QStringLiteral("TouchInteraction.Down")));
+}
+
+// Turned tutorial by real finger: drag up from a quarter along bar opens grid; held tab carried
+// onto rail's group row moves there.
+void tst_qmlload::landscapeTutorialUnderAFinger()
+{
+    evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+    auto *page = qobject_cast<QQuickItem *>(currentPage());
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    turnDevice(Landscape);
+    QVERIFY(page->rotation() != qreal(0));
+    click(find(QStringLiteral("tutorialStartButton")));
+    QTRY_VERIFY(!find(QStringLiteral("tutorialWelcome"))->property("visible").toBool());
+    page->setProperty("step", QStringLiteral("open"));
+    QObject *deck = find(QStringLiteral("tutorialDeck"));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("tutorialBarGesture")));
+    QObject *grid = find(QStringLiteral("tutorialGrid"));
+    QObject *strip = find(QStringLiteral("tutorialStrip"));
+    const qreal threshold = deck->property("pullThreshold").toReal();
+    const auto step = [page]() { return page->property("step").toString(); };
+    const auto onWindow = [page](const QPointF &at) { return page->mapToScene(at).toPoint(); };
+    const auto carry = [&window](const QPoint &from, const QPoint &to) {
+        const int steps = 12;
+        for (int i = 1; i <= steps; ++i) {
+            QTest::mouseMove(&window, from + (to - from) * i / steps);
+        }
+    };
+
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF from(page->width() / 4, gesture->mapToItem(page, QPointF(0, reach)).y() +
+                                              gesture->property("strip").toReal() / 2);
+    const QPointF to = from - QPointF(0, 3 * threshold);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onWindow(from));
+    carry(onWindow(from), onWindow(to));
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onWindow(to));
+    QVERIFY(deck->property("tabsOpen").toBool());
+    QCOMPARE(step(), QStringLiteral("closeTab"));
+    QTRY_COMPARE(deck->property("tabsOffset").toReal(), deck->property("fullHeight").toReal());
+    QTRY_VERIFY(!find(QStringLiteral("tutorialGridView"))->property("moving").toBool());
+
+    page->setProperty("step", QStringLiteral("groupTab"));
+    QObject *last = tutorialCells(grid).last();
+    const QPoint hold = centreOf(last);
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, hold);
+    QTRY_VERIFY(last->property("held").toBool());
+    const QPoint onCurrent = centreOf(find(QStringLiteral("tutorialCurrentRow")));
+    carry(hold, onCurrent);
+    QCOMPARE(strip->property("dropIndex").toInt(), -1);
+    const QPoint onOther = centreOf(find(QStringLiteral("tutorialOtherGroup")));
+    carry(onCurrent, onOther);
+    QCOMPARE(strip->property("dropIndex").toInt(), 1);
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onOther);
+    QTRY_COMPARE(step(), QStringLiteral("close"));
+    QCOMPARE(grid->property("count").toInt(), 3);
+    turnDevice(Portrait);
+    QCOMPARE(page->rotation(), qreal(0));
+}
+
+// Silica turns landscape page a quarter inside portrait window. Swipe up anywhere along bar opens
+// grid; pull down on grid head returns. Gestures once measured window axes: deck followed only a
+// sideways drift, so on device just bar's right part, under a right thumb's arc, opened grid.
+void tst_qmlload::landscapeGesturesUnderAFinger()
+{
+    for (int i = 0; i < 11; ++i) {
+        m_core->tabs()->newTab(QStringLiteral("https://more.example/%1").arg(i));
+    }
+    QObject *grid = find(QStringLiteral("tabGrid"));
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    auto *head = qobject_cast<QQuickItem *>(find(QStringLiteral("gridHeadControls")));
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    const qreal threshold = browser->property("pullThreshold").toReal();
+    const auto offset = [browser]() { return browser->property("tabsOffset").toReal(); };
+    const auto onWindow = [browser](const QPointF &at) {
+        return browser->mapToScene(at).toPoint();
+    };
+    const auto swipe = [&](const QPointF &from, const QPointF &to) {
+        const int steps = 24;
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, onWindow(from));
+        for (int step = 1; step <= steps; ++step) {
+            QTest::mouseMove(&window, onWindow(from + (to - from) * step / steps));
+        }
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, onWindow(to));
+    };
+
+    for (int orientation : {Landscape, LandscapeInverted}) {
+        turnDevice(orientation);
+        QVERIFY(browser->rotation() != qreal(0));
+        const qreal reach = gesture->property("reach").toReal();
+        const qreal onBar = gesture->mapToItem(browser, QPointF(0, reach)).y() +
+                            gesture->property("strip").toReal() / 2;
+
+        // Tap above bar reaches page where finger is.
+        auto *view = qobject_cast<QQuickItem *>(currentWebView());
+        const int touched = view->property("touches").toList().count();
+        const QPointF tap(200, gesture->mapToItem(browser, QPointF(0, reach / 2)).y());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, onWindow(tap));
+        const QVariantMap began = view->property("touches").toList().value(touched).toMap();
+        const QPointF local = view->mapFromItem(browser, tap);
+        QVERIFY(qAbs(began.value(QStringLiteral("x")).toReal() - local.x()) < 1);
+        QVERIFY(qAbs(began.value(QStringLiteral("y")).toReal() - local.y()) < 1);
+        for (const qreal across : {0.1, 0.5, 0.9}) {
+            const QPointF from(browser->width() * across, onBar);
+            swipe(from, from - QPointF(0, 3 * threshold));
+            QVERIFY2(browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), browser->property("fullHeight").toReal());
+            QTRY_VERIFY(!grid->property("moving").toBool());
+
+            // Scrolled grid: only head's own pull returns, grid's overscroll can't.
+            const qreal scrolled = grid->property("cellHeight").toReal();
+            grid->setProperty("contentY", scrolled);
+            const QPointF pulled =
+                head->mapToItem(browser, QPointF(head->width() * across, head->height() / 2));
+            swipe(pulled, pulled + QPointF(0, 3 * threshold));
+            QVERIFY2(!browser->property("tabsOpen").toBool(), qPrintable(QString::number(across)));
+            QTRY_COMPARE(offset(), qreal(0));
+            QCOMPARE(grid->property("contentY").toReal(), scrolled);
+            grid->setProperty("contentY", 0);
+        }
+    }
+    turnDevice(Portrait);
+    QCOMPARE(browser->rotation(), qreal(0));
+}
+
+// Landscape bar: slim height with every control, stays put. Hiding it on scroll, the page's
+// redraw at rest and the fade over it disoriented (device). Portrait still slims.
+void tst_qmlload::landscapeBarStaysPut()
+{
+    auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
+    auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
+    auto *viewArea = qobject_cast<QQuickItem *>(find(QStringLiteral("viewArea")));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *banners = find(QStringLiteral("barBanners"));
+    QObject *webView = currentWebView();
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    const qreal slim = bar->property("slimHeight").toReal();
+    webView->setProperty("painted", true);
+
+    // Portrait as before: slims.
+    webView->setProperty("chrome", false);
+    QVERIFY(bar->property("compact").toBool());
+    QTRY_COMPARE(bar->height(), slim);
+    QCOMPARE(viewArea->height(),
+             browser->height() - slim - browser->property("pageCutoutInset").toReal());
+    webView->setProperty("chrome", true);
+    QTRY_COMPARE(bar->height(), evaluate(bar, QStringLiteral("Theme.itemSizeLarge")).toReal());
+
+    turnDevice(Landscape);
+    const qreal pageHeight = browser->height();
+    QTRY_COMPARE(bar->height(), slim);
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    QCOMPARE(bar->property("expansion").toReal(), 1.0);
+    for (const char *control : {"backButton", "reloadButton", "menuButton"}) {
+        QVERIFY2(find(QLatin1String(control))->property("visible").toBool(), control);
+    }
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(width - 1)")).toString(),
+             QStringLiteral("menu"));
+    QCOMPARE(evaluate(bar, QStringLiteral("regionAt(1)")).toString(), QStringLiteral("back"));
+    QCOMPARE(bar->y() + bar->height(), pageHeight);
+    QCOMPARE(viewArea->height(), pageHeight - slim);
+
+    // Scrolled down, flung, at rest: bar and page as they were, no frame held over page.
+    const int taken = grabs();
+    webView->setProperty("moving", true);
+    webView->setProperty("chrome", false);
+    QVERIFY(!bar->property("compact").toBool());
+    webView->setProperty("moving", false);
+    QTest::qWait(300);
+    QVERIFY(bar->isVisible());
+    QCOMPARE(bar->height(), slim);
+    QCOMPARE(bar->y() + bar->height(), pageHeight);
+    QCOMPARE(viewArea->height(), pageHeight - slim);
+    QCOMPARE(grabs(), taken);
+    QVERIFY(!hold->property("visible").toBool());
+    QVERIFY(find(QStringLiteral("navigationBarGesture"))->property("visible").toBool());
+
+    // Banner over bar's right end at portrait width; page keeps its height under it.
+    evaluate(viewArea,
+             QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start', id: 1,"
+                            " displayName: 'v86.zip', sourceUrl: 'https://files.example/v86.zip',"
+                            " targetPath: '/tmp/v86.zip', mimeType: 'application/zip',"
+                            " size: 2048})"));
+    QVERIFY(banners->property("downloadShown").toBool());
+    const qreal bannerWidth = banners->property("width").toReal();
+    QCOMPARE(bannerWidth,
+             qMin(browser->width(), evaluate(bar, QStringLiteral("Screen.width")).toReal()));
+    QVERIFY(bannerWidth < browser->width() / 2);
+    QCOMPARE(banners->property("x").toReal() + bannerWidth, browser->width());
+    QCOMPARE(banners->property("y").toReal() + banners->property("height").toReal(), bar->y());
+    QCOMPARE(viewArea->height(), pageHeight - slim);
+
+    // Turned with chrome down: portrait slims.
+    turnDevice(Portrait);
+    QVERIFY(bar->property("compact").toBool());
+    QTRY_COMPARE(bar->height(), slim);
+    QCOMPARE(bar->y() + bar->height(), browser->height());
+    QCOMPARE(banners->property("width").toReal(), browser->width());
+    QCOMPARE(banners->property("x").toReal(), qreal(0));
+    webView->setProperty("chrome", true);
+    webView->setProperty("painted", false);
+}
+
+// Landscape omnibar: keyboard leaves room for few rows, so no go/search rows; pills sit in field
+// row before menu and field shrinks for them. Hits fill three columns from bottom left, column by
+// column, then sideways.
+void tst_qmlload::landscapeOmnibar()
+{
+    plantForest(m_core.data());
+    QObject *root = m_window.data();
+    const auto item = [this](const char *name) {
+        return qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+    };
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    auto *browser = item("browserPage");
+    auto *bar = item("navigationBar");
+    auto *pane = item("omnibarView");
+    auto *field = item("addressField");
+    auto *list = item("omnibarResults");
+    auto *grid = item("omnibarColumns");
+    auto *pills = item("omnibarPills");
+    auto *goPill = item("omnibarGoPill");
+    auto *searchPill = item("omnibarSearchPill");
+    QObject *webView = currentWebView();
+    const auto cells = [this, root]() {
+        QList<QQuickItem *> rows;
+        for (QObject *row : findObjects(root, QStringLiteral("omnibarResult"))) {
+            auto *cell = qobject_cast<QQuickItem *>(row);
+            if (cell->isVisible()) {
+                rows.append(cell);
+            }
+        }
+        std::sort(rows.begin(), rows.end(), [this](QQuickItem *a, QQuickItem *b) {
+            return evaluate(a, QStringLiteral("index")).toInt() <
+                   evaluate(b, QStringLiteral("index")).toInt();
+        });
+        return rows;
+    };
+    const auto at = [pane](QQuickItem *cell) { return cell->mapToItem(pane, QPointF(0, 0)); };
+
+    turnDevice(Landscape);
+    typeIntoBar(root, QStringLiteral("forest"));
+    settle();
+    QVERIFY(pane->isVisible());
+    QVERIFY(!item("omnibarGoAction")->isVisible());
+    QVERIFY(!item("omnibarSearchAction")->isVisible());
+    QCOMPARE(item("omnibarActions")->height(), qreal(0));
+    QVERIFY(!list->isVisible());
+    QVERIFY(grid->isVisible());
+
+    // Five hits: two rows, column by column from bottom left.
+    const QList<QQuickItem *> hits = cells();
+    QCOMPARE(hits.count(), 5);
+    const qreal cellWidth = grid->property("cellWidth").toReal();
+    const qreal cellHeight = grid->property("cellHeight").toReal();
+    QCOMPARE(cellWidth, qreal(qFloor(pane->width() / 3)));
+    QVERIFY(cellHeight >=
+            evaluate(pane, QStringLiteral("Theme.itemSizeExtraSmall")).toReal() * 0.8);
+    QCOMPARE(grid->height(), 2 * cellHeight);
+    QCOMPARE(grid->y() + grid->height(), pane->height());
+    const QList<QPointF> spots{{0, 1}, {0, 0}, {1, 1}, {1, 0}, {2, 1}};
+    for (int i = 0; i < hits.count(); ++i) {
+        QCOMPARE(at(hits.at(i)),
+                 QPointF(spots.at(i).x() * cellWidth, grid->y() + spots.at(i).y() * cellHeight));
+        QCOMPARE(hits.at(i)->width(), cellWidth);
+        QVERIFY(hits.at(i)->property("compact").toBool());
+    }
+    QCOMPARE(findObjects(hits.first(), QStringLiteral("omnibarResultTitle"))
+                 .first()
+                 ->property("font")
+                 .value<QFont>()
+                 .pixelSize(),
+             int(evaluate(pane, QStringLiteral("Theme.fontSizeSmall")).toReal()));
+
+    // Search pill names engine, in field row before menu; field ends before pills.
+    const QString engine =
+        m_core->searchEngines()->engineNames().at(m_core->searchSettings()->engineIndex());
+    QVERIFY(pills->isVisible());
+    QVERIFY(searchPill->isVisible());
+    QVERIFY(!goPill->isVisible());
+    QCOMPARE(searchPill->property("label").toString(), engine);
+    const QRectF onBar = pills->mapRectToItem(bar, QRectF(0, 0, pills->width(), pills->height()));
+    QCOMPARE(onBar.right(), bar->property("fieldEnd").toReal());
+    QCOMPARE(onBar.center().y(), bar->height() / 2);
+    QVERIFY(onBar.right() < item("menuButton")->x());
+    QCOMPARE(field->x() + field->width(), bar->property("fieldRight").toReal());
+    QVERIFY(field->x() + field->width() < onBar.left());
+    QVERIFY(field->width() > bar->width() / 2);
+    click(searchPill);
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(),
+             QUrl(m_core->searchSettings()->searchUrl(QStringLiteral("forest"))));
+    QCOMPARE(field->x() + field->width(), bar->property("fieldEnd").toReal());
+
+    typeIntoBar(root, QStringLiteral("forest.example/path"));
+    QVERIFY(goPill->isVisible());
+    QVERIFY(!item("omnibarGoAction")->isVisible());
+    QCOMPARE(item("omnibarActions")->height(), qreal(0));
+    QVERIFY(goPill->x() + goPill->width() < searchPill->x());
+    QCOMPARE(pills->width(), searchPill->x() + searchPill->width());
+    QCOMPARE(goPill->x(), qreal(0));
+    click(goPill);
+    QVERIFY(!bar->property("editing").toBool());
+    QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/path")));
+
+    // Keyboard leaves one row: hits go on sideways past the third column.
+    const qreal landscapeHeight = browser->height();
+    typeIntoBar(root, QStringLiteral("forest"));
+    window->setWidth(bar->height() + cellHeight * 1.2);
+    settle();
+    QCOMPARE(grid->property("rows").toInt(), 1);
+    QCOMPARE(grid->height(), grid->property("cellHeight").toReal());
+    QVERIFY(grid->property("contentWidth").toReal() >= 5 * cellWidth);
+    const QList<QQuickItem *> row = cells();
+    QVERIFY(row.count() > 3);
+    for (int i = 0; i < row.count(); ++i) {
+        QCOMPARE(at(row.at(i)).x(), i * cellWidth);
+        QVERIFY(qAbs(at(row.at(i)).y() - grid->y()) < 0.5);
+    }
+    window->setWidth(landscapeHeight);
+    settle();
+
+    turnDevice(Portrait);
+    settle();
+    QVERIFY(list->isVisible());
+    QVERIFY(!grid->isVisible());
+    QVERIFY(item("omnibarSearchAction")->isVisible());
+    QVERIFY(!pills->isVisible());
+    QCOMPARE(field->x() + field->width(), bar->property("fieldEnd").toReal());
+    QCOMPARE(cells().count(), m_core->omnibar()->count());
+    QCOMPARE(at(cells().at(1)).x(), qreal(0));
+    QVERIFY(at(cells().at(1)).y() < at(cells().at(0)).y());
+    evaluate(bar, QStringLiteral("endEditing()"));
+}
+
+// Side sheet sliding out right while its page slides out left stood still on screen, over the
+// page coming in: it leaves with its page instead and shuts at once when that is out of sight.
+// Bottom sheet still slides down.
+void tst_qmlload::sideSheetLeavesWithItsPage()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    const auto open = [menu]() { return menu->property("open").toBool(); };
+    const auto atOnce = [menu]() { return menu->property("hiddenAtOnce").toBool(); };
+    const int inactive = 0; // Silica's PageStatus values.
+    const int active = 2;
+    const int deactivating = 3;
+    turnDevice(Landscape);
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(open());
+    evaluate(menu, QStringLiteral("leave()"));
+    QVERIFY(open());
+    page->setProperty("status", deactivating);
+    QVERIFY(open());
+    page->setProperty("status", inactive);
+    QVERIFY(!open());
+    QVERIFY(atOnce());
+    QVERIFY(!menu->property("leaving").toBool());
+    page->setProperty("status", active);
+
+    for (const char *button : {"settingsMenuButton", "historyMenuButton"}) {
+        tapBar(QStringLiteral("menu"));
+        QVERIFY(open());
+        click(find(QLatin1String(button)));
+        QVERIFY(currentPage() != page);
+        QVERIFY(!open());
+        QVERIFY(atOnce());
+        popPage();
+        QCOMPARE(currentPage(), page);
+        QVERIFY(!open());
+    }
+    tapBar(QStringLiteral("menu"));
+    evaluate(menu, QStringLiteral("openSiteDetails()"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteDetailsPage"));
+    QVERIFY(!open());
+    QVERIFY(atOnce());
+    popPage();
+
+    turnDevice(Portrait);
+    tapBar(QStringLiteral("menu"));
+    click(find(QStringLiteral("settingsMenuButton")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("settingsPage"));
+    QVERIFY(!open());
+    QVERIFY(!atOnce());
+    QVERIFY(!menu->property("leaving").toBool());
+}
+
+// Landscape: black strip over window's wallpaper beside cutout, which Silica keeps pages clear
+// of, on whichever side device's top is turned to; none upright. Tutorial's page too.
+void tst_qmlload::cutoutStripInLandscape()
+{
+    auto *window = qobject_cast<QQuickItem *>(m_window.data());
+    const QRectF band(0, 0, window->width(), 90); // Stub's cutout: window's top 90 px.
+    const auto scene = [](QObject *of) {
+        auto *item = qobject_cast<QQuickItem *>(of);
+        return item->mapRectToScene(QRectF(0, 0, item->width(), item->height()));
+    };
+    for (const char *name : {"cutoutStrip", "tutorialCutoutStrip"}) {
+        if (qstrcmp(name, "tutorialCutoutStrip") == 0) {
+            evaluate(m_window.data(), QStringLiteral("showTutorial()"));
+        }
+        QObject *strip = find(QLatin1String(name));
+        QVERIFY2(strip != nullptr, name);
+        QObject *page = currentPage();
+        QCOMPARE(strip->property("color").value<QColor>(), QColor(Qt::black));
+        turnDevice(Portrait);
+        QVERIFY(!strip->property("visible").toBool());
+        for (int orientation : {Landscape, LandscapeInverted}) {
+            turnDevice(orientation);
+            QVERIFY2(strip->property("visible").toBool(), name);
+            QCOMPARE(scene(strip), band);
+            QCOMPARE(scene(page).top(), band.bottom());
+        }
+    }
+    turnDevice(Portrait);
+}
+
+// Device: page stretched for a second or two after a turn. Page colour alone over turned view
+// until engine reports an area of view's own shape (upright frame in turned view read as one
+// more movement, device), then a slow fade over its last redraws. Busy page's later reports do
+// not put that off (held near two seconds, device). Patience run out lets go; finger on page,
+// new document, other tab drop it at once, fade too; no turn after all: later resize not held.
+// Engine's visible area, reported every scroll frame, read only while holding.
+void tst_qmlload::frameHoldOverTurn()
+{
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *hold = find(QStringLiteral("frameHold"));
+    QObject *fill = find(QStringLiteral("frameHoldFill"));
+    QObject *fade = find(QStringLiteral("frameHoldFade"));
+    QObject *webView = currentWebView();
+    const auto holding = [hold]() { return hold->property("holding").toBool(); };
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    const auto viewSize = [webView]() {
+        return QSizeF(webView->property("width").toReal(), webView->property("height").toReal());
+    };
+    const auto reportArea = [webView](const QSizeF &size, qreal top = 0) {
+        webView->setProperty("contentRect", QRectF(0, top, size.width() / 2, size.height() / 2));
+    };
+    const auto transition = [page](bool running) {
+        page->setProperty("orientationTransitionRunning", running);
+    };
+    // Turned with page colour over it, as Silica's transition ends.
+    const auto turnHeld = [&](int orientation) {
+        QTRY_VERIFY(!hold->property("visible").toBool());
+        reportArea(viewSize());
+        transition(true);
+        turnDevice(orientation);
+        transition(false);
+        QVERIFY(holding());
+    };
+    webView->setProperty("painted", true);
+
+    for (int orientation : {Landscape, Portrait}) {
+        QTRY_VERIFY(!holding());
+        reportArea(viewSize());
+        const QSizeF before = viewSize();
+        const int taken = grabs();
+        transition(true);
+        QCOMPARE(grabs(), taken);
+        QVERIFY(!holding());
+        turnDevice(orientation);
+        QVERIFY(viewSize() != before);
+        QVERIFY(holding());
+        QVERIFY(hold->property("visible").toBool());
+        QCOMPARE(hold->property("opacity").toReal(), 1.0);
+        QCOMPARE(fill->property("color").value<QColor>(),
+                 webView->property("backgroundColor").value<QColor>());
+        transition(false);
+        QTRY_VERIFY(!find(QStringLiteral("navigationBar"))->property("resizing").toBool());
+        QCOMPARE(grabs(), taken);
+        QVERIFY(holding());
+        // Scrolled at old shape: engine not there yet.
+        reportArea(before, 40);
+        QTest::qWait(300);
+        QVERIFY(holding());
+        // Laid out at new size, old rotation: view's shape on its side, still held.
+        reportArea(before.transposed());
+        QTest::qWait(300);
+        QVERIFY(holding());
+        // Turned. Busy page reports again every frame: let go all the same.
+        for (int frame = 0; holding() && frame < 20; ++frame) {
+            reportArea(viewSize(), frame);
+            QTest::qWait(20);
+        }
+        QVERIFY(!holding());
+        // Fades slowly over engine's last redraws.
+        QVERIFY(hold->property("visible").toBool());
+        QVERIFY(fade->property("running").toBool());
+        QVERIFY(fade->property("duration").toInt() >= 500);
+    }
+
+    // Not holding: scroll frames' visible area not read.
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    reportArea(viewSize(), 120);
+    QCOMPARE(hold->property("area").toRectF(), QRectF());
+
+    // Finger on page, new document, other tab: gone at once, no fade over moving page.
+    turnHeld(Landscape);
+    webView->setProperty("dragging", true);
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("dragging", false);
+    turnHeld(Portrait);
+    reportArea(viewSize());
+    QTRY_VERIFY(fade->property("running").toBool());
+    webView->setProperty("moving", true);
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("moving", false);
+    turnHeld(Landscape);
+    webView->setProperty("painted", false);
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    webView->setProperty("painted", true);
+    turnHeld(Portrait);
+    evaluate(hold, QStringLiteral("view = null"));
+    QVERIFY(!holding());
+    QVERIFY(!hold->property("visible").toBool());
+    evaluate(hold,
+             QStringLiteral("view = Qt.binding(function() { return browserPage.currentView })"));
+    QCOMPARE(hold->property("view").value<QObject *>(), webView);
+
+    // Engine silent: let go after patience.
+    turnHeld(Landscape);
+    QTest::qWait(500);
+    QVERIFY(holding());
+    QTRY_VERIFY_WITH_TIMEOUT(!holding(), 3000);
+
+    // Transition but no turn: later resize not held.
+    QTRY_VERIFY(!hold->property("visible").toBool());
+    transition(true);
+    transition(false);
+    QVERIFY(hold->property("armed").toBool());
+    QTRY_VERIFY_WITH_TIMEOUT(!hold->property("armed").toBool(), 3000);
+    QVERIFY(!holding());
+
+    // Never drawn: nothing to stretch.
+    webView->setProperty("painted", false);
+    transition(true);
+    QVERIFY(!hold->property("armed").toBool());
+    transition(false);
+}
+
+// Device: previews letterboxed (taken turned). Picture fills its cell whatever shape it was
+// taken at, cut at foot and right so page's head and start stay.
+void tst_qmlload::previewFillsItsCell()
+{
+    TabModel *tabs = m_core->tabs();
+    QImage wide(400, 100, QImage::Format_ARGB32_Premultiplied);
+    wide.fill(Qt::red);
+    QImage tall(100, 400, QImage::Format_ARGB32_Premultiplied);
+    tall.fill(Qt::blue);
+    for (const QImage &picture : {wide, tall}) {
+        const int tabId = tabs->newTabBehind(QStringLiteral("https://shapes.example/"), QString());
+        QVERIFY(tabs->storeThumbnail(tabId, QVariant::fromValue(picture)));
+    }
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
+    pullUpToTabs();
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 3);
+    for (int row : {1, 2}) {
+        auto *image = qobject_cast<QQuickItem *>(
+            findObjects(previews.at(row), QStringLiteral("tabPreviewImage")).first());
+        auto *shot = qobject_cast<QQuickItem *>(
+            findObjects(previews.at(row), QStringLiteral("tabPreviewShot")).first());
+        QTRY_VERIFY(evaluate(image, QStringLiteral("status === Image.Ready")).toBool());
+        QVERIFY(image->isVisible());
+        QCOMPARE(image->size(), shot->size());
+        QVERIFY(evaluate(image, QStringLiteral("fillMode === Image.PreserveAspectCrop "
+                                               "&& horizontalAlignment === Image.AlignLeft "
+                                               "&& verticalAlignment === Image.AlignTop"))
+                    .toBool());
+        // Cut, not squeezed: one side fits, other runs past.
+        const qreal paintedWidth = image->property("paintedWidth").toReal();
+        const qreal paintedHeight = image->property("paintedHeight").toReal();
+        QVERIFY(row == 1 ? paintedWidth > image->width() : paintedHeight > image->height());
+        QCOMPARE(row == 1 ? paintedHeight : paintedWidth,
+                 row == 1 ? image->height() : image->width());
+    }
+}
+
+// Device: previews missing. Page never drawn (opened behind, not shown since restart): engine
+// draws only page in front, so site's icon, else its initial, and title stand in.
+void tst_qmlload::previewStandsInForUndrawnPage()
+{
+    TabModel *tabs = m_core->tabs();
+    const QString heron = QStringLiteral("https://birds.example/heron");
+    const QString moss = QStringLiteral("https://moss.example/");
+    tabs->newTabBehind(heron, QStringLiteral("Grey heron"));
+    const int mossTab = tabs->newTabBehind(moss, QString());
+    tabs->updateFavicon(mossTab, QStringLiteral("image://theme/icon-m-favicon"));
+    pullUpToTabs();
+    const QList<QObject *> previews = findAll(QStringLiteral("tabPreview"));
+    QCOMPARE(previews.count(), 3);
+    const auto part = [&previews](int row, const char *name) {
+        return findObjects(previews.at(row), QLatin1String(name)).first();
+    };
+    const auto shown = [&part](int row, const char *name) {
+        return qobject_cast<QQuickItem *>(part(row, name))->isVisible();
+    };
+
+    QVERIFY(shown(1, "tabPreviewSite"));
+    QVERIFY(!shown(1, "tabPreviewPlaceholder"));
+    QVERIFY(!shown(1, "tabPreviewImage"));
+    QCOMPARE(part(1, "tabPreviewTitle")->property("text").toString(), QStringLiteral("Grey heron"));
+    QVERIFY(shown(1, "tabPreviewLetter"));
+    QVERIFY(!shown(1, "tabPreviewIcon"));
+    QCOMPARE(part(1, "tabPreviewLetter")->property("text").toString(),
+             SearchSettings::displayAddress(heron).left(1).toUpper());
+
+    // No title: address. Icon over initial once loaded.
+    QVERIFY(shown(2, "tabPreviewSite"));
+    QCOMPARE(part(2, "tabPreviewTitle")->property("text").toString(),
+             SearchSettings::displayAddress(moss));
+    QTRY_VERIFY(shown(2, "tabPreviewIcon"));
+    QVERIFY(!shown(2, "tabPreviewLetter"));
+    QCOMPARE(part(2, "tabPreviewIcon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-favicon"));
+
+    // Front page pictured as grid opened: no stand-in.
+    tabs->thumbnailWriter()->waitForDone();
+    QTRY_VERIFY(shown(0, "tabPreviewImage"));
+    QVERIFY(!shown(0, "tabPreviewSite"));
+}
+
+// Device: previews missing or of previous page: load ended before engine painted new document.
+// Picture waits for first paint. Page left any way but grid (address pane's tab row, banner,
+// link) pictured as it goes.
+void tst_qmlload::pictureWaitsForFirstPaint()
+{
+    QObject *webView = currentWebView();
+    const auto grabs = [webView]() { return webView->property("grabCount").toInt(); };
+    QCOMPARE(grabs(), 0);
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 0);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+    QCOMPARE(webView->property("lastGrabSize").toSize().width(),
+             int(webView->property("width").toReal() / 2));
+
+    // Painted again: pictured already.
+    webView->setProperty("painted", false);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+
+    // Painted mid-load: picture at load end, once.
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 1);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 2);
+
+    // Load restarted before paint: earlier wait dropped.
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), 2);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), 3);
+
+    // Left with picture from load end: none taken. Each switch took one, and readback, encode
+    // and model's refresh made switch four times the work.
+    TabModel *tabs = m_core->tabs();
+    const int left = tabs->activeTabId();
+    const int other = tabs->newTabBehind(QStringLiteral("https://other.example/"), QString());
+    QCOMPARE(grabs(), 3);
+    QVERIFY(tabs->activateTabById(other));
+    QCOMPARE(grabs(), 3);
+    QVERIFY(tabs->activateTabById(left));
+    const auto leave = [&]() {
+        const int before = grabs();
+        tabs->activateTabById(other);
+        const int taken = grabs() - before;
+        tabs->activateTabById(left);
+        return taken;
+    };
+    QCOMPARE(leave(), 0);
+
+    // Scrolled or zoomed since: taken as page is left, once.
+    for (const char *gesture : {"moving", "pinching"}) {
+        webView->setProperty(gesture, true);
+        webView->setProperty(gesture, false);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 0);
+    }
+    tabs->thumbnailWriter()->waitForDone();
+    QTRY_VERIFY(!tabs->data(tabs->index(tabs->indexOf(left), 0), roleId(TabModel::Role::Thumbnail))
+                     .toString()
+                     .isEmpty());
+
+    // Grab or picture failed: tried again next time.
+    for (const char *failure : {"grabFails", "grabSaveFails"}) {
+        webView->setProperty("moving", true);
+        webView->setProperty("moving", false);
+        webView->setProperty(failure, true);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 1);
+        webView->setProperty(failure, false);
+        QCOMPARE(leave(), 1);
+        QCOMPARE(leave(), 0);
+    }
+
+    // Address changed in page, or view resized (keyboard): taken.
+    webView->setProperty("url", QUrl(QStringLiteral("https://example.org/#more")));
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 0);
+    webView->setProperty("height", webView->property("height").toReal() - 100);
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 0);
+
+    // Left mid-load: taken; load end takes its own.
+    webView->setProperty("loading", true);
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 1);
+    webView->setProperty("loading", false);
+    QCOMPARE(leave(), 0);
 }
 
 #include "tst_qmlload.moc"

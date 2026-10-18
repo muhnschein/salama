@@ -9,7 +9,7 @@ Page {
     id: groupsPage
 
     objectName: "tabGroupsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     function choose(index) {
         TabGroups.activate(index)

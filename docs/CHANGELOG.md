@@ -6,6 +6,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ## [Unreleased]
 
 ### Added
+- Landscape: every page turns with phone, either way round; upside-down portrait stays upright. Notch gap only in portrait; in landscape, strip beside notch black. Bar slim with every control, stays put on scroll. Cards at portrait width over bar's right end. Address entry: Go and Search beside field, matches in three columns. Menu a side sheet above bar's right end, icon and label rows in two columns, leaving with its page when it opens another; link sheet: head at left, portrait's rows beside it, preview floats above. Tab groups in rail left of grid, tab search atop rail, three page-shaped previews a row. Settings, Search and History settings, and site details in two columns, menus kept to their column; Start page, Reader view, Cover settings show preview beside controls. Start page in halves: top sites over bookmarks left, recent pages right, one half alone takes full width; tiles portrait-sized; its settings preview drawn the same. Tutorial follows landscape layout.
 - Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
 - Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
@@ -16,7 +17,6 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Site details: tap page name atop menu; connection security, verifier, certificate, cipher; per-site tracking protection off; permissions.
 - Site-offered search engines collected under Settings > Search > Found while browsing; tap adds and searches. Added engines show source; remove singly or all via pulley (three built-in stay).
 - Salama in share sheet for links: opens in new front tab in "N tabs" group, launching Salama if needed. Plain text not offered.
-- Settings > Appearance > Fixed toolbar: bar stays whole while scrolling.
 - Settings > Privacy > Enable JavaScript, notes cost of turning off.
 - Settings > Tracking protection ends with web engine's current limits.
 - Download card above bar on originating page: name, progress, paused or failed; several: count and total progress. Shows arrival few seconds. Tap opens Downloads; swipe hides until change.
@@ -54,7 +54,11 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ### Fixed
 - Menu sheet: opaque handle sits on top edge as on nav bar, page header as far from first row as rows from each other. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
-- Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
+- Scrolling no longer stutters or flashes page colour as bar slims or grows: page ends at slim bar's top, whole bar overlaps its foot, page never resized for bar.
+- Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag; press on page foot near bar prepares nothing until finger heads up.
+- Page no longer stretched after turning phone: turned page covered in its colour until page laid out turned (at most 1.5 s), then a slow fade over its last redraws; touching page removes cover at once.
+- Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken as tab is left (any way) only if page scrolled, zoomed or changed since.
+- Switching and opening tabs quicker: no page picture when last one still shows page, tab search builds its rows only while searching. Bar slims and grows without laying address out again each frame. Turning no longer lays out closed tab grid in turn itself.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.

@@ -1386,14 +1386,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Drží obsah stránok mimo výrezu obrazovky. „Auto“ nechá prispôsobené stránky využiť oblasť výrezu tak, aby obsah nebol zakrytý.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Pevný panel s nástrojmi</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vždy zobrazovať dolný panel s nástrojmi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Povoliť JavaScript</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Bez náhľadu</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Domovská stránka</translation>
     </message>
@@ -2069,7 +2057,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Podrž kartu a pusti ju na názov skupiny, čím ju do nej presunieš.</translation>
     </message>
     <message>

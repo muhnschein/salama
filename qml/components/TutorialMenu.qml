@@ -7,9 +7,17 @@ Item {
     id: menu
 
     property bool open: false
+    // Bar's top: side sheet stands on it.
+    property real barTop: height
     // Site's own title: not translated.
     readonly property string pageTitle: "Sailfish OS"
     readonly property real sheetHeight: sheet.height
+    readonly property real sheetWidth: sheet.width
+    // Landscape: side sheet above bar's right end, as menu.
+    readonly property bool wide: width > height
+    readonly property real gap: Theme.paddingLarge
+    readonly property real column: Math.floor((width * 0.42 - gap) / 2)
+    readonly property real labelSize: wide ? Theme.fontSizeSmall : Theme.fontSizeTiny
 
     signal dismissed()
 
@@ -21,7 +29,7 @@ Item {
             left: parent.left
             right: parent.right
             top: parent.top
-            bottom: sheet.top
+            bottom: menu.wide ? parent.bottom : sheet.top
         }
         onClicked: menu.dismissed()
 
@@ -36,12 +44,17 @@ Item {
         id: sheet
 
         objectName: "tutorialMenuSheet"
-        anchors.bottom: parent.bottom
-        width: parent.width
-        height: content.height
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            bottomMargin: menu.wide ? parent.height - menu.barTop : 0
+        }
+        width: menu.wide ? 2 * menu.column + menu.gap : parent.width
+        height: menu.wide ? Math.min(content.height, menu.barTop) : content.height
 
         SheetBackground {
             anchors.fill: parent
+            side: menu.wide
         }
 
         MouseArea {
@@ -50,8 +63,10 @@ Item {
 
         SheetGrip {
             edgeOf: sheet
+            upright: menu.wide
         }
 
+        // As menu's: head over rows; side sheet's rows in two columns under a line.
         Column {
             id: content
 
@@ -70,54 +85,80 @@ Item {
             Item {
                 width: parent.width
                 height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
-            }
-
-            Grid {
-                width: parent.width
-                columns: 5
-
-                Repeater {
-                    model: [
-                        { icon: "icon-m-search-on-page", name: qsTr("Find in page") },
-                        { icon: "icon-m-favorite", name: qsTr("Bookmark") },
-                        { icon: "icon-m-share", name: qsTr("Share") },
-                        { icon: "icon-m-computer", name: qsTr("Desktop site") },
-                        { icon: "icon-m-file-formatted", name: qsTr("Reader view") }
-                    ]
-
-                    MenuButton {
-                        width: menu.width / 5
-                        round: true
-                        enabled: false
-                        opacity: 1.0
-                        iconSource: "image://theme/" + modelData.icon
-                        text: modelData.name
-                    }
-                }
+                visible: !menu.wide
             }
 
             MenuSeparator {
                 width: parent.width
+                visible: menu.wide
             }
 
             Grid {
-                width: parent.width
-                columns: 4
+                columns: menu.wide ? 3 : 1
 
-                Repeater {
-                    model: [
-                        { icon: "icon-m-favorite-selected", name: qsTr("Bookmarks") },
-                        { icon: "icon-m-history", name: qsTr("History") },
-                        { icon: "icon-m-downloads", name: qsTr("Downloads") },
-                        { icon: "icon-m-setting", name: qsTr("Settings") }
-                    ]
+                Grid {
+                    id: pageRow
 
-                    MenuButton {
-                        width: menu.width / 4
-                        enabled: false
-                        opacity: 1.0
-                        iconSource: "image://theme/" + modelData.icon
-                        text: modelData.name
+                    readonly property real cell: menu.wide ? menu.column : menu.width / 5
+
+                    objectName: "tutorialMenuPageRow"
+                    width: menu.wide ? cell : 5 * cell
+                    columns: menu.wide ? 1 : 5
+
+                    Repeater {
+                        model: [
+                            { icon: "icon-m-search-on-page", name: qsTr("Find in page") },
+                            { icon: "icon-m-favorite", name: qsTr("Bookmark") },
+                            { icon: "icon-m-share", name: qsTr("Share") },
+                            { icon: "icon-m-computer", name: qsTr("Desktop site") },
+                            { icon: "icon-m-file-formatted", name: qsTr("Reader view") }
+                        ]
+
+                        MenuButton {
+                            width: pageRow.cell
+                            labelSize: menu.labelSize
+                            across: menu.wide
+                            round: true
+                            enabled: false
+                            opacity: 1.0
+                            iconSource: "image://theme/" + modelData.icon
+                            text: modelData.name
+                        }
+                    }
+                }
+
+                MenuSeparator {
+                    width: menu.wide ? menu.gap : menu.width
+                    height: menu.wide ? pageRow.height : Theme.paddingLarge
+                    vertical: menu.wide
+                }
+
+                Grid {
+                    id: placeRow
+
+                    readonly property real cell: menu.wide ? menu.column : menu.width / 4
+
+                    objectName: "tutorialMenuPlaceRow"
+                    width: menu.wide ? cell : 4 * cell
+                    columns: menu.wide ? 1 : 4
+
+                    Repeater {
+                        model: [
+                            { icon: "icon-m-favorite-selected", name: qsTr("Bookmarks") },
+                            { icon: "icon-m-history", name: qsTr("History") },
+                            { icon: "icon-m-downloads", name: qsTr("Downloads") },
+                            { icon: "icon-m-setting", name: qsTr("Settings") }
+                        ]
+
+                        MenuButton {
+                            width: placeRow.cell
+                            labelSize: menu.labelSize
+                            across: menu.wide
+                            enabled: false
+                            opacity: 1.0
+                            iconSource: "image://theme/" + modelData.icon
+                            text: modelData.name
+                        }
                     }
                 }
             }

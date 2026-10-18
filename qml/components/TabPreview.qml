@@ -228,17 +228,14 @@ Item {
                     band: muteAction.height * 2
                 }
 
-                // Top-anchored at own aspect: PreserveAspectCrop would centre on page middle.
+                // Fills cell whatever shape page was taken at (turned since): cut at foot and
+                // right, so page's head and start stay, as Chrome and Firefox cut theirs.
                 Image {
                     objectName: "tabPreviewImage"
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                    }
-                    height: sourceSize.width > 0 ? width * sourceSize.height / sourceSize.width
-                                                 : parent.height
-                    fillMode: Image.PreserveAspectFit
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectCrop
+                    horizontalAlignment: Image.AlignLeft
+                    verticalAlignment: Image.AlignTop
                     asynchronous: true
                     source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
                     visible: status === Image.Ready
@@ -248,10 +245,63 @@ Item {
             Label {
                 objectName: "tabPreviewPlaceholder"
                 anchors.centerIn: parent
-                visible: model.thumbnail.length === 0
-                text: model.url.length === 0 ? qsTr("Start page") : qsTr("No preview")
+                visible: model.thumbnail.length === 0 && model.url.length === 0
+                text: qsTr("Start page")
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
+            }
+
+            // Page never drawn (opened behind, not shown since restart): engine draws only
+            // page in front, so site's icon and title stand in, as in Chrome.
+            Column {
+                objectName: "tabPreviewSite"
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: Theme.paddingMedium
+                }
+                spacing: Theme.paddingSmall
+                visible: model.thumbnail.length === 0 && model.url.length > 0
+
+                Item {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Theme.iconSizeMedium
+                    height: width
+
+                    Image {
+                        id: siteIcon
+
+                        objectName: "tabPreviewIcon"
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        asynchronous: true
+                        source: model.favicon ? model.favicon : ""
+                        visible: status === Image.Ready
+                    }
+
+                    Label {
+                        objectName: "tabPreviewLetter"
+                        anchors.centerIn: parent
+                        visible: !siteIcon.visible
+                        text: SearchSettings.displayAddress(model.url).charAt(0).toUpperCase()
+                        font.pixelSize: Theme.fontSizeLarge
+                        color: Theme.secondaryColor
+                    }
+                }
+
+                Label {
+                    objectName: "tabPreviewTitle"
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    text: model.title ? model.title : SearchSettings.displayAddress(model.url)
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    truncationMode: TruncationMode.Elide
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryColor
+                }
             }
 
             // Hand-drawn: icon-m-clear has own translucent disc, lost on pages.

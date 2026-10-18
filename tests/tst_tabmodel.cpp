@@ -1288,6 +1288,12 @@ void tst_tabmodel::searchSpansTheGroups()
     QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::Title)).toString(),
              QStringLiteral("Inbox"));
     QVERIFY(role(search, 2, roleId(TabSearchModel::Role::Favicon)).toString().isEmpty());
+    QVERIFY(role(search, 2, roleId(TabSearchModel::Role::Thumbnail)).toString().isEmpty());
+    model.updateThumbnail(b1, QStringLiteral("/previews/inbox.png"));
+    QCOMPARE(role(search, 2, roleId(TabSearchModel::Role::Thumbnail)).toString(),
+             QStringLiteral("/previews/inbox.png"));
+    QCOMPARE(search.roleNames().value(roleId(TabSearchModel::Role::Thumbnail)),
+             QByteArrayLiteral("thumbnail"));
     QVERIFY(!role(search, 3, roleId(TabSearchModel::Role::TabId)).isValid());
     QCOMPARE(search.roleNames().value(roleId(TabSearchModel::Role::GroupStart)),
              QByteArrayLiteral("groupStart"));
