@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "HistoryModel.h"
 
+#include "DateGroup.h"
 #include "storage/Storage.h"
 
 #include <QSqlError>
@@ -65,6 +66,8 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return entry.visitCount;
     case Role::Favicon:
         return entry.favicon;
+    case Role::DateGroup:
+        return static_cast<int>(DateGroup::of(entry.date.toMSecsSinceEpoch()));
     default:
         return {};
     }
@@ -78,6 +81,7 @@ QHash<int, QByteArray> HistoryModel::roleNames() const
         {roleId(Role::Date), QByteArrayLiteral("date")},
         {roleId(Role::VisitCount), QByteArrayLiteral("visitCount")},
         {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
+        {roleId(Role::DateGroup), QByteArrayLiteral("dateGroup")},
     };
 }
 

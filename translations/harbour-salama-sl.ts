@@ -300,6 +300,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>V teku</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Danes</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Včeraj</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Zadnjih 7 dni</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Zadnjih 30 dni</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Starejše</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

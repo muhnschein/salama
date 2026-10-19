@@ -95,6 +95,12 @@ Page {
             clip: true
             model: search
 
+            // In progress first, then by start.
+            section.property: "dateGroup"
+            section.delegate: DateSectionHeader {
+                group: Number(section)
+            }
+
             delegate: DownloadDelegate {
                 id: delegate
 

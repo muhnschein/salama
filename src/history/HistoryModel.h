@@ -35,7 +35,9 @@ public:
         Title,
         Date,
         VisitCount,
-        Favicon
+        Favicon,
+        // DateGroup::Group of date.
+        DateGroup
     };
 
     enum ClearRange // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum

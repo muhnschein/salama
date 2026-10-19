@@ -2,6 +2,8 @@
 add_library(salama-core STATIC
     Core.cpp
     Core.h
+    DateGroup.cpp
+    DateGroup.h
     ModelRoles.h
     QmlTypes.cpp
     QmlTypes.h

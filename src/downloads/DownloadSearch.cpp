@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "DownloadSearch.h"
 
+#include "DateGroup.h"
 #include "DownloadModel.h"
 
 namespace Salama {
@@ -9,6 +10,8 @@ namespace Salama {
 DownloadSearch::DownloadSearch(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
+    // lessThan's.
+    setSortRole(roleId(DownloadModel::Role::DateGroup));
     connect(this, &QAbstractItemModel::rowsInserted, this, &DownloadSearch::recount);
     connect(this, &QAbstractItemModel::rowsRemoved, this, &DownloadSearch::recount);
     connect(this, &QAbstractItemModel::modelReset, this, &DownloadSearch::recount);
@@ -27,6 +30,7 @@ void DownloadSearch::setDownloads(QObject *downloads)
         return;
     }
     setSourceModel(model);
+    sort(0);
     emit downloadsChanged();
 }
 
@@ -51,6 +55,17 @@ bool DownloadSearch::filterAcceptsRow(int sourceRow, const QModelIndex &sourcePa
     const QModelIndex row = sourceModel()->index(sourceRow, 0, sourceParent);
     return m_words.matches({sourceModel()->data(row, roleId(DownloadModel::Role::Name)).toString(),
                             sourceModel()->data(row, roleId(DownloadModel::Role::Url)).toString()});
+}
+
+bool DownloadSearch::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+    const auto inProgress = [this](const QModelIndex &row) {
+        return sourceModel()->data(row, sortRole()).toInt() == DateGroup::InProgress;
+    };
+    if (inProgress(left) != inProgress(right)) {
+        return inProgress(left);
+    }
+    return left.row() < right.row();
 }
 
 void DownloadSearch::recount()

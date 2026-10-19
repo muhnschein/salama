@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
+#include "DateGroup.h"
 #include "downloads/DownloadModel.h"
 #include "downloads/DownloadSearch.h"
 #include "storage/Storage.h"
@@ -15,6 +16,7 @@
 #include <QUrl>
 #include <QtTest>
 
+using Salama::DateGroup;
 using Salama::DownloadModel;
 using Salama::DownloadSearch;
 using Salama::Storage;
@@ -44,6 +46,8 @@ private slots:
     void rowOf();
     void search();
     void searchRefusesOtherModels();
+    void dateGroupRole();
+    void searchPutsInProgressFirst();
     void directory();
     void withoutDatabase();
     void pauseAndResume();
@@ -116,7 +120,8 @@ int storedStatus(const Storage &storage, int downloadId)
 
 QVector<int> statusRoles()
 {
-    return {roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable)};
+    return {roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable),
+            roleId(DownloadModel::Role::DateGroup)};
 }
 
 QVector<int> changedRoles(const QSignalSpy &spy)
@@ -147,7 +152,8 @@ void tst_downloadmodel::topicRolesAndStatuses()
     QCOMPARE(roles.value(roleId(DownloadModel::Role::Started)), QByteArray("started"));
     QCOMPARE(roles.value(roleId(DownloadModel::Role::Resumable)), QByteArray("resumable"));
     QCOMPARE(roles.value(roleId(DownloadModel::Role::FileExists)), QByteArray("fileExists"));
-    QCOMPARE(roles.count(), 11);
+    QCOMPARE(roles.value(roleId(DownloadModel::Role::DateGroup)), QByteArray("dateGroup"));
+    QCOMPARE(roles.count(), 12);
 
     // QML compares status by name, DB stores numbers: neither may move.
     const QMetaEnum status = QMetaEnum::fromType<DownloadModel::Status>();
@@ -396,11 +402,11 @@ void tst_downloadmodel::done()
     QCOMPARE(role(model, 0, roleId(DownloadModel::Role::Path)).toString(),
              Downloads + QStringLiteral("a(1).pdf"));
     QCOMPARE(changeSpy.count(), 1);
-    QCOMPARE(
-        changedRoles(changeSpy),
-        QVector<int>({roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable),
-                      roleId(DownloadModel::Role::FileExists),
-                      roleId(DownloadModel::Role::Progress), roleId(DownloadModel::Role::Path)}));
+    QCOMPARE(changedRoles(changeSpy),
+             QVector<int>(
+                 {roleId(DownloadModel::Role::Status), roleId(DownloadModel::Role::Resumable),
+                  roleId(DownloadModel::Role::FileExists), roleId(DownloadModel::Role::Progress),
+                  roleId(DownloadModel::Role::Path), roleId(DownloadModel::Role::DateGroup)}));
     QCOMPARE(storedStatus(storage, 1), static_cast<int>(DownloadModel::Done));
 
     model.observe(Topic, done);
@@ -413,7 +419,8 @@ void tst_downloadmodel::done()
              Downloads + QStringLiteral("b.pdf"));
     QCOMPARE(changedRoles(changeSpy), QVector<int>({roleId(DownloadModel::Role::Status),
                                                     roleId(DownloadModel::Role::Resumable),
-                                                    roleId(DownloadModel::Role::FileExists)}));
+                                                    roleId(DownloadModel::Role::FileExists),
+                                                    roleId(DownloadModel::Role::DateGroup)}));
     QCOMPARE(storedStatus(storage, 2), static_cast<int>(DownloadModel::Done));
 }
 
@@ -865,6 +872,78 @@ void tst_downloadmodel::search()
     QCOMPARE(search.rowCount(), 4);
     model.clear();
     QCOMPARE(search.rowCount(), 0);
+}
+
+// Running and paused: In progress; else group of start. Status change re-reports group.
+void tst_downloadmodel::dateGroupRole()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    {
+        const qint64 old =
+            QDateTime(QDate::currentDate().addDays(-40), QTime(12, 0)).toMSecsSinceEpoch();
+        QSqlQuery insert(storage.database());
+        insert.prepare(QStringLiteral("INSERT INTO download (id, name, status, started) "
+                                      "VALUES (1, 'old.pdf', ?, ?)"));
+        insert.addBindValue(int(DownloadModel::Done));
+        insert.addBindValue(old);
+        QVERIFY(insert.exec());
+    }
+    DownloadModel model(storage, dir.path());
+    const int group = roleId(DownloadModel::Role::DateGroup);
+    QCOMPARE(model.roleNames().value(group), QByteArrayLiteral("dateGroup"));
+    QCOMPARE(role(model, 0, group).toInt(), int(DateGroup::Older));
+
+    model.observe(Topic, startMessage(1, QStringLiteral("new.pdf")));
+    QCOMPARE(role(model, 0, group).toInt(), int(DateGroup::InProgress));
+    QSignalSpy changes(&model, &DownloadModel::dataChanged);
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(role(model, 0, group).toInt(), int(DateGroup::InProgress));
+    QVERIFY(changedRoles(changes).contains(group));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    QCOMPARE(role(model, 0, group).toInt(), int(DateGroup::Today));
+    QVERIFY(changedRoles(changes).contains(group));
+    model.resume(0);
+    model.observe(Topic, startMessage(1, QStringLiteral("new.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(role(model, 0, group).toInt(), int(DateGroup::Today));
+    QVERIFY(changedRoles(changes).contains(group));
+    model.observe(Topic, progressMessage(1, 50));
+    QVERIFY(!changedRoles(changes).contains(group));
+}
+
+// In progress first, else model's order; a download that arrives moves down.
+void tst_downloadmodel::searchPutsInProgressFirst()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    DownloadSearch search;
+    search.setDownloads(&model);
+    const auto names = [&search]() {
+        QStringList shown;
+        for (int row = 0; row < search.rowCount(); ++row) {
+            shown.append(
+                search.data(search.index(row, 0), roleId(DownloadModel::Role::Name)).toString());
+        }
+        return shown;
+    };
+    model.observe(Topic, startMessage(1, QStringLiteral("big.iso")));
+    model.observe(Topic, startMessage(2, QStringLiteral("small.pdf")));
+    QCOMPARE(names(), (QStringList{QStringLiteral("small.pdf"), QStringLiteral("big.iso")}));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 2));
+    QCOMPARE(names(), (QStringList{QStringLiteral("big.iso"), QStringLiteral("small.pdf")}));
+    model.observe(Topic, startMessage(3, QStringLiteral("song.ogg")));
+    QCOMPARE(names(), (QStringList{QStringLiteral("song.ogg"), QStringLiteral("big.iso"),
+                                   QStringLiteral("small.pdf")}));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    QCOMPARE(names().first(), QStringLiteral("song.ogg"));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
+    QCOMPARE(names(), (QStringList{QStringLiteral("song.ogg"), QStringLiteral("small.pdf"),
+                                   QStringLiteral("big.iso")}));
+    model.observe(Topic, message(QStringLiteral("dl-done"), 3));
+    QCOMPARE(names(), (QStringList{QStringLiteral("song.ogg"), QStringLiteral("small.pdf"),
+                                   QStringLiteral("big.iso")}));
 }
 
 void tst_downloadmodel::searchRefusesOtherModels()

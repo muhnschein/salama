@@ -285,6 +285,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>进行中</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>今天</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>昨天</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>过去 7 天</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>过去 30 天</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>更早</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

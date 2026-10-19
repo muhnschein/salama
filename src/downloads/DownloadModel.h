@@ -51,7 +51,9 @@ public:
         Status,
         Started,
         Resumable,
-        FileExists
+        FileExists,
+        // DateGroup::Group: InProgress while running or paused, else of started.
+        DateGroup
     };
 
     static const int Limit = 50;
@@ -125,7 +127,7 @@ private:
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);
     void setStatus(int row, Status status);
-    void changed(int row, const QVector<int> &roles);
+    void changed(int row, QVector<int> roles);
     void recount();
     void request(const QVariantMap &data);
     QString freePath(const QString &name) const;

@@ -214,6 +214,7 @@ private slots:
     void downloadsPage();
     void downloadAgain();
     void downloadsSearch();
+    void listsByDate();
     void downloadNotice();
     void barBannerUnderAFinger();
     void linkMenuOnALongPress();
@@ -4547,6 +4548,89 @@ void tst_qmlload::downloadsSearch()
     QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No downloads"));
     QCOMPARE(placeholder->property("hintText").toString(),
              QStringLiteral("Files downloaded from pages are listed here"));
+}
+
+// History and Downloads under Firefox for Android's date sections; downloads still coming
+// or paused first.
+void tst_qmlload::listsByDate()
+{
+    const auto headings = [this]() {
+        settle();
+        QStringList texts;
+        // List keeps spare headings, hidden.
+        for (QObject *heading : byRow(findAll(QStringLiteral("dateSection")))) {
+            if (heading->property("visible").toBool()) {
+                texts.append(heading->property("text").toString());
+            }
+        }
+        return texts;
+    };
+    {
+        QSqlQuery old(m_core->storage().database());
+        old.prepare(
+            QStringLiteral("INSERT INTO browser_history (url, title, date) VALUES (?, ?, ?)"));
+        for (int daysAgo : {1, 3, 10, 40}) {
+            old.addBindValue(QStringLiteral("https://day%1.example/").arg(daysAgo));
+            old.addBindValue(QStringLiteral("Day %1").arg(daysAgo));
+            old.addBindValue(QDateTime(QDate::currentDate().addDays(-daysAgo), QTime(12, 0))
+                                 .toMSecsSinceEpoch());
+            QVERIFY(old.exec());
+        }
+        m_core->history()->setSearchTerm(QStringLiteral("reload"));
+        m_core->history()->setSearchTerm(QString());
+    }
+    openMenuItem(QStringLiteral("historyMenuButton"));
+    QCOMPARE(evaluate(find(QStringLiteral("historyList")), QStringLiteral("section.property"))
+                 .toString(),
+             QStringLiteral("dateGroup"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("Today"), QStringLiteral("Yesterday"),
+                                      QStringLiteral("Last 7 days"), QStringLiteral("Last 30 days"),
+                                      QStringLiteral("Older")}));
+    find(QStringLiteral("historySearch"))->setProperty("text", QStringLiteral("day"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("Yesterday"), QStringLiteral("Last 7 days"),
+                                      QStringLiteral("Last 30 days"), QStringLiteral("Older")}));
+    popPage();
+    settle();
+
+    Salama::DownloadModel *downloads = m_core->downloads();
+    const auto engineSays = [downloads](const QString &msg, int id, const QString &name) {
+        downloads->observe(downloads->topic(),
+                           QVariantMap{{QStringLiteral("msg"), msg},
+                                       {QStringLiteral("id"), id},
+                                       {QStringLiteral("displayName"), name},
+                                       {QStringLiteral("sourceUrl"),
+                                        QStringLiteral("https://files.example/") + name}});
+    };
+    engineSays(QStringLiteral("dl-start"), 1, QStringLiteral("big.iso"));
+    engineSays(QStringLiteral("dl-start"), 2, QStringLiteral("small.pdf"));
+    engineSays(QStringLiteral("dl-done"), 2, QString());
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(evaluate(find(QStringLiteral("downloadList")), QStringLiteral("section.property"))
+                 .toString(),
+             QStringLiteral("dateGroup"));
+    const auto names = [this]() {
+        settle();
+        QStringList shown;
+        for (QObject *row : byRow(findAll(QStringLiteral("downloadDelegate")))) {
+            shown.append(findObjects(row, QStringLiteral("downloadName"))
+                             .first()
+                             ->property("text")
+                             .toString());
+        }
+        return shown;
+    };
+    // Older one still coming: above newer arrived one.
+    QCOMPARE(headings(), (QStringList{QStringLiteral("In progress"), QStringLiteral("Today")}));
+    QCOMPARE(names(), (QStringList{QStringLiteral("big.iso"), QStringLiteral("small.pdf")}));
+    engineSays(QStringLiteral("dl-done"), 1, QString());
+    QCOMPARE(headings(), QStringList{QStringLiteral("Today")});
+    QCOMPARE(names(), (QStringList{QStringLiteral("small.pdf"), QStringLiteral("big.iso")}));
+    // Newest arrives in place: same row, other section.
+    engineSays(QStringLiteral("dl-start"), 3, QStringLiteral("song.ogg"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("In progress"), QStringLiteral("Today")}));
+    engineSays(QStringLiteral("dl-done"), 3, QString());
+    QCOMPARE(headings(), QStringList{QStringLiteral("Today")});
+    QCOMPARE(names().first(), QStringLiteral("song.ogg"));
 }
 
 // Earlier-run download refetched from source; engine's start becomes replacement row.

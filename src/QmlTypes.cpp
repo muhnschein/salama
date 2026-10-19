@@ -3,6 +3,7 @@
 #include "QmlTypes.h"
 
 #include "Core.h"
+#include "DateGroup.h"
 #include "downloads/DownloadSearch.h"
 #include "permissions/SiteExceptions.h"
 #include "tabs/ClosedTabModel.h"
@@ -220,6 +221,8 @@ void registerQmlTypes(Core *core)
                                               &sitePermissionsProvider);
     qmlRegisterType<SiteExceptions>(ModuleUri, 1, 0, "SiteExceptions");
     qmlRegisterType<DownloadSearch>(ModuleUri, 1, 0, "DownloadSearch");
+    qmlRegisterUncreatableType<DateGroup>(ModuleUri, 1, 0, "DateGroup",
+                                          QStringLiteral("Enum only"));
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));
 }

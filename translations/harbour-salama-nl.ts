@@ -290,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Wordt uitgevoerd</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Vandaag</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Gisteren</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Afgelopen 7 dagen</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Afgelopen 30 dagen</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Ouder</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

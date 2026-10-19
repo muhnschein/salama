@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "DownloadModel.h"
 
+#include "DateGroup.h"
 #include "engine/EngineData.h"
 #include "storage/Storage.h"
 
@@ -123,6 +124,10 @@ QVariant DownloadModel::data(const QModelIndex &index, int role) const
     case Role::FileExists:
         return download.status == Done && !download.path.isEmpty() &&
                QFileInfo::exists(download.path);
+    case Role::DateGroup:
+        return static_cast<int>(download.status == Running || download.status == Canceled
+                                    ? DateGroup::InProgress
+                                    : DateGroup::of(download.started));
     default:
         return {};
     }
@@ -142,6 +147,7 @@ QHash<int, QByteArray> DownloadModel::roleNames() const
         {roleId(Role::Started), QByteArrayLiteral("started")},
         {roleId(Role::Resumable), QByteArrayLiteral("resumable")},
         {roleId(Role::FileExists), QByteArrayLiteral("fileExists")},
+        {roleId(Role::DateGroup), QByteArrayLiteral("dateGroup")},
     };
 }
 
@@ -556,8 +562,12 @@ void DownloadModel::setStatus(int row, Status status)
     }
 }
 
-void DownloadModel::changed(int row, const QVector<int> &roles)
+void DownloadModel::changed(int row, QVector<int> roles)
 {
+    // Group follows status.
+    if (roles.contains(roleId(Role::Status))) {
+        roles.append(roleId(Role::DateGroup));
+    }
     const QModelIndex modelIndex = index(row, 0);
     emit dataChanged(modelIndex, modelIndex, roles);
     recount();

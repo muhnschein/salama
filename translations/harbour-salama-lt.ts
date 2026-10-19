@@ -295,6 +295,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Vykdoma</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Šiandien</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Vakar</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Paskutinės 7 dienos</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Paskutinės 30 dienų</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Senesni</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

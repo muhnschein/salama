@@ -83,6 +83,11 @@ Page {
             clip: true
             model: HistoryModel
 
+            section.property: "dateGroup"
+            section.delegate: DateSectionHeader {
+                group: Number(section)
+            }
+
             delegate: HistoryDelegate {
                 onClicked: historyPage.open(model.url, false)
                 onOpenInNewTabRequested: historyPage.open(model.url, true)

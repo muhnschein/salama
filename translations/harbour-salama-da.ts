@@ -290,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>I gang</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>I dag</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>I går</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>De seneste 7 dage</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>De seneste 30 dage</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Ældre</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

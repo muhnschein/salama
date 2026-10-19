@@ -285,6 +285,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Барышта</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Бүген</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Кичә</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Соңгы 7 көн</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Соңгы 30 көн</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Искерәк</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

@@ -10,8 +10,8 @@
 
 namespace Salama {
 
-// Downloads page's rows: name or address holds every word, as in address bar. Model's order.
-// Rows differ from DownloadModel's: act by id (DownloadModel.rowOf).
+// Downloads page's rows: name or address holds every word, as in address bar. In progress
+// first, then model's order. Rows differ from DownloadModel's: act by id (DownloadModel.rowOf).
 class DownloadSearch : public QSortFilterProxyModel
 {
     Q_OBJECT
@@ -35,6 +35,7 @@ signals:
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+    bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
     void recount();

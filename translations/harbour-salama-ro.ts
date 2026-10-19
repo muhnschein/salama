@@ -295,6 +295,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>În desfășurare</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Astăzi</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Ieri</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Ultimele 7 zile</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Ultimele 30 de zile</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Mai vechi</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

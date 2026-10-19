@@ -290,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>En cours</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Aujourd’hui</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Hier</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Les 7 derniers jours</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Les 30 derniers jours</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Avant le mois dernier</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

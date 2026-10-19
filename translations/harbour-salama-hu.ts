@@ -285,6 +285,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Folyamatban</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Ma</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Tegnap</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Elmúlt 7 nap</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Elmúlt 30 nap</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Régebbi</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>

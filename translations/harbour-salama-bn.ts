@@ -290,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>চলছে</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>আজ</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>গতকাল</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>গত 7 দিন</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>গত 30 দিন</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>পুরোনো</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>
