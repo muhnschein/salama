@@ -33,16 +33,6 @@ Page {
             title: qsTr("Bookmarks")
         }
 
-        PullDownMenu {
-            MenuItem {
-                objectName: "addBookmarkMenu"
-                text: qsTr("Bookmark current page")
-                enabled: TabModel.activeUrl.length > 0 && !BookmarkModel.activeUrlBookmarked
-                onClicked: BookmarkModel.add(TabModel.activeUrl, TabModel.activeTitle,
-                                             TabModel.activeFavicon)
-            }
-        }
-
         delegate: BookmarkDelegate {
             onClicked: bookmarksPage.open(model.url, false)
             onOpenInNewTabRequested: bookmarksPage.open(model.url, true)
@@ -57,7 +47,7 @@ Page {
         ViewPlaceholder {
             enabled: BookmarkModel.count === 0
             text: qsTr("No bookmarks")
-            hintText: qsTr("Pull down to bookmark the current page")
+            hintText: qsTr("Add bookmarks as you browse so you can find your favorite sites later")
         }
 
         VerticalScrollDecorator {}

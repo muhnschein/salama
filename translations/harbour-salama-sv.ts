@@ -88,16 +88,12 @@
         <translation>Bokmärken</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Bokmärk aktuell sida</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Inga bokmärken</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Dra nedåt för att bokmärka aktuell sida</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Lägg till bokmärken när du surfar så att du kan hitta dina favoritplatser senare</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Tar bort</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Sök i nedladdningar</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Inga matchningar</translation>
     </message>
 </context>
 <context>

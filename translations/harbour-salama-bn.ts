@@ -88,16 +88,12 @@
         <translation>বুকমার্ক</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>বর্তমান পাতা বুকমার্ক করুন</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>কোনো বুকমার্ক নেই</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>বর্তমান পাতা বুকমার্ক করতে নিচে টানুন</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ব্রাউজ করার সময় বুকমার্ক যোগ করুন, যাতে পরে আপনার প্রিয় সাইটগুলো খুঁজে পান</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>মোছা হচ্ছে</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>ডাউনলোড অনুসন্ধান করুন</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>কোনো মিল নেই</translation>
     </message>
 </context>
 <context>

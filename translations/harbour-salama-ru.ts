@@ -88,16 +88,12 @@
         <translation>Закладки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Добавить текущую страницу в закладки</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Закладок нет</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Потяните вниз, чтобы добавить текущую страницу в закладки</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Добавляйте закладки при просмотре, чтобы иметь возможность найти свои любимые сайты позже</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Удаление</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Поиск в загрузках</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ничего не найдено</translation>
     </message>
 </context>
 <context>

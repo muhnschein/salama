@@ -32,6 +32,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
 - Swedish translation.
 - Translations into every other Sailfish OS language: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese; Firefox wording where available.
+- Downloads search field under heading, like History's: lists downloads whose name or address holds every typed word.
 
 ### Changed
 - Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
@@ -62,6 +63,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.
+- Bookmarks pulley: bookmark current page from menu's Bookmark button.
 
 ## [0.8.0] - 2026-09-26
 

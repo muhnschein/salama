@@ -88,16 +88,12 @@
         <translation>ബുക്ക്മാർക്കുകൾ</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>നിലവിലെ താൾ ബുക്ക്മാർക്ക് ചെയ്യുക</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ബുക്ക്മാർക്കുകളില്ല</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>നിലവിലെ താൾ ബുക്ക്മാർക്ക് ചെയ്യാൻ താഴേക്ക് വലിക്കുക</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ബ്രൗസ് ചെയ്യുമ്പോൾ ബുക്ക്മാർക്കുകൾ ചേർക്കുക, അങ്ങനെ പ്രിയപ്പെട്ട സൈറ്റുകൾ പിന്നീട് കണ്ടെത്താം</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>ഇല്ലാതാക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>ഡൗൺലോഡുകൾ തിരയുക</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>ഒന്നും പൊരുത്തപ്പെടുന്നില്ല</translation>
     </message>
 </context>
 <context>

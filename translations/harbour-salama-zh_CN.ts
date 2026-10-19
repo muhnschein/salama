@@ -88,16 +88,12 @@
         <translation>书签</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>为当前页面添加书签</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>没有书签</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>下拉即可为当前页面添加书签</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>可在浏览时添加书签，方便以后找到常用网站</translation>
     </message>
 </context>
 <context>
@@ -499,6 +495,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>正在删除</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>搜索下载项</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>没有匹配项</translation>
     </message>
 </context>
 <context>

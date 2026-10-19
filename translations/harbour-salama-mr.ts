@@ -88,16 +88,12 @@
         <translation>वाचनखुणा</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>सध्याच्या पृष्ठाला वाचनखूण लावा</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>वाचनखुणा नाहीत</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>सध्याच्या पृष्ठाला वाचनखूण लावण्यासाठी खाली ओढा</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ब्राउझ करताना वाचनखुणा जोडा, म्हणजे तुमच्या आवडत्या साइट्स नंतर सापडतील</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>हटवत आहे</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>डाउनलोड शोधा</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>काहीही जुळत नाही</translation>
     </message>
 </context>
 <context>

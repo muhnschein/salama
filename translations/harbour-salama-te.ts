@@ -88,16 +88,12 @@
         <translation>ఇష్టాంశాలు</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>ప్రస్తుత పేజీని ఇష్టాంశంగా గుర్తుపెట్టు</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ఇష్టాంశాలు లేవు</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>ప్రస్తుత పేజీని ఇష్టాంశంగా గుర్తుపెట్టడానికి కిందికి లాగండి</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>బ్రౌజ్ చేస్తున్నప్పుడు ఇష్టాంశాలను జోడించండి, తద్వారా మీకు ఇష్టమైన సైట్‌లను తర్వాత కనుగొనవచ్చు</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>తొలగిస్తోంది</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>డౌన్‌లోడ్‌లలో వెతకండి</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>ఏవీ సరిపోలడం లేదు</translation>
     </message>
 </context>
 <context>

@@ -213,6 +213,7 @@ private slots:
     void readerView();
     void downloadsPage();
     void downloadAgain();
+    void downloadsSearch();
     void downloadNotice();
     void barBannerUnderAFinger();
     void linkMenuOnALongPress();
@@ -4455,6 +4456,99 @@ void tst_qmlload::downloadsPage()
     QVERIFY(!find(QStringLiteral("clearFinishedDownloadsMenu"))->property("enabled").toBool());
 }
 
+// Search keeps rows whose name or address holds every word. Rows then differ from
+// DownloadModel's: acting on one must reach that download, not the one at its row.
+void tst_qmlload::downloadsSearch()
+{
+    Salama::DownloadModel *downloads = m_core->downloads();
+    const QString folder = downloads->directory();
+    const auto start = [downloads, &folder](int id, const QString &name) {
+        downloads->observe(
+            downloads->topic(),
+            QVariantMap{
+                {QStringLiteral("msg"), QStringLiteral("dl-start")},
+                {QStringLiteral("id"), id},
+                {QStringLiteral("displayName"), name},
+                {QStringLiteral("sourceUrl"), QStringLiteral("https://files.example/") + name},
+                {QStringLiteral("targetPath"), folder + QLatin1Char('/') + name}});
+    };
+    // Newest first: photo, notes, report.
+    start(1, QStringLiteral("report.pdf"));
+    QFile report(folder + QStringLiteral("/report.pdf"));
+    QVERIFY(report.open(QIODevice::WriteOnly));
+    report.close();
+    downloads->observe(
+        downloads->topic(),
+        QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-done")}, {QStringLiteral("id"), 1}});
+    start(2, QStringLiteral("notes.txt"));
+    start(3, QStringLiteral("photo.jpg"));
+    QCOMPARE(downloads->count(), 3);
+
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QObject *field = find(QStringLiteral("downloadsSearch"));
+    QObject *list = find(QStringLiteral("downloadList"));
+    QObject *placeholder = find(QStringLiteral("downloadsPlaceholder"));
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search downloads"));
+    QCOMPARE(list->property("count").toInt(), 3);
+    QVERIFY(!placeholder->property("enabled").toBool());
+    const auto onlyRow = [this]() {
+        settle();
+        const QList<QObject *> rows = findAll(QStringLiteral("downloadDelegate"));
+        return rows.count() == 1 ? rows.first() : nullptr;
+    };
+    const auto part = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first();
+    };
+
+    // Address too; every word, any case, any order.
+    field->setProperty("text", QStringLiteral("files.example"));
+    QCOMPARE(list->property("count").toInt(), 3);
+    field->setProperty("text", QStringLiteral("PDF report"));
+    QCOMPARE(list->property("count").toInt(), 1);
+    QObject *row = onlyRow();
+    QVERIFY(row != nullptr);
+    QCOMPARE(part(row, "downloadName")->property("text").toString(), QStringLiteral("report.pdf"));
+    const UrlCatcher files(QStringLiteral("file"));
+    click(row);
+    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(report.fileName())});
+
+    QSignalSpy told(downloads, &Salama::DownloadModel::engineRequest);
+    field->setProperty("text", QStringLiteral("notes"));
+    row = onlyRow();
+    QVERIFY(row != nullptr);
+    click(part(row, "downloadAction"));
+    QCOMPARE(told.count(), 1);
+    QCOMPARE(told.last().at(1).toMap(),
+             (QVariantMap{{QStringLiteral("msg"), QStringLiteral("cancelDownload")},
+                          {QStringLiteral("id"), 2}}));
+    click(part(row, "removeDownloadMenu"));
+    QCOMPARE(downloads->count(), 2);
+    QCOMPARE(downloads->rowOf(2), -1);
+
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No matches"));
+    QCOMPARE(placeholder->property("hintText").toString(), QString());
+    field->setProperty("text", QString());
+    QCOMPARE(list->property("count").toInt(), 2);
+    QVERIFY(!placeholder->property("enabled").toBool());
+
+    // Term is the page's: back and in again lists everything.
+    field->setProperty("text", QStringLiteral("photo"));
+    QCOMPARE(list->property("count").toInt(), 1);
+    popPage();
+    settle();
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(find(QStringLiteral("downloadsSearch"))->property("text").toString(), QString());
+    QCOMPARE(find(QStringLiteral("downloadList"))->property("count").toInt(), 2);
+
+    downloads->clear();
+    placeholder = find(QStringLiteral("downloadsPlaceholder"));
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No downloads"));
+    QCOMPARE(placeholder->property("hintText").toString(),
+             QStringLiteral("Files downloaded from pages are listed here"));
+}
+
 // Earlier-run download refetched from source; engine's start becomes replacement row.
 void tst_qmlload::downloadAgain()
 {
@@ -5270,6 +5364,8 @@ struct Keystroke
 void typeKeepingFocus(QQuickWindow *window, QQuickItem *field, QObject *list,
                       const QList<Keystroke> &keystrokes)
 {
+    // Inside list (as header) it is in list's focus scope: refill focuses new current item.
+    QVERIFY(!qobject_cast<QQuickItem *>(list)->isAncestorOf(field));
     QVERIFY(list->property("clip").toBool());
     field->forceActiveFocus();
     QVERIFY(field->hasActiveFocus());
@@ -5291,6 +5387,15 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
     m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
     m_core->bookmarks()->add(QStringLiteral("https://one.example/"), QStringLiteral("One"));
     m_core->bookmarks()->add(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    for (const QString &name : {QStringLiteral("one"), QStringLiteral("two")}) {
+        m_core->downloads()->observe(
+            m_core->downloads()->topic(),
+            QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-start")},
+                        {QStringLiteral("id"), m_core->downloads()->count() + 1},
+                        {QStringLiteral("displayName"), name + QStringLiteral(".zip")},
+                        {QStringLiteral("sourceUrl"),
+                         QStringLiteral("https://%1.example/%1.zip").arg(name)}});
+    }
     FingerWindow host(m_window.data());
     QQuickWindow *window = host.window();
     QVERIFY(QTest::qWaitForWindowExposed(window));
@@ -5316,6 +5421,23 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
     QVERIFY(m_core->history()->searchTerm().isEmpty());
     openMenuItem(QStringLiteral("historyMenuButton"));
     QCOMPARE(find(QStringLiteral("historyList"))->property("count").toInt(), 3);
+    popPage();
+    settle();
+
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QVERIFY(
+        qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsPulley")))
+            ->parentItem()
+            ->isAncestorOf(qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsHeading")))));
+    typeKeepingFocus(window, qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsSearch"))),
+                     find(QStringLiteral("downloadList")),
+                     {{QStringLiteral("o"), 2},
+                      {QStringLiteral("on"), 1},
+                      {QStringLiteral("onx"), 0},
+                      {QStringLiteral("tw"), 1}});
+    if (QTest::currentTestFailed()) {
+        return;
+    }
     popPage();
     settle();
 
@@ -5370,12 +5492,13 @@ void tst_qmlload::bookmarksPage()
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QCOMPARE(delegates.at(0)->property("remorseCount").toInt(), 1);
 
-    QObject *addMenu = find(QStringLiteral("addBookmarkMenu"));
-    QVERIFY(addMenu->property("enabled").toBool());
-    click(addMenu);
-    QCOMPARE(m_core->bookmarks()->count(), 2);
-    QVERIFY(m_core->bookmarks()->contains(QStringLiteral("https://b1.example/")));
-    QVERIFY(!addMenu->property("enabled").toBool());
+    // Bookmarking is the browser menu's: page has no pulley.
+    const QList<QQuickItem *> items = currentPage()->findChildren<QQuickItem *>();
+    QVERIFY(!items.isEmpty());
+    for (const QQuickItem *item : items) {
+        QVERIFY2(!QByteArray(item->metaObject()->className()).startsWith("PullDownMenu"),
+                 qPrintable(item->objectName()));
+    }
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
     click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());

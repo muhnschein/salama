@@ -88,16 +88,12 @@
         <translation>Отметки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Отмятане на текущата страница</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Няма отметки</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Дръпнете надолу, за да отметнете текущата страница</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Добавете отметки, докато разглеждате, за да можете по-късно да намирате любимите си страници</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Изтрива се</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Търсене на изтегляния</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Няма съвпадения</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>ਬੁੱਕਮਾਰਕ</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>ਮੌਜੂਦਾ ਸਫ਼ੇ ਨੂੰ ਬੁੱਕਮਾਰਕ ਕਰੋ</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ਕੋਈ ਬੁੱਕਮਾਰਕ ਨਹੀਂ</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>ਮੌਜੂਦਾ ਸਫ਼ੇ ਨੂੰ ਬੁੱਕਮਾਰਕ ਕਰਨ ਲਈ ਹੇਠਾਂ ਖਿੱਚੋ</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ਬਰਾਊਜ਼ ਕਰਦੇ ਸਮੇਂ ਬੁੱਕਮਾਰਕ ਜੋੜੋ, ਤਾਂ ਕਿ ਆਪਣੀਆਂ ਮਨਪਸੰਦ ਸਾਈਟਾਂ ਨੂੰ ਬਾਅਦ ਵਿੱਚ ਲੱਭ ਸਕੋ</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>ਹਟਾਇਆ ਜਾ ਰਿਹਾ ਹੈ</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>ਡਾਊਨਲੋਡਾਂ ਨੂੰ ਖੋਜੋ</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>ਕੋਈ ਮੇਲ ਨਹੀਂ</translation>
     </message>
 </context>
 <context>

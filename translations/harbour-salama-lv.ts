@@ -88,16 +88,12 @@
         <translation>Grāmatzīmes</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Saglabāt pašreizējo lapu grāmatzīmēs</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nav grāmatzīmju</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Velc uz leju, lai saglabātu pašreizējo lapu grāmatzīmēs</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Pievieno grāmatzīmes pārlūkošanas laikā, lai vēlāk atrastu savas iecienītās vietnes</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Dzēš</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Meklēt lejupielādēs</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nav atbilstību</translation>
     </message>
 </context>
 <context>

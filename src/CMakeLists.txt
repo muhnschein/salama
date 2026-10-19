@@ -11,6 +11,8 @@ add_library(salama-core STATIC
     bookmarks/BookmarkModel.h
     downloads/DownloadModel.cpp
     downloads/DownloadModel.h
+    downloads/DownloadSearch.cpp
+    downloads/DownloadSearch.h
     engine/EngineData.cpp
     engine/EngineData.h
     engine/EngineMessages.cpp

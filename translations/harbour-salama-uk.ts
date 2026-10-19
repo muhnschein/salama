@@ -88,16 +88,12 @@
         <translation>Закладки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Додати поточну сторінку до закладок</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Закладок немає</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Потягніть вниз, щоб додати поточну сторінку до закладок</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Додавайте закладки для сайтів під час перегляду, щоб потім легко їх знайти</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Видалення</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Шукати в завантаженнях</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Збігів не знайдено</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>Segnalibri</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Aggiungi la pagina corrente ai segnalibri</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nessun segnalibro</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trascina verso il basso per aggiungere la pagina corrente ai segnalibri</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Crea segnalibri mentre navighi per ritrovare i tuoi siti preferiti più tardi</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Eliminazione</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Cerca nei download</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nessun risultato</translation>
     </message>
 </context>
 <context>

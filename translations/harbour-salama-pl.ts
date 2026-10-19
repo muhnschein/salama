@@ -88,16 +88,12 @@
         <translation>Zakładki</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Dodaj bieżącą stronę do zakładek</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Brak zakładek</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Przeciągnij w dół, aby dodać bieżącą stronę do zakładek</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Dodawaj zakładki w trakcie przeglądania, aby później łatwo znaleźć ulubione witryny</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Usuwanie</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Szukaj w pobranych plikach</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Brak wyników</translation>
     </message>
 </context>
 <context>

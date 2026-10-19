@@ -88,16 +88,12 @@
         <translation>ಪುಟಗುರುತುಗಳು</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>ಪ್ರಸ್ತುತ ಪುಟವನ್ನು ಪುಟಗುರುತು ಮಾಡಿ</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ಪುಟಗುರುತುಗಳಿಲ್ಲ</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>ಪ್ರಸ್ತುತ ಪುಟವನ್ನು ಪುಟಗುರುತು ಮಾಡಲು ಕೆಳಗೆ ಎಳೆಯಿರಿ</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ಬ್ರೌಸ್ ಮಾಡುವಾಗ ಪುಟಗುರುತುಗಳನ್ನು ಸೇರಿಸಿ, ಇದರಿಂದ ನಿಮ್ಮ ಮೆಚ್ಚಿನ ತಾಣಗಳನ್ನು ನಂತರ ಹುಡುಕಬಹುದು</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>ಅಳಿಸಲಾಗುತ್ತಿದೆ</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>ಡೌನ್‌ಲೋಡ್‌ಗಳನ್ನು ಹುಡುಕಿ</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>ಯಾವುದೂ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ</translation>
     </message>
 </context>
 <context>

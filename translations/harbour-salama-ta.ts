@@ -88,16 +88,12 @@
         <translation>புத்தகக்குறிகள்</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>தற்போதைய பக்கத்தைப் புத்தகக்குறியிடு</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>புத்தகக்குறிகள் இல்லை</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>தற்போதைய பக்கத்தைப் புத்தகக்குறியிடக் கீழே இழுக்கவும்</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>உலாவும்போது புத்தகக்குறிகளைச் சேர்க்கவும், பின்னர் உங்களுக்குப் பிடித்த தளங்களைக் கண்டறியலாம்</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>நீக்கப்படுகிறது</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>பதிவிறக்கங்களைத் தேடு</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>எதுவும் பொருந்தவில்லை</translation>
     </message>
 </context>
 <context>

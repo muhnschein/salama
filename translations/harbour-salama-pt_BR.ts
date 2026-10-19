@@ -88,16 +88,12 @@
         <translation>Favoritos</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Adicionar a página atual aos favoritos</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nenhum favorito</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Puxe para baixo para adicionar a página atual aos favoritos</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adicione favoritos enquanto navega para poder encontrar seus sites preferidos mais tarde</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Excluindo</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Pesquisar nos arquivos baixados</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nenhum resultado</translation>
     </message>
 </context>
 <context>

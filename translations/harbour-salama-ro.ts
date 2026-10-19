@@ -88,16 +88,12 @@
         <translation>Marcaje</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Adaugă pagina curentă la marcaje</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Niciun marcaj</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trage în jos pentru a adăuga pagina curentă la marcaje</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adaugă marcaje pe măsură ce navighezi, pentru a putea găsi site-urile tale preferate mai târziu</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Se șterge</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Caută în descărcări</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nicio potrivire</translation>
     </message>
 </context>
 <context>

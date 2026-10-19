@@ -3,6 +3,7 @@
 #include "QmlTypes.h"
 
 #include "Core.h"
+#include "downloads/DownloadSearch.h"
 #include "permissions/SiteExceptions.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
@@ -218,6 +219,7 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<SitePermissions>(ModuleUri, 1, 0, "SitePermissions",
                                               &sitePermissionsProvider);
     qmlRegisterType<SiteExceptions>(ModuleUri, 1, 0, "SiteExceptions");
+    qmlRegisterType<DownloadSearch>(ModuleUri, 1, 0, "DownloadSearch");
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));
 }

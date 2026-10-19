@@ -88,16 +88,12 @@
         <translation>Záložky</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Přidat aktuální stránku do záložek</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Žádné záložky</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Stažením dolů přidáš aktuální stránku do záložek</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Během procházení si přidávej záložky, ať později najdeš své oblíbené stránky</translation>
     </message>
 </context>
 <context>
@@ -509,6 +505,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Mazání</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Hledat ve stažených souborech</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nic nenalezeno</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>書籤</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>將目前頁面加入書籤</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>沒有書籤</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>下拉即可將目前頁面加入書籤</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>瀏覽時加入書籤，日後便可輕鬆找回您喜愛的網站</translation>
     </message>
 </context>
 <context>
@@ -499,6 +495,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>正在刪除</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>搜尋下載項目</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>沒有相符的項目</translation>
     </message>
 </context>
 <context>

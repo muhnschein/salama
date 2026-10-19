@@ -88,16 +88,12 @@
         <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Προσθήκη τρέχουσας σελίδας στους σελιδοδείκτες</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Δεν υπάρχουν σελιδοδείκτες</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Τραβήξτε προς τα κάτω για να προσθέσετε την τρέχουσα σελίδα στους σελιδοδείκτες</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Προσθέστε σελιδοδείκτες καθώς περιηγείστε, ώστε να βρείτε αργότερα τις αγαπημένες σας ιστοσελίδες</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Διαγραφή σε εξέλιξη</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Αναζήτηση λήψεων</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Δεν βρέθηκαν αποτελέσματα</translation>
     </message>
 </context>
 <context>

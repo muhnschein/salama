@@ -88,16 +88,12 @@
         <translation>Könyvjelzők</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Aktuális oldal könyvjelzőzése</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nincs könyvjelző</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Húzd le az aktuális oldal könyvjelzőzéséhez</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adj hozzá könyvjelzőket böngészés közben, hogy később is megtaláld a kedvenc oldalaidat</translation>
     </message>
 </context>
 <context>
@@ -499,6 +495,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Törlés folyamatban</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Keresés a letöltések között</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nincs találat</translation>
     </message>
 </context>
 <context>

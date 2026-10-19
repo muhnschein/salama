@@ -88,16 +88,12 @@
         <translation>Кыстыргычлар</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Хәзерге битне кыстыргычларга өстәргә</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Кыстыргычлар юк</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Хәзерге битне кыстыргычларга өстәү өчен аска тартыгыз</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Битләрне караганда кыстыргычлар өстәгез, шулай яраткан сайтларыгызны соңрак таба аласыз</translation>
     </message>
 </context>
 <context>
@@ -499,6 +495,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Бетерелә</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Йөкләнгәннәрдән эзләү</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Бернәрсә дә туры килми</translation>
     </message>
 </context>
 <context>

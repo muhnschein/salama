@@ -88,16 +88,12 @@
         <translation>Bladwijzers</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Bladwijzer voor huidige pagina maken</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Geen bladwijzers</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trek omlaag om een bladwijzer voor de huidige pagina te maken</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Voeg bladwijzers toe terwijl je surft, zodat je je favoriete websites later terugvindt</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Wordt verwijderd</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Downloads doorzoeken</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Geen overeenkomsten</translation>
     </message>
 </context>
 <context>

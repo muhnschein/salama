@@ -88,16 +88,12 @@
         <translation>Kirjanmerkit</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Lisää nykyinen sivu kirjanmerkkeihin</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Ei kirjanmerkkejä</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Vedä alas lisätäksesi nykyisen sivun kirjanmerkkeihin</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Lisää kirjanmerkkejä selatessasi, jotta löydät suosikkisivustosi myöhemmin</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Poistetaan</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Hae latauksista</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ei osumia</translation>
     </message>
 </context>
 <context>

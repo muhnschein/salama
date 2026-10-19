@@ -88,16 +88,12 @@
         <translation>Marcadores</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Marcar la página actual</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>No hay marcadores</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Desliza hacia abajo para marcar la página actual</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Añade marcadores mientras navegas para que puedas encontrar tus sitios favoritos más tarde</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Eliminando</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Buscar en descargas</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>No hay coincidencias</translation>
     </message>
 </context>
 <context>

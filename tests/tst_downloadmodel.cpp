@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 #include "downloads/DownloadModel.h"
+#include "downloads/DownloadSearch.h"
 #include "storage/Storage.h"
 
 #include <QDateTime>
@@ -15,6 +16,7 @@
 #include <QtTest>
 
 using Salama::DownloadModel;
+using Salama::DownloadSearch;
 using Salama::Storage;
 
 class tst_downloadmodel : public QObject
@@ -40,6 +42,8 @@ private slots:
     void clearSince();
     void fileUrl();
     void rowOf();
+    void search();
+    void searchRefusesOtherModels();
     void directory();
     void withoutDatabase();
     void pauseAndResume();
@@ -800,6 +804,88 @@ void tst_downloadmodel::rowOf()
              QUrl::fromLocalFile(Downloads + QStringLiteral("a.pdf")).toString());
     model.clear();
     QCOMPARE(model.rowOf(a), -1);
+}
+
+// Downloads page's rows: name or address holds every word, any case; model's order kept.
+void tst_downloadmodel::search()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    DownloadSearch search;
+    QSignalSpy counts(&search, &DownloadSearch::countChanged);
+    QSignalSpy terms(&search, &DownloadSearch::searchTermChanged);
+    search.setDownloads(&model);
+    QCOMPARE(search.downloads(), static_cast<QObject *>(&model));
+    QCOMPARE(search.roleNames(), model.roleNames());
+    QCOMPARE(search.rowCount(), 0);
+
+    model.observe(Topic, startMessage(1, QStringLiteral("report.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("photo.jpg")));
+    model.observe(Topic, startMessage(3, QStringLiteral("notes.pdf")));
+    QCOMPARE(search.rowCount(), 3);
+    QCOMPARE(counts.count(), 3);
+    const auto names = [&search]() {
+        QStringList shown;
+        for (int row = 0; row < search.rowCount(); ++row) {
+            shown.append(
+                search.data(search.index(row, 0), roleId(DownloadModel::Role::Name)).toString());
+        }
+        return shown;
+    };
+
+    search.setSearchTerm(QStringLiteral("PDF"));
+    QCOMPARE(search.searchTerm(), QStringLiteral("PDF"));
+    QCOMPARE(terms.count(), 1);
+    QCOMPARE(names(), (QStringList{QStringLiteral("notes.pdf"), QStringLiteral("report.pdf")}));
+    QCOMPARE(counts.count(), 4);
+    search.setSearchTerm(QStringLiteral("PDF"));
+    QCOMPARE(terms.count(), 1);
+
+    search.setSearchTerm(QStringLiteral(" pdf  rep "));
+    QCOMPARE(names(), QStringList{QStringLiteral("report.pdf")});
+    // Address: every row's site.
+    search.setSearchTerm(QStringLiteral("files.example"));
+    QCOMPARE(search.rowCount(), 3);
+    search.setSearchTerm(QStringLiteral("pdf zip"));
+    QCOMPARE(search.rowCount(), 0);
+
+    // New and removed downloads follow term.
+    search.setSearchTerm(QStringLiteral("pdf"));
+    model.observe(Topic, startMessage(4, QStringLiteral("map.pdf")));
+    model.observe(Topic, startMessage(5, QStringLiteral("song.ogg")));
+    QCOMPARE(names(), (QStringList{QStringLiteral("map.pdf"), QStringLiteral("notes.pdf"),
+                                   QStringLiteral("report.pdf")}));
+    model.remove(model.rowOf(
+        search.data(search.index(1, 0), roleId(DownloadModel::Role::DownloadId)).toInt()));
+    QCOMPARE(names(), (QStringList{QStringLiteral("map.pdf"), QStringLiteral("report.pdf")}));
+    QCOMPARE(model.count(), 4);
+
+    search.setSearchTerm(QString());
+    QCOMPARE(search.rowCount(), 4);
+    model.clear();
+    QCOMPARE(search.rowCount(), 0);
+}
+
+void tst_downloadmodel::searchRefusesOtherModels()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadSearch search;
+    QSignalSpy changed(&search, &DownloadSearch::downloadsChanged);
+    QObject other;
+    search.setDownloads(&other);
+    search.setDownloads(nullptr);
+    QVERIFY(search.downloads() == nullptr);
+    QCOMPARE(changed.count(), 0);
+    DownloadModel model(storage, dir.path());
+    search.setDownloads(&model);
+    search.setDownloads(&model);
+    QCOMPARE(changed.count(), 1);
+    search.setDownloads(&other);
+    search.setDownloads(nullptr);
+    QCOMPARE(search.downloads(), static_cast<QObject *>(&model));
+    QCOMPARE(changed.count(), 1);
 }
 
 // Engine saves only into existing folder: model creates it and parents before telling engine.

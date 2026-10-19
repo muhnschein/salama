@@ -88,16 +88,12 @@
         <translation>Lesezeichen</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Aktuelle Seite als Lesezeichen hinzufügen</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Keine Lesezeichen</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Nach unten ziehen, um die aktuelle Seite als Lesezeichen hinzuzufügen</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Füge beim Surfen Lesezeichen hinzu, um deine Lieblings-Websites später wiederzufinden</translation>
     </message>
 </context>
 <context>
@@ -504,6 +500,14 @@
         <source>Deleting</source>
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Wird gelöscht</translation>
+    </message>
+    <message>
+        <source>Search downloads</source>
+        <translation>Downloads durchsuchen</translation>
+    </message>
+    <message>
+        <source>No matches</source>
+        <translation>Keine Treffer</translation>
     </message>
 </context>
 <context>
