@@ -55,6 +55,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Menu sheet: opaque handle sits on top edge as on nav bar, page header as far from first row as rows from each other. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
+- History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.
