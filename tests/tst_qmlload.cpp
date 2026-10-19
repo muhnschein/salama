@@ -5128,7 +5128,11 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     auto *history = qobject_cast<QQuickItem *>(find(QStringLiteral("historySearch")));
-    typeKeepingFocus(window, history, find(QStringLiteral("historyList")), keystrokes);
+    auto *historyList = qobject_cast<QQuickItem *>(find(QStringLiteral("historyList")));
+    // Pulley opens above heading, as on any Silica page: its flickable holds field, not list.
+    auto *pulley = qobject_cast<QQuickItem *>(find(QStringLiteral("historyPulley")));
+    QVERIFY(pulley->parentItem()->isAncestorOf(history));
+    typeKeepingFocus(window, history, historyList, keystrokes);
     if (QTest::currentTestFailed()) {
         return;
     }
