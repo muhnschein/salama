@@ -530,12 +530,12 @@
         <translation>ਹਟਾਇਆ ਜਾ ਰਿਹਾ ਹੈ</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>ਡਾਊਨਲੋਡਾਂ ਨੂੰ ਖੋਜੋ</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>ਕੋਈ ਮੇਲ ਨਹੀਂ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ਖੋਜੋ</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>ਅਤੀਤ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ਅਤੀਤ ਖੋਜੋ</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ਅਤੀਤ ਮਿਟਾਓ</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ਹਾਲੇ ਕੋਈ ਅਤੀਤ ਨਹੀਂ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ਖੋਜੋ</translation>
     </message>
 </context>
 <context>

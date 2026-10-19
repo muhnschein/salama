@@ -530,12 +530,12 @@
         <translation>Kustutan</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Otsi allalaadimistest</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Vasteid pole</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Otsing</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Ajalugu</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Otsi ajaloost</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Kustuta ajalugu</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ajalugu pole veel</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Otsing</translation>
     </message>
 </context>
 <context>

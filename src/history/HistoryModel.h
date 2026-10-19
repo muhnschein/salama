@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ModelRoles.h"
+#include "search/SearchWords.h"
 
 #include <QAbstractListModel>
 #include <QDateTime>
@@ -37,7 +38,10 @@ public:
         VisitCount,
         Favicon,
         // DateGroup::Group of date.
-        DateGroup
+        DateGroup,
+        // StyledText, escaped: search term's words in <b>.
+        MarkedTitle,
+        MarkedUrl
     };
 
     enum ClearRange // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
@@ -111,6 +115,7 @@ private:
     QSqlDatabase m_db;
     QList<Entry> m_entries;
     QString m_searchTerm;
+    SearchWords m_words;
     qint64 m_lastVisit = 0;
     int m_pageCount = 0;
 };

@@ -525,12 +525,12 @@
         <translation>Siliniyor</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>İndirilenlerde ara</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Eşleşme yok</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Ara</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>Geçmiş</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Geçmişte ara</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Geçmişi temizle</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Henüz geçmiş yok</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Ara</translation>
     </message>
 </context>
 <context>

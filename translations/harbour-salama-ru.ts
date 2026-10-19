@@ -535,12 +535,12 @@
         <translation>Удаление</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Поиск в загрузках</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Ничего не найдено</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Поиск</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>История</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Поиск в истории</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Удалить историю</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Истории пока нет</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Поиск</translation>
     </message>
 </context>
 <context>

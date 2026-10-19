@@ -530,12 +530,12 @@
         <translation>తొలగిస్తోంది</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>డౌన్‌లోడ్‌లలో వెతకండి</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>ఏవీ సరిపోలడం లేదు</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>వెతకండి</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>చరిత్ర</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>చరిత్రలో వెతకండి</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>చరిత్రను తుడిచివేయి</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ఇంకా చరిత్ర లేదు</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>వెతకండి</translation>
     </message>
 </context>
 <context>

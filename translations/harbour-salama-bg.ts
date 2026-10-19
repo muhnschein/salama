@@ -530,12 +530,12 @@
         <translation>Изтрива се</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Търсене на изтегляния</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Няма съвпадения</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Търсене</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>История</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Търсене в историята</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Изчистване на историята</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Все още няма история</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Търсене</translation>
     </message>
 </context>
 <context>

@@ -525,12 +525,12 @@
         <translation>Бетерелә</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Йөкләнгәннәрдән эзләү</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Бернәрсә дә туры килми</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Эзләү</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>Тарих</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Тарихтан эзләү</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Тарихны чистартырга</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Тарих әлегә юк</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Эзләү</translation>
     </message>
 </context>
 <context>

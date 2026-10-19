@@ -64,7 +64,7 @@ Page {
             SearchField {
                 objectName: "historySearch"
                 width: parent.width
-                placeholderText: qsTr("Search history")
+                placeholderText: qsTr("Search")
                 onTextChanged: HistoryModel.searchTerm = text
             }
         }

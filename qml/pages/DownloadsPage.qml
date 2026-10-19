@@ -77,7 +77,7 @@ Page {
             SearchField {
                 objectName: "downloadsSearch"
                 width: parent.width
-                placeholderText: qsTr("Search downloads")
+                placeholderText: qsTr("Search")
                 onTextChanged: search.searchTerm = text
             }
         }
@@ -104,6 +104,7 @@ Page {
             delegate: DownloadDelegate {
                 id: delegate
 
+                searching: search.searchTerm.length > 0
                 onClicked: downloadsPage.open(model.downloadId, delegate.openable)
                 onActionRequested: downloadsPage.act(model.downloadId, model.status)
                 onRemoveRequested: DownloadModel.remove(DownloadModel.rowOf(model.downloadId))

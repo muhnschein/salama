@@ -535,12 +535,12 @@
         <translation>Dzēš</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Meklēt lejupielādēs</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nav atbilstību</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Meklēšana</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>Vēsture</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Meklēt vēsturē</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Notīrīt vēsturi</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Vēl nav vēstures</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Meklēšana</translation>
     </message>
 </context>
 <context>

@@ -530,12 +530,12 @@
         <translation>Poistetaan</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Hae latauksista</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Ei osumia</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Historia</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Hae historiasta</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Tyhjennä historia</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ei vielä historiaa</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
     </message>
 </context>
 <context>

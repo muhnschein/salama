@@ -530,12 +530,12 @@
         <translation>Tar bort</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Sök i nedladdningar</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Inga matchningar</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Sök</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Historik</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Sök i historik</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Rensa historik</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ingen historik än</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Sök</translation>
     </message>
 </context>
 <context>

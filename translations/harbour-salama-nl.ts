@@ -530,12 +530,12 @@
         <translation>Wordt verwijderd</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Downloads doorzoeken</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Geen overeenkomsten</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Geschiedenis</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Geschiedenis doorzoeken</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Geschiedenis wissen</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Nog geen geschiedenis</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
     </message>
 </context>
 <context>

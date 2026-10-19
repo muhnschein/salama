@@ -530,12 +530,12 @@
         <translation>Wird gelöscht</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Downloads durchsuchen</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Keine Treffer</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Suchen</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Chronik</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Chronik durchsuchen</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Chronik löschen</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Noch keine Chronik</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Suchen</translation>
     </message>
 </context>
 <context>

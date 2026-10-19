@@ -530,12 +530,12 @@
         <translation>Sletter</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Søg i hentede filer</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Ingen match</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Søg</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Historik</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Søg i historik</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Ryd historik</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ingen historik endnu</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Søg</translation>
     </message>
 </context>
 <context>

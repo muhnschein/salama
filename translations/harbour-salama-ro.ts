@@ -535,12 +535,12 @@
         <translation>Se șterge</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Caută în descărcări</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nicio potrivire</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Caută</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>Istoric</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Caută în istoric</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Șterge istoricul</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Încă nu există istoric</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Caută</translation>
     </message>
 </context>
 <context>

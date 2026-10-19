@@ -535,12 +535,12 @@
         <translation>Odstraňuje sa</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Hľadať v stiahnutých súboroch</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nič sa nenašlo</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hľadať</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>História</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Hľadať v histórii</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Vymazať históriu</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Zatiaľ žiadna história</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hľadať</translation>
     </message>
 </context>
 <context>

@@ -530,12 +530,12 @@
         <translation>ಅಳಿಸಲಾಗುತ್ತಿದೆ</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>ಡೌನ್‌ಲೋಡ್‌ಗಳನ್ನು ಹುಡುಕಿ</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>ಯಾವುದೂ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ಹುಡುಕಿ</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>ಇತಿಹಾಸ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ಇತಿಹಾಸವನ್ನು ಹುಡುಕಿ</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ಇತಿಹಾಸವನ್ನು ಅಳಿಸಿ</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ಇನ್ನೂ ಇತಿಹಾಸವಿಲ್ಲ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ಹುಡುಕಿ</translation>
     </message>
 </context>
 <context>

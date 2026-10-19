@@ -535,12 +535,12 @@
         <translation>Видалення</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Шукати в завантаженнях</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Збігів не знайдено</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Пошук</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>Історія</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Шукати в історії</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Видалити історію</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Історії ще немає</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Пошук</translation>
     </message>
 </context>
 <context>

@@ -535,12 +535,12 @@
         <translation>Mazání</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Hledat ve stažených souborech</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nic nenalezeno</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hledat</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>Historie</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Hledat v historii</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Vymazat historii</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Zatím žádná historie</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hledat</translation>
     </message>
 </context>
 <context>

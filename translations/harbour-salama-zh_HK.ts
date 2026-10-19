@@ -525,12 +525,12 @@
         <translation>正在刪除</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>搜尋下載項目</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>沒有相符的項目</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜尋</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>瀏覽記錄</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>搜尋瀏覽記錄</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>清除瀏覽記錄</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>暫無瀏覽記錄</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜尋</translation>
     </message>
 </context>
 <context>

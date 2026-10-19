@@ -530,12 +530,12 @@
         <translation>ഇല്ലാതാക്കുന്നു</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>ഡൗൺലോഡുകൾ തിരയുക</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>ഒന്നും പൊരുത്തപ്പെടുന്നില്ല</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>തിരയുക</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>നാൾവഴി</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>നാൾവഴി തിരയുക</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>നാൾവഴി മായ്ക്കുക</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ഇതുവരെ നാൾവഴിയില്ല</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>തിരയുക</translation>
     </message>
 </context>
 <context>

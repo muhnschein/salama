@@ -530,12 +530,12 @@
         <translation>Eliminazione</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Cerca nei download</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nessun risultato</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Cerca</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Cronologia</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Cerca nella cronologia</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Cancella cronologia</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ancora nessuna cronologia</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Cerca</translation>
     </message>
 </context>
 <context>

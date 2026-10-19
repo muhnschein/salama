@@ -540,12 +540,12 @@
         <translation>Brisanje</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Iskanje po prenosih</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Ni zadetkov</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Iskanje</translation>
     </message>
 </context>
 <context>
@@ -586,10 +586,6 @@
         <translation>Zgodovina</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Iskanje po zgodovini</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Počisti zgodovino</translation>
     </message>
@@ -604,6 +600,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ni še zgodovine</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Iskanje</translation>
     </message>
 </context>
 <context>

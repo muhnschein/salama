@@ -530,12 +530,12 @@
         <translation>A eliminar</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Pesquisar transferências</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Sem correspondências</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Pesquisar</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Histórico</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Pesquisar histórico</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Limpar histórico</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ainda sem histórico</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Pesquisar</translation>
     </message>
 </context>
 <context>

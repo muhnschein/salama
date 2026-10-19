@@ -535,12 +535,12 @@
         <translation>Trinama</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Ieškoti atsisiuntimuose</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Atitikmenų nėra</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Paieška</translation>
     </message>
 </context>
 <context>
@@ -581,10 +581,6 @@
         <translation>Žurnalas</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Ieškoti žurnale</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Išvalyti žurnalą</translation>
     </message>
@@ -599,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Žurnalas dar tuščias</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Paieška</translation>
     </message>
 </context>
 <context>

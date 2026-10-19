@@ -906,12 +906,17 @@ QList<QObject *> omnibarRows(QObject *root)
     return rows;
 }
 
-// Row title without bold of typed words.
+// Row title without marks of typed words.
 QString titleOf(QObject *row)
 {
-    return textIn(row, QStringLiteral("omnibarResultTitle"))
-        .remove(QStringLiteral("<b>"))
-        .remove(QStringLiteral("</b>"));
+    static const QRegularExpression tag(QStringLiteral("<[^>]*>"));
+    return textIn(row, QStringLiteral("omnibarResultTitle")).remove(tag);
+}
+
+// Search mark as vuo draws it: bold, in ambience highlight colour.
+QString marked(const QString &text, const QColor &highlight)
+{
+    return QStringLiteral("<b><font color=\"%1\">%2</font></b>").arg(highlight.name(), text);
 }
 
 QObject *omnibarRowTitled(QObject *root, const QString &title)
@@ -1047,15 +1052,16 @@ void tst_qmlload::omnibar()
     for (int i = 1; i < rows.count(); ++i) {
         QVERIFY(rows.at(i)->property("y").toReal() < rows.at(i - 1)->property("y").toReal());
     }
-    const QStringList titles{
-        QStringLiteral("<b>Forest</b> wiki"), QStringLiteral("<b>Forest</b> work"),
-        QStringLiteral("<b>Forest</b> near"), QStringLiteral("<b>Forest</b> blog"),
-        QStringLiteral("<b>forest</b>-map.pdf")};
-    const QStringList details{
-        QStringLiteral("<b>forest</b>.example"), QStringLiteral("Switch to tab in Work"),
-        QStringLiteral("Switch to tab"), QStringLiteral("<b>forest</b>.example"),
-        QStringLiteral("files.example · Downloading, 40%")};
     const QColor highlight = evaluate(pane, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    const QString mark = marked(QStringLiteral("Forest"), highlight);
+    const QString markLower = marked(QStringLiteral("forest"), highlight);
+    const QStringList titles{mark + QStringLiteral(" wiki"), mark + QStringLiteral(" work"),
+                             mark + QStringLiteral(" near"), mark + QStringLiteral(" blog"),
+                             markLower + QStringLiteral("-map.pdf")};
+    const QStringList details{
+        markLower + QStringLiteral(".example"), QStringLiteral("Switch to tab in Work"),
+        QStringLiteral("Switch to tab"), markLower + QStringLiteral(".example"),
+        QStringLiteral("files.example · Downloading, 40%")};
     for (int i = 0; i < rows.count(); ++i) {
         QVERIFY(evaluate(rows.at(i), QStringLiteral("model.tabId")).toInt() != forest.front);
         QObject *title = findObjects(rows.at(i), QStringLiteral("omnibarResultTitle")).first();
@@ -4489,7 +4495,7 @@ void tst_qmlload::downloadsSearch()
     QObject *field = find(QStringLiteral("downloadsSearch"));
     QObject *list = find(QStringLiteral("downloadList"));
     QObject *placeholder = find(QStringLiteral("downloadsPlaceholder"));
-    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search downloads"));
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search"));
     QCOMPARE(list->property("count").toInt(), 3);
     QVERIFY(!placeholder->property("enabled").toBool());
     const auto onlyRow = [this]() {
@@ -4501,14 +4507,43 @@ void tst_qmlload::downloadsSearch()
         return findObjects(row, QLatin1String(name)).first();
     };
 
-    // Address too; every word, any case, any order.
+    const auto text = [&part](QObject *row, const char *name) {
+        return part(row, name)->property("text").toString();
+    };
+    const int styledText = evaluate(field, QStringLiteral("Text.StyledText")).toInt();
+    const auto styled = [&part, styledText](QObject *row, const char *name) {
+        return part(row, name)->property("textFormat").toInt() == styledText;
+    };
+    const QColor highlight =
+        evaluate(field, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    QObject *row = findAll(QStringLiteral("downloadDelegate")).first();
+    QVERIFY(!styled(row, "downloadName"));
+    QVERIFY(!styled(row, "downloadStatus"));
+
+    // Address too; every word, any case, any order. Matches marked as in vuo; site shown marked.
     field->setProperty("text", QStringLiteral("files.example"));
     QCOMPARE(list->property("count").toInt(), 3);
+    for (QObject *shown : findAll(QStringLiteral("downloadDelegate"))) {
+        QVERIFY(styled(shown, "downloadName"));
+        QVERIFY(styled(shown, "downloadStatus"));
+        if (text(shown, "downloadName") == QLatin1String("report.pdf")) {
+            row = shown;
+        }
+    }
+    QCOMPARE(text(row, "downloadStatus"), marked(QStringLiteral("files.example"), highlight));
     field->setProperty("text", QStringLiteral("PDF report"));
     QCOMPARE(list->property("count").toInt(), 1);
-    QObject *row = onlyRow();
+    row = onlyRow();
     QVERIFY(row != nullptr);
-    QCOMPARE(part(row, "downloadName")->property("text").toString(), QStringLiteral("report.pdf"));
+    QCOMPARE(text(row, "downloadName"), marked(QStringLiteral("report"), highlight) +
+                                            QLatin1Char('.') +
+                                            marked(QStringLiteral("pdf"), highlight));
+    QCOMPARE(text(row, "downloadStatus"), QStringLiteral("files.example"));
+    // Status words around a marked site go escaped into StyledText.
+    // Delegate's ids live in its own context, its parts'.
+    QCOMPARE(
+        evaluate(part(row, "downloadName"), QStringLiteral("says.escaped('a<b>&c')")).toString(),
+        QStringLiteral("a&lt;b&gt;&amp;c"));
     const UrlCatcher files(QStringLiteral("file"));
     click(row);
     QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(report.fileName())});
@@ -5397,13 +5432,45 @@ void tst_qmlload::historyPage()
 {
     m_core->history()->visit(QStringLiteral("https://one.example/"), QStringLiteral("One"));
     m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    const QString icon =
+        QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/icons/86x86/harbour-salama.png"))
+            .toString();
+    m_core->history()->updateFavicon(QStringLiteral("https://two.example/"), icon);
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 3);
     QObject *search = find(QStringLiteral("historySearch"));
+    QCOMPARE(search->property("placeholderText").toString(), QStringLiteral("Search"));
+    const auto part = [](QObject *row, const char *name) {
+        return row->findChild<QObject *>(QLatin1String(name));
+    };
+    const int styledText = evaluate(search, QStringLiteral("Text.StyledText")).toInt();
+    const int plainText = evaluate(search, QStringLiteral("Text.PlainText")).toInt();
+    // Page's favicon left of its title, as a bookmark's.
+    QObject *top = byRow(findAll(QStringLiteral("historyDelegate"))).first();
+    QCOMPARE(part(top, "historyTitle")->property("text").toString(), QStringLiteral("Two"));
+    QCOMPARE(part(top, "historyTitle")->property("textFormat").toInt(), plainText);
+    QCOMPARE(part(top, "historyUrl")->property("textFormat").toInt(), plainText);
+    QVERIFY(part(top, "historyFavicon") != nullptr);
+    QCOMPARE(part(top, "historyFavicon")->property("source").toUrl(), QUrl(icon));
+    QVERIFY(part(top, "historyFavicon")->property("x").toReal() <
+            qobject_cast<QQuickItem *>(part(top, "historyTitle"))
+                ->mapToItem(qobject_cast<QQuickItem *>(top), QPointF())
+                .x());
+
+    // Matches marked as in vuo.
     search->setProperty("text", QStringLiteral("two"));
     QCOMPARE(m_core->history()->count(), 1);
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 1);
+    const QColor highlight =
+        evaluate(search, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    top = findAll(QStringLiteral("historyDelegate")).first();
+    QCOMPARE(part(top, "historyTitle")->property("text").toString(),
+             marked(QStringLiteral("Two"), highlight));
+    QCOMPARE(part(top, "historyTitle")->property("textFormat").toInt(), styledText);
+    QCOMPARE(part(top, "historyUrl")->property("text").toString(),
+             QStringLiteral("https://%1.example/").arg(marked(QStringLiteral("two"), highlight)));
+    QCOMPARE(part(top, "historyUrl")->property("textFormat").toInt(), styledText);
     search->setProperty("text", QString());
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 3);
 

@@ -530,12 +530,12 @@
         <translation>કાઢી નાખવામાં આવે છે</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>ડાઉનલોડ શોધો</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>કોઈ મેળ ખાતું નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>ઇતિહાસ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ઇતિહાસ શોધો</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ઇતિહાસ સાફ કરો</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>હજી કોઈ ઇતિહાસ નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
     </message>
 </context>
 <context>

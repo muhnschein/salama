@@ -530,12 +530,12 @@
         <translation>Διαγραφή σε εξέλιξη</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Αναζήτηση λήψεων</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Δεν βρέθηκαν αποτελέσματα</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Αναζήτηση</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Ιστορικό</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Αναζήτηση ιστορικού</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Απαλοιφή ιστορικού</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Δεν υπάρχει ακόμη ιστορικό</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Αναζήτηση</translation>
     </message>
 </context>
 <context>

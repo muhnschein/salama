@@ -37,6 +37,7 @@ private slots:
     void dateGroups_data();
     void dateGroups();
     void dateGroupRole();
+    void markedRoles();
 };
 
 namespace {
@@ -509,6 +510,34 @@ void tst_historymodel::dateGroupRole()
                                  DateGroup::LastThirtyDays, DateGroup::Older}));
     QCOMPARE(int(DateGroup::of(QDateTime::currentMSecsSinceEpoch())), int(DateGroup::Today));
     QCOMPARE(int(DateGroup::of(qint64(0))), int(DateGroup::Older));
+}
+
+// Search term's words in <b>, rest escaped: rows can show StyledText safely.
+void tst_historymodel::markedRoles()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://untitled.example/"));
+    model.visit(QStringLiteral("https://tags.example/?a&b"), QStringLiteral("<i>Tags</i> & more"));
+    const int title = roleId(HistoryModel::Role::MarkedTitle);
+    const int url = roleId(HistoryModel::Role::MarkedUrl);
+    QCOMPARE(model.roleNames().value(title), QByteArrayLiteral("markedTitle"));
+    QCOMPARE(model.roleNames().value(url), QByteArrayLiteral("markedUrl"));
+    QCOMPARE(role(model, 0, title).toString(),
+             QStringLiteral("&lt;i&gt;Tags&lt;/i&gt; &amp; more"));
+    QCOMPARE(role(model, 0, url).toString(), QStringLiteral("https://tags.example/?a&amp;b"));
+
+    model.setSearchTerm(QStringLiteral("TAGS"));
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(role(model, 0, title).toString(),
+             QStringLiteral("&lt;i&gt;<b>Tags</b>&lt;/i&gt; &amp; more"));
+    QCOMPARE(role(model, 0, url).toString(),
+             QStringLiteral("https://<b>tags</b>.example/?a&amp;b"));
+
+    // Untitled page shows its address as title, marked too.
+    model.setSearchTerm(QStringLiteral("untitled"));
+    QCOMPARE(role(model, 0, title).toString(), QStringLiteral("https://<b>untitled</b>.example/"));
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)

@@ -530,11 +530,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Search downloads</source>
+        <source>No matches</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No matches</source>
+        <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -576,10 +576,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation type="unfinished"></translation>
     </message>
@@ -593,6 +589,10 @@
     </message>
     <message>
         <source>No history yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

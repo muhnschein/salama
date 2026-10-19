@@ -530,12 +530,12 @@
         <translation>মোছা হচ্ছে</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>ডাউনলোড অনুসন্ধান করুন</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>কোনো মিল নেই</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>অনুসন্ধান</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>ইতিহাস</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ইতিহাস অনুসন্ধান করুন</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ইতিহাস মুছুন</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>এখনও কোনো ইতিহাস নেই</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>অনুসন্ধান</translation>
     </message>
 </context>
 <context>

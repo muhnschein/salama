@@ -530,12 +530,12 @@
         <translation>Suppression</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Rechercher dans les téléchargements</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Aucune correspondance</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Rechercher</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>Historique</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Rechercher dans l&apos;historique</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Effacer l&apos;historique</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Aucun historique pour l&apos;instant</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Rechercher</translation>
     </message>
 </context>
 <context>

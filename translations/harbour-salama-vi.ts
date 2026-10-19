@@ -525,12 +525,12 @@
         <translation>Đang xóa</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Tìm kiếm tải xuống</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Không có kết quả khớp</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Tìm kiếm</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>Lịch sử</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Tìm kiếm lịch sử</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Xóa lịch sử</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Chưa có lịch sử</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Tìm kiếm</translation>
     </message>
 </context>
 <context>

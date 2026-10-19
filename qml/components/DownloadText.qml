@@ -15,6 +15,26 @@ QtObject {
     }
 
     function status(download) {
+        return state(download) || arrived(download, SearchSettings.displayAddress(download.url))
+    }
+
+    // status() as StyledText: site as given (search-marked, escaped by model), rest escaped.
+    function markedStatus(download, markedSite) {
+        var said = state(download)
+        return said ? escaped(said) : arrived(download, markedSite)
+    }
+
+    function escaped(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    }
+
+    // Arrived file's size and site.
+    function arrived(download, site) {
+        return download.size > 0 ? DownloadModel.formatSize(download.size) + " · " + site : site
+    }
+
+    // Running, failed, paused or file gone; "" for an arrived file.
+    function state(download) {
         if (download.status === DownloadModel.Running) {
             return progress(download.size, download.progress)
         }
@@ -31,8 +51,7 @@ QtObject {
             //: A download whose file has been deleted or moved since
             return qsTr("File not found")
         }
-        var site = SearchSettings.displayAddress(download.url)
-        return download.size > 0 ? DownloadModel.formatSize(download.size) + " · " + site : site
+        return ""
     }
 
     // By extension when mime type is generic bytes.

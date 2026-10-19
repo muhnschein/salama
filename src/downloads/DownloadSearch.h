@@ -2,6 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #pragma once
 
+#include "DownloadModel.h"
+#include "ModelRoles.h"
 #include "search/SearchWords.h"
 
 #include <QObject>
@@ -21,7 +23,18 @@ class DownloadSearch : public QSortFilterProxyModel
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 
 public:
+    // Beyond DownloadModel's. StyledText, escaped: search term's words in <b>.
+    enum class Role
+    {
+        MarkedName = roleId(DownloadModel::Role::DateGroup) + 1,
+        // SearchSettings::displayAddress of url, as row shows it.
+        MarkedHost
+    };
+
     explicit DownloadSearch(QObject *parent = nullptr);
+
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
     QObject *downloads() const;
     void setDownloads(QObject *downloads);

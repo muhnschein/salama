@@ -60,6 +60,10 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return entry.url;
     case Role::Title:
         return entry.title.isEmpty() ? entry.url : entry.title;
+    case Role::MarkedTitle:
+        return m_words.marked(entry.title.isEmpty() ? entry.url : entry.title);
+    case Role::MarkedUrl:
+        return m_words.marked(entry.url);
     case Role::Date:
         return entry.date;
     case Role::VisitCount:
@@ -82,6 +86,8 @@ QHash<int, QByteArray> HistoryModel::roleNames() const
         {roleId(Role::VisitCount), QByteArrayLiteral("visitCount")},
         {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
         {roleId(Role::DateGroup), QByteArrayLiteral("dateGroup")},
+        {roleId(Role::MarkedTitle), QByteArrayLiteral("markedTitle")},
+        {roleId(Role::MarkedUrl), QByteArrayLiteral("markedUrl")},
     };
 }
 
@@ -117,6 +123,7 @@ void HistoryModel::setSearchTerm(const QString &term)
         return;
     }
     m_searchTerm = term;
+    m_words = SearchWords(term);
     emit searchTermChanged();
     reload();
 }

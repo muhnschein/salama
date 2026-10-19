@@ -525,12 +525,12 @@
         <translation>Törlés folyamatban</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>Keresés a letöltések között</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>Nincs találat</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Keresés</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>Előzmények</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Keresés az előzményekben</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Előzmények törlése</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Még nincsenek előzmények</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Keresés</translation>
     </message>
 </context>
 <context>

@@ -530,12 +530,12 @@
         <translation>நீக்கப்படுகிறது</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>பதிவிறக்கங்களைத் தேடு</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>எதுவும் பொருந்தவில்லை</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>தேடு</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>வரலாறு</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>வரலாற்றைத் தேடு</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>வரலாற்றைத் துடை</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>இன்னும் வரலாறு இல்லை</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>தேடு</translation>
     </message>
 </context>
 <context>

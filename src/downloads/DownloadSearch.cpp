@@ -4,6 +4,7 @@
 
 #include "DateGroup.h"
 #include "DownloadModel.h"
+#include "settings/SearchSettings.h"
 
 namespace Salama {
 
@@ -16,6 +17,28 @@ DownloadSearch::DownloadSearch(QObject *parent)
     connect(this, &QAbstractItemModel::rowsRemoved, this, &DownloadSearch::recount);
     connect(this, &QAbstractItemModel::modelReset, this, &DownloadSearch::recount);
     connect(this, &QAbstractItemModel::layoutChanged, this, &DownloadSearch::recount);
+}
+
+QVariant DownloadSearch::data(const QModelIndex &index, int role) const
+{
+    switch (static_cast<Role>(role)) {
+    case Role::MarkedName:
+        return m_words.marked(
+            QSortFilterProxyModel::data(index, roleId(DownloadModel::Role::Name)).toString());
+    case Role::MarkedHost:
+        return m_words.marked(SearchSettings::displayAddress(
+            QSortFilterProxyModel::data(index, roleId(DownloadModel::Role::Url)).toString()));
+    default:
+        return QSortFilterProxyModel::data(index, role);
+    }
+}
+
+QHash<int, QByteArray> DownloadSearch::roleNames() const
+{
+    QHash<int, QByteArray> names = QSortFilterProxyModel::roleNames();
+    names.insert(roleId(Role::MarkedName), QByteArrayLiteral("markedName"));
+    names.insert(roleId(Role::MarkedHost), QByteArrayLiteral("markedHost"));
+    return names;
 }
 
 QObject *DownloadSearch::downloads() const
@@ -47,6 +70,11 @@ void DownloadSearch::setSearchTerm(const QString &term)
     m_searchTerm = term;
     m_words = SearchWords(term);
     invalidateFilter();
+    // Rows kept show new marks.
+    if (rowCount() > 0) {
+        emit dataChanged(index(0, 0), index(rowCount() - 1, 0),
+                         {roleId(Role::MarkedName), roleId(Role::MarkedHost)});
+    }
     emit searchTermChanged();
 }
 

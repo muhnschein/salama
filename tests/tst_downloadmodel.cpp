@@ -48,6 +48,7 @@ private slots:
     void searchRefusesOtherModels();
     void dateGroupRole();
     void searchPutsInProgressFirst();
+    void searchMarks();
     void directory();
     void withoutDatabase();
     void pauseAndResume();
@@ -824,7 +825,9 @@ void tst_downloadmodel::search()
     QSignalSpy terms(&search, &DownloadSearch::searchTermChanged);
     search.setDownloads(&model);
     QCOMPARE(search.downloads(), static_cast<QObject *>(&model));
-    QCOMPARE(search.roleNames(), model.roleNames());
+    for (const int role : model.roleNames().keys()) {
+        QCOMPARE(search.roleNames().value(role), model.roleNames().value(role));
+    }
     QCOMPARE(search.rowCount(), 0);
 
     model.observe(Topic, startMessage(1, QStringLiteral("report.pdf")));
@@ -944,6 +947,47 @@ void tst_downloadmodel::searchPutsInProgressFirst()
     model.observe(Topic, message(QStringLiteral("dl-done"), 3));
     QCOMPARE(names(), (QStringList{QStringLiteral("song.ogg"), QStringLiteral("small.pdf"),
                                    QStringLiteral("big.iso")}));
+}
+
+// Name and shown site with the term's words in <b>, rest escaped; rows kept by a new term
+// told their marks changed.
+void tst_downloadmodel::searchMarks()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    DownloadSearch search;
+    search.setDownloads(&model);
+    const int name = roleId(DownloadSearch::Role::MarkedName);
+    const int host = roleId(DownloadSearch::Role::MarkedHost);
+    QCOMPARE(search.roleNames().value(name), QByteArrayLiteral("markedName"));
+    QCOMPARE(search.roleNames().value(host), QByteArrayLiteral("markedHost"));
+    QCOMPARE(search.roleNames().value(roleId(DownloadModel::Role::Name)),
+             QByteArrayLiteral("name"));
+    model.observe(Topic, startMessage(1, QStringLiteral("a&b report.pdf")));
+    model.observe(Topic, startMessage(2, QStringLiteral("photo.jpg")));
+    const auto at = [&search](int row, int role) {
+        return search.data(search.index(row, 0), role).toString();
+    };
+    QCOMPARE(at(1, name), QStringLiteral("a&amp;b report.pdf"));
+    QCOMPARE(at(1, host), QStringLiteral("files.example"));
+    QCOMPARE(at(1, roleId(DownloadModel::Role::Name)), QStringLiteral("a&b report.pdf"));
+
+    QSignalSpy changes(&search, &QAbstractItemModel::dataChanged);
+    search.setSearchTerm(QStringLiteral("FILES"));
+    QCOMPARE(search.rowCount(), 2);
+    QCOMPARE(changes.count(), 1);
+    QCOMPARE(changes.last().at(0).value<QModelIndex>().row(), 0);
+    QCOMPARE(changes.last().at(1).value<QModelIndex>().row(), 1);
+    QCOMPARE(changes.last().at(2).value<QVector<int>>(), (QVector<int>{name, host}));
+    QCOMPARE(at(0, host), QStringLiteral("<b>files</b>.example"));
+    search.setSearchTerm(QStringLiteral("report pdf"));
+    QCOMPARE(search.rowCount(), 1);
+    QCOMPARE(at(0, name), QStringLiteral("a&amp;b <b>report</b>.<b>pdf</b>"));
+    QCOMPARE(at(0, host), QStringLiteral("files.example"));
+    search.setSearchTerm(QStringLiteral("zip"));
+    QCOMPARE(search.rowCount(), 0);
+    QCOMPARE(changes.count(), 2);
 }
 
 void tst_downloadmodel::searchRefusesOtherModels()

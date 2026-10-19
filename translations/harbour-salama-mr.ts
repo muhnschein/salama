@@ -530,12 +530,12 @@
         <translation>हटवत आहे</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>डाउनलोड शोधा</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>काहीही जुळत नाही</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>शोधा</translation>
     </message>
 </context>
 <context>
@@ -576,10 +576,6 @@
         <translation>इतिहास</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>इतिहास शोधा</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>इतिहास पुसा</translation>
     </message>
@@ -594,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>अजून इतिहास नाही</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>शोधा</translation>
     </message>
 </context>
 <context>

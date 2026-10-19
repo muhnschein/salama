@@ -525,12 +525,12 @@
         <translation>正在删除</translation>
     </message>
     <message>
-        <source>Search downloads</source>
-        <translation>搜索下载项</translation>
-    </message>
-    <message>
         <source>No matches</source>
         <translation>没有匹配项</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜索</translation>
     </message>
 </context>
 <context>
@@ -571,10 +571,6 @@
         <translation>历史记录</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>搜索历史记录</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>清除历史记录</translation>
     </message>
@@ -589,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>暂无历史记录</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜索</translation>
     </message>
 </context>
 <context>
