@@ -23,26 +23,43 @@ Page {
         pageStack.pop(browser)
     }
 
+    // Field above list, not its header: each keystroke resets model, list then focuses its
+    // new current item (field loses keyboard) and scrolls content under field.
+    Column {
+        id: heading
+
+        objectName: "historyHeading"
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+
+        PageHeader {
+            title: qsTr("History")
+        }
+
+        SearchField {
+            objectName: "historySearch"
+            width: parent.width
+            placeholderText: qsTr("Search history")
+            onTextChanged: HistoryModel.searchTerm = text
+        }
+    }
+
     SilicaListView {
         id: historyList
 
         objectName: "historyList"
-        anchors.fill: parent
-        model: HistoryModel
-        header: Column {
-            width: parent.width
-
-            PageHeader {
-                title: qsTr("History")
-            }
-
-            SearchField {
-                objectName: "historySearch"
-                width: parent.width
-                placeholderText: qsTr("Search history")
-                onTextChanged: HistoryModel.searchTerm = text
-            }
+        anchors {
+            top: heading.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
         }
+        // Rows otherwise draw over field when scrolled.
+        clip: true
+        model: HistoryModel
 
         PullDownMenu {
             MenuItem {
@@ -68,4 +85,7 @@ Page {
 
         VerticalScrollDecorator {}
     }
+
+    // Term is this page's: next visit starts unfiltered, as its field starts empty.
+    Component.onDestruction: HistoryModel.searchTerm = ""
 }

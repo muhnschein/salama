@@ -220,6 +220,7 @@ private slots:
     void linkPreview();
     void bannersEndThePage();
     void historyPage();
+    void searchFieldsKeepTheKeyboard();
     void bookmarksPage();
     void settingsPage();
     void sailfishBrowserSettings();
@@ -5082,6 +5083,75 @@ void tst_qmlload::historyPage()
     click(find(QStringLiteral("clearHistoryMenu")));
     QCOMPARE(m_core->history()->count(), 0);
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 0);
+}
+
+namespace {
+
+struct Keystroke
+{
+    QString text;
+    int rows;
+};
+
+// Field keeps active focus (so keyboard) through each keystroke while list under it refills.
+void typeKeepingFocus(QQuickWindow *window, QQuickItem *field, QObject *list,
+                      const QList<Keystroke> &keystrokes)
+{
+    QVERIFY(list->property("clip").toBool());
+    field->forceActiveFocus();
+    QVERIFY(field->hasActiveFocus());
+    for (const Keystroke &keystroke : keystrokes) {
+        field->setProperty("text", keystroke.text);
+        QCOMPARE(list->property("count").toInt(), keystroke.rows);
+        QVERIFY2(field->hasActiveFocus(), qPrintable(keystroke.text));
+        QCOMPARE(window->activeFocusItem(), field);
+    }
+}
+
+} // namespace
+
+// Search fields over refilled lists: Qt hands a list's new current item focus on every
+// refill, which took it (and the keyboard) from a field in the list's header.
+void tst_qmlload::searchFieldsKeepTheKeyboard()
+{
+    m_core->history()->visit(QStringLiteral("https://one.example/"), QStringLiteral("One"));
+    m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    m_core->bookmarks()->add(QStringLiteral("https://one.example/"), QStringLiteral("One"));
+    m_core->bookmarks()->add(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    FingerWindow host(m_window.data());
+    QQuickWindow *window = host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    const QList<Keystroke> keystrokes{{QStringLiteral("o"), 3},
+                                      {QStringLiteral("on"), 1},
+                                      {QStringLiteral("onx"), 0},
+                                      {QStringLiteral("tw"), 1}};
+
+    openMenuItem(QStringLiteral("historyMenuButton"));
+    auto *history = qobject_cast<QQuickItem *>(find(QStringLiteral("historySearch")));
+    typeKeepingFocus(window, history, find(QStringLiteral("historyList")), keystrokes);
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+
+    // Term is the page's: back and in again lists everything, as field is empty.
+    popPage();
+    settle();
+    QVERIFY(m_core->history()->searchTerm().isEmpty());
+    openMenuItem(QStringLiteral("historyMenuButton"));
+    QCOMPARE(find(QStringLiteral("historyList"))->property("count").toInt(), 3);
+    popPage();
+    settle();
+
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("coverSettingsEntry")));
+    click(find(QStringLiteral("quickAction-bookmark")));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("bookmarkPickerPage"));
+    auto *bookmarks = qobject_cast<QQuickItem *>(find(QStringLiteral("bookmarkPickerSearch")));
+    typeKeepingFocus(window, bookmarks, find(QStringLiteral("bookmarkPickerList")),
+                     {{QStringLiteral("o"), 2},
+                      {QStringLiteral("on"), 1},
+                      {QStringLiteral("onx"), 0},
+                      {QStringLiteral("tw"), 1}});
 }
 
 void tst_qmlload::bookmarksPage()
