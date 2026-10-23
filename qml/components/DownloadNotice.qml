@@ -7,26 +7,31 @@ import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
 
-Notice {
-    id: notice
+// Item root: device Notice takes no children, so Connections sits beside it.
+Item {
+    id: host
 
     function say(message) {
-        text = message
-        show()
+        notice.text = message
+        notice.show()
     }
 
-    objectName: "downloadNotice"
-    duration: Notice.Short
-    // Over nav bar.
-    verticalOffset: -Theme.itemSizeLarge
+    Notice {
+        id: notice
+
+        objectName: "downloadNotice"
+        duration: Notice.Short
+        // Over nav bar.
+        verticalOffset: -Theme.itemSizeLarge
+    }
 
     Connections {
         target: DownloadModel
         //: Shown for a moment as a download starts: "Downloading report.pdf"
-        onStarted: notice.say(qsTr("Downloading %1").arg(name))
+        onStarted: host.say(qsTr("Downloading %1").arg(name))
         //: Shown for a moment as a download arrives: "Downloaded report.pdf"
-        onFinished: notice.say(qsTr("Downloaded %1").arg(name))
+        onFinished: host.say(qsTr("Downloaded %1").arg(name))
         //: Shown for a moment as a download fails: "Download failed: report.pdf"
-        onFailed: notice.say(qsTr("Download failed: %1").arg(name))
+        onFailed: host.say(qsTr("Download failed: %1").arg(name))
     }
 }
