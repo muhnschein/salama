@@ -137,40 +137,29 @@ DockedPanel {
                 }
             }
 
-            // Header ink to first row's discs as far as one row's labels to next row's (#38).
-            Item {
-                objectName: "menuHeaderGap"
-                width: parent.width
-                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
-            }
-
             Grid {
                 objectName: "menuPageRow"
                 width: parent.width
                 columns: 5
 
-                MenuButton {
+                MenuIconButton {
                     objectName: "findMenuButton"
                     width: menu.width / 5
-                    round: true
                     enabled: menu.hasPage && menu.view !== null
                     iconSource: "image://theme/icon-m-search-on-page"
-                    text: qsTr("Find in page")
                     onClicked: {
                         menu.hide()
                         menu.findRequested()
                     }
                 }
 
-                MenuButton {
+                MenuIconButton {
                     objectName: "bookmarkMenuButton"
                     width: menu.width / 5
-                    round: true
                     enabled: menu.hasPage
                     checked: BookmarkModel.activeUrlBookmarked
                     iconSource: checked ? "image://theme/icon-m-favorite-selected"
                                         : "image://theme/icon-m-favorite"
-                    text: qsTr("Bookmark")
                     onClicked: {
                         menu.hide()
                         if (BookmarkModel.activeUrlBookmarked) {
@@ -182,13 +171,11 @@ DockedPanel {
                     }
                 }
 
-                MenuButton {
+                MenuIconButton {
                     objectName: "shareMenuButton"
                     width: menu.width / 5
-                    round: true
                     enabled: menu.hasPage
                     iconSource: "image://theme/icon-m-share"
-                    text: qsTr("Share")
                     onClicked: {
                         menu.hide()
                         shareAction.trigger()
@@ -196,28 +183,24 @@ DockedPanel {
                 }
 
                 // Lasts view's life: view unloaded past loaded-page limit returns as phone.
-                MenuButton {
+                MenuIconButton {
                     objectName: "desktopMenuButton"
                     width: menu.width / 5
-                    round: true
                     enabled: menu.hasPage && menu.view !== null
                     checked: menu.view !== null && menu.view.desktopMode === true
                     iconSource: "image://theme/icon-m-computer"
-                    text: qsTr("Desktop site")
                     onClicked: {
                         menu.hide()
                         menu.view.desktopMode = !menu.view.desktopMode
                     }
                 }
 
-                MenuButton {
+                MenuIconButton {
                     objectName: "readerMenuButton"
                     width: menu.width / 5
-                    round: true
                     enabled: menu.reader !== null && (menu.reader.readerable || menu.reader.active)
                     checked: menu.reader !== null && menu.reader.active
                     iconSource: "image://theme/icon-m-file-formatted"
-                    text: qsTr("Reader view")
                     onClicked: {
                         menu.hide()
                         menu.reader.toggle()
@@ -225,35 +208,34 @@ DockedPanel {
                 }
             }
 
-            MenuSeparator {
+            Item {
                 width: parent.width
-                lineName: "menuSeparator"
+                height: Theme.paddingMedium
             }
 
-            Grid {
+            Column {
                 objectName: "menuBrowserRow"
                 width: parent.width
-                columns: 4
 
-                MenuButton {
+                MenuListItem {
                     objectName: "bookmarksMenuButton"
-                    width: menu.width / 4
+                    width: parent.width
                     iconSource: "image://theme/icon-m-favorite-selected"
                     text: qsTr("Bookmarks")
                     onClicked: menu.openPage("BookmarksPage.qml")
                 }
 
-                MenuButton {
+                MenuListItem {
                     objectName: "historyMenuButton"
-                    width: menu.width / 4
+                    width: parent.width
                     iconSource: "image://theme/icon-m-history"
                     text: qsTr("History")
                     onClicked: menu.openPage("HistoryPage.qml")
                 }
 
-                MenuButton {
+                MenuListItem {
                     objectName: "downloadsMenuButton"
-                    width: menu.width / 4
+                    width: parent.width
                     busy: DownloadModel.runningCount > 0
                     progress: DownloadModel.runningProgress / 100
                     iconSource: "image://theme/icon-m-downloads"
@@ -261,9 +243,9 @@ DockedPanel {
                     onClicked: menu.openPage("DownloadsPage.qml")
                 }
 
-                MenuButton {
+                MenuListItem {
                     objectName: "settingsMenuButton"
-                    width: menu.width / 4
+                    width: parent.width
                     iconSource: "image://theme/icon-m-setting"
                     text: qsTr("Settings")
                     onClicked: menu.openPage("SettingsPage.qml")

@@ -103,10 +103,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Share</source>
-        <translation>പങ്കിടുക</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>ബുക്ക്മാർക്ക്</translation>
     </message>
@@ -123,25 +119,9 @@
         <translation>ക്രമീകരണങ്ങൾ</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>കുറിച്ചിടുക</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>വായന</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>വിലാസം പകർത്തി</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>തിരയുക</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>പിസി പതിപ്പ്</translation>
     </message>
 </context>
 <context>
@@ -422,30 +402,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n ഡൗൺലോഡ്</numerusform>
-            <numerusform>%n ഡൗൺലോഡുകൾ</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>പരാജയപ്പെട്ടു</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>നിർത്തി · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>ഡൗൺലോഡ് ചെയ്തു</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -475,6 +431,24 @@
     <message>
         <source>Delete file</source>
         <translation>ഫയൽ ഇല്ലാതാക്കുക</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>%1 ഡൗൺലോഡ് ചെയ്യുന്നു</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>%1 ഡൗൺലോഡ് ചെയ്തു</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>ഡൗൺലോഡ് പരാജയപ്പെട്ടു: %1</translation>
     </message>
 </context>
 <context>
@@ -768,6 +742,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>തിരനോട്ടം കാണിക്കുക</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1928,18 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>കുറിച്ചിടുക</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>പങ്കിടുക</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>വായന</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>ബുക്ക്മാർക്ക്</translation>
     </message>
@@ -1954,14 +1924,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>ക്രമീകരണങ്ങൾ</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>തിരയുക</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>പിസി പതിപ്പ്</translation>
     </message>
 </context>
 <context>

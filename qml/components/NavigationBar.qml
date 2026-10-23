@@ -59,8 +59,9 @@ Item {
     readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
                                                       addressRight - width / 2)
 
-    readonly property real fieldLeft: Theme.paddingMedium
-    readonly property real fieldRight: menuIcon.x - Theme.paddingMedium
+    // Edit slab from bar's edge to menu; text inside starts at page margin, under back icon.
+    readonly property real fieldLeft: 0
+    readonly property real fieldRight: menuIcon.x - Theme.paddingLarge
 
     // Bar sits in system edge-swipe strip; its height is gesture start area, so slim gives
     // up only a quarter.
@@ -115,12 +116,6 @@ Item {
         } else if (!keyboardVisible) {
             endEditing()
         }
-    }
-
-    // Silica field leaves room for label/underline; field publishes offset to centre text.
-    function textCentringOffset(field) {
-        var offset = field.textVerticalCenterOffset
-        return offset === undefined ? 0 : offset
     }
 
     function submit() {
@@ -314,10 +309,7 @@ Item {
 
         x: navigationBar.fieldLeft
         width: navigationBar.fieldRight - navigationBar.fieldLeft
-        anchors {
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: navigationBar.textCentringOffset(urlField)
-        }
+        height: parent.height
         // Above gesture handler: field needs own presses for caret.
         z: 1
         visible: navigationBar.editing

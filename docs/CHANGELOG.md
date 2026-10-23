@@ -19,7 +19,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Settings > Appearance > Fixed toolbar: bar stays whole while scrolling.
 - Settings > Privacy > Enable JavaScript, notes cost of turning off.
 - Settings > Tracking protection ends with web engine's current limits.
-- Download card above bar on originating page: name, progress, paused or failed; several: count and total progress. Shows arrival few seconds. Tap opens Downloads; swipe hides until change.
+- Downloads said for a moment over bar, Silica Notice: Downloading, Downloaded, Download failed, with file name. Progress in menu's Downloads row and on Downloads page.
 - Downloads pause, resume, retry; pre-restart ones refetchable. Row menu deletes file too; pulley clears finished; Clear list gone.
 - New cover: front tab's site and title over app's bolt in faint dots, ambience colour. Downloading: ring with percentage. Playing: what plays, with art or video picture, playing/paused. No tab: bolt alone. Static; quick action and mute at foot.
 - Settings > Website colours: pages with dark and light schemes follow ambience, or always light, or always dark.
@@ -27,14 +27,13 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind.
 - Settings > Start page shows half-size live new-tab preview under switches.
 - Settings > Start page > Frequently visited: Rows, one or two (default) rows of tiles.
-- Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads entry wears progress ring.
+- Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads row wears progress ring and percentage.
 - Tab groups reorderable: drag by bars at row end. "N tabs" stays first.
 - Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
 - Swedish translation.
 - Translations into every other Sailfish OS language: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese; Firefox wording where available.
 
 ### Changed
-- Downloads card now full-width bar on navigation bar, Show at end; page ends above.
 - Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
 - Avoid the screen cutout now Notch guard, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Forced keeps all below; Disabled none. Old on becomes Forced, off Disabled.
 - Settings rows: icon or switch, never both; switch lights in icon column.
@@ -47,13 +46,15 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Website colours and Avoid the screen cutout get icons: moon and display, from sailfish-browser.
 - Settings > Notifications lists Allowed and Blocked; switch reads Sites can ask; Forget this site removes one.
 - Clear browsing data on history page now button.
-- Menu: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit when on; browser's four below line.
+- Menu, Silica way: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- plain icons in one row, lit when on; Bookmarks, History, Downloads, Settings below as rows, icon then name. No discs or captions.
+- Link and picture sheet: actions as rows, icon then name, like menu's; link and picture groups apart by a gap, no line.
+- Address bar while typing: sailfish-browser's entry, faint slab filling bar, no underline; text starts under back button, centred.
 - Grid: front tab framed by thin rounded outline, not washed; smaller close discs, same tap area; target group name lights in rounded wash; search highlights typed letters; recently closed tabs on menu's sheet.
 - Tab group list: square thumbnail of recent tabs per group, current framed, "N tabs" under name; new-group row has ringed plus; dialog reads New tab group, Create.
 - Tutorial: shorter text, five progress dots, icon first card, check-mark last card.
 
 ### Fixed
-- Menu sheet: opaque handle sits on top edge as on nav bar, page header as far from first row as rows from each other. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
+- Menu sheet: opaque handle sits on top edge as on nav bar. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 - History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
