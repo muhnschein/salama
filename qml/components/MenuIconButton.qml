@@ -9,6 +9,8 @@ BackgroundItem {
     id: button
 
     property string iconSource
+    // Sign at icon's bottom right: see BadgedIcon.
+    property string badge
     property bool checked: false
     readonly property bool lit: highlighted || checked
 
@@ -16,12 +18,11 @@ BackgroundItem {
     opacity: enabled ? 1.0 : Theme.opacityLow
     highlightedColor: "transparent"
 
-    Icon {
+    BadgedIcon {
         objectName: "menuButtonIcon"
         anchors.centerIn: parent
-        width: Theme.iconSizeMedium
-        height: width
         source: button.iconSource
+        badge: button.badge
         highlighted: button.lit
     }
 }

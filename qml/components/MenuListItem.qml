@@ -10,6 +10,8 @@ BackgroundItem {
     id: row
 
     property string iconSource
+    // Sign at icon's bottom right: see BadgedIcon.
+    property string badge
     property string text
     // progress 0..1.
     property bool busy: false
@@ -39,12 +41,11 @@ BackgroundItem {
             borderWidth: Theme.paddingSmall / 2
         }
 
-        Icon {
+        BadgedIcon {
             objectName: "menuButtonIcon"
             anchors.centerIn: parent
-            width: Theme.iconSizeMedium
-            height: width
             source: row.iconSource
+            badge: row.badge
             highlighted: row.highlighted
         }
     }

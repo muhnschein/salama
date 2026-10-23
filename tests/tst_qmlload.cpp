@@ -204,6 +204,7 @@ private slots:
     void restoredTabsLoadLazily();
     void browserMenu();
     void menuSheetLayout();
+    void menuBookmarkSigns();
     void menuNamesThePage();
     void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
@@ -278,6 +279,7 @@ private:
     QObject *currentPage() const;
     QObject *currentWebView() const;
     QVariant evaluate(QObject *scope, const QString &expression) const;
+    QString splitProblem(QObject *ground, const QString &gapName) const;
     static void click(QObject *object);
     static void enterKey(QObject *field);
     void typeAddress(const QString &text);
@@ -442,6 +444,43 @@ QObject *tst_qmlload::find(const QString &name) const
 {
     const QList<QObject *> found = findObjects(m_window.data(), name);
     return found.isEmpty() ? nullptr : found.first();
+}
+
+// Sheet ground in two shades, both from ambience: head lighter, rows below deeper. Edge mid-gap
+// named. Empty if so, else what is off.
+QString tst_qmlload::splitProblem(QObject *ground, const QString &gapName) const
+{
+    auto *groundItem = qobject_cast<QQuickItem *>(ground);
+    auto *head =
+        qobject_cast<QQuickItem *>(findObjects(ground, QStringLiteral("sheetHead")).first());
+    auto *gap = qobject_cast<QQuickItem *>(find(gapName));
+    const auto colour = [this, ground](const char *expression) {
+        return evaluate(ground, QLatin1String(expression)).value<QColor>();
+    };
+    const QColor dimmer = colour("Theme.highlightDimmerColor");
+    const QColor lighter = colour(
+        "Qt.tint(Theme.highlightDimmerColor, Theme.rgba(Theme.highlightBackgroundColor, 0.18))");
+    const QColor deeper = colour(
+        "Qt.tint(Theme.highlightDimmerColor, Theme.rgba(Theme.overlayBackgroundColor, 0.45))");
+    const qreal edge = head->mapToItem(groundItem, QPointF(0, head->height())).y();
+    const qreal middle = gap->mapToItem(groundItem, QPointF(0, gap->height() / 2)).y();
+    QStringList off;
+    if (!head->isVisible() || head->x() != 0 || head->y() != 0 ||
+        head->width() != groundItem->width()) {
+        off << QStringLiteral("head not across top");
+    }
+    if (head->property("color").value<QColor>() != lighter ||
+        lighter.lightnessF() <= dimmer.lightnessF()) {
+        off << QStringLiteral("head not lighter ambience shade");
+    }
+    if (ground->property("color").value<QColor>() != deeper ||
+        deeper.lightnessF() >= dimmer.lightnessF()) {
+        off << QStringLiteral("rows not deeper ambience shade");
+    }
+    if (qAbs(edge - middle) > 0.01) {
+        off << QStringLiteral("edge at %1, gap middle at %2").arg(edge).arg(middle);
+    }
+    return off.join(QStringLiteral("; "));
 }
 
 QList<QObject *> tst_qmlload::findAll(const QString &name) const
@@ -3195,11 +3234,11 @@ void tst_qmlload::recentlyClosedTabs()
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
     QCOMPARE(grounds.count(), 4);
     QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
+    // One shade: no head and list here to split.
     QCOMPARE(ground->property("color").value<QColor>(),
-             findObjects(find(QStringLiteral("browserMenu")), QStringLiteral("sheetBackground"))
-                 .first()
-                 ->property("color")
-                 .value<QColor>());
+             evaluate(panel, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
+    QVERIFY(
+        !findObjects(ground, QStringLiteral("sheetHead")).first()->property("visible").toBool());
     QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
     QCOMPARE(ground->property("height").toReal(), panel->property("height").toReal());
     auto *handle =
@@ -3508,10 +3547,15 @@ void tst_qmlload::menuSheetLayout()
     QVERIFY(find(QStringLiteral("menuSeparator")) == nullptr);
     QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
     QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
-    QCOMPARE(ground->property("color").value<QColor>(),
-             evaluate(menu, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
+    // Head (page, its actions) lighter, browser's rows deeper; split mid-gap between them.
+    const QString split = splitProblem(ground, QStringLiteral("menuHeadGap"));
+    QVERIFY2(split.isEmpty(), qPrintable(split));
+    auto *headGap = qobject_cast<QQuickItem *>(find(QStringLiteral("menuHeadGap")));
+    QCOMPARE(sceneY(headGap), rowBottom);
+    QCOMPARE(sceneY(headGap) + headGap->height(),
+             sceneY(qobject_cast<QQuickItem *>(find(QStringLiteral("bookmarksMenuButton")))));
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
     // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
@@ -3547,6 +3591,119 @@ void tst_qmlload::menuSheetLayout()
     history->setProperty("down", true);
     QVERIFY(lit(history));
     QCOMPARE(historyLabel->property("color").value<QColor>(), highlight);
+}
+
+// Bookmark button tells add from added by a sign at icon's bottom right, as Material's
+// bookmark-add: plus on star, then lit check on filled star. Bookmarks row: star with list, so the
+// two read apart. Star keeps full size; a gap round the sign is cut out of it (sign's strokes
+// widened), so it holds on any ground. Entries without sign: whole icon, nothing cut.
+void tst_qmlload::menuBookmarkSigns()
+{
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    const qreal iconSize = evaluate(menu, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    const QColor primary = evaluate(menu, QStringLiteral("Theme.primaryColor")).value<QColor>();
+    const QColor highlight = evaluate(menu, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    const auto icon = [this](const char *entry) {
+        return qobject_cast<QQuickItem *>(
+            findObjects(find(QLatin1String(entry)), QStringLiteral("menuButtonIcon")).first());
+    };
+    const auto part = [](QQuickItem *of, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(of, QLatin1String(name)).first());
+    };
+    const auto source = [&part](QQuickItem *of) {
+        return part(of, "menuButtonGlyph")->property("source").toString();
+    };
+    // Each stroke's ends in its box, as twentieths; colours; thicknesses.
+    struct Strokes
+    {
+        QStringList ends;
+        QSet<QRgb> colours;
+        QSet<qreal> thicknesses;
+    };
+    const auto strokes = [&part](QQuickItem *of, const char *box) {
+        QQuickItem *frame = part(of, box);
+        Strokes found;
+        for (QObject *object : findObjects(frame, QStringLiteral("menuButtonBadgeStroke"))) {
+            auto *stroke = qobject_cast<QQuickItem *>(object);
+            const qreal cap = stroke->height() / 2;
+            const QPointF from = stroke->mapToItem(frame, QPointF(cap, cap));
+            const QPointF to = stroke->mapToItem(frame, QPointF(stroke->width() - cap, cap));
+            const auto twentieths = [frame](const QPointF &at) {
+                return QStringLiteral("%1,%2")
+                    .arg(qRound(at.x() / frame->width() * 20))
+                    .arg(qRound(at.y() / frame->height() * 20));
+            };
+            found.ends.append(twentieths(from) + QLatin1Char('-') + twentieths(to));
+            found.colours.insert(stroke->property("color").value<QColor>().rgba());
+            found.thicknesses.insert(stroke->height());
+        }
+        return found;
+    };
+    const auto signShown = [&part](QQuickItem *of) {
+        return part(of, "menuButtonBadge")->isVisible();
+    };
+    const auto cut = [this, &part](QQuickItem *of) {
+        return evaluate(part(of, "menuButtonGlyph"), QStringLiteral("layer.enabled")).toBool();
+    };
+    // Whole star; sign in box's bottom right corner, under half its width; cut-out over sign, same
+    // strokes, wider each side.
+    const auto laidOut = [&part, &strokes, &cut, iconSize](QQuickItem *of) {
+        QQuickItem *glyph = part(of, "menuButtonGlyph");
+        QQuickItem *sign = part(of, "menuButtonBadge");
+        QQuickItem *cutout = part(of, "menuButtonCutout");
+        const QPointF signEnd = sign->mapToItem(of, QPointF(sign->width(), sign->height()));
+        const Strokes drawn = strokes(of, "menuButtonBadge");
+        const Strokes gap = strokes(of, "menuButtonCutout");
+        return of->width() == iconSize && glyph->x() == 0 && glyph->y() == 0 &&
+               glyph->width() == iconSize && glyph->height() == iconSize &&
+               signEnd == QPointF(iconSize, iconSize) && sign->width() < iconSize / 2 &&
+               cutout->mapToItem(of, QPointF()) == sign->mapToItem(of, QPointF()) &&
+               cutout->width() == sign->width() && drawn.ends == gap.ends &&
+               drawn.thicknesses.count() == 1 && gap.thicknesses.count() == 1 &&
+               *gap.thicknesses.begin() >= *drawn.thicknesses.begin() + 2 && cut(of);
+    };
+    const QStringList plus{QStringLiteral("10,2-10,18"), QStringLiteral("2,10-18,10")};
+    const QStringList check{QStringLiteral("2,11-8,17"), QStringLiteral("8,17-18,4")};
+    const QStringList list{QStringLiteral("2,4-18,4"), QStringLiteral("2,10-18,10"),
+                           QStringLiteral("2,16-18,16")};
+
+    QQuickItem *bookmark = icon("bookmarkMenuButton");
+    QQuickItem *bookmarks = icon("bookmarksMenuButton");
+    QCOMPARE(source(bookmark), QStringLiteral("image://theme/icon-m-favorite"));
+    QVERIFY(signShown(bookmark));
+    QVERIFY(laidOut(bookmark));
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, plus);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+
+    QCOMPARE(source(bookmarks), QStringLiteral("image://theme/icon-m-favorite"));
+    QVERIFY(signShown(bookmarks));
+    QVERIFY(laidOut(bookmarks));
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").ends, list);
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+    find(QStringLiteral("bookmarksMenuButton"))->setProperty("down", true);
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").colours, QSet<QRgb>{highlight.rgba()});
+    find(QStringLiteral("bookmarksMenuButton"))->setProperty("down", false);
+
+    m_core->bookmarks()->add(m_core->tabs()->activeUrl(), m_core->tabs()->activeTitle(), QString());
+    QCOMPARE(source(bookmark), QStringLiteral("image://theme/icon-m-favorite-selected"));
+    QVERIFY(part(bookmark, "menuButtonGlyph")->property("highlighted").toBool());
+    QVERIFY(laidOut(bookmark));
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, check);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{highlight.rgba()});
+    m_core->bookmarks()->removeByUrl(m_core->tabs()->activeUrl());
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, plus);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+
+    for (const char *entry :
+         {"findMenuButton", "shareMenuButton", "desktopMenuButton", "readerMenuButton",
+          "historyMenuButton", "downloadsMenuButton", "settingsMenuButton"}) {
+        QQuickItem *plain = icon(entry);
+        QVERIFY2(!signShown(plain), entry);
+        QVERIFY2(!cut(plain), entry);
+        QCOMPARE(part(plain, "menuButtonGlyph")->width(), iconSize);
+    }
 }
 
 // Sheet head names page (icon, title, padlock for https + host), copies address. Start page:
@@ -4541,6 +4698,25 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(shownIn(find(QStringLiteral("linkMenuInitial"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
+    // As menu: link's name and preview in head shade, actions below in rows' shade. Column lays
+    // out on polish, which needs a window.
+    {
+        FingerWindow host(m_window.data());
+        QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+        QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
+        QTRY_VERIFY2(splitProblem(ground, QStringLiteral("linkHeadGap")).isEmpty(),
+                     qPrintable(splitProblem(ground, QStringLiteral("linkHeadGap"))));
+        const auto top = [this](const char *name) {
+            return qobject_cast<QQuickItem *>(find(QLatin1String(name)))->mapToScene(QPointF()).y();
+        };
+        const auto bottom = [this](const char *name) {
+            auto *item = qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+            return item->mapToScene(QPointF(0, item->height())).y();
+        };
+        QVERIFY(find(QStringLiteral("linkPreview"))->property("visible").toBool());
+        QTRY_COMPARE(top("linkHeadGap"), bottom("linkPreview"));
+        QTRY_COMPARE(bottom("linkHeadGap"), top("linkActions"));
+    }
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
     // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
@@ -9213,6 +9389,17 @@ void tst_qmlload::tutorial()
                                .y();
     QVERIFY(sheetTop > 0);
     QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
+    // Same signs as real menu: plus on bookmark button, list on Bookmarks row.
+    QStringList signs;
+    for (QObject *icon : findObjects(menu, QStringLiteral("menuButtonIcon"))) {
+        signs.append(icon->property("badge").toString());
+    }
+    signs.sort();
+    QCOMPARE(signs, QStringList({QString(), QString(), QString(), QString(), QString(), QString(),
+                                 QString(), QStringLiteral("add"), QStringLiteral("list")}));
+    const QString split = splitProblem(findObjects(menu, QStringLiteral("sheetBackground")).first(),
+                                       QStringLiteral("tutorialHeadGap"));
+    QVERIFY2(split.isEmpty(), qPrintable(split));
     QVERIFY(tapping());
     QVERIFY(centre(tapHint).y() < sheetTop);
     QVERIFY(labelAtTop());

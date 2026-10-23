@@ -42,6 +42,7 @@ Item {
 
         SheetBackground {
             anchors.fill: parent
+            headHeight: headGap.y + headGap.height / 2
         }
 
         MouseArea {
@@ -72,29 +73,38 @@ Item {
                 columns: 5
 
                 Repeater {
-                    model: ["icon-m-search-on-page", "icon-m-favorite", "icon-m-share",
-                        "icon-m-computer", "icon-m-file-formatted"]
+                    model: [
+                        { icon: "icon-m-search-on-page", badge: "" },
+                        { icon: "icon-m-favorite", badge: "add" },
+                        { icon: "icon-m-share", badge: "" },
+                        { icon: "icon-m-computer", badge: "" },
+                        { icon: "icon-m-file-formatted", badge: "" }
+                    ]
 
                     MenuIconButton {
                         width: menu.width / 5
                         enabled: false
                         opacity: 1.0
-                        iconSource: "image://theme/" + modelData
+                        iconSource: "image://theme/" + modelData.icon
+                        badge: modelData.badge
                     }
                 }
             }
 
             Item {
+                id: headGap
+
+                objectName: "tutorialHeadGap"
                 width: parent.width
                 height: Theme.paddingMedium
             }
 
             Repeater {
                 model: [
-                    { icon: "icon-m-favorite-selected", name: qsTr("Bookmarks") },
-                    { icon: "icon-m-history", name: qsTr("History") },
-                    { icon: "icon-m-downloads", name: qsTr("Downloads") },
-                    { icon: "icon-m-setting", name: qsTr("Settings") }
+                    { icon: "icon-m-favorite", badge: "list", name: qsTr("Bookmarks") },
+                    { icon: "icon-m-history", badge: "", name: qsTr("History") },
+                    { icon: "icon-m-downloads", badge: "", name: qsTr("Downloads") },
+                    { icon: "icon-m-setting", badge: "", name: qsTr("Settings") }
                 ]
 
                 MenuListItem {
@@ -102,6 +112,7 @@ Item {
                     enabled: false
                     opacity: 1.0
                     iconSource: "image://theme/" + modelData.icon
+                    badge: modelData.badge
                     text: modelData.name
                 }
             }

@@ -75,8 +75,10 @@ DockedPanel {
             }]
     }
 
+    // Head: page's name and actions, to middle of gap before browser's rows.
     SheetBackground {
         anchors.fill: parent
+        headHeight: headGap.y + headGap.height / 2
     }
 
     // Over nav bar: sheet already hidden by then.
@@ -138,6 +140,8 @@ DockedPanel {
             }
 
             Grid {
+                id: pageRow
+
                 objectName: "menuPageRow"
                 width: parent.width
                 columns: 5
@@ -158,8 +162,10 @@ DockedPanel {
                     width: menu.width / 5
                     enabled: menu.hasPage
                     checked: BookmarkModel.activeUrlBookmarked
+                    // Plus to add, lit check once added; Bookmarks row below has list.
                     iconSource: checked ? "image://theme/icon-m-favorite-selected"
                                         : "image://theme/icon-m-favorite"
+                    badge: checked ? "check" : "add"
                     onClicked: {
                         menu.hide()
                         if (BookmarkModel.activeUrlBookmarked) {
@@ -209,6 +215,9 @@ DockedPanel {
             }
 
             Item {
+                id: headGap
+
+                objectName: "menuHeadGap"
                 width: parent.width
                 height: Theme.paddingMedium
             }
@@ -220,7 +229,8 @@ DockedPanel {
                 MenuListItem {
                     objectName: "bookmarksMenuButton"
                     width: parent.width
-                    iconSource: "image://theme/icon-m-favorite-selected"
+                    iconSource: "image://theme/icon-m-favorite"
+                    badge: "list"
                     text: qsTr("Bookmarks")
                     onClicked: menu.openPage("BookmarksPage.qml")
                 }

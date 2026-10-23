@@ -46,7 +46,8 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Website colours and Avoid the screen cutout get icons: moon and display, from sailfish-browser.
 - Settings > Notifications lists Allowed and Blocked; switch reads Sites can ask; Forget this site removes one.
 - Clear browsing data on history page now button.
-- Menu, Silica way: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- plain icons in one row, lit when on; Bookmarks, History, Downloads, Settings below as rows, icon then name. No discs or captions.
+- Menu, Silica way: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- plain icons in one row, lit when on; Bookmarks, History, Downloads, Settings below as rows, icon then name. No discs or captions. Bookmark button: star with plus, lit star with check once bookmarked; Bookmarks row: star with list. Star keeps full size; sign cut into its corner with small gap round it, like Material's.
+- Menu, link, picture and tutorial sheets two shades from ambience: page or link and its actions lighter on top, rows below deeper; split mid-gap.
 - Link and picture sheet: actions as rows, icon then name, like menu's; link and picture groups apart by a gap, no line.
 - Address bar while typing: sailfish-browser's entry, faint slab filling bar, no underline; text starts under back button, centred.
 - Grid: front tab framed by thin rounded outline, not washed; smaller close discs, same tap area; target group name lights in rounded wash; search highlights typed letters; recently closed tabs on menu's sheet.

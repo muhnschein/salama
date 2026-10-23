@@ -2,12 +2,30 @@
 // Copyright (c) 2026 salama contributors
 //
 // Opaque: see-through was one more thing to read past. Glow so edge shows over dark pages.
+// Split: head (page and its actions) lighter, lists below deeper, both from ambience.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Rectangle {
+    id: ground
+
+    // Top part in head shade; 0: one shade throughout.
+    property real headHeight: 0
+    readonly property color headColor: Qt.tint(Theme.highlightDimmerColor,
+                                               Theme.rgba(Theme.highlightBackgroundColor, 0.18))
+    readonly property color bodyColor: Qt.tint(Theme.highlightDimmerColor,
+                                               Theme.rgba(Theme.overlayBackgroundColor, 0.45))
+
     objectName: "sheetBackground"
-    color: Theme.highlightDimmerColor
+    color: headHeight > 0 ? bodyColor : Theme.highlightDimmerColor
+
+    Rectangle {
+        objectName: "sheetHead"
+        width: parent.width
+        height: Math.min(parent.height, ground.headHeight)
+        visible: ground.headHeight > 0
+        color: ground.headColor
+    }
 
     GlassTexture {
         anchors.fill: parent
