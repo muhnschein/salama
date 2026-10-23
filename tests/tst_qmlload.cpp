@@ -3499,7 +3499,11 @@ void tst_qmlload::menuSheetLayout()
         auto *label = qobject_cast<QQuickItem *>(parts(row, "menuButtonLabel").first());
         QCOMPARE(label->property("text").toString(), names.at(i));
         QVERIFY(label->mapToItem(row, QPointF()).x() > pageMargin + slot->width());
-        QCOMPARE(label->mapToItem(row, QPointF(0, label->height() / 2)).y(), row->height() / 2);
+        // Anchors snap centred item to whole pixel: tolerance 0.5.
+        const qreal labelMiddle = label->mapToItem(row, QPointF(0, label->height() / 2)).y();
+        QVERIFY2(
+            qAbs(labelMiddle - row->height() / 2) <= 0.5,
+            qPrintable(QStringLiteral("%1 label middle %2").arg(names.at(i)).arg(labelMiddle)));
     }
     QVERIFY(find(QStringLiteral("menuSeparator")) == nullptr);
     QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
