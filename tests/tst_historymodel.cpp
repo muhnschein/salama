@@ -425,6 +425,8 @@ void tst_historymodel::favicons()
                  QStringLiteral("https://a.example/icon.png"));
         model.updateFavicon(QStringLiteral("https://b.example/"), QStringLiteral("b.png"));
         model.updateFavicon(QStringLiteral("about:blank"), QStringLiteral("c.png"));
+        // Told on every page load: unchanged one no news (start page rebuilds on news).
+        model.updateFavicon(url, QStringLiteral("https://a.example/icon.png"));
         QCOMPARE(changed.count(), 1);
         QCOMPARE(model.count(), 1);
     }

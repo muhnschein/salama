@@ -236,7 +236,7 @@ void HistoryModel::updateFavicon(const QString &url, const QString &favicon)
         return;
     }
     for (int i = 0; i < m_entries.count(); ++i) {
-        if (m_entries.at(i).url == url) {
+        if (m_entries.at(i).url == url && m_entries.at(i).favicon != favicon) {
             m_entries[i].favicon = favicon;
             const QModelIndex modelIndex = index(i, 0);
             emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(Role::Favicon)});

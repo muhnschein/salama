@@ -47,6 +47,7 @@ using Salama::Core;
 using Salama::CoverSettings;
 using Salama::DohSettings;
 using Salama::EngineMessages;
+using Salama::HistoryModel;
 using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
 using Salama::Reader;
@@ -181,6 +182,7 @@ private slots:
     void editingEndsWithTheKeyboard();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
+    void historyRowsGetPageIcons();
     void tabGrid();
     void gridCellsArePicturesAlone();
     void gridRowsAreOpaque();
@@ -868,7 +870,8 @@ void tst_qmlload::addressBarNavigates()
     typeAddress(QStringLiteral("example.org"));
     QCOMPARE(webView->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
     QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org"));
-    QCOMPARE(m_core->history()->count(), 2);
+    // Visit once engine reports where it went.
+    QTRY_COMPARE(m_core->history()->count(), 2);
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("example.org"));
@@ -1718,6 +1721,55 @@ void tst_qmlload::faviconResolvedAfterLoad()
             QColor(QStringLiteral("#123456")));
 }
 
+// Engine shows a typed address before it resolves (qtmozembed's pending url): History keeps only
+// where it went, and each page there gets its icon, also the next one sharing it.
+void tst_qmlload::historyRowsGetPageIcons()
+{
+    QVERIFY(startWithoutTabs());
+    HistoryModel *history = m_core->history();
+    const auto rows = [history]() {
+        QStringList shown;
+        for (int i = 0; i < history->rowCount(); ++i) {
+            const QModelIndex index = history->index(i, 0);
+            shown.append(history->data(index, roleId(HistoryModel::Role::Url)).toString() +
+                         QLatin1Char(' ') +
+                         history->data(index, roleId(HistoryModel::Role::Favicon)).toString());
+        }
+        return shown;
+    };
+    const auto load = [](QObject *view) {
+        view->setProperty("loading", true);
+        view->setProperty("loading", false);
+    };
+    const QString icon = QStringLiteral(" https://example.org/icon.png");
+
+    // From start page. Engine resolves before anything else runs: no settle (find()) till then.
+    QObject *loader = find(QStringLiteral("webViewLoader"));
+    typeAddress(QStringLiteral("example.org"));
+    auto *view = loader->property("item").value<QObject *>();
+    QVERIFY(view != nullptr);
+    QCOMPARE(view->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
+    evaluate(view, QStringLiteral("locate('https://example.org/')"));
+    view->setProperty("scriptResult", QStringLiteral("/icon.png"));
+    load(view);
+    QCOMPARE(rows(), QStringList{QStringLiteral("https://example.org/") + icon});
+
+    // Link: engine's own move, page with same icon.
+    evaluate(view, QStringLiteral("locate('https://example.org/about')"));
+    load(view);
+    QCOMPARE(rows(), (QStringList{QStringLiteral("https://example.org/about") + icon,
+                                  QStringLiteral("https://example.org/") + icon}));
+
+    // Address bar over a page, redirected.
+    typeAddress(QStringLiteral("example.org/old"));
+    QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org/old"));
+    evaluate(view, QStringLiteral("locate('https://example.org/new')"));
+    load(view);
+    QCOMPARE(rows(), (QStringList{QStringLiteral("https://example.org/new") + icon,
+                                  QStringLiteral("https://example.org/about") + icon,
+                                  QStringLiteral("https://example.org/") + icon}));
+}
+
 void tst_qmlload::tabGrid()
 {
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
@@ -2209,6 +2261,9 @@ void tst_qmlload::tabSearch()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     pullUpToTabs();
+    // Pictures written meanwhile would rebuild results under the pointers held below.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
 
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
@@ -3335,6 +3390,7 @@ void tst_qmlload::restoredTabsLoadLazily()
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
     m_core->tabs()->newTab(QStringLiteral("https://three.example/"));
     m_core->tabs()->activateTab(1);
+    QTRY_COMPARE(m_core->history()->count(), 3);
 
     m_window.reset();
     m_engine.reset();
@@ -6860,19 +6916,20 @@ void tst_qmlload::historySettingsPage()
     QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("0 tab(s)"));
     QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1 tab(s)"));
     tabs->newTab(QStringLiteral("https://closed.example/"));
+    QTRY_COMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("2 page(s)"));
     tabs->closeTab(tabs->activeTabIndex());
-    QCOMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("2 page(s)"));
     QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("1 tab(s)"));
     tabs->groupModel()->addGroup(QStringLiteral("Work"));
     QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1, in 2 group(s)"));
 
     QVERIFY(remember->property("checked").toBool());
     tabs->newTab(QStringLiteral("https://kept.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int visits = m_core->history()->count();
-    QVERIFY(visits > 0);
     remember->setProperty("checked", false);
     QVERIFY(!settings->rememberHistory());
     tabs->newTab(QStringLiteral("https://unkept.example/"));
+    settle();
     QCOMPARE(m_core->history()->count(), visits);
     remember->setProperty("checked", true);
     QVERIFY(settings->rememberHistory());
@@ -6887,8 +6944,8 @@ void tst_qmlload::historySettingsPage()
     onClose->setProperty("checked", false);
 
     tabs->newTab(QStringLiteral("https://again.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int again = m_core->history()->count();
-    QVERIFY(again > 0);
     const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
     QObject *clear = find(QStringLiteral("clearDataButton"));
     QCOMPARE(clear->property("text").toString(), QStringLiteral("Clear browsing data"));
@@ -7015,8 +7072,8 @@ void tst_qmlload::clearDataDialog()
     QCOMPARE(sent(), 0);
 
     tabs->newTab(QStringLiteral("https://three.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int visits = m_core->history()->count();
-    QVERIFY(visits > 0);
     clear({false, false, true, false});
     QCOMPARE(remorses(), 2);
     QCOMPARE(sent(), 1);

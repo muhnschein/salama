@@ -63,6 +63,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 - History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
+- History no longer lists the address as typed next to the page it led to ("example.org" beside "example.org/", or a redirect's start): only where the page went is kept, so its row gets the page's title and icon. A page sharing its icon or title with the one before it in the tab gets them too.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.

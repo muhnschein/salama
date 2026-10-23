@@ -126,7 +126,12 @@ public:
     Q_INVOKABLE int tabIdForUrl(const QString &url) const;
     Q_INVOKABLE QString groupNameOf(int tabId) const;
 
+    // Engine's report of where tab is: a visit when new (or tab's first or after request()).
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);
+    // Address asked of engine, not yet resolved (qtmozembed shows it at once): tab shows it, no
+    // visit; engine's next report is the visit, even of same address.
+    Q_INVOKABLE void request(int tabId, const QString &url);
+    // Passed on every time: history and bookmarks key by page, and next page often shares both.
     Q_INVOKABLE void updateTitle(int tabId, const QString &title);
     Q_INVOKABLE void updateFavicon(int tabId, const QString &favicon);
     Q_INVOKABLE void showStartPage(int tabId);
@@ -208,6 +213,7 @@ private:
     int groupRowFor(int index) const;
     void stampActive();
     void notifyRow(int index, Role role);
+    void showUrl(int index, const QString &url);
     void persist(const Tab &tab) const;
     void discardThumbnail(const QString &path) const;
     void thumbnailWritten(int tabId, const QString &path, bool saved);
@@ -216,7 +222,8 @@ private:
     QString m_thumbnailDirectory;
     QList<Tab> m_tabs;
     QList<TabGroup> m_groups;
-    QList<int> m_awaitingFirstUrl;
+    // Next url report a visit even if unchanged: new tabs, requested addresses.
+    QList<int> m_awaitingVisit;
     GroupTabModel *m_groupTabs;
     TabGroupModel *m_groupModel;
     ClosedTabModel *m_closedTabs;
