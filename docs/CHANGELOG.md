@@ -39,6 +39,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Avoid the screen cutout now Notch guard, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Forced keeps all below; Disabled none. Old on becomes Forced, off Disabled.
 - Settings rows: icon or switch, never both; switch lights in icon column.
 - Loading stop button: plain cross, like sailfish-browser.
+- Page loading shown like sailfish-browser: highlight wash fills bar from left, fading downward, fades out when loaded; thin strip along top edge gone.
 - Downloads rows: progress ring at start with pause, play or retry, replacing foot line; kind icon when done. Failed in red; missing file "File not found". Removing in-progress download or clearing list stops it.
 - Settings shows current value under each name (start page, search engine, reader look, cover, tracking protection level, notification sites, history). Headings: Browsing, Appearance, Privacy, Help; Privacy page now Tracking protection.
 - Choices inline: start page, search engine, tracking protection level as lists, chosen lit; reader colours five painted squares, typefaces two tiles; cover quick action six rows with glyphs under cover picture.

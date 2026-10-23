@@ -174,6 +174,7 @@ private slots:
     void omnibarChoices();
     void omnibarForANewTab();
     void navigationBarDrivesWebView();
+    void loadProgressWashesBar();
     void addressShowsHostAndSecurity();
     void barDoesNotCoverThePage();
     void editingEndsWithTheKeyboard();
@@ -1375,6 +1376,54 @@ void tst_qmlload::navigationBarDrivesWebView()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+}
+
+// sailfish-browser's ProgressBar: highlight wash over whole bar, behind controls, fading downward,
+// fading out at load end. Was thin strip along top edge, Android's.
+void tst_qmlload::loadProgressWashesBar()
+{
+    QObject *webView = currentWebView();
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *progress = find(QStringLiteral("loadProgress"));
+    QObject *fill = find(QStringLiteral("loadProgressFill"));
+    QVERIFY(fill != nullptr);
+    QVERIFY(!progress->property("visible").toBool());
+
+    webView->setProperty("loading", true);
+    webView->setProperty("loadProgress", 40);
+    QVERIFY(progress->property("visible").toBool());
+    const qreal barHeight = bar->property("height").toReal();
+    QCOMPARE(progress->property("height").toReal(), barHeight);
+    QCOMPARE(fill->property("height").toReal(), barHeight);
+    QTRY_COMPARE(fill->property("width").toReal(), bar->property("width").toReal() * 0.4);
+    QTRY_COMPARE(progress->property("opacity").toReal(), 1.0);
+
+    const QColor top = evaluate(fill, QStringLiteral("gradient.stops[0].color")).value<QColor>();
+    const QColor bottom = evaluate(fill, QStringLiteral("gradient.stops[1].color")).value<QColor>();
+    QCOMPARE(evaluate(fill, QStringLiteral("gradient.stops[0].position")).toReal(), 0.0);
+    QCOMPARE(evaluate(fill, QStringLiteral("gradient.stops[1].position")).toReal(), 1.0);
+    QCOMPARE(top, evaluate(bar, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor, "
+                                               "Theme.opacityHigh)"))
+                      .value<QColor>());
+    QCOMPARE(bottom.rgb(), top.rgb());
+    QCOMPARE(bottom.alpha(), 0);
+
+    // Behind controls: drawn over them, wash would tint icons.
+    const QList<QQuickItem *> stack = qobject_cast<QQuickItem *>(bar)->childItems();
+    const int washAt = stack.indexOf(qobject_cast<QQuickItem *>(progress));
+    QVERIFY(washAt >= 0);
+    QCOMPARE(progress->property("z").toReal(), 0.0);
+    for (const QString &control : {QStringLiteral("backButton"), QStringLiteral("reloadButton"),
+                                   QStringLiteral("menuButton"), QStringLiteral("addressRow")}) {
+        QVERIFY2(washAt < stack.indexOf(qobject_cast<QQuickItem *>(find(control))),
+                 qPrintable(control));
+    }
+
+    // Fades, not cut.
+    webView->setProperty("loading", false);
+    QVERIFY(progress->property("visible").toBool());
+    QTRY_VERIFY(!progress->property("visible").toBool());
+    QCOMPARE(progress->property("opacity").toReal(), 0.0);
 }
 
 // Short address; broken connection drawn on it, only for pages claiming secure.

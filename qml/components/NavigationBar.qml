@@ -190,6 +190,43 @@ Item {
         color: Theme.highlightDimmerColor
     }
 
+    // sailfish-browser's ProgressBar: highlight wash fills whole bar behind controls, fading
+    // downward, fades out when load ends.
+    Item {
+        objectName: "loadProgress"
+        anchors.fill: parent
+        opacity: navigationBar.loading ? 1.0 : 0.0
+        visible: navigationBar.loading || opacity > 0
+
+        Behavior on opacity {
+            FadeAnimation {}
+        }
+
+        Rectangle {
+            objectName: "loadProgressFill"
+            height: parent.height
+            width: parent.width * navigationBar.loadProgress / 100
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, Theme.opacityHigh)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, 0.0)
+                }
+            }
+
+            Behavior on width {
+                enabled: parent.opacity === 1.0
+                SmoothedAnimation {
+                    velocity: 480
+                    duration: 200
+                }
+            }
+        }
+    }
+
     DragHandle {
         objectName: "barDragHandle"
         x: (navigationBar.width - width) / 2
@@ -308,17 +345,5 @@ Item {
             top: parent.top
             topMargin: -reach
         }
-    }
-
-    Rectangle {
-        objectName: "loadProgress"
-        anchors {
-            left: parent.left
-            top: parent.top
-        }
-        height: Theme.paddingSmall
-        width: parent.width * navigationBar.loadProgress / 100
-        color: Theme.highlightColor
-        visible: navigationBar.loading
     }
 }
