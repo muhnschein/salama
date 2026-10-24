@@ -5,6 +5,8 @@
 #include "storage/Storage.h"
 
 #include <QJSEngine>
+#include <QRegularExpression>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -64,6 +66,7 @@ private slots:
     void rejects();
     void script();
     void favicons();
+    void faviconsWithoutDatabase();
 
 private:
     QVariantList entriesOf(const QVariantList &entries) const
@@ -242,6 +245,16 @@ void tst_tabhistory::favicons()
              QStringLiteral("https://a.example/icon.png"));
     QVERIFY(entries.at(1).toMap().value(QStringLiteral("favicon")).toString().isEmpty());
     QVERIFY(entries.at(2).toMap().value(QStringLiteral("favicon")).toString().isEmpty());
+}
+
+// Broken database: rows still listed, no icon.
+void tst_tabhistory::faviconsWithoutDatabase()
+{
+    QSqlQuery(m_storage->database()).exec(QStringLiteral("DROP TABLE browser_history"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("^TabHistory:")));
+    const QVariantList entries = entriesOf({backEntry(0, QStringLiteral("https://a.example/"))});
+    QCOMPARE(entries.count(), 1);
+    QVERIFY(entries.first().toMap().value(QStringLiteral("favicon")).toString().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(tst_tabhistory)
