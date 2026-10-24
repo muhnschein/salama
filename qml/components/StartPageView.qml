@@ -15,7 +15,7 @@ SilicaFlickable {
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
                                              && StartPage.recentPages.count > 0
     readonly property int columns: 4
-    // Tiles past the chosen rows hidden; Grid skips hidden items.
+    // Tiles past chosen rows hidden; Grid skips hidden items.
     readonly property int topSiteTiles: StartPageSettings.topSiteRows * columns
 
     signal openRequested(string url)

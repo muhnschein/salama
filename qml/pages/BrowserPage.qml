@@ -465,8 +465,8 @@ WebViewPage {
             property PageSearchLink searches: PageSearchLink { view: webView }
             property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.openFor(target, webView) }
 
-            // Engine shows an address it is asked for at once, unresolved (qtmozembed's pending
-            // url): a typed host gains its slash, a link its redirect. Only where it went is a
+            // Engine shows asked address at once, unresolved (qtmozembed's pending url): typed
+            // host gains slash, link its redirect. Only where it went is
             // visit, else history keeps rows no title or icon ever reaches.
             property bool requesting: false
 

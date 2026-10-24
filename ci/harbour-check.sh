@@ -350,7 +350,7 @@ validate_paths() {
         done < <(grep -oE 'DESTINATION[[:space:]]+[^ )]+' "$cmake" | awk '{print $2}')
     done < <(find "$ROOT" -name CMakeLists.txt -not -path '*/tests/*' -not -path '*/build*/*' | sort)
 
-    # The qml directory is installed as-is: nothing but QML may be in it.
+    # qml/ installed as-is: nothing but QML in it.
     while read -r file; do
         error stray-file "${file#"$ROOT"/}" "this kind of file must not be included"
     done < <(find "$ROOT/qml" \( -type f ! -name '*.qml' \) -o -name '.git' -o -name '.svn' -o -name '.DS_Store' -o -name '*~' -o -name '.*.swp')
@@ -449,7 +449,7 @@ validate_sandboxing() {
     while read -r hit; do
         error hardcoded-path "${hit%%:*}" "hardcoded home path: ${hit#*:}"
     done < <(grep -rnE '/home/(nemo|defaultuser)/' "$ROOT/src" "$ROOT/qml" | sed "s|^$ROOT/||")
-    # Sailjail only grants writes below the app-specific standard locations.
+    # Sailjail grants writes only below app's standard locations.
     while read -r hit; do
         error path-policy "${hit%%:*}" "location not writable under Sailjail: ${hit#*:}"
     done < <(grep -rnoE 'QStandardPaths::(GenericDataLocation|GenericConfigLocation|GenericCacheLocation|HomeLocation|ConfigLocation|DataLocation)\b' "$ROOT/src" | sed "s|^$ROOT/||")

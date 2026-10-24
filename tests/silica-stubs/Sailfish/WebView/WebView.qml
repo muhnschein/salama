@@ -98,9 +98,9 @@ Item {
         url = target
     }
 
-    // qtmozembed (since 2021, JB#56506): setUrl shows the address at once, unresolved (pending
+    // qtmozembed (since 2021, JB#56506): setUrl shows address at once, unresolved (pending
     // url), then reports where engine went (OnLocationChanged), again if same. Writing url is
-    // that request; locate() is a move engine makes itself (link, script), reported once.
+    // that request; locate() = move engine makes itself (link, script), reported once.
     property string location
 
     function locate(address) {

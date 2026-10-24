@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Own pull: DockedPanel drag ignores pulls begun on icons, so icons sit in a SilicaFlickable
+// Own pull: DockedPanel drag ignores pulls begun on icons, so icons sit in SilicaFlickable
 // whose overscroll drives sheet.
 import QtQuick 2.6
 import Sailfish.Silica 1.0

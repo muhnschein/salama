@@ -28,7 +28,7 @@ public:
     // Empty unless http(s) with host.
     static QString sharedUrl(const QVariantMap &arguments);
 
-    // Qt D-Bus leaves nested a{sv} containers as QDBusArgument; unwraps one level.
+    // Qt D-Bus leaves nested a{sv} as QDBusArgument; unwraps one level.
     static QVariant unwrap(const QVariant &value);
 
 signals:

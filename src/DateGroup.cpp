@@ -15,7 +15,7 @@ DateGroup::Group DateGroup::of(const QDate &day, const QDate &today)
     if (daysAgo == 1) {
         return Yesterday;
     }
-    // Today counts as one of the 7 and 30.
+    // Today counts toward 7 and 30.
     if (daysAgo < 7) {
         return LastSevenDays;
     }

@@ -11,7 +11,7 @@ Page {
     id: tutorialPage
 
     property bool welcome: false
-    // "welcome", then a lesson step, then "done".
+    // "welcome", then lesson steps, then "done".
     property string step: welcome ? "welcome" : lessons[0]
     readonly property var lessons: ["address", "omnibar", "menu", "menuOpen", "open", "closeTab",
                                     "moveTab", "groupTab", "close"]

@@ -315,7 +315,7 @@ pre {
   padding-inline-start: 30px;
 }
 
-/* Firefox's compounding list outdent runs off a phone screen; end lists with text. */
+/* Firefox's compounding list outdent runs off phone screen; end lists with text. */
 .moz-reader-content ul,
 .moz-reader-content ol,
 .moz-reader-content li {

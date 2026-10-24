@@ -160,7 +160,7 @@ Item {
         Row {
             id: row
 
-            // Half slack to first and last button centres a fitting row.
+            // Half slack to first and last button centres fitting row.
             readonly property real extraMargin: {
                 var total = 0
                 for (var i = 0; i < row.children.length; ++i) {

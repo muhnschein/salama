@@ -386,7 +386,7 @@ void WebNotifications::receive(int tabId, const QVariant &data)
     if (type == QLatin1String("request")) {
         request(tabId, page, id, origin);
     } else if (type == QLatin1String("show")) {
-        // Gecko's answer, or our allow if engine not caught up; never overrides denied.
+        // Gecko's answer, or Salama's allow if engine not caught up; never overrides denied.
         const QString permission = relayed.value(QStringLiteral("permission")).toString();
         const bool allowed =
             permission == QLatin1String("granted") ||

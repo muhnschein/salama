@@ -33,7 +33,7 @@ QtObject {
         return download.size > 0 ? DownloadModel.formatSize(download.size) + " · " + site : site
     }
 
-    // Running, failed, paused or file gone; "" for an arrived file.
+    // Running, failed, paused or file gone; "" for arrived file.
     function state(download) {
         if (download.status === DownloadModel.Running) {
             return progress(download.size, download.progress)

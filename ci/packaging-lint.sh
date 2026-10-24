@@ -4,7 +4,7 @@
 #  * desktop entry validates (desktop-file-validate)
 #  * shell scripts clean (shellcheck)
 #  * translations compile, current (lrelease, lupdate)
-#  * every docs/*.md a comment names exists
+#  * every docs/*.md named in comment exists
 #  * changelog has Unreleased; Sailjail permissions documented
 #  * one version: CMake = spec, changelog has its section
 #
@@ -92,7 +92,7 @@ if have lupdate; then
     rm -rf "$tmp"
 fi
 
-# 5. Every docs/*.md a comment points at exists
+# 5. Every docs/*.md named in comment exists
 while read -r ref; do
     [[ -f $ROOT/$ref ]] || fail docs-reference "$ref" "referenced but missing"
 done < <(grep -rhoE 'docs/[A-Za-z0-9_./-]+\.md' "$ROOT/src" "$ROOT/qml" "$ROOT/tests" "$ROOT/ci" "$ROOT/rpm" "$ROOT/docs" "$ROOT/README.md" "$ROOT/Makefile" "$ROOT/CMakeLists.txt" 2>/dev/null | sort -u)

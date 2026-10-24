@@ -80,7 +80,7 @@ while read -r hit; do
     esac
 done < <(grep -nE '^\s*import\s+Qt' "${FILES[@]}" | sed "s|^$ROOT/||")
 
-# 4. Syntax the device engine rejects (ES2015+ and QML from Qt 5.7 onwards)
+# 4. Syntax device engine rejects (ES2015+, QML from Qt 5.7 on)
 declare -A NEWER=(
     ['\blet\b']='ES2015 let'
     ['\bconst\b']='ES2015 const'
@@ -136,7 +136,7 @@ for file in "${FILES[@]}"; do
         "$lines lines; over $limit -- SCOPE.md §6 (SIZE_WAIVERS lifts 400, nothing lifts 600)"
 done
 
-# 8. TODO without an issue number, across shipped sources and tests
+# 8. TODO without issue number, shipped sources and tests
 while read -r hit; do
     fail todo "${hit%%:*}" "TODO/FIXME must reference an issue as TODO(#123): ${hit#*:}"
 done < <(grep -rnE '\b(TODO|FIXME|XXX)\b' "$ROOT/src" "$ROOT/qml" "$ROOT/tests" "$ROOT/docs" 2>/dev/null | grep -vE '(TODO|FIXME|XXX)\(#[0-9]+\)' | sed "s|^$ROOT/||")

@@ -15,7 +15,7 @@ namespace {
 const QString Playing = QStringLiteral("playing");
 const QString Paused = QStringLiteral("paused");
 
-// Muted flag removed only where we set it (salamaMuted); play resumes only what we paused
+// Muted flag removed only where Salama set it (salamaMuted); play resumes only what it paused
 // (salamaPaused). concealed: hide playing video via visibility so Gecko stops decoding;
 // salamaConcealed restores page's value.
 const char *const ScriptTemplate = R"( var command = '%1', muted = %2, concealed = %3;

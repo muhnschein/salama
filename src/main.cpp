@@ -11,7 +11,7 @@
 #include <QTranslator>
 #include <sailfishapp.h>
 
-// Exported so the Silica booster can dlopen() the binary and call main().
+// Exported: Silica booster dlopen()s binary, calls main().
 Q_DECL_EXPORT int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Print SonarQube Cloud's verdict on an analysis into job log and step summary.
+# SonarQube Cloud's verdict on analysis into job log and step summary.
 # Scanner uploads and exits; server processes later; results sit behind login.
 # This asks server from runner and prints gate, ratings, issues beside commit.
 #

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
-# Harbour package. Every Requires must be in ci/harbour/allowed_requires.conf (or a library
+# Harbour package. Every Requires must be in ci/harbour/allowed_requires.conf (or library
 # from allowed_libraries.conf); see docs/HARBOUR.md. OS floor (>= 5.2.0) can't be
 # `Requires: sailfish-version` (Harbour rejects it); carried by SDK target
 # (__libc_start_main check) and package versions below.

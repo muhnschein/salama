@@ -57,7 +57,7 @@ void tst_core::wiresTabsToHistory()
              QStringLiteral("Alpha"));
 }
 
-// Each page's row gets its title and icon, also where the engine went past the address asked
+// Each page's row gets its title and icon, also where engine went past address asked
 // ("~half of History without icons").
 void tst_core::historyRowsGetTitlesAndIcons()
 {
@@ -84,7 +84,7 @@ void tst_core::historyRowsGetTitlesAndIcons()
     QCOMPARE(history->count(), 1);
     QCOMPARE(row(QStringLiteral("https://a.example/"), HistoryModel::Role::Favicon), icon);
 
-    // Next page, same icon and title as the last.
+    // Next page, same icon and title as last.
     core.tabs()->updateUrl(id, QStringLiteral("https://a.example/next"));
     core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
     core.tabs()->updateFavicon(id, icon);

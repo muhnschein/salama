@@ -28,7 +28,7 @@ for tool in python3 jq curl; do
     fi
 done
 
-# ---------------------------------------------------------------- the stub
+# -------------------------------------------------------------------- stub
 #
 # Answers four endpoints, records requested paths, can demand credentials.
 # Refuses with 404 not 403, as SonarQube Cloud does.
@@ -252,7 +252,7 @@ expect "a rating is a letter" "- security_rating: A" "$work/out"
 expect "the other rating is a letter too" "- sqale_rating: B" "$work/out"
 reject "no raw rating survives" "security_rating: 1.0" "$work/out"
 
-# ------------------------------------------------------- the scope is passed
+# ----------------------------------------------------------- scope passed
 #
 # Slice from scanner's dashboard URL must reach measures/issues queries, else they
 # answer for default branch: wrong but plausible.
@@ -269,7 +269,7 @@ expect "the issues query carries the scope" \
     "/api/issues/search?componentKeys=muhnschein_salama&pullRequest=45&" \
     "$work/seen"
 
-# --------------------------------------------------------- the token first
+# ------------------------------------------------------------- token first
 #
 # Cloud answers 404, not 403, when unauthorised. Anonymous-first once reported nothing.
 start_stub SUCCESS 1 || exit 1
@@ -298,7 +298,7 @@ else
 fi
 reject "and prints no gate" "Quality gate" "$work/out"
 
-# ------------------------------------------------------ the step summary
+# ---------------------------------------------------------- step summary
 #
 # Same text in job log and step summary (what reviewer opens).
 start_stub SUCCESS 0 || exit 1

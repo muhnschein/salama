@@ -915,7 +915,7 @@ void tst_downloadmodel::dateGroupRole()
     QVERIFY(!changedRoles(changes).contains(group));
 }
 
-// In progress first, else model's order; a download that arrives moves down.
+// In progress first, else model's order; download that arrives moves down.
 void tst_downloadmodel::searchPutsInProgressFirst()
 {
     QTemporaryDir dir;
@@ -949,7 +949,7 @@ void tst_downloadmodel::searchPutsInProgressFirst()
                                    QStringLiteral("big.iso")}));
 }
 
-// Name and shown site with the term's words in <b>, rest escaped; rows kept by a new term
+// Name and shown site with term's words in <b>, rest escaped; rows kept by new term
 // told their marks changed.
 void tst_downloadmodel::searchMarks()
 {
@@ -1515,7 +1515,7 @@ void tst_downloadmodel::finished()
     QCOMPARE(finishedSpy.count(), 1);
 }
 
-// Each turn to failed the engine reports. Earlier run's running row loads failed before anyone
+// Each turn to failed engine reports. Earlier run's running row loads failed before anyone
 // listens; its engine id, come round again, is another download's.
 void tst_downloadmodel::failed()
 {

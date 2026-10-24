@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Theme icon with small sign at bottom right, as Material's bookmark-add: theme has no star with
-// plus, check or list. Icon keeps full size; a gap round sign is cut out of it, not painted over,
+// plus, check or list. Icon keeps full size; gap round sign cut out of it, not painted over,
 // so it holds on any ground, pressed too.
 import QtQuick 2.6
 import Sailfish.Silica 1.0

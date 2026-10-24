@@ -312,7 +312,7 @@ void tst_qmlload::init()
     m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
                           m_dir->path() + QStringLiteral("/Downloads/Salama")));
     // PageMedia queries pages shortly after first tab opens. Answer here: left pending, it fired in
-    // a later slow test and stub's "nothing plays" undid that test's playing state.
+    // later slow test and stub's "nothing plays" undid that test's playing state.
     QSignalSpy pagesAsked(m_core->pageMedia(), &Salama::PageMedia::requested);
     m_core->tabs()->newTab(QLatin1String(FirstPage));
     m_core->settings()->setTutorialShown(true);
@@ -828,7 +828,7 @@ void tst_qmlload::startPage()
     QVERIFY(currentWebView() != nullptr);
 }
 
-// Frequently visited: two rows of tiles by default, one when chosen; tiles past the rows hidden,
+// Frequently visited: two rows of tiles by default, one when chosen; tiles past rows hidden,
 // most visited kept.
 void tst_qmlload::startPageTopSiteRows()
 {
@@ -1721,8 +1721,8 @@ void tst_qmlload::faviconResolvedAfterLoad()
             QColor(QStringLiteral("#123456")));
 }
 
-// Engine shows a typed address before it resolves (qtmozembed's pending url): History keeps only
-// where it went, and each page there gets its icon, also the next one sharing it.
+// Engine shows typed address before it resolves (qtmozembed's pending url): History keeps only
+// where it went; each page there gets its icon, also next one sharing it.
 void tst_qmlload::historyRowsGetPageIcons()
 {
     QVERIFY(startWithoutTabs());
@@ -1760,7 +1760,7 @@ void tst_qmlload::historyRowsGetPageIcons()
     QCOMPARE(rows(), (QStringList{QStringLiteral("https://example.org/about") + icon,
                                   QStringLiteral("https://example.org/") + icon}));
 
-    // Address bar over a page, redirected.
+    // Address bar over page, redirected.
     typeAddress(QStringLiteral("example.org/old"));
     QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org/old"));
     evaluate(view, QStringLiteral("locate('https://example.org/new')"));
@@ -2101,7 +2101,7 @@ void tst_qmlload::tabGroupRows()
     const int first = tabs->activeTabId();
     const int work = tabs->addGroup(QStringLiteral("Work"));
     pullUpToTabs();
-    // Opening grid grabs a preview; let its write land first, else it replaces ours.
+    // Opening grid grabs preview; let its write land first, else it replaces ours.
     tabs->thumbnailWriter()->waitForDone();
     QCoreApplication::processEvents();
     const QString shot = tabs->thumbnailPath(first);
@@ -2261,7 +2261,7 @@ void tst_qmlload::tabSearch()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     pullUpToTabs();
-    // Pictures written meanwhile would rebuild results under the pointers held below.
+    // Pictures written meanwhile would rebuild results under pointers held below.
     tabs->thumbnailWriter()->waitForDone();
     settle();
 
@@ -2421,7 +2421,7 @@ void tst_qmlload::previewGestures()
     QObject *timer = findObjects(cell, QStringLiteral("holdTimer")).first();
     QCOMPARE(timer->property("interval").toInt(), 1000);
     QCOMPARE(cell->property("holdInterval").toInt(), 1000);
-    // Grid may take drag while hold forming (flickable refused a touch never retakes it -> no
+    // Grid may take drag while hold forming (flickable refused touch never retakes it -> no
     // scroll/pull from cell); not once cell up.
     QObject *gesture = findObjects(cell, QStringLiteral("tabPreviewGesture")).first();
     QVERIFY(cell->property("holdTolerance").toReal() > 0);
@@ -2528,7 +2528,7 @@ private:
     QQuickWindow m_window;
 };
 
-// Collects QML script errors while alive: throwing handler otherwise just scrolls past.
+// Collects QML script errors while alive: throwing handler otherwise scrolls past.
 QStringList *scriptErrors = nullptr;
 QtMessageHandler previousHandler = nullptr;
 
@@ -2900,7 +2900,7 @@ void tst_qmlload::carryToGroupUnderAFinger()
 }
 
 // Over strip finger picks group not place: no swap with cells under strip; grid-cancelled carry
-// leaves nothing lit; scrolled-out name not a drop target.
+// leaves nothing lit; scrolled-out name no drop target.
 void tst_qmlload::carryOverTheStripUnderAFinger()
 {
     TabModel *tabs = m_core->tabs();
@@ -3657,9 +3657,9 @@ void tst_qmlload::menuSheetLayout()
     QCOMPARE(historyLabel->property("color").value<QColor>(), highlight);
 }
 
-// Bookmark button tells add from added by a sign at icon's bottom right, as Material's
-// bookmark-add: plus on star, then lit check on filled star. Bookmarks row: star with list, so the
-// two read apart. Star keeps full size; a gap round the sign is cut out of it (sign's strokes
+// Bookmark button tells add from added by sign at icon's bottom right, as Material's
+// bookmark-add: plus on star, then lit check on filled star. Bookmarks row: star with list, so
+// two read apart. Star keeps full size; gap round sign cut out of it (sign's strokes
 // widened), so it holds on any ground. Entries without sign: whole icon, nothing cut.
 void tst_qmlload::menuBookmarkSigns()
 {
@@ -4520,7 +4520,7 @@ void tst_qmlload::downloadsPage()
 }
 
 // Search keeps rows whose name or address holds every word. Rows then differ from
-// DownloadModel's: acting on one must reach that download, not the one at its row.
+// DownloadModel's: acting on one must reach that download, not one at its row.
 void tst_qmlload::downloadsSearch()
 {
     Salama::DownloadModel *downloads = m_core->downloads();
@@ -4595,7 +4595,7 @@ void tst_qmlload::downloadsSearch()
                                             QLatin1Char('.') +
                                             marked(QStringLiteral("pdf"), highlight));
     QCOMPARE(text(row, "downloadStatus"), QStringLiteral("files.example"));
-    // Status words around a marked site go escaped into StyledText.
+    // Status words around marked site go escaped into StyledText.
     // Delegate's ids live in its own context, its parts'.
     QCOMPARE(
         evaluate(part(row, "downloadName"), QStringLiteral("says.escaped('a<b>&c')")).toString(),
@@ -4624,7 +4624,7 @@ void tst_qmlload::downloadsSearch()
     QCOMPARE(list->property("count").toInt(), 2);
     QVERIFY(!placeholder->property("enabled").toBool());
 
-    // Term is the page's: back and in again lists everything.
+    // Term is page's: back and in again lists everything.
     field->setProperty("text", QStringLiteral("photo"));
     QCOMPARE(list->property("count").toInt(), 1);
     popPage();
@@ -5502,7 +5502,7 @@ void tst_qmlload::historyPage()
     };
     const int styledText = evaluate(search, QStringLiteral("Text.StyledText")).toInt();
     const int plainText = evaluate(search, QStringLiteral("Text.PlainText")).toInt();
-    // Page's favicon left of its title, as a bookmark's.
+    // Page's favicon left of its title, as bookmark's.
     QObject *top = byRow(findAll(QStringLiteral("historyDelegate"))).first();
     QCOMPARE(part(top, "historyTitle")->property("text").toString(), QStringLiteral("Two"));
     QCOMPARE(part(top, "historyTitle")->property("textFormat").toInt(), plainText);
@@ -5586,8 +5586,8 @@ void typeKeepingFocus(QQuickWindow *window, QQuickItem *field, QObject *list,
 
 } // namespace
 
-// Search fields over refilled lists: Qt hands a list's new current item focus on every
-// refill, which took it (and the keyboard) from a field in the list's header.
+// Search fields over refilled lists: Qt hands list's new current item focus on every
+// refill, which took it (and keyboard) from field in list's header.
 void tst_qmlload::searchFieldsKeepTheKeyboard()
 {
     m_core->history()->visit(QStringLiteral("https://one.example/"), QStringLiteral("One"));
@@ -5622,7 +5622,7 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
         return;
     }
 
-    // Term is the page's: back and in again lists everything, as field is empty.
+    // Term is page's: back and in again lists everything, field empty.
     popPage();
     settle();
     QVERIFY(m_core->history()->searchTerm().isEmpty());
@@ -5699,7 +5699,7 @@ void tst_qmlload::bookmarksPage()
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QCOMPARE(delegates.at(0)->property("remorseCount").toInt(), 1);
 
-    // Bookmarking is the browser menu's: page has no pulley.
+    // Bookmarking is browser menu's: page has no pulley.
     const QList<QQuickItem *> items = currentPage()->findChildren<QQuickItem *>();
     QVERIFY(!items.isEmpty());
     for (const QQuickItem *item : items) {
@@ -7878,7 +7878,7 @@ void tst_qmlload::thumbnailCapturedOnLeavingTheApp()
 }
 
 // Shortly after going out of sight, loaded pages sleep unless one makes sound; each wakes when its
-// view next shown. Timing is PageActivity's (tst_pageactivity); this is browsing page's response.
+// view next shown. Timing is PageActivity's (tst_pageactivity); this = browsing page's response.
 void tst_qmlload::pagesSleepOutOfSight()
 {
     const int firstTab = m_core->tabs()->activeTabId();
@@ -8626,7 +8626,7 @@ QString permissionList(const QList<QStringList> &entries)
 } // namespace
 
 // Site permissions: row per kind with default + exception count; tap changes default or opens
-// exceptions. Cookies row only while tracking protection off or a site has cookie exception;
+// exceptions. Cookies row only while tracking protection off or site has cookie exception;
 // TP-off sites under own heading. Choices saved live and sent to engine.
 void tst_qmlload::sitePermissionsPage()
 {
@@ -8778,7 +8778,7 @@ void tst_qmlload::sitePermissionsPage()
     QCOMPARE(given("permissions.default.camera"), QVariant(0));
 }
 
-// Cookies on Site permissions belong to TP while on: row appears when TP off or a site has
+// Cookies on Site permissions belong to TP while on: row appears when TP off or site has
 // cookie exception; choice = engine cookie behaviour while TP off. Choice-less rows navigate.
 void tst_qmlload::sitePermissionsCookiesAndWaysOn()
 {

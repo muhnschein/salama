@@ -46,7 +46,7 @@ TextField {
         value: Theme.paddingLarge
     }
 
-    // Always bound: on Qt 5.6 a released Binding leaves plain values as-is.
+    // Always bound: on Qt 5.6 released Binding leaves plain values as-is.
     Binding {
         target: field
         property: "focusOutBehavior"

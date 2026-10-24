@@ -1,7 +1,7 @@
 # SonarQube Cloud analysis.
 #
 # Out of ci.yml on purpose: ci.yml is GATE (`make check`; green laptop = green CI,
-# SCOPE.md §6). This is REPORT: can't fail change. Hosted service in gate would break
+# SCOPE.md §6). This = REPORT: can't fail change. Hosted service in gate would break
 # "laptop enough" rule.
 #
 # Imports (coverage, compile DB) come from `make sonar-reports`, same as local.
