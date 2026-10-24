@@ -123,5 +123,6 @@ In `docs/`. Updated in PR that changes subject. No duplication.
 | `RELEASING.md` | Tag, build, validate, submit | 1 page |
 | `TRANSLATING.md` | Filling a catalog | 1 page |
 | `CHANGELOG.md` | Keep-a-Changelog, user-facing entries only | — |
+| `AGENTS.md` (root) | How agents work here: rules, done steps, reporting | 1 page |
 
 Not kept: design narratives, roadmaps beyond this file, tutorials, marketing copy.
