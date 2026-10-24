@@ -24,7 +24,7 @@ public:
     static constexpr int PluginShutdownLimit = 2000 + 5000;
     static constexpr int DefaultTimeout = PluginShutdownLimit + 1000;
 
-    explicit ExitWatchdog(QGuiApplication *app, int timeout = DefaultTimeout,
+    explicit ExitWatchdog(const QGuiApplication *app, int timeout = DefaultTimeout,
                           QObject *parent = nullptr);
 
 signals:

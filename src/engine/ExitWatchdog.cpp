@@ -9,7 +9,7 @@ namespace Salama {
 static_assert(ExitWatchdog::DefaultTimeout > ExitWatchdog::PluginShutdownLimit,
               "plugin must get its whole shutdown first");
 
-ExitWatchdog::ExitWatchdog(QGuiApplication *app, int timeout, QObject *parent)
+ExitWatchdog::ExitWatchdog(const QGuiApplication *app, int timeout, QObject *parent)
     : QObject(parent)
 {
     m_timer.setSingleShot(true);
