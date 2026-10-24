@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Tab's back entries for back hold, read by frame script (EngineMessages.tabHistory*).
+// Tab's back entries for back hold, read by frame script (TabHistory).
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -14,11 +14,11 @@ QtObject {
 
     function ask() {
         entries = []
-        view.sendAsyncMessage(EngineMessages.tabHistoryMessage, {})
+        view.sendAsyncMessage(TabHistory.askMessage, {})
     }
 
     function go(entry) {
-        view.sendAsyncMessage(EngineMessages.tabHistoryGoMessage,
+        view.sendAsyncMessage(TabHistory.goMessage,
                               { "index": entry.index, "address": entry.address })
     }
 
@@ -26,15 +26,15 @@ QtObject {
     property Connections page: Connections {
         target: link.view
         onRecvAsyncMessage: {
-            if (message === EngineMessages.tabHistoryResultMessage) {
-                link.entries = EngineMessages.tabHistory(data)
+            if (message === TabHistory.resultMessage) {
+                link.entries = TabHistory.entries(data)
             }
         }
     }
 
     // Messages heard only once listened for; qtmozembed holds frame script until view made.
     Component.onCompleted: {
-        view.addMessageListener(EngineMessages.tabHistoryResultMessage)
-        view.loadFrameScript(EngineMessages.tabHistoryScriptUrl)
+        view.addMessageListener(TabHistory.resultMessage)
+        view.loadFrameScript(TabHistory.scriptUrl)
     }
 }

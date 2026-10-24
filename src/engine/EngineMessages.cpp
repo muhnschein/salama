@@ -3,7 +3,6 @@
 #include "EngineMessages.h"
 
 #include "EngineData.h"
-#include "reader/Reader.h"
 #include "settings/DohSettings.h"
 #include "settings/PrivacySettings.h"
 #include "settings/SearchSettings.h"
@@ -16,52 +15,11 @@
 #include <QStringList>
 #include <QUrl>
 #include <QVector>
-#include <cmath>
 #include <cstring>
-#include <limits>
 
 namespace Salama {
 
 namespace {
-
-const QString TabHistoryMessage = QStringLiteral("salama:tabhistory");
-const QString TabHistoryResultMessage = QStringLiteral("salama:tabhistory-result");
-const QString TabHistoryGoMessage = QStringLiteral("salama:tabhistory-go");
-
-// Child-side nsISHistory exists while session history stays in content process (embedlite runs
-// without Fission, so no sessionHistoryInParent). Moved to parent -> legacySHistory throws ->
-// empty answer -> hold acts as tap. Go checks entry still same: list may be stale.
-const char *const TabHistoryTemplate = R"((function () {
-    "use strict";
-    var ask = "%1", result = "%2", go = "%3", limit = %4;
-    function navigation() {
-        return docShell.QueryInterface(Components.interfaces.nsIWebNavigation);
-    }
-    function history() {
-        return navigation().sessionHistory.legacySHistory;
-    }
-    addMessageListener(ask, function () {
-        var entries = [];
-        try {
-            var list = history();
-            for (var i = list.index - 1; i >= 0 && entries.length < limit; --i) {
-                var entry = list.getEntryAtIndex(i);
-                entries.push({ index: i, address: entry.URI.spec, title: entry.title });
-            }
-        } catch (e) {}
-        sendAsyncMessage(result, { entries: entries });
-    });
-    addMessageListener(go, function (message) {
-        try {
-            var list = history(), index = message.data.index;
-            if (index >= 0 && index < list.index
-                    && list.getEntryAtIndex(index).URI.spec === message.data.address) {
-                navigation().gotoIndex(index);
-            }
-        } catch (e) {}
-    });
-})();
-)";
 
 bool isWebScheme(const QString &scheme)
 {
@@ -335,65 +293,6 @@ QVariantMap EngineMessages::linkTarget(const QVariant &data)
         {QStringLiteral("contentType"), message.value(QStringLiteral("contentType")).toString()},
         {QStringLiteral("address"), shownAddress(link.isEmpty() ? image : link)},
     };
-}
-
-QString EngineMessages::tabHistoryScript() const
-{
-    return QString::fromUtf8(TabHistoryTemplate)
-        .arg(TabHistoryMessage, TabHistoryResultMessage, TabHistoryGoMessage)
-        .arg(TabHistoryLimit);
-}
-
-QString EngineMessages::tabHistoryScriptUrl() const
-{
-    return QStringLiteral("data:application/javascript;charset=utf-8,") +
-           QString::fromLatin1(QUrl::toPercentEncoding(tabHistoryScript()));
-}
-
-QString EngineMessages::tabHistoryMessage() const
-{
-    return TabHistoryMessage;
-}
-
-QString EngineMessages::tabHistoryResultMessage() const
-{
-    return TabHistoryResultMessage;
-}
-
-QString EngineMessages::tabHistoryGoMessage() const
-{
-    return TabHistoryGoMessage;
-}
-
-// Index whole, strictly falling, in int range: anything else not what script sends.
-QVariantList EngineMessages::tabHistory(const QVariant &data)
-{
-    QVariantList entries;
-    double previous = double(std::numeric_limits<int>::max()) + 1;
-    const QVariantList listed = data.toMap().value(QStringLiteral("entries")).toList();
-    for (const QVariant &value : listed) {
-        if (entries.count() == TabHistoryLimit) {
-            break;
-        }
-        const QVariantMap entry = value.toMap();
-        const QVariant index = entry.value(QStringLiteral("index"));
-        const double number = index.toDouble();
-        const QString address = entry.value(QStringLiteral("address")).toString();
-        const QUrl url(address, QUrl::TolerantMode);
-        if (!EngineData::isNumber(index) || number < 0 || number >= previous ||
-            number != std::floor(number) || !url.isValid() || url.scheme().isEmpty()) {
-            continue;
-        }
-        previous = number;
-        const QString source = Reader::sourceUrl(url);
-        entries.append(QVariantMap{
-            {QStringLiteral("index"), int(number)},
-            {QStringLiteral("address"), address},
-            {QStringLiteral("url"), source.isEmpty() ? address : source},
-            {QStringLiteral("title"), entry.value(QStringLiteral("title")).toString().simplified()},
-        });
-    }
-    return entries;
 }
 
 QVariantMap EngineMessages::findRequest(const QString &text, bool again, bool backwards) const

@@ -49,7 +49,7 @@ DockedPanel {
         edgeOf: panel
     }
 
-    // Ten rows at most (engine side caps): all made, sheet sized to them.
+    // TabHistory caps rows: all made, sheet sized to them.
     SilicaFlickable {
         objectName: "tabHistoryList"
         anchors.fill: parent
@@ -76,7 +76,7 @@ DockedPanel {
                     width: content.width
                     title: modelData.title
                     subtitle: modelData.url
-                    icon: HistoryModel.faviconOf(modelData.url)
+                    icon: modelData.favicon
                     onClicked: {
                         panel.hide()
                         panel.entryChosen(modelData)

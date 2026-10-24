@@ -27,15 +27,8 @@ class EngineMessages : public QObject
     Q_PROPERTY(QString findResultMessage READ findResultMessage CONSTANT)
     Q_PROPERTY(QString searchOfferedMessage READ searchOfferedMessage CONSTANT)
     Q_PROPERTY(QString contextMenuMessage READ contextMenuMessage CONSTANT)
-    Q_PROPERTY(QString tabHistoryScriptUrl READ tabHistoryScriptUrl CONSTANT)
-    Q_PROPERTY(QString tabHistoryMessage READ tabHistoryMessage CONSTANT)
-    Q_PROPERTY(QString tabHistoryResultMessage READ tabHistoryResultMessage CONSTANT)
-    Q_PROPERTY(QString tabHistoryGoMessage READ tabHistoryGoMessage CONSTANT)
 
 public:
-    // Back entries listed on back hold; older ones via History page.
-    static constexpr int TabHistoryLimit = 10;
-
     explicit EngineMessages(QObject *parent = nullptr);
 
     QString clearPrivateDataTopic() const;
@@ -77,19 +70,6 @@ public:
 
     // All keys present. link "" for javascript:; kind "page", "app" (isExternalUrl) or "".
     Q_INVOKABLE static QVariantMap linkTarget(const QVariant &data);
-
-    // WebView exposes canGoBack only: frame script reads tab's session history, answers
-    // tabHistoryMessage with tabHistoryResultMessage (needs addMessageListener), goes on
-    // tabHistoryGoMessage `{index, address}`.
-    QString tabHistoryScriptUrl() const;
-    QString tabHistoryScript() const;
-    QString tabHistoryMessage() const;
-    QString tabHistoryResultMessage() const;
-    QString tabHistoryGoMessage() const;
-
-    // Back entries newest first, at most TabHistoryLimit: `{index, address, url, title}`.
-    // address = engine's, url = shown (reader view -> article's).
-    Q_INVOKABLE static QVariantList tabHistory(const QVariant &data);
 
     // Empty text ends search, else last match stays highlighted.
     Q_INVOKABLE QVariantMap findRequest(const QString &text, bool again, bool backwards) const;

@@ -58,6 +58,7 @@ using Salama::Settings;
 using Salama::SitePermissions;
 using Salama::SitePermissionSettings;
 using Salama::StartPageSettings;
+using Salama::TabHistory;
 using Salama::TabModel;
 using Salama::WebNotifications;
 
@@ -3286,7 +3287,7 @@ void tst_qmlload::backHoldShowsTabHistory()
     FingerWindow host(m_window.data());
     QQuickWindow &window = *host.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
-    EngineMessages *messages = m_core->engineMessages();
+    TabHistory *history = m_core->tabHistory();
     QObject *view = currentWebView();
     QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *panel = find(QStringLiteral("tabHistoryPanel"));
@@ -3300,11 +3301,10 @@ void tst_qmlload::backHoldShowsTabHistory()
         }
         return count;
     };
-    const auto answer = [view, messages](const QVariantList &entries) {
+    const auto answer = [view, history](const QVariantList &entries) {
         const QVariant data = QVariantMap{{QStringLiteral("entries"), entries}};
         QMetaObject::invokeMethod(view, "recvAsyncMessage",
-                                  Q_ARG(QString, messages->tabHistoryResultMessage()),
-                                  Q_ARG(QVariant, data));
+                                  Q_ARG(QString, history->resultMessage()), Q_ARG(QVariant, data));
     };
     const auto entry = [](int index, const QString &address, const QString &title) {
         return QVariantMap{{QStringLiteral("index"), index},
@@ -3312,11 +3312,8 @@ void tst_qmlload::backHoldShowsTabHistory()
                            {QStringLiteral("title"), title}};
     };
 
-    QVERIFY(view->property("messageListeners")
-                .toStringList()
-                .contains(messages->tabHistoryResultMessage()));
-    QCOMPARE(view->property("frameScripts").toStringList().count(messages->tabHistoryScriptUrl()),
-             1);
+    QVERIFY(view->property("messageListeners").toStringList().contains(history->resultMessage()));
+    QCOMPARE(view->property("frameScripts").toStringList().count(history->scriptUrl()), 1);
     QVERIFY(!panel->property("open").toBool());
     // Own shade, not DockedPanel's modal, which dims handle too (#38).
     QVERIFY(!panel->property("modal").toBool());
@@ -3325,14 +3322,14 @@ void tst_qmlload::backHoldShowsTabHistory()
     view->setProperty("canGoBack", false);
     view->setProperty("calls", QVariantList());
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, back);
-    QCOMPARE(messageCount(messages->tabHistoryMessage()), 0);
+    QCOMPARE(messageCount(history->askMessage()), 0);
 
     view->setProperty("canGoBack", true);
     m_core->history()->visit(QStringLiteral("https://b.example/"), QStringLiteral("B"));
     m_core->history()->updateFavicon(QStringLiteral("https://b.example/"),
                                      QStringLiteral("https://b.example/icon.png"));
     QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, back);
-    QCOMPARE(messageCount(messages->tabHistoryMessage()), 1);
+    QCOMPARE(messageCount(history->askMessage()), 1);
     QVERIFY(!evaluate(bar, QStringLiteral("hold('back')")).toBool());
     answer({entry(1, QStringLiteral("https://b.example/"), QStringLiteral("B")),
             entry(0, QStringLiteral("https://a.example/"), QString())});
@@ -3351,7 +3348,7 @@ void tst_qmlload::backHoldShowsTabHistory()
     click(rows.at(1));
     QVERIFY(!panel->property("open").toBool());
     const QVariantMap went = view->property("messages").toList().last().toMap();
-    QCOMPARE(went.value(QStringLiteral("name")).toString(), messages->tabHistoryGoMessage());
+    QCOMPARE(went.value(QStringLiteral("name")).toString(), history->goMessage());
     QCOMPARE(went.value(QStringLiteral("data")).toMap().value(QStringLiteral("index")).toInt(), 0);
     QCOMPARE(went.value(QStringLiteral("data")).toMap().value(QStringLiteral("address")).toString(),
              QStringLiteral("https://a.example/"));
@@ -3360,7 +3357,7 @@ void tst_qmlload::backHoldShowsTabHistory()
     // Tap still back; each press asks again, old answer dropped. Fading shade takes presses.
     QTRY_VERIFY(!find(QStringLiteral("tabHistoryShade"))->property("visible").toBool());
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, back);
-    QCOMPARE(messageCount(messages->tabHistoryMessage()), 2);
+    QCOMPARE(messageCount(history->askMessage()), 2);
     QCOMPARE(view->property("calls").toStringList().count(QStringLiteral("goBack")), 1);
     QVERIFY(!panel->property("open").toBool());
     QVERIFY(!evaluate(bar, QStringLiteral("hold('back')")).toBool());
@@ -3371,7 +3368,7 @@ void tst_qmlload::backHoldShowsTabHistory()
                       reloadIcon->mapToScene(QPointF(reloadIcon->width() / 2, 0)).toPoint() +
                           QPoint(0, int(reloadIcon->height() / 2)));
     QVERIFY(view->property("calls").toStringList().contains(QStringLiteral("reload")));
-    QCOMPARE(messageCount(messages->tabHistoryMessage()), 2);
+    QCOMPARE(messageCount(history->askMessage()), 2);
     answer({entry(0, QStringLiteral("https://a.example/"), QStringLiteral("A"))});
     QVERIFY(!evaluate(bar, QStringLiteral("hold('reload')")).toBool());
     QVERIFY(!evaluate(bar, QStringLiteral("hold('address')")).toBool());
