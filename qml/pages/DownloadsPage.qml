@@ -12,13 +12,15 @@ Page {
     objectName: "downloadsPage"
     allowedOrientations: Orientation.Portrait
 
-    function open(row, openable) {
+    // By id: list shows search's rows, not DownloadModel's.
+    function open(downloadId, openable) {
         if (openable) {
-            Qt.openUrlExternally(DownloadModel.fileUrl(row))
+            Qt.openUrlExternally(DownloadModel.fileUrl(DownloadModel.rowOf(downloadId)))
         }
     }
 
-    function act(row, status) {
+    function act(downloadId, status) {
+        var row = DownloadModel.rowOf(downloadId)
         if (status === DownloadModel.Running) {
             DownloadModel.pause(row)
         } else {
@@ -33,15 +35,18 @@ Page {
         }
     }
 
-    SilicaListView {
-        id: downloadList
+    DownloadSearch {
+        id: search
 
-        objectName: "downloadList"
+        downloads: DownloadModel
+    }
+
+    // As History: flickable owns pulley so it opens above heading; field stays out of list.
+    SilicaFlickable {
+        objectName: "downloadsPulleyHost"
         anchors.fill: parent
-        model: DownloadModel
-        header: PageHeader {
-            title: qsTr("Downloads")
-        }
+        contentWidth: width
+        contentHeight: height
 
         PullDownMenu {
             objectName: "downloadsPulley"
@@ -55,28 +60,73 @@ Page {
             }
         }
 
-        delegate: DownloadDelegate {
-            id: delegate
+        Column {
+            id: heading
 
-            onClicked: downloadsPage.open(index, delegate.openable)
-            onActionRequested: downloadsPage.act(index, model.status)
-            onRemoveRequested: DownloadModel.remove(index)
-            // Looked up by id at timeout: rows above may have changed.
-            onDeleteRequested: {
-                var downloadId = model.downloadId
-                //: The few seconds to change one's mind before a downloaded file is deleted
-                delegate.remorseAction(qsTr("Deleting"), function () {
-                    DownloadModel.deleteFile(DownloadModel.rowOf(downloadId))
-                })
+            objectName: "downloadsHeading"
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+            }
+
+            PageHeader {
+                title: qsTr("Downloads")
+            }
+
+            SearchField {
+                objectName: "downloadsSearch"
+                width: parent.width
+                placeholderText: qsTr("Search")
+                onTextChanged: search.searchTerm = text
             }
         }
 
-        ViewPlaceholder {
-            enabled: DownloadModel.count === 0
-            text: qsTr("No downloads")
-            hintText: qsTr("Files downloaded from pages are listed here")
-        }
+        SilicaListView {
+            id: downloadList
 
-        VerticalScrollDecorator {}
+            objectName: "downloadList"
+            anchors {
+                top: heading.bottom
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+            }
+            clip: true
+            model: search
+
+            // In progress first, then by start.
+            section.property: "dateGroup"
+            section.delegate: DateSectionHeader {
+                group: Number(section)
+            }
+
+            delegate: DownloadDelegate {
+                id: delegate
+
+                searching: search.searchTerm.length > 0
+                onClicked: downloadsPage.open(model.downloadId, delegate.openable)
+                onActionRequested: downloadsPage.act(model.downloadId, model.status)
+                onRemoveRequested: DownloadModel.remove(DownloadModel.rowOf(model.downloadId))
+                // Looked up at timeout: rows above may have changed.
+                onDeleteRequested: {
+                    var downloadId = model.downloadId
+                    //: The few seconds to change one's mind before a downloaded file is deleted
+                    delegate.remorseAction(qsTr("Deleting"), function () {
+                        DownloadModel.deleteFile(DownloadModel.rowOf(downloadId))
+                    })
+                }
+            }
+
+            ViewPlaceholder {
+                objectName: "downloadsPlaceholder"
+                enabled: search.count === 0
+                text: search.searchTerm.length > 0 ? qsTr("No matches") : qsTr("No downloads")
+                hintText: search.searchTerm.length > 0
+                          ? "" : qsTr("Files downloaded from pages are listed here")
+            }
+
+            VerticalScrollDecorator {}
+        }
     }
 }

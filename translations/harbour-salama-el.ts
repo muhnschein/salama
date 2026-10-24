@@ -88,16 +88,12 @@
         <translation>Σελιδοδείκτες</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Προσθήκη τρέχουσας σελίδας στους σελιδοδείκτες</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Δεν υπάρχουν σελιδοδείκτες</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Τραβήξτε προς τα κάτω για να προσθέσετε την τρέχουσα σελίδα στους σελιδοδείκτες</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Προσθέστε σελιδοδείκτες καθώς περιηγείστε, ώστε να βρείτε αργότερα τις αγαπημένες σας ιστοσελίδες</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Το εικονίδιό του στο εξώφυλλο</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Σε εξέλιξη</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Σήμερα</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Χθες</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Τελευταίες 7 ημέρες</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Τελευταίες 30 ημέρες</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Παλαιότερα</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Διαγραφή σε εξέλιξη</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Δεν βρέθηκαν αποτελέσματα</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Αναζήτηση</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Ιστορικό</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Αναζήτηση ιστορικού</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Απαλοιφή ιστορικού</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Δεν υπάρχει ακόμη ιστορικό</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Αναζήτηση</translation>
     </message>
 </context>
 <context>

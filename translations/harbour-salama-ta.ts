@@ -88,16 +88,12 @@
         <translation>புத்தகக்குறிகள்</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>தற்போதைய பக்கத்தைப் புத்தகக்குறியிடு</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>புத்தகக்குறிகள் இல்லை</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>தற்போதைய பக்கத்தைப் புத்தகக்குறியிடக் கீழே இழுக்கவும்</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>உலாவும்போது புத்தகக்குறிகளைச் சேர்க்கவும், பின்னர் உங்களுக்குப் பிடித்த தளங்களைக் கண்டறியலாம்</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>அட்டையில் அதன் சின்னம்</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>நடைபெறுகிறது</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>இன்று</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>நேற்று</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>கடந்த 7 நாட்கள்</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>கடந்த 30 நாட்கள்</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>பழையவை</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>நீக்கப்படுகிறது</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>எதுவும் பொருந்தவில்லை</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>தேடு</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>வரலாறு</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>வரலாற்றைத் தேடு</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>வரலாற்றைத் துடை</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>இன்னும் வரலாறு இல்லை</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>தேடு</translation>
     </message>
 </context>
 <context>

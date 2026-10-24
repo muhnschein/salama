@@ -88,16 +88,12 @@
         <translation>ബുക്ക്മാർക്കുകൾ</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>നിലവിലെ താൾ ബുക്ക്മാർക്ക് ചെയ്യുക</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ബുക്ക്മാർക്കുകളില്ല</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>നിലവിലെ താൾ ബുക്ക്മാർക്ക് ചെയ്യാൻ താഴേക്ക് വലിക്കുക</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ബ്രൗസ് ചെയ്യുമ്പോൾ ബുക്ക്മാർക്കുകൾ ചേർക്കുക, അങ്ങനെ പ്രിയപ്പെട്ട സൈറ്റുകൾ പിന്നീട് കണ്ടെത്താം</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>കവറിൽ ഇതിന്റെ ഐക്കൺ</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>പുരോഗമിക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>ഇന്ന്</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>ഇന്നലെ</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>കഴിഞ്ഞ 7 ദിവസം</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>കഴിഞ്ഞ 30 ദിവസം</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>പഴയവ</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>ഇല്ലാതാക്കുന്നു</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>ഒന്നും പൊരുത്തപ്പെടുന്നില്ല</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>തിരയുക</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>നാൾവഴി</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>നാൾവഴി തിരയുക</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>നാൾവഴി മായ്ക്കുക</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ഇതുവരെ നാൾവഴിയില്ല</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>തിരയുക</translation>
     </message>
 </context>
 <context>

@@ -6,6 +6,7 @@
 //  * Every `model.<role>` in delegate exists on its model.
 //  * Every `<Singleton>.<member>` resolves to property, method or signal.
 #include "Core.h"
+#include "downloads/DownloadSearch.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
 #include "tabs/TabGroupModel.h"
@@ -23,6 +24,7 @@ using Salama::BookmarkModel;
 using Salama::ClosedTabModel;
 using Salama::CoverSettings;
 using Salama::DownloadModel;
+using Salama::DownloadSearch;
 using Salama::EngineMessages;
 using Salama::GroupTabModel;
 using Salama::HistoryModel;
@@ -160,6 +162,8 @@ void tst_qmlstatic::delegateRolesExist()
     HistoryModel history(storage);
     BookmarkModel bookmarks(storage);
     DownloadModel downloads(storage, dir.path());
+    DownloadSearch downloadSearch;
+    downloadSearch.setDownloads(&downloads);
     QSettings file(dir.path() + QStringLiteral("/salama.conf"), QSettings::IniFormat);
     SearchEngines searchEngines(file);
     SearchSettings searchSettings(file, searchEngines);
@@ -187,8 +191,9 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},
         {QStringLiteral("components/BookmarkDelegate.qml"), roleSet(bookmarks)},
-        {QStringLiteral("pages/DownloadsPage.qml"), roleSet(downloads)},
-        {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloads)},
+        // Page lists a DownloadSearch over DownloadModel.
+        {QStringLiteral("pages/DownloadsPage.qml"), roleSet(downloadSearch)},
+        {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloadSearch)},
         {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},
         {QStringLiteral("components/OmnibarResultRow.qml"), roleSet(omnibar)},
         {QStringLiteral("components/StartPageView.qml"), roleSet(sites)},

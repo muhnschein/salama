@@ -88,16 +88,12 @@
         <translation>Dấu trang</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Đánh dấu trang hiện tại</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Không có dấu trang nào</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Kéo xuống để đánh dấu trang hiện tại</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Thêm dấu trang khi bạn duyệt để bạn có thể tìm thấy các trang web yêu thích của mình sau này</translation>
     </message>
 </context>
 <context>
@@ -286,6 +282,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Biểu tượng của thao tác trên bìa</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Trong tiến trình</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Hôm nay</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Hôm qua</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>7 ngày qua</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>30 ngày qua</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Cũ hơn</translation>
     </message>
 </context>
 <context>
@@ -500,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Đang xóa</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Không có kết quả khớp</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Tìm kiếm</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -539,10 +571,6 @@
         <translation>Lịch sử</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Tìm kiếm lịch sử</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Xóa lịch sử</translation>
     </message>
@@ -557,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Chưa có lịch sử</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Tìm kiếm</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>Bladwijzers</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Bladwijzer voor huidige pagina maken</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Geen bladwijzers</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trek omlaag om een bladwijzer voor de huidige pagina te maken</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Voeg bladwijzers toe terwijl je surft, zodat je je favoriete websites later terugvindt</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Zijn pictogram op de cover</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Wordt uitgevoerd</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Vandaag</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Gisteren</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Afgelopen 7 dagen</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Afgelopen 30 dagen</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Ouder</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Wordt verwijderd</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Geen overeenkomsten</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Geschiedenis</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Geschiedenis doorzoeken</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Geschiedenis wissen</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Nog geen geschiedenis</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
     </message>
 </context>
 <context>

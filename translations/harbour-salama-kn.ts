@@ -88,16 +88,12 @@
         <translation>ಪುಟಗುರುತುಗಳು</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>ಪ್ರಸ್ತುತ ಪುಟವನ್ನು ಪುಟಗುರುತು ಮಾಡಿ</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>ಪುಟಗುರುತುಗಳಿಲ್ಲ</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>ಪ್ರಸ್ತುತ ಪುಟವನ್ನು ಪುಟಗುರುತು ಮಾಡಲು ಕೆಳಗೆ ಎಳೆಯಿರಿ</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ಬ್ರೌಸ್ ಮಾಡುವಾಗ ಪುಟಗುರುತುಗಳನ್ನು ಸೇರಿಸಿ, ಇದರಿಂದ ನಿಮ್ಮ ಮೆಚ್ಚಿನ ತಾಣಗಳನ್ನು ನಂತರ ಹುಡುಕಬಹುದು</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>ಕವರ್‌ನಲ್ಲಿ ಇದರ ಐಕಾನ್</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>ಪ್ರಗತಿಯಲ್ಲಿದೆ</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>ಇಂದು</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>ನಿನ್ನೆ</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>ಕಳೆದ 7 ದಿನಗಳು</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>ಕಳೆದ 30 ದಿನಗಳು</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>ಹಳೆಯವು</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>ಅಳಿಸಲಾಗುತ್ತಿದೆ</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>ಯಾವುದೂ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ಹುಡುಕಿ</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>ಇತಿಹಾಸ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ಇತಿಹಾಸವನ್ನು ಹುಡುಕಿ</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ಇತಿಹಾಸವನ್ನು ಅಳಿಸಿ</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>ಇನ್ನೂ ಇತಿಹಾಸವಿಲ್ಲ</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>ಹುಡುಕಿ</translation>
     </message>
 </context>
 <context>

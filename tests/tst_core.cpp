@@ -19,6 +19,7 @@ class tst_core : public QObject
 
 private slots:
     void wiresTabsToHistory();
+    void historyRowsGetTitlesAndIcons();
     void wiresFaviconsAndActiveUrlToBookmarks();
     void restoresState();
     void wiresPlaybackToPageMedia();
@@ -53,6 +54,43 @@ void tst_core::wiresTabsToHistory()
     QCOMPARE(core.history()
                  ->data(core.history()->index(0, 0), roleId(HistoryModel::Role::Title))
                  .toString(),
+             QStringLiteral("Alpha"));
+}
+
+// Each page's row gets its title and icon, also where the engine went past the address asked
+// ("~half of History without icons").
+void tst_core::historyRowsGetTitlesAndIcons()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    HistoryModel *history = core.history();
+    const auto row = [history](const QString &url, HistoryModel::Role role) {
+        for (int i = 0; i < history->rowCount(); ++i) {
+            const QModelIndex index = history->index(i, 0);
+            if (history->data(index, roleId(HistoryModel::Role::Url)).toString() == url) {
+                return history->data(index, roleId(role)).toString();
+            }
+        }
+        return QStringLiteral("(no row)");
+    };
+    const QString icon = QStringLiteral("https://a.example/favicon.ico");
+    const int id = core.tabs()->newTab(QString());
+
+    // Typed "a.example": asked without slash, engine loads with one.
+    core.tabs()->request(id, QStringLiteral("https://a.example"));
+    core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
+    core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
+    core.tabs()->updateFavicon(id, icon);
+    QCOMPARE(history->count(), 1);
+    QCOMPARE(row(QStringLiteral("https://a.example/"), HistoryModel::Role::Favicon), icon);
+
+    // Next page, same icon and title as the last.
+    core.tabs()->updateUrl(id, QStringLiteral("https://a.example/next"));
+    core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
+    core.tabs()->updateFavicon(id, icon);
+    QCOMPARE(history->count(), 2);
+    QCOMPARE(row(QStringLiteral("https://a.example/next"), HistoryModel::Role::Favicon), icon);
+    QCOMPARE(row(QStringLiteral("https://a.example/next"), HistoryModel::Role::Title),
              QStringLiteral("Alpha"));
 }
 

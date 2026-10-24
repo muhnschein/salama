@@ -88,16 +88,12 @@
         <translation>Adresynas</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Įtraukti dabartinį tinklalapį į adresyną</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Adresyno įrašų nėra</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Patrauk žemyn, kad įtrauktum dabartinį tinklalapį į adresyną</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Naršant įtrauk tinklalapius į adresyną, kad vėliau rastum mėgstamas svetaines</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Jo piktograma viršelyje</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Vykdoma</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Šiandien</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Vakar</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Paskutinės 7 dienos</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Paskutinės 30 dienų</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Senesni</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Trinama</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Atitikmenų nėra</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Paieška</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Žurnalas</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Ieškoti žurnale</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Išvalyti žurnalą</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Žurnalas dar tuščias</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Paieška</translation>
     </message>
 </context>
 <context>

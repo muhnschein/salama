@@ -98,6 +98,33 @@ Item {
         url = target
     }
 
+    // qtmozembed (since 2021, JB#56506): setUrl shows the address at once, unresolved (pending
+    // url), then reports where engine went (OnLocationChanged), again if same. Writing url is
+    // that request; locate() is a move engine makes itself (link, script), reported once.
+    property string location
+
+    function locate(address) {
+        location = String(address)
+        if (String(url) === location) {
+            urlChanged()
+        } else {
+            url = address
+        }
+    }
+
+    function resolve() {
+        if (String(url) !== location) {
+            location = String(url)
+            urlChanged()
+        }
+    }
+
+    onUrlChanged: {
+        if (String(url) !== location) {
+            Qt.callLater(resolve)
+        }
+    }
+
     property string lastHtml
 
     function loadHtml(html, baseUrl) {

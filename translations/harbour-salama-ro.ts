@@ -88,16 +88,12 @@
         <translation>Marcaje</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Adaugă pagina curentă la marcaje</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Niciun marcaj</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trage în jos pentru a adăuga pagina curentă la marcaje</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adaugă marcaje pe măsură ce navighezi, pentru a putea găsi site-urile tale preferate mai târziu</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Pictograma sa de pe copertă</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>În desfășurare</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Astăzi</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Ieri</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Ultimele 7 zile</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Ultimele 30 de zile</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Mai vechi</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Se șterge</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nicio potrivire</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Caută</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Istoric</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Caută în istoric</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Șterge istoricul</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Încă nu există istoric</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Caută</translation>
     </message>
 </context>
 <context>

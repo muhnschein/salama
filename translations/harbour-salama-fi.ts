@@ -88,16 +88,12 @@
         <translation>Kirjanmerkit</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Lisää nykyinen sivu kirjanmerkkeihin</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Ei kirjanmerkkejä</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Vedä alas lisätäksesi nykyisen sivun kirjanmerkkeihin</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Lisää kirjanmerkkejä selatessasi, jotta löydät suosikkisivustosi myöhemmin</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Sen kuvake kannessa</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Käynnissä</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Tänään</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Eilen</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Viimeiset 7 päivää</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Viimeiset 30 päivää</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Vanhemmat</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Poistetaan</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ei osumia</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Historia</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Hae historiasta</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Tyhjennä historia</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ei vielä historiaa</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Haku</translation>
     </message>
 </context>
 <context>

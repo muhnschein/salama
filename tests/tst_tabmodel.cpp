@@ -44,6 +44,7 @@ private slots:
     void closeTabActivatesPrevious();
     void closeAllTabs();
     void urlUpdatesAndVisits();
+    void requestedUrlIsNoVisit();
     void titleAndFavicon();
     void persistenceRoundTrip();
     void thumbnailsAreCapturedPerTab();
@@ -389,15 +390,76 @@ void tst_tabmodel::urlUpdatesAndVisits()
              QStringLiteral("https://a.example/next"));
     QCOMPARE(dataSpy.count(), 0);
 
+    // First report of tab's own url: a visit, nothing new shown.
     model.updateUrl(b, QStringLiteral("https://b.example/"));
+    QCOMPARE(visitedSpy.count(), 3);
+    QCOMPARE(dataSpy.count(), 0);
+    model.updateUrl(b, QStringLiteral("https://b.example/next"));
     QCOMPARE(dataSpy.count(), 1);
-    QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/next"));
 
     model.updateUrl(b, QString());
     model.updateUrl(b, QStringLiteral("tel:112"));
     model.updateUrl(999, QStringLiteral("https://nowhere.example/"));
+    QCOMPARE(visitedSpy.count(), 4);
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/next"));
+}
+
+// Engine shows an asked address before resolving it (qtmozembed's pending url): the tab shows
+// it, but only where the engine went is a visit, else history keeps rows no title or icon
+// ever reaches ("https://example.org" typed, "https://example.org/" loaded).
+void tst_tabmodel::requestedUrlIsNoVisit()
+{
+    TabModel model(nullptr);
+    QSignalSpy visitedSpy(&model, &TabModel::visited);
+    const int tab = model.newTab(QString());
+    QVERIFY(model.activeUrl().isEmpty());
+    // First report of a new tab: a visit.
+    model.updateUrl(tab, QStringLiteral("https://start.example/"));
+    QCOMPARE(visitedSpy.count(), 1);
+    QSignalSpy dataSpy(&model, &TabModel::activeTabDataChanged);
+
+    model.request(tab, QStringLiteral("https://example.org"));
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://example.org"));
+    QCOMPARE(dataSpy.count(), 1);
+    QCOMPARE(visitedSpy.count(), 1);
+    // Engine echoes it, unresolved: still none.
+    model.request(tab, QStringLiteral("https://example.org"));
+    QCOMPARE(visitedSpy.count(), 1);
+    model.updateUrl(tab, QStringLiteral("https://example.org/"));
+    QCOMPARE(visitedSpy.count(), 2);
+    QCOMPARE(visitedSpy.last().first().toString(), QStringLiteral("https://example.org/"));
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://example.org/"));
+
+    // Resolved where asked: the same address is the visit.
+    model.request(tab, QStringLiteral("https://example.org/about"));
+    QCOMPARE(visitedSpy.count(), 2);
+    model.updateUrl(tab, QStringLiteral("https://example.org/about"));
     QCOMPARE(visitedSpy.count(), 3);
-    QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/"));
+    QCOMPARE(visitedSpy.last().first().toString(), QStringLiteral("https://example.org/about"));
+    model.updateUrl(tab, QStringLiteral("https://example.org/about"));
+    QCOMPARE(visitedSpy.count(), 3);
+
+    // Restored tab asks for its own page: no visit when engine reports it.
+    model.request(tab, QStringLiteral("https://example.org/about"));
+    model.updateUrl(tab, QStringLiteral("https://example.org/about"));
+    QCOMPARE(visitedSpy.count(), 3);
+
+    // From start page (no url): shown, so tab leaves it; visit on engine's report.
+    model.showStartPage(tab);
+    QVERIFY(model.activeUrl().isEmpty());
+    model.request(tab, QStringLiteral("https://example.org/about"));
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://example.org/about"));
+    QCOMPARE(visitedSpy.count(), 3);
+    model.updateUrl(tab, QStringLiteral("https://example.org/about"));
+    QCOMPARE(visitedSpy.count(), 4);
+
+    const int shown = dataSpy.count();
+    model.request(tab, QString());
+    model.request(tab, QStringLiteral("tel:112"));
+    model.request(999, QStringLiteral("https://nowhere.example/"));
+    QCOMPARE(dataSpy.count(), shown);
+    QCOMPARE(model.activeUrl(), QStringLiteral("https://example.org/about"));
 }
 
 void tst_tabmodel::titleAndFavicon()
@@ -413,7 +475,8 @@ void tst_tabmodel::titleAndFavicon()
     model.updateTitle(a, QStringLiteral("A"));
     model.updateTitle(a, QStringLiteral("A"));
     model.updateTitle(999, QStringLiteral("X"));
-    QCOMPARE(titleSpy.count(), 1);
+    // Passed on each time (history keys by page), row told once.
+    QCOMPARE(titleSpy.count(), 2);
     QCOMPARE(titleSpy.last().at(0).toString(), QStringLiteral("https://a.example/"));
     QCOMPARE(titleSpy.last().at(1).toString(), QStringLiteral("A"));
     QCOMPARE(role(model, 0, roleId(TabModel::Role::Title)).toString(), QStringLiteral("A"));
@@ -427,13 +490,25 @@ void tst_tabmodel::titleAndFavicon()
     QCOMPARE(dataSpy.count(), 1);
 
     model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));
-    model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));
     model.updateFavicon(999, QStringLiteral("x"));
     QCOMPARE(faviconSpy.count(), 1);
     QCOMPARE(role(model, 0, roleId(TabModel::Role::Favicon)).toString(),
              QStringLiteral("https://a.example/favicon.ico"));
     model.updateFavicon(b, QStringLiteral("https://b.example/icon.png"));
     QCOMPARE(model.activeFavicon(), QStringLiteral("https://b.example/icon.png"));
+    QCOMPARE(dataSpy.count(), 2);
+
+    // Next page on the site, same icon and title: still passed on, for that page.
+    model.updateUrl(a, QStringLiteral("https://a.example/next"));
+    const int rows = rowSpy.count();
+    model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));
+    model.updateTitle(a, QStringLiteral("A"));
+    QCOMPARE(faviconSpy.count(), 3);
+    QCOMPARE(faviconSpy.last().at(0).toString(), QStringLiteral("https://a.example/next"));
+    QCOMPARE(faviconSpy.last().at(1).toString(), QStringLiteral("https://a.example/favicon.ico"));
+    QCOMPARE(titleSpy.last().at(0).toString(), QStringLiteral("https://a.example/next"));
+    QCOMPARE(titleSpy.last().at(1).toString(), QStringLiteral("A"));
+    QCOMPARE(rowSpy.count(), rows);
     QCOMPARE(dataSpy.count(), 2);
 }
 

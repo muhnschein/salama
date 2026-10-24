@@ -88,16 +88,12 @@
         <translation>Кыстыргычлар</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Хәзерге битне кыстыргычларга өстәргә</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Кыстыргычлар юк</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Хәзерге битне кыстыргычларга өстәү өчен аска тартыгыз</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Битләрне караганда кыстыргычлар өстәгез, шулай яраткан сайтларыгызны соңрак таба аласыз</translation>
     </message>
 </context>
 <context>
@@ -286,6 +282,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Аның тышлыктагы тамгасы</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Барышта</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Бүген</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Кичә</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Соңгы 7 көн</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Соңгы 30 көн</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Искерәк</translation>
     </message>
 </context>
 <context>
@@ -500,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Бетерелә</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Бернәрсә дә туры килми</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Эзләү</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -539,10 +571,6 @@
         <translation>Тарих</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Тарихтан эзләү</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Тарихны чистартырга</translation>
     </message>
@@ -557,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Тарих әлегә юк</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Эзләү</translation>
     </message>
 </context>
 <context>

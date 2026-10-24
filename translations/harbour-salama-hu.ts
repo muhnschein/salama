@@ -88,16 +88,12 @@
         <translation>Könyvjelzők</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Aktuális oldal könyvjelzőzése</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nincs könyvjelző</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Húzd le az aktuális oldal könyvjelzőzéséhez</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adj hozzá könyvjelzőket böngészés közben, hogy később is megtaláld a kedvenc oldalaidat</translation>
     </message>
 </context>
 <context>
@@ -286,6 +282,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Ikonja a borítón</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Folyamatban</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Ma</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Tegnap</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Elmúlt 7 nap</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Elmúlt 30 nap</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Régebbi</translation>
     </message>
 </context>
 <context>
@@ -500,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Törlés folyamatban</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nincs találat</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Keresés</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -539,10 +571,6 @@
         <translation>Előzmények</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Keresés az előzményekben</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Előzmények törlése</translation>
     </message>
@@ -557,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Még nincsenek előzmények</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Keresés</translation>
     </message>
 </context>
 <context>

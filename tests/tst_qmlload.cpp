@@ -47,6 +47,7 @@ using Salama::Core;
 using Salama::CoverSettings;
 using Salama::DohSettings;
 using Salama::EngineMessages;
+using Salama::HistoryModel;
 using Salama::NotificationPermissions;
 using Salama::PrivacySettings;
 using Salama::Reader;
@@ -181,6 +182,7 @@ private slots:
     void editingEndsWithTheKeyboard();
     void thumbnailCapturedOnLoad();
     void faviconResolvedAfterLoad();
+    void historyRowsGetPageIcons();
     void tabGrid();
     void gridCellsArePicturesAlone();
     void gridRowsAreOpaque();
@@ -213,6 +215,8 @@ private slots:
     void readerView();
     void downloadsPage();
     void downloadAgain();
+    void downloadsSearch();
+    void listsByDate();
     void downloadNotice();
     void barBannerUnderAFinger();
     void linkMenuOnALongPress();
@@ -866,7 +870,8 @@ void tst_qmlload::addressBarNavigates()
     typeAddress(QStringLiteral("example.org"));
     QCOMPARE(webView->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
     QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org"));
-    QCOMPARE(m_core->history()->count(), 2);
+    // Visit once engine reports where it went.
+    QTRY_COMPARE(m_core->history()->count(), 2);
     QVERIFY(!find(QStringLiteral("addressField"))->property("visible").toBool());
     QCOMPARE(find(QStringLiteral("addressLabel"))->property("text").toString(),
              QStringLiteral("example.org"));
@@ -904,12 +909,17 @@ QList<QObject *> omnibarRows(QObject *root)
     return rows;
 }
 
-// Row title without bold of typed words.
+// Row title without marks of typed words.
 QString titleOf(QObject *row)
 {
-    return textIn(row, QStringLiteral("omnibarResultTitle"))
-        .remove(QStringLiteral("<b>"))
-        .remove(QStringLiteral("</b>"));
+    static const QRegularExpression tag(QStringLiteral("<[^>]*>"));
+    return textIn(row, QStringLiteral("omnibarResultTitle")).remove(tag);
+}
+
+// Search mark as vuo draws it: bold, in ambience highlight colour.
+QString marked(const QString &text, const QColor &highlight)
+{
+    return QStringLiteral("<b><font color=\"%1\">%2</font></b>").arg(highlight.name(), text);
 }
 
 QObject *omnibarRowTitled(QObject *root, const QString &title)
@@ -1045,15 +1055,16 @@ void tst_qmlload::omnibar()
     for (int i = 1; i < rows.count(); ++i) {
         QVERIFY(rows.at(i)->property("y").toReal() < rows.at(i - 1)->property("y").toReal());
     }
-    const QStringList titles{
-        QStringLiteral("<b>Forest</b> wiki"), QStringLiteral("<b>Forest</b> work"),
-        QStringLiteral("<b>Forest</b> near"), QStringLiteral("<b>Forest</b> blog"),
-        QStringLiteral("<b>forest</b>-map.pdf")};
-    const QStringList details{
-        QStringLiteral("<b>forest</b>.example"), QStringLiteral("Switch to tab in Work"),
-        QStringLiteral("Switch to tab"), QStringLiteral("<b>forest</b>.example"),
-        QStringLiteral("files.example · Downloading, 40%")};
     const QColor highlight = evaluate(pane, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    const QString mark = marked(QStringLiteral("Forest"), highlight);
+    const QString markLower = marked(QStringLiteral("forest"), highlight);
+    const QStringList titles{mark + QStringLiteral(" wiki"), mark + QStringLiteral(" work"),
+                             mark + QStringLiteral(" near"), mark + QStringLiteral(" blog"),
+                             markLower + QStringLiteral("-map.pdf")};
+    const QStringList details{
+        markLower + QStringLiteral(".example"), QStringLiteral("Switch to tab in Work"),
+        QStringLiteral("Switch to tab"), markLower + QStringLiteral(".example"),
+        QStringLiteral("files.example · Downloading, 40%")};
     for (int i = 0; i < rows.count(); ++i) {
         QVERIFY(evaluate(rows.at(i), QStringLiteral("model.tabId")).toInt() != forest.front);
         QObject *title = findObjects(rows.at(i), QStringLiteral("omnibarResultTitle")).first();
@@ -1710,6 +1721,55 @@ void tst_qmlload::faviconResolvedAfterLoad()
             QColor(QStringLiteral("#123456")));
 }
 
+// Engine shows a typed address before it resolves (qtmozembed's pending url): History keeps only
+// where it went, and each page there gets its icon, also the next one sharing it.
+void tst_qmlload::historyRowsGetPageIcons()
+{
+    QVERIFY(startWithoutTabs());
+    HistoryModel *history = m_core->history();
+    const auto rows = [history]() {
+        QStringList shown;
+        for (int i = 0; i < history->rowCount(); ++i) {
+            const QModelIndex index = history->index(i, 0);
+            shown.append(history->data(index, roleId(HistoryModel::Role::Url)).toString() +
+                         QLatin1Char(' ') +
+                         history->data(index, roleId(HistoryModel::Role::Favicon)).toString());
+        }
+        return shown;
+    };
+    const auto load = [](QObject *view) {
+        view->setProperty("loading", true);
+        view->setProperty("loading", false);
+    };
+    const QString icon = QStringLiteral(" https://example.org/icon.png");
+
+    // From start page. Engine resolves before anything else runs: no settle (find()) till then.
+    QObject *loader = find(QStringLiteral("webViewLoader"));
+    typeAddress(QStringLiteral("example.org"));
+    auto *view = loader->property("item").value<QObject *>();
+    QVERIFY(view != nullptr);
+    QCOMPARE(view->property("url").toUrl().toString(), QStringLiteral("https://example.org"));
+    evaluate(view, QStringLiteral("locate('https://example.org/')"));
+    view->setProperty("scriptResult", QStringLiteral("/icon.png"));
+    load(view);
+    QCOMPARE(rows(), QStringList{QStringLiteral("https://example.org/") + icon});
+
+    // Link: engine's own move, page with same icon.
+    evaluate(view, QStringLiteral("locate('https://example.org/about')"));
+    load(view);
+    QCOMPARE(rows(), (QStringList{QStringLiteral("https://example.org/about") + icon,
+                                  QStringLiteral("https://example.org/") + icon}));
+
+    // Address bar over a page, redirected.
+    typeAddress(QStringLiteral("example.org/old"));
+    QCOMPARE(m_core->tabs()->activeUrl(), QStringLiteral("https://example.org/old"));
+    evaluate(view, QStringLiteral("locate('https://example.org/new')"));
+    load(view);
+    QCOMPARE(rows(), (QStringList{QStringLiteral("https://example.org/new") + icon,
+                                  QStringLiteral("https://example.org/about") + icon,
+                                  QStringLiteral("https://example.org/") + icon}));
+}
+
 void tst_qmlload::tabGrid()
 {
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
@@ -2201,6 +2261,9 @@ void tst_qmlload::tabSearch()
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *strip = find(QStringLiteral("tabGroupStrip"));
     pullUpToTabs();
+    // Pictures written meanwhile would rebuild results under the pointers held below.
+    tabs->thumbnailWriter()->waitForDone();
+    settle();
 
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
@@ -3327,6 +3390,7 @@ void tst_qmlload::restoredTabsLoadLazily()
     m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
     m_core->tabs()->newTab(QStringLiteral("https://three.example/"));
     m_core->tabs()->activateTab(1);
+    QTRY_COMPARE(m_core->history()->count(), 3);
 
     m_window.reset();
     m_engine.reset();
@@ -4455,6 +4519,211 @@ void tst_qmlload::downloadsPage()
     QVERIFY(!find(QStringLiteral("clearFinishedDownloadsMenu"))->property("enabled").toBool());
 }
 
+// Search keeps rows whose name or address holds every word. Rows then differ from
+// DownloadModel's: acting on one must reach that download, not the one at its row.
+void tst_qmlload::downloadsSearch()
+{
+    Salama::DownloadModel *downloads = m_core->downloads();
+    const QString folder = downloads->directory();
+    const auto start = [downloads, &folder](int id, const QString &name) {
+        downloads->observe(
+            downloads->topic(),
+            QVariantMap{
+                {QStringLiteral("msg"), QStringLiteral("dl-start")},
+                {QStringLiteral("id"), id},
+                {QStringLiteral("displayName"), name},
+                {QStringLiteral("sourceUrl"), QStringLiteral("https://files.example/") + name},
+                {QStringLiteral("targetPath"), folder + QLatin1Char('/') + name}});
+    };
+    // Newest first: photo, notes, report.
+    start(1, QStringLiteral("report.pdf"));
+    QFile report(folder + QStringLiteral("/report.pdf"));
+    QVERIFY(report.open(QIODevice::WriteOnly));
+    report.close();
+    downloads->observe(
+        downloads->topic(),
+        QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-done")}, {QStringLiteral("id"), 1}});
+    start(2, QStringLiteral("notes.txt"));
+    start(3, QStringLiteral("photo.jpg"));
+    QCOMPARE(downloads->count(), 3);
+
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QObject *field = find(QStringLiteral("downloadsSearch"));
+    QObject *list = find(QStringLiteral("downloadList"));
+    QObject *placeholder = find(QStringLiteral("downloadsPlaceholder"));
+    QCOMPARE(field->property("placeholderText").toString(), QStringLiteral("Search"));
+    QCOMPARE(list->property("count").toInt(), 3);
+    QVERIFY(!placeholder->property("enabled").toBool());
+    const auto onlyRow = [this]() {
+        settle();
+        const QList<QObject *> rows = findAll(QStringLiteral("downloadDelegate"));
+        return rows.count() == 1 ? rows.first() : nullptr;
+    };
+    const auto part = [](QObject *row, const char *name) {
+        return findObjects(row, QLatin1String(name)).first();
+    };
+
+    const auto text = [&part](QObject *row, const char *name) {
+        return part(row, name)->property("text").toString();
+    };
+    const int styledText = evaluate(field, QStringLiteral("Text.StyledText")).toInt();
+    const auto styled = [&part, styledText](QObject *row, const char *name) {
+        return part(row, name)->property("textFormat").toInt() == styledText;
+    };
+    const QColor highlight =
+        evaluate(field, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    QObject *row = findAll(QStringLiteral("downloadDelegate")).first();
+    QVERIFY(!styled(row, "downloadName"));
+    QVERIFY(!styled(row, "downloadStatus"));
+
+    // Address too; every word, any case, any order. Matches marked as in vuo; site shown marked.
+    field->setProperty("text", QStringLiteral("files.example"));
+    QCOMPARE(list->property("count").toInt(), 3);
+    for (QObject *shown : findAll(QStringLiteral("downloadDelegate"))) {
+        QVERIFY(styled(shown, "downloadName"));
+        QVERIFY(styled(shown, "downloadStatus"));
+        if (text(shown, "downloadName") == QLatin1String("report.pdf")) {
+            row = shown;
+        }
+    }
+    QCOMPARE(text(row, "downloadStatus"), marked(QStringLiteral("files.example"), highlight));
+    field->setProperty("text", QStringLiteral("PDF report"));
+    QCOMPARE(list->property("count").toInt(), 1);
+    row = onlyRow();
+    QVERIFY(row != nullptr);
+    QCOMPARE(text(row, "downloadName"), marked(QStringLiteral("report"), highlight) +
+                                            QLatin1Char('.') +
+                                            marked(QStringLiteral("pdf"), highlight));
+    QCOMPARE(text(row, "downloadStatus"), QStringLiteral("files.example"));
+    // Status words around a marked site go escaped into StyledText.
+    // Delegate's ids live in its own context, its parts'.
+    QCOMPARE(
+        evaluate(part(row, "downloadName"), QStringLiteral("says.escaped('a<b>&c')")).toString(),
+        QStringLiteral("a&lt;b&gt;&amp;c"));
+    const UrlCatcher files(QStringLiteral("file"));
+    click(row);
+    QCOMPARE(files.opened, QList<QUrl>{QUrl::fromLocalFile(report.fileName())});
+
+    QSignalSpy told(downloads, &Salama::DownloadModel::engineRequest);
+    field->setProperty("text", QStringLiteral("notes"));
+    row = onlyRow();
+    QVERIFY(row != nullptr);
+    click(part(row, "downloadAction"));
+    QCOMPARE(told.count(), 1);
+    QCOMPARE(told.last().at(1).toMap(),
+             (QVariantMap{{QStringLiteral("msg"), QStringLiteral("cancelDownload")},
+                          {QStringLiteral("id"), 2}}));
+    click(part(row, "removeDownloadMenu"));
+    QCOMPARE(downloads->count(), 2);
+    QCOMPARE(downloads->rowOf(2), -1);
+
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No matches"));
+    QCOMPARE(placeholder->property("hintText").toString(), QString());
+    field->setProperty("text", QString());
+    QCOMPARE(list->property("count").toInt(), 2);
+    QVERIFY(!placeholder->property("enabled").toBool());
+
+    // Term is the page's: back and in again lists everything.
+    field->setProperty("text", QStringLiteral("photo"));
+    QCOMPARE(list->property("count").toInt(), 1);
+    popPage();
+    settle();
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(find(QStringLiteral("downloadsSearch"))->property("text").toString(), QString());
+    QCOMPARE(find(QStringLiteral("downloadList"))->property("count").toInt(), 2);
+
+    downloads->clear();
+    placeholder = find(QStringLiteral("downloadsPlaceholder"));
+    QVERIFY(placeholder->property("enabled").toBool());
+    QCOMPARE(placeholder->property("text").toString(), QStringLiteral("No downloads"));
+    QCOMPARE(placeholder->property("hintText").toString(),
+             QStringLiteral("Files downloaded from pages are listed here"));
+}
+
+// History and Downloads under Firefox for Android's date sections; downloads still coming
+// or paused first.
+void tst_qmlload::listsByDate()
+{
+    const auto headings = [this]() {
+        settle();
+        QStringList texts;
+        // List keeps spare headings, hidden.
+        for (QObject *heading : byRow(findAll(QStringLiteral("dateSection")))) {
+            if (heading->property("visible").toBool()) {
+                texts.append(heading->property("text").toString());
+            }
+        }
+        return texts;
+    };
+    {
+        QSqlQuery old(m_core->storage().database());
+        old.prepare(
+            QStringLiteral("INSERT INTO browser_history (url, title, date) VALUES (?, ?, ?)"));
+        for (int daysAgo : {1, 3, 10, 40}) {
+            old.addBindValue(QStringLiteral("https://day%1.example/").arg(daysAgo));
+            old.addBindValue(QStringLiteral("Day %1").arg(daysAgo));
+            old.addBindValue(QDateTime(QDate::currentDate().addDays(-daysAgo), QTime(12, 0))
+                                 .toMSecsSinceEpoch());
+            QVERIFY(old.exec());
+        }
+        m_core->history()->setSearchTerm(QStringLiteral("reload"));
+        m_core->history()->setSearchTerm(QString());
+    }
+    openMenuItem(QStringLiteral("historyMenuButton"));
+    QCOMPARE(evaluate(find(QStringLiteral("historyList")), QStringLiteral("section.property"))
+                 .toString(),
+             QStringLiteral("dateGroup"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("Today"), QStringLiteral("Yesterday"),
+                                      QStringLiteral("Last 7 days"), QStringLiteral("Last 30 days"),
+                                      QStringLiteral("Older")}));
+    find(QStringLiteral("historySearch"))->setProperty("text", QStringLiteral("day"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("Yesterday"), QStringLiteral("Last 7 days"),
+                                      QStringLiteral("Last 30 days"), QStringLiteral("Older")}));
+    popPage();
+    settle();
+
+    Salama::DownloadModel *downloads = m_core->downloads();
+    const auto engineSays = [downloads](const QString &msg, int id, const QString &name) {
+        downloads->observe(downloads->topic(),
+                           QVariantMap{{QStringLiteral("msg"), msg},
+                                       {QStringLiteral("id"), id},
+                                       {QStringLiteral("displayName"), name},
+                                       {QStringLiteral("sourceUrl"),
+                                        QStringLiteral("https://files.example/") + name}});
+    };
+    engineSays(QStringLiteral("dl-start"), 1, QStringLiteral("big.iso"));
+    engineSays(QStringLiteral("dl-start"), 2, QStringLiteral("small.pdf"));
+    engineSays(QStringLiteral("dl-done"), 2, QString());
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QCOMPARE(evaluate(find(QStringLiteral("downloadList")), QStringLiteral("section.property"))
+                 .toString(),
+             QStringLiteral("dateGroup"));
+    const auto names = [this]() {
+        settle();
+        QStringList shown;
+        for (QObject *row : byRow(findAll(QStringLiteral("downloadDelegate")))) {
+            shown.append(findObjects(row, QStringLiteral("downloadName"))
+                             .first()
+                             ->property("text")
+                             .toString());
+        }
+        return shown;
+    };
+    // Older one still coming: above newer arrived one.
+    QCOMPARE(headings(), (QStringList{QStringLiteral("In progress"), QStringLiteral("Today")}));
+    QCOMPARE(names(), (QStringList{QStringLiteral("big.iso"), QStringLiteral("small.pdf")}));
+    engineSays(QStringLiteral("dl-done"), 1, QString());
+    QCOMPARE(headings(), QStringList{QStringLiteral("Today")});
+    QCOMPARE(names(), (QStringList{QStringLiteral("small.pdf"), QStringLiteral("big.iso")}));
+    // Newest arrives in place: same row, other section.
+    engineSays(QStringLiteral("dl-start"), 3, QStringLiteral("song.ogg"));
+    QCOMPARE(headings(), (QStringList{QStringLiteral("In progress"), QStringLiteral("Today")}));
+    engineSays(QStringLiteral("dl-done"), 3, QString());
+    QCOMPARE(headings(), QStringList{QStringLiteral("Today")});
+    QCOMPARE(names().first(), QStringLiteral("song.ogg"));
+}
+
 // Earlier-run download refetched from source; engine's start becomes replacement row.
 void tst_qmlload::downloadAgain()
 {
@@ -5219,13 +5488,45 @@ void tst_qmlload::historyPage()
 {
     m_core->history()->visit(QStringLiteral("https://one.example/"), QStringLiteral("One"));
     m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    const QString icon =
+        QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/icons/86x86/harbour-salama.png"))
+            .toString();
+    m_core->history()->updateFavicon(QStringLiteral("https://two.example/"), icon);
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 3);
     QObject *search = find(QStringLiteral("historySearch"));
+    QCOMPARE(search->property("placeholderText").toString(), QStringLiteral("Search"));
+    const auto part = [](QObject *row, const char *name) {
+        return row->findChild<QObject *>(QLatin1String(name));
+    };
+    const int styledText = evaluate(search, QStringLiteral("Text.StyledText")).toInt();
+    const int plainText = evaluate(search, QStringLiteral("Text.PlainText")).toInt();
+    // Page's favicon left of its title, as a bookmark's.
+    QObject *top = byRow(findAll(QStringLiteral("historyDelegate"))).first();
+    QCOMPARE(part(top, "historyTitle")->property("text").toString(), QStringLiteral("Two"));
+    QCOMPARE(part(top, "historyTitle")->property("textFormat").toInt(), plainText);
+    QCOMPARE(part(top, "historyUrl")->property("textFormat").toInt(), plainText);
+    QVERIFY(part(top, "historyFavicon") != nullptr);
+    QCOMPARE(part(top, "historyFavicon")->property("source").toUrl(), QUrl(icon));
+    QVERIFY(part(top, "historyFavicon")->property("x").toReal() <
+            qobject_cast<QQuickItem *>(part(top, "historyTitle"))
+                ->mapToItem(qobject_cast<QQuickItem *>(top), QPointF())
+                .x());
+
+    // Matches marked as in vuo.
     search->setProperty("text", QStringLiteral("two"));
     QCOMPARE(m_core->history()->count(), 1);
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 1);
+    const QColor highlight =
+        evaluate(search, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    top = findAll(QStringLiteral("historyDelegate")).first();
+    QCOMPARE(part(top, "historyTitle")->property("text").toString(),
+             marked(QStringLiteral("Two"), highlight));
+    QCOMPARE(part(top, "historyTitle")->property("textFormat").toInt(), styledText);
+    QCOMPARE(part(top, "historyUrl")->property("text").toString(),
+             QStringLiteral("https://%1.example/").arg(marked(QStringLiteral("two"), highlight)));
+    QCOMPARE(part(top, "historyUrl")->property("textFormat").toInt(), styledText);
     search->setProperty("text", QString());
     QCOMPARE(findAll(QStringLiteral("historyDelegate")).count(), 3);
 
@@ -5270,6 +5571,8 @@ struct Keystroke
 void typeKeepingFocus(QQuickWindow *window, QQuickItem *field, QObject *list,
                       const QList<Keystroke> &keystrokes)
 {
+    // Inside list (as header) it is in list's focus scope: refill focuses new current item.
+    QVERIFY(!qobject_cast<QQuickItem *>(list)->isAncestorOf(field));
     QVERIFY(list->property("clip").toBool());
     field->forceActiveFocus();
     QVERIFY(field->hasActiveFocus());
@@ -5291,6 +5594,15 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
     m_core->history()->visit(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
     m_core->bookmarks()->add(QStringLiteral("https://one.example/"), QStringLiteral("One"));
     m_core->bookmarks()->add(QStringLiteral("https://two.example/"), QStringLiteral("Two"));
+    for (const QString &name : {QStringLiteral("one"), QStringLiteral("two")}) {
+        m_core->downloads()->observe(
+            m_core->downloads()->topic(),
+            QVariantMap{{QStringLiteral("msg"), QStringLiteral("dl-start")},
+                        {QStringLiteral("id"), m_core->downloads()->count() + 1},
+                        {QStringLiteral("displayName"), name + QStringLiteral(".zip")},
+                        {QStringLiteral("sourceUrl"),
+                         QStringLiteral("https://%1.example/%1.zip").arg(name)}});
+    }
     FingerWindow host(m_window.data());
     QQuickWindow *window = host.window();
     QVERIFY(QTest::qWaitForWindowExposed(window));
@@ -5316,6 +5628,23 @@ void tst_qmlload::searchFieldsKeepTheKeyboard()
     QVERIFY(m_core->history()->searchTerm().isEmpty());
     openMenuItem(QStringLiteral("historyMenuButton"));
     QCOMPARE(find(QStringLiteral("historyList"))->property("count").toInt(), 3);
+    popPage();
+    settle();
+
+    openMenuItem(QStringLiteral("downloadsMenuButton"));
+    QVERIFY(
+        qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsPulley")))
+            ->parentItem()
+            ->isAncestorOf(qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsHeading")))));
+    typeKeepingFocus(window, qobject_cast<QQuickItem *>(find(QStringLiteral("downloadsSearch"))),
+                     find(QStringLiteral("downloadList")),
+                     {{QStringLiteral("o"), 2},
+                      {QStringLiteral("on"), 1},
+                      {QStringLiteral("onx"), 0},
+                      {QStringLiteral("tw"), 1}});
+    if (QTest::currentTestFailed()) {
+        return;
+    }
     popPage();
     settle();
 
@@ -5370,12 +5699,13 @@ void tst_qmlload::bookmarksPage()
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QCOMPARE(delegates.at(0)->property("remorseCount").toInt(), 1);
 
-    QObject *addMenu = find(QStringLiteral("addBookmarkMenu"));
-    QVERIFY(addMenu->property("enabled").toBool());
-    click(addMenu);
-    QCOMPARE(m_core->bookmarks()->count(), 2);
-    QVERIFY(m_core->bookmarks()->contains(QStringLiteral("https://b1.example/")));
-    QVERIFY(!addMenu->property("enabled").toBool());
+    // Bookmarking is the browser menu's: page has no pulley.
+    const QList<QQuickItem *> items = currentPage()->findChildren<QQuickItem *>();
+    QVERIFY(!items.isEmpty());
+    for (const QQuickItem *item : items) {
+        QVERIFY2(!QByteArray(item->metaObject()->className()).startsWith("PullDownMenu"),
+                 qPrintable(item->objectName()));
+    }
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
     click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
@@ -6586,19 +6916,20 @@ void tst_qmlload::historySettingsPage()
     QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("0 tab(s)"));
     QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1 tab(s)"));
     tabs->newTab(QStringLiteral("https://closed.example/"));
+    QTRY_COMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("2 page(s)"));
     tabs->closeTab(tabs->activeTabIndex());
-    QCOMPARE(kept(QStringLiteral("keptHistory")), QStringLiteral("2 page(s)"));
     QCOMPARE(kept(QStringLiteral("keptClosedTabs")), QStringLiteral("1 tab(s)"));
     tabs->groupModel()->addGroup(QStringLiteral("Work"));
     QCOMPARE(kept(QStringLiteral("keptOpenTabs")), QStringLiteral("1, in 2 group(s)"));
 
     QVERIFY(remember->property("checked").toBool());
     tabs->newTab(QStringLiteral("https://kept.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int visits = m_core->history()->count();
-    QVERIFY(visits > 0);
     remember->setProperty("checked", false);
     QVERIFY(!settings->rememberHistory());
     tabs->newTab(QStringLiteral("https://unkept.example/"));
+    settle();
     QCOMPARE(m_core->history()->count(), visits);
     remember->setProperty("checked", true);
     QVERIFY(settings->rememberHistory());
@@ -6613,8 +6944,8 @@ void tst_qmlload::historySettingsPage()
     onClose->setProperty("checked", false);
 
     tabs->newTab(QStringLiteral("https://again.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int again = m_core->history()->count();
-    QVERIFY(again > 0);
     const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
     QObject *clear = find(QStringLiteral("clearDataButton"));
     QCOMPARE(clear->property("text").toString(), QStringLiteral("Clear browsing data"));
@@ -6741,8 +7072,8 @@ void tst_qmlload::clearDataDialog()
     QCOMPARE(sent(), 0);
 
     tabs->newTab(QStringLiteral("https://three.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
     const int visits = m_core->history()->count();
-    QVERIFY(visits > 0);
     clear({false, false, true, false});
     QCOMPARE(remorses(), 2);
     QCOMPARE(sent(), 1);
