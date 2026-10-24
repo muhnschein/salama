@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "QmlTypes.h"
 #include "Translations.h"
+#include "engine/ExitWatchdog.h"
 
 #include <QGuiApplication>
 #include <QLocale>
@@ -34,6 +35,10 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     QObject::connect(app.data(), &QGuiApplication::aboutToQuit, &core, &Salama::Core::clearOnClose);
     QObject::connect(app.data(), &QGuiApplication::aboutToQuit, core.webNotifications(),
                      &Salama::WebNotifications::closeAll);
+
+    Salama::ExitWatchdog exitWatchdog(app.data());
+    QObject::connect(&exitWatchdog, &Salama::ExitWatchdog::expired, app.data(),
+                     &QCoreApplication::quit);
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->setSource(SailfishApp::pathToMainQml());
