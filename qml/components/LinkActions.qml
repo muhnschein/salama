@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Link sheet's actions as Silica rows, like menu's: link group, then image group after a gap.
+// Link sheet's actions as Silica rows, like menu's: link group, gap, image group.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

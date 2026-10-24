@@ -775,7 +775,7 @@ void tst_settings::startPage()
         QCOMPARE(reloaded.startPage()->topSiteRows(), 1);
     }
     {
-        // Hand-edited file: out of range reads the default.
+        // Hand-edited file: out of range reads default.
         QSettings file(path, QSettings::IniFormat);
         file.setValue(QStringLiteral("startPageTopSiteRows"), 5);
     }

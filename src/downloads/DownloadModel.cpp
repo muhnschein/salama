@@ -194,7 +194,7 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
     const QString msg = message.value(QStringLiteral("msg")).toString();
     const int row = rowForEngineId(m_downloads, engineId);
     if (msg == QLatin1String("dl-start")) {
-        // Engine restart of same id keeps id and row: not a new start.
+        // Engine restart of same id keeps id and row: no new start.
         if (row < 0) {
             start(engineId, message);
         } else {

@@ -6,7 +6,7 @@ import harbour.salama 1.0
 
 // History's and Downloads' section heading, Firefox for Android's words.
 SectionHeader {
-    /// DateGroup.Group: ListView section, a role's int as string.
+    /// DateGroup.Group: ListView section, role's int as string.
     property int group
 
     objectName: "dateSection"

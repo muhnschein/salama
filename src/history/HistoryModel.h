@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Modelled on sailfish-browser apps/history/declarativehistorymodel.{h,cpp} and the
+// Modelled on sailfish-browser apps/history/declarativehistorymodel.{h,cpp} and
 // browser_history handling in apps/storage/dbworker.cpp (Copyright (c) 2013 - 2021
 // Jolla Ltd., MPL-2.0). Sync queries OK: table capped at MaxEntries. Times ms since epoch.
 #pragma once

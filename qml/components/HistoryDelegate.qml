@@ -31,7 +31,7 @@ ListItem {
         id: marks
     }
 
-    // As a bookmark's row.
+    // As bookmark's row.
     Image {
         id: favicon
 

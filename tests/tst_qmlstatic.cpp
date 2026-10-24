@@ -191,7 +191,7 @@ void tst_qmlstatic::delegateRolesExist()
         {QStringLiteral("components/HistoryDelegate.qml"), roleSet(history)},
         {QStringLiteral("pages/BookmarksPage.qml"), roleSet(bookmarks)},
         {QStringLiteral("components/BookmarkDelegate.qml"), roleSet(bookmarks)},
-        // Page lists a DownloadSearch over DownloadModel.
+        // Page lists DownloadSearch over DownloadModel.
         {QStringLiteral("pages/DownloadsPage.qml"), roleSet(downloadSearch)},
         {QStringLiteral("components/DownloadDelegate.qml"), roleSet(downloadSearch)},
         {QStringLiteral("components/OmnibarView.qml"), roleSet(omnibar)},

@@ -126,7 +126,7 @@ public:
     Q_INVOKABLE int tabIdForUrl(const QString &url) const;
     Q_INVOKABLE QString groupNameOf(int tabId) const;
 
-    // Engine's report of where tab is: a visit when new (or tab's first or after request()).
+    // Engine's report of where tab is: visit when new (or tab's first or after request()).
     Q_INVOKABLE void updateUrl(int tabId, const QString &url);
     // Address asked of engine, not yet resolved (qtmozembed shows it at once): tab shows it, no
     // visit; engine's next report is the visit, even of same address.
@@ -222,7 +222,7 @@ private:
     QString m_thumbnailDirectory;
     QList<Tab> m_tabs;
     QList<TabGroup> m_groups;
-    // Next url report a visit even if unchanged: new tabs, requested addresses.
+    // Next url report = visit even if unchanged: new tabs, requested addresses.
     QList<int> m_awaitingVisit;
     GroupTabModel *m_groupTabs;
     TabGroupModel *m_groupModel;

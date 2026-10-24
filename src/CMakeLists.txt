@@ -1,4 +1,4 @@
-# Engine-independent core: models exposed to QML, plus the application entry point.
+# Engine-independent core: models exposed to QML, plus app entry point.
 add_library(salama-core STATIC
     Core.cpp
     Core.h

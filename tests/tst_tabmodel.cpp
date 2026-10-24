@@ -390,7 +390,7 @@ void tst_tabmodel::urlUpdatesAndVisits()
              QStringLiteral("https://a.example/next"));
     QCOMPARE(dataSpy.count(), 0);
 
-    // First report of tab's own url: a visit, nothing new shown.
+    // First report of tab's own url: visit, nothing new shown.
     model.updateUrl(b, QStringLiteral("https://b.example/"));
     QCOMPARE(visitedSpy.count(), 3);
     QCOMPARE(dataSpy.count(), 0);
@@ -405,8 +405,8 @@ void tst_tabmodel::urlUpdatesAndVisits()
     QCOMPARE(model.activeUrl(), QStringLiteral("https://b.example/next"));
 }
 
-// Engine shows an asked address before resolving it (qtmozembed's pending url): the tab shows
-// it, but only where the engine went is a visit, else history keeps rows no title or icon
+// Engine shows asked address before resolving it (qtmozembed's pending url): tab shows it,
+// but only where engine went is visit, else history keeps rows no title or icon
 // ever reaches ("https://example.org" typed, "https://example.org/" loaded).
 void tst_tabmodel::requestedUrlIsNoVisit()
 {
@@ -414,7 +414,7 @@ void tst_tabmodel::requestedUrlIsNoVisit()
     QSignalSpy visitedSpy(&model, &TabModel::visited);
     const int tab = model.newTab(QString());
     QVERIFY(model.activeUrl().isEmpty());
-    // First report of a new tab: a visit.
+    // First report of new tab: visit.
     model.updateUrl(tab, QStringLiteral("https://start.example/"));
     QCOMPARE(visitedSpy.count(), 1);
     QSignalSpy dataSpy(&model, &TabModel::activeTabDataChanged);
@@ -431,7 +431,7 @@ void tst_tabmodel::requestedUrlIsNoVisit()
     QCOMPARE(visitedSpy.last().first().toString(), QStringLiteral("https://example.org/"));
     QCOMPARE(model.activeUrl(), QStringLiteral("https://example.org/"));
 
-    // Resolved where asked: the same address is the visit.
+    // Resolved where asked: same address is visit.
     model.request(tab, QStringLiteral("https://example.org/about"));
     QCOMPARE(visitedSpy.count(), 2);
     model.updateUrl(tab, QStringLiteral("https://example.org/about"));
@@ -498,7 +498,7 @@ void tst_tabmodel::titleAndFavicon()
     QCOMPARE(model.activeFavicon(), QStringLiteral("https://b.example/icon.png"));
     QCOMPARE(dataSpy.count(), 2);
 
-    // Next page on the site, same icon and title: still passed on, for that page.
+    // Next page on site, same icon and title: still passed on, for that page.
     model.updateUrl(a, QStringLiteral("https://a.example/next"));
     const int rows = rowSpy.count();
     model.updateFavicon(a, QStringLiteral("https://a.example/favicon.ico"));

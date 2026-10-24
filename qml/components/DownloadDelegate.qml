@@ -11,7 +11,7 @@ ListItem {
     readonly property bool done: model.status === DownloadModel.Done
     readonly property bool failed: model.status === DownloadModel.Failed
     readonly property bool openable: done && model.fileExists
-    // Rows from a DownloadSearch with a term: name and site marked.
+    // Rows from DownloadSearch with term: name and site marked.
     property bool searching
 
     signal actionRequested()

@@ -1,5 +1,5 @@
 // Stub: show() counts and records text for tests; draws nothing, never times out. QtObject,
-// not Item: device Notice takes no children, so nesting one fails the load there too.
+// not Item: device Notice takes no children, so nesting one fails load there too.
 import QtQuick 2.6
 
 QtObject {
