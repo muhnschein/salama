@@ -105,9 +105,9 @@ Two checks, kept honest against each other:
 SonarQube Cloud on every PR. **Report, not gate**: `make check` decides merges. Coverage measured locally, imported.
 
 ### Process
-- `main` always releasable. Feature branches, squash merge, linear history.
+- `main` always releasable. Feature branches, merge commit (no squash, no rebase).
 - PR needs: green CI, one review, changelog entry.
-- Commit subject imperative, ≤ 72 chars; body says why.
+- Commit subject Conventional Commits (`type(scope): outcome`), ≤ 72 chars; body says why.
 - Semver. Version lives in spec; CI builds, validates, publishes each release from `v` tag on `main`.
 - Dependencies: Harbour allowed list only. Addition updates `docs/HARBOUR.md` in same PR.
 

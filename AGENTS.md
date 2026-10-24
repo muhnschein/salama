@@ -56,7 +56,7 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
 
 - One branch, one PR per task. Stacked PR only when asked.
 - Unrelated finding → tell user; separate PR or issue, not this PR.
-- Commit and PR titles: imperative, plain language, ≤ 72 chars, say outcome: `Group History and Downloads by date`. Issue number in parentheses when there is one. Body says why, plain prose; brief, to the point.
+- Commit and PR titles: Conventional Commits, plain language, ≤ 72 chars, say outcome: `feat(history): group pages by date`. Types `feat` `fix` `perf` `refactor` `test` `docs` `ci` `build` `chore`; scope = app area or subsystem (`tabs`, `history`, `downloads`, `reader`, `settings`, `cover`, `rpm`, …). Issue number in parentheses when there is one. Body says why, plain prose; brief, to the point.
 - PR body: the problem in a sentence or two, then how you fixed it. End with the model and harness that did the work.
 - Final diff: no debug logging, no `TEMPORARY` workflow steps, no leftovers.
 - Flaky test → find and fix cause. Never add retries (`make test` runs none by design: pass on second try = defect). Never re-run CI until green and call it done. Never skip test or loosen assert. One re-run OK only for infra failure before any test ran (runner lost, apt mirror timeout); say so.
