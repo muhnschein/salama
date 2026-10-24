@@ -15,8 +15,6 @@ Item {
     property bool tlsBroken: false
     readonly property bool hasPage: url.length > 0
     readonly property string host: hasPage ? SearchSettings.displayAddress(url) : ""
-    // Empty band above and below drawn content; sheet sizes gaps by ink, not item.
-    readonly property real inkMargin: (height - Math.max(tile.height, lines.height)) / 2
 
     signal copyRequested()
     signal detailsRequested()

@@ -103,10 +103,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Share</source>
-        <translation>Уртаклашу</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>Кыстыргычлар</translation>
     </message>
@@ -123,25 +119,9 @@
         <translation>Көйләүләр</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>Кыстыргыч</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Уку режимы</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Адрес күчерелде</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Биттән табу</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Компьютер</translation>
     </message>
 </context>
 <context>
@@ -417,29 +397,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n йөкләү</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>Барып чыкмады</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>Туктатылган · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>Йөкләнде</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -469,6 +426,24 @@
     <message>
         <source>Delete file</source>
         <translation>Файлны бетерергә</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>%1 йөкләнә</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>%1 йөкләнде</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>Йөкләү барып чыкмады: %1</translation>
     </message>
 </context>
 <context>
@@ -758,6 +733,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>Алдан карауны күрсәтергә</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1905,18 +1888,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>Кыстыргыч</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>Уртаклашу</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Уку режимы</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>Кыстыргычлар</translation>
     </message>
@@ -1931,14 +1902,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>Көйләүләр</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Биттән табу</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Компьютер</translation>
     </message>
 </context>
 <context>

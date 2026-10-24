@@ -187,8 +187,10 @@ DockedPanel {
         mimeType: "text/x-url"
     }
 
+    // Head: link's name and preview, to middle of gap before actions.
     SheetBackground {
         anchors.fill: parent
+        headHeight: headGap.y + headGap.height / 2
     }
 
     Notice {
@@ -251,7 +253,16 @@ DockedPanel {
                 }
             }
 
+            Item {
+                id: headGap
+
+                objectName: "linkHeadGap"
+                width: parent.width
+                height: Theme.paddingMedium
+            }
+
             LinkActions {
+                objectName: "linkActions"
                 width: parent.width
                 sheet: menu
             }

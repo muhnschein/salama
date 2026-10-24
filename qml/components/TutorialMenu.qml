@@ -42,6 +42,7 @@ Item {
 
         SheetBackground {
             anchors.fill: parent
+            headHeight: headGap.y + headGap.height / 2
         }
 
         MouseArea {
@@ -67,58 +68,52 @@ Item {
                 title: menu.pageTitle
             }
 
-            Item {
-                width: parent.width
-                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
-            }
-
             Grid {
                 width: parent.width
                 columns: 5
 
                 Repeater {
                     model: [
-                        { icon: "icon-m-search-on-page", name: qsTr("Find in page") },
-                        { icon: "icon-m-favorite", name: qsTr("Bookmark") },
-                        { icon: "icon-m-share", name: qsTr("Share") },
-                        { icon: "icon-m-computer", name: qsTr("Desktop site") },
-                        { icon: "icon-m-file-formatted", name: qsTr("Reader view") }
+                        { icon: "icon-m-search-on-page", badge: "" },
+                        { icon: "icon-m-favorite", badge: "add" },
+                        { icon: "icon-m-share", badge: "" },
+                        { icon: "icon-m-computer", badge: "" },
+                        { icon: "icon-m-file-formatted", badge: "" }
                     ]
 
-                    MenuButton {
+                    MenuIconButton {
                         width: menu.width / 5
-                        round: true
                         enabled: false
                         opacity: 1.0
                         iconSource: "image://theme/" + modelData.icon
-                        text: modelData.name
+                        badge: modelData.badge
                     }
                 }
             }
 
-            MenuSeparator {
+            Item {
+                id: headGap
+
+                objectName: "tutorialHeadGap"
                 width: parent.width
+                height: Theme.paddingMedium
             }
 
-            Grid {
-                width: parent.width
-                columns: 4
+            Repeater {
+                model: [
+                    { icon: "icon-m-favorite", badge: "list", name: qsTr("Bookmarks") },
+                    { icon: "icon-m-history", badge: "", name: qsTr("History") },
+                    { icon: "icon-m-downloads", badge: "", name: qsTr("Downloads") },
+                    { icon: "icon-m-setting", badge: "", name: qsTr("Settings") }
+                ]
 
-                Repeater {
-                    model: [
-                        { icon: "icon-m-favorite-selected", name: qsTr("Bookmarks") },
-                        { icon: "icon-m-history", name: qsTr("History") },
-                        { icon: "icon-m-downloads", name: qsTr("Downloads") },
-                        { icon: "icon-m-setting", name: qsTr("Settings") }
-                    ]
-
-                    MenuButton {
-                        width: menu.width / 4
-                        enabled: false
-                        opacity: 1.0
-                        iconSource: "image://theme/" + modelData.icon
-                        text: modelData.name
-                    }
+                MenuListItem {
+                    width: menu.width
+                    enabled: false
+                    opacity: 1.0
+                    iconSource: "image://theme/" + modelData.icon
+                    badge: modelData.badge
+                    text: modelData.name
                 }
             }
         }

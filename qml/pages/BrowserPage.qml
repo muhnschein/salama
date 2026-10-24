@@ -327,6 +327,8 @@ WebViewPage {
                      && !browserPage.dragging
         }
 
+        DownloadNotice {}
+
         FindBar {
             id: findBar
 

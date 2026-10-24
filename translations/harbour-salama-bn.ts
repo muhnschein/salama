@@ -103,10 +103,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Share</source>
-        <translation>শেয়ার করুন</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>বুকমার্ক</translation>
     </message>
@@ -123,25 +119,9 @@
         <translation>সেটিংস</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>বুকমার্ক করুন</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>রিডার ভিউ</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>ঠিকানা কপি করা হয়েছে</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>পাতায় খুঁজুন</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>ডেস্কটপ সাইট</translation>
     </message>
 </context>
 <context>
@@ -422,30 +402,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n ডাউনলোড</numerusform>
-            <numerusform>%n ডাউনলোড</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>ব্যর্থ</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>বিরতিতে · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>ডাউনলোড হয়েছে</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -475,6 +431,24 @@
     <message>
         <source>Delete file</source>
         <translation>ফাইল মুছুন</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>%1 ডাউনলোড হচ্ছে</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>%1 ডাউনলোড হয়েছে</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>ডাউনলোড ব্যর্থ: %1</translation>
     </message>
 </context>
 <context>
@@ -768,6 +742,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>প্রাকদর্শন দেখান</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1928,18 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>বুকমার্ক করুন</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>শেয়ার করুন</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>রিডার ভিউ</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>বুকমার্ক</translation>
     </message>
@@ -1954,14 +1924,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>সেটিংস</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>পাতায় খুঁজুন</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>ডেস্কটপ সাইট</translation>
     </message>
 </context>
 <context>

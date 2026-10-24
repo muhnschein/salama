@@ -52,9 +52,9 @@ private slots:
     void fileExists();
     void formatSize_data();
     void formatSize();
-    void tray();
-    void trayDismissed();
+    void started();
     void finished();
+    void failed();
 };
 
 namespace {
@@ -1086,7 +1086,6 @@ void tst_downloadmodel::clearFinished()
     model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
     QCOMPARE(countSpy.count(), 4);
     QSignalSpy runningSpy(&model, &DownloadModel::runningChanged);
-    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
 
     model.clearFinished();
     QCOMPARE(model.count(), 2);
@@ -1097,9 +1096,6 @@ void tst_downloadmodel::clearFinished()
     QCOMPARE(storedStatus(storage, 1), -1);
     QCOMPARE(storedStatus(storage, 3), -1);
     QCOMPARE(runningSpy.count(), 0);
-    QCOMPARE(model.trayCount(), 2);
-    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("d.pdf"), QStringLiteral("b.pdf")}));
-    QCOMPARE(traySpy.count(), 0);
 
     model.clearFinished();
     QCOMPARE(countSpy.count(), 5);
@@ -1240,114 +1236,45 @@ void tst_downloadmodel::formatSize()
     QCOMPARE(DownloadModel::formatSize(bytes), text);
 }
 
-void tst_downloadmodel::tray()
+namespace {
+
+int statusOf(const DownloadModel &model, int downloadId)
 {
-    QTemporaryDir dir;
-    {
-        Storage storage(dir.path());
-        DownloadModel model(storage, dir.path());
-        model.observe(Topic, startMessage(1, QStringLiteral("old.pdf")));
-        model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
-        QCOMPARE(model.trayCount(), 1);
-    }
-    Storage storage(dir.path());
-    DownloadModel model(storage, dir.path());
-    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
-    QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayNames(), QStringList());
-
-    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
-    model.observe(Topic, progressMessage(1, 40.0));
-    QCOMPARE(model.trayCount(), 1);
-    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
-    QCOMPARE(model.traySize(), 2048.0);
-    QCOMPARE(model.trayProgress(), 40);
-    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("a.pdf")});
-    QCOMPARE(traySpy.count(), 2);
-
-    QVariantMap unsized = startMessage(2, QStringLiteral("b.iso"));
-    unsized.insert(QStringLiteral("size"), 0.0);
-    model.observe(Topic, unsized);
-    model.observe(Topic, progressMessage(2, 20.0));
-    model.observe(Topic, startMessage(3, QStringLiteral("c.zip")));
-    model.observe(Topic, progressMessage(3, 90.0));
-    QCOMPARE(model.trayCount(), 3);
-    QCOMPARE(model.trayProgress(), 50);
-    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("c.zip"), QStringLiteral("b.iso"),
-                                             QStringLiteral("a.pdf")}));
-    model.observe(Topic, message(QStringLiteral("dl-fail"), 3));
-    QCOMPARE(model.trayFailed(), 1);
-    QCOMPARE(model.trayProgress(), 30);
-    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Failed));
-    QCOMPARE(model.traySize(), 2048.0);
-    model.remove(0);
-    QCOMPARE(model.trayNames().value(0), QStringLiteral("b.iso"));
-    QCOMPARE(model.trayStatus(), static_cast<int>(DownloadModel::Running));
-    QCOMPARE(model.traySize(), 0.0);
-    model.observe(Topic, startMessage(3, QStringLiteral("c.zip")));
-    model.observe(Topic, progressMessage(3, 90.0));
-    model.observe(Topic, message(QStringLiteral("dl-fail"), 3));
-    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
-    QCOMPARE(model.trayPaused(), 1);
-    QCOMPARE(model.trayFailed(), 1);
-    QCOMPARE(model.trayProgress(), 30);
-    QCOMPARE(model.trayCount(), 3);
-
-    model.observe(Topic, message(QStringLiteral("dl-done"), 1));
-    QCOMPARE(model.trayCount(), 2);
-    QCOMPARE(model.trayPaused(), 0);
-    const int said = traySpy.count();
-    model.observe(Topic, progressMessage(2, 20.0));
-    QCOMPARE(traySpy.count(), said);
-
-    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
-    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
-    const int arrived = traySpy.count();
-    model.remove(0);
-    QCOMPARE(traySpy.count(), arrived);
-    QCOMPARE(model.trayNames(), QStringList({QStringLiteral("c.zip"), QStringLiteral("b.iso")}));
-    model.remove(0);
-    QCOMPARE(model.trayCount(), 1);
-    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("b.iso")});
-    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
-    model.clearSince(0);
-    QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayNames(), QStringList());
-    QCOMPARE(model.trayProgress(), 0);
+    return role(model, model.rowOf(downloadId), roleId(DownloadModel::Role::Status)).toInt();
 }
 
-void tst_downloadmodel::trayDismissed()
+} // namespace
+
+// Row id, not this run's engine id. Restart of same engine id is same download.
+void tst_downloadmodel::started()
 {
     QTemporaryDir dir;
     Storage storage(dir.path());
     DownloadModel model(storage, dir.path());
-    QSignalSpy traySpy(&model, &DownloadModel::trayChanged);
-    model.dismissTray();
-    QCOMPARE(traySpy.count(), 0);
+    QSignalSpy startedSpy(&model, &DownloadModel::started);
+    int rowAtSignal = -1;
+    connect(&model, &DownloadModel::started, this,
+            [&model, &rowAtSignal](int downloadId) { rowAtSignal = model.rowOf(downloadId); });
 
-    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
-    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
-    model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
-    model.observe(Topic, startMessage(3, QStringLiteral("c.pdf")));
-    model.observe(Topic, message(QStringLiteral("dl-done"), 3));
-    QCOMPARE(model.trayCount(), 2);
-    model.dismissTray();
-    QCOMPARE(model.trayCount(), 0);
-    QCOMPARE(model.trayNames(), QStringList());
+    model.observe(Topic, startMessage(4, QStringLiteral("a.pdf")));
+    QCOMPARE(startedSpy.count(), 1);
+    QCOMPARE(startedSpy.last().at(0).toInt(), 1);
+    QCOMPARE(startedSpy.last().at(1).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(rowAtSignal, 0);
 
-    model.observe(Topic, progressMessage(1, 50.0));
-    QCOMPARE(model.trayCount(), 0);
-    model.observe(Topic, startMessage(4, QStringLiteral("d.pdf")));
-    QCOMPARE(model.trayCount(), 1);
-    QCOMPARE(model.trayNames(), QStringList{QStringLiteral("d.pdf")});
-    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
-    QCOMPARE(model.trayCount(), 2);
-    QCOMPARE(model.trayPaused(), 1);
-    model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
-    QCOMPARE(model.trayCount(), 3);
-    model.dismissTray();
-    model.observe(Topic, message(QStringLiteral("dl-done"), 4));
-    QCOMPARE(model.trayCount(), 0);
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 4));
+    model.observe(Topic, startMessage(4, QStringLiteral("a.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 4));
+    model.observe(Topic, startMessage(4, QStringLiteral("a.pdf")));
+    QCOMPARE(model.count(), 1);
+    QCOMPARE(startedSpy.count(), 1);
+
+    QVariantMap nameless = startMessage(9, QStringLiteral("b.zip"));
+    nameless.remove(QStringLiteral("displayName"));
+    model.observe(Topic, nameless);
+    QCOMPARE(startedSpy.count(), 2);
+    QCOMPARE(startedSpy.last().at(0).toInt(), 2);
+    QCOMPARE(startedSpy.last().at(1).toString(), QStringLiteral("b.zip"));
 }
 
 void tst_downloadmodel::finished()
@@ -1356,9 +1283,10 @@ void tst_downloadmodel::finished()
     Storage storage(dir.path());
     DownloadModel model(storage, dir.path());
     QSignalSpy finishedSpy(&model, &DownloadModel::finished);
-    int trayAtSignal = -1;
-    connect(&model, &DownloadModel::finished, this,
-            [&model, &trayAtSignal]() { trayAtSignal = model.trayCount(); });
+    int statusAtSignal = -1;
+    connect(&model, &DownloadModel::finished, this, [&model, &statusAtSignal](int downloadId) {
+        statusAtSignal = statusOf(model, downloadId);
+    });
     model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
     model.observe(Topic, startMessage(2, QStringLiteral("b.pdf")));
     model.observe(Topic, message(QStringLiteral("dl-fail"), 2));
@@ -1370,12 +1298,50 @@ void tst_downloadmodel::finished()
     QCOMPARE(finishedSpy.count(), 1);
     QCOMPARE(finishedSpy.last().at(0).toInt(), model.downloads().at(1).id);
     QCOMPARE(finishedSpy.last().at(1).toString(), QStringLiteral("a.pdf"));
-    QCOMPARE(trayAtSignal, 2);
+    QCOMPARE(statusAtSignal, static_cast<int>(DownloadModel::Done));
     QVariantMap moved = message(QStringLiteral("dl-done"), 1);
     moved.insert(QStringLiteral("targetPath"), Downloads + QStringLiteral("a(1).pdf"));
     model.observe(Topic, moved);
     model.observe(Topic, message(QStringLiteral("dl-done"), 1));
     QCOMPARE(finishedSpy.count(), 1);
+}
+
+// Each turn to failed the engine reports. Earlier run's running row loads failed before anyone
+// listens; its engine id, come round again, is another download's.
+void tst_downloadmodel::failed()
+{
+    QTemporaryDir dir;
+    {
+        Storage storage(dir.path());
+        DownloadModel model(storage, dir.path());
+        model.observe(Topic, startMessage(1, QStringLiteral("old.pdf")));
+    }
+    Storage storage(dir.path());
+    DownloadModel model(storage, dir.path());
+    QSignalSpy failedSpy(&model, &DownloadModel::failed);
+    int statusAtSignal = -1;
+    connect(&model, &DownloadModel::failed, this, [&model, &statusAtSignal](int downloadId) {
+        statusAtSignal = statusOf(model, downloadId);
+    });
+    QCOMPARE(statusOf(model, 1), static_cast<int>(DownloadModel::Failed));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-cancel"), 1));
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    QCOMPARE(failedSpy.count(), 0);
+
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    QCOMPARE(failedSpy.count(), 1);
+    QCOMPARE(failedSpy.last().at(0).toInt(), 2);
+    QCOMPARE(failedSpy.last().at(1).toString(), QStringLiteral("a.pdf"));
+    QCOMPARE(statusAtSignal, static_cast<int>(DownloadModel::Failed));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    QCOMPARE(failedSpy.count(), 1);
+
+    // Retry failing again is news again.
+    model.observe(Topic, startMessage(1, QStringLiteral("a.pdf")));
+    model.observe(Topic, message(QStringLiteral("dl-fail"), 1));
+    QCOMPARE(failedSpy.count(), 2);
 }
 
 QTEST_GUILESS_MAIN(tst_downloadmodel)

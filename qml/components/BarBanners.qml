@@ -15,20 +15,11 @@ Item {
     }
 
     objectName: "barBanners"
-    height: (tabBanner.visible ? tabBanner.height : 0)
-            + (downloadBanner.visible ? downloadBanner.height : 0)
+    height: tabBanner.visible ? tabBanner.height : 0
 
     TabBanner {
         id: tabBanner
 
-        width: parent.width
-        allowed: banners.allowed
-    }
-
-    DownloadBanner {
-        id: downloadBanner
-
-        y: tabBanner.visible ? tabBanner.height : 0
         width: parent.width
         allowed: banners.allowed
     }

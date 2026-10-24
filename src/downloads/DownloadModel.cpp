@@ -73,13 +73,6 @@ bool resumable(const DownloadModel::Download &download)
 
 } // namespace
 
-bool DownloadModel::Tray::operator==(const Tray &other) const
-{
-    return count == other.count && failed == other.failed && paused == other.paused &&
-           progress == other.progress && names == other.names && status == other.status &&
-           size == other.size;
-}
-
 DownloadModel::DownloadModel(const Storage &storage, QString directory, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
@@ -177,41 +170,6 @@ int DownloadModel::runningProgress() const
     return m_runningProgress;
 }
 
-int DownloadModel::trayCount() const
-{
-    return m_tray.count;
-}
-
-int DownloadModel::trayFailed() const
-{
-    return m_tray.failed;
-}
-
-int DownloadModel::trayPaused() const
-{
-    return m_tray.paused;
-}
-
-int DownloadModel::trayProgress() const
-{
-    return m_tray.progress;
-}
-
-QStringList DownloadModel::trayNames() const
-{
-    return m_tray.names;
-}
-
-int DownloadModel::trayStatus() const
-{
-    return m_tray.status;
-}
-
-double DownloadModel::traySize() const
-{
-    return double(m_tray.size);
-}
-
 const QList<DownloadModel::Download> &DownloadModel::downloads() const
 {
     return m_downloads;
@@ -230,7 +188,7 @@ void DownloadModel::observe(const QString &topic, const QVariant &data)
     const QString msg = message.value(QStringLiteral("msg")).toString();
     const int row = rowForEngineId(m_downloads, engineId);
     if (msg == QLatin1String("dl-start")) {
-        // Engine restart of same id keeps id and row.
+        // Engine restart of same id keeps id and row: not a new start.
         if (row < 0) {
             start(engineId, message);
         } else {
@@ -276,7 +234,6 @@ void DownloadModel::clearFinished()
     }
     if (m_downloads.count() != before) {
         emit countChanged();
-        recount();
     }
 }
 
@@ -429,16 +386,6 @@ void DownloadModel::refreshFiles()
     emit dataChanged(index(0, 0), index(m_downloads.count() - 1, 0), {roleId(Role::FileExists)});
 }
 
-void DownloadModel::dismissTray()
-{
-    for (Download &download : m_downloads) {
-        if (download.engineId != 0 && download.status != Done) {
-            download.dismissed = true;
-        }
-    }
-    recount();
-}
-
 void DownloadModel::clearSince(double since)
 {
     const int before = m_downloads.count();
@@ -455,7 +402,6 @@ void DownloadModel::clearSince(double since)
     }
     if (m_downloads.count() != before) {
         emit countChanged();
-        recount();
     }
 }
 
@@ -549,6 +495,7 @@ void DownloadModel::start(int engineId, const QVariantMap &message)
         emit countChanged();
     }
     recount();
+    emit started(download.id, download.name);
 }
 
 void DownloadModel::setProgress(int row, const QVariant &percent)
@@ -588,11 +535,11 @@ void DownloadModel::finish(int row, const QString &path)
         return;
     }
     store(download);
-    // Emit before row change so banner has name.
+    changed(row, roles);
+    // Arrival only: later path fix-up is no news.
     if (arrived) {
         emit finished(download.id, download.name);
     }
-    changed(row, roles);
 }
 
 void DownloadModel::setStatus(int row, Status status)
@@ -602,10 +549,11 @@ void DownloadModel::setStatus(int row, Status status)
         return;
     }
     download.status = status;
-    // State change re-shows on banner even if swiped.
-    download.dismissed = false;
     store(download);
     changed(row, {roleId(Role::Status), roleId(Role::Resumable)});
+    if (status == Failed) {
+        emit failed(download.id, download.name);
+    }
 }
 
 void DownloadModel::changed(int row, const QVector<int> &roles)
@@ -620,35 +568,6 @@ void DownloadModel::recount()
     if (recountRunning(m_downloads, m_runningCount, m_runningProgress)) {
         emit runningChanged();
     }
-    Tray tray;
-    int coming = 0;
-    int percent = 0;
-    for (const Download &download : m_downloads) {
-        if (download.engineId == 0 || download.status == Done || download.dismissed) {
-            continue;
-        }
-        if (tray.count == 0) {
-            tray.status = download.status;
-            tray.size = download.size;
-        }
-        ++tray.count;
-        tray.names.append(download.name);
-        if (download.status == Failed) {
-            ++tray.failed;
-            continue;
-        }
-        if (download.status == Canceled) {
-            ++tray.paused;
-        }
-        ++coming;
-        percent += download.progress;
-    }
-    tray.progress = coming > 0 ? qRound(double(percent) / coming) : 0;
-    if (tray == m_tray) {
-        return;
-    }
-    m_tray = tray;
-    emit trayChanged();
 }
 
 void DownloadModel::request(const QVariantMap &data)

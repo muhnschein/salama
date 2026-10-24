@@ -15,6 +15,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFont>
+#include <QFontMetricsF>
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonArray>
@@ -174,6 +175,7 @@ private slots:
     void omnibarChoices();
     void omnibarForANewTab();
     void navigationBarDrivesWebView();
+    void loadProgressWashesBar();
     void addressShowsHostAndSecurity();
     void barDoesNotCoverThePage();
     void editingEndsWithTheKeyboard();
@@ -202,6 +204,7 @@ private slots:
     void restoredTabsLoadLazily();
     void browserMenu();
     void menuSheetLayout();
+    void menuBookmarkSigns();
     void menuNamesThePage();
     void menuShowsDownloadsComing();
     void menuSheetUnderAFinger();
@@ -210,8 +213,8 @@ private slots:
     void readerView();
     void downloadsPage();
     void downloadAgain();
-    void downloadBanner();
-    void downloadBannerUnderAFinger();
+    void downloadNotice();
+    void barBannerUnderAFinger();
     void linkMenuOnALongPress();
     void linkMenuActions();
     void linkMenuForOtherApps();
@@ -276,6 +279,7 @@ private:
     QObject *currentPage() const;
     QObject *currentWebView() const;
     QVariant evaluate(QObject *scope, const QString &expression) const;
+    QString splitProblem(QObject *ground, const QString &gapName) const;
     static void click(QObject *object);
     static void enterKey(QObject *field);
     void typeAddress(const QString &text);
@@ -440,6 +444,43 @@ QObject *tst_qmlload::find(const QString &name) const
 {
     const QList<QObject *> found = findObjects(m_window.data(), name);
     return found.isEmpty() ? nullptr : found.first();
+}
+
+// Sheet ground in two shades, both from ambience: head lighter, rows below deeper. Edge mid-gap
+// named. Empty if so, else what is off.
+QString tst_qmlload::splitProblem(QObject *ground, const QString &gapName) const
+{
+    auto *groundItem = qobject_cast<QQuickItem *>(ground);
+    auto *head =
+        qobject_cast<QQuickItem *>(findObjects(ground, QStringLiteral("sheetHead")).first());
+    auto *gap = qobject_cast<QQuickItem *>(find(gapName));
+    const auto colour = [this, ground](const char *expression) {
+        return evaluate(ground, QLatin1String(expression)).value<QColor>();
+    };
+    const QColor dimmer = colour("Theme.highlightDimmerColor");
+    const QColor lighter = colour(
+        "Qt.tint(Theme.highlightDimmerColor, Theme.rgba(Theme.highlightBackgroundColor, 0.18))");
+    const QColor deeper = colour(
+        "Qt.tint(Theme.highlightDimmerColor, Theme.rgba(Theme.overlayBackgroundColor, 0.45))");
+    const qreal edge = head->mapToItem(groundItem, QPointF(0, head->height())).y();
+    const qreal middle = gap->mapToItem(groundItem, QPointF(0, gap->height() / 2)).y();
+    QStringList off;
+    if (!head->isVisible() || head->x() != 0 || head->y() != 0 ||
+        head->width() != groundItem->width()) {
+        off << QStringLiteral("head not across top");
+    }
+    if (head->property("color").value<QColor>() != lighter ||
+        lighter.lightnessF() <= dimmer.lightnessF()) {
+        off << QStringLiteral("head not lighter ambience shade");
+    }
+    if (ground->property("color").value<QColor>() != deeper ||
+        deeper.lightnessF() >= dimmer.lightnessF()) {
+        off << QStringLiteral("rows not deeper ambience shade");
+    }
+    if (qAbs(edge - middle) > 0.01) {
+        off << QStringLiteral("edge at %1, gap middle at %2").arg(edge).arg(middle);
+    }
+    return off.join(QStringLiteral("; "));
 }
 
 QList<QObject *> tst_qmlload::findAll(const QString &name) const
@@ -1328,10 +1369,12 @@ void tst_qmlload::navigationBarDrivesWebView()
     QCOMPARE(webView->property("calls").toStringList().last(), QStringLiteral("stop"));
     webView->setProperty("loading", false);
 
-    // Editing: field takes back/reload room, inset by padding (was half-wide with double margins).
+    // Editing: field takes back/reload room (was half-wide with double margins). sailfish-browser's
+    // entry: faint slab from bar's edge to short of menu, bar's height; text starts under back
+    // icon, centred top to bottom; no label, no underline (lifted text and line off centre).
     QObject *field = find(QStringLiteral("addressField"));
-    const qreal pageMargin = evaluate(bar, QStringLiteral("Theme.horizontalPageMargin")).toReal();
     const qreal menuX = find(QStringLiteral("menuButton"))->property("x").toReal();
+    const qreal backX = find(QStringLiteral("backButton"))->property("x").toReal();
     tapBar(QStringLiteral("address"));
     QVERIFY(field->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("backButton"))->property("visible").toBool());
@@ -1341,11 +1384,25 @@ void tst_qmlload::navigationBarDrivesWebView()
              QStringLiteral("address"));
     const qreal fieldLeft = field->property("x").toReal();
     const qreal fieldRight = fieldLeft + field->property("width").toReal();
-    QVERIFY(fieldLeft < pageMargin);
-    QVERIFY(fieldRight <= menuX);
-    QVERIFY(menuX - fieldRight < pageMargin);
-    QVERIFY(field->property("textLeftMargin").toReal() < pageMargin);
-    QVERIFY(field->property("textRightMargin").toReal() < pageMargin);
+    QCOMPARE(fieldLeft, 0.0);
+    QCOMPARE(menuX - fieldRight, evaluate(bar, QStringLiteral("Theme.paddingLarge")).toReal());
+    QCOMPARE(field->property("y").toReal(), 0.0);
+    QCOMPARE(field->property("height").toReal(), bar->property("height").toReal());
+    QCOMPARE(fieldLeft + field->property("textLeftMargin").toReal(), backX);
+    QCOMPARE(field->property("textRightMargin").toReal(),
+             evaluate(bar, QStringLiteral("Theme.paddingLarge")).toReal());
+    QVERIFY(!field->property("labelVisible").toBool());
+    const QFontMetricsF lineMetrics(field->property("font").value<QFont>());
+    QCOMPARE(field->property("textTopMargin").toReal(),
+             (field->property("height").toReal() - lineMetrics.height()) / 2);
+    auto *slab = field->property("background").value<QQuickItem *>();
+    QVERIFY(slab != nullptr);
+    QCOMPARE(slab->objectName(), QStringLiteral("addressFieldSlab"));
+    QCOMPARE(slab->width(), field->property("width").toReal());
+    QCOMPARE(slab->height(), field->property("height").toReal());
+    QCOMPARE(slab->property("color").value<QColor>(),
+             evaluate(bar, QStringLiteral("Theme.primaryColor")).value<QColor>());
+    QCOMPARE(slab->opacity(), 0.1);
     const int hostSize = addressLabel->property("font").value<QFont>().pixelSize();
     QCOMPARE(field->property("font").value<QFont>().pixelSize(), hostSize);
     QVERIFY(hostSize > evaluate(bar, QStringLiteral("Theme.fontSizeSmall")).toInt());
@@ -1375,6 +1432,54 @@ void tst_qmlload::navigationBarDrivesWebView()
     pullUpToTabs();
     QVERIFY(page->property("tabsOpen").toBool());
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+}
+
+// sailfish-browser's ProgressBar: highlight wash over whole bar, behind controls, fading downward,
+// fading out at load end. Was thin strip along top edge, Android's.
+void tst_qmlload::loadProgressWashesBar()
+{
+    QObject *webView = currentWebView();
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *progress = find(QStringLiteral("loadProgress"));
+    QObject *fill = find(QStringLiteral("loadProgressFill"));
+    QVERIFY(fill != nullptr);
+    QVERIFY(!progress->property("visible").toBool());
+
+    webView->setProperty("loading", true);
+    webView->setProperty("loadProgress", 40);
+    QVERIFY(progress->property("visible").toBool());
+    const qreal barHeight = bar->property("height").toReal();
+    QCOMPARE(progress->property("height").toReal(), barHeight);
+    QCOMPARE(fill->property("height").toReal(), barHeight);
+    QTRY_COMPARE(fill->property("width").toReal(), bar->property("width").toReal() * 0.4);
+    QTRY_COMPARE(progress->property("opacity").toReal(), 1.0);
+
+    const QColor top = evaluate(fill, QStringLiteral("gradient.stops[0].color")).value<QColor>();
+    const QColor bottom = evaluate(fill, QStringLiteral("gradient.stops[1].color")).value<QColor>();
+    QCOMPARE(evaluate(fill, QStringLiteral("gradient.stops[0].position")).toReal(), 0.0);
+    QCOMPARE(evaluate(fill, QStringLiteral("gradient.stops[1].position")).toReal(), 1.0);
+    QCOMPARE(top, evaluate(bar, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor, "
+                                               "Theme.opacityHigh)"))
+                      .value<QColor>());
+    QCOMPARE(bottom.rgb(), top.rgb());
+    QCOMPARE(bottom.alpha(), 0);
+
+    // Behind controls: drawn over them, wash would tint icons.
+    const QList<QQuickItem *> stack = qobject_cast<QQuickItem *>(bar)->childItems();
+    const int washAt = stack.indexOf(qobject_cast<QQuickItem *>(progress));
+    QVERIFY(washAt >= 0);
+    QCOMPARE(progress->property("z").toReal(), 0.0);
+    for (const QString &control : {QStringLiteral("backButton"), QStringLiteral("reloadButton"),
+                                   QStringLiteral("menuButton"), QStringLiteral("addressRow")}) {
+        QVERIFY2(washAt < stack.indexOf(qobject_cast<QQuickItem *>(find(control))),
+                 qPrintable(control));
+    }
+
+    // Fades, not cut.
+    webView->setProperty("loading", false);
+    QVERIFY(progress->property("visible").toBool());
+    QTRY_VERIFY(!progress->property("visible").toBool());
+    QCOMPARE(progress->property("opacity").toReal(), 0.0);
 }
 
 // Short address; broken connection drawn on it, only for pages claiming secure.
@@ -3127,13 +3232,13 @@ void tst_qmlload::recentlyClosedTabs()
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
-    QCOMPARE(grounds.count(), 5);
+    QCOMPARE(grounds.count(), 4);
     QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
+    // One shade: no head and list here to split.
     QCOMPARE(ground->property("color").value<QColor>(),
-             findObjects(find(QStringLiteral("browserMenu")), QStringLiteral("sheetBackground"))
-                 .first()
-                 ->property("color")
-                 .value<QColor>());
+             evaluate(panel, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
+    QVERIFY(
+        !findObjects(ground, QStringLiteral("sheetHead")).first()->property("visible").toBool());
     QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
     QCOMPARE(ground->property("height").toReal(), panel->property("height").toReal());
     auto *handle =
@@ -3243,8 +3348,8 @@ void tst_qmlload::restoredTabsLoadLazily()
     QCOMPARE(m_core->history()->count(), 3);
 }
 
-// Menu button -> icon sheet from under bar, two rows: page, browser. Nothing pushed; each icon
-// hides it. No new tab (grid's plus).
+// Menu button -> sheet from under bar: page actions as icon row, browser places as named rows.
+// Nothing pushed; each entry hides it. No new tab (grid's plus).
 void tst_qmlload::browserMenu()
 {
     TabModel *tabs = m_core->tabs();
@@ -3267,7 +3372,6 @@ void tst_qmlload::browserMenu()
         QVERIFY2(button != nullptr, qPrintable(entry));
         QVERIFY2(button->property("enabled").toBool(), qPrintable(entry));
         QVERIFY2(!button->property("iconSource").toString().isEmpty(), qPrintable(entry));
-        QVERIFY2(!button->property("text").toString().isEmpty(), qPrintable(entry));
     }
     QVERIFY(find(QStringLiteral("newTabMenuButton")) == nullptr);
     QVERIFY(find(QStringLiteral("menuTabsRow")) == nullptr);
@@ -3290,7 +3394,6 @@ void tst_qmlload::browserMenu()
     QVERIFY(reader != nullptr);
     QVERIFY(!reader->property("enabled").toBool());
     QVERIFY(!reader->property("iconSource").toString().isEmpty());
-    QCOMPARE(reader->property("text").toString(), QStringLiteral("Reader view"));
     // Via BrowserPage.qml item: its scope names page and menu.
     QObject *pageScope = find(QStringLiteral("viewArea"));
     evaluate(pageScope, QStringLiteral("browserMenu.view = null"));
@@ -3328,14 +3431,12 @@ void tst_qmlload::browserMenu()
     tapBar(QStringLiteral("menu"));
     QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
     QVERIFY(!bookmark->property("checked").toBool());
-    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
     click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QVERIFY(m_core->bookmarks()->activeUrlBookmarked());
     QVERIFY(!menu->property("open").toBool());
     tapBar(QStringLiteral("menu"));
     QVERIFY(bookmark->property("checked").toBool());
-    QCOMPARE(bookmark->property("text").toString(), QStringLiteral("Bookmark"));
     click(bookmark);
     QCOMPARE(m_core->bookmarks()->count(), 0);
 
@@ -3389,8 +3490,9 @@ void tst_qmlload::browserMenu()
     QVERIFY(!menu->property("open").toBool());
 }
 
-// Stub-visible sheet: 5 page actions on discs in one row, line, 4 browser ones without; opaque
-// ground; on switch or pressed entry lit (disc, icon, name), no wash.
+// Stub-visible sheet, Silica way: 5 page actions as plain icons in one row (no disc, no name), then
+// browser places as rows, icon at page margin then name; no line. Opaque ground. On switch or
+// pressed action icon lit, no wash; pressed row lit icon and name.
 void tst_qmlload::menuSheetLayout()
 {
     QObject *menu = find(QStringLiteral("browserMenu"));
@@ -3400,51 +3502,60 @@ void tst_qmlload::menuSheetLayout()
         QStringLiteral("findMenuButton"), QStringLiteral("bookmarkMenuButton"),
         QStringLiteral("shareMenuButton"), QStringLiteral("desktopMenuButton"),
         QStringLiteral("readerMenuButton")};
-    const QStringList names{QStringLiteral("Find in page"), QStringLiteral("Bookmark"),
-                            QStringLiteral("Share"), QStringLiteral("Desktop site"),
-                            QStringLiteral("Reader view")};
+    const auto parts = [](QObject *button, const char *name) {
+        return findObjects(button, QLatin1String(name));
+    };
+    const auto sceneY = [](QQuickItem *of) { return of->mapToScene(QPointF()).y(); };
     auto *sheetItem = qobject_cast<QQuickItem *>(menu);
-    const qreal rowY =
-        qobject_cast<QQuickItem *>(find(pageActions.first()))->mapToScene(QPointF()).y();
-    for (int i = 0; i < pageActions.count(); ++i) {
-        auto *button = qobject_cast<QQuickItem *>(find(pageActions.at(i)));
-        QCOMPARE(button->mapToScene(QPointF()).y(), rowY);
-        QCOMPARE(button->width(), sheetItem->width() / 5);
-        QCOMPARE(button->property("text").toString(), names.at(i));
-        QVERIFY(button->property("round").toBool());
-        QVERIFY(findObjects(button, QStringLiteral("menuButtonDisc"))
-                    .first()
-                    ->property("visible")
-                    .toBool());
-    }
-    for (const QString &entry :
-         {QStringLiteral("bookmarksMenuButton"), QStringLiteral("historyMenuButton"),
-          QStringLiteral("downloadsMenuButton"), QStringLiteral("settingsMenuButton")}) {
+    const qreal iconSize = evaluate(menu, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    const qreal pageMargin = evaluate(menu, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const qreal rowY = sceneY(qobject_cast<QQuickItem *>(find(pageActions.first())));
+    qreal rowBottom = 0;
+    for (const QString &entry : pageActions) {
         auto *button = qobject_cast<QQuickItem *>(find(entry));
-        QVERIFY(button->mapToScene(QPointF()).y() > rowY);
-        QCOMPARE(button->width(), sheetItem->width() / 4);
-        QVERIFY(!findObjects(button, QStringLiteral("menuButtonDisc"))
-                     .first()
-                     ->property("visible")
-                     .toBool());
+        QCOMPARE(sceneY(button), rowY);
+        QCOMPARE(button->width(), sheetItem->width() / 5);
+        QVERIFY2(parts(button, "menuButtonDisc").isEmpty(), qPrintable(entry));
+        QVERIFY2(parts(button, "menuButtonLabel").isEmpty(), qPrintable(entry));
+        QCOMPARE(parts(button, "menuButtonIcon").first()->property("width").toReal(), iconSize);
+        rowBottom = rowY + button->height();
     }
-    auto *line = qobject_cast<QQuickItem *>(find(QStringLiteral("menuSeparator")));
-    QVERIFY(line != nullptr);
-    const qreal lineY = line->mapToScene(QPointF()).y();
-    QVERIFY(lineY > rowY + find(QStringLiteral("findMenuButton"))->property("height").toReal() - 1);
-    QVERIFY(lineY < qobject_cast<QQuickItem *>(find(QStringLiteral("historyMenuButton")))
-                        ->mapToScene(QPointF())
-                        .y());
-    const QList<QQuickItem *> halves = line->childItems();
-    QCOMPARE(halves.count(), 2);
-    QCOMPARE(halves.at(0)->rotation(), 180.0);
-    QCOMPARE(halves.at(1)->rotation(), 0.0);
+    const QStringList places{
+        QStringLiteral("bookmarksMenuButton"), QStringLiteral("historyMenuButton"),
+        QStringLiteral("downloadsMenuButton"), QStringLiteral("settingsMenuButton")};
+    const QStringList names{QStringLiteral("Bookmarks"), QStringLiteral("History"),
+                            QStringLiteral("Downloads"), QStringLiteral("Settings")};
+    qreal placeY = rowBottom;
+    for (int i = 0; i < places.count(); ++i) {
+        auto *row = qobject_cast<QQuickItem *>(find(places.at(i)));
+        QVERIFY(sceneY(row) >= placeY);
+        placeY = sceneY(row) + row->height();
+        QCOMPARE(row->width(), sheetItem->width());
+        QCOMPARE(row->height(), evaluate(menu, QStringLiteral("Theme.itemSizeSmall")).toReal());
+        QVERIFY(parts(row, "menuButtonDisc").isEmpty());
+        auto *slot = qobject_cast<QQuickItem *>(parts(row, "menuButtonIconSlot").first());
+        QCOMPARE(slot->mapToItem(row, QPointF()).x(), pageMargin);
+        auto *label = qobject_cast<QQuickItem *>(parts(row, "menuButtonLabel").first());
+        QCOMPARE(label->property("text").toString(), names.at(i));
+        QVERIFY(label->mapToItem(row, QPointF()).x() > pageMargin + slot->width());
+        // Anchors snap centred item to whole pixel: tolerance 0.5.
+        const qreal labelMiddle = label->mapToItem(row, QPointF(0, label->height() / 2)).y();
+        QVERIFY2(
+            qAbs(labelMiddle - row->height() / 2) <= 0.5,
+            qPrintable(QStringLiteral("%1 label middle %2").arg(names.at(i)).arg(labelMiddle)));
+    }
+    QVERIFY(find(QStringLiteral("menuSeparator")) == nullptr);
     QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
     QCOMPARE(ground->property("color").value<QColor>().alphaF(), 1.0);
-    QCOMPARE(ground->property("color").value<QColor>(),
-             evaluate(menu, QStringLiteral("Theme.highlightDimmerColor")).value<QColor>());
     QCOMPARE(ground->property("width").toReal(), sheetItem->width());
     QCOMPARE(ground->property("height").toReal(), sheetItem->height());
+    // Head (page, its actions) lighter, browser's rows deeper; split mid-gap between them.
+    const QString split = splitProblem(ground, QStringLiteral("menuHeadGap"));
+    QVERIFY2(split.isEmpty(), qPrintable(split));
+    auto *headGap = qobject_cast<QQuickItem *>(find(QStringLiteral("menuHeadGap")));
+    QCOMPARE(sceneY(headGap), rowBottom);
+    QCOMPARE(sceneY(headGap) + headGap->height(),
+             sceneY(qobject_cast<QQuickItem *>(find(QStringLiteral("bookmarksMenuButton")))));
     QVERIFY(findObjects(menu, QStringLiteral("menuDragHandle")).count() == 1);
     // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *handle = qobject_cast<QQuickItem *>(find(QStringLiteral("menuDragHandle")));
@@ -3453,35 +3564,146 @@ void tst_qmlload::menuSheetLayout()
                  handle->height() / 2);
     QVERIFY(unclipped(handle));
 
-    const auto litParts = [this](QObject *button) {
-        const QColor wash =
-            evaluate(button, QStringLiteral("Theme.rgba(Theme.highlightBackgroundColor,"
-                                            " Theme.highlightBackgroundOpacity)"))
-                .value<QColor>();
-        const QColor highlight =
-            evaluate(button, QStringLiteral("Theme.highlightColor")).value<QColor>();
-        const auto part = [button](const char *name) {
-            return findObjects(button, QLatin1String(name)).first();
-        };
-        return int(part("menuButtonDisc")->property("color").value<QColor>() == wash) +
-               int(part("menuButtonIcon")->property("highlighted").toBool()) +
-               int(part("menuButtonLabel")->property("color").value<QColor>() == highlight);
+    const auto lit = [&parts](QObject *button) {
+        return parts(button, "menuButtonIcon").first()->property("highlighted").toBool();
     };
     QObject *bookmark = find(QStringLiteral("bookmarkMenuButton"));
     QObject *desktop = find(QStringLiteral("desktopMenuButton"));
     QObject *share = find(QStringLiteral("shareMenuButton"));
-    QCOMPARE(litParts(bookmark), 0);
-    QCOMPARE(litParts(desktop), 0);
+    QVERIFY(!lit(bookmark));
+    QVERIFY(!lit(desktop));
     m_core->bookmarks()->add(m_core->tabs()->activeUrl(), m_core->tabs()->activeTitle(), QString());
     QVERIFY(bookmark->property("checked").toBool());
-    QCOMPARE(litParts(bookmark), 3);
+    QVERIFY(lit(bookmark));
     currentWebView()->setProperty("desktopMode", true);
     QVERIFY(desktop->property("checked").toBool());
-    QCOMPARE(litParts(desktop), 3);
-    QCOMPARE(litParts(share), 0);
+    QVERIFY(lit(desktop));
+    QVERIFY(!lit(share));
     QCOMPARE(share->property("highlightedColor").value<QColor>().alpha(), 0);
     share->setProperty("down", true);
-    QCOMPARE(litParts(share), 3);
+    QVERIFY(lit(share));
+
+    QObject *history = find(QStringLiteral("historyMenuButton"));
+    QObject *historyLabel = parts(history, "menuButtonLabel").first();
+    const QColor highlight = evaluate(menu, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    QVERIFY(!lit(history));
+    QVERIFY(historyLabel->property("color").value<QColor>() != highlight);
+    history->setProperty("down", true);
+    QVERIFY(lit(history));
+    QCOMPARE(historyLabel->property("color").value<QColor>(), highlight);
+}
+
+// Bookmark button tells add from added by a sign at icon's bottom right, as Material's
+// bookmark-add: plus on star, then lit check on filled star. Bookmarks row: star with list, so the
+// two read apart. Star keeps full size; a gap round the sign is cut out of it (sign's strokes
+// widened), so it holds on any ground. Entries without sign: whole icon, nothing cut.
+void tst_qmlload::menuBookmarkSigns()
+{
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    tapBar(QStringLiteral("menu"));
+    QVERIFY(menu->property("open").toBool());
+    const qreal iconSize = evaluate(menu, QStringLiteral("Theme.iconSizeMedium")).toReal();
+    const QColor primary = evaluate(menu, QStringLiteral("Theme.primaryColor")).value<QColor>();
+    const QColor highlight = evaluate(menu, QStringLiteral("Theme.highlightColor")).value<QColor>();
+    const auto icon = [this](const char *entry) {
+        return qobject_cast<QQuickItem *>(
+            findObjects(find(QLatin1String(entry)), QStringLiteral("menuButtonIcon")).first());
+    };
+    const auto part = [](QQuickItem *of, const char *name) {
+        return qobject_cast<QQuickItem *>(findObjects(of, QLatin1String(name)).first());
+    };
+    const auto source = [&part](QQuickItem *of) {
+        return part(of, "menuButtonGlyph")->property("source").toString();
+    };
+    // Each stroke's ends in its box, as twentieths; colours; thicknesses.
+    struct Strokes
+    {
+        QStringList ends;
+        QSet<QRgb> colours;
+        QSet<qreal> thicknesses;
+    };
+    const auto strokes = [&part](QQuickItem *of, const char *box) {
+        QQuickItem *frame = part(of, box);
+        Strokes found;
+        for (QObject *object : findObjects(frame, QStringLiteral("menuButtonBadgeStroke"))) {
+            auto *stroke = qobject_cast<QQuickItem *>(object);
+            const qreal cap = stroke->height() / 2;
+            const QPointF from = stroke->mapToItem(frame, QPointF(cap, cap));
+            const QPointF to = stroke->mapToItem(frame, QPointF(stroke->width() - cap, cap));
+            const auto twentieths = [frame](const QPointF &at) {
+                return QStringLiteral("%1,%2")
+                    .arg(qRound(at.x() / frame->width() * 20))
+                    .arg(qRound(at.y() / frame->height() * 20));
+            };
+            found.ends.append(twentieths(from) + QLatin1Char('-') + twentieths(to));
+            found.colours.insert(stroke->property("color").value<QColor>().rgba());
+            found.thicknesses.insert(stroke->height());
+        }
+        return found;
+    };
+    const auto signShown = [&part](QQuickItem *of) {
+        return part(of, "menuButtonBadge")->isVisible();
+    };
+    const auto cut = [this, &part](QQuickItem *of) {
+        return evaluate(part(of, "menuButtonGlyph"), QStringLiteral("layer.enabled")).toBool();
+    };
+    // Whole star; sign in box's bottom right corner, under half its width; cut-out over sign, same
+    // strokes, wider each side.
+    const auto laidOut = [&part, &strokes, &cut, iconSize](QQuickItem *of) {
+        QQuickItem *glyph = part(of, "menuButtonGlyph");
+        QQuickItem *sign = part(of, "menuButtonBadge");
+        QQuickItem *cutout = part(of, "menuButtonCutout");
+        const QPointF signEnd = sign->mapToItem(of, QPointF(sign->width(), sign->height()));
+        const Strokes drawn = strokes(of, "menuButtonBadge");
+        const Strokes gap = strokes(of, "menuButtonCutout");
+        return of->width() == iconSize && glyph->x() == 0 && glyph->y() == 0 &&
+               glyph->width() == iconSize && glyph->height() == iconSize &&
+               signEnd == QPointF(iconSize, iconSize) && sign->width() < iconSize / 2 &&
+               cutout->mapToItem(of, QPointF()) == sign->mapToItem(of, QPointF()) &&
+               cutout->width() == sign->width() && drawn.ends == gap.ends &&
+               drawn.thicknesses.count() == 1 && gap.thicknesses.count() == 1 &&
+               *gap.thicknesses.begin() >= *drawn.thicknesses.begin() + 2 && cut(of);
+    };
+    const QStringList plus{QStringLiteral("10,2-10,18"), QStringLiteral("2,10-18,10")};
+    const QStringList check{QStringLiteral("2,11-8,17"), QStringLiteral("8,17-18,4")};
+    const QStringList list{QStringLiteral("2,4-18,4"), QStringLiteral("2,10-18,10"),
+                           QStringLiteral("2,16-18,16")};
+
+    QQuickItem *bookmark = icon("bookmarkMenuButton");
+    QQuickItem *bookmarks = icon("bookmarksMenuButton");
+    QCOMPARE(source(bookmark), QStringLiteral("image://theme/icon-m-favorite"));
+    QVERIFY(signShown(bookmark));
+    QVERIFY(laidOut(bookmark));
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, plus);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+
+    QCOMPARE(source(bookmarks), QStringLiteral("image://theme/icon-m-favorite"));
+    QVERIFY(signShown(bookmarks));
+    QVERIFY(laidOut(bookmarks));
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").ends, list);
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+    find(QStringLiteral("bookmarksMenuButton"))->setProperty("down", true);
+    QCOMPARE(strokes(bookmarks, "menuButtonBadge").colours, QSet<QRgb>{highlight.rgba()});
+    find(QStringLiteral("bookmarksMenuButton"))->setProperty("down", false);
+
+    m_core->bookmarks()->add(m_core->tabs()->activeUrl(), m_core->tabs()->activeTitle(), QString());
+    QCOMPARE(source(bookmark), QStringLiteral("image://theme/icon-m-favorite-selected"));
+    QVERIFY(part(bookmark, "menuButtonGlyph")->property("highlighted").toBool());
+    QVERIFY(laidOut(bookmark));
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, check);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{highlight.rgba()});
+    m_core->bookmarks()->removeByUrl(m_core->tabs()->activeUrl());
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").ends, plus);
+    QCOMPARE(strokes(bookmark, "menuButtonBadge").colours, QSet<QRgb>{primary.rgba()});
+
+    for (const char *entry :
+         {"findMenuButton", "shareMenuButton", "desktopMenuButton", "readerMenuButton",
+          "historyMenuButton", "downloadsMenuButton", "settingsMenuButton"}) {
+        QQuickItem *plain = icon(entry);
+        QVERIFY2(!signShown(plain), entry);
+        QVERIFY2(!cut(plain), entry);
+        QCOMPARE(part(plain, "menuButtonGlyph")->width(), iconSize);
+    }
 }
 
 // Sheet head names page (icon, title, padlock for https + host), copies address. Start page:
@@ -3506,21 +3728,7 @@ void tst_qmlload::menuNamesThePage()
     QVERIFY(header != nullptr);
     QVERIFY(sceneY(header) > sceneY(item("menuDragHandle")));
     QVERIFY(sceneY(header) + header->height() <= sceneY(item("findMenuButton")));
-    // Empty band, no line, under header; as tall as gap between rows, ink to ink (#38).
     QVERIFY(find(QStringLiteral("menuHeaderSeparator")) == nullptr);
-    const auto part = [](QQuickItem *button, const char *name) {
-        return qobject_cast<QQuickItem *>(findObjects(button, QLatin1String(name)).first());
-    };
-    QQuickItem *firstRow = item("findMenuButton");
-    QQuickItem *secondRow = item("bookmarksMenuButton");
-    const qreal headerGap =
-        sceneY(part(firstRow, "menuButtonIconSlot")) -
-        (sceneY(header) + header->height() - header->property("inkMargin").toReal());
-    QQuickItem *firstLabel = part(firstRow, "menuButtonLabel");
-    const qreal rowGap =
-        sceneY(part(secondRow, "menuButtonIconSlot")) - (sceneY(firstLabel) + firstLabel->height());
-    QVERIFY(rowGap > 0);
-    QCOMPARE(headerGap, rowGap);
     QCOMPARE(text("menuPageTitle"), title);
     QVERIFY(
         evaluate(item("menuPageTitle"), QStringLiteral("truncationMode === TruncationMode.Fade"))
@@ -3602,7 +3810,8 @@ void tst_qmlload::menuNamesThePage()
     }
 }
 
-// Downloads ring shows combined progress while any running; none when all done.
+// Downloads row: ring round icon and percent at end show combined progress while any running;
+// neither when all done.
 void tst_qmlload::menuShowsDownloadsComing()
 {
     // BrowserPage.qml item: scope has engine.
@@ -3616,6 +3825,9 @@ void tst_qmlload::menuShowsDownloadsComing()
         findObjects(downloads, QStringLiteral("menuButtonProgress")).first());
     QVERIFY(!downloads->property("busy").toBool());
     QVERIFY(!ring->isVisible());
+    auto *percent = qobject_cast<QQuickItem *>(
+        findObjects(downloads, QStringLiteral("menuButtonPercent")).first());
+    QVERIFY(!percent->isVisible());
     auto *icon = qobject_cast<QQuickItem *>(
         findObjects(downloads, QStringLiteral("menuButtonIcon")).first());
     QCOMPARE(ring->mapToScene(QPointF(ring->width() / 2, ring->height() / 2)),
@@ -3634,6 +3846,10 @@ void tst_qmlload::menuShowsDownloadsComing()
     QCOMPARE(ring->property("value").toReal(), 0.0);
     send(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 60}"));
     QCOMPARE(ring->property("value").toReal(), 0.6);
+    QVERIFY(percent->isVisible());
+    QCOMPARE(percent->property("text").toString(), QStringLiteral("60%"));
+    QCOMPARE(percent->property("color").value<QColor>(),
+             evaluate(downloads, QStringLiteral("Theme.highlightColor")).value<QColor>());
     send(QStringLiteral(
         "{msg: 'dl-start', id: 2, displayName: 'b.iso', sourceUrl: 'https://files.example/b.iso',"
         " targetPath: '/tmp/b.iso', mimeType: '', size: 0}"));
@@ -3642,10 +3858,15 @@ void tst_qmlload::menuShowsDownloadsComing()
     send(QStringLiteral("{msg: 'dl-done', id: 1, targetPath: '/tmp/a.pdf'}"));
     QCOMPARE(ring->property("value").toReal(), 0.2);
     QVERIFY(ring->isVisible());
+    QCOMPARE(percent->property("text").toString(), QStringLiteral("20%"));
     send(QStringLiteral("{msg: 'dl-fail', id: 2}"));
     QVERIFY(!downloads->property("busy").toBool());
     QVERIFY(!ring->isVisible());
-    for (const char *entry : {"findMenuButton", "historyMenuButton", "settingsMenuButton"}) {
+    QVERIFY(!percent->isVisible());
+    QVERIFY(
+        findObjects(find(QStringLiteral("findMenuButton")), QStringLiteral("menuButtonProgress"))
+            .isEmpty());
+    for (const char *entry : {"historyMenuButton", "settingsMenuButton"}) {
         QVERIFY(!findObjects(find(QLatin1String(entry)), QStringLiteral("menuButtonProgress"))
                      .first()
                      ->property("visible")
@@ -4302,121 +4523,61 @@ void tst_qmlload::downloadAgain()
     QCOMPARE(m_core->downloads()->count(), 1);
 }
 
-// Download status banner above bar on browsing page.
-void tst_qmlload::downloadBanner()
+// Download start, arrival and failure said for a moment by Silica Notice over bar, by name; nothing
+// laid over page (was banner with ring and Show, Android's snackbar).
+void tst_qmlload::downloadNotice()
 {
     QObject *scope = find(QStringLiteral("viewArea"));
-    QObject *banner = find(QStringLiteral("downloadBanner"));
-    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *notice = find(QStringLiteral("downloadNotice"));
+    QVERIFY(notice != nullptr);
+    QVERIFY(find(QStringLiteral("downloadBanner")) == nullptr);
     const auto engineSays = [this, scope](const QString &message) {
         evaluate(scope, QStringLiteral("WebEngine.recvObserve('embed:download', %1)").arg(message));
     };
-    const auto part = [banner](const char *name) {
-        return findObjects(banner, QLatin1String(name)).first();
-    };
-    const auto text = [&part](const char *name) { return part(name)->property("text").toString(); };
-    QVERIFY(!banner->property("shown").toBool());
-    QCOMPARE(banner->property("opacity").toReal(), 0.0);
+    const auto shown = [notice]() { return notice->property("shownCount").toInt(); };
+    const auto said = [notice]() { return notice->property("shownText").toString(); };
+    QCOMPARE(shown(), 0);
+    QCOMPARE(notice->property("duration").toInt(),
+             evaluate(notice, QStringLiteral("Notice.Short")).toInt());
+    QCOMPARE(notice->property("verticalOffset").toReal(),
+             -evaluate(notice, QStringLiteral("Theme.itemSizeLarge")).toReal());
 
     engineSays(QStringLiteral("{msg: 'dl-start', id: 1, displayName: 'report.pdf',"
                               " sourceUrl: 'https://files.example/report.pdf',"
                               " targetPath: '/tmp/report.pdf', mimeType: 'application/pdf',"
                               " size: 2048}"));
+    QCOMPARE(shown(), 1);
+    QCOMPARE(said(), QStringLiteral("Downloading report.pdf"));
     engineSays(QStringLiteral("{msg: 'dl-progress', id: 1, percent: 40}"));
-    QVERIFY(banner->property("shown").toBool());
-    QCOMPARE(text("bannerTitle"), QStringLiteral("report.pdf"));
-    QCOMPARE(text("bannerDetail"), QStringLiteral("819 B of 2.0 kB · 40%"));
-    QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 0.4);
-    QTRY_COMPARE(banner->property("opacity").toReal(), 1.0);
-    QObject *banners = find(QStringLiteral("barBanners"));
-    QCOMPARE(banners->property("y").toReal() + banners->property("height").toReal(),
-             bar->property("y").toReal());
-    QCOMPARE(banner->property("y").toReal() + banner->property("height").toReal(),
-             banners->property("height").toReal());
-    QVERIFY(part("bannerDetail")->property("visible").toBool());
-    QCOMPARE(banner->property("width").toReal(), bar->property("width").toReal());
-    QCOMPARE(findObjects(banner, QStringLiteral("sheetBackground")).count(), 1);
-    QCOMPARE(text("bannerActionLabel"), QStringLiteral("Show"));
-    for (QObject *item : findObjects(banner, QString())) {
-        QVERIFY2(!QByteArray(item->metaObject()->className()).startsWith("IconButton"),
-                 item->metaObject()->className());
-    }
-    const QColor secondary =
-        evaluate(scope, QStringLiteral("Theme.secondaryColor")).value<QColor>();
-    const QColor error = evaluate(scope, QStringLiteral("Theme.errorColor")).value<QColor>();
-    QCOMPARE(part("bannerDetail")->property("color").value<QColor>(), secondary);
     engineSays(QStringLiteral("{msg: 'dl-cancel', id: 1}"));
-    QCOMPARE(text("bannerDetail"), QStringLiteral("Paused · 40%"));
-    engineSays(QStringLiteral("{msg: 'dl-fail', id: 1}"));
-    QCOMPARE(text("bannerDetail"), QStringLiteral("Failed"));
-    QCOMPARE(part("bannerDetail")->property("color").value<QColor>(), error);
-    QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(), error);
     engineSays(QStringLiteral("{msg: 'dl-start', id: 1}"));
-
-    engineSays(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'b.iso', size: 0}"));
-    engineSays(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 20}"));
-    QCOMPARE(text("bannerTitle"), QStringLiteral("2 download(s) · 30%"));
-    QCOMPARE(text("bannerDetail"), QString());
-    QVERIFY(!part("bannerDetail")->property("visible").toBool());
-    engineSays(QStringLiteral("{msg: 'dl-start', id: 3, displayName: 'c.zip', size: 0}"));
-    engineSays(QStringLiteral("{msg: 'dl-fail', id: 3}"));
-    engineSays(QStringLiteral("{msg: 'dl-cancel', id: 2}"));
-    QCOMPARE(text("bannerTitle"), QStringLiteral("3 download(s) · 30%"));
-    QVERIFY(!part("bannerDetail")->property("visible").toBool());
-    QCOMPARE(part("downloadBannerProgress")->property("progressColor").value<QColor>(),
-             evaluate(scope, QStringLiteral("Theme.highlightColor")).value<QColor>());
-
-    tapBar(QStringLiteral("address"));
-    QVERIFY(!banner->property("shown").toBool());
-    evaluate(bar, QStringLiteral("endEditing()"));
-    QVERIFY(banner->property("shown").toBool());
-    pullUpToTabs();
-    QVERIFY(!banner->property("shown").toBool());
-    pullDownToBrowser();
-    QVERIFY(banner->property("shown").toBool());
-
-    evaluate(banner, QStringLiteral("activate()"));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
-    popPage();
-    click(part("bannerAction"));
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
-    popPage();
+    QCOMPARE(shown(), 1);
+    QCOMPARE(find(QStringLiteral("barBanners"))->property("height").toReal(), 0.0);
 
     engineSays(QStringLiteral("{msg: 'dl-done', id: 1}"));
-    QVERIFY(banner->property("flashing").toBool());
-    QCOMPARE(text("bannerTitle"), QStringLiteral("report.pdf"));
-    QCOMPARE(text("bannerDetail"), QStringLiteral("Downloaded"));
-    QCOMPARE(part("downloadBannerProgress")->property("value").toReal(), 1.0);
-    const UrlCatcher files(QStringLiteral("file"));
-    evaluate(banner, QStringLiteral("activate()"));
-    QVERIFY(files.opened.isEmpty());
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
-    popPage();
-    part("downloadBannerFlash")->setProperty("running", false);
-    QCOMPARE(text("bannerTitle"), QStringLiteral("2 download(s) · 20%"));
+    QCOMPARE(shown(), 2);
+    QCOMPARE(said(), QStringLiteral("Downloaded report.pdf"));
 
-    evaluate(banner, QStringLiteral("dismiss()"));
-    QVERIFY(!banner->property("shown").toBool());
-    engineSays(QStringLiteral("{msg: 'dl-progress', id: 2, percent: 70}"));
-    QVERIFY(!banner->property("shown").toBool());
-    engineSays(QStringLiteral("{msg: 'dl-start', id: 2}"));
-    QVERIFY(banner->property("shown").toBool());
-    QCOMPARE(text("bannerTitle"), QStringLiteral("b.iso"));
-
-    engineSays(QStringLiteral("{msg: 'dl-done', id: 2}"));
-    QVERIFY(banner->property("flashing").toBool());
-    evaluate(banner, QStringLiteral("dismiss()"));
-    QVERIFY(!banner->property("flashing").toBool());
-    QVERIFY(!banner->property("shown").toBool());
+    engineSays(QStringLiteral("{msg: 'dl-start', id: 2, displayName: 'b.iso', size: 0}"));
+    QCOMPARE(shown(), 3);
+    QCOMPARE(said(), QStringLiteral("Downloading b.iso"));
+    engineSays(QStringLiteral("{msg: 'dl-fail', id: 2}"));
+    QCOMPARE(shown(), 4);
+    QCOMPARE(said(), QStringLiteral("Download failed: b.iso"));
+    engineSays(QStringLiteral("{msg: 'dl-fail', id: 2}"));
+    QCOMPARE(shown(), 4);
 }
 
-// Real finger: far sideways drag dismisses, short one stays, tap opens list.
-void tst_qmlload::downloadBannerUnderAFinger()
+// Real finger on bar banner (tab opened behind): far sideways drag dismisses, short one stays,
+// tap brings tab to front.
+void tst_qmlload::barBannerUnderAFinger()
 {
-    QObject *banner = find(QStringLiteral("downloadBanner"));
-    evaluate(find(QStringLiteral("viewArea")),
-             QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start', id: 1,"
-                            " displayName: 'a.pdf', size: 0})"));
+    QObject *banner = find(QStringLiteral("tabBanner"));
+    TabModel *tabs = m_core->tabs();
+    const int front = tabs->activeTabId();
+    const int behind =
+        tabs->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
+    evaluate(find(QStringLiteral("barBanners")), QStringLiteral("tabOpened(%1, 'B')").arg(behind));
     auto *root = qobject_cast<QQuickItem *>(m_window.data());
     FingerWindow host(root);
     QQuickWindow &window = *host.window();
@@ -4432,13 +4593,15 @@ void tst_qmlload::downloadBannerUnderAFinger()
     QCOMPARE(findObjects(banner, QStringLiteral("bannerHandle")).first()->property("x").toReal(),
              0.0);
     QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, grip);
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("downloadsPage"));
-    popPage();
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
+    QCOMPARE(tabs->activeTabId(), behind);
+    QVERIFY(!banner->property("shown").toBool());
 
+    tabs->activateTabById(front);
+    evaluate(find(QStringLiteral("barBanners")), QStringLiteral("tabOpened(%1, 'B')").arg(behind));
+    QTRY_COMPARE(banner->property("opacity").toReal(), 1.0);
     drag(&window, grip, grip + QPoint(width / 2, 0));
     QVERIFY(!banner->property("shown").toBool());
-    QCOMPARE(m_core->downloads()->trayCount(), 0);
+    QCOMPARE(tabs->activeTabId(), front);
 }
 
 namespace {
@@ -4535,6 +4698,25 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(shownIn(find(QStringLiteral("linkMenuInitial"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkMenuAppIcon"))));
     QCOMPARE(findObjects(menu, QStringLiteral("sheetBackground")).count(), 1);
+    // As menu: link's name and preview in head shade, actions below in rows' shade. Column lays
+    // out on polish, which needs a window.
+    {
+        FingerWindow host(m_window.data());
+        QVERIFY(QTest::qWaitForWindowExposed(host.window()));
+        QObject *ground = findObjects(menu, QStringLiteral("sheetBackground")).first();
+        QTRY_VERIFY2(splitProblem(ground, QStringLiteral("linkHeadGap")).isEmpty(),
+                     qPrintable(splitProblem(ground, QStringLiteral("linkHeadGap"))));
+        const auto top = [this](const char *name) {
+            return qobject_cast<QQuickItem *>(find(QLatin1String(name)))->mapToScene(QPointF()).y();
+        };
+        const auto bottom = [this](const char *name) {
+            auto *item = qobject_cast<QQuickItem *>(find(QLatin1String(name)));
+            return item->mapToScene(QPointF(0, item->height())).y();
+        };
+        QVERIFY(find(QStringLiteral("linkPreview"))->property("visible").toBool());
+        QTRY_COMPARE(top("linkHeadGap"), bottom("linkPreview"));
+        QTRY_COMPARE(bottom("linkHeadGap"), top("linkActions"));
+    }
     QVERIFY(find(QStringLiteral("linkMenuDragHandle")) != nullptr);
     // Handle centred on sheet's edge line, as on nav bar (#38).
     auto *linkHandle = qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuDragHandle")));
@@ -4555,8 +4737,7 @@ void tst_qmlload::linkMenuOnALongPress()
     QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkAppRow"))));
     QVERIFY(!shownIn(find(QStringLiteral("linkImageRow"))));
-    QVERIFY(!shownIn(
-        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    QVERIFY(!shownIn(qobject_cast<QQuickItem *>(find(QStringLiteral("linkGroupGap")))));
     const QList<QPair<QString, QString>> actions{
         {QStringLiteral("newTabLinkButton"), QStringLiteral("New tab")},
         {QStringLiteral("backgroundTabLinkButton"), QStringLiteral("Background tab")},
@@ -4567,11 +4748,14 @@ void tst_qmlload::linkMenuOnALongPress()
         QObject *button = find(action.first);
         QVERIFY2(button != nullptr, qPrintable(action.first));
         QCOMPARE(button->property("text").toString(), action.second);
-        QVERIFY2(button->property("round").toBool(), qPrintable(action.first));
+        QVERIFY2(findObjects(button, QStringLiteral("menuButtonDisc")).isEmpty(),
+                 qPrintable(action.first));
         QVERIFY2(!button->property("iconSource").toString().isEmpty(), qPrintable(action.first));
         QCOMPARE(qobject_cast<QQuickItem *>(button)->parentItem()->objectName(),
                  QStringLiteral("linkPageRow"));
-        QCOMPARE(button->property("width").toReal(), menu->property("width").toReal() / 4);
+        QCOMPARE(button->property("width").toReal(), menu->property("width").toReal());
+        QCOMPARE(button->property("height").toReal(),
+                 evaluate(menu, QStringLiteral("Theme.itemSizeSmall")).toReal());
     }
 
     holdOn(view, heldOn(QStringLiteral("https://trails.example/")));
@@ -4780,8 +4964,7 @@ void tst_qmlload::linkMenuForPictures()
     QVERIFY(menu->property("open").toBool());
     QVERIFY(shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(shownIn(find(QStringLiteral("linkImageRow"))));
-    QVERIFY(shownIn(
-        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    QVERIFY(shownIn(qobject_cast<QQuickItem *>(find(QStringLiteral("linkGroupGap")))));
     QVERIFY(!shownIn(find(QStringLiteral("linkPreview"))));
     QVERIFY(!menu->property("previewShown").toBool());
     QVERIFY(view->property("active").toBool());
@@ -4831,8 +5014,7 @@ void tst_qmlload::linkMenuForPictures()
 
     QVERIFY(!shownIn(find(QStringLiteral("linkPageRow"))));
     QVERIFY(shownIn(find(QStringLiteral("linkImageRow"))));
-    QVERIFY(!shownIn(
-        qobject_cast<QQuickItem *>(find(QStringLiteral("linkMenuSeparator")))->parentItem()));
+    QVERIFY(!shownIn(qobject_cast<QQuickItem *>(find(QStringLiteral("linkGroupGap")))));
     QCOMPARE(find(QStringLiteral("linkMenuTitle"))->property("text").toString(),
              QStringLiteral("cdn.example/b.jpg"));
     const QList<QPair<QString, QString>> actions{
@@ -4843,8 +5025,9 @@ void tst_qmlload::linkMenuForPictures()
     for (const auto &action : actions) {
         QObject *button = find(action.first);
         QCOMPARE(button->property("text").toString(), action.second);
-        QVERIFY(button->property("round").toBool());
+        QVERIFY(findObjects(button, QStringLiteral("menuButtonDisc")).isEmpty());
         QVERIFY(!button->property("iconSource").toString().isEmpty());
+        QCOMPARE(button->property("width").toReal(), menu->property("width").toReal());
     }
     click(find(QStringLiteral("copyLinkButton")));
     QCOMPARE(evaluate(scope, QStringLiteral("Clipboard.text")).toString(),
@@ -4996,15 +5179,13 @@ void tst_qmlload::linkPreview()
     QCOMPARE(errors.all(), QString());
 }
 
-// Page ends where bar banners begin (one or two), regains room when gone: banner never covers
-// page foot.
+// Page ends where bar banner begins, regains room when gone: banner never covers page foot.
 void tst_qmlload::bannersEndThePage()
 {
     QObject *page = find(QStringLiteral("browserPage"));
     QObject *bar = find(QStringLiteral("navigationBar"));
     QObject *viewArea = find(QStringLiteral("viewArea"));
     QObject *banners = find(QStringLiteral("barBanners"));
-    QObject *downloads = find(QStringLiteral("downloadBanner"));
     QObject *opened = find(QStringLiteral("tabBanner"));
     QObject *webView = currentWebView();
     const qreal pageHeight = page->property("height").toReal();
@@ -5016,28 +5197,20 @@ void tst_qmlload::bannersEndThePage()
     QCOMPARE(banners->property("height").toReal(), 0.0);
     QCOMPARE(pageEnd(), pageHeight - fullBar);
 
-    evaluate(viewArea, QStringLiteral("WebEngine.recvObserve('embed:download', {msg: 'dl-start',"
-                                      " id: 1, displayName: 'a.pdf', size: 0})"));
-    QTRY_VERIFY(downloads->property("visible").toBool());
-    const qreal one = downloads->property("height").toReal();
+    const int behind =
+        m_core->tabs()->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
+    evaluate(banners, QStringLiteral("tabOpened(%1, 'B')").arg(behind));
+    QTRY_VERIFY(opened->property("visible").toBool());
+    const qreal one = opened->property("height").toReal();
     QVERIFY(one > 0);
     QCOMPARE(banners->property("height").toReal(), one);
     QCOMPARE(pageEnd(), banners->property("y").toReal());
     QCOMPARE(pageEnd(), pageHeight - fullBar - one);
     QCOMPARE(webView->property("height").toReal(), pageHeight - fullBar - one - inset);
-
-    const int behind =
-        m_core->tabs()->newTabBehind(QStringLiteral("https://b.example/"), QStringLiteral("B"));
-    evaluate(banners, QStringLiteral("tabOpened(%1, 'B')").arg(behind));
-    QTRY_VERIFY(opened->property("visible").toBool());
-    QCOMPARE(banners->property("height").toReal(), 2 * one);
-    QCOMPARE(pageEnd(), banners->property("y").toReal());
-    QCOMPARE(banners->property("y").toReal() + 2 * one, bar->property("y").toReal());
+    QCOMPARE(banners->property("y").toReal() + one, bar->property("y").toReal());
 
     evaluate(opened, QStringLiteral("dismiss()"));
-    evaluate(downloads, QStringLiteral("dismiss()"));
     QTRY_VERIFY(!opened->property("visible").toBool());
-    QTRY_VERIFY(!downloads->property("visible").toBool());
     QCOMPARE(banners->property("height").toReal(), 0.0);
     QCOMPARE(pageEnd(), pageHeight - fullBar);
 }
@@ -9216,6 +9389,17 @@ void tst_qmlload::tutorial()
                                .y();
     QVERIFY(sheetTop > 0);
     QCOMPARE(findObjects(menu, QStringLiteral("menuButtonIcon")).count(), 9);
+    // Same signs as real menu: plus on bookmark button, list on Bookmarks row.
+    QStringList signs;
+    for (QObject *icon : findObjects(menu, QStringLiteral("menuButtonIcon"))) {
+        signs.append(icon->property("badge").toString());
+    }
+    signs.sort();
+    QCOMPARE(signs, QStringList({QString(), QString(), QString(), QString(), QString(), QString(),
+                                 QString(), QStringLiteral("add"), QStringLiteral("list")}));
+    const QString split = splitProblem(findObjects(menu, QStringLiteral("sheetBackground")).first(),
+                                       QStringLiteral("tutorialHeadGap"));
+    QVERIFY2(split.isEmpty(), qPrintable(split));
     QVERIFY(tapping());
     QVERIFY(centre(tapHint).y() < sheetTop);
     QVERIFY(labelAtTop());

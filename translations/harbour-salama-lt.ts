@@ -103,10 +103,6 @@
 <context>
     <name>BrowserMenu</name>
     <message>
-        <source>Share</source>
-        <translation>Dalintis</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>Adresynas</translation>
     </message>
@@ -123,25 +119,9 @@
         <translation>Nustatymai</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>Į adresyną</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Skaitymas</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Adresas nukopijuotas</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Rasti tekste</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Kompiuteriui</translation>
     </message>
 </context>
 <context>
@@ -427,31 +407,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n atsiuntimas</numerusform>
-            <numerusform>%n atsiuntimai</numerusform>
-            <numerusform>%n atsiuntimų</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>Nepavyko</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>Pristabdyta · %1 %</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>Atsiųsta</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -481,6 +436,24 @@
     <message>
         <source>Delete file</source>
         <translation>Ištrinti failą</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>Atsiunčiama %1</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>Atsiųsta %1</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>Atsiųsti nepavyko: %1</translation>
     </message>
 </context>
 <context>
@@ -778,6 +751,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>Rodyti peržiūrą</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1 %</translation>
     </message>
 </context>
 <context>
@@ -1951,18 +1932,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>Į adresyną</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>Dalintis</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Skaitymas</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>Adresynas</translation>
     </message>
@@ -1977,14 +1946,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>Nustatymai</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Rasti tekste</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Kompiuteriui</translation>
     </message>
 </context>
 <context>

@@ -59,8 +59,9 @@ Item {
     readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
                                                       addressRight - width / 2)
 
-    readonly property real fieldLeft: Theme.paddingMedium
-    readonly property real fieldRight: menuIcon.x - Theme.paddingMedium
+    // Edit slab from bar's edge to menu; text inside starts at page margin, under back icon.
+    readonly property real fieldLeft: 0
+    readonly property real fieldRight: menuIcon.x - Theme.paddingLarge
 
     // Bar sits in system edge-swipe strip; its height is gesture start area, so slim gives
     // up only a quarter.
@@ -115,12 +116,6 @@ Item {
         } else if (!keyboardVisible) {
             endEditing()
         }
-    }
-
-    // Silica field leaves room for label/underline; field publishes offset to centre text.
-    function textCentringOffset(field) {
-        var offset = field.textVerticalCenterOffset
-        return offset === undefined ? 0 : offset
     }
 
     function submit() {
@@ -188,6 +183,43 @@ Item {
         objectName: "navigationBarBackground"
         anchors.fill: parent
         color: Theme.highlightDimmerColor
+    }
+
+    // sailfish-browser's ProgressBar: highlight wash fills whole bar behind controls, fading
+    // downward, fades out when load ends.
+    Item {
+        objectName: "loadProgress"
+        anchors.fill: parent
+        opacity: navigationBar.loading ? 1.0 : 0.0
+        visible: navigationBar.loading || opacity > 0
+
+        Behavior on opacity {
+            FadeAnimation {}
+        }
+
+        Rectangle {
+            objectName: "loadProgressFill"
+            height: parent.height
+            width: parent.width * navigationBar.loadProgress / 100
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, Theme.opacityHigh)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, 0.0)
+                }
+            }
+
+            Behavior on width {
+                enabled: parent.opacity === 1.0
+                SmoothedAnimation {
+                    velocity: 480
+                    duration: 200
+                }
+            }
+        }
     }
 
     DragHandle {
@@ -277,10 +309,7 @@ Item {
 
         x: navigationBar.fieldLeft
         width: navigationBar.fieldRight - navigationBar.fieldLeft
-        anchors {
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: navigationBar.textCentringOffset(urlField)
-        }
+        height: parent.height
         // Above gesture handler: field needs own presses for caret.
         z: 1
         visible: navigationBar.editing
@@ -308,17 +337,5 @@ Item {
             top: parent.top
             topMargin: -reach
         }
-    }
-
-    Rectangle {
-        objectName: "loadProgress"
-        anchors {
-            left: parent.left
-            top: parent.top
-        }
-        height: Theme.paddingSmall
-        width: parent.width * navigationBar.loadProgress / 100
-        color: Theme.highlightColor
-        visible: navigationBar.loading
     }
 }
