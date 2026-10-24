@@ -1,0 +1,90 @@
+# Reproducibility drift between releases (rpm.yml's `reproduce` gates only releases). Red:
+# commit no longer rebuilds byte for byte; log lists what differs. Weekly on main: Jolla's
+# repos feed BuildRequires each build, can change without commit here. On PRs touching
+# packaging: change proves itself before merge.
+#
+# Docker build on one runner, Podman rebuild on another, other time zone and umask: same
+# as release gate.
+name: reproducible
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "rpm/**"
+      - "ci/build-in-container.sh"
+      - "ci/container-engine.sh"
+      - "ci/verify-release.sh"
+      - "ci/sdk-images"
+      - "CMakeLists.txt"
+      - "**/CMakeLists.txt"
+      - ".github/workflows/rpm.yml"
+      - ".github/workflows/reproducible.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# PR: head commit, not GitHub's merge commit; that one is on no branch, a fresh clone
+# can't check it out. Fork PRs: head not in this repo, check fails to clone.
+env:
+  SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  build:
+    name: Build with Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+      - run: ci/build-in-container.sh
+        env:
+          SALAMA_ENGINE: docker
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repro-build
+          path: RPMS/harbour-salama-*.rpm
+          if-no-files-found: error
+          retention-days: 7
+
+  check:
+    name: Rebuild with Podman and compare
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Make room
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet \
+                      "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}"
+      # SDK image's build user is uid 100000: beyond runner's 65536 subordinate ids
+      # (docs/VERIFYING.md).
+      - name: Widen the subordinate id range
+        run: |
+          sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
+          podman system migrate
+      - run: gh run download "$GITHUB_RUN_ID" -n repro-build --dir rpms
+      - name: Rebuild and compare
+        env:
+          SALAMA_ENGINE: podman
+          TZ: Pacific/Chatham
+        run: |
+          umask 0002
+          rpm=$(find rpms -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
+          [ -n "$rpm" ] || { echo "::error::no device RPM to check"; exit 1; }
+          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
+            ci/verify-release.sh --no-download --rpm "$rpm" --ref "$SHA"

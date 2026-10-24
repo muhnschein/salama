@@ -6,6 +6,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ## [Unreleased]
 
 ### Added
+- Reproducible builds: each release RPM from next one on rebuilds from its tag to same file, byte for byte. `ci/verify-release.sh` checks release for you (docs/VERIFYING.md).
 - Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
 - Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.

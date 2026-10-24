@@ -1,0 +1,9 @@
+# Sailfish SDK image per SDK version, by digest: tag names its exact build environment
+# (ci/build-in-container.sh, rpm.yml read this). Digest, not tag: third-party image runs
+# privileged with read-write checkout, tags repointable.
+#
+# New SDK: pull tag once, read `docker inspect --format '{{index .RepoDigests 0}}'`, add
+# line. Never delete one: older releases verify against it (docs/VERIFYING.md).
+#
+# <sfos-version> <image@digest>
+5.2.0.15 docker.io/coderus/sailfishos-platform-sdk@sha256:e7c4379393b17ee63d7f7443ce9930c315a61fdb2e732016346ccbe8c934435e

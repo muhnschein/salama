@@ -71,11 +71,16 @@ gate, measures, open issues into job log and step summary. `continue-on-error`: 
     sfdk build
     sfdk check -s harbour RPMS/harbour-salama-*.aarch64.rpm
 
-`.github/workflows/rpm.yml` does same unattended (postivene's pattern): `docker run` of
-`coderus/sailfishos-platform-sdk` pinned by digest (5.2.0.15), target from image, checkout
-owned by SDK user and mounted in its home (scratchbox2 rpm maps unknown absolute paths into
-target rootfs), then `mb2 -X build-init`, `build-requires`, `build --no-check`. Parallel make.
-No cache: SDK image restore no faster than pull; build takes seconds.
+Without SDK, Podman or Docker: `ci/build-in-container.sh` (`make clean` first: mb2 builds
+in tree). `.github/workflows/rpm.yml` runs same script unattended (postivene's pattern):
+`coderus/sailfishos-platform-sdk` pinned by digest in `ci/sdk-images` (5.2.0.15), target
+from image, checkout owned by SDK user and mounted in its home (scratchbox2 rpm maps
+unknown absolute paths into target rootfs), then `mb2 -X build-init`, `build-requires`,
+`build --no-check`. Parallel make. No cache: SDK image restore no faster than pull; build
+takes seconds.
+
+Reproducible: commit time as `SOURCE_DATE_EPOCH`, fixed host and path; same commit, same
+RPM, byte for byte. Release gated on rebuild matching (`VERIFYING.md`).
 
 Run from Actions tab (`sfos_version` input), cut release with it (`RELEASING.md`), or push
 `build-*` tag to build branch before workflow reaches default branch. Spec holds version and
