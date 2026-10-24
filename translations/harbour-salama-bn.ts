@@ -88,16 +88,12 @@
         <translation>বুকমার্ক</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>বর্তমান পাতা বুকমার্ক করুন</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>কোনো বুকমার্ক নেই</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>বর্তমান পাতা বুকমার্ক করতে নিচে টানুন</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>ব্রাউজ করার সময় বুকমার্ক যোগ করুন, যাতে পরে আপনার প্রিয় সাইটগুলো খুঁজে পান</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>কভারে এর আইকন</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>চলছে</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>আজ</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>গতকাল</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>গত 7 দিন</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>গত 30 দিন</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>পুরোনো</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>মোছা হচ্ছে</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>কোনো মিল নেই</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>অনুসন্ধান</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>ইতিহাস</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ইতিহাস অনুসন্ধান করুন</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ইতিহাস মুছুন</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>এখনও কোনো ইতিহাস নেই</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>অনুসন্ধান</translation>
     </message>
 </context>
 <context>

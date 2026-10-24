@@ -88,16 +88,12 @@
         <translation>Záložky</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Přidat aktuální stránku do záložek</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Žádné záložky</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Stažením dolů přidáš aktuální stránku do záložek</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Během procházení si přidávej záložky, ať později najdeš své oblíbené stránky</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Její ikona na náhledu</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Probíhá</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Dnes</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Včera</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Posledních 7 dní</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Posledních 30 dní</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Starší</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Mazání</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nic nenalezeno</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hledat</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Historie</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Hledat v historii</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Vymazat historii</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Zatím žádná historie</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Hledat</translation>
     </message>
 </context>
 <context>

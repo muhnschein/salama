@@ -282,7 +282,7 @@ int TabModel::insertTab(const QString &url, const QString &title)
     beginInsertRows(QModelIndex(), index, index);
     m_tabs.append(tab);
     endInsertRows();
-    m_awaitingFirstUrl.append(tab.id);
+    m_awaitingVisit.append(tab.id);
     if (tab.groupId == m_currentGroupId) {
         m_groupTabs->append(tab.id);
     }
@@ -412,7 +412,7 @@ void TabModel::closeTab(int index)
     beginRemoveRows(QModelIndex(), index, index);
     m_tabs.removeAt(index);
     endRemoveRows();
-    m_awaitingFirstUrl.removeAll(closing.id);
+    m_awaitingVisit.removeAll(closing.id);
     m_media.remove(closing.id);
     m_muted.remove(closing.id);
     m_metadata.remove(closing.id);
@@ -466,7 +466,7 @@ void TabModel::closeAllTabs()
     beginRemoveRows(QModelIndex(), 0, m_tabs.count() - 1);
     m_tabs.clear();
     endRemoveRows();
-    m_awaitingFirstUrl.clear();
+    m_awaitingVisit.clear();
     m_activeTabId = 0;
     m_liveIds.clear();
     m_media.clear();
@@ -537,9 +537,34 @@ void TabModel::updateUrl(int tabId, const QString &url)
     if (index < 0) {
         return;
     }
+    const bool awaited = m_awaitingVisit.removeAll(tabId) > 0;
+    if (!awaited && m_tabs.at(index).url == url) {
+        return;
+    }
+    showUrl(index, url);
+    emit visited(url);
+}
+
+void TabModel::request(int tabId, const QString &url)
+{
+    if (url.isEmpty() || isExternalUrl(url)) {
+        return;
+    }
+    const int index = indexOf(tabId);
+    // Same address: restored tab's page, or asked again; nothing new to visit.
+    if (index < 0 || m_tabs.at(index).url == url) {
+        return;
+    }
+    showUrl(index, url);
+    if (!m_awaitingVisit.contains(tabId)) {
+        m_awaitingVisit.append(tabId);
+    }
+}
+
+void TabModel::showUrl(int index, const QString &url)
+{
     Tab &tab = m_tabs[index];
-    const bool firstReport = m_awaitingFirstUrl.removeAll(tabId) > 0;
-    if (!firstReport && tab.url == url) {
+    if (tab.url == url) {
         return;
     }
     const bool leavesStartPage = tab.url.isEmpty();
@@ -552,21 +577,22 @@ void TabModel::updateUrl(int tabId, const QString &url)
     if (leavesStartPage) {
         refreshLive();
     }
-    emit visited(url);
 }
 
 void TabModel::updateTitle(int tabId, const QString &title)
 {
     const int index = indexOf(tabId);
-    if (index < 0 || m_tabs.at(index).title == title) {
+    if (index < 0) {
         return;
     }
     Tab &tab = m_tabs[index];
-    tab.title = title;
-    notifyRow(index, Role::Title);
-    persist(tab);
-    if (tab.id == m_activeTabId) {
-        emit activeTabDataChanged();
+    if (tab.title != title) {
+        tab.title = title;
+        notifyRow(index, Role::Title);
+        persist(tab);
+        if (tab.id == m_activeTabId) {
+            emit activeTabDataChanged();
+        }
     }
     emit titleUpdated(tab.url, title);
 }
@@ -574,15 +600,17 @@ void TabModel::updateTitle(int tabId, const QString &title)
 void TabModel::updateFavicon(int tabId, const QString &favicon)
 {
     const int index = indexOf(tabId);
-    if (index < 0 || m_tabs.at(index).favicon == favicon) {
+    if (index < 0) {
         return;
     }
     Tab &tab = m_tabs[index];
-    tab.favicon = favicon;
-    notifyRow(index, Role::Favicon);
-    persist(tab);
-    if (tab.id == m_activeTabId) {
-        emit activeTabDataChanged();
+    if (tab.favicon != favicon) {
+        tab.favicon = favicon;
+        notifyRow(index, Role::Favicon);
+        persist(tab);
+        if (tab.id == m_activeTabId) {
+            emit activeTabDataChanged();
+        }
     }
     emit faviconUpdated(tab.url, favicon);
 }

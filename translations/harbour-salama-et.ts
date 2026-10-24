@@ -88,16 +88,12 @@
         <translation>Järjehoidjad</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Lisa praegune leht järjehoidjatesse</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Järjehoidjaid pole</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Praeguse lehe järjehoidjatesse lisamiseks tõmba alla</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Lisa sirvimise ajal järjehoidjaid, et oma lemmiksaidid hiljem üles leida</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Selle ikoon kaanel</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Pooleli</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Täna</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Eile</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Viimased 7 päeva</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Viimased 30 päeva</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Vanemad</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Kustutan</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Vasteid pole</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Otsing</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Ajalugu</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Otsi ajaloost</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Kustuta ajalugu</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ajalugu pole veel</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Otsing</translation>
     </message>
 </context>
 <context>

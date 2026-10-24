@@ -88,16 +88,12 @@
         <translation>બુકમાર્ક્સ</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>વર્તમાન પૃષ્ઠને બુકમાર્ક કરો</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>કોઈ બુકમાર્ક નથી</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>વર્તમાન પૃષ્ઠને બુકમાર્ક કરવા નીચે ખેંચો</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>બ્રાઉઝ કરતી વખતે બુકમાર્ક ઉમેરો, જેથી તમે પછીથી તમારી મનપસંદ સાઇટ્સ શોધી શકો</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>કવર પર તેનું ચિહ્ન</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>ચાલુ છે</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>આજે</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>ગઈકાલે</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>છેલ્લા 7 દિવસ</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>છેલ્લા 30 દિવસ</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>જૂના</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>કાઢી નાખવામાં આવે છે</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>કોઈ મેળ ખાતું નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>ઇતિહાસ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ઇતિહાસ શોધો</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ઇતિહાસ સાફ કરો</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>હજી કોઈ ઇતિહાસ નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
     </message>
 </context>
 <context>

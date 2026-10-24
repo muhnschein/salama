@@ -88,16 +88,12 @@
         <translation>Zakładki</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Dodaj bieżącą stronę do zakładek</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Brak zakładek</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Przeciągnij w dół, aby dodać bieżącą stronę do zakładek</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Dodawaj zakładki w trakcie przeglądania, aby później łatwo znaleźć ulubione witryny</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Jej ikona na okładce</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>W trakcie</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Dzisiaj</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Wczoraj</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Ostatnie 7 dni</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Ostatnie 30 dni</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Starsze</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Usuwanie</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Brak wyników</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Szukaj</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Historia</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Szukaj w historii</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Usuń historię</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Nie ma jeszcze historii</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Szukaj</translation>
     </message>
 </context>
 <context>

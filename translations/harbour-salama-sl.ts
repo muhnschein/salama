@@ -88,16 +88,12 @@
         <translation>Zaznamki</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Dodaj trenutno stran med zaznamke</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Ni zaznamkov</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Povleci navzdol, da dodaš trenutno stran med zaznamke</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Med brskanjem dodajaj zaznamke, da priljubljena spletna mesta pozneje hitro najdeš</translation>
     </message>
 </context>
 <context>
@@ -301,6 +297,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Njegova ikona na naslovnici</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>V teku</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Danes</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Včeraj</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Zadnjih 7 dni</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Zadnjih 30 dni</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Starejše</translation>
     </message>
 </context>
 <context>
@@ -515,6 +539,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Brisanje</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ni zadetkov</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Iskanje</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -554,10 +586,6 @@
         <translation>Zgodovina</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Iskanje po zgodovini</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Počisti zgodovino</translation>
     </message>
@@ -572,6 +600,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ni še zgodovine</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Iskanje</translation>
     </message>
 </context>
 <context>

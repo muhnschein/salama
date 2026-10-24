@@ -88,15 +88,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -290,6 +286,34 @@
     <message>
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Older</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation type="unfinished"></translation>
     </message>
@@ -561,6 +589,10 @@
     </message>
     <message>
         <source>No history yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

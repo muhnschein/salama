@@ -88,16 +88,12 @@
         <translation>Grāmatzīmes</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Saglabāt pašreizējo lapu grāmatzīmēs</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Nav grāmatzīmju</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Velc uz leju, lai saglabātu pašreizējo lapu grāmatzīmēs</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Pievieno grāmatzīmes pārlūkošanas laikā, lai vēlāk atrastu savas iecienītās vietnes</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Tās ikona uz vāka</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Notiek</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Šodien</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Vakar</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Pēdējās 7 dienas</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Pēdējās 30 dienas</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Vecāki</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Dzēš</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Nav atbilstību</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Meklēšana</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Vēsture</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Meklēt vēsturē</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Notīrīt vēsturi</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Vēl nav vēstures</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Meklēšana</translation>
     </message>
 </context>
 <context>

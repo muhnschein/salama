@@ -64,7 +64,7 @@ Page {
             SearchField {
                 objectName: "historySearch"
                 width: parent.width
-                placeholderText: qsTr("Search history")
+                placeholderText: qsTr("Search")
                 onTextChanged: HistoryModel.searchTerm = text
             }
         }
@@ -82,6 +82,11 @@ Page {
             // Rows otherwise draw over field when scrolled.
             clip: true
             model: HistoryModel
+
+            section.property: "dateGroup"
+            section.delegate: DateSectionHeader {
+                group: Number(section)
+            }
 
             delegate: HistoryDelegate {
                 onClicked: historyPage.open(model.url, false)

@@ -31,7 +31,7 @@ Loader {
 
     function openFromStartPage(url) {
         startPageBehind = true
-        TabModel.updateUrl(tabId, url)
+        TabModel.request(tabId, url)
     }
 
     function backToStartPage() {

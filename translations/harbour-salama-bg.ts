@@ -88,16 +88,12 @@
         <translation>Отметки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Отмятане на текущата страница</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Няма отметки</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Дръпнете надолу, за да отметнете текущата страница</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Добавете отметки, докато разглеждате, за да можете по-късно да намирате любимите си страници</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Иконката му на корицата</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Изпълнява се</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Днес</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Вчера</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Последните 7 дни</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Последните 30 дни</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>По-стари</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Изтрива се</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Няма съвпадения</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Търсене</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>История</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Търсене в историята</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Изчистване на историята</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Все още няма история</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Търсене</translation>
     </message>
 </context>
 <context>

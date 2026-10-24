@@ -88,16 +88,12 @@
         <translation>Yer imleri</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Geçerli sayfayı yer imlerine ekle</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Yer imi yok</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Geçerli sayfayı yer imlerine eklemek için aşağı çek</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Gezinirken sevdiğin siteleri yer imlerine ekle, böylece onları daha sonra kolayca bulursun</translation>
     </message>
 </context>
 <context>
@@ -286,6 +282,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Kapaktaki simgesi</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Devam ediyor</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Bugün</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Dün</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Son 7 gün</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Son 30 gün</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Daha eski</translation>
     </message>
 </context>
 <context>
@@ -500,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Siliniyor</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Eşleşme yok</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Ara</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -539,10 +571,6 @@
         <translation>Geçmiş</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Geçmişte ara</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Geçmişi temizle</translation>
     </message>
@@ -557,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>Henüz geçmiş yok</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Ara</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>Закладки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Додати поточну сторінку до закладок</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Закладок немає</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Потягніть вниз, щоб додати поточну сторінку до закладок</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Додавайте закладки для сайтів під час перегляду, щоб потім легко їх знайти</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Її значок на обкладинці</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Виконується</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Сьогодні</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Вчора</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Останні 7 днів</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Останні 30 днів</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Старіші</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Видалення</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Збігів не знайдено</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Пошук</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>Історія</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Шукати в історії</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Видалити історію</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Історії ще немає</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Пошук</translation>
     </message>
 </context>
 <context>

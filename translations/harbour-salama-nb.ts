@@ -88,16 +88,12 @@
         <translation>Bokmerker</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Bokmerk gjeldende side</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Ingen bokmerker</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Dra ned for å bokmerke gjeldende side</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Legg til bokmerker mens du surfer så du kan finne favorittsidene dine senere</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Handlingens ikon på coveret</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Pågår</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>I dag</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>I går</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Siste 7 dager</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Siste 30 dager</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Eldre</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Sletter</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ingen treff</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Søk</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Historikk</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Søk i historikk</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Tøm historikk</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ingen historikk ennå</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Søk</translation>
     </message>
 </context>
 <context>

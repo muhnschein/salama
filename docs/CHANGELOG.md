@@ -32,6 +32,10 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
 - Swedish translation.
 - Translations into every other Sailfish OS language: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese; Firefox wording where available.
+- Downloads search field under heading, like History's: lists downloads whose name or address holds every typed word. Both fields now say just Search.
+- History and Downloads grouped by date, as in Firefox for Android: Today, Yesterday, Last 7 days, Last 30 days, Older. Running and paused downloads first, under In progress.
+- History rows show page icons, like Bookmarks.
+- Search matches in History, Downloads and address bar suggestions bold in ambience highlight colour, like vuo.
 
 ### Changed
 - Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
@@ -59,9 +63,11 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 - History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
+- History no longer lists the address as typed next to the page it led to ("example.org" beside "example.org/", or a redirect's start): only where the page went is kept, so its row gets the page's title and icon. A page sharing its icon or title with the one before it in the tab gets them too.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.
+- Bookmarks pulley: bookmark current page from menu's Bookmark button.
 
 ## [0.8.0] - 2026-09-26
 

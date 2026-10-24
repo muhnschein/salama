@@ -88,16 +88,12 @@
         <translation>書籤</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>將目前頁面加入書籤</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>沒有書籤</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>下拉即可將目前頁面加入書籤</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>一邊上網，一邊加入書籤，這樣之後就可以再找回您最愛的網站</translation>
     </message>
 </context>
 <context>
@@ -286,6 +282,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>它在封面上的圖示</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>進行中</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>今天</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>昨天</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>7 天內</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>30 天內</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>更久之前</translation>
     </message>
 </context>
 <context>
@@ -500,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>正在刪除</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>沒有相符的項目</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜尋</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -539,10 +571,6 @@
         <translation>瀏覽紀錄</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>搜尋瀏覽紀錄</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>清除瀏覽紀錄</translation>
     </message>
@@ -557,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>尚無瀏覽紀錄</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜尋</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>Закладки</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Добавить текущую страницу в закладки</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Закладок нет</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Потяните вниз, чтобы добавить текущую страницу в закладки</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Добавляйте закладки при просмотре, чтобы иметь возможность найти свои любимые сайты позже</translation>
     </message>
 </context>
 <context>
@@ -296,6 +292,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>Его значок на обложке</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>В процессе</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Сегодня</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Вчера</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Последние 7 дней</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Последние 30 дней</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Ранее</translation>
     </message>
 </context>
 <context>
@@ -510,6 +534,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Удаление</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Ничего не найдено</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Поиск</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -549,10 +581,6 @@
         <translation>История</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Поиск в истории</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Удалить историю</translation>
     </message>
@@ -567,6 +595,10 @@
     <message>
         <source>No history yet</source>
         <translation>Истории пока нет</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Поиск</translation>
     </message>
 </context>
 <context>

@@ -88,16 +88,12 @@
         <translation>Marcadores</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Adicionar a página atual aos marcadores</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Sem marcadores</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Puxe para baixo para adicionar a página atual aos marcadores</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Adicione marcadores enquanto navega para que possa encontrar os seus sites favoritos mais tarde</translation>
     </message>
 </context>
 <context>
@@ -291,6 +287,34 @@
         <source>Its icon on the cover</source>
         <extracomment>Over the glyphs a bookmark&apos;s quick action can wear on the cover</extracomment>
         <translation>O seu ícone na capa</translation>
+    </message>
+</context>
+<context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Em progresso</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Hoje</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Ontem</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Últimos 7 dias</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Últimos 30 dias</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Mais antigas</translation>
     </message>
 </context>
 <context>
@@ -505,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>A eliminar</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Sem correspondências</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Pesquisar</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -544,10 +576,6 @@
         <translation>Histórico</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Pesquisar histórico</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Limpar histórico</translation>
     </message>
@@ -562,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Ainda sem histórico</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Pesquisar</translation>
     </message>
 </context>
 <context>
