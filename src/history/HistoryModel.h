@@ -92,6 +92,8 @@ public:
     Q_INVOKABLE void clearSince(double since);
     Q_INVOKABLE int countSince(double since) const;
     Q_INVOKABLE static double rangeStart(int range);
+    // "" if page not in history.
+    Q_INVOKABLE QString faviconOf(const QString &url) const;
     static qint64 rangeStart(int range, const QDateTime &now);
 
     // count = 1 + 0.9 * old (UrlbarUtils.addToInputHistory).

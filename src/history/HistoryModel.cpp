@@ -112,6 +112,17 @@ int HistoryModel::countSince(double since) const
     return query.value(0).toInt();
 }
 
+QString HistoryModel::faviconOf(const QString &url) const
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral("SELECT favicon FROM browser_history WHERE url = ?"));
+    query.addBindValue(url);
+    if (!run(query) || !query.next()) {
+        return {};
+    }
+    return query.value(0).toString();
+}
+
 QString HistoryModel::searchTerm() const
 {
     return m_searchTerm;

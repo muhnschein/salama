@@ -15,6 +15,8 @@ Item {
     property string url: TabModel.activeUrl
     readonly property bool loading: view ? view.loading === true : false
     property bool canGoBack: view ? view.canGoBack === true : false
+    // Back hold lists tab history; false -> hold = slow tap.
+    property bool holdsBack: false
     readonly property int loadProgress: view ? view.loadProgress : 0
     // Gecko verdict, https only: validState = has one, allGood covers cert, protocol, mixed
     // content. Not for reader view: app's own document, no connection.
@@ -39,6 +41,9 @@ Item {
 
     signal accepted(string text, bool inNewTab)
     signal back()
+    // Press, before hold or tap: time to fetch what hold shows.
+    signal backPressed()
+    signal backHeld()
     signal reloadOrStop()
     signal showMenu()
     // Upward px from catch point, negative below.
@@ -165,6 +170,21 @@ Item {
         } else if (region === "address") {
             navigationBar.tapAddress()
         }
+    }
+
+    function regionPressed(region) {
+        if (region === "back" && navigationBar.canGoBack) {
+            navigationBar.backPressed()
+        }
+    }
+
+    // True = hold handled, no tap follows.
+    function hold(region) {
+        if (region === "back" && navigationBar.canGoBack && navigationBar.holdsBack) {
+            navigationBar.backHeld()
+            return true
+        }
+        return false
     }
 
     // Restore via engine chrome state, which slims again on scroll.

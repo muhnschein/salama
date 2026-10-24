@@ -432,6 +432,10 @@ void tst_historymodel::favicons()
     }
     HistoryModel reopened(storage);
     QCOMPARE(reopened.allEntries().first().favicon, QStringLiteral("https://a.example/icon.png"));
+    QCOMPARE(reopened.faviconOf(url), QStringLiteral("https://a.example/icon.png"));
+    QVERIFY(reopened.faviconOf(QStringLiteral("https://b.example/")).isEmpty());
+    reopened.visit(QStringLiteral("https://b.example/"));
+    QVERIFY(reopened.faviconOf(QStringLiteral("https://b.example/")).isEmpty());
 }
 
 void tst_historymodel::removeByUrl()
