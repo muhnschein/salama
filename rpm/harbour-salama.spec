@@ -4,7 +4,14 @@
 # from allowed_libraries.conf); see docs/HARBOUR.md. OS floor (>= 5.2.0) can't be
 # `Requires: sailfish-version` (Harbour rejects it); carried by SDK target
 # (__libc_start_main check) and package versions below.
-#
+
+# Reproducible package (docs/VERIFYING.md). SOURCE_DATE_EPOCH set (ci/build-in-container.sh:
+# commit time): build time = it, file dates clamped to it. Unset: rpm's defaults. Host name
+# fixed either way (rpm records it).
+%define use_source_date_epoch_as_buildtime 1
+%define clamp_mtime_to_source_date_epoch 1
+%define _buildhost salama-build
+
 # Version = release version (docs/RELEASING.md); CI refuses mismatching tag. Release stays 1;
 # CI stamps 1.<run number> on non-release builds.
 Name:       harbour-salama

@@ -7,6 +7,7 @@
 #  * every docs/*.md named in comment exists
 #  * changelog has Unreleased; Sailjail permissions documented
 #  * one version: CMake = spec, changelog has its section
+#  * reproducible: spec pins build time, dates, host; build dir named for spec
 #
 # Missing tool: SKIP locally, fail with PACKAGING_LINT_STRICT=1 (CI).
 set -uo pipefail
@@ -110,6 +111,16 @@ spec_version=$(sed -n 's/^Version:[[:space:]]*//p' "$SPEC")
 cmake_version=$(sed -n 's/^project(harbour-salama VERSION \([0-9.]*\).*/\1/p' "$ROOT/CMakeLists.txt")
 [[ $cmake_version == "$spec_version" ]] || fail version CMakeLists.txt "project VERSION '$cmake_version' is not the spec's Version '$spec_version'"
 "$ROOT/ci/release-notes.sh" "$spec_version" >/dev/null || fail changelog docs/CHANGELOG.md "no '## [$spec_version]' section for the spec's Version"
+
+# 8. Reproducible package (docs/VERIFYING.md): without these, every build stamps own time
+#    and host, no rebuild matches a release. mb2 takes package name from build dir, so
+#    ci/build-in-container.sh must mount tree at spec's Name.
+for define in 'use_source_date_epoch_as_buildtime 1' 'clamp_mtime_to_source_date_epoch 1' '_buildhost [^ ]'; do
+    grep -Eq "^%define $define" "$SPEC" || fail reproducible rpm/harbour-salama.spec "no '%define $define'"
+done
+spec_name=$(sed -n 's/^Name:[[:space:]]*//p' "$SPEC")
+grep -q "^builddir=\"\$home/$spec_name\"\$" "$ROOT/ci/build-in-container.sh" ||
+    fail reproducible ci/build-in-container.sh "build dir is not \$home/$spec_name; mb2 would look for another spec"
 
 if [[ $FAILED -eq 0 ]]; then
     echo "packaging-lint: clean"
