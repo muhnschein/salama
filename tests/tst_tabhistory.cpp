@@ -258,8 +258,8 @@ void tst_tabhistory::siteFavicons()
     history.visit(QStringLiteral("https://a.example/new"));
     history.updateFavicon(QStringLiteral("https://a.example/new"), QStringLiteral("new.png"));
     history.visit(QStringLiteral("https://a.example/pushed"));
-    history.visit(QStringLiteral("https://a_example.org/x"));
-    history.updateFavicon(QStringLiteral("https://a_example.org/x"), QStringLiteral("o.png"));
+    history.visit(QStringLiteral("https://aXexample.org/x"));
+    history.updateFavicon(QStringLiteral("https://aXexample.org/x"), QStringLiteral("o.png"));
     history.visit(QStringLiteral("https://a.example.evil/x"));
     history.updateFavicon(QStringLiteral("https://a.example.evil/x"), QStringLiteral("e.png"));
     const auto icon = [this](const QString &url) {
@@ -269,8 +269,8 @@ void tst_tabhistory::siteFavicons()
     QCOMPARE(icon(QStringLiteral("https://a.example/old")), QVariant(QStringLiteral("old.png")));
     QCOMPARE(icon(QStringLiteral("https://a.example/never")), QVariant(QStringLiteral("new.png")));
     QCOMPARE(icon(QStringLiteral("http://a.example/pushed")), QVariant(QString()));
-    QCOMPARE(icon(QStringLiteral("https://aXexample.org/x")), QVariant(QString()));
-    QCOMPARE(icon(QStringLiteral("https://a_example.org/y")), QVariant(QStringLiteral("o.png")));
+    QCOMPARE(icon(QStringLiteral("https://aXexample.org/y")), QVariant(QStringLiteral("o.png")));
+    QCOMPARE(icon(QStringLiteral("https://a_example.org/y")), QVariant(QString()));
     QCOMPARE(icon(QStringLiteral("https://b.example/")), QVariant(QString()));
     QCOMPARE(icon(QStringLiteral("about:blank")), QVariant(QString()));
 }

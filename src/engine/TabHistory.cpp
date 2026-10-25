@@ -128,12 +128,9 @@ QVariantList TabHistory::entries(const QVariant &data) const
 // gets icon of its own.
 QString TabHistory::faviconOf(const QString &url) const
 {
-    const QUrl page(url, QUrl::TolerantMode);
-    QString site = page.toString(QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment |
+    QString site = QUrl(url, QUrl::TolerantMode)
+                       .toString(QUrl::RemovePath | QUrl::RemoveQuery | QUrl::RemoveFragment |
                                  QUrl::RemoveUserInfo);
-    if (page.host().isEmpty()) {
-        site.clear();
-    }
     site.replace(QLatin1Char('\\'), QStringLiteral("\\\\"))
         .replace(QLatin1Char('%'), QStringLiteral("\\%"))
         .replace(QLatin1Char('_'), QStringLiteral("\\_"));
@@ -142,8 +139,7 @@ QString TabHistory::faviconOf(const QString &url) const
                                  "(url = ? OR url LIKE ? ESCAPE '\\') "
                                  "ORDER BY url = ? DESC, date DESC LIMIT 1"));
     query.addBindValue(url);
-    // NULL when no host: matches nothing.
-    query.addBindValue(site.isEmpty() ? QVariant() : QVariant(site + QStringLiteral("/%")));
+    query.addBindValue(site + QStringLiteral("/%"));
     query.addBindValue(url);
     if (!query.exec()) {
         qWarning() << "TabHistory:" << query.lastError().text();
