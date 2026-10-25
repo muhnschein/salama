@@ -3334,15 +3334,31 @@ void tst_qmlload::backHoldShowsTabHistory()
     answer({entry(1, QStringLiteral("https://b.example/"), QStringLiteral("B")),
             entry(0, QStringLiteral("https://a.example/"), QString())});
     QTRY_VERIFY(panel->property("open").toBool());
-    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, back);
+    // Finger moving up after hold: sheet stays, deck doesn't drag under it.
+    QObject *page = find(QStringLiteral("browserPage"));
+    const int up = 3 * page->property("pullThreshold").toInt();
+    QTest::mouseMove(&window, back - QPoint(0, up / 2));
+    QTest::mouseMove(&window, back - QPoint(0, up));
+    QVERIFY(!page->property("dragging").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, back - QPoint(0, up));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QVERIFY(panel->property("open").toBool());
     QVERIFY(!view->property("calls").toStringList().contains(QStringLiteral("goBack")));
 
+    // Titles only; untitled page by address.
     QList<QObject *> rows = findObjects(panel, QStringLiteral("tabHistoryRow"));
     QCOMPARE(rows.count(), 2);
     QCOMPARE(rows.at(0)->property("title").toString(), QStringLiteral("B"));
-    QCOMPARE(rows.at(0)->property("subtitle").toString(), QStringLiteral("https://b.example/"));
+    QVERIFY(rows.at(0)->property("subtitle").toString().isEmpty());
+    QVERIFY(!findObjects(rows.at(0), QStringLiteral("tabRowSubtitle"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
     QCOMPARE(rows.at(0)->property("icon").toString(), QStringLiteral("https://b.example/icon.png"));
-    QCOMPARE(rows.at(1)->property("shownTitle").toString(), QStringLiteral("https://a.example/"));
+    QCOMPARE(rows.at(1)->property("title").toString(), QStringLiteral("https://a.example/"));
+    // Sheet height counts rows at this height.
+    QCOMPARE(rows.at(0)->property("contentHeight").toReal(),
+             evaluate(panel, QStringLiteral("Theme.itemSizeSmall")).toReal());
     QVERIFY(rows.at(1)->property("icon").toString().isEmpty());
 
     click(rows.at(1));
@@ -3372,8 +3388,12 @@ void tst_qmlload::backHoldShowsTabHistory()
     answer({entry(0, QStringLiteral("https://a.example/"), QStringLiteral("A"))});
     QVERIFY(!evaluate(bar, QStringLiteral("hold('reload')")).toBool());
     QVERIFY(!evaluate(bar, QStringLiteral("hold('address')")).toBool());
+    // Sized for its rows the moment it opens, before any layout pass: slides to final height.
+    const qreal twoRows = panel->property("height").toReal();
     QVERIFY(evaluate(bar, QStringLiteral("hold('back')")).toBool());
     QVERIFY(panel->property("open").toBool());
+    QCOMPARE(twoRows - panel->property("height").toReal(),
+             evaluate(panel, QStringLiteral("Theme.itemSizeSmall")).toReal());
     QCOMPARE(findObjects(panel, QStringLiteral("tabHistoryRow")).count(), 1);
 
     evaluate(find(QStringLiteral("browserPage")), QStringLiteral("openOmnibar(false)"));

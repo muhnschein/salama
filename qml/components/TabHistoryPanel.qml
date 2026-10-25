@@ -15,7 +15,11 @@ DockedPanel {
 
     objectName: "tabHistoryPanel"
     width: parent.width
-    height: Math.min(content.height, Math.round(parent.height * 0.6))
+    // From entries, not content.height: Column lays out a frame late, so first show slid toward
+    // header-only height then jumped open.
+    height: Math.min(2 * Theme.paddingMedium + heading.height
+                     + entries.length * Theme.itemSizeSmall,
+                     Math.round(parent.height * 0.6))
     dock: Dock.Bottom
     // Shade sits one under: over page, so taps beside sheet reach it.
     z: 2
@@ -44,7 +48,7 @@ DockedPanel {
         edgeOf: panel
     }
 
-    // TabHistory caps rows: all made, sheet sized to them.
+    // TabHistory caps rows: all made.
     SilicaFlickable {
         objectName: "tabHistoryList"
         anchors.fill: parent
@@ -59,6 +63,8 @@ DockedPanel {
             bottomPadding: Theme.paddingMedium
 
             SectionHeader {
+                id: heading
+
                 objectName: "tabHistoryTitle"
                 //: Heading of the list of pages visited before this one in the tab
                 text: qsTr("Tab history")
@@ -70,8 +76,8 @@ DockedPanel {
                 TabRow {
                     objectName: "tabHistoryRow"
                     width: content.width
-                    title: modelData.title
-                    subtitle: modelData.url
+                    contentHeight: Theme.itemSizeSmall
+                    title: modelData.title.length > 0 ? modelData.title : modelData.url
                     icon: modelData.favicon
                     onClicked: {
                         panel.hide()

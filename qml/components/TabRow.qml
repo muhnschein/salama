@@ -52,6 +52,7 @@ ListItem {
         Label {
             objectName: "tabRowSubtitle"
             width: parent.width
+            visible: text.length > 0
             text: row.match ? Theme.highlightText(row.subtitle, row.match,
                                                   Theme.secondaryHighlightColor)
                             : row.subtitle
