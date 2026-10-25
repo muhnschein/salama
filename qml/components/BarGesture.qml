@@ -23,6 +23,8 @@ MouseArea {
     property bool pressedOnBar: false
     property bool forwarding: false
     property bool heldDown: false
+    // Bar region took hold (sheet opening): finger moving up no longer drags deck under sheet.
+    property bool holdTaken: false
     property string pressedRegion: ""
     // Off under omnibar pane: forwarding would hit covered page.
     property bool reaching: true
@@ -57,14 +59,20 @@ MouseArea {
         dragging = false
         forwarding = false
         heldDown = false
+        holdTaken = false
         pressedOnBar = mouse.y >= reach
         pressedRegion = pressedOnBar ? bar.regionAt(mouse.x) : ""
+        bar.regionPressed(pressedRegion)
         // Arm on press so grid's first-show cost paid before motion, not in first drag frame.
         bar.dragArmed()
     }
-    // Reach only. On bar slow tap still tap: rejecting makes MouseArea emit clicked on release.
+    // On bar slow tap still tap unless region has hold action: rejecting makes MouseArea emit
+    // clicked on release, accepting emits none.
     onPressAndHold: {
-        if (pressedOnBar) {
+        if (pressedOnBar && !dragging && bar.hold(pressedRegion)) {
+            holdTaken = true
+            pressedRegion = ""
+        } else if (pressedOnBar) {
             mouse.accepted = false
         } else {
             heldDown = true
@@ -83,7 +91,7 @@ MouseArea {
             bar.pageTouchMoved(lastAt)
             return
         }
-        if (!dragging && pressedY - lastAt.y > Theme.startDragDistance) {
+        if (!dragging && !holdTaken && pressedY - lastAt.y > Theme.startDragDistance) {
             dragging = true
             caughtY = lastAt.y
             pressedRegion = ""

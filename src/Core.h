@@ -7,6 +7,7 @@
 #include "engine/EngineMessages.h"
 #include "engine/PageActivity.h"
 #include "engine/PageMedia.h"
+#include "engine/TabHistory.h"
 #include "history/HistoryModel.h"
 #include "notifications/NotificationPermissions.h"
 #include "notifications/WebNotifications.h"
@@ -54,6 +55,7 @@ public:
     EngineMessages *engineMessages();
     PageActivity *pageActivity();
     PageMedia *pageMedia();
+    TabHistory *tabHistory();
     Reader *reader();
     StartPage *startPage();
     NotificationPermissions *notificationPermissions();
@@ -78,6 +80,7 @@ private:
     EngineMessages m_engineMessages;
     PageActivity m_pageActivity;
     PageMedia m_pageMedia;
+    TabHistory m_tabHistory;
     Reader m_reader;
     StartPage m_startPage;
     NotificationPermissions m_notificationPermissions;

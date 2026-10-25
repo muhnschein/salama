@@ -27,6 +27,8 @@ add_library(salama-core STATIC
     engine/PageActivity.h
     engine/PageMedia.cpp
     engine/PageMedia.h
+    engine/TabHistory.cpp
+    engine/TabHistory.h
     history/HistoryModel.cpp
     history/HistoryModel.h
     notifications/NotificationPermissions.cpp

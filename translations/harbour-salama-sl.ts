@@ -1931,6 +1931,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
+    <name>TabHistoryPanel</name>
+    <message>
+        <source>Tab history</source>
+        <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
+        <translation>Zgodovina zavihka</translation>
+    </message>
+</context>
+<context>
     <name>TabPreview</name>
     <message>
         <source>No preview</source>

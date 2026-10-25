@@ -22,6 +22,7 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     , m_omnibar(&m_tabs, &m_bookmarks, &m_history, &m_downloads, m_settings.search(),
                 m_settings.privacy())
     , m_pageMedia(&m_tabs)
+    , m_tabHistory(m_storage)
     , m_reader(*m_settings.reader())
     , m_startPage(m_storage, *m_settings.searchEngines())
     , m_webNotifications(&m_notificationPermissions,
@@ -175,6 +176,11 @@ PageActivity *Core::pageActivity()
 PageMedia *Core::pageMedia()
 {
     return &m_pageMedia;
+}
+
+TabHistory *Core::tabHistory()
+{
+    return &m_tabHistory;
 }
 
 Reader *Core::reader()

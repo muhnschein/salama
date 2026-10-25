@@ -58,6 +58,7 @@ using Salama::Settings;
 using Salama::SitePermissions;
 using Salama::SitePermissionSettings;
 using Salama::StartPageSettings;
+using Salama::TabHistory;
 using Salama::TabModel;
 using Salama::WebNotifications;
 
@@ -199,6 +200,7 @@ private slots:
     void tabGroupStripFades();
     void tabGroupsReorderUnderAFinger();
     void barReachUnderAFinger();
+    void backHoldShowsTabHistory();
     void barDragStartsWithoutAStutter();
     void barStaysSlimWhileDragged();
     void recentlyClosedTabs();
@@ -3278,6 +3280,132 @@ void tst_qmlload::barReachUnderAFinger()
     QCOMPARE(touches().count(), before);
 }
 
+// Firefox's tab history: back hold lists pages before this one in tab, newest first, from engine
+// (asked on press, answered before hold). Tap = back. No answer or no entries -> hold = tap.
+void tst_qmlload::backHoldShowsTabHistory()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    TabHistory *history = m_core->tabHistory();
+    QObject *view = currentWebView();
+    QObject *bar = find(QStringLiteral("navigationBar"));
+    QObject *panel = find(QStringLiteral("tabHistoryPanel"));
+    auto *backIcon = qobject_cast<QQuickItem *>(find(QStringLiteral("backButton")));
+    const QPoint back =
+        backIcon->mapToScene(QPointF(backIcon->width() / 2, backIcon->height() / 2)).toPoint();
+    const auto messageCount = [view](const QString &name) {
+        int count = 0;
+        for (const QVariant &message : view->property("messages").toList()) {
+            count += message.toMap().value(QStringLiteral("name")).toString() == name ? 1 : 0;
+        }
+        return count;
+    };
+    const auto answer = [view, history](const QVariantList &entries) {
+        const QVariant data = QVariantMap{{QStringLiteral("entries"), entries}};
+        QMetaObject::invokeMethod(view, "recvAsyncMessage",
+                                  Q_ARG(QString, history->resultMessage()), Q_ARG(QVariant, data));
+    };
+    const auto entry = [](int index, const QString &address, const QString &title) {
+        return QVariantMap{{QStringLiteral("index"), index},
+                           {QStringLiteral("address"), address},
+                           {QStringLiteral("title"), title}};
+    };
+
+    QVERIFY(view->property("messageListeners").toStringList().contains(history->resultMessage()));
+    QCOMPARE(view->property("frameScripts").toStringList().count(history->scriptUrl()), 1);
+    QVERIFY(!panel->property("open").toBool());
+    // Own shade, not DockedPanel's modal, which dims handle too (#38).
+    QVERIFY(!panel->property("modal").toBool());
+
+    // Nowhere to go back: nothing asked.
+    view->setProperty("canGoBack", false);
+    view->setProperty("calls", QVariantList());
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, back);
+    QCOMPARE(messageCount(history->askMessage()), 0);
+
+    view->setProperty("canGoBack", true);
+    m_core->history()->visit(QStringLiteral("https://b.example/"), QStringLiteral("B"));
+    m_core->history()->updateFavicon(QStringLiteral("https://b.example/"),
+                                     QStringLiteral("https://b.example/icon.png"));
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, back);
+    QCOMPARE(messageCount(history->askMessage()), 1);
+    QVERIFY(!evaluate(bar, QStringLiteral("hold('back')")).toBool());
+    answer({entry(1, QStringLiteral("https://b.example/"), QStringLiteral("B")),
+            entry(0, QStringLiteral("https://a.example/"), QString())});
+    QTRY_VERIFY(panel->property("open").toBool());
+    // Finger moving up after hold: sheet stays, deck doesn't drag under it.
+    QObject *page = find(QStringLiteral("browserPage"));
+    const int up = 3 * page->property("pullThreshold").toInt();
+    QTest::mouseMove(&window, back - QPoint(0, up / 2));
+    QTest::mouseMove(&window, back - QPoint(0, up));
+    QVERIFY(!page->property("dragging").toBool());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, back - QPoint(0, up));
+    QVERIFY(!page->property("tabsOpen").toBool());
+    QVERIFY(panel->property("open").toBool());
+    QVERIFY(!view->property("calls").toStringList().contains(QStringLiteral("goBack")));
+
+    // Titles only; untitled page by address.
+    QList<QObject *> rows = findObjects(panel, QStringLiteral("tabHistoryRow"));
+    QCOMPARE(rows.count(), 2);
+    QCOMPARE(rows.at(0)->property("title").toString(), QStringLiteral("B"));
+    QVERIFY(rows.at(0)->property("subtitle").toString().isEmpty());
+    QVERIFY(!findObjects(rows.at(0), QStringLiteral("tabRowSubtitle"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    QCOMPARE(rows.at(0)->property("icon").toString(), QStringLiteral("https://b.example/icon.png"));
+    QCOMPARE(rows.at(1)->property("title").toString(), QStringLiteral("https://a.example/"));
+    // Sheet height counts rows at this height.
+    QCOMPARE(rows.at(0)->property("contentHeight").toReal(),
+             evaluate(panel, QStringLiteral("Theme.itemSizeSmall")).toReal());
+    QVERIFY(rows.at(1)->property("icon").toString().isEmpty());
+
+    click(rows.at(1));
+    QVERIFY(!panel->property("open").toBool());
+    const QVariantMap went = view->property("messages").toList().last().toMap();
+    QCOMPARE(went.value(QStringLiteral("name")).toString(), history->goMessage());
+    QCOMPARE(went.value(QStringLiteral("data")).toMap().value(QStringLiteral("index")).toInt(), 0);
+    QCOMPARE(went.value(QStringLiteral("data")).toMap().value(QStringLiteral("address")).toString(),
+             QStringLiteral("https://a.example/"));
+    QVERIFY(!view->property("calls").toStringList().contains(QStringLiteral("goBack")));
+
+    // Tap still back; each press asks again, old answer dropped. Fading shade takes presses.
+    QTRY_VERIFY(!find(QStringLiteral("tabHistoryShade"))->property("visible").toBool());
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, back);
+    QCOMPARE(messageCount(history->askMessage()), 2);
+    QCOMPARE(view->property("calls").toStringList().count(QStringLiteral("goBack")), 1);
+    QVERIFY(!panel->property("open").toBool());
+    QVERIFY(!evaluate(bar, QStringLiteral("hold('back')")).toBool());
+
+    // Other regions hold as before.
+    auto *reloadIcon = qobject_cast<QQuickItem *>(find(QStringLiteral("reloadButton")));
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                      reloadIcon->mapToScene(QPointF(reloadIcon->width() / 2, 0)).toPoint() +
+                          QPoint(0, int(reloadIcon->height() / 2)));
+    QVERIFY(view->property("calls").toStringList().contains(QStringLiteral("reload")));
+    QCOMPARE(messageCount(history->askMessage()), 2);
+    answer({entry(0, QStringLiteral("https://a.example/"), QStringLiteral("A"))});
+    QVERIFY(!evaluate(bar, QStringLiteral("hold('reload')")).toBool());
+    QVERIFY(!evaluate(bar, QStringLiteral("hold('address')")).toBool());
+    // Sized for its rows the moment it opens, before any layout pass: slides to final height.
+    const qreal twoRows = panel->property("height").toReal();
+    QVERIFY(evaluate(bar, QStringLiteral("hold('back')")).toBool());
+    QVERIFY(panel->property("open").toBool());
+    QCOMPARE(twoRows - panel->property("height").toReal(),
+             evaluate(panel, QStringLiteral("Theme.itemSizeSmall")).toReal());
+    QCOMPARE(findObjects(panel, QStringLiteral("tabHistoryRow")).count(), 1);
+
+    evaluate(find(QStringLiteral("browserPage")), QStringLiteral("openOmnibar(false)"));
+    QVERIFY(!panel->property("open").toBool());
+    evaluate(bar, QStringLiteral("endEditing()"));
+    QVERIFY(evaluate(bar, QStringLiteral("hold('back')")).toBool());
+    QVERIFY(panel->property("open").toBool());
+    m_core->tabs()->newTab(QStringLiteral("https://two.example/"));
+    QVERIFY(!panel->property("open").toBool());
+    QVERIFY(!evaluate(bar, QStringLiteral("hold('back')")).toBool());
+}
+
 void tst_qmlload::recentlyClosedTabs()
 {
     TabModel *tabs = m_core->tabs();
@@ -3295,7 +3423,7 @@ void tst_qmlload::recentlyClosedTabs()
     QMetaObject::invokeMethod(find(QStringLiteral("newTabButton")), "pressAndHold");
     QVERIFY(panel->property("open").toBool());
     QList<QObject *> grounds = findAll(QStringLiteral("sheetBackground"));
-    QCOMPARE(grounds.count(), 4);
+    QCOMPARE(grounds.count(), 5);
     QObject *ground = findObjects(panel, QStringLiteral("sheetBackground")).first();
     // One shade: no head and list here to split.
     QCOMPARE(ground->property("color").value<QColor>(),
@@ -8302,8 +8430,8 @@ void tst_qmlload::webNotifications()
 
     QVERIFY(
         view->property("messageListeners").toStringList().contains(notifications->messageName()));
-    QCOMPARE(view->property("frameScripts").toStringList(),
-             QStringList{notifications->relayScriptUrl()});
+    QCOMPARE(view->property("frameScripts").toStringList().count(notifications->relayScriptUrl()),
+             1);
     // Notification shim installed on document arrival and again after load (engine runs no script
     // before view made).
     const auto installs = [view, notifications]() {

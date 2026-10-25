@@ -142,6 +142,11 @@ QObject *pageMediaProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/
     return keepOwnership(registeredCore()->pageMedia());
 }
 
+QObject *tabHistoryProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->tabHistory());
+}
+
 QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->reader());
@@ -209,6 +214,7 @@ void registerQmlTypes(Core *core)
                                              &engineMessagesProvider);
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);
     qmlRegisterSingletonType<PageMedia>(ModuleUri, 1, 0, "PageMedia", &pageMediaProvider);
+    qmlRegisterSingletonType<TabHistory>(ModuleUri, 1, 0, "TabHistory", &tabHistoryProvider);
     qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
     qmlRegisterSingletonType<StartPage>(ModuleUri, 1, 0, "StartPage", &startPageProvider);
     qmlRegisterSingletonType<NotificationPermissions>(ModuleUri, 1, 0, "NotificationPermissions",
