@@ -65,6 +65,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag.
 - History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
 - History no longer lists the address as typed next to the page it led to ("example.org" beside "example.org/", or a redirect's start): only where the page went is kept, so its row gets the page's title and icon. A page sharing its icon or title with the one before it in the tab gets them too.
+- Salama starts again from app grid after being closed. When web engine was slow to stop, closed Salama sometimes kept running without window and next start timed out. Now it quits within seconds.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.

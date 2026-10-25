@@ -21,6 +21,8 @@ add_library(salama-core STATIC
     engine/EngineMessages.h
     engine/EnginePermissions.cpp
     engine/EnginePermissions.h
+    engine/ExitWatchdog.cpp
+    engine/ExitWatchdog.h
     engine/PageActivity.cpp
     engine/PageActivity.h
     engine/PageMedia.cpp

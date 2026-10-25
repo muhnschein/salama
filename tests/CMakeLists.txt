@@ -51,6 +51,7 @@ foreach(test
     tst_searchengines
     tst_omnibarmodel
     tst_enginemessages
+    tst_exitwatchdog
     tst_pageactivity
     tst_pagemedia
     tst_webnotifications
