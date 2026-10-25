@@ -11,7 +11,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
 - Press and hold link or picture: sheet like menu's, link named with copy button; New tab, Background tab, Share, Save link; app action for email, phone, text message, place; Open image, Save image, Copy image link. Background tab stays put, notes where link went, with Show. Saved files keep names.
-- Press and hold back button: tab history, pages before this one in tab, newest first, like Firefox; tap one to go back to it. Show full history opens History. Tap still goes back.
+- Press and hold back button: tab history, pages before this one in tab, newest first, like Firefox; tap one to go back to it. Tap still goes back.
 - Link preview atop that sheet, like Safari: tap opens; Hide preview hides for all links until Show preview.
 - Held picture lifts above sheet, max size, pinch to zoom.
 - Settings > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies when tracking protection off; each with editable exceptions. Salama now requests location, camera, microphone from phone.

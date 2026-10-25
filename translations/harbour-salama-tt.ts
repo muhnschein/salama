@@ -1874,11 +1874,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
         <translation>Таб тарихы</translation>
     </message>
-    <message>
-        <source>Show full history</source>
-        <extracomment>Last row of the tab history list: opens the History page</extracomment>
-        <translation>Тулы тарихны күрсәтү</translation>
-    </message>
 </context>
 <context>
     <name>TabPreview</name>

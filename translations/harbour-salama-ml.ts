@@ -1895,11 +1895,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
         <translation>ടാബിന്റെ നാൾവഴി</translation>
     </message>
-    <message>
-        <source>Show full history</source>
-        <extracomment>Last row of the tab history list: opens the History page</extracomment>
-        <translation>മുഴുവൻ നാൾവഴി കാണിക്കുക</translation>
-    </message>
 </context>
 <context>
     <name>TabPreview</name>

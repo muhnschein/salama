@@ -3376,13 +3376,6 @@ void tst_qmlload::backHoldShowsTabHistory()
     QVERIFY(panel->property("open").toBool());
     QCOMPARE(findObjects(panel, QStringLiteral("tabHistoryRow")).count(), 1);
 
-    click(find(QStringLiteral("tabHistoryShowAll")));
-    QVERIFY(!panel->property("open").toBool());
-    QCOMPARE(currentPage()->objectName(), QStringLiteral("historyPage"));
-    popPage();
-
-    QVERIFY(evaluate(bar, QStringLiteral("hold('back')")).toBool());
-    QVERIFY(panel->property("open").toBool());
     evaluate(find(QStringLiteral("browserPage")), QStringLiteral("openOmnibar(false)"));
     QVERIFY(!panel->property("open").toBool());
     evaluate(bar, QStringLiteral("endEditing()"));

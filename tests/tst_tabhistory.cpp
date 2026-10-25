@@ -66,6 +66,7 @@ private slots:
     void rejects();
     void script();
     void favicons();
+    void siteFavicons();
     void faviconsWithoutDatabase();
 
 private:
@@ -245,6 +246,33 @@ void tst_tabhistory::favicons()
              QStringLiteral("https://a.example/icon.png"));
     QVERIFY(entries.at(1).toMap().value(QStringLiteral("favicon")).toString().isEmpty());
     QVERIFY(entries.at(2).toMap().value(QStringLiteral("favicon")).toString().isEmpty());
+}
+
+// Page without own icon (script-made address, never loaded): site's latest. Other sites,
+// look-alike hosts, no-host addresses get none.
+void tst_tabhistory::siteFavicons()
+{
+    HistoryModel history(*m_storage);
+    history.visit(QStringLiteral("https://a.example/old"));
+    history.updateFavicon(QStringLiteral("https://a.example/old"), QStringLiteral("old.png"));
+    history.visit(QStringLiteral("https://a.example/new"));
+    history.updateFavicon(QStringLiteral("https://a.example/new"), QStringLiteral("new.png"));
+    history.visit(QStringLiteral("https://a.example/pushed"));
+    history.visit(QStringLiteral("https://a_example.org/x"));
+    history.updateFavicon(QStringLiteral("https://a_example.org/x"), QStringLiteral("o.png"));
+    history.visit(QStringLiteral("https://a.example.evil/x"));
+    history.updateFavicon(QStringLiteral("https://a.example.evil/x"), QStringLiteral("e.png"));
+    const auto icon = [this](const QString &url) {
+        return entriesOf({backEntry(0, url)}).first().toMap().value(QStringLiteral("favicon"));
+    };
+    QCOMPARE(icon(QStringLiteral("https://a.example/pushed")), QVariant(QStringLiteral("new.png")));
+    QCOMPARE(icon(QStringLiteral("https://a.example/old")), QVariant(QStringLiteral("old.png")));
+    QCOMPARE(icon(QStringLiteral("https://a.example/never")), QVariant(QStringLiteral("new.png")));
+    QCOMPARE(icon(QStringLiteral("http://a.example/pushed")), QVariant(QString()));
+    QCOMPARE(icon(QStringLiteral("https://aXexample.org/x")), QVariant(QString()));
+    QCOMPARE(icon(QStringLiteral("https://a_example.org/y")), QVariant(QStringLiteral("o.png")));
+    QCOMPARE(icon(QStringLiteral("https://b.example/")), QVariant(QString()));
+    QCOMPARE(icon(QStringLiteral("about:blank")), QVariant(QString()));
 }
 
 // Broken database: rows still listed, no icon.

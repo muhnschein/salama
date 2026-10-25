@@ -25,11 +25,6 @@ DockedPanel {
         show()
     }
 
-    function openAll() {
-        hide()
-        pageStack.push(Qt.resolvedUrl("../pages/HistoryPage.qml"))
-    }
-
     Connections {
         target: TabModel
         onActiveTabChanged: panel.hide()
@@ -61,6 +56,7 @@ DockedPanel {
 
             width: parent.width
             topPadding: Theme.paddingMedium
+            bottomPadding: Theme.paddingMedium
 
             SectionHeader {
                 objectName: "tabHistoryTitle"
@@ -81,26 +77,6 @@ DockedPanel {
                         panel.hide()
                         panel.entryChosen(modelData)
                     }
-                }
-            }
-
-            BackgroundItem {
-                objectName: "tabHistoryShowAll"
-                width: content.width
-                onClicked: panel.openAll()
-
-                Label {
-                    anchors {
-                        left: parent.left
-                        leftMargin: Theme.horizontalPageMargin
-                        right: parent.right
-                        rightMargin: Theme.horizontalPageMargin
-                        verticalCenter: parent.verticalCenter
-                    }
-                    //: Last row of the tab history list: opens the History page
-                    text: qsTr("Show full history")
-                    truncationMode: TruncationMode.Fade
-                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
                 }
             }
         }
