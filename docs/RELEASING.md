@@ -12,7 +12,8 @@ on `main` (as piirit, vuo).
      `vX.Y.Z`; or
    - tag merge commit by hand, `git tag -s vX.Y.Z -m "salama X.Y.Z"`, push tag (same workflow).
 3. Workflow refuses version spec doesn't say (and dispatch off `main`), builds `aarch64`
-   RPM with spec's `Release: 1`, runs Jolla's validator, then publishes GitHub release
+   RPM with spec's `Release: 1`, runs Jolla's validator, rebuilds it from fresh clone on
+   another runner (must match byte for byte, `VERIFYING.md`), then publishes GitHub release
    `vX.Y.Z`: device RPM, `SHA256SUMS`, changelog section as text (`ci/release-notes.sh`,
    fails if section missing). Debug and source RPMs stay on run artifact.
 4. Validate: device smoke test on release page RPM. Locally `sfdk build` and

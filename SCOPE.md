@@ -108,7 +108,7 @@ SonarQube Cloud on every PR. **Report, not gate**: `make check` decides merges. 
 - `main` always releasable. Feature branches, merge commit (no squash, no rebase).
 - PR needs: green CI, one review, changelog entry.
 - Commit subject Conventional Commits (`type(scope): outcome`), ≤ 72 chars; body says why.
-- Semver. Version lives in spec; CI builds, validates, publishes each release from `v` tag on `main`.
+- Semver. Version lives in spec; CI builds, validates, rebuilds byte for byte, publishes each release from `v` tag on `main`.
 - Dependencies: Harbour allowed list only. Addition updates `docs/HARBOUR.md` in same PR.
 
 ## 7. Documentation
@@ -121,6 +121,7 @@ In `docs/`. Updated in PR that changes subject. No duplication.
 | `HARBOUR.md` | Jolla rules, CI gates, waivers, Sailjail permissions + why | 2 pages |
 | `BUILDING.md` | Toolchain pins, lints, test tiers, device RPM build | 2 pages |
 | `RELEASING.md` | Tag, build, validate, submit | 1 page |
+| `VERIFYING.md` | Rebuild release, compare byte for byte | 1 page |
 | `TRANSLATING.md` | Filling a catalog | 1 page |
 | `CHANGELOG.md` | Keep-a-Changelog, user-facing entries only | — |
 | `AGENTS.md` (root) | How agents work here: rules, done steps, reporting | 1 page |
