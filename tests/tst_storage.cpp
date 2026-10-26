@@ -18,6 +18,7 @@ class tst_storage : public QObject
 private slots:
     void createsSchema();
     void reopenKeepsData();
+    void writesAheadWithoutFullSync();
     void refusesUnusableDirectory();
     void refusesNewerSchema();
     void migratesSchemaOne();
@@ -74,6 +75,31 @@ void tst_storage::reopenKeepsData()
     QVERIFY(query.exec(QStringLiteral("SELECT value FROM setting WHERE name = 'probe'")));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toString(), QStringLiteral("kept"));
+}
+
+// Rollback journal synced disk 4 times per commit, on GUI thread. WAL sticks to file, sync
+// level is per connection: both checked on reopen too.
+void tst_storage::writesAheadWithoutFullSync()
+{
+    QTemporaryDir dir;
+    const auto pragma = [](const Storage &storage, const QString &name) {
+        QSqlQuery query(storage.database());
+        if (!query.exec(QStringLiteral("PRAGMA ") + name) || !query.next()) {
+            return QString();
+        }
+        return query.value(0).toString();
+    };
+    {
+        Storage storage(dir.path());
+        QVERIFY(storage.isOpen());
+        QCOMPARE(pragma(storage, QStringLiteral("journal_mode")), QStringLiteral("wal"));
+        // 1 = NORMAL; default 2 = FULL.
+        QCOMPARE(pragma(storage, QStringLiteral("synchronous")), QStringLiteral("1"));
+    }
+    Storage storage(dir.path());
+    QCOMPARE(pragma(storage, QStringLiteral("journal_mode")), QStringLiteral("wal"));
+    QCOMPARE(pragma(storage, QStringLiteral("synchronous")), QStringLiteral("1"));
+    QCOMPARE(storage.userVersion(), Storage::SchemaVersion);
 }
 
 void tst_storage::refusesUnusableDirectory()
