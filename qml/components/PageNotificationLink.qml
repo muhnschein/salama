@@ -24,7 +24,12 @@ QtObject {
     property Connections page: Connections {
         target: link.view
         onViewInitialized: link.ready = true
-        onUrlChanged: link.install()
+        // Not loading: same document (single-page site), shim still in place.
+        onUrlChanged: {
+            if (link.view.loading) {
+                link.install()
+            }
+        }
         onLoadingChanged: {
             if (!link.view.loading) {
                 link.install()
