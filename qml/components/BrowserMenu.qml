@@ -76,6 +76,13 @@ DockedPanel {
         }
     }
 
+    // Readability check only while menu shows its button.
+    function askReader() {
+        if (open && reader !== null) {
+            reader.ask()
+        }
+    }
+
     // Not once closing: DockedPanel moves it then.
     onPullChanged: {
         if (!open) {
@@ -90,8 +97,18 @@ DockedPanel {
     onDockChanged: stand()
     onHeightChanged: stand()
     onBarTopChanged: stand()
-    onOpenChanged: stand()
+    onOpenChanged: {
+        stand()
+        askReader()
+    }
+    onReaderChanged: askReader()
     Component.onCompleted: stand()
+
+    // Address changed under open menu: new document, ask again.
+    Connections {
+        target: menu.open ? menu.reader : null
+        onAskedChanged: menu.askReader()
+    }
 
     Connections {
         target: TabModel

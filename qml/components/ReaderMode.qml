@@ -17,6 +17,8 @@ QtObject {
     readonly property bool active: source.length > 0
     property bool readerable: false
     property bool busy: false
+    // Menu asked since document arrived; load end answers again.
+    property bool asked: false
 
     // For Automatic and ambience look.
     readonly property var ambience: ({
@@ -33,15 +35,25 @@ QtObject {
 
     onAmbienceChanged: restyle()
 
-    // Check now if address changed without load. Returns url tab keeps.
+    // Returns url tab keeps. No check here: Readability check lays page out on Gecko's main
+    // thread, ran on every address change and load end, only for menu's button.
     function follow(url) {
         source = Reader.sourceUrl(url)
         readerable = false
         busy = false
+        asked = false
+        return active ? source : String(url)
+    }
+
+    // Menu opening: once per document. Mid-load answer waits for load end.
+    function ask() {
+        if (asked) {
+            return
+        }
+        asked = true
         if (view && !view.loading) {
             check()
         }
-        return active ? source : String(url)
     }
 
     // Skips reader views and site front pages.
@@ -119,7 +131,7 @@ QtObject {
     property Connections loads: Connections {
         target: reader.view
         onLoadingChanged: {
-            if (!reader.view.loading) {
+            if (!reader.view.loading && reader.asked) {
                 reader.check()
             }
         }

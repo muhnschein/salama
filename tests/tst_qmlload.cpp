@@ -5294,21 +5294,32 @@ void tst_qmlload::readerView()
     QCOMPARE(runs(engine->readerableScript()), 0);
     QVERIFY(!reader->property("readerable").toBool());
 
+    // Check lays page out on Gecko's main thread: only once menu shows button, once per
+    // document, again at load end once asked.
     answer(QStringLiteral("false"), articleLiteral);
     webView->setProperty("url", QUrl(story));
     load();
-    QVERIFY(runs(engine->readerableScript()) > 0);
+    QCOMPARE(runs(engine->readerableScript()), 0);
+    QVERIFY(!reader->property("readerable").toBool());
+    webView->setProperty("loading", true);
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(runs(engine->readerableScript()), 0);
+    webView->setProperty("loading", false);
+    QCOMPARE(runs(engine->readerableScript()), 1);
     QVERIFY(!reader->property("readerable").toBool());
     QVERIFY(!button->property("enabled").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(runs(engine->readerableScript()), 1);
     answer(QStringLiteral("true"), articleLiteral);
     load();
+    QCOMPARE(runs(engine->readerableScript()), 2);
     QVERIFY(reader->property("readerable").toBool());
     QVERIFY(button->property("enabled").toBool());
     QVERIFY(!button->property("checked").toBool());
     QCOMPARE(tabs->activeUrl(), story);
     const int visits = m_core->history()->count();
 
-    tapBar(QStringLiteral("menu"));
     click(button);
     QVERIFY(!menu->property("open").toBool());
     QCOMPARE(runs(engine->articleScript()), 1);
@@ -5353,7 +5364,16 @@ void tst_qmlload::readerView()
     QVERIFY(bar->property("tlsBroken").toBool());
     evaluate(webView, QStringLiteral("security.allGood = true"));
     QVERIFY(!bar->property("tlsBroken").toBool());
+    QVERIFY(!reader->property("readerable").toBool());
+    tapBar(QStringLiteral("menu"));
     QVERIFY(reader->property("readerable").toBool());
+    // Address change under open menu: new document asked at once.
+    const int asked = runs(engine->readerableScript());
+    webView->setProperty("url", QUrl(QStringLiteral("https://example.com/2026/b-story")));
+    QCOMPARE(runs(engine->readerableScript()), asked + 1);
+    webView->setProperty("url", QUrl(story));
+    QCOMPARE(runs(engine->readerableScript()), asked + 2);
+    evaluate(menu, QStringLiteral("hide()"));
     QCOMPARE(tabs->activeUrl(), story);
     m_core->readerSettings()->setColors(ReaderSettings::Dark);
     QCOMPARE(runs(engine->styleScript(ambience)), 0);
@@ -5370,8 +5390,8 @@ void tst_qmlload::readerView()
 
     answer(QStringLiteral("true"), QStringLiteral("''"));
     load();
-    QVERIFY(button->property("enabled").toBool());
     tapBar(QStringLiteral("menu"));
+    QVERIFY(button->property("enabled").toBool());
     click(button);
     QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
     QVERIFY(!reader->property("readerable").toBool());
