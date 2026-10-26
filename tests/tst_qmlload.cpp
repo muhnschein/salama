@@ -10157,7 +10157,7 @@ void tst_qmlload::webNotifications()
 // This run's own, shown before then, kept.
 void tst_qmlload::leftoverNotificationsSweptAfterLaunch()
 {
-    QObject *center =
+    auto *center =
         find(QStringLiteral("browserPage"))->property("notifications").value<QObject *>();
     auto *sweep = evaluate(center, QStringLiteral("leftovers")).value<QObject *>();
     QVERIFY(sweep->property("running").toBool());
