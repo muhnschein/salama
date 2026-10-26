@@ -5,22 +5,27 @@
 #include "history/HistoryModel.h"
 #include "omnibar/OmnibarModel.h"
 #include "search/SearchEngines.h"
+#include "search/SearchWords.h"
 #include "settings/PrivacySettings.h"
 #include "settings/SearchSettings.h"
 #include "storage/Storage.h"
 #include "tabs/TabModel.h"
 
 #include <QDateTime>
+#include <QSet>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <algorithm>
 
 using Salama::BookmarkModel;
 using Salama::DownloadModel;
 using Salama::HistoryModel;
+using Salama::OmnibarKind;
 using Salama::OmnibarModel;
+using Salama::OmnibarRow;
 using Salama::PrivacySettings;
 using Salama::SearchEngines;
 using Salama::SearchSettings;
@@ -54,6 +59,9 @@ private slots:
     void quietWhileNothingIsAsked();
     void changesInPlace();
     void openPaneSeesVisits();
+    void typingReadsHistoryOnce();
+    void bookmarksRenewCache();
+    void sameAsFullSort();
 };
 
 namespace {
@@ -145,6 +153,283 @@ void downloadMessage(DownloadModel &model, int engineId, const QVariantMap &extr
 void settle()
 {
     QTest::qWait(10);
+}
+
+// Oracle: ranking as it was before caching and partial sort (full parse, two stable sorts).
+namespace Before {
+
+using Salama::SearchWords;
+using Salama::Tab;
+
+QString orUrl(const QString &title, const QString &url)
+{
+    return title.isEmpty() ? url : title;
+}
+
+struct Page
+{
+    OmnibarRow row;
+    int match = 3;
+    double learnt = 0;
+    int visits = 0;
+    qint64 lastUsed = 0;
+    qint64 frecency = 0;
+};
+
+int matchOf(const SearchWords &words, const OmnibarRow &row)
+{
+    if (!words.matches({row.title, row.url})) {
+        return 3;
+    }
+    if (words.prefixes(row.host)) {
+        return 0;
+    }
+    return words.prefixesAWordOf(row.title) || words.prefixesAWordOf(row.url) ? 1 : 2;
+}
+
+struct Search
+{
+    const SearchWords &words;
+    QHash<QString, double> learnt;
+
+    bool wants(const QString &title, const QString &url) const
+    {
+        return learnt.contains(url) || words.matches({title, url});
+    }
+};
+
+struct Pages
+{
+    QList<Page> list;
+    QHash<QString, int> byUrl;
+
+    void add(const Page &page)
+    {
+        byUrl.insert(page.row.url, list.count());
+        list.append(page);
+    }
+};
+
+void addTabs(Pages &pages, const TabModel &model, const Search &search)
+{
+    QList<const Tab *> tabs;
+    for (const Tab &tab : model.tabs()) {
+        if (tab.id != model.activeTabId() && search.wants(tab.title, tab.url)) {
+            tabs.append(&tab);
+        }
+    }
+    std::stable_sort(tabs.begin(), tabs.end(), [](const Tab *one, const Tab *other) {
+        return one->lastActive > other->lastActive;
+    });
+    for (const Tab *tab : tabs) {
+        if (pages.byUrl.contains(tab->url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::Tab;
+        page.row.id = tab->id;
+        page.row.title = orUrl(tab->title, tab->url);
+        page.row.url = tab->url;
+        page.row.favicon = tab->favicon;
+        page.row.groupId = tab->groupId;
+        const int group = model.groupIndexOf(tab->groupId);
+        page.row.groupName = group >= 0 ? model.groups().at(group).name : QString();
+        page.row.groupTabCount = model.tabCountInGroup(tab->groupId);
+        pages.add(page);
+    }
+}
+
+void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search)
+{
+    for (const BookmarkModel::Bookmark &bookmark : model.bookmarks()) {
+        if (pages.byUrl.contains(bookmark.url) || !search.wants(bookmark.title, bookmark.url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::Bookmark;
+        page.row.id = bookmark.id;
+        page.row.title = orUrl(bookmark.title, bookmark.url);
+        page.row.url = bookmark.url;
+        page.row.favicon = bookmark.favicon;
+        page.lastUsed = bookmark.created;
+        pages.add(page);
+    }
+}
+
+using SiteIcons = QHash<QString, QString>;
+
+void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
+{
+    if (!favicon.isEmpty()) {
+        const QString host = SearchSettings::displayAddress(url);
+        if (!icons.contains(host)) {
+            icons.insert(host, favicon);
+        }
+    }
+}
+
+void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search,
+                SiteIcons &icons)
+{
+    for (const HistoryModel::Entry &entry : model.allEntries()) {
+        addSiteIcon(icons, entry.url, entry.favicon);
+        const auto known = pages.byUrl.constFind(entry.url);
+        if (known != pages.byUrl.cend()) {
+            Page &page = pages.list[known.value()];
+            page.visits = entry.visitCount;
+            page.lastUsed = std::max(page.lastUsed, entry.date.toMSecsSinceEpoch());
+            if (page.row.favicon.isEmpty()) {
+                page.row.favicon = entry.favicon;
+            }
+            continue;
+        }
+        if (!listed || !search.wants(entry.title, entry.url)) {
+            continue;
+        }
+        Page page;
+        page.row.kind = OmnibarKind::History;
+        page.row.id = entry.id;
+        page.row.title = orUrl(entry.title, entry.url);
+        page.row.url = entry.url;
+        page.row.favicon = entry.favicon;
+        page.row.date = entry.date;
+        page.visits = entry.visitCount;
+        page.lastUsed = entry.date.toMSecsSinceEpoch();
+        pages.add(page);
+    }
+}
+
+void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &icons, qint64 now)
+{
+    page.row.host = SearchSettings::displayAddress(page.row.url);
+    page.row.markedTitle = search.words.marked(page.row.title);
+    page.row.markedHost = search.words.marked(page.row.host);
+    if (page.row.favicon.isEmpty()) {
+        page.row.favicon = icons.value(page.row.host);
+    }
+    page.row.bookmarked = bookmarked;
+    page.match = matchOf(search.words, page.row);
+    page.learnt = search.learnt.value(page.row.url);
+    if (page.row.kind == OmnibarKind::Tab && page.visits == 0) {
+        page.lastUsed = now;
+    }
+    page.frecency = OmnibarModel::frecency(page.visits, bookmarked, page.lastUsed, now);
+}
+
+void rank(QList<Page> &pages)
+{
+    std::stable_sort(pages.begin(), pages.end(), [](const Page &one, const Page &other) {
+        if (one.learnt != other.learnt) {
+            return one.learnt > other.learnt;
+        }
+        return one.frecency > other.frecency;
+    });
+    int learntFirst = 0;
+    while (learntFirst < pages.count() && learntFirst < OmnibarModel::MaxLearnt &&
+           pages.at(learntFirst).learnt > 0) {
+        ++learntFirst;
+    }
+    std::stable_sort(pages.begin() + learntFirst, pages.end(),
+                     [](const Page &one, const Page &other) {
+                         if (one.match != other.match) {
+                             return one.match < other.match;
+                         }
+                         return one.frecency > other.frecency;
+                     });
+}
+
+QList<OmnibarRow> pageRows(Sources &sources, const QString &query, int room)
+{
+    const SearchWords words(query);
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const Search search{words, sources.history.inputRanks(query, now)};
+    Pages pages;
+    if (sources.search.omnibarTabs()) {
+        addTabs(pages, sources.tabs, search);
+    }
+    if (sources.search.omnibarBookmarks()) {
+        addBookmarks(pages, sources.bookmarks, search);
+    }
+    SiteIcons icons;
+    for (const Tab &tab : sources.tabs.tabs()) {
+        addSiteIcon(icons, tab.url, tab.favicon);
+    }
+    QSet<QString> bookmarked;
+    for (const BookmarkModel::Bookmark &bookmark : sources.bookmarks.bookmarks()) {
+        bookmarked.insert(bookmark.url);
+        addSiteIcon(icons, bookmark.url, bookmark.favicon);
+    }
+    addHistory(pages, sources.history, sources.search.omnibarHistory(), search, icons);
+    for (Page &page : pages.list) {
+        score(page, search, bookmarked.contains(page.row.url), icons, now);
+    }
+    rank(pages.list);
+    QList<OmnibarRow> rows;
+    for (int i = 0; i < pages.list.count() && i < room; ++i) {
+        rows.append(pages.list.at(i).row);
+    }
+    return rows;
+}
+
+} // namespace Before
+
+QString kindName(OmnibarKind kind)
+{
+    switch (kind) {
+    case OmnibarKind::Tab:
+        return QStringLiteral("tab");
+    case OmnibarKind::Bookmark:
+        return QStringLiteral("bookmark");
+    case OmnibarKind::History:
+        return QStringLiteral("history");
+    case OmnibarKind::Download:
+        break;
+    }
+    return QStringLiteral("download");
+}
+
+QString described(const QString &kind, int tabId, const QVariantList &fields)
+{
+    QStringList parts{kind, QString::number(tabId)};
+    for (const QVariant &field : fields) {
+        parts.append(field.type() == QVariant::DateTime
+                         ? QString::number(field.toDateTime().toMSecsSinceEpoch())
+                         : field.toString());
+    }
+    return parts.join(QLatin1Char('|'));
+}
+
+// Page rows, every field; downloads left out.
+QStringList pageFields(const OmnibarModel &model)
+{
+    using Role = OmnibarModel::Role;
+    QStringList rows;
+    for (int row = 0; row < model.rowCount(); ++row) {
+        const QString kind = role(model, row, roleId(Role::Kind)).toString();
+        if (kind == QStringLiteral("download")) {
+            continue;
+        }
+        QVariantList fields;
+        for (const Role field : {Role::Title, Role::Url, Role::Host, Role::MarkedTitle,
+                                 Role::MarkedHost, Role::Favicon, Role::GroupId, Role::GroupName,
+                                 Role::GroupTabCount, Role::Bookmarked, Role::Date}) {
+            fields.append(role(model, row, roleId(field)));
+        }
+        rows.append(described(kind, role(model, row, roleId(Role::TabId)).toInt(), fields));
+    }
+    return rows;
+}
+
+QStringList pageFields(const QList<OmnibarRow> &rows)
+{
+    QStringList out;
+    for (const OmnibarRow &row : rows) {
+        out.append(
+            described(kindName(row.kind), row.kind == OmnibarKind::Tab ? row.id : 0,
+                      {row.title, row.url, row.host, row.markedTitle, row.markedHost, row.favicon,
+                       row.groupId, row.groupName, row.groupTabCount, row.bookmarked, row.date}));
+    }
+    return out;
 }
 
 } // namespace
@@ -423,6 +708,8 @@ void tst_omnibarmodel::rankedByMatch()
                        QStringLiteral("Often"), 50, Day));
     QVERIFY(addHistory(sources.storage, QStringLiteral("https://news.seldom.example/"),
                        QStringLiteral("Seldom"), 1, 100 * Day));
+    // Raw rows bypass model; omnibar keeps table read: say what model's writes say.
+    emit sources.history.entriesChanged();
     omnibar.setQuery(QStringLiteral("news example"));
     const QStringList found = rows(omnibar);
     QVERIFY(found.indexOf(QStringLiteral("history: Seldom")) >= 0);
@@ -597,6 +884,7 @@ void tst_omnibarmodel::learntFirst()
     }
     QVERIFY(addHistory(sources.storage, QStringLiteral("https://zz.example/"), QStringLiteral("Zz"),
                        1, 0));
+    emit sources.history.entriesChanged();
     omnibar.setQuery(QStringLiteral("zz"));
     QCOMPARE(rows(omnibar), (QStringList{
                                 QStringLiteral("history: Learnt 3"),
@@ -936,6 +1224,201 @@ void tst_omnibarmodel::openPaneSeesVisits()
                                              QStringLiteral("history: Known b")}));
     sources.history.visit(QStringLiteral("https://known.example/c"));
     QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("history")), 3);
+}
+
+// Keystrokes with history unchanged read table once: row written behind model's back stays
+// unseen until model says history changed.
+void tst_omnibarmodel::typingReadsHistoryOnce()
+{
+    Sources sources;
+    sources.history.visit(QStringLiteral("https://pages.example/one"), QStringLiteral("Page one"));
+    sources.history.visit(QStringLiteral("https://pages.example/two"), QStringLiteral("Page two"));
+    OmnibarModel &omnibar = sources.omnibar;
+    omnibar.setQuery(QStringLiteral("p"));
+    QCOMPARE(countOfKind(omnibar, QStringLiteral("history")), 2);
+
+    QSqlQuery wipe(sources.storage.database());
+    QVERIFY(wipe.exec(QStringLiteral("DELETE FROM browser_history")));
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://pages.example/three"),
+                       QStringLiteral("Page three"), 1, 0));
+    omnibar.setQuery(QStringLiteral("pa"));
+    omnibar.setQuery(QStringLiteral("pag"));
+    QCOMPARE(rows(omnibar), (QStringList{QStringLiteral("history: Page two"),
+                                         QStringLiteral("history: Page one")}));
+
+    sources.history.visit(QStringLiteral("https://pages.example/four"),
+                          QStringLiteral("Page four"));
+    QTRY_COMPARE(rows(omnibar), (QStringList{QStringLiteral("history: Page four"),
+                                             QStringLiteral("history: Page three")}));
+}
+
+// Bookmarked mark and site icons come from kept bookmark parse: bookmark change renews it.
+void tst_omnibarmodel::bookmarksRenewCache()
+{
+    Sources sources;
+    sources.history.visit(QStringLiteral("https://cache.example/a"), QStringLiteral("Cache a"));
+    sources.history.visit(QStringLiteral("https://cache.example/b"), QStringLiteral("Cache b"));
+    OmnibarModel &omnibar = sources.omnibar;
+    sources.search.setOmnibarBookmarks(false);
+    omnibar.setQuery(QStringLiteral("cache"));
+    QCOMPARE(countOfKind(omnibar, QStringLiteral("history")), 2);
+    QVERIFY(!role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+
+    sources.bookmarks.add(QStringLiteral("https://cache.example/b"), QStringLiteral("Mark"),
+                          QStringLiteral("mark.ico"));
+    QTRY_VERIFY(role(omnibar, 0, roleId(OmnibarModel::Role::Bookmarked)).toBool());
+    QCOMPARE(role(omnibar, 1, roleId(OmnibarModel::Role::Favicon)).toString(),
+             QStringLiteral("mark.ico"));
+}
+
+// Cached hosts and partial sort give rows, order and fields of full parse and two stable sorts:
+// mixed sources, shared pages, learnt inputs past MaxLearnt, many frecency ties.
+void tst_omnibarmodel::sameAsFullSort()
+{
+    Sources sources;
+    const auto historyUrl = [](int i) {
+        switch (i % 4) {
+        case 0:
+            return QStringLiteral("https://www.site%1.example/news/%2").arg(i % 37).arg(i);
+        case 1:
+            return QStringLiteral("https://site%1.example/?q=helsinki+%2").arg(i % 37).arg(i);
+        case 2:
+            return QStringLiteral("http://h%1.test/path%2").arg(i % 11).arg(i);
+        default:
+            return QStringLiteral("https://tampere.example/%1").arg(i);
+        }
+    };
+    {
+        QSqlQuery query(sources.storage.database());
+        QVERIFY(query.exec(QStringLiteral("BEGIN")));
+        const qint64 now = QDateTime::currentMSecsSinceEpoch();
+        for (int i = 0; i < 600; ++i) {
+            QSqlQuery insert(sources.storage.database());
+            insert.prepare(QStringLiteral("INSERT INTO browser_history (url, title, "
+                                          "visited_count, date, favicon) VALUES (?, ?, ?, ?, ?)"));
+            insert.addBindValue(historyUrl(i));
+            QString title = QStringLiteral("");
+            if (i % 6 != 0) {
+                title = i % 2 != 0 ? QStringLiteral("Title %1 news").arg(i % 50)
+                                   : QStringLiteral("Helsinki <%1> & co").arg(i % 13);
+            }
+            insert.addBindValue(title);
+            insert.addBindValue(1 + i % 4);
+            insert.addBindValue(now - (i % 9) * Day - (i % 2) * Minute);
+            insert.addBindValue(i % 5 == 0 ? QStringLiteral("fav%1.ico").arg(i % 37)
+                                           : QStringLiteral(""));
+            QVERIFY(insert.exec());
+        }
+        QVERIFY(query.exec(QStringLiteral("COMMIT")));
+    }
+    TabModel &tabs = sources.tabs;
+    for (int i = 0; i < 6; ++i) {
+        const int tab = tabs.newTab(i % 2 != 0 ? historyUrl(i * 8)
+                                               : QStringLiteral("https://tab%1.example/h").arg(i));
+        tabs.updateTitle(tab, i % 3 != 0 ? QStringLiteral("Tab %1 news").arg(i) : QString());
+        if (i % 2 == 0) {
+            tabs.updateFavicon(tab, QStringLiteral("tab%1.ico").arg(i));
+        }
+    }
+    tabs.addGroup(QStringLiteral("Work"));
+    for (int i = 0; i < 4; ++i) {
+        tabs.newTab(historyUrl(4 * i + 1));
+    }
+    tabs.newTab(QStringLiteral("https://front.example/"));
+    for (int i = 0; i < 30; ++i) {
+        QString url = QStringLiteral("https://mark%1.example/").arg(i);
+        if (i % 3 != 2) {
+            url = historyUrl(i % 3 == 0 ? 4 * i + 3 : 8 * i);
+        }
+        sources.bookmarks.add(url, i % 4 != 0 ? QStringLiteral("Mark %1 news").arg(i) : QString(),
+                              i % 5 == 0 ? QStringLiteral("mark%1.ico").arg(i) : QString());
+    }
+    HistoryModel &history = sources.history;
+    for (int i = 0; i < 5; ++i) {
+        for (int times = 0; times <= i % 3; ++times) {
+            history.recordInput(QStringLiteral("h"), historyUrl(i * 5));
+        }
+        history.recordInput(QStringLiteral("t"), historyUrl(i * 7 + 2));
+        history.recordInput(QStringLiteral("zz"), historyUrl(i * 3));
+    }
+    history.recordInput(QStringLiteral("he"), historyUrl(8));
+    history.recordInput(QStringLiteral("zz"), QStringLiteral("https://mark2.example/"));
+    // Learnt past cap, same match and frecency: more learnt, later in source, still first.
+    for (int i = 0; i < 5; ++i) {
+        const QString url = QStringLiteral("https://lt%1.example/").arg(i);
+        QVERIFY(addHistory(sources.storage, url, QString(), 1, Day));
+        for (int times = i; times < 5; ++times) {
+            history.recordInput(QStringLiteral("lt"), url);
+        }
+    }
+    // Learnt alike: higher frecency, later in source, first.
+    QVERIFY(
+        addHistory(sources.storage, QStringLiteral("https://lu1.example/"), QString(), 10, Day));
+    QVERIFY(addHistory(sources.storage, QStringLiteral("https://lu0.example/"), QString(), 1, 0));
+    // Same use time: equal rank, no decay gap.
+    const qint64 used = QDateTime::currentMSecsSinceEpoch() - Day;
+    for (const QString &url :
+         {QStringLiteral("https://lu0.example/"), QStringLiteral("https://lu1.example/")}) {
+        QSqlQuery learn(sources.storage.database());
+        learn.prepare(QStringLiteral("INSERT INTO input_history (input, url, use_count, used) "
+                                     "VALUES ('lu', ?, 1, ?)"));
+        learn.addBindValue(url);
+        learn.addBindValue(used);
+        QVERIFY(learn.exec());
+    }
+    startDownload(sources.downloads, 1, QStringLiteral("e-report.pdf"),
+                  QStringLiteral("https://files.example/e.pdf"));
+    startDownload(sources.downloads, 2, QStringLiteral("news.pdf"),
+                  QStringLiteral("https://files.example/news.pdf"));
+
+    OmnibarModel &omnibar = sources.omnibar;
+    const QStringList queries{
+        QStringLiteral("h"),       QStringLiteral("he"),
+        QStringLiteral("hel"),     QStringLiteral("helsinki news"),
+        QStringLiteral("t"),       QStringLiteral("ti"),
+        QStringLiteral("e"),       QStringLiteral("ex"),
+        QStringLiteral("example"), QStringLiteral("news"),
+        QStringLiteral("site1"),   QStringLiteral("site 1"),
+        QStringLiteral("www"),     QStringLiteral("tampere"),
+        QStringLiteral("zz"),      QStringLiteral("q"),
+        QStringLiteral("1"),       QStringLiteral("fav"),
+        QStringLiteral("http"),    QStringLiteral("<1>"),
+        QStringLiteral("&"),       QStringLiteral("nope"),
+        QStringLiteral("lt"),      QStringLiteral("lu"),
+    };
+    const auto compareAll = [&]() {
+        for (const QString &query : queries) {
+            omnibar.setQuery(QString());
+            omnibar.setQuery(query);
+            const int room =
+                OmnibarModel::MaxRows - countOfKind(omnibar, QStringLiteral("download"));
+            QCOMPARE(pageFields(omnibar), pageFields(Before::pageRows(sources, query, room)));
+        }
+    };
+    compareAll();
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+    omnibar.setQuery(QStringLiteral("lt"));
+    QCOMPARE(rows(omnibar), (QStringList{
+                                QStringLiteral("history: https://lt0.example/"),
+                                QStringLiteral("history: https://lt1.example/"),
+                                QStringLiteral("history: https://lt2.example/"),
+                                QStringLiteral("history: https://lt3.example/"),
+                                QStringLiteral("history: https://lt4.example/"),
+                            }));
+    omnibar.setQuery(QStringLiteral("lu"));
+    QCOMPARE(rows(omnibar), (QStringList{QStringLiteral("history: https://lu1.example/"),
+                                         QStringLiteral("history: https://lu0.example/")}));
+    omnibar.setQuery(QStringLiteral("h"));
+    QCOMPARE(omnibar.count(), OmnibarModel::MaxRows);
+    sources.search.setOmnibarTabs(false);
+    compareAll();
+    if (QTest::currentTestFailed()) {
+        return;
+    }
+    sources.search.setOmnibarHistory(false);
+    compareAll();
 }
 
 QTEST_GUILESS_MAIN(tst_omnibarmodel)
