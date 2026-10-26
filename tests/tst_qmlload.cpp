@@ -26,6 +26,7 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlExpression>
+#include <QQmlIncubationController>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QRegularExpression>
@@ -313,6 +314,7 @@ private slots:
     void previewFillsItsCell();
     void previewStandsInForUndrawnPage();
     void pictureWaitsForFirstPaint();
+    void sheetsMadeAfterLaunch();
 
 private:
     bool loadWindow();
@@ -340,6 +342,8 @@ private:
     QScopedPointer<Core> m_core;
     QScopedPointer<QQmlEngine> m_engine;
     QScopedPointer<QObject> m_window;
+    // Device's view incubates in frames' spare time; none here makes everything at once.
+    QScopedPointer<QQmlIncubationController> m_incubation;
 };
 
 // Software rendering before QtQuick loads: offscreen has no OpenGL, gridGesturesUnderAFinger()
@@ -379,6 +383,7 @@ void tst_qmlload::cleanup()
 {
     m_window.reset();
     m_engine.reset();
+    m_incubation.reset();
     m_core.reset();
     m_dir.reset();
 }
@@ -388,6 +393,9 @@ bool tst_qmlload::loadWindow()
     Salama::registerQmlTypes(m_core.data());
     m_engine.reset(new QQmlEngine);
     m_engine->addImportPath(QStringLiteral(SALAMA_STUBS_DIR));
+    if (m_incubation) {
+        m_engine->setIncubationController(m_incubation.data());
+    }
     QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QLatin1String(RootQml)));
     if (component.isError()) {
         qWarning() << component.errorString();
@@ -4228,13 +4236,13 @@ void tst_qmlload::browserMenu()
     QVERIFY(!reader->property("iconSource").toString().isEmpty());
     // Via BrowserPage.qml item: its scope names page and menu.
     QObject *pageScope = find(QStringLiteral("viewArea"));
-    evaluate(pageScope, QStringLiteral("browserMenu.view = null"));
+    evaluate(pageScope, QStringLiteral("browserMenu.item.view = null"));
     QVERIFY(!find(QStringLiteral("findMenuButton"))->property("enabled").toBool());
     QVERIFY(!find(QStringLiteral("desktopMenuButton"))->property("enabled").toBool());
     QVERIFY(!reader->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("bookmarkMenuButton"))->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("shareMenuButton"))->property("enabled").toBool());
-    evaluate(pageScope, QStringLiteral("browserMenu.view = Qt.binding(function () {"
+    evaluate(pageScope, QStringLiteral("browserMenu.item.view = Qt.binding(function () {"
                                        " return browserPage.currentView })"));
     QCOMPARE(menu->property("view").value<QObject *>(), currentWebView());
     QVERIFY(find(QStringLiteral("tabsItem")) == nullptr);
@@ -13618,6 +13626,56 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     webView->setProperty("moving", false);
     QCOMPARE(leave(), 1);
     QCOMPARE(leave(), 0);
+}
+
+// Menu, tab history and link sheets (about 230 items) made a slice per frame after launch, not
+// for first frame. First use before then makes that one at once.
+void tst_qmlload::sheetsMadeAfterLaunch()
+{
+    cleanup();
+    m_dir.reset(new QTemporaryDir);
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    m_core->tabs()->newTab(QLatin1String(FirstPage));
+    m_core->settings()->setTutorialShown(true);
+    // Incubates only when told, as view does between frames.
+    m_incubation.reset(new QQmlIncubationController);
+    QVERIFY(loadWindow());
+    QObject *page = find(QStringLiteral("browserPage"));
+    const char *const sheets[] = {"browserMenu", "tabHistoryPanel", "linkMenu"};
+    for (const char *name : sheets) {
+        QVERIFY2(find(QLatin1String(name)) == nullptr, name);
+    }
+    QVERIFY(m_incubation->incubatingObjectCount() > 0);
+    QVERIFY(currentWebView() != nullptr);
+    QVERIFY(currentWebView()->property("visible").toBool());
+
+    tapBar(QStringLiteral("menu"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QVERIFY(menu != nullptr);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(evaluate(page, QStringLiteral("browserMenu.item")).value<QObject *>(), menu);
+    QCOMPARE(menu->property("view").value<QObject *>(), currentWebView());
+    auto *strip = qobject_cast<QQuickItem *>(find(QStringLiteral("cutoutStrip")));
+    QCOMPARE(qobject_cast<QQuickItem *>(menu)->parentItem(), strip->parentItem());
+    QVERIFY(find(QStringLiteral("linkMenu")) == nullptr);
+    evaluate(menu, QStringLiteral("hide()"));
+
+    QObject *view = currentWebView();
+    holdOn(view, heldOn(QStringLiteral("https://trails.example/walks/ridge-loop"),
+                        QStringLiteral("The ridge loop")));
+    QObject *link = find(QStringLiteral("linkMenu"));
+    QVERIFY(link != nullptr);
+    QVERIFY(link->property("open").toBool());
+    QCOMPARE(evaluate(page, QStringLiteral("linkMenu.item")).value<QObject *>(), link);
+    evaluate(link, QStringLiteral("hide()"));
+
+    m_incubation->incubateFor(5000);
+    QCOMPARE(m_incubation->incubatingObjectCount(), 0);
+    QObject *history = find(QStringLiteral("tabHistoryPanel"));
+    QVERIFY(history != nullptr);
+    QCOMPARE(evaluate(page, QStringLiteral("tabHistory.item")).value<QObject *>(), history);
+    QCOMPARE(qobject_cast<QQuickItem *>(history)->parentItem(), strip->parentItem());
 }
 
 #include "tst_qmlload.moc"
