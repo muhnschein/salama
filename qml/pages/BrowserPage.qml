@@ -16,6 +16,10 @@ WebViewPage {
     property Item currentLoader: null
     property NotificationCenter notifications: NotificationCenter { page: browserPage }
     property EnginePreferences preferences: EnginePreferences {}
+    property SheetMaker browserMenu: SheetMaker { component: browserMenuComponent }
+    property SheetMaker tabHistory: SheetMaker { component: tabHistoryComponent }
+    property SheetMaker linkMenu: SheetMaker { component: linkMenuComponent }
+    readonly property bool linkPreviewShown: linkMenu.item !== null && linkMenu.item.previewShown
 
     property alias tabsOpen: deck.tabsOpen
     property alias dragging: deck.dragging
@@ -92,7 +96,7 @@ WebViewPage {
 
     function showBackHistory() {
         uncover()
-        tabHistory.showFor(currentView.history.entries)
+        tabHistory.get().showFor(currentView.history.entries)
     }
 
     function reloadOrStop() {
@@ -139,9 +143,12 @@ WebViewPage {
     }
 
     function uncover() {
-        browserMenu.hide()
-        linkMenu.hide()
-        tabHistory.hide()
+        var sheets = [browserMenu, linkMenu, tabHistory]
+        for (var i = 0; i < sheets.length; ++i) {
+            if (sheets[i].item) {
+                sheets[i].item.hide()
+            }
+        }
         navigationBar.endEditing()
         deck.settle(false)
     }
@@ -240,6 +247,10 @@ WebViewPage {
         WebEngine.addObserver(DownloadModel.topic)
         ensureTab()
         updateCurrentView()
+        // Parent as declared items get.
+        browserMenu.make(deck.parent)
+        tabHistory.make(deck.parent)
+        linkMenu.make(deck.parent)
     }
 
     Connections {
@@ -319,7 +330,7 @@ WebViewPage {
             onBackPressed: browserPage.askBackHistory()
             onBackHeld: browserPage.showBackHistory()
             onReloadOrStop: browserPage.reloadOrStop()
-            onShowMenu: browserMenu.show()
+            onShowMenu: browserMenu.get().show()
             // Capture and prime grid while finger down: both in drag's first frame stuttered.
             onDragArmed: {
                 browserPage.captureCurrent()
@@ -387,30 +398,38 @@ WebViewPage {
         }
     }
 
-    BrowserMenu {
-        id: browserMenu
+    Component {
+        id: browserMenuComponent
 
-        view: browserPage.currentView
-        onFindRequested: findBar.open()
+        BrowserMenu {
+            view: browserPage.currentView
+            onFindRequested: findBar.open()
+        }
     }
 
-    TabHistoryPanel {
-        id: tabHistory
+    Component {
+        id: tabHistoryComponent
 
-        onEntryChosen: {
-            if (browserPage.currentView) {
-                browserPage.currentView.history.go(entry)
+        TabHistoryPanel {
+            onEntryChosen: {
+                if (browserPage.currentView) {
+                    browserPage.currentView.history.go(entry)
+                }
             }
         }
     }
 
-    LinkMenu {
-        id: linkMenu
+    Component {
+        id: linkMenuComponent
 
-        topInset: browserPage.pageCutoutInset
-        previewView: Component { WebView { objectName: "linkPreviewView"; url: linkMenu.target.link } }
-        onOpenRequested: browserPage.openChosen(url, inNewTab)
-        onOpenedBehind: banners.tabOpened(tabId, title)
+        LinkMenu {
+            id: linkSheet
+
+            topInset: browserPage.pageCutoutInset
+            previewView: Component { WebView { objectName: "linkPreviewView"; url: linkSheet.target.link } }
+            onOpenRequested: browserPage.openChosen(url, inNewTab)
+            onOpenedBehind: banners.tabOpened(tabId, title)
+        }
     }
 
     Component {
@@ -421,11 +440,11 @@ WebViewPage {
 
             objectName: "webView"
             // Active until pages sleep: Sailfish Gecko pauses media of inactive (hidden) documents.
-            active: isCurrent && !PageActivity.asleep && !linkMenu.previewShown
+            active: isCurrent && !PageActivity.asleep && !browserPage.linkPreviewShown
                     && (browserPage.status === PageStatus.Active
                         || browserPage.status === PageStatus.Deactivating)
             // Link preview holds engine's single picture.
-            visible: !linkMenu.previewShown
+            visible: !browserPage.linkPreviewShown
             downloadsEnabled: true
 
             property ViewChrome viewChrome: ViewChrome {
@@ -490,7 +509,7 @@ WebViewPage {
             property PageViewport viewport: PageViewport { view: webView }
             property PageSearchLink searches: PageSearchLink { view: webView }
             property PageHistoryLink history: PageHistoryLink { view: webView }
-            property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.openFor(target, webView) }
+            property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.get().openFor(target, webView) }
 
             // Engine shows asked address at once, unresolved (qtmozembed's pending url): typed
             // host gains slash, link its redirect. Only where it went is
