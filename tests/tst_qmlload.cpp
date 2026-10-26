@@ -9673,9 +9673,17 @@ void tst_qmlload::gridCellsArePicturesAlone()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(1);
 
-    // Rounded box: clipping always rectangular, so mask cuts corners.
+    // Rounded box: clipping always rectangular, so shader cuts corners at shot's radius, no
+    // mask texture per cell.
     QObject *shot = findObjects(cell, QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
+    QVERIFY(evaluate(shot, QStringLiteral("layer.enabled")).toBool());
+    const QList<QObject *> corners = findObjects(cell, QStringLiteral("tabPreviewCorners"));
+    QCOMPARE(corners.count(), 1);
+    QVERIFY(corners.first()->inherits("QQuickShaderEffect"));
+    QCOMPARE(corners.first()->property("radius").toReal(), shot->property("radius").toReal());
+    QCOMPARE(corners.first()->property("size").toSizeF(), qobject_cast<QQuickItem *>(shot)->size());
+    QVERIFY(corners.first()->findChildren<QQuickItem *>().isEmpty());
     QVERIFY(findObjects(cell, QStringLiteral("tabPreviewHighlight")).isEmpty());
     auto *frame =
         qobject_cast<QQuickItem *>(findObjects(cell, QStringLiteral("tabPreviewFrame")).first());
@@ -13446,10 +13454,16 @@ void tst_qmlload::previewStandsInForUndrawnPage()
     QCOMPARE(part(2, "tabPreviewIcon")->property("source").toString(),
              QStringLiteral("image://theme/icon-m-favicon"));
 
-    // Front page pictured as grid opened: no stand-in.
+    // Front page pictured as grid opened: no stand-in, and its icon never fetched.
     tabs->thumbnailWriter()->waitForDone();
     QTRY_VERIFY(shown(0, "tabPreviewImage"));
     QVERIFY(!shown(0, "tabPreviewSite"));
+    tabs->updateFavicon(tabs->activeTabId(), QStringLiteral("image://theme/icon-m-favicon"));
+    QCOMPARE(part(0, "tabPreviewIcon")->property("source").toString(), QString());
+    QCOMPARE(part(0, "tabPreviewTitle")->property("text").toString(), QString());
+    QCOMPARE(part(0, "tabPreviewLetter")->property("text").toString(), QString());
+    QCOMPARE(part(2, "tabPreviewIcon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-favicon"));
 }
 
 // Device: previews missing or of previous page: load ended before engine painted new document.
