@@ -53,6 +53,7 @@ private slots:
     void rebuildsOnSourceChange();
     void quietWhileNothingIsAsked();
     void changesInPlace();
+    void openPaneSeesVisits();
 };
 
 namespace {
@@ -917,6 +918,24 @@ void tst_omnibarmodel::changesInPlace()
     QTRY_COMPARE(resetSpy.count(), 1);
     QCOMPARE(omnibar.count(), 3);
     QCOMPARE(resultsSpy.count(), 1);
+}
+
+// History moves and inserts rows on visit, no reset: open pane follows both.
+void tst_omnibarmodel::openPaneSeesVisits()
+{
+    Sources sources;
+    sources.history.visit(QStringLiteral("https://known.example/a"), QStringLiteral("Known a"));
+    sources.history.visit(QStringLiteral("https://known.example/b"), QStringLiteral("Known b"));
+    OmnibarModel &omnibar = sources.omnibar;
+    omnibar.setQuery(QStringLiteral("known"));
+    QCOMPARE(rows(omnibar),
+             (QStringList{QStringLiteral("history: Known b"), QStringLiteral("history: Known a")}));
+
+    sources.history.visit(QStringLiteral("https://known.example/a"), QStringLiteral("Known again"));
+    QTRY_COMPARE(rows(omnibar), (QStringList{QStringLiteral("history: Known again"),
+                                             QStringLiteral("history: Known b")}));
+    sources.history.visit(QStringLiteral("https://known.example/c"));
+    QTRY_COMPARE(countOfKind(omnibar, QStringLiteral("history")), 3);
 }
 
 QTEST_GUILESS_MAIN(tst_omnibarmodel)
