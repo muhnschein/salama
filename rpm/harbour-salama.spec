@@ -38,6 +38,8 @@ Requires:   sailfish-components-webview-qt5 >= 1.7.0
 Requires:   sailfish-components-webview-qt5-popups >= 1.7.0
 Requires:   sailfish-components-webview-qt5-pickers >= 1.7.0
 Requires:   qt5-plugin-imageformat-ico
+# JPEG: tab pictures.
+Requires:   qt5-plugin-imageformat-jpeg
 # QtGraphicalEffects: rounded tab preview corners.
 Requires:   qt5-qtgraphicaleffects
 # Nemo.Notifications: page notifications.

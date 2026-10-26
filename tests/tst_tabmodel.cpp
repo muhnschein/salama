@@ -704,7 +704,7 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
     QCOMPARE(QFileInfo(path).absolutePath(),
              QDir(dir.path() + QStringLiteral("/previews")).absolutePath());
     QImageReader reader(path);
-    QCOMPARE(reader.format(), QByteArrayLiteral("png"));
+    QCOMPARE(reader.format(), QByteArrayLiteral("jpeg"));
     QCOMPARE(reader.size(), picture.size());
 
     QVERIFY(!model.storeThumbnail(a, QVariant::fromValue(QImage())));
