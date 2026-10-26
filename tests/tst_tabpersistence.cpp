@@ -135,7 +135,7 @@ void tst_tabpersistence::saveOrderWritesOnceAndOnlyMoves()
     QCOMPARE(persistence.loadTabs().first().id, 50);
 
     QList<TabGroup> groups;
-    for (int id = 1; id <= 3; ++id) {
+    for (int id = 1; id <= 20; ++id) {
         TabGroup group;
         group.id = id;
         group.name = QStringLiteral("G%1").arg(id);
@@ -147,6 +147,12 @@ void tst_tabpersistence::saveOrderWritesOnceAndOnlyMoves()
     groups.move(0, 1);
     persistence.saveGroupOrder(groups);
     QCOMPARE(scalar(QStringLiteral("SELECT total_changes()"), 0) - groupsBefore, 2);
+    QCOMPARE(scalar(QStringLiteral("PRAGMA wal_checkpoint(TRUNCATE)"), 0), 0);
+    std::reverse(groups.begin(), groups.end());
+    persistence.saveGroupOrder(groups);
+    const int groupFrames = scalar(QStringLiteral("PRAGMA wal_checkpoint(PASSIVE)"), 1);
+    QVERIFY2(groupFrames > 0 && groupFrames < 10, qPrintable(QString::number(groupFrames)));
+    QCOMPARE(persistence.loadGroups().first().id, 20);
 }
 
 void tst_tabpersistence::ignoresInvalidTabs()
