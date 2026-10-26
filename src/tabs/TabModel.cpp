@@ -652,7 +652,7 @@ QString TabModel::thumbnailPath(int tabId)
         return {};
     }
     // Counter + clock: two grabs in same ms differ.
-    return dir.absoluteFilePath(QStringLiteral("tab-%1-%2-%3.png")
+    return dir.absoluteFilePath(QStringLiteral("tab-%1-%2-%3.jpg")
                                     .arg(tabId)
                                     .arg(QDateTime::currentMSecsSinceEpoch())
                                     .arg(++m_thumbnailCounter));
