@@ -35,6 +35,7 @@ public:
     static QVariant text(const QString &value);
 
 private:
+    void useWriteAheadLog() const;
     bool applySchema() const;
     bool hasColumn(const QString &table, const QString &column) const;
 
