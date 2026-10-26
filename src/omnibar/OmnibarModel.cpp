@@ -245,9 +245,9 @@ OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryMode
     connect(m_downloads, &DownloadModel::rowsInserted, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::dataChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::modelReset, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::dataChanged, this, &OmnibarModel::sourceChanged);
+    // Not row signals: visit moves or inserts rows; title or icon change past shown rows emits
+    // none.
+    connect(m_history, &HistoryModel::entriesChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarTabsChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarBookmarksChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarHistoryChanged, this, &OmnibarModel::sourceChanged);
