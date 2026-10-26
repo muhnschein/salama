@@ -32,6 +32,10 @@ SilicaFlickable {
     objectName: "startPage"
     contentHeight: column.height
 
+    // Counted in while shown: history changes re-read only then.
+    Component.onCompleted: StartPage.watch()
+    Component.onDestruction: StartPage.unwatch()
+
     // Grid, not Flow: a fractional column width never wraps. As tall as the taller half.
     Grid {
         id: column

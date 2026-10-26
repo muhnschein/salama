@@ -27,6 +27,7 @@ private slots:
     void historyNotRemembered();
     void clearsOnClose();
     void wiresHistoryAndBookmarksToTheStartPage();
+    void startPageWaitsUntilShown();
     void wiresAddedEnginesToTheStartPage();
 };
 
@@ -272,6 +273,7 @@ void tst_core::wiresHistoryAndBookmarksToTheStartPage()
     Salama::StartPage *start = core.startPage();
     QVERIFY(start != nullptr);
     QCOMPARE(start->topSites()->count(), 0);
+    start->watch();
 
     const int id = core.tabs()->newTab(QString());
     core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
@@ -295,12 +297,49 @@ void tst_core::wiresHistoryAndBookmarksToTheStartPage()
     QCOMPARE(start->recentPages()->count(), 0);
 }
 
+// Every address, title and icon change re-read history for start page, also while nothing
+// showed it: unwatched, changes only mark it stale; next watch() reads once.
+void tst_core::startPageWaitsUntilShown()
+{
+    QTemporaryDir dir;
+    Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    Salama::StartPage *start = core.startPage();
+    QSignalSpy reads(start->recentPages(), &QAbstractItemModel::modelReset);
+    const int id = core.tabs()->newTab(QString());
+    core.tabs()->updateUrl(id, QStringLiteral("https://a.example/"));
+    core.tabs()->updateTitle(id, QStringLiteral("Alpha"));
+    core.bookmarks()->add(QStringLiteral("https://b.example/"), QStringLiteral("B"));
+    QCOMPARE(reads.count(), 0);
+    QCOMPARE(start->recentPages()->count(), 0);
+
+    start->watch();
+    QCOMPARE(reads.count(), 1);
+    QCOMPARE(start->recentPages()->sites().first().title, QStringLiteral("Alpha"));
+    QCOMPARE(start->bookmarks()->count(), 1);
+    // Two views: both must go before reads stop.
+    start->watch();
+    start->unwatch();
+    core.tabs()->updateUrl(id, QStringLiteral("https://c.example/"));
+    QCOMPARE(start->recentPages()->sites().first().url, QStringLiteral("https://c.example/"));
+    start->unwatch();
+    const int counted = reads.count();
+    core.tabs()->updateUrl(id, QStringLiteral("https://d.example/"));
+    QCOMPARE(reads.count(), counted);
+    // Unwatch with none left changes nothing: one watch still counts.
+    start->unwatch();
+    start->watch();
+    QCOMPARE(start->recentPages()->sites().first().url, QStringLiteral("https://d.example/"));
+    core.tabs()->updateUrl(id, QStringLiteral("https://e.example/"));
+    QCOMPARE(start->recentPages()->sites().first().url, QStringLiteral("https://e.example/"));
+}
+
 // Result page of engine added while browsing = search, not visit, from moment of add,
 // without needing visit to refresh start page.
 void tst_core::wiresAddedEnginesToTheStartPage()
 {
     QTemporaryDir dir;
     Core core(dir.path(), dir.path() + QStringLiteral("/salama.conf"), dir.path());
+    core.startPage()->watch();
     const int id = core.tabs()->newTab(QString());
     core.tabs()->updateUrl(id, QStringLiteral("https://find.example/results?query=forest"));
     QCOMPARE(core.startPage()->topSites()->count(), 1);

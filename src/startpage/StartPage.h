@@ -36,6 +36,11 @@ public:
     SiteListModel *recentPages();
 
     Q_INVOKABLE void refresh();
+    // Shown view counts itself in while it lives: history and bookmark changes re-read only
+    // while counted in, else once on next watch(). Page load changes history 3+ times.
+    Q_INVOKABLE void watch();
+    Q_INVOKABLE void unwatch();
+    void sourceChanged();
 
     static QString siteOf(const QString &url);
 
@@ -49,6 +54,8 @@ private:
     SiteListModel m_topSites;
     SiteListModel m_bookmarks;
     SiteListModel m_recentPages;
+    int m_watchers = 0;
+    bool m_stale = false;
 };
 
 } // namespace Salama
