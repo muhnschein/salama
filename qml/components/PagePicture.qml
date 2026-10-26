@@ -5,7 +5,7 @@
 // engine's first paint of new document: picture then waits for it, else it showed old page or
 // none. Held frame is engine's stretched one: none taken from it. Leaving, grid drag or
 // background: only if page changed since its picture; each switch took one, and readback,
-// encode and the model's refresh after made a switch four times the work (measured).
+// encode and model's refresh after made switch four times work (measured).
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -36,7 +36,7 @@ QtObject {
             return
         }
         var tabId = pageTabId
-        // Before grab: its result may come back inside call. Loading page still changes.
+        // Before grab: its result can come back inside call. Loading page still changes.
         fresh = !loading
         // Half size: GPU readback at gesture start. Encode/write off GUI thread in model.
         if (view.grabToImage(function (result) {

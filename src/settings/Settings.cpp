@@ -9,7 +9,7 @@ namespace {
 const char *const NotchGuardKey = "notchGuard";
 // Legacy bool: on = Forced, off = Disabled.
 const char *const RetiredCutoutGuardKey = "cutoutGuard";
-// Fixed toolbar: dropped once the landscape bar stayed put; portrait bar always slims.
+// Fixed toolbar: dropped once landscape bar stayed put; portrait bar always slims.
 const char *const RetiredFixedToolbarKey = "fixedToolbar";
 const char *const TutorialShownKey = "tutorialShown";
 const char *const WebsiteColorsKey = "websiteColors";

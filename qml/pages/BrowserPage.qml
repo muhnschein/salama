@@ -43,7 +43,7 @@ WebViewPage {
     readonly property real pageCutoutInset: cutout.pageInset
 
     // Not during deck drag: mid-drag resize relaid out page. Landscape bar already slim and
-    // stays: hiding it on scroll, page's redraw at rest and the fade over it disoriented (device).
+    // stays: hiding it on scroll, page's redraw at rest and fade over it disoriented (device).
     readonly property bool barCompact: {
         if (!currentView || isLandscape || navigationBar.editing || findBar.active) {
             return false

@@ -1596,7 +1596,7 @@ void tst_qmlload::barDoesNotCoverThePage()
     QVERIFY(fullBar > 0);
     QVERIFY(inset > 0);
 
-    // View sits between cutout and slim bar: first line never hidden, last ones only under the
+    // View sits between cutout and slim bar: first line never hidden, last ones only under
     // whole bar's extra height, slimmed away by scrolling down. Bar over whole page foot left
     // last rows unreachable on device; resizing for each bar change stuttered and flashed.
     const qreal slimBar = bar->property("slimHeight").toReal();
@@ -2334,7 +2334,7 @@ void tst_qmlload::tabSearch()
     tabs->thumbnailWriter()->waitForDone();
     settle();
 
-    // No rows until searched: every tab change reset them, a hidden list made them all again.
+    // No rows until searched: every tab change reset them, hidden list made them all again.
     QVERIFY(findAll(QStringLiteral("tabSearchDelegate")).isEmpty());
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
@@ -2480,7 +2480,7 @@ void tst_qmlload::tabsDropOntoGroups()
     QCOMPARE(findAll(QStringLiteral("tabPreview")).count(), 1);
 }
 
-// Landscape grid: no head or foot row; group rail left of grid, a fifth of page wide, with
+// Landscape grid: no head or foot row; group rail left of grid, one fifth of page wide, with
 // search field on top, one row per group and + and edit at its foot. Grid fills rest.
 void tst_qmlload::landscapeTabGroupRail()
 {
@@ -2528,7 +2528,7 @@ void tst_qmlload::landscapeTabGroupRail()
     QCOMPARE(grid->property("headerItem").value<QQuickItem *>()->height(), qreal(0));
     QCOMPARE(grid->property("footerItem").value<QQuickItem *>()->height(), qreal(0));
 
-    // Three page-shaped previews a row over area right of rail, full height.
+    // Three page-shaped previews per row over area right of rail, full height.
     QCOMPARE(grid->x(), railWidth);
     QCOMPARE(grid->width(), view->width() - railWidth);
     QCOMPARE(grid->height(), view->height());
@@ -2676,7 +2676,7 @@ void tst_qmlload::landscapeTabGroupRail()
     QCOMPARE(rows.at(0)->property("height").toReal(), footRow->height());
 }
 
-// Under a finger, turned: tap rail row switches group; held tab dropped on rail group moves
+// Under finger, turned: tap rail row switches group; held tab dropped on rail group moves
 // there; long list scrolls to keep current group in view.
 void tst_qmlload::landscapeRailUnderAFinger()
 {
@@ -2816,7 +2816,7 @@ void tst_qmlload::landscapeTabSearch()
     settle();
     tabs->updateTitle(first, QStringLiteral("Office hours"));
     tabs->updateTitle(second, QStringLiteral("Office mail"));
-    // Half a portrait page.
+    // Half portrait page.
     const QString picture = m_dir->path() + QStringLiteral("/office.png");
     QImage(540, 1170, QImage::Format_RGB32).save(picture);
     tabs->updateThumbnail(second, picture);
@@ -3882,7 +3882,7 @@ void tst_qmlload::barReachUnderAFinger()
     const QPointF local = view->mapFromScene(QPointF(200, inReach));
     QCOMPARE(touch(0).value(QStringLiteral("x")).toReal(), local.x());
     QCOMPARE(touch(0).value(QStringLiteral("y")).toReal(), local.y());
-    // Over page foot: above whole bar, which overlaps the page by its height beyond slim.
+    // Over page foot: above whole bar, which overlaps page by its height beyond slim.
     QObject *bar = find(QStringLiteral("navigationBar"));
     const qreal overlap = bar->property("height").toReal() - bar->property("slimHeight").toReal();
     QVERIFY(local.y() > view->height() - overlap - reach && local.y() < view->height());
@@ -4901,7 +4901,7 @@ QRectF onPage(QQuickItem *page, QQuickItem *item)
     return item->mapRectToItem(page, QRectF(0, 0, item->width(), item->height()));
 }
 
-// Landscape sheet has nothing to scroll and a drag up moves nothing; pull down, along page (across
+// Landscape sheet has nothing to scroll and drag up moves nothing; pull down, along page (across
 // window), still puts sheet away.
 void turnedSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu,
                          QQuickItem *sheet, QQuickItem *grabbed)
@@ -4935,8 +4935,8 @@ void turnedSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *men
     QTRY_COMPARE(sheet->y(), qreal(0));
 }
 
-// Side sheet has nothing to scroll and a drag left moves nothing. Drag right, along page (across
-// window), moves sheet, row under finger: past a short way puts sheet away, short of it returns.
+// Side sheet has nothing to scroll and drag left moves nothing. Drag right, along page (across
+// window), moves sheet, row under finger: past short way puts sheet away, short of it returns.
 void sideSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu, QQuickItem *sheet,
                        QQuickItem *grabbed)
 {
@@ -4991,8 +4991,8 @@ void sideSheetStaysPut(QQuickWindow &window, QQuickItem *page, QQuickItem *menu,
 } // namespace
 
 // Landscape menu: portrait's sheet as side sheet at page's right edge, standing on bar, as tall
-// as its content, 42% of page wide in whole pixels. Head across top, page's five icons in a row,
-// gap, browser's four rows full width; shades split mid-gap as in portrait. German names fit
+// as its content, 42% of page wide in whole pixels. Head across top, page's five icons in one
+// row, gap, browser's four rows full width; shades split mid-gap as in portrait. German names fit
 // unfaded, also on page shaped as phone's. Grip upright on left edge; press beside it closes,
 // as does drag right. Turned while open, stays open, placed for new edge.
 void tst_qmlload::menuSheetInLandscape()
@@ -5052,7 +5052,7 @@ void tst_qmlload::menuSheetInLandscape()
     QVERIFY(rect(item("copyAddressButton")).right() <= sheet.right());
     QVERIFY(rect(item("copyAddressButton")).left() > sheet.center().x());
 
-    // Page's five in a row under head, fifths of sheet; then gap, then browser's four rows.
+    // Page's five in one row under head, fifths of sheet; then gap, then browser's four rows.
     const QRectF first = rect(item(pageActions[0]));
     QCOMPARE(first.y(), head.bottom());
     for (int i = 0; i < 5; ++i) {
@@ -7021,11 +7021,11 @@ namespace {
 
 // Column contents in order: objectName per item, section header as "#text". Declaration
 // order, not y: Column only places items on polish, never happens windowless. Unnamed
-// containers are looked through, since a landscape page lays its items in two columns (a
-// Flow of Columns); the order reads the same either way.
+// containers are looked through, since landscape page lays its items in two columns (Flow of
+// Columns); order reads identical either way.
 void appendInOrder(QQuickItem *container, QStringList &held)
 {
-    // Depth first: an unnamed container's items come before its next sibling.
+    // Depth first: unnamed container's items come before its next sibling.
     QList<QQuickItem *> pending = container->childItems();
     while (!pending.isEmpty()) {
         QQuickItem *child = pending.takeFirst();
@@ -7040,7 +7040,7 @@ void appendInOrder(QQuickItem *container, QStringList &held)
     }
 }
 
-// The column the item is in: its ancestor that sits directly in the page's flickable.
+// Column holding item: its ancestor that sits directly in page's flickable.
 QStringList columnOf(QObject *item)
 {
     auto *column = qobject_cast<QQuickItem *>(item);
@@ -7056,7 +7056,7 @@ QStringList columnOf(QObject *item)
     return held;
 }
 
-// Where an item's top left corner sits on a page, in the page's own coordinates; NaN for none.
+// Where item's top left corner sits on page, in page's own coordinates; NaN for none.
 QPointF onPage(QObject *item, QObject *page)
 {
     if (item == nullptr) {
@@ -7065,8 +7065,8 @@ QPointF onPage(QObject *item, QObject *page)
     return qobject_cast<QQuickItem *>(item)->mapToItem(qobject_cast<QQuickItem *>(page), QPointF());
 }
 
-// Where a Silica menu opened on the item spreads, in the page's coordinates: ContextMenu (a
-// ComboBox's too) spans its nearest Flickable from that one's left edge.
+// Where Silica menu opened on item spreads, in page's coordinates: ContextMenu (ComboBox's
+// too) spans its nearest Flickable from that one's left edge.
 QRectF menuSpan(QObject *item, QObject *page)
 {
     QQuickItem *flickable = qobject_cast<QQuickItem *>(item)->parentItem();
@@ -7080,7 +7080,7 @@ QRectF menuSpan(QObject *item, QObject *page)
                                     QRectF(0, 0, flickable->width(), flickable->height()));
 }
 
-// The section header with this text, wherever it is on the page.
+// Section header with this text, wherever it is on page.
 QObject *sectionHeader(QObject *page, const QString &text)
 {
     for (QObject *object : findObjects(page, QString())) {
@@ -7093,8 +7093,8 @@ QObject *sectionHeader(QObject *page, const QString &text)
     return nullptr;
 }
 
-// Column and Flow place their items when polished, and only a frame of a shown window polishes:
-// after a turn, positions are read once two frames have passed.
+// Column and Flow place their items when polished, and only frame of shown window polishes:
+// after turn, positions are read once two frames have passed.
 void layOut(QQuickWindow &window)
 {
     QSignalSpy frames(&window, &QQuickWindow::frameSwapped);
@@ -7304,10 +7304,9 @@ void tst_qmlload::settingsPage()
     QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 }
 
-// Landscape: each heading spans the page inside Silica's margins (sectionHeadersInset), and the
-// entries under it flow two a row, the left one at the page's edge and the right one at its
-// middle, a row's two on one y. Portrait is one column again, each entry the page's width under
-// the one before.
+// Landscape: each heading spans page inside Silica's margins (sectionHeadersInset), and
+// entries under it flow two per row, left one at page's edge, right one at its middle,
+// row's two on one y. Portrait is one column again, each entry page's width below previous one.
 void tst_qmlload::landscapeSettingsPage()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -7351,13 +7350,13 @@ void tst_qmlload::landscapeSettingsPage()
             QVERIFY2(qAbs(point.y() - y) < 1, qPrintable(row.at(i)));
         }
     }
-    // Device: combo menus spread over both columns, under the right one. Each keeps to its own.
+    // Device: combo menus spread over both columns, under right one. Each keeps to its own.
     for (const QString &name : rows.at(2)) {
         const QRectF span = menuSpan(find(name), page);
         QVERIFY2(qAbs(span.x() - at(name).x()) < 1, qPrintable(name));
         QVERIFY2(qAbs(span.width() - width / 2) < 1, qPrintable(name));
     }
-    // Each row below the one before it.
+    // Each row below previous one.
     below(QStringLiteral("startPageSettingsEntry"), QStringLiteral("readerSettingsEntry"));
     below(QStringLiteral("readerSettingsEntry"), QStringLiteral("websiteColorsCombo"));
     below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("trackingSettingsEntry"));
@@ -7380,9 +7379,9 @@ void tst_qmlload::landscapeSettingsPage()
     below(QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("dohSettingsEntry"));
 }
 
-// Landscape: on the start page, the reader view and the cover, the choices sit in the left
-// column and the picture in the right one, both starting under the page header. Portrait is
-// one column, the picture under the choices, the cover's over them, as it was.
+// Landscape: on start page, reader view and cover, choices sit in left column and picture
+// in right one, both starting under page header. Portrait is one column, picture under
+// choices, cover's over them, as it was.
 void tst_qmlload::landscapePreviewPages()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -7405,14 +7404,14 @@ void tst_qmlload::landscapePreviewPages()
         QCOMPARE(at(page, QStringLiteral("startPageSitesSwitch")).y(), onPage(picture, page).y());
         QVERIFY(at(page, QStringLiteral("startPageRecentSwitch")).x() < width / 2);
         QVERIFY(onPage(sectionHeader(page, QStringLiteral("Sections")), page).x() < width / 2);
-        // Device: Rows menu spread over both columns, under the preview. Keeps to its column.
+        // Device: Rows menu spread over both columns, under preview. Keeps to its column.
         const QRectF rowsMenu = menuSpan(find(QStringLiteral("startPageTopSiteRowsCombo")), page);
         QCOMPARE(rowsMenu.x(), qreal(0));
         QVERIFY(qAbs(rowsMenu.width() - width / 2) < 1);
         QVERIFY(onPage(picture, page).x() >= width / 2);
         QVERIFY(onPage(frame, page).x() >= width / 2);
         QVERIFY(onPage(frame, page).x() + frame->property("width").toReal() <= width);
-        // The picture takes its column less the page margin either side.
+        // Picture takes its column less page margin either side.
         const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
         QVERIFY(qAbs(onPage(frame, page).x() - (width / 2 + margin)) < 1);
         QVERIFY(qAbs(onPage(frame, page).x() + frame->property("width").toReal() -
@@ -7478,10 +7477,10 @@ void tst_qmlload::landscapePreviewPages()
     }
 }
 
-// Start page settings' picture in landscape: a landscape screen in halves as on the start page,
-// top sites over bookmarks left, recent pages right, a half with nothing to show leaving the
-// other the whole width; each switch moves the picture's sections as it moves the page's. Upright:
-// the portrait picture, stacked, four tiles a row.
+// Start page settings' picture in landscape: landscape screen in halves as on start page,
+// top sites over bookmarks left, recent pages right, half with nothing to show leaving other
+// whole width; each switch moves picture's sections as it moves page's. Upright: portrait
+// picture, stacked, four tiles per row.
 void tst_qmlload::landscapeStartPagePreview()
 {
     for (int i = 0; i < 8; ++i) {
@@ -7513,7 +7512,7 @@ void tst_qmlload::landscapeStartPagePreview()
     const auto item = [this](const QString &name) {
         return qobject_cast<QQuickItem *>(find(name));
     };
-    // Unscaled, on the picture's screen; as drawn, on the frame; and on the real start page.
+    // Unscaled, on picture's screen; as drawn, on frame; and on real start page.
     const auto drawn = [&](const QString &name) { return onPage(screen, item(name)); };
     const auto shrunk = [&](const QString &name) { return onPage(frame, item(name)); };
     const auto real = [&](const QString &name) { return onPage(start, item(name)); };
@@ -7522,7 +7521,7 @@ void tst_qmlload::landscapeStartPagePreview()
             evaluate(m_window.data(), QStringLiteral("Screen.width")).toReal() / 4;
         return qBound(1, int(columnWidth / portraitTile), 8);
     };
-    // Every shown section of the picture spans the same share of its screen as on the page.
+    // Every shown section of picture spans same share of its screen as on page.
     const auto compareShares = [&]() {
         for (int i = 0; i < pictured.count(); ++i) {
             const bool shown = find(pictured.at(i))->property("visible").toBool();
@@ -7549,7 +7548,7 @@ void tst_qmlload::landscapeStartPagePreview()
     const qreal width = page->property("width").toReal();
     const qreal height = page->property("height").toReal();
     QVERIFY(width > height);
-    // Landscape screen, as big as the page, scaled into the right column.
+    // Landscape screen, as big as page, scaled into right column.
     QCOMPARE(screen->width(), width);
     QCOMPARE(screen->height(), height);
     QVERIFY(frame->width() > frame->height());
@@ -7570,7 +7569,7 @@ void tst_qmlload::landscapeStartPagePreview()
     QCOMPARE(recent.x(), half);
     QCOMPARE(recent.width(), half);
     QCOMPARE(recent.y(), topSites.y());
-    // Drawn at the picture's scale: halves of the frame.
+    // Drawn at picture's scale: halves of frame.
     QCOMPARE(shrunk(pictured.at(2)).x() - shrunk(pictured.at(0)).x(), frame->width() / 2);
     QCOMPARE(shrunk(pictured.at(2)).width(), frame->width() / 2);
     QCOMPARE(shrunk(pictured.at(0)).width(), frame->width() / 2);
@@ -7591,12 +7590,12 @@ void tst_qmlload::landscapeStartPagePreview()
         QCOMPARE(at.width(), half);
     }
     QVERIFY(alike());
-    // Slim bar, as on the browsing page in landscape.
+    // Slim bar, as on browsing page in landscape.
     const qreal slim = evaluate(page, QStringLiteral("Theme.itemSizeSmall")).toReal();
     QTRY_COMPARE(find(QStringLiteral("navigationBar"))->property("height").toReal(), slim);
     QCOMPARE(find(QStringLiteral("startPagePreviewBar"))->property("height").toReal(), slim);
 
-    // Recent pages off: tiles across the whole picture.
+    // Recent pages off: tiles across whole picture.
     check(QStringLiteral("startPageRecentSwitch"), false);
     layOut(window);
     QCOMPARE(drawn(pictured.at(0)).width(), width);
@@ -7614,7 +7613,7 @@ void tst_qmlload::landscapeStartPagePreview()
     QCOMPARE(drawn(pictured.at(2)).x(), half);
     QVERIFY(alike());
 
-    // Tile sections off: recent pages across the whole picture.
+    // Tile sections off: recent pages across whole picture.
     check(QStringLiteral("startPageTopSitesSwitch"), false);
     layOut(window);
     QCOMPARE(drawn(pictured.at(2)).x(), qreal(0));
@@ -7622,7 +7621,7 @@ void tst_qmlload::landscapeStartPagePreview()
     QCOMPARE(onPage(screen, qobject_cast<QQuickItem *>(rows.first())).width(), width);
     QVERIFY(alike());
 
-    // Blank: nothing but the bar, as on the page.
+    // Blank: nothing but bar, as on page.
     check(QStringLiteral("startPageTopSitesSwitch"), true);
     check(QStringLiteral("startPageBookmarksSwitch"), true);
     click(find(QStringLiteral("startPageBlankSwitch")));
@@ -7634,7 +7633,7 @@ void tst_qmlload::landscapeStartPagePreview()
     QVERIFY(alike());
     click(find(QStringLiteral("startPageSitesSwitch")));
 
-    // Upright: the portrait picture, stacked full width, four tiles a row, tall bar.
+    // Upright: portrait picture, stacked full width, four tiles per row, tall bar.
     turnDevice(Portrait);
     layOut(window);
     const qreal portraitWidth = page->property("width").toReal();
@@ -11183,7 +11182,7 @@ void tst_qmlload::siteDetailsPermissions()
     QCOMPARE(textOf(page, "sitePermissionsSection"), QStringLiteral("Permissions"));
     QCOMPARE(textOf(page, "siteTrackingSection"), QStringLiteral("Tracking protection"));
     QCOMPARE(findAll(QStringLiteral("siteDecisionRow")).count(), 6);
-    // In declaration order: a hidden row is not placed, so its y would not order it.
+    // In declaration order: hidden row is not placed, so its y would not order it.
     QStringList names;
     for (QObject *candidate : findAll(QStringLiteral("siteDecisionRow"))) {
         names.append(textOf(candidate, "siteDecisionName"));
@@ -11313,8 +11312,8 @@ void tst_qmlload::siteDetailsPermissions()
     QVERIFY(find(QStringLiteral("siteTrackingSwitch"))->property("checked").toBool());
 }
 
-// Landscape: the connection on the left, its security compact with the icon beside its words,
-// and the Permissions on the right, two a row. Portrait is one column, the icon above its words.
+// Landscape: connection on left, its security compact with icon beside its words,
+// and Permissions on right, two per row. Portrait is one column, icon above its words.
 void tst_qmlload::landscapeSiteDetails()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -11347,7 +11346,7 @@ void tst_qmlload::landscapeSiteDetails()
     QVERIFY(onPage(permissions, page).x() >= width / 2);
     QCOMPARE(onPage(permissions, page).y(), at(QStringLiteral("siteSecurityHero")).y());
 
-    // The rows the site has: Cookies is hidden until tracking protection lets it show.
+    // Rows site has: Cookies is hidden until tracking protection lets it show.
     QList<QObject *> rows;
     for (QObject *row : findAll(QStringLiteral("siteDecisionRow"))) {
         if (qobject_cast<QQuickItem *>(row)->isVisible()) {
@@ -11382,9 +11381,9 @@ void tst_qmlload::landscapeSiteDetails()
     QVERIFY(onPage(rows.at(2), page).y() > onPage(rows.at(1), page).y());
 }
 
-// Landscape: the engines (and those found while browsing) in the left column, the address bar's
-// suggestions in the right, both starting under the page header. Portrait is one column, the
-// suggestions under the engines, as it was.
+// Landscape: engines (and those found while browsing) in left column, address bar's
+// suggestions in right, both starting under page header. Portrait is one column, suggestions
+// under engines, as it was.
 void tst_qmlload::landscapeSearchSettings()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -11395,7 +11394,7 @@ void tst_qmlload::landscapeSearchSettings()
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("searchSettingsPage"));
     const auto at = [this, page](const QString &name) { return onPage(find(name), page); };
-    // The columns are unnamed (columnOf() looks through them): reached from what they hold.
+    // Columns are unnamed (columnOf() looks through them): reached from what they hold.
     const auto columnHolding = [this](const QString &name) -> QObject * {
         return qobject_cast<QQuickItem *>(find(name))->parentItem();
     };
@@ -11439,9 +11438,9 @@ void tst_qmlload::landscapeSearchSettings()
     QCOMPARE(at(QStringLiteral("omnibarDownloadsSwitch")).x(), qreal(0));
 }
 
-// Landscape: the two switches in the left column, what is kept on the phone and the clearing
-// button, centred, in the right, both starting under the page header. Portrait is one column,
-// the button centred on the page, as it was.
+// Landscape: two switches in left column, what is kept on phone and clearing button,
+// centred, in right, both starting under page header. Portrait is one column, button
+// centred on page, as it was.
 void tst_qmlload::landscapeHistorySettings()
 {
     FingerWindow host(qobject_cast<QQuickItem *>(m_window.data()));
@@ -12009,8 +12008,8 @@ void tst_qmlload::everyPageTurns()
     QCOMPARE(browser->property("orientation").toInt(), Portrait);
 }
 
-// Silica insets SectionHeader a page margin each side, text right-aligned: widened to its
-// column, header pushes its text a margin off page. Every page, both ways up.
+// Silica insets SectionHeader page margin each side, text right-aligned: widened to its
+// column, header pushes its text one margin off page. Every page, both ways up.
 void tst_qmlload::sectionHeadersInset()
 {
     QObject *browser = find(QStringLiteral("browserPage"));
@@ -12050,7 +12049,7 @@ void tst_qmlload::sectionHeadersInset()
 }
 
 // Silica turns page width before height (PageOrientationTransition's PropertyAction), and
-// pushed page may meet either first. Deck re-measures on turn whichever side moves first;
+// pushed page can meet either first. Deck re-measures on turn whichever side moves first;
 // keyboard still leaves its height.
 void tst_qmlload::deckTurnsEitherWay()
 {
@@ -12180,14 +12179,14 @@ void tst_qmlload::landscapeBrowsing()
     auto *bar = item("navigationBar");
     QCOMPARE(bar->y() + bar->height(), browser->height());
 
-    // Three page-shaped previews a row right of group rail, a whole row on the page.
+    // Three page-shaped previews per row right of group rail, whole row on page.
     QCOMPARE(grid->property("cellWidth").toReal(), (browser->width() - railWidth) / 3);
     QVERIFY(grid->property("cellHeight").toReal() < browser->height());
     QVERIFY(grid->property("cellHeight").toReal() > grid->property("cellWidth").toReal() / 3);
     // Start page in columns: landscapeStartPage.
 
     QObject *banner = find(QStringLiteral("bannerBar"))->parent();
-    // Portrait width over bar's right end (landscapeBarStaysPut), swipe a third of it.
+    // Portrait width over bar's right end (landscapeBarStaysPut), swipe one third of it.
     QCOMPARE(banner->property("width").toReal(), browser->height());
     QCOMPARE(banner->property("dismissDistance").toReal(), browser->height() / 3);
 
@@ -12221,8 +12220,8 @@ void tst_qmlload::landscapeBrowsing()
 }
 
 // Landscape start page in halves: top sites over bookmarks left, recent pages right, tiles
-// portrait-sized; a half with nothing to show leaves the other the whole width. Upright: stacked,
-// four tiles a row.
+// portrait-sized; half with nothing to show leaves other whole width. Upright: stacked,
+// four tiles per row.
 void tst_qmlload::landscapeStartPage()
 {
     for (int i = 0; i < 8; ++i) {
@@ -12242,13 +12241,13 @@ void tst_qmlload::landscapeStartPage()
     const auto box = [this, start](const QString &name) {
         return onPage(start, qobject_cast<QQuickItem *>(find(name)));
     };
-    // Portrait-width tiles that fit a column, at most a row of all top sites.
+    // Portrait-width tiles that fit column, at most one row of all top sites.
     const auto perRow = [this](qreal columnWidth) {
         const qreal portraitTile =
             evaluate(m_window.data(), QStringLiteral("Screen.width")).toReal() / 4;
         return qBound(1, int(columnWidth / portraitTile), 8);
     };
-    // Each tile list in rows of the expected count, every item inside its section's column.
+    // Each tile list in rows of expected count, every item inside its section's column.
     const auto checkRows = [&](const QString &section, const QString &item, int count,
                                int tilesPerRow) {
         const QRectF column = box(section);
@@ -12305,11 +12304,11 @@ void tst_qmlload::landscapeStartPage()
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
     QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 4));
     QVERIFY(filled(names.at(2), QStringLiteral("recentPageRow"), 5, 0));
-    // Device (#46): a row's menu spread over both halves. Keeps to the right one.
+    // Device (#46): row's menu spread over both halves. Keeps to right one.
     const QRectF rowMenu = menuSpan(findAll(QStringLiteral("recentPageRow")).first(), start);
     QCOMPARE(rowMenu.x(), half);
     QCOMPARE(rowMenu.width(), half);
-    // Content as tall as the taller half plus padding.
+    // Content as tall as taller half plus padding.
     QCOMPARE(start->property("contentY").toReal(), qreal(0));
     const qreal left = bookmarks.bottom() - topSites.top();
     const qreal right = recent.height();
@@ -12319,7 +12318,7 @@ void tst_qmlload::landscapeStartPage()
     QVERIFY(padding > 0);
     QCOMPARE(start->property("contentHeight").toReal(), qMax(left, right) + padding);
 
-    // One tile section off: still halves, top sites alone on the left.
+    // One tile section off: still halves, top sites alone on left.
     m_core->startPageSettings()->setBookmarks(false);
     layOut(window);
     QVERIFY(!find(names.at(1))->property("visible").toBool());
@@ -12330,13 +12329,13 @@ void tst_qmlload::landscapeStartPage()
     QCOMPARE(box(names.at(2)).y(), box(names.at(0)).y());
     QCOMPARE(start->property("columns").toInt(), 4);
     QVERIFY(filled(names.at(0), QStringLiteral("topSiteTile"), 8, 4));
-    // One row chosen: one row of the half's tiles.
+    // One row chosen: one row of half's tiles.
     m_core->startPageSettings()->setTopSiteRows(1);
     QCOMPARE(shownTiles(), 4);
     m_core->startPageSettings()->setTopSiteRows(2);
     m_core->startPageSettings()->setBookmarks(true);
 
-    // Recent pages off: no empty right half, tiles across the whole width, all top sites a row.
+    // Recent pages off: no empty right half, tiles across whole width, all top sites in one row.
     m_core->startPageSettings()->setRecent(false);
     layOut(window);
     QVERIFY(!find(names.at(2))->property("visible").toBool());
@@ -12351,13 +12350,13 @@ void tst_qmlload::landscapeStartPage()
     QVERIFY(filled(names.at(1), QStringLiteral("bookmarkTile"), 8, 8));
     QCOMPARE(start->property("contentHeight").toReal(),
              box(names.at(1)).bottom() - box(names.at(0)).top() + padding);
-    // One row chosen: a row is the whole width's tiles.
+    // One row chosen: row is whole width's tiles.
     m_core->startPageSettings()->setTopSiteRows(1);
     QCOMPARE(shownTiles(), 8);
     m_core->startPageSettings()->setTopSiteRows(2);
     m_core->startPageSettings()->setRecent(true);
 
-    // Tile sections off: no empty left half, recent pages across the whole width.
+    // Tile sections off: no empty left half, recent pages across whole width.
     m_core->startPageSettings()->setTopSites(false);
     m_core->startPageSettings()->setBookmarks(false);
     layOut(window);
@@ -12486,8 +12485,8 @@ bool isUnder(QObject *object, QObject *ancestor)
 
 } // namespace
 
-// Turned bar sketch as browsing bar: slim, every control. Words in one line in a low band at top;
-// drag-up hint a quarter along bar (whole bar drags), tap hints on its controls. Upright: as
+// Turned bar sketch as browsing bar: slim, every control. Words in one line in low band at top;
+// drag-up hint one quarter along bar (whole bar drags), tap hints on its controls. Upright: as
 // before.
 void tst_qmlload::landscapeTutorialBar()
 {
@@ -12563,7 +12562,7 @@ void tst_qmlload::landscapeTutorialBar()
     setStep(QStringLiteral("menu"));
     QCOMPARE(hintCentre(tapHint), barPoint("menuCentre"));
 
-    // Drag up from a quarter along bar.
+    // Drag up from one quarter along bar.
     setStep(QStringLiteral("open"));
     QVERIFY(touchHint->property("running").toBool());
     QCOMPARE(touchHint->property("direction"),
@@ -12781,9 +12780,10 @@ void tst_qmlload::landscapeTutorialOmnibar()
         QRectF(0, 0, page->property("width").toReal(), page->property("height").toReal()).center());
 }
 
-// Turned sketch grid as tab grid: group rail on left fifth (search row, then one row a group,
-// current one marked), three page-shaped previews a row right of it. Drop step's words at foot,
-// group names at rail's top; hint carries tab left onto group row. Upright: strip at foot again.
+// Turned sketch grid as tab grid: group rail on left fifth (search row, then one row per group,
+// current one marked), three page-shaped previews per row right of it. Drop step's words at
+// foot, group names at rail's top; hint carries tab left onto group row. Upright: strip at foot
+// again.
 void tst_qmlload::landscapeTutorialGrid()
 {
     evaluate(m_window.data(), QStringLiteral("showTutorial()"));
@@ -12863,7 +12863,7 @@ void tst_qmlload::landscapeTutorialGrid()
     QCOMPARE(touchHint->property("startX").toReal() + touchHint->property("width").toReal() / 2,
              group.x() + touchHint->property("distance").toReal());
 
-    // Carried over a row: only other group's takes it.
+    // Carried over row: only other group's takes it.
     QObject *carried = cells().last();
     evaluate(carried, QStringLiteral("pickUp()"));
     evaluate(strip,
@@ -12897,8 +12897,8 @@ void tst_qmlload::landscapeTutorialGrid()
              evaluate(page, QStringLiteral("TouchInteraction.Down")));
 }
 
-// Turned tutorial by real finger: drag up from a quarter along bar opens grid; held tab carried
-// onto rail's group row moves there.
+// Turned tutorial by real finger: drag up from one quarter along bar opens grid; held tab
+// carried onto rail's group row moves there.
 void tst_qmlload::landscapeTutorialUnderAFinger()
 {
     evaluate(m_window.data(), QStringLiteral("showTutorial()"));
@@ -12955,9 +12955,9 @@ void tst_qmlload::landscapeTutorialUnderAFinger()
     QCOMPARE(page->rotation(), qreal(0));
 }
 
-// Silica turns landscape page a quarter inside portrait window. Swipe up anywhere along bar opens
-// grid; pull down on grid head returns. Gestures once measured window axes: deck followed only a
-// sideways drift, so on device just bar's right part, under a right thumb's arc, opened grid.
+// Silica turns landscape page one quarter inside portrait window. Swipe up anywhere along bar
+// opens grid; pull down on grid head returns. Gestures once measured window axes: deck followed
+// only sideways drift, so on device bar's right part alone, under right thumb's arc, opened grid.
 void tst_qmlload::landscapeGesturesUnderAFinger()
 {
     for (int i = 0; i < 11; ++i) {
@@ -13023,8 +13023,8 @@ void tst_qmlload::landscapeGesturesUnderAFinger()
     QCOMPARE(browser->rotation(), qreal(0));
 }
 
-// Landscape bar: slim height with every control, stays put. Hiding it on scroll, the page's
-// redraw at rest and the fade over it disoriented (device). Portrait still slims.
+// Landscape bar: slim height with every control, stays put. Hiding it on scroll, page's
+// redraw at rest and fade over it disoriented (device). Portrait still slims.
 void tst_qmlload::landscapeBarStaysPut()
 {
     auto *browser = qobject_cast<QQuickItem *>(find(QStringLiteral("browserPage")));
@@ -13201,7 +13201,7 @@ void tst_qmlload::landscapeOmnibar()
     QVERIFY(!bar->property("editing").toBool());
     QCOMPARE(webView->property("url").toUrl(), QUrl(QStringLiteral("https://forest.example/path")));
 
-    // Keyboard leaves one row: hits go on sideways past the third column.
+    // Keyboard leaves one row: hits go on sideways past third column.
     const qreal landscapeHeight = browser->height();
     typeIntoBar(root, QStringLiteral("forest"));
     window->setWidth(bar->height() + cellHeight * 1.2);
@@ -13231,7 +13231,7 @@ void tst_qmlload::landscapeOmnibar()
     evaluate(bar, QStringLiteral("endEditing()"));
 }
 
-// Side sheet sliding out right while its page slides out left stood still on screen, over the
+// Side sheet sliding out right while its page slides out left stood still on screen, over
 // page coming in: it leaves with its page instead and shuts at once when that is out of sight.
 // Bottom sheet still slides down.
 void tst_qmlload::sideSheetLeavesWithItsPage()
@@ -13313,9 +13313,9 @@ void tst_qmlload::cutoutStripInLandscape()
     turnDevice(Portrait);
 }
 
-// Device: page stretched for a second or two after a turn. Page colour alone over turned view
-// until engine reports an area of view's own shape (upright frame in turned view read as one
-// more movement, device), then a slow fade over its last redraws. Busy page's later reports do
+// Device: page stretched for one or two seconds after turn. Page colour alone over turned view
+// until engine reports area of view's own shape (upright frame in turned view read as one
+// more movement, device), then slow fade over its last redraws. Busy page's later reports do
 // not put that off (held near two seconds, device). Patience run out lets go; finger on page,
 // new document, other tab drop it at once, fade too; no turn after all: later resize not held.
 // Engine's visible area, reported every scroll frame, read only while holding.
@@ -13375,7 +13375,7 @@ void tst_qmlload::frameHoldOverTurn()
         reportArea(before.transposed());
         QTest::qWait(300);
         QVERIFY(holding());
-        // Turned. Busy page reports again every frame: let go all the same.
+        // Turned. Busy page reports again every frame: let go anyway.
         for (int frame = 0; holding() && frame < 20; ++frame) {
             reportArea(viewSize(), frame);
             QTest::qWait(20);
@@ -13568,7 +13568,7 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     QCOMPARE(grabs(), 3);
 
     // Left with picture from load end: none taken. Each switch took one, and readback, encode
-    // and model's refresh made switch four times the work.
+    // and model's refresh made switch four times work.
     TabModel *tabs = m_core->tabs();
     const int left = tabs->activeTabId();
     const int other = tabs->newTabBehind(QStringLiteral("https://other.example/"), QString());
@@ -13669,8 +13669,8 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     QCOMPARE(leave(), 0);
 }
 
-// Menu, tab history and link sheets (about 230 items) made a slice per frame after launch, not
-// for first frame. First use before then makes that one at once.
+// Menu, tab history and link sheets (about 230 items) made one slice per frame after launch,
+// not for first frame. First use before then makes that one at once.
 void tst_qmlload::sheetsMadeAfterLaunch()
 {
     cleanup();
