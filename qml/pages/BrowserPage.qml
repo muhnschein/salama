@@ -56,7 +56,7 @@ WebViewPage {
             return
         }
         if (currentView) {
-            currentView.url = url
+            currentView.open(url)
         } else if (startPageLayer.active && currentLoader) {
             currentLoader.openFromStartPage(url)
         } else {
@@ -87,6 +87,17 @@ WebViewPage {
         } else if (canGoBack) {
             currentLoader.backToStartPage()
         }
+    }
+
+    function askBackHistory() {
+        if (currentView) {
+            currentView.history.ask()
+        }
+    }
+
+    function showBackHistory() {
+        uncover()
+        tabHistory.showFor(currentView.history.entries)
     }
 
     function reloadOrStop() {
@@ -135,6 +146,7 @@ WebViewPage {
     function uncover() {
         browserMenu.hide()
         linkMenu.hide()
+        tabHistory.hide()
         navigationBar.endEditing()
         deck.settle(false)
     }
@@ -325,11 +337,15 @@ WebViewPage {
 
             view: browserPage.currentView
             canGoBack: browserPage.canGoBack
+            holdsBack: !!browserPage.currentView
+                       && browserPage.currentView.history.entries.length > 0
             compact: browserPage.barCompact
             landscape: browserPage.isLandscape
             pillsWidth: omnibar.pillsWidth
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
             onBack: browserPage.goBack()
+            onBackPressed: browserPage.askBackHistory()
+            onBackHeld: browserPage.showBackHistory()
             onReloadOrStop: browserPage.reloadOrStop()
             onShowMenu: browserMenu.show()
             // Capture and prime grid while finger down: both in drag's first frame stuttered.
@@ -356,6 +372,8 @@ WebViewPage {
             allowed: !navigationBar.editing && !findBar.active && !browserPage.tabsOpen
                      && !browserPage.dragging
         }
+
+        DownloadNotice {}
 
         FindBar {
             id: findBar
@@ -414,6 +432,16 @@ WebViewPage {
         // Side sheet only: in portrait bar's slide moved it every frame for nothing.
         barTop: side ? navigationBar.y : browserPage.height
         onFindRequested: findBar.open()
+    }
+
+    TabHistoryPanel {
+        id: tabHistory
+
+        onEntryChosen: {
+            if (browserPage.currentView) {
+                browserPage.currentView.history.go(entry)
+            }
+        }
     }
 
     LinkMenu {
@@ -496,9 +524,27 @@ WebViewPage {
             property PageNotificationLink notices: PageNotificationLink { view: webView; pageTabId: tabId }
             property PageViewport viewport: PageViewport { view: webView }
             property PageSearchLink searches: PageSearchLink { view: webView }
+            property PageHistoryLink history: PageHistoryLink { view: webView }
             property PageLinkMenu links: PageLinkMenu { view: webView; onRequested: if (isCurrent) linkMenu.openFor(target, webView) }
 
-            onUrlChanged: TabModel.updateUrl(tabId, reader.follow(url))
+            // Engine shows asked address at once, unresolved (qtmozembed's pending url): typed
+            // host gains slash, link its redirect. Only where it went is
+            // visit, else history keeps rows no title or icon ever reaches.
+            property bool requesting: false
+
+            function open(address) {
+                requesting = true
+                url = address
+                requesting = false
+            }
+
+            onUrlChanged: {
+                if (requesting) {
+                    TabModel.request(tabId, reader.follow(url))
+                } else {
+                    TabModel.updateUrl(tabId, reader.follow(url))
+                }
+            }
             onTitleChanged: TabModel.updateTitle(tabId, title)
             onLoadingChanged: {
                 // Doc arriving while asleep arrives awake (redirect, reload): re-suspend. Only
@@ -517,7 +563,7 @@ WebViewPage {
             }
             Component.onCompleted: {
                 addMessageListener(EngineMessages.findResultMessage)
-                url = initialUrl
+                open(initialUrl)
             }
         }
     }

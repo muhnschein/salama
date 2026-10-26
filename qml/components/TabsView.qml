@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Not a page: sits below browsing page in TabDeck. Way back = overscroll: grid shifts up by
+// Not page: sits below browsing page in TabDeck. Way back = overscroll: grid shifts up by
 // distance so content stays under finger while deck slides page back. Landscape: no head or
-// foot row; search field and groups in a rail left of grid.
+// foot row; search field and groups in rail left of grid.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

@@ -11,6 +11,8 @@ ListItem {
     readonly property bool done: model.status === DownloadModel.Done
     readonly property bool failed: model.status === DownloadModel.Failed
     readonly property bool openable: done && model.fileExists
+    // Rows from DownloadSearch with term: name and site marked.
+    property bool searching
 
     signal actionRequested()
     signal removeRequested()
@@ -59,6 +61,10 @@ ListItem {
 
     DownloadText {
         id: says
+    }
+
+    MatchMarks {
+        id: marks
     }
 
     Item {
@@ -121,7 +127,8 @@ ListItem {
         Label {
             objectName: "downloadName"
             width: parent.width
-            text: model.name
+            text: row.searching ? marks.marked(model.markedName) : model.name
+            textFormat: row.searching ? Text.StyledText : Text.PlainText
             truncationMode: TruncationMode.Fade
             color: row.highlighted ? Theme.highlightColor : Theme.primaryColor
         }
@@ -129,7 +136,9 @@ ListItem {
         Label {
             objectName: "downloadStatus"
             width: parent.width
-            text: says.status(model)
+            text: row.searching ? says.markedStatus(model, marks.marked(model.markedHost))
+                                : says.status(model)
+            textFormat: row.searching ? Text.StyledText : Text.PlainText
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeExtraSmall
             color: row.failed ? Theme.errorColor

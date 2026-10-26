@@ -1,7 +1,9 @@
-# Engine-independent core: models exposed to QML, plus the application entry point.
+# Engine-independent core: models exposed to QML, plus app entry point.
 add_library(salama-core STATIC
     Core.cpp
     Core.h
+    DateGroup.cpp
+    DateGroup.h
     ModelRoles.h
     QmlTypes.cpp
     QmlTypes.h
@@ -11,16 +13,22 @@ add_library(salama-core STATIC
     bookmarks/BookmarkModel.h
     downloads/DownloadModel.cpp
     downloads/DownloadModel.h
+    downloads/DownloadSearch.cpp
+    downloads/DownloadSearch.h
     engine/EngineData.cpp
     engine/EngineData.h
     engine/EngineMessages.cpp
     engine/EngineMessages.h
     engine/EnginePermissions.cpp
     engine/EnginePermissions.h
+    engine/ExitWatchdog.cpp
+    engine/ExitWatchdog.h
     engine/PageActivity.cpp
     engine/PageActivity.h
     engine/PageMedia.cpp
     engine/PageMedia.h
+    engine/TabHistory.cpp
+    engine/TabHistory.h
     history/HistoryModel.cpp
     history/HistoryModel.h
     notifications/NotificationPermissions.cpp

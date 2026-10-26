@@ -144,7 +144,7 @@ void tst_reader::scriptsAreMozillasReadability()
     QVERIFY(m_reader->articleScript().contains(QLatin1String("\"wp-caption-text\"")));
 }
 
-// Our wrapper compiles as runJavaScript function body. Readability itself uses Gecko-only
+// Salama's wrapper compiles as runJavaScript function body. Readability itself uses Gecko-only
 // syntax host QJSEngine lacks (optional catch binding, `??`), so stripped first (Mozilla
 // tests it). Rest compiled with stand-ins for callees.
 void tst_reader::scriptsParse()

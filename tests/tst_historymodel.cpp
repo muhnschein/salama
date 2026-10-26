@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
+#include "DateGroup.h"
 #include "history/HistoryModel.h"
 #include "storage/Storage.h"
 
@@ -10,6 +11,7 @@
 #include <QtTest>
 #include <cmath>
 
+using Salama::DateGroup;
 using Salama::HistoryModel;
 using Salama::Storage;
 
@@ -32,6 +34,10 @@ private slots:
     void learningGoesWithThePage();
     void favicons();
     void removeByUrl();
+    void dateGroups_data();
+    void dateGroups();
+    void dateGroupRole();
+    void markedRoles();
 };
 
 namespace {
@@ -419,6 +425,8 @@ void tst_historymodel::favicons()
                  QStringLiteral("https://a.example/icon.png"));
         model.updateFavicon(QStringLiteral("https://b.example/"), QStringLiteral("b.png"));
         model.updateFavicon(QStringLiteral("about:blank"), QStringLiteral("c.png"));
+        // Told on every page load: unchanged one no news (start page rebuilds on news).
+        model.updateFavicon(url, QStringLiteral("https://a.example/icon.png"));
         QCOMPARE(changed.count(), 1);
         QCOMPARE(model.count(), 1);
     }
@@ -450,6 +458,88 @@ void tst_historymodel::removeByUrl()
     QCOMPARE(model.count(), 0);
     QCOMPARE(rowsInDatabase(storage), 0);
     QCOMPARE(inputsInDatabase(storage), 0);
+}
+
+// Firefox for Android's groups, on calendar days back from today.
+void tst_historymodel::dateGroups_data()
+{
+    QTest::addColumn<QDate>("day");
+    QTest::addColumn<QDate>("today");
+    QTest::addColumn<int>("group");
+    const QDate today(2026, 10, 19);
+    QTest::newRow("today") << today << today << int(DateGroup::Today);
+    QTest::newRow("clock moved back") << today.addDays(2) << today << int(DateGroup::Today);
+    QTest::newRow("yesterday") << today.addDays(-1) << today << int(DateGroup::Yesterday);
+    QTest::newRow("2 days") << today.addDays(-2) << today << int(DateGroup::LastSevenDays);
+    QTest::newRow("6 days") << today.addDays(-6) << today << int(DateGroup::LastSevenDays);
+    QTest::newRow("7 days") << today.addDays(-7) << today << int(DateGroup::LastThirtyDays);
+    QTest::newRow("29 days") << today.addDays(-29) << today << int(DateGroup::LastThirtyDays);
+    QTest::newRow("30 days") << today.addDays(-30) << today << int(DateGroup::Older);
+    QTest::newRow("years") << QDate(2001, 1, 1) << today << int(DateGroup::Older);
+    QTest::newRow("new year's eve")
+        << QDate(2026, 12, 31) << QDate(2027, 1, 1) << int(DateGroup::Yesterday);
+}
+
+void tst_historymodel::dateGroups()
+{
+    QFETCH(QDate, day);
+    QFETCH(QDate, today);
+    QFETCH(int, group);
+    QCOMPARE(int(DateGroup::of(day, today)), group);
+}
+
+// Row's group from its last visit, local time; rows newest first, so groups in order.
+void tst_historymodel::dateGroupRole()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const auto noon = [](int daysAgo) {
+        return QDateTime(QDate::currentDate().addDays(-daysAgo), QTime(12, 0)).toMSecsSinceEpoch();
+    };
+    addHistory(storage, QStringLiteral("https://older.example/"), noon(40));
+    addHistory(storage, QStringLiteral("https://month.example/"), noon(10));
+    addHistory(storage, QStringLiteral("https://week.example/"), noon(3));
+    addHistory(storage, QStringLiteral("https://yesterday.example/"), noon(1));
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://today.example/"));
+    QCOMPARE(model.roleNames().value(roleId(HistoryModel::Role::DateGroup)),
+             QByteArrayLiteral("dateGroup"));
+    QList<int> groups;
+    for (int row = 0; row < model.rowCount(); ++row) {
+        groups.append(role(model, row, roleId(HistoryModel::Role::DateGroup)).toInt());
+    }
+    QCOMPARE(groups, (QList<int>{DateGroup::Today, DateGroup::Yesterday, DateGroup::LastSevenDays,
+                                 DateGroup::LastThirtyDays, DateGroup::Older}));
+    QCOMPARE(int(DateGroup::of(QDateTime::currentMSecsSinceEpoch())), int(DateGroup::Today));
+    QCOMPARE(int(DateGroup::of(qint64(0))), int(DateGroup::Older));
+}
+
+// Search term's words in <b>, rest escaped: rows can show StyledText safely.
+void tst_historymodel::markedRoles()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://untitled.example/"));
+    model.visit(QStringLiteral("https://tags.example/?a&b"), QStringLiteral("<i>Tags</i> & more"));
+    const int title = roleId(HistoryModel::Role::MarkedTitle);
+    const int url = roleId(HistoryModel::Role::MarkedUrl);
+    QCOMPARE(model.roleNames().value(title), QByteArrayLiteral("markedTitle"));
+    QCOMPARE(model.roleNames().value(url), QByteArrayLiteral("markedUrl"));
+    QCOMPARE(role(model, 0, title).toString(),
+             QStringLiteral("&lt;i&gt;Tags&lt;/i&gt; &amp; more"));
+    QCOMPARE(role(model, 0, url).toString(), QStringLiteral("https://tags.example/?a&amp;b"));
+
+    model.setSearchTerm(QStringLiteral("TAGS"));
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(role(model, 0, title).toString(),
+             QStringLiteral("&lt;i&gt;<b>Tags</b>&lt;/i&gt; &amp; more"));
+    QCOMPARE(role(model, 0, url).toString(),
+             QStringLiteral("https://<b>tags</b>.example/?a&amp;b"));
+
+    // Untitled page shows its address as title, marked too.
+    model.setSearchTerm(QStringLiteral("untitled"));
+    QCOMPARE(role(model, 0, title).toString(), QStringLiteral("https://<b>untitled</b>.example/"));
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)

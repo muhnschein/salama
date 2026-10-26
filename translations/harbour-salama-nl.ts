@@ -88,24 +88,16 @@
         <translation>Bladwijzers</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>Bladwijzer voor huidige pagina maken</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>Geen bladwijzers</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>Trek omlaag om een bladwijzer voor de huidige pagina te maken</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>Voeg bladwijzers toe terwijl je surft, zodat je je favoriete websites later terugvindt</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
-    <message>
-        <source>Share</source>
-        <translation>Delen</translation>
-    </message>
     <message>
         <source>Bookmarks</source>
         <translation>Bladwijzers</translation>
@@ -123,25 +115,9 @@
         <translation>Instellingen</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>Bladwijzer</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Lezermodus</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Adres gekopieerd</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Zoeken</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Desktopsite</translation>
     </message>
 </context>
 <context>
@@ -314,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>Wordt uitgevoerd</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Vandaag</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Gisteren</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>Afgelopen 7 dagen</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>Afgelopen 30 dagen</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>Ouder</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>
@@ -422,30 +426,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n download</numerusform>
-            <numerusform>%n downloads</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>Mislukt</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>Gepauzeerd · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>Gedownload</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -475,6 +455,24 @@
     <message>
         <source>Delete file</source>
         <translation>Bestand verwijderen</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>%1 wordt gedownload</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>%1 gedownload</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>Downloaden mislukt: %1</translation>
     </message>
 </context>
 <context>
@@ -531,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>Wordt verwijderd</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>Geen overeenkomsten</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -570,10 +576,6 @@
         <translation>Geschiedenis</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>Geschiedenis doorzoeken</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>Geschiedenis wissen</translation>
     </message>
@@ -588,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>Nog geen geschiedenis</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Zoeken</translation>
     </message>
 </context>
 <context>
@@ -768,6 +774,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>Voorbeeld tonen</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1867,6 +1881,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
+    <name>TabHistoryPanel</name>
+    <message>
+        <source>Tab history</source>
+        <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
+        <translation>Tabbladgeschiedenis</translation>
+    </message>
+</context>
+<context>
     <name>TabPreview</name>
     <message>
         <source>Start page</source>
@@ -1916,18 +1938,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>Bladwijzer</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>Delen</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>Lezermodus</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>Bladwijzers</translation>
     </message>
@@ -1942,14 +1952,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>Instellingen</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>Zoeken</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>Desktopsite</translation>
     </message>
 </context>
 <context>

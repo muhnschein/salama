@@ -88,24 +88,16 @@
         <translation>બુકમાર્ક્સ</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>વર્તમાન પૃષ્ઠને બુકમાર્ક કરો</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>કોઈ બુકમાર્ક નથી</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>વર્તમાન પૃષ્ઠને બુકમાર્ક કરવા નીચે ખેંચો</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>બ્રાઉઝ કરતી વખતે બુકમાર્ક ઉમેરો, જેથી તમે પછીથી તમારી મનપસંદ સાઇટ્સ શોધી શકો</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
-    <message>
-        <source>Share</source>
-        <translation>વહેંચો</translation>
-    </message>
     <message>
         <source>Bookmarks</source>
         <translation>બુકમાર્ક્સ</translation>
@@ -123,25 +115,9 @@
         <translation>સેટિંગ્સ</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>બુકમાર્ક કરો</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>રીડર દૃશ્ય</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>સરનામું કૉપિ થયું</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>પૃષ્ઠમાં શોધો</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>ડેસ્કટોપ સાઇટ</translation>
     </message>
 </context>
 <context>
@@ -314,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>ચાલુ છે</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>આજે</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>ગઈકાલે</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>છેલ્લા 7 દિવસ</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>છેલ્લા 30 દિવસ</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>જૂના</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>
@@ -422,30 +426,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n ડાઉનલોડ</numerusform>
-            <numerusform>%n ડાઉનલોડ્સ</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>નિષ્ફળ</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>અટકાવેલ · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>ડાઉનલોડ થયું</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -475,6 +455,24 @@
     <message>
         <source>Delete file</source>
         <translation>ફાઇલ કાઢી નાખો</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>%1 ડાઉનલોડ થઈ રહ્યું છે</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>%1 ડાઉનલોડ થયું</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>ડાઉનલોડ નિષ્ફળ: %1</translation>
     </message>
 </context>
 <context>
@@ -531,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>કાઢી નાખવામાં આવે છે</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>કોઈ મેળ ખાતું નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -570,10 +576,6 @@
         <translation>ઇતિહાસ</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>ઇતિહાસ શોધો</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>ઇતિહાસ સાફ કરો</translation>
     </message>
@@ -588,6 +590,10 @@
     <message>
         <source>No history yet</source>
         <translation>હજી કોઈ ઇતિહાસ નથી</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>શોધો</translation>
     </message>
 </context>
 <context>
@@ -768,6 +774,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>પૂર્વદર્શન બતાવો</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1867,6 +1881,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
+    <name>TabHistoryPanel</name>
+    <message>
+        <source>Tab history</source>
+        <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
+        <translation>ટૅબનો ઇતિહાસ</translation>
+    </message>
+</context>
+<context>
     <name>TabPreview</name>
     <message>
         <source>Start page</source>
@@ -1916,18 +1938,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>બુકમાર્ક કરો</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>વહેંચો</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>રીડર દૃશ્ય</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>બુકમાર્ક્સ</translation>
     </message>
@@ -1942,14 +1952,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>સેટિંગ્સ</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>પૃષ્ઠમાં શોધો</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>ડેસ્કટોપ સાઇટ</translation>
     </message>
 </context>
 <context>

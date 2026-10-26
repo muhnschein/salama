@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-// Cookies row only while tracking off or a cookie exception exists.
+// Cookies row only while tracking off or cookie exception exists.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

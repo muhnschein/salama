@@ -2,6 +2,7 @@
 // Copyright (c) 2026 salama contributors
 #include "HistoryModel.h"
 
+#include "DateGroup.h"
 #include "storage/Storage.h"
 
 #include <QSqlError>
@@ -59,12 +60,18 @@ QVariant HistoryModel::data(const QModelIndex &index, int role) const
         return entry.url;
     case Role::Title:
         return entry.title.isEmpty() ? entry.url : entry.title;
+    case Role::MarkedTitle:
+        return m_words.marked(entry.title.isEmpty() ? entry.url : entry.title);
+    case Role::MarkedUrl:
+        return m_words.marked(entry.url);
     case Role::Date:
         return entry.date;
     case Role::VisitCount:
         return entry.visitCount;
     case Role::Favicon:
         return entry.favicon;
+    case Role::DateGroup:
+        return static_cast<int>(DateGroup::of(entry.date.toMSecsSinceEpoch()));
     default:
         return {};
     }
@@ -78,6 +85,9 @@ QHash<int, QByteArray> HistoryModel::roleNames() const
         {roleId(Role::Date), QByteArrayLiteral("date")},
         {roleId(Role::VisitCount), QByteArrayLiteral("visitCount")},
         {roleId(Role::Favicon), QByteArrayLiteral("favicon")},
+        {roleId(Role::DateGroup), QByteArrayLiteral("dateGroup")},
+        {roleId(Role::MarkedTitle), QByteArrayLiteral("markedTitle")},
+        {roleId(Role::MarkedUrl), QByteArrayLiteral("markedUrl")},
     };
 }
 
@@ -113,6 +123,7 @@ void HistoryModel::setSearchTerm(const QString &term)
         return;
     }
     m_searchTerm = term;
+    m_words = SearchWords(term);
     emit searchTermChanged();
     reload();
 }
@@ -225,7 +236,7 @@ void HistoryModel::updateFavicon(const QString &url, const QString &favicon)
         return;
     }
     for (int i = 0; i < m_entries.count(); ++i) {
-        if (m_entries.at(i).url == url) {
+        if (m_entries.at(i).url == url && m_entries.at(i).favicon != favicon) {
             m_entries[i].favicon = favicon;
             const QModelIndex modelIndex = index(i, 0);
             emit dataChanged(modelIndex, modelIndex, QVector<int>{roleId(Role::Favicon)});

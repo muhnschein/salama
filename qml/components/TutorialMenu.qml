@@ -15,9 +15,6 @@ Item {
     readonly property real sheetWidth: sheet.width
     // Landscape: side sheet above bar's right end, as menu.
     readonly property bool wide: width > height
-    readonly property real gap: Theme.paddingLarge
-    readonly property real column: Math.floor((width * 0.42 - gap) / 2)
-    readonly property real labelSize: wide ? Theme.fontSizeSmall : Theme.fontSizeTiny
 
     signal dismissed()
 
@@ -49,11 +46,12 @@ Item {
             bottom: parent.bottom
             bottomMargin: menu.wide ? parent.height - menu.barTop : 0
         }
-        width: menu.wide ? 2 * menu.column + menu.gap : parent.width
+        width: menu.wide ? Math.floor(parent.width * 0.42) : parent.width
         height: menu.wide ? Math.min(content.height, menu.barTop) : content.height
 
         SheetBackground {
             anchors.fill: parent
+            headHeight: headGap.y + headGap.height / 2
             side: menu.wide
         }
 
@@ -66,7 +64,6 @@ Item {
             upright: menu.wide
         }
 
-        // As menu's: head over rows; side sheet's rows in two columns under a line.
         Column {
             id: content
 
@@ -82,84 +79,53 @@ Item {
                 title: menu.pageTitle
             }
 
-            Item {
-                width: parent.width
-                height: Math.max(0, Theme.paddingLarge + Theme.paddingMedium - header.inkMargin)
-                visible: !menu.wide
-            }
-
-            MenuSeparator {
-                width: parent.width
-                visible: menu.wide
-            }
-
             Grid {
-                columns: menu.wide ? 3 : 1
+                objectName: "tutorialMenuPageRow"
+                width: parent.width
+                columns: 5
 
-                Grid {
-                    id: pageRow
+                Repeater {
+                    model: [
+                        { icon: "icon-m-search-on-page", badge: "" },
+                        { icon: "icon-m-favorite", badge: "add" },
+                        { icon: "icon-m-share", badge: "" },
+                        { icon: "icon-m-computer", badge: "" },
+                        { icon: "icon-m-file-formatted", badge: "" }
+                    ]
 
-                    readonly property real cell: menu.wide ? menu.column : menu.width / 5
-
-                    objectName: "tutorialMenuPageRow"
-                    width: menu.wide ? cell : 5 * cell
-                    columns: menu.wide ? 1 : 5
-
-                    Repeater {
-                        model: [
-                            { icon: "icon-m-search-on-page", name: qsTr("Find in page") },
-                            { icon: "icon-m-favorite", name: qsTr("Bookmark") },
-                            { icon: "icon-m-share", name: qsTr("Share") },
-                            { icon: "icon-m-computer", name: qsTr("Desktop site") },
-                            { icon: "icon-m-file-formatted", name: qsTr("Reader view") }
-                        ]
-
-                        MenuButton {
-                            width: pageRow.cell
-                            labelSize: menu.labelSize
-                            across: menu.wide
-                            round: true
-                            enabled: false
-                            opacity: 1.0
-                            iconSource: "image://theme/" + modelData.icon
-                            text: modelData.name
-                        }
+                    MenuIconButton {
+                        width: sheet.width / 5
+                        enabled: false
+                        opacity: 1.0
+                        iconSource: "image://theme/" + modelData.icon
+                        badge: modelData.badge
                     }
                 }
+            }
 
-                MenuSeparator {
-                    width: menu.wide ? menu.gap : menu.width
-                    height: menu.wide ? pageRow.height : Theme.paddingLarge
-                    vertical: menu.wide
-                }
+            Item {
+                id: headGap
 
-                Grid {
-                    id: placeRow
+                objectName: "tutorialHeadGap"
+                width: parent.width
+                height: Theme.paddingMedium
+            }
 
-                    readonly property real cell: menu.wide ? menu.column : menu.width / 4
+            Repeater {
+                model: [
+                    { icon: "icon-m-favorite", badge: "list", name: qsTr("Bookmarks") },
+                    { icon: "icon-m-history", badge: "", name: qsTr("History") },
+                    { icon: "icon-m-downloads", badge: "", name: qsTr("Downloads") },
+                    { icon: "icon-m-setting", badge: "", name: qsTr("Settings") }
+                ]
 
-                    objectName: "tutorialMenuPlaceRow"
-                    width: menu.wide ? cell : 4 * cell
-                    columns: menu.wide ? 1 : 4
-
-                    Repeater {
-                        model: [
-                            { icon: "icon-m-favorite-selected", name: qsTr("Bookmarks") },
-                            { icon: "icon-m-history", name: qsTr("History") },
-                            { icon: "icon-m-downloads", name: qsTr("Downloads") },
-                            { icon: "icon-m-setting", name: qsTr("Settings") }
-                        ]
-
-                        MenuButton {
-                            width: placeRow.cell
-                            labelSize: menu.labelSize
-                            across: menu.wide
-                            enabled: false
-                            opacity: 1.0
-                            iconSource: "image://theme/" + modelData.icon
-                            text: modelData.name
-                        }
-                    }
+                MenuListItem {
+                    width: sheet.width
+                    enabled: false
+                    opacity: 1.0
+                    iconSource: "image://theme/" + modelData.icon
+                    badge: modelData.badge
+                    text: modelData.name
                 }
             }
         }

@@ -8,7 +8,6 @@ import harbour.salama 1.0
 Page {
     id: pickerPage
 
-    // On page: field is list header, whose id page can't see.
     property string query
 
     signal bookmarkPicked(int bookmarkId, string url, string title)
@@ -16,29 +15,46 @@ Page {
     objectName: "bookmarkPickerPage"
     allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
+    // Field above list, not its header: each keystroke replaces model, list then focuses its
+    // new current item (field loses keyboard) and scrolls content under field.
+    Column {
+        id: heading
+
+        objectName: "bookmarkPickerHeading"
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+
+        PageHeader {
+            //: Over the list of bookmarks, when picking the one the cover's quick
+            //: action opens
+            title: qsTr("Choose a bookmark")
+        }
+
+        SearchField {
+            objectName: "bookmarkPickerSearch"
+            width: parent.width
+            placeholderText: qsTr("Search bookmarks")
+            onTextChanged: pickerPage.query = text
+        }
+    }
+
     SilicaListView {
         id: pickerList
 
         objectName: "bookmarkPickerList"
-        anchors.fill: parent
+        anchors {
+            top: heading.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        // Rows otherwise draw over field when scrolled.
+        clip: true
         // Maps so row reads modelData. Revision read -> re-query on bookmark change.
         model: (BookmarkModel.revision, BookmarkModel.matching(pickerPage.query))
-        header: Column {
-            width: parent.width
-
-            PageHeader {
-                //: Over the list of bookmarks, when picking the one the cover's quick
-                //: action opens
-                title: qsTr("Choose a bookmark")
-            }
-
-            SearchField {
-                objectName: "bookmarkPickerSearch"
-                width: parent.width
-                placeholderText: qsTr("Search bookmarks")
-                onTextChanged: pickerPage.query = text
-            }
-        }
 
         delegate: ListItem {
             id: row

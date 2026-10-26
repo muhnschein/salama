@@ -9,7 +9,6 @@
 #include <QSet>
 #include <QSqlDatabase>
 #include <QString>
-#include <QStringList>
 #include <QVariant>
 #include <QVector>
 
@@ -29,14 +28,6 @@ class DownloadModel : public QAbstractListModel
     // Mean of percents, not bytes: engine size 0 while unknown.
     Q_PROPERTY(int runningCount READ runningCount NOTIFY runningChanged)
     Q_PROPERTY(int runningProgress READ runningProgress NOTIFY runningChanged)
-    // This run's unarrived, unswiped downloads. Progress excludes failed.
-    Q_PROPERTY(int trayCount READ trayCount NOTIFY trayChanged)
-    Q_PROPERTY(int trayFailed READ trayFailed NOTIFY trayChanged)
-    Q_PROPERTY(int trayPaused READ trayPaused NOTIFY trayChanged)
-    Q_PROPERTY(int trayProgress READ trayProgress NOTIFY trayChanged)
-    Q_PROPERTY(QStringList trayNames READ trayNames NOTIFY trayChanged)
-    Q_PROPERTY(int trayStatus READ trayStatus NOTIFY trayChanged)
-    Q_PROPERTY(double traySize READ traySize NOTIFY trayChanged)
 
 public:
     enum Status // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
@@ -60,7 +51,9 @@ public:
         Status,
         Started,
         Resumable,
-        FileExists
+        FileExists,
+        // DateGroup::Group: InProgress while running or paused, else of started.
+        DateGroup
     };
 
     static const int Limit = 50;
@@ -79,8 +72,6 @@ public:
         Status status = Running;
         // ms since epoch.
         qint64 started = 0;
-        // Not stored.
-        bool dismissed = false;
     };
 
     // Creates dir: engine falls back to ~/Downloads if missing.
@@ -95,13 +86,6 @@ public:
     QString directory() const;
     int runningCount() const;
     int runningProgress() const;
-    int trayCount() const;
-    int trayFailed() const;
-    int trayPaused() const;
-    int trayProgress() const;
-    QStringList trayNames() const;
-    int trayStatus() const;
-    double traySize() const;
     const QList<Download> &downloads() const;
 
     Q_INVOKABLE void observe(const QString &topic, const QVariant &data);
@@ -122,7 +106,6 @@ public:
 
     Q_INVOKABLE void refreshFiles();
 
-    Q_INVOKABLE void dismissTray();
     Q_INVOKABLE void clearSince(double since);
     Q_INVOKABLE int countSince(double since) const;
 
@@ -133,16 +116,18 @@ public:
 signals:
     void countChanged();
     void runningChanged();
-    void trayChanged();
     void engineRequest(const QString &topic, const QVariantMap &data);
+    // For notices, after row shows it. Never for earlier run's rows.
+    void started(int downloadId, const QString &name);
     void finished(int downloadId, const QString &name);
+    void failed(int downloadId, const QString &name);
 
 private:
     void start(int engineId, const QVariantMap &message);
     void setProgress(int row, const QVariant &percent);
     void finish(int row, const QString &path);
     void setStatus(int row, Status status);
-    void changed(int row, const QVector<int> &roles);
+    void changed(int row, QVector<int> roles);
     void recount();
     void request(const QVariantMap &data);
     QString freePath(const QString &name) const;
@@ -162,20 +147,6 @@ private:
     int m_runningProgress = 0;
     // Requested; engine may not have started yet.
     QSet<QString> m_saved;
-
-    struct Tray
-    {
-        int count = 0;
-        int failed = 0;
-        int paused = 0;
-        int progress = 0;
-        QStringList names;
-        int status = Running;
-        qint64 size = 0;
-
-        bool operator==(const Tray &other) const;
-    };
-    Tray m_tray;
 };
 
 } // namespace Salama

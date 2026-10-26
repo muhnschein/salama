@@ -98,7 +98,7 @@ Item {
 
         objectName: "tabPreviewGesture"
         anchors.fill: parent
-        // Steal only once carried, sliding or sideways: flickable refused a touch gives it
+        // Steal only once carried, sliding or sideways: flickable refused touch gives it
         // up for good, so stealing from press kills grid scroll and pull-back. Sideways
         // claimed at 0.75 of Qt's (not Silica's) startDragDistance, which grid measures by.
         preventStealing: preview.held || preview.swiping || preview.sideways

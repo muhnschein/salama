@@ -183,7 +183,7 @@ Item {
         Grid {
             id: row
 
-            // Half slack to first and last button centres a fitting row.
+            // Half slack to first and last button centres fitting row.
             readonly property real extraMargin: {
                 if (strip.vertical) {
                     return 0

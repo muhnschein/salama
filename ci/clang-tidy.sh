@@ -1,5 +1,5 @@
 #!/bin/bash
-# clang-tidy over all our C++ via host build compile DB. Findings are errors.
+# clang-tidy over all own C++ via host build compile DB. Findings are errors.
 set -euo pipefail
 
 BUILD_DIR=${1:-build}

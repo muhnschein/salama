@@ -44,14 +44,18 @@ ListItem {
         }
         if (isFile && downloadState.length > 0) {
             //: Under a download the address bar found: its site, and how it is going
-            return qsTr("%1 · %2").arg(model.markedHost).arg(downloadState)
+            return qsTr("%1 · %2").arg(marks.marked(model.markedHost)).arg(downloadState)
         }
-        return model.markedHost
+        return marks.marked(model.markedHost)
     }
 
     objectName: "omnibarResult"
     width: ListView.view.width
     contentHeight: Theme.itemSizeMedium
+
+    MatchMarks {
+        id: marks
+    }
 
     Item {
         id: pictureSlot
@@ -116,7 +120,7 @@ ListItem {
         Label {
             objectName: "omnibarResultTitle"
             width: parent.width
-            text: model.markedTitle
+            text: marks.marked(model.markedTitle)
             textFormat: Text.StyledText
             font.pixelSize: row.compact ? Theme.fontSizeSmall : Theme.fontSizeMedium
             truncationMode: TruncationMode.Fade

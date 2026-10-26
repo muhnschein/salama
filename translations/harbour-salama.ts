@@ -88,24 +88,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
-    <message>
-        <source>Share</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Bookmarks</source>
         <translation type="unfinished"></translation>
@@ -123,24 +115,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -314,6 +290,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>
@@ -422,30 +426,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation type="unfinished">
-            <numerusform>%n download</numerusform>
-            <numerusform>%n downloads</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -474,6 +454,24 @@
     </message>
     <message>
         <source>Delete file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -531,6 +529,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -570,10 +576,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation type="unfinished"></translation>
     </message>
@@ -587,6 +589,10 @@
     </message>
     <message>
         <source>No history yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -767,6 +773,14 @@
     <message>
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1867,6 +1881,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
+    <name>TabHistoryPanel</name>
+    <message>
+        <source>Tab history</source>
+        <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TabPreview</name>
     <message>
         <source>Start page</source>
@@ -1916,18 +1938,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1941,14 +1951,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

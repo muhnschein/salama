@@ -97,7 +97,7 @@ QtObject {
         if (view.canGoBack) {
             view.goBack()
         } else {
-            view.url = source
+            view.open(source)
         }
     }
 

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Modelled on sailfish-browser apps/history/declarativehistorymodel.{h,cpp} and the
+// Modelled on sailfish-browser apps/history/declarativehistorymodel.{h,cpp} and
 // browser_history handling in apps/storage/dbworker.cpp (Copyright (c) 2013 - 2021
 // Jolla Ltd., MPL-2.0). Sync queries OK: table capped at MaxEntries. Times ms since epoch.
 #pragma once
 
 #include "ModelRoles.h"
+#include "search/SearchWords.h"
 
 #include <QAbstractListModel>
 #include <QDateTime>
@@ -35,7 +36,12 @@ public:
         Title,
         Date,
         VisitCount,
-        Favicon
+        Favicon,
+        // DateGroup::Group of date.
+        DateGroup,
+        // StyledText, escaped: search term's words in <b>.
+        MarkedTitle,
+        MarkedUrl
     };
 
     enum ClearRange // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
@@ -109,6 +115,7 @@ private:
     QSqlDatabase m_db;
     QList<Entry> m_entries;
     QString m_searchTerm;
+    SearchWords m_words;
     qint64 m_lastVisit = 0;
     int m_pageCount = 0;
 };

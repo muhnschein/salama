@@ -73,6 +73,10 @@ sfdk build
 sfdk check -s harbour RPMS/harbour-salama-*.aarch64.rpm
 ```
 
+Without the SDK, `ci/build-in-container.sh` builds the same package in a container with
+Podman or Docker. Releases are reproducible: `ci/verify-release.sh` rebuilds one and checks
+it matches the published RPM byte for byte ([`docs/VERIFYING.md`](docs/VERIFYING.md)).
+
 More detail lives in [`docs/`](docs/).
 
 ## Licence

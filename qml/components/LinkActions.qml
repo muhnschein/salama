@@ -1,28 +1,21 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Rows under each other, in the sheet's cells.
+// Link sheet's actions as Silica rows, like menu's: link group, gap, image group.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 Column {
-    id: actions
-
     property Item sheet
 
-    Grid {
-        id: pageRow
-
+    Column {
         objectName: "linkPageRow"
-        width: 4 * sheet.cell
-        columns: 4
+        width: parent.width
         visible: sheet.opensPage
 
-        MenuButton {
+        MenuListItem {
             objectName: "newTabLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-tab-new"
             //: The link sheet's action: the link in a new tab, brought to the front
             text: qsTr("New tab")
@@ -32,32 +25,26 @@ Column {
             }
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "backgroundTabLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-tabs"
             //: The link sheet's action: the link in a new tab, left behind the one in front
             text: qsTr("Background tab")
             onClicked: sheet.openBehind()
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "shareLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-share"
             text: qsTr("Share")
             onClicked: sheet.share()
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "saveLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-downloads"
             //: The link sheet's action: what the link leads to, downloaded
             text: qsTr("Save link")
@@ -65,19 +52,14 @@ Column {
         }
     }
 
-    Grid {
-        id: appRow
-
+    Column {
         objectName: "linkAppRow"
-        width: 4 * sheet.cell
-        columns: 4
+        width: parent.width
         visible: sheet.forApp
 
-        MenuButton {
+        MenuListItem {
             objectName: "appLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: sheet.appIcon(sheet.target.scheme)
             text: sheet.appAction(sheet.target.scheme)
             onClicked: {
@@ -86,36 +68,30 @@ Column {
             }
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "shareAppLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-share"
             text: qsTr("Share")
             onClicked: sheet.share()
         }
     }
 
-    MenuSeparator {
-        width: actions.width
+    Item {
+        objectName: "linkGroupGap"
+        width: parent.width
+        height: Theme.paddingLarge
         visible: sheet.hasLink && sheet.hasImage
-        lineName: "linkMenuSeparator"
     }
 
-    Grid {
-        id: imageRow
-
+    Column {
         objectName: "linkImageRow"
-        width: 4 * sheet.cell
-        columns: 4
+        width: parent.width
         visible: sheet.hasImage
 
-        MenuButton {
+        MenuListItem {
             objectName: "openImageButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-file-image"
             //: The link sheet's action: the picture alone, in a new tab
             text: qsTr("Open image")
@@ -125,22 +101,18 @@ Column {
             }
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "saveImageButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-downloads"
             //: The link sheet's action: the picture, downloaded
             text: qsTr("Save image")
             onClicked: sheet.save(sheet.target.image, sheet.target.contentType)
         }
 
-        MenuButton {
+        MenuListItem {
             objectName: "copyImageLinkButton"
-            width: sheet.cell
-            labelSize: sheet.labelSize
-            round: true
+            width: parent.width
             iconSource: "image://theme/icon-m-clipboard"
             //: The link sheet's action: the picture's address, put on the clipboard
             text: qsTr("Copy image link")

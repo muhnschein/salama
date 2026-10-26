@@ -88,24 +88,16 @@
         <translation>书签</translation>
     </message>
     <message>
-        <source>Bookmark current page</source>
-        <translation>为当前页面添加书签</translation>
-    </message>
-    <message>
         <source>No bookmarks</source>
         <translation>没有书签</translation>
     </message>
     <message>
-        <source>Pull down to bookmark the current page</source>
-        <translation>下拉即可为当前页面添加书签</translation>
+        <source>Add bookmarks as you browse so you can find your favorite sites later</source>
+        <translation>可在浏览时添加书签，方便以后找到常用网站</translation>
     </message>
 </context>
 <context>
     <name>BrowserMenu</name>
-    <message>
-        <source>Share</source>
-        <translation>分享</translation>
-    </message>
     <message>
         <source>Bookmarks</source>
         <translation>书签</translation>
@@ -123,25 +115,9 @@
         <translation>设置</translation>
     </message>
     <message>
-        <source>Bookmark</source>
-        <translation>添加书签</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>阅读模式</translation>
-    </message>
-    <message>
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>已复制网址</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>页内查找</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>桌面版网站</translation>
     </message>
 </context>
 <context>
@@ -309,6 +285,34 @@
     </message>
 </context>
 <context>
+    <name>DateSectionHeader</name>
+    <message>
+        <source>In progress</source>
+        <extracomment>Downloads still running or paused, listed first</extracomment>
+        <translation>进行中</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>今天</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>昨天</translation>
+    </message>
+    <message>
+        <source>Last 7 days</source>
+        <translation>过去 7 天</translation>
+    </message>
+    <message>
+        <source>Last 30 days</source>
+        <translation>过去 30 天</translation>
+    </message>
+    <message>
+        <source>Older</source>
+        <translation>更早</translation>
+    </message>
+</context>
+<context>
     <name>DohExceptionDialog</name>
     <message>
         <source>Save</source>
@@ -417,29 +421,6 @@
     </message>
 </context>
 <context>
-    <name>DownloadBanner</name>
-    <message numerus="yes">
-        <source>%n download(s)</source>
-        <extracomment>The banner over several downloads, and how far along they are together: &quot;3 downloads · 42%&quot;</extracomment>
-        <translation>
-            <numerusform>%n 个下载项</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation>下载失败</translation>
-    </message>
-    <message>
-        <source>Paused · %1%</source>
-        <translation>已暂停 · %1%</translation>
-    </message>
-    <message>
-        <source>Downloaded</source>
-        <extracomment>The banner as a download arrives</extracomment>
-        <translation>下载完成</translation>
-    </message>
-</context>
-<context>
     <name>DownloadDelegate</name>
     <message>
         <source>Remove from list</source>
@@ -469,6 +450,24 @@
     <message>
         <source>Delete file</source>
         <translation>删除文件</translation>
+    </message>
+</context>
+<context>
+    <name>DownloadNotice</name>
+    <message>
+        <source>Downloading %1</source>
+        <extracomment>Shown for a moment as a download starts: &quot;Downloading report.pdf&quot;</extracomment>
+        <translation>正在下载 %1</translation>
+    </message>
+    <message>
+        <source>Downloaded %1</source>
+        <extracomment>Shown for a moment as a download arrives: &quot;Downloaded report.pdf&quot;</extracomment>
+        <translation>已下载 %1</translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <extracomment>Shown for a moment as a download fails: &quot;Download failed: report.pdf&quot;</extracomment>
+        <translation>下载失败：%1</translation>
     </message>
 </context>
 <context>
@@ -525,6 +524,14 @@
         <extracomment>The few seconds to change one&apos;s mind before a downloaded file is deleted</extracomment>
         <translation>正在删除</translation>
     </message>
+    <message>
+        <source>No matches</source>
+        <translation>没有匹配项</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
 </context>
 <context>
     <name>FindBar</name>
@@ -564,10 +571,6 @@
         <translation>历史记录</translation>
     </message>
     <message>
-        <source>Search history</source>
-        <translation>搜索历史记录</translation>
-    </message>
-    <message>
         <source>Clear history</source>
         <translation>清除历史记录</translation>
     </message>
@@ -582,6 +585,10 @@
     <message>
         <source>No history yet</source>
         <translation>暂无历史记录</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>搜索</translation>
     </message>
 </context>
 <context>
@@ -758,6 +765,14 @@
         <source>Show preview</source>
         <extracomment>The row a link&apos;s preview would be under, which shows it for every link</extracomment>
         <translation>显示预览</translation>
+    </message>
+</context>
+<context>
+    <name>MenuListItem</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>How far the running downloads are, at the end of the menu&apos;s Downloads row: &quot;42%&quot;</extracomment>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1845,6 +1860,14 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
 </context>
 <context>
+    <name>TabHistoryPanel</name>
+    <message>
+        <source>Tab history</source>
+        <extracomment>Heading of the list of pages visited before this one in the tab</extracomment>
+        <translation>标签页历史记录</translation>
+    </message>
+</context>
+<context>
     <name>TabPreview</name>
     <message>
         <source>Start page</source>
@@ -1893,18 +1916,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TutorialMenu</name>
     <message>
-        <source>Bookmark</source>
-        <translation>添加书签</translation>
-    </message>
-    <message>
-        <source>Share</source>
-        <translation>分享</translation>
-    </message>
-    <message>
-        <source>Reader view</source>
-        <translation>阅读模式</translation>
-    </message>
-    <message>
         <source>Bookmarks</source>
         <translation>书签</translation>
     </message>
@@ -1919,14 +1930,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Settings</source>
         <translation>设置</translation>
-    </message>
-    <message>
-        <source>Find in page</source>
-        <translation>页内查找</translation>
-    </message>
-    <message>
-        <source>Desktop site</source>
-        <translation>桌面版网站</translation>
     </message>
 </context>
 <context>

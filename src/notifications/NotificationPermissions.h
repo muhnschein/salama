@@ -57,7 +57,7 @@ public:
     void adopt(const QString &origin, int capability);
 
     // Platform PopupOpener.qml denies non-location permissions for session; site asking
-    // before our UI loaded stays denied unasked. Undo unless permanently decided.
+    // before Salama's UI loaded stays denied unasked. Undo unless permanently decided.
     void undoAutomaticDenial(const QString &origin);
 
     // "https://host[:port]", ASCII host as Gecko principal. Empty for non-http(s).

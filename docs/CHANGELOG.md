@@ -6,11 +6,13 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ## [Unreleased]
 
 ### Added
-- Landscape: every page turns with phone, either way round; upside-down portrait stays upright. Notch gap only in portrait; in landscape, strip beside notch black. Bar slim with every control, stays put on scroll. Cards at portrait width over bar's right end. Address entry: Go and Search beside field, matches in three columns. Menu a side sheet above bar's right end, icon and label rows in two columns, leaving with its page when it opens another; link sheet: head at left, portrait's rows beside it, preview floats above. Tab groups in rail left of grid, tab search atop rail, three page-shaped previews a row. Settings, Search and History settings, and site details in two columns, menus kept to their column; Start page, Reader view, Cover settings show preview beside controls. Start page in halves: top sites over bookmarks left, recent pages right, one half alone takes full width; tiles portrait-sized; its settings preview drawn the same. Tutorial follows landscape layout.
+- Landscape: every page turns with phone, either way round; upside-down portrait stays upright. Notch gap only in portrait; in landscape, strip beside notch black. Bar slim with every control, stays put on scroll. Cards at portrait width over bar's right end. Address entry: Go and Search beside field, matches in three columns. Menu a side sheet above bar's right end, page's actions in a row, browser's rows below, leaving with its page when it opens another; link sheet: head at left, portrait's rows beside it, preview floats above. Tab groups in rail left of grid, tab search atop rail, three page-shaped previews a row. Settings, Search and History settings, and site details in two columns, menus kept to their column; Start page, Reader view, Cover settings show preview beside controls. Start page in halves: top sites over bookmarks left, recent pages right, one half alone takes full width; tiles portrait-sized; its settings preview drawn the same. Tutorial follows landscape layout.
+- Reproducible builds: each release RPM from next one on rebuilds from its tag to same file, byte for byte. `ci/verify-release.sh` checks release for you (docs/VERIFYING.md).
 - Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
 - Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
 - Press and hold link or picture: sheet like menu's, link named with copy button; New tab, Background tab, Share, Save link; app action for email, phone, text message, place; Open image, Save image, Copy image link. Background tab stays put, notes where link went, with Show. Saved files keep names.
+- Press and hold back button: tab history, pages before this one in tab, newest first, like Firefox; tap one to go back to it. Tap still goes back.
 - Link preview atop that sheet, like Safari: tap opens; Hide preview hides for all links until Show preview.
 - Held picture lifts above sheet, max size, pinch to zoom.
 - Settings > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies when tracking protection off; each with editable exceptions. Salama now requests location, camera, microphone from phone.
@@ -19,7 +21,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Salama in share sheet for links: opens in new front tab in "N tabs" group, launching Salama if needed. Plain text not offered.
 - Settings > Privacy > Enable JavaScript, notes cost of turning off.
 - Settings > Tracking protection ends with web engine's current limits.
-- Download card above bar on originating page: name, progress, paused or failed; several: count and total progress. Shows arrival few seconds. Tap opens Downloads; swipe hides until change.
+- Downloads said for a moment over bar, Silica Notice: Downloading, Downloaded, Download failed, with file name. Progress in menu's Downloads row and on Downloads page.
 - Downloads pause, resume, retry; pre-restart ones refetchable. Row menu deletes file too; pulley clears finished; Clear list gone.
 - New cover: front tab's site and title over app's bolt in faint dots, ambience colour. Downloading: ring with percentage. Playing: what plays, with art or video picture, playing/paused. No tab: bolt alone. Static; quick action and mute at foot.
 - Settings > Website colours: pages with dark and light schemes follow ambience, or always light, or always dark.
@@ -27,18 +29,22 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind.
 - Settings > Start page shows half-size live new-tab preview under switches.
 - Settings > Start page > Frequently visited: Rows, one or two (default) rows of tiles.
-- Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads entry wears progress ring.
+- Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads row wears progress ring and percentage.
 - Tab groups reorderable: drag by bars at row end. "N tabs" stays first.
 - Ungroup, in tab group menu: removes group, tabs move to first group unchanged.
 - Swedish translation.
 - Translations into every other Sailfish OS language: Bengali, Bulgarian, Chinese (China, Hong Kong and Taiwan), Czech, Danish, Dutch, Estonian, French, German, Greek, Gujarati, Hindi, Hungarian, Italian, Kannada, Latvian, Lithuanian, Malayalam, Marathi, Norwegian Bokmål, Polish, Portuguese (Portugal and Brazil), Punjabi, Romanian, Russian, Slovak, Slovenian, Spanish, Tamil, Tatar, Telugu, Turkish, Ukrainian and Vietnamese; Firefox wording where available.
+- Downloads search field under heading, like History's: lists downloads whose name or address holds every typed word. Both fields now say just Search.
+- History and Downloads grouped by date, as in Firefox for Android: Today, Yesterday, Last 7 days, Last 30 days, Older. Running and paused downloads first, under In progress.
+- History rows show page icons, like Bookmarks.
+- Search matches in History, Downloads and address bar suggestions bold in ambience highlight colour, like vuo.
 
 ### Changed
-- Downloads card now full-width bar on navigation bar, Show at end; page ends above.
 - Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
 - Avoid the screen cutout now Notch guard, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Forced keeps all below; Disabled none. Old on becomes Forced, off Disabled.
 - Settings rows: icon or switch, never both; switch lights in icon column.
 - Loading stop button: plain cross, like sailfish-browser.
+- Page loading shown like sailfish-browser: highlight wash fills bar from left, fading downward, fades out when loaded; thin strip along top edge gone.
 - Downloads rows: progress ring at start with pause, play or retry, replacing foot line; kind icon when done. Failed in red; missing file "File not found". Removing in-progress download or clearing list stops it.
 - Settings shows current value under each name (start page, search engine, reader look, cover, tracking protection level, notification sites, history). Headings: Browsing, Appearance, Privacy, Help; Privacy page now Tracking protection.
 - Choices inline: start page, search engine, tracking protection level as lists, chosen lit; reader colours five painted squares, typefaces two tiles; cover quick action six rows with glyphs under cover picture.
@@ -46,22 +52,29 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Website colours and Avoid the screen cutout get icons: moon and display, from sailfish-browser.
 - Settings > Notifications lists Allowed and Blocked; switch reads Sites can ask; Forget this site removes one.
 - Clear browsing data on history page now button.
-- Menu: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- on discs in one row, lit when on; browser's four below line.
+- Menu, Silica way: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- plain icons in one row, lit when on; Bookmarks, History, Downloads, Settings below as rows, icon then name. No discs or captions. Bookmark button: star with plus, lit star with check once bookmarked; Bookmarks row: star with list. Star keeps full size; sign cut into its corner with small gap round it, like Material's.
+- Menu, link, picture and tutorial sheets two shades from ambience: page or link and its actions lighter on top, rows below deeper; split mid-gap.
+- Link and picture sheet: actions as rows, icon then name, like menu's; link and picture groups apart by a gap, no line.
+- Address bar while typing: sailfish-browser's entry, faint slab filling bar, no underline; text starts under back button, centred.
 - Grid: front tab framed by thin rounded outline, not washed; smaller close discs, same tap area; target group name lights in rounded wash; search highlights typed letters; recently closed tabs on menu's sheet.
 - Tab group list: square thumbnail of recent tabs per group, current framed, "N tabs" under name; new-group row has ringed plus; dialog reads New tab group, Create.
 - Tutorial: shorter text, five progress dots, icon first card, check-mark last card.
 
 ### Fixed
-- Menu sheet: opaque handle sits on top edge as on nav bar, page header as far from first row as rows from each other. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
+- Menu sheet: opaque handle sits on top edge as on nav bar. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
 - Sheets dim the page themselves instead of DockedPanel's modal shade, which also dimmed handle and picture; press beside a sheet still closes it. Picture sheet: picture opaque, backdrop darker so picture stands out, double tap zooms.
 - Scrolling no longer stutters or flashes page colour as bar slims or grows: page ends at slim bar's top, whole bar overlaps its foot, page never resized for bar.
 - Bar-to-grid drag no longer stutters at start: grid tracks finger from start, slim bar stays slim, page picture and grid prepared before drag; press on page foot near bar prepares nothing until finger heads up.
 - Page no longer stretched after turning phone: turned page covered in its colour until page laid out turned (at most 1.5 s), then a slow fade over its last redraws; touching page removes cover at once.
 - Tab previews fill their cell whatever shape page was pictured at, cut at foot and right, no bars. Page never shown since (opened behind, after restart) shows its site icon, else initial, and title. Picture waits for page's first paint after load, never taken stretched, retaken as tab is left (any way) only if page scrolled, zoomed or changed since.
 - Switching and opening tabs quicker: no page picture when last one still shows page, tab search builds its rows only while searching. Bar slims and grows without laying address out again each frame. Turning no longer lays out closed tab grid in turn itself.
+- History and the cover's bookmark picker keep the keyboard while searching: each keystroke no longer moves focus from the search field to the list. History opens unfiltered again after a search.
+- History no longer lists the address as typed next to the page it led to ("example.org" beside "example.org/", or a redirect's start): only where the page went is kept, so its row gets the page's title and icon. A page sharing its icon or title with the one before it in the tab gets them too.
+- Salama starts again from app grid after being closed. When web engine was slow to stop, closed Salama sometimes kept running without window and next start timed out. Now it quits within seconds.
 
 ### Removed
 - Lightning cover, its flash, and cover choice in Settings: one cover now.
+- Bookmarks pulley: bookmark current page from menu's Bookmark button.
 
 ## [0.8.0] - 2026-09-26
 

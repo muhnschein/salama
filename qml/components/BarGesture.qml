@@ -26,6 +26,8 @@ MouseArea {
     property bool heldDown: false
     // Grid's first-show cost (page picture, grid primed) paid ahead of drag.
     property bool armed: false
+    // Bar region took hold (sheet opening): finger moving up no longer drags deck under sheet.
+    property bool holdTaken: false
     property string pressedRegion: ""
     // Off under omnibar pane: forwarding would hit covered page.
     property bool reaching: true
@@ -83,8 +85,10 @@ MouseArea {
         dragging = false
         forwarding = false
         heldDown = false
+        holdTaken = false
         pressedOnBar = mouse.y >= reach
         pressedRegion = pressedOnBar ? bar.regionAt(mouse.x) : ""
+        bar.regionPressed(pressedRegion)
         armed = false
         // On bar: arm on press, so cost paid before motion, not in drag's first frame. Reach
         // covers page foot, mostly tapped and scrolled: arm only once finger heads up.
@@ -92,9 +96,13 @@ MouseArea {
             arm()
         }
     }
-    // Reach only. On bar slow tap still tap: rejecting makes MouseArea emit clicked on release.
+    // On bar slow tap still tap unless region has hold action: rejecting makes MouseArea emit
+    // clicked on release, accepting emits none.
     onPressAndHold: {
-        if (pressedOnBar) {
+        if (pressedOnBar && !dragging && bar.hold(pressedRegion)) {
+            holdTaken = true
+            pressedRegion = ""
+        } else if (pressedOnBar) {
             mouse.accepted = false
         } else {
             heldDown = true
@@ -113,10 +121,10 @@ MouseArea {
             bar.pageTouchMoved(lastAt)
             return
         }
-        if (!dragging && pressedY - lastAt.y > Theme.startDragDistance / 2) {
+        if (!dragging && !holdTaken && pressedY - lastAt.y > Theme.startDragDistance / 2) {
             arm()
         }
-        if (!dragging && pressedY - lastAt.y > Theme.startDragDistance) {
+        if (!dragging && !holdTaken && pressedY - lastAt.y > Theme.startDragDistance) {
             arm()
             dragging = true
             caughtY = lastAt.y

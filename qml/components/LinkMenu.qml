@@ -38,16 +38,12 @@ DockedPanel {
 
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
-    // Landscape: head at left, portrait's rows beside it, actions in quarters; preview floats
-    // above sheet.
+    // Landscape: head at left, portrait's rows beside it; preview floats above sheet.
     readonly property SheetCells cells: SheetCells {
         width: menu.width
         height: menu.parent ? menu.parent.height : 0
     }
     readonly property bool wide: cells.wide
-    readonly property real rowsWidth: wide ? cells.block : width
-    readonly property real cell: rowsWidth / 4
-    readonly property real labelSize: wide ? Theme.fontSizeExtraSmall : Theme.fontSizeTiny
 
     signal openRequested(string url, bool inNewTab)
     signal openedBehind(int tabId, string title)
@@ -197,8 +193,12 @@ DockedPanel {
         mimeType: "text/x-url"
     }
 
+    // Head: link's name and preview, to middle of gap before actions. Landscape: head at left,
+    // to middle of gap before rows.
     SheetBackground {
         anchors.fill: parent
+        headHeight: menu.wide ? height : rows.y + headGap.y + headGap.height / 2
+        headWidth: menu.wide ? menu.cells.headWidth + menu.cells.gap / 2 : width
     }
 
     Notice {
@@ -257,18 +257,17 @@ DockedPanel {
                 onCopyRequested: menu.copyPressed()
             }
 
-            MenuSeparator {
+            Item {
+                objectName: "linkHeadSideGap"
                 width: menu.cells.gap
                 height: rows.height
                 visible: menu.wide
-                vertical: true
-                lineName: "linkMenuHeadDivider"
             }
 
             Column {
                 id: rows
 
-                width: menu.rowsWidth
+                width: menu.wide ? menu.cells.block : parent.width
 
                 LinkPreview {
                     id: preview
@@ -287,7 +286,17 @@ DockedPanel {
                     }
                 }
 
+                Item {
+                    id: headGap
+
+                    objectName: "linkHeadGap"
+                    width: parent.width
+                    height: Theme.paddingMedium
+                    visible: !menu.wide
+                }
+
                 LinkActions {
+                    objectName: "linkActions"
                     width: parent.width
                     sheet: menu
                 }

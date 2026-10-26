@@ -3,6 +3,8 @@
 #include "QmlTypes.h"
 
 #include "Core.h"
+#include "DateGroup.h"
+#include "downloads/DownloadSearch.h"
 #include "permissions/SiteExceptions.h"
 #include "tabs/ClosedTabModel.h"
 #include "tabs/GroupTabModel.h"
@@ -140,6 +142,11 @@ QObject *pageMediaProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/
     return keepOwnership(registeredCore()->pageMedia());
 }
 
+QObject *tabHistoryProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
+{
+    return keepOwnership(registeredCore()->tabHistory());
+}
+
 QObject *readerProvider(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return keepOwnership(registeredCore()->reader());
@@ -207,6 +214,7 @@ void registerQmlTypes(Core *core)
                                              &engineMessagesProvider);
     qmlRegisterSingletonType<PageActivity>(ModuleUri, 1, 0, "PageActivity", &pageActivityProvider);
     qmlRegisterSingletonType<PageMedia>(ModuleUri, 1, 0, "PageMedia", &pageMediaProvider);
+    qmlRegisterSingletonType<TabHistory>(ModuleUri, 1, 0, "TabHistory", &tabHistoryProvider);
     qmlRegisterSingletonType<Reader>(ModuleUri, 1, 0, "Reader", &readerProvider);
     qmlRegisterSingletonType<StartPage>(ModuleUri, 1, 0, "StartPage", &startPageProvider);
     qmlRegisterSingletonType<NotificationPermissions>(ModuleUri, 1, 0, "NotificationPermissions",
@@ -218,6 +226,9 @@ void registerQmlTypes(Core *core)
     qmlRegisterSingletonType<SitePermissions>(ModuleUri, 1, 0, "SitePermissions",
                                               &sitePermissionsProvider);
     qmlRegisterType<SiteExceptions>(ModuleUri, 1, 0, "SiteExceptions");
+    qmlRegisterType<DownloadSearch>(ModuleUri, 1, 0, "DownloadSearch");
+    qmlRegisterUncreatableType<DateGroup>(ModuleUri, 1, 0, "DateGroup",
+                                          QStringLiteral("Enum only"));
     qmlRegisterUncreatableType<SiteListModel>(ModuleUri, 1, 0, "SiteListModel",
                                               QStringLiteral("A list of the start page's"));
 }

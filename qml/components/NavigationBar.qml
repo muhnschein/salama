@@ -15,6 +15,8 @@ Item {
     property string url: TabModel.activeUrl
     readonly property bool loading: view ? view.loading === true : false
     property bool canGoBack: view ? view.canGoBack === true : false
+    // Back hold lists tab history; false -> hold = slow tap.
+    property bool holdsBack: false
     readonly property int loadProgress: view ? view.loadProgress : 0
     // Gecko verdict, https only: validState = has one, allGood covers cert, protocol, mixed
     // content. Not for reader view: app's own document, no connection.
@@ -41,6 +43,9 @@ Item {
 
     signal accepted(string text, bool inNewTab)
     signal back()
+    // Press, before hold or tap: time to fetch what hold shows.
+    signal backPressed()
+    signal backHeld()
     signal reloadOrStop()
     signal showMenu()
     // Upward px from catch point, negative below.
@@ -61,8 +66,9 @@ Item {
     readonly property real centredWidth: 2 * Math.min(width / 2 - addressLeft,
                                                       addressRight - width / 2)
 
-    readonly property real fieldLeft: Theme.paddingMedium
-    readonly property real fieldEnd: menuIcon.x - Theme.paddingMedium
+    // Edit slab from bar's edge to menu; text inside starts at page margin, under back icon.
+    readonly property real fieldLeft: 0
+    readonly property real fieldEnd: menuIcon.x - Theme.paddingLarge
     // Omnibar's landscape go/search pills sit between field and menu.
     property real pillsWidth: 0
     readonly property real fieldRight: fieldEnd - (pillsWidth > 0 ? pillsWidth + Theme.paddingMedium
@@ -124,12 +130,6 @@ Item {
         }
     }
 
-    // Silica field leaves room for label/underline; field publishes offset to centre text.
-    function textCentringOffset(field) {
-        var offset = field.textVerticalCenterOffset
-        return offset === undefined ? 0 : offset
-    }
-
     function submit() {
         var text = urlField.text
         var inNewTab = forNewTab
@@ -179,6 +179,21 @@ Item {
         }
     }
 
+    function regionPressed(region) {
+        if (region === "back" && navigationBar.canGoBack) {
+            navigationBar.backPressed()
+        }
+    }
+
+    // True = hold handled, no tap follows.
+    function hold(region) {
+        if (region === "back" && navigationBar.canGoBack && navigationBar.holdsBack) {
+            navigationBar.backHeld()
+            return true
+        }
+        return false
+    }
+
     // Restore via engine chrome state, which slims again on scroll.
     function tapAddress() {
         if (navigationBar.compact) {
@@ -195,6 +210,43 @@ Item {
         objectName: "navigationBarBackground"
         anchors.fill: parent
         color: Theme.highlightDimmerColor
+    }
+
+    // sailfish-browser's ProgressBar: highlight wash fills whole bar behind controls, fading
+    // downward, fades out when load ends.
+    Item {
+        objectName: "loadProgress"
+        anchors.fill: parent
+        opacity: navigationBar.loading ? 1.0 : 0.0
+        visible: navigationBar.loading || opacity > 0
+
+        Behavior on opacity {
+            FadeAnimation {}
+        }
+
+        Rectangle {
+            objectName: "loadProgressFill"
+            height: parent.height
+            width: parent.width * navigationBar.loadProgress / 100
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, Theme.opacityHigh)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Theme.rgba(Theme.highlightBackgroundColor, 0.0)
+                }
+            }
+
+            Behavior on width {
+                enabled: parent.opacity === 1.0
+                SmoothedAnimation {
+                    velocity: 480
+                    duration: 200
+                }
+            }
+        }
     }
 
     DragHandle {
@@ -285,10 +337,7 @@ Item {
 
         x: navigationBar.fieldLeft
         width: navigationBar.fieldRight - navigationBar.fieldLeft
-        anchors {
-            verticalCenter: parent.verticalCenter
-            verticalCenterOffset: navigationBar.textCentringOffset(urlField)
-        }
+        height: parent.height
         // Above gesture handler: field needs own presses for caret.
         z: 1
         visible: navigationBar.editing
@@ -316,17 +365,5 @@ Item {
             top: parent.top
             topMargin: -reach
         }
-    }
-
-    Rectangle {
-        objectName: "loadProgress"
-        anchors {
-            left: parent.left
-            top: parent.top
-        }
-        height: Theme.paddingSmall
-        width: parent.width * navigationBar.loadProgress / 100
-        color: Theme.highlightColor
-        visible: navigationBar.loading
     }
 }

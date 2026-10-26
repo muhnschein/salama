@@ -10,7 +10,7 @@ Dialog {
     id: dialog
 
     property int kind
-    // Empty while not a site.
+    // Empty while not site.
     readonly property string origin: SitePermissions.originOf(address.text)
     readonly property bool listOnly: kind === SitePermissions.TrackingProtection
     readonly property string scheme: "https://"

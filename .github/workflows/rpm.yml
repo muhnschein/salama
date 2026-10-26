@@ -1,6 +1,7 @@
 # Device RPM: cross-compile for aarch64 in Sailfish platform SDK image, run Jolla's
 # validator. Same as postivene's rpm.yml minus Rust; releases as piirit/vuo: workflow
-# publishes what it built (docs/RELEASING.md).
+# publishes what it built (docs/RELEASING.md), once a second build matched it byte for
+# byte (docs/VERIFYING.md).
 #
 # Not in ci.yml: multi-GB image, minutes of runner time. Run from Actions tab; release via
 # main dispatch with `release` or `v*` tag; `build-*` tag builds branch before this file
@@ -82,69 +83,16 @@ jobs:
           grep -E '^(Version|Release):' rpm/harbour-salama.spec
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
-      # Digest, not tag: third-party image runs privileged with read-write checkout.
-      # New release: pull tag once, read
-      # `docker inspect --format '{{index .RepoDigests 0}}'`, add line.
-      - name: Resolve the SDK image
-        run: |
-          [[ $SFOS =~ ^[0-9]+(\.[0-9]+){3}$ ]] || {
-            echo "::error::sfos_version '$SFOS' is not a dotted version"; exit 1; }
-          case "$SFOS" in
-            5.2.0.15) digest=sha256:e7c4379393b17ee63d7f7443ce9930c315a61fdb2e732016346ccbe8c934435e ;;
-            *) echo "::error::no pinned digest for coderus/sailfishos-platform-sdk:$SFOS; add one to rpm.yml"
-               exit 1 ;;
-          esac
-          echo "IMAGE=coderus/sailfishos-platform-sdk@$digest" >> "$GITHUB_ENV"
-
-      - name: Pull the Sailfish SDK
-        run: docker pull "$IMAGE"
-
-      # Ask image for target, don't assume: odd naming fails here with list, not in rpmbuild.
-      - name: Resolve the build target
-        run: |
-          targets=$(docker run --rm "$IMAGE" sb2-config -l 2>/dev/null || true)
-          echo "available targets:"; echo "$targets"
-          target=$(echo "$targets" | grep -- "-$ARCH\$" | tail -1)
-          if [ -z "$target" ]; then
-            echo "::error::no $ARCH target in the $SFOS SDK image; see the list above"
-            exit 1
-          fi
-          echo "Building against $target"
-          echo "TARGET=$target" >> "$GITHUB_ENV"
-
-      # sdk-manage refuses root: build as image user, checkout owned by it, mounted
-      # in its home. scratchbox2 rpm maps unknown absolute paths into target rootfs,
-      # so tree at /build would be written outside, read inside.
-      - name: Hand the checkout to the SDK's build user
-        run: |
-          uid=$(docker run --rm "$IMAGE" id -u)
-          gid=$(docker run --rm "$IMAGE" id -g)
-          home=$(docker run --rm "$IMAGE" sh -c 'echo $HOME')
-          echo "SDK builds as uid=$uid gid=$gid, HOME=$home"
-          echo "BUILDDIR=$home/harbour-salama" >> "$GITHUB_ENV"
-          sudo chown -R "$uid:$gid" "$PWD"
-
-      # `-X`: else build-init asks `git describe`, finds no tag, never writes
-      # .mb2/spec. build-requires pulls BuildRequires from Jolla repos. Parallel make.
+      # Same script as local build, so the two can't drift (its comments say why). Image
+      # pinned in ci/sdk-images. Docker here; `reproduce` rebuilds with Podman.
       - name: Build the RPM
-        run: |
-          docker run --rm --privileged \
-            -e TARGET \
-            -v "$PWD:$BUILDDIR" -w "$BUILDDIR" \
-            "$IMAGE" \
-            /bin/bash -c 'set -e
-              mb2 -t "$TARGET" -X build-init
-              mb2 -t "$TARGET" -X build-requires ||
-                echo "::warning::mb2 build-requires failed; the build may stop on a missing BuildRequires"
-              mb2 -t "$TARGET" -X build --no-check'
+        env:
+          SALAMA_ENGINE: docker
+        run: ci/build-in-container.sh "$SFOS"
 
       - name: Show mb2's state
         if: failure()
         run: ls -la .mb2 2>/dev/null || true; tail -60 .mb2/*.log 2>/dev/null || true
-
-      - name: Take the tree back
-        if: always()
-        run: sudo chown -R "$(id -u):$(id -g)" "$PWD"
 
       - name: Install rpm tooling on the runner
         run: ci/apt-install.sh binutils rpm rpm2cpio cpio file
@@ -169,17 +117,64 @@ jobs:
           echo "Validating $rpm"
           ci/harbour-validate-rpm.sh "$rpm"
 
+  # Release gate: fresh clone of same commit, rebuilt the way docs/VERIFYING.md tells users
+  # (ci/verify-release.sh), on another runner, with Podman not Docker, another time zone
+  # and umask. Not byte-identical: no release. Users' check is then one CI already passed.
+  reproduce:
+    name: Rebuild byte for byte
+    needs: rpm
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Upstream SDK image unpacks to many GB; runner's spare toolchains make room.
+      - name: Make room
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet \
+                      "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}"
+
+      # SDK image's build user is uid 100000: beyond runner's 65536 subordinate ids
+      # (docs/VERIFYING.md).
+      - name: Widen the subordinate id range
+        run: |
+          sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
+          podman system migrate
+
+      - name: Fetch the package the build made
+        run: gh run download "$GITHUB_RUN_ID" --dir rpms
+
+      - name: Rebuild and compare
+        env:
+          SALAMA_ENGINE: podman
+          SALAMA_SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
+          TZ: Pacific/Chatham
+        run: |
+          umask 0002
+          rpm=$(find rpms -name 'harbour-salama-*.rpm' ! -name '*debug*' \
+                     ! -name '*.src.rpm' | head -1)
+          [ -n "$rpm" ] || { echo "::error::no device RPM to check"; exit 1; }
+          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
+            ci/verify-release.sh --no-download --rpm "$rpm" --ref "$GITHUB_SHA"
+
   # Release: built package on GitHub release v<version>, text = version's
   # docs/CHANGELOG.md section. Own job so `contents: write` never reaches privileged
   # third-party SDK build. Needs build, which ends with validator: rejected package gets
-  # no release.
+  # no release; and `reproduce`: package nobody can rebuild gets none either.
   #
   # `v*` tag: tag exists, `--verify-tag` won't invent one. Dispatch: release creates tag
   # on checked-out commit, so tag, release, RPM = one commit. Existing release is added
   # to, so re-run finishes after transient failure. Runner's own `gh`, job token.
   release:
     name: GitHub release
-    needs: rpm
+    needs: [rpm, reproduce]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
