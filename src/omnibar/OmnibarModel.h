@@ -10,6 +10,7 @@
 #include <QSet>
 #include <QString>
 #include <QTimer>
+#include <memory>
 
 namespace Salama {
 
@@ -105,6 +106,7 @@ public:
     OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryModel *history,
                  DownloadModel *downloads, SearchSettings *search, PrivacySettings *privacy,
                  QObject *parent = nullptr);
+    ~OmnibarModel() override;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -129,6 +131,9 @@ signals:
     void resultsChanged();
 
 private:
+    // Parsed sources kept between keystrokes; part dropped when its source changes.
+    struct Cache;
+
     bool active() const;
     // Coalesced: one page load signals several changes.
     void sourceChanged();
@@ -148,6 +153,7 @@ private:
     bool m_bookmarksWhenEmpty = false;
     QList<OmnibarRow> m_rows;
     QTimer m_refresh;
+    std::unique_ptr<Cache> m_cache;
 };
 
 } // namespace Salama
