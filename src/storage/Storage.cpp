@@ -180,17 +180,15 @@ QVariant Storage::text(const QString &value)
 
 // SQLite default (rollback journal, full sync): every commit waits for 4 disk syncs on GUI
 // thread, page load makes 8-10 commits. WAL + NORMAL: no sync per commit; power cut can lose
-// last commits, never corrupts. Journal mode sticks to file; sync level per connection.
+// last commits, never corrupts. Journal mode sticks to file; sync level per connection. WAL
+// refused (file system without shared memory): full sync stays, as NORMAL under rollback
+// journal can corrupt.
 void Storage::useWriteAheadLog() const
 {
     QSqlQuery query(database());
-    if (!query.exec(QStringLiteral("PRAGMA journal_mode=WAL")) || !query.next() ||
-        query.value(0).toString() != QLatin1String("wal")) {
-        qWarning() << "Storage: no write-ahead log for" << m_databasePath;
-        return;
-    }
-    if (!query.exec(QStringLiteral("PRAGMA synchronous=NORMAL"))) {
-        qWarning() << "Storage:" << query.lastError().text();
+    if (query.exec(QStringLiteral("PRAGMA journal_mode=WAL")) && query.next() &&
+        query.value(0).toString() == QLatin1String("wal")) {
+        query.exec(QStringLiteral("PRAGMA synchronous=NORMAL"));
     }
 }
 
