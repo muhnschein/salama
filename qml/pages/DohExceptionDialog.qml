@@ -11,6 +11,7 @@ Dialog {
     readonly property string domain: DohSettings.domainOf(site.text)
 
     objectName: "dohExceptionDialog"
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     canAccept: domain.length > 0
     onAccepted: DohSettings.addException(domain)
 

@@ -1365,14 +1365,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>讓網站內容避開螢幕凹口。「自動」允許已針對凹口調整的網站使用凹口區域，同時確保內容不被遮擋。</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>固定工具列</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>總是顯示底部工具列</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>啟用 JavaScript</translation>
     </message>
@@ -1878,10 +1870,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>沒有預覽</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>起始頁</translation>
     </message>
@@ -2026,7 +2014,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>長按分頁，然後將其放到群組名稱上，即可移入該群組。</translation>
     </message>
     <message>

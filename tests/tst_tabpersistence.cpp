@@ -3,6 +3,7 @@
 #include "storage/Storage.h"
 #include "tabs/TabPersistence.h"
 
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -19,6 +20,7 @@ class tst_tabpersistence : public QObject
 private slots:
     void roundTrip();
     void saveOrderRenumbers();
+    void saveOrderWritesOnceAndOnlyMoves();
     void ignoresInvalidTabs();
     void activeTabId();
     void removeAll();
@@ -99,6 +101,58 @@ void tst_tabpersistence::saveOrderRenumbers()
 
     persistence.insertTab(makeTab(4, QStringLiteral("https://d.example/")));
     QCOMPARE(persistence.loadTabs().at(3).id, 4);
+}
+
+// Grid drag saves order on every cell crossed. Each tab its own commit froze drag (50 tabs,
+// 4 disk syncs each): one commit, rows whose place is unchanged left alone.
+void tst_tabpersistence::saveOrderWritesOnceAndOnlyMoves()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    TabPersistence persistence(storage);
+    for (int id = 1; id <= 50; ++id) {
+        persistence.insertTab(makeTab(id, QStringLiteral("https://%1.example/").arg(id)));
+    }
+    const auto scalar = [&storage](const QString &sql, int column) {
+        QSqlQuery query(storage.database());
+        return query.exec(sql) && query.next() ? query.value(column).toInt() : -1;
+    };
+    QList<Tab> tabs = persistence.loadTabs();
+
+    // Neighbours swapped: two rows written.
+    tabs.move(10, 11);
+    const int before = scalar(QStringLiteral("SELECT total_changes()"), 0);
+    persistence.saveOrder(tabs);
+    QCOMPARE(scalar(QStringLiteral("SELECT total_changes()"), 0) - before, 2);
+    QCOMPARE(persistence.loadTabs().at(10).id, 12);
+
+    // Every place moved: one commit, so write-ahead log gains a few pages, not one per tab.
+    QCOMPARE(scalar(QStringLiteral("PRAGMA wal_checkpoint(TRUNCATE)"), 0), 0);
+    std::reverse(tabs.begin(), tabs.end());
+    persistence.saveOrder(tabs);
+    const int frames = scalar(QStringLiteral("PRAGMA wal_checkpoint(PASSIVE)"), 1);
+    QVERIFY2(frames > 0 && frames < 10, qPrintable(QString::number(frames)));
+    QCOMPARE(persistence.loadTabs().first().id, 50);
+
+    QList<TabGroup> groups;
+    for (int id = 1; id <= 20; ++id) {
+        TabGroup group;
+        group.id = id;
+        group.name = QStringLiteral("G%1").arg(id);
+        groups.append(group);
+        persistence.insertGroup(group);
+    }
+    persistence.saveGroupOrder(groups);
+    const int groupsBefore = scalar(QStringLiteral("SELECT total_changes()"), 0);
+    groups.move(0, 1);
+    persistence.saveGroupOrder(groups);
+    QCOMPARE(scalar(QStringLiteral("SELECT total_changes()"), 0) - groupsBefore, 2);
+    QCOMPARE(scalar(QStringLiteral("PRAGMA wal_checkpoint(TRUNCATE)"), 0), 0);
+    std::reverse(groups.begin(), groups.end());
+    persistence.saveGroupOrder(groups);
+    const int groupFrames = scalar(QStringLiteral("PRAGMA wal_checkpoint(PASSIVE)"), 1);
+    QVERIFY2(groupFrames > 0 && groupFrames < 10, qPrintable(QString::number(groupFrames)));
+    QCOMPARE(persistence.loadGroups().first().id, 20);
 }
 
 void tst_tabpersistence::ignoresInvalidTabs()

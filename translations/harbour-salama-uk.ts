@@ -1399,14 +1399,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Не дає вмісту сайтів заходити під виріз екрана. У режимі «Авто» адаптовані сайти можуть використовувати область вирізу, а вміст залишається видимим.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Закріплена панель інструментів</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Завжди показувати нижню панель інструментів</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Увімкнути JavaScript</translation>
     </message>
@@ -1920,10 +1912,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Немає попереднього перегляду</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Початкова сторінка</translation>
     </message>
@@ -2070,7 +2058,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Утримуйте вкладку, потім перетягніть її на назву групи, щоб перемістити туди.</translation>
     </message>
     <message>

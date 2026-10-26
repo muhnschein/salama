@@ -9,6 +9,9 @@ import harbour.salama 1.0
 ListItem {
     id: row
 
+    // Landscape cell: smaller title so two lines fit 1/3 of keyboard-shrunk pane.
+    property bool compact: false
+
     readonly property bool isFile: model.kind === "download"
     readonly property bool switches: model.kind === "tab"
     readonly property bool showsFavicon: !isFile && model.favicon.length > 0
@@ -119,6 +122,7 @@ ListItem {
             width: parent.width
             text: marks.marked(model.markedTitle)
             textFormat: Text.StyledText
+            font.pixelSize: row.compact ? Theme.fontSizeSmall : Theme.fontSizeMedium
             truncationMode: TruncationMode.Fade
             color: row.highlighted ? Theme.highlightColor : Theme.primaryColor
         }

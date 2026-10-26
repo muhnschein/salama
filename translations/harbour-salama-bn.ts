@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ওয়েবসাইটের কন্টেন্ট স্ক্রিনের নচ থেকে দূরে রাখে। স্বয়ংক্রিয় মোডে উপযোগী করে তৈরি ওয়েবসাইটগুলি নচের জায়গা ব্যবহার করতে পারে, তবে কন্টেন্ট পরিষ্কার দেখা যায়।</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>স্থির টুলবার</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>নিচের টুলবার সবসময় দেখান</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript চালু করুন</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>প্রাকদর্শন নেই</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>শুরুর পাতা</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>একটি ট্যাব ধরে রাখুন, তারপর কোনো গ্রুপে সরাতে সেটিকে সেই গ্রুপের নামের উপর ছেড়ে দিন।</translation>
     </message>
     <message>

@@ -10,7 +10,7 @@ Page {
     id: sitePermissionsPage
 
     objectName: "sitePermissionsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     property SettingNames names: SettingNames {}
     property SitePermissionNames siteNames: SitePermissionNames {}

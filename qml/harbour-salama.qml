@@ -9,7 +9,7 @@ ApplicationWindow {
     id: window
 
     objectName: "applicationWindow"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
     initialPage: Component {
         BrowserPage {}
     }

@@ -12,6 +12,8 @@ Item {
     property color detailColor: Theme.secondaryColor
     default property alias badge: badgeSlot.data
     readonly property bool pressed: touch.pressed
+    // Portrait's swipe in landscape too: third of wide bar is long reach. Screen is portrait.
+    readonly property real dismissDistance: Math.min(bar.width, Screen.width) / 3
 
     signal activated()
     signal dismissed()
@@ -64,7 +66,7 @@ Item {
             }
             onClicked: banner.activated()
             onReleased: {
-                if (Math.abs(handle.x) > bar.width / 3) {
+                if (Math.abs(handle.x) > banner.dismissDistance) {
                     banner.dismissed()
                 }
                 handle.x = 0

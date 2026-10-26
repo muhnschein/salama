@@ -9,7 +9,8 @@ namespace {
 const char *const NotchGuardKey = "notchGuard";
 // Legacy bool: on = Forced, off = Disabled.
 const char *const RetiredCutoutGuardKey = "cutoutGuard";
-const char *const FixedToolbarKey = "fixedToolbar";
+// Fixed toolbar: dropped once landscape bar stayed put; portrait bar always slims.
+const char *const RetiredFixedToolbarKey = "fixedToolbar";
 const char *const TutorialShownKey = "tutorialShown";
 const char *const WebsiteColorsKey = "websiteColors";
 const char *const LinkPreviewKey = "linkPreview";
@@ -26,6 +27,7 @@ Settings::Settings(QSettings &file, QObject *parent)
         }
         remove(RetiredCutoutGuardKey);
     }
+    remove(RetiredFixedToolbarKey);
 }
 
 int Settings::notchGuard() const
@@ -44,18 +46,6 @@ void Settings::setNotchGuard(int guard)
 bool Settings::cutoutGuard() const
 {
     return notchGuard() != NotchGuardDisabled;
-}
-
-bool Settings::fixedToolbar() const
-{
-    return flag(FixedToolbarKey, false);
-}
-
-void Settings::setFixedToolbar(bool fixed)
-{
-    if (setFlag(FixedToolbarKey, fixed, false)) {
-        emit fixedToolbarChanged();
-    }
 }
 
 int Settings::websiteColors() const

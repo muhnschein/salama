@@ -1365,14 +1365,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>A webhelyek tartalmát távol tartja a kijelző bevágásától. Az „Automatikus” lehetővé teszi, hogy az erre felkészített webhelyek használják a bevágás körüli területet, a tartalmat mégis szabadon hagyva.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Rögzített eszköztár</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Az alsó eszköztár mindig látható legyen</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript engedélyezése</translation>
     </message>
@@ -1878,10 +1870,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Nincs előnézet</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Kezdőlap</translation>
     </message>
@@ -2026,7 +2014,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Tarts nyomva egy lapot, majd az áthelyezéséhez ejtsd egy csoport nevére.</translation>
     </message>
     <message>

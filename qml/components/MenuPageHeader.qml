@@ -13,6 +13,10 @@ Item {
     property string title
     property string favicon
     property bool tlsBroken: false
+    // Icon fetched only once shown: closed menu fetched every page's icon over Qt's network
+    // stack, past Gecko's cache and privacy settings. Kept while page keeps its icon.
+    property bool shown: true
+    property string fetched: ""
     readonly property bool hasPage: url.length > 0
     readonly property string host: hasPage ? SearchSettings.displayAddress(url) : ""
 
@@ -21,6 +25,19 @@ Item {
 
     objectName: "menuHeader"
     height: Theme.itemSizeSmall
+
+    function fetch() {
+        if (shown) {
+            fetched = favicon
+        }
+    }
+
+    onShownChanged: fetch()
+    onFaviconChanged: {
+        fetched = ""
+        fetch()
+    }
+    Component.onCompleted: fetch()
 
     // Copy button on top takes own taps.
     BackgroundItem {
@@ -58,7 +75,7 @@ Item {
             width: Theme.iconSizeSmall
             height: width
             fillMode: Image.PreserveAspectFit
-            source: header.hasPage ? header.favicon : ""
+            source: header.hasPage ? header.fetched : ""
             visible: status === Image.Ready
         }
 

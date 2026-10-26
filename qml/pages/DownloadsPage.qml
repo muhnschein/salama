@@ -10,7 +10,7 @@ Page {
     id: downloadsPage
 
     objectName: "downloadsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     // By id: list shows search's rows, not DownloadModel's.
     function open(downloadId, openable) {

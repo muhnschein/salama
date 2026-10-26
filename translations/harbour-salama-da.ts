@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Holder websteders indhold væk fra hakket i skærmen. Automatisk lader tilpassede websteder bruge området ved hakket og holder samtidig indholdet frit.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fast værktøjslinje</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vis altid værktøjslinjen nederst</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Aktivér JavaScript</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Ingen forhåndsvisning</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Startside</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Tryk og hold på et faneblad, og slip det så på et gruppenavn for at flytte det dertil.</translation>
     </message>
     <message>

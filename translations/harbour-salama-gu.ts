@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>વેબસાઇટની સામગ્રીને સ્ક્રીનના નૉચથી દૂર રાખે છે. સ્વચાલિત સેટિંગમાં, તેને અનુરૂપ બનાવેલી વેબસાઇટ્સ નૉચનો વિસ્તાર વાપરી શકે છે, છતાં સામગ્રી સ્પષ્ટ રહે છે.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>સ્થિર ટૂલબાર</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>નીચેનો ટૂલબાર હંમેશા બતાવો</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript ચાલુ કરો</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>કોઈ પૂર્વદર્શન નથી</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>પ્રારંભ પૃષ્ઠ</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>ટૅબને દબાવી રાખો, પછી તેને જૂથમાં ખસેડવા જૂથના નામ પર છોડો.</translation>
     </message>
     <message>

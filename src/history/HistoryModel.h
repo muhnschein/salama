@@ -16,8 +16,6 @@
 #include <QSqlDatabase>
 #include <QString>
 
-class QSqlQuery;
-
 namespace Salama {
 
 class Storage;
@@ -57,6 +55,8 @@ public:
     static const int MaxEntries = 2000;
     static const int DisplayLimit = 500;
     static const int MaxInputs = 500;
+    // Pruned rows never on screen: visit() needs no reload after prune.
+    static_assert(DisplayLimit < MaxEntries, "pruned rows must lie past displayed rows");
 
     struct Entry
     {
@@ -80,6 +80,7 @@ public:
     void setSearchTerm(const QString &term);
 
     // Whole table for C++ matching: SQLite LIKE folds ASCII only. Bounded by MaxEntries.
+    // Re-read after entriesChanged().
     QList<Entry> allEntries() const;
 
     Q_INVOKABLE void visit(const QString &url, const QString &title = QString());
@@ -103,14 +104,15 @@ signals:
     void countChanged();
     void pageCountChanged();
     void searchTermChanged();
+    // Any browser_history write, rows outside shown ones too.
+    void entriesChanged();
 
 private:
-    // Query must select id, url, title, date, visited_count, favicon.
-    static Entry entryAt(const QSqlQuery &query);
     static bool isRecordable(const QString &url);
     static QString inputKey(const QString &input);
-    void prune() const;
     void reload();
+    // Visited entry to row 0: move, or insert dropping last past DisplayLimit.
+    void showOnTop(const Entry &entry);
 
     QSqlDatabase m_db;
     QList<Entry> m_entries;

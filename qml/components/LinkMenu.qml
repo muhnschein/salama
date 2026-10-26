@@ -38,6 +38,12 @@ DockedPanel {
 
     readonly property real pull: 2 * sheet.overscroll
     readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
+    // Landscape: head at left, portrait's rows beside it; preview floats above sheet.
+    readonly property SheetCells cells: SheetCells {
+        width: menu.width
+        height: menu.parent ? menu.parent.height : 0
+    }
+    readonly property bool wide: cells.wide
 
     signal openRequested(string url, bool inNewTab)
     signal openedBehind(int tabId, string title)
@@ -187,10 +193,12 @@ DockedPanel {
         mimeType: "text/x-url"
     }
 
-    // Head: link's name and preview, to middle of gap before actions.
+    // Head: link's name and preview, to middle of gap before actions. Landscape: head at left,
+    // to middle of gap before rows.
     SheetBackground {
         anchors.fill: parent
-        headHeight: headGap.y + headGap.height / 2
+        headHeight: menu.wide ? height : rows.y + headGap.y + headGap.height / 2
+        headWidth: menu.wide ? menu.cells.headWidth + menu.cells.gap / 2 : width
     }
 
     Notice {
@@ -206,7 +214,10 @@ DockedPanel {
         objectName: "linkMenuDim"
         edgeOf: menu
         strength: menu.hasImage ? Theme.opacityOverlay : Theme.opacityHigh
-        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop) : 0
+        reach: overlay.pictureShown ? Math.max(0, menu.y - overlay.pictureTop)
+                                    : preview.floating && Settings.linkPreview
+                                      && menu.previewOffered
+                                      ? Math.max(0, menu.y - preview.floatingTop) : 0
     }
 
     SheetGrip {
@@ -227,44 +238,68 @@ DockedPanel {
             }
         }
 
-        Column {
+        // Portrait: one column, head over rows. Landscape: head beside rows.
+        Grid {
             id: content
 
             width: parent.width
+            columns: menu.wide ? 3 : 1
+            verticalItemAlignment: Grid.AlignVCenter
             topPadding: Theme.paddingMedium
             bottomPadding: Theme.paddingMedium
 
             LinkMenuHeader {
-                width: parent.width
+                width: menu.wide ? menu.cells.headWidth : parent.width
+                height: menu.wide ? rows.height : Theme.itemSizeSmall
+                wide: menu.wide
                 target: menu.target
                 appIcon: menu.forApp ? menu.appIcon(menu.target.scheme) : ""
                 onCopyRequested: menu.copyPressed()
             }
 
-            LinkPreview {
-                width: parent.width
-                offered: menu.previewOffered
-                shown: menu.previewShown
-                pageView: menu.previewView
-                frameHeight: Math.round(menu.parent.height / 3)
-                onOpenRequested: {
-                    menu.hide()
-                    menu.openRequested(menu.target.link, false)
-                }
-            }
-
             Item {
-                id: headGap
-
-                objectName: "linkHeadGap"
-                width: parent.width
-                height: Theme.paddingMedium
+                objectName: "linkHeadSideGap"
+                width: menu.cells.gap
+                height: rows.height
+                visible: menu.wide
             }
 
-            LinkActions {
-                objectName: "linkActions"
-                width: parent.width
-                sheet: menu
+            Column {
+                id: rows
+
+                width: menu.wide ? menu.cells.block : parent.width
+
+                LinkPreview {
+                    id: preview
+
+                    width: parent.width
+                    room: menu.wide ? overlay.room : null
+                    aspect: menu.view !== null && menu.view.height > 0
+                            ? menu.view.width / menu.view.height : 1
+                    offered: menu.previewOffered
+                    shown: menu.previewShown
+                    pageView: menu.previewView
+                    frameHeight: Math.round(menu.parent.height / 3)
+                    onOpenRequested: {
+                        menu.hide()
+                        menu.openRequested(menu.target.link, false)
+                    }
+                }
+
+                Item {
+                    id: headGap
+
+                    objectName: "linkHeadGap"
+                    width: parent.width
+                    height: Theme.paddingMedium
+                    visible: !menu.wide
+                }
+
+                LinkActions {
+                    objectName: "linkActions"
+                    width: parent.width
+                    sheet: menu
+                }
             }
         }
     }

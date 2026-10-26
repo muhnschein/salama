@@ -9,7 +9,7 @@ Page {
     id: exceptionsPage
 
     objectName: "dohExceptionsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     SilicaListView {
         objectName: "dohExceptionList"

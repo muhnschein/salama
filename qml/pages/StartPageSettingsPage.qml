@@ -10,9 +10,11 @@ Page {
     id: startPageSettings
 
     property SettingNames names: SettingNames {}
+    // Landscape: choices on left, picture on right.
+    readonly property real columnWidth: isLandscape ? width / 2 : width
 
     objectName: "startPageSettingsPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     SilicaFlickable {
         anchors.fill: parent
@@ -27,86 +29,99 @@ Page {
                 title: qsTr("Start page")
             }
 
-            TextSwitch {
-                objectName: "startPageSitesSwitch"
-                automaticCheck: false
-                text: startPageSettings.names.startPage(false)
-                checked: !StartPageSettings.blank
-                onClicked: StartPageSettings.blank = false
-            }
-
-            TextSwitch {
-                objectName: "startPageBlankSwitch"
-                automaticCheck: false
-                text: startPageSettings.names.startPage(true)
-                checked: StartPageSettings.blank
-                onClicked: StartPageSettings.blank = true
-            }
-
-            SectionHeader {
-                //: The parts of the start page, each switched on or off
-                text: qsTr("Sections")
-            }
-
-            TextSwitch {
-                objectName: "startPageTopSitesSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Frequently visited")
-                checked: StartPageSettings.topSites
-                onCheckedChanged: StartPageSettings.topSites = checked
-            }
-
-            // Shown while frequently visited is on. Index = rows - 1.
-            ComboBox {
-                objectName: "startPageTopSiteRowsCombo"
+            Flow {
                 width: parent.width
-                visible: StartPageSettings.topSites
-                enabled: !StartPageSettings.blank
-                //: How many rows of frequently visited sites the start page shows
-                label: qsTr("Rows")
-                currentIndex: StartPageSettings.topSiteRows - 1
-                menu: ContextMenu {
-                    MenuItem {
-                        text: Number(1).toLocaleString(Qt.locale(), "f", 0)
+
+                // Rows menu keeps to this column.
+                MenuScope {
+                    width: startPageSettings.columnWidth
+
+                    TextSwitch {
+                        objectName: "startPageSitesSwitch"
+                        automaticCheck: false
+                        text: startPageSettings.names.startPage(false)
+                        checked: !StartPageSettings.blank
+                        onClicked: StartPageSettings.blank = false
                     }
 
-                    MenuItem {
-                        text: Number(2).toLocaleString(Qt.locale(), "f", 0)
+                    TextSwitch {
+                        objectName: "startPageBlankSwitch"
+                        automaticCheck: false
+                        text: startPageSettings.names.startPage(true)
+                        checked: StartPageSettings.blank
+                        onClicked: StartPageSettings.blank = true
+                    }
+
+                    SectionHeader {
+                        //: The parts of the start page, each switched on or off
+                        text: qsTr("Sections")
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageTopSitesSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Frequently visited")
+                        checked: StartPageSettings.topSites
+                        onCheckedChanged: StartPageSettings.topSites = checked
+                    }
+
+                    // Shown while frequently visited is on. Index = rows - 1.
+                    ComboBox {
+                        objectName: "startPageTopSiteRowsCombo"
+                        width: parent.width
+                        visible: StartPageSettings.topSites
+                        enabled: !StartPageSettings.blank
+                        //: How many rows of frequently visited sites the start page shows
+                        label: qsTr("Rows")
+                        currentIndex: StartPageSettings.topSiteRows - 1
+                        menu: ContextMenu {
+                            MenuItem {
+                                text: Number(1).toLocaleString(Qt.locale(), "f", 0)
+                            }
+
+                            MenuItem {
+                                text: Number(2).toLocaleString(Qt.locale(), "f", 0)
+                            }
+                        }
+                        onCurrentIndexChanged: StartPageSettings.topSiteRows = currentIndex + 1
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageBookmarksSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Bookmarks")
+                        checked: StartPageSettings.bookmarks
+                        onCheckedChanged: StartPageSettings.bookmarks = checked
+                    }
+
+                    TextSwitch {
+                        objectName: "startPageRecentSwitch"
+                        enabled: !StartPageSettings.blank
+                        text: qsTr("Recently visited")
+                        checked: StartPageSettings.recent
+                        onCheckedChanged: StartPageSettings.recent = checked
                     }
                 }
-                onCurrentIndexChanged: StartPageSettings.topSiteRows = currentIndex + 1
-            }
 
-            TextSwitch {
-                objectName: "startPageBookmarksSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Bookmarks")
-                checked: StartPageSettings.bookmarks
-                onCheckedChanged: StartPageSettings.bookmarks = checked
-            }
+                Column {
+                    width: startPageSettings.columnWidth
 
-            TextSwitch {
-                objectName: "startPageRecentSwitch"
-                enabled: !StartPageSettings.blank
-                text: qsTr("Recently visited")
-                checked: StartPageSettings.recent
-                onCheckedChanged: StartPageSettings.recent = checked
-            }
+                    SectionHeader {
+                        //: Over a picture of what a new tab will show
+                        text: qsTr("Preview")
+                    }
 
-            SectionHeader {
-                //: Over a picture of what a new tab will show
-                text: qsTr("Preview")
-            }
+                    Item {
+                        width: parent.width
+                        height: Theme.paddingLarge
+                    }
 
-            Item {
-                width: parent.width
-                height: Theme.paddingLarge
-            }
-
-            StartPagePreview {
-                width: parent.width
-                screenWidth: startPageSettings.width
-                screenHeight: startPageSettings.height
+                    StartPagePreview {
+                        width: parent.width
+                        screenWidth: startPageSettings.width
+                        screenHeight: startPageSettings.height
+                    }
+                }
             }
         }
 

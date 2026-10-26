@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Κρατά το περιεχόμενο των ιστοτόπων μακριά από την εγκοπή της οθόνης. Η επιλογή «Αυτόματο» επιτρέπει στους προσαρμοσμένους ιστοτόπους να χρησιμοποιούν την περιοχή της εγκοπής, διατηρώντας το περιεχόμενο ορατό.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Σταθερή γραμμή εργαλείων</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Πάντα εμφάνιση της κάτω γραμμής εργαλείων</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ενεργοποίηση JavaScript</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Χωρίς προεπισκόπηση</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Αρχική σελίδα</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Κρατήστε πατημένη μια καρτέλα και, στη συνέχεια, αφήστε τη σε ένα όνομα ομάδας για να τη μετακινήσετε εκεί.</translation>
     </message>
     <message>

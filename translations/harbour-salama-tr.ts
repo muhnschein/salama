@@ -1365,14 +1365,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Web sitesi içeriğini ekran çentiğinden uzak tutar. “Otomatik”, uyumlu web sitelerinin içeriği açıkta tutarak çentik alanını kullanmasına izin verir.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Sabit araç çubuğu</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Alttaki araç çubuğunu her zaman göster</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>JavaScript&apos;i etkinleştir</translation>
     </message>
@@ -1878,10 +1870,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Önizleme yok</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Giriş sayfası</translation>
     </message>
@@ -2026,7 +2014,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Bir sekmeye basılı tut, sonra oraya taşımak için onu bir grup adının üzerine bırak.</translation>
     </message>
     <message>

@@ -7,9 +7,14 @@ Item {
     id: menu
 
     property bool open: false
+    // Bar's top: side sheet stands on it.
+    property real barTop: height
     // Site's own title: not translated.
     readonly property string pageTitle: "Sailfish OS"
     readonly property real sheetHeight: sheet.height
+    readonly property real sheetWidth: sheet.width
+    // Landscape: side sheet above bar's right end, as menu.
+    readonly property bool wide: width > height
 
     signal dismissed()
 
@@ -21,7 +26,7 @@ Item {
             left: parent.left
             right: parent.right
             top: parent.top
-            bottom: sheet.top
+            bottom: menu.wide ? parent.bottom : sheet.top
         }
         onClicked: menu.dismissed()
 
@@ -36,13 +41,18 @@ Item {
         id: sheet
 
         objectName: "tutorialMenuSheet"
-        anchors.bottom: parent.bottom
-        width: parent.width
-        height: content.height
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            bottomMargin: menu.wide ? parent.height - menu.barTop : 0
+        }
+        width: menu.wide ? Math.floor(parent.width * 0.42) : parent.width
+        height: menu.wide ? Math.min(content.height, menu.barTop) : content.height
 
         SheetBackground {
             anchors.fill: parent
             headHeight: headGap.y + headGap.height / 2
+            side: menu.wide
         }
 
         MouseArea {
@@ -51,6 +61,7 @@ Item {
 
         SheetGrip {
             edgeOf: sheet
+            upright: menu.wide
         }
 
         Column {
@@ -69,6 +80,7 @@ Item {
             }
 
             Grid {
+                objectName: "tutorialMenuPageRow"
                 width: parent.width
                 columns: 5
 
@@ -82,7 +94,7 @@ Item {
                     ]
 
                     MenuIconButton {
-                        width: menu.width / 5
+                        width: sheet.width / 5
                         enabled: false
                         opacity: 1.0
                         iconSource: "image://theme/" + modelData.icon
@@ -108,7 +120,7 @@ Item {
                 ]
 
                 MenuListItem {
-                    width: menu.width
+                    width: sheet.width
                     enabled: false
                     opacity: 1.0
                     iconSource: "image://theme/" + modelData.icon

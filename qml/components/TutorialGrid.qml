@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Real TabPreview cells over sketched ListModel, so gestures match real grid.
+// Real TabPreview cells over sketched ListModel, so gestures match real grid. Landscape, as
+// tab grid: no head or foot row; groups in rail left of grid.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -18,6 +19,13 @@ Item {
     signal tabGrouped()
 
     property real cutoutHeight: 0
+    readonly property bool wide: width > height
+    readonly property real railWidth: wide ? Math.round(width / 5) : 0
+    readonly property GridCells cells: GridCells {
+        width: tutorialGrid.width - tutorialGrid.railWidth
+        height: tutorialGrid.height
+        pageWidth: tutorialGrid.width
+    }
     readonly property int count: tabs.count
     readonly property Item strip: groupStrip
     property bool moved: false
@@ -41,8 +49,9 @@ Item {
     }
 
     function cellCentre(index) {
-        return Qt.point((index % 2 + 0.5) * view.cellWidth,
-                        headRow.height + (Math.floor(index / 2) + 0.5) * view.cellHeight)
+        return Qt.point(railWidth + (index % cells.columns + 0.5) * view.cellWidth,
+                        (wide ? 0 : headRow.height)
+                        + (Math.floor(index / cells.columns) + 0.5) * view.cellHeight)
     }
 
     function rowOf(tabId) {
@@ -64,6 +73,64 @@ Item {
         id: tabs
     }
 
+    // Under grid, so carried cell shows over group it is dropped on.
+    Rectangle {
+        objectName: "tutorialRail"
+        width: tutorialGrid.railWidth
+        height: parent.height
+        visible: tutorialGrid.wide
+        color: Theme.highlightDimmerColor
+
+        GlassTexture {
+            anchors.fill: parent
+        }
+
+        // Search field sketch.
+        Item {
+            id: railHead
+
+            width: parent.width
+            height: Theme.itemSizeSmall
+
+            Icon {
+                id: searchIcon
+
+                anchors {
+                    left: parent.left
+                    leftMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                width: Theme.iconSizeSmallPlus
+                height: width
+                source: "image://theme/icon-m-search"
+            }
+
+            Rectangle {
+                anchors {
+                    left: searchIcon.right
+                    right: parent.right
+                    leftMargin: Theme.paddingMedium
+                    rightMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                height: Theme.paddingMedium
+                radius: height / 2
+                color: Theme.rgba(Theme.primaryColor, Theme.opacityFaint)
+            }
+        }
+
+        Item {
+            id: railGroups
+
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: railHead.bottom
+                bottom: parent.bottom
+            }
+        }
+    }
+
     SilicaGridView {
         id: view
 
@@ -71,12 +138,13 @@ Item {
         property real pullDistance: 0
 
         objectName: "tutorialGridView"
-        width: parent.width
+        x: tutorialGrid.railWidth
+        width: parent.width - x
         height: parent.height
         y: -overscroll
         model: tabs
-        cellWidth: width / 2
-        cellHeight: cellWidth + Theme.itemSizeSmall
+        cellWidth: cells.cellWidth
+        cellHeight: cells.cellHeight
         // Explicit vertical: automatic refuses drag when content fits.
         flickableDirection: Flickable.VerticalFlick
         boundsBehavior: Flickable.DragOverBounds
@@ -95,12 +163,12 @@ Item {
 
         header: Item {
             width: view.width
-            height: headRow.height
+            height: tutorialGrid.wide ? 0 : headRow.height
         }
 
         footer: Item {
             width: view.width
-            height: footRow.height
+            height: tutorialGrid.wide ? 0 : footRow.height
         }
 
         delegate: TabPreview {
@@ -140,14 +208,17 @@ Item {
             topMargin: view.overscroll
         }
         height: Theme.itemSizeLarge + tutorialGrid.cutoutHeight
+        visible: !tutorialGrid.wide
         color: Theme.highlightDimmerColor
 
         GlassTexture {
             anchors.fill: parent
         }
 
+        // Landscape: along whole top, over rail too.
         Rectangle {
             objectName: "tutorialPullIndicator"
+            parent: tutorialGrid.wide ? tutorialGrid : headRow
             width: parent.width
             height: Theme.paddingSmall
             color: Theme.highlightBackgroundColor
@@ -164,6 +235,7 @@ Item {
             bottomMargin: -view.overscroll
         }
         height: Theme.itemSizeLarge
+        visible: !tutorialGrid.wide
         color: Theme.highlightDimmerColor
 
         GlassTexture {
@@ -174,7 +246,9 @@ Item {
             id: groupStrip
 
             objectName: "tutorialStrip"
+            parent: tutorialGrid.wide ? railGroups : footRow
             anchors.fill: parent
+            vertical: tutorialGrid.wide
             tabCount: tabs.count
             onTabDropped: {
                 var row = tutorialGrid.rowOf(tabId)

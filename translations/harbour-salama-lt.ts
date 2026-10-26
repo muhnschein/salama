@@ -1399,14 +1399,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Laiko svetainės turinį atokiau nuo ekrano iškirptės. Automatinis režimas leidžia pritaikytoms svetainėms naudoti iškirptės sritį, išlaikydamas turinį matomą.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Fiksuota priemonių juosta</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Visada rodyti apatinę priemonių juostą</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Įjungti JavaScript</translation>
     </message>
@@ -1920,10 +1912,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Peržiūros nėra</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Pradžios tinklalapis</translation>
     </message>
@@ -2070,7 +2058,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Palaikyk kortelę ir numesk ją ant grupės pavadinimo, kad perkeltum ją ten.</translation>
     </message>
     <message>

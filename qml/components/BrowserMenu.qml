@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Own pull: DockedPanel drag ignores pulls begun on icons, so icons sit in SilicaFlickable
-// whose overscroll drives sheet.
+// whose overscroll drives sheet. Landscape: same sheet docked right, standing on bar.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Sailfish.Share 1.0
@@ -12,6 +12,8 @@ DockedPanel {
     id: menu
 
     property Item view: null
+    // Bar's top on page: side sheet stands on it.
+    property real barTop: parent ? parent.height : 0
     readonly property bool hasPage: TabModel.activeUrl.length > 0
     readonly property QtObject reader: view !== null && view.reader ? view.reader : null
     // Never for reader view: no connection behind it.
@@ -25,25 +27,41 @@ DockedPanel {
     }
     // Overscroll is half finger travel (rubber band); x2 so sheet follows finger.
     readonly property real pull: 2 * sheet.overscroll
-    readonly property real closeDistance: Math.min(height / 3, Theme.itemSizeLarge)
+    readonly property real closeDistance: Math.min((side ? width : height) / 3,
+                                                   Theme.itemSizeLarge)
+    readonly property bool side: !!parent && parent.width > parent.height
 
     signal findRequested()
 
     objectName: "browserMenu"
-    width: parent.width
-    height: content.height
-    dock: Dock.Bottom
+    // Side sheet: 42% of page, whole pixels, so page still reads beside it.
+    width: side ? Math.floor(parent.width * 0.42) : parent.width
+    height: side ? Math.min(content.height, barTop) : content.height
+    dock: side ? Dock.Right : Dock.Bottom
     // Shade sits one under: over page, so taps beside sheet reach it.
     z: 2
 
+    // Side sheet would slide out right while its page slides out left: on screen it would stand
+    // still over incoming page. Leaves with its page instead, shut once page out of sight.
+    // Bottom sheet slides down as page slides away.
+    property bool leaving: false
+
+    function leave() {
+        if (side) {
+            leaving = true
+        } else {
+            hide()
+        }
+    }
+
     function openPage(page) {
-        hide()
+        leave()
         pageStack.push(Qt.resolvedUrl("../pages/" + page))
     }
 
     // Page reads view via bindings that survive view going away.
     function openSiteDetails() {
-        hide()
+        leave()
         pageStack.push(Qt.resolvedUrl("../pages/SiteDetailsPage.qml"), {
                            "url": TabModel.activeUrl,
                            "title": TabModel.activeTitle,
@@ -51,16 +69,60 @@ DockedPanel {
                        })
     }
 
+    // DockedPanel leaves side sheet's y alone but zeroes it on turning, before this runs.
+    function stand() {
+        if (side) {
+            y = barTop - height
+        }
+    }
+
+    // Readability check only while menu shows its button.
+    function askReader() {
+        if (open && reader !== null) {
+            reader.ask()
+        }
+    }
+
     // Not once closing: DockedPanel moves it then.
     onPullChanged: {
-        if (open) {
+        if (!open) {
+            return
+        }
+        if (side) {
+            x = parent.width - width + pull
+        } else {
             y = parent.height - height + pull
         }
+    }
+    onDockChanged: stand()
+    onHeightChanged: stand()
+    onBarTopChanged: stand()
+    onOpenChanged: {
+        stand()
+        askReader()
+    }
+    onReaderChanged: askReader()
+    Component.onCompleted: stand()
+
+    // Address changed under open menu: new document, ask again.
+    Connections {
+        target: menu.open ? menu.reader : null
+        onAskedChanged: menu.askReader()
     }
 
     Connections {
         target: TabModel
         onActiveTabChanged: menu.hide()
+    }
+
+    Connections {
+        target: menu.leaving ? menu.parent : null
+        onStatusChanged: {
+            if (menu.parent.status === PageStatus.Inactive) {
+                menu.leaving = false
+                menu.hide(true)
+            }
+        }
     }
 
     ShareAction {
@@ -79,6 +141,7 @@ DockedPanel {
     SheetBackground {
         anchors.fill: parent
         headHeight: headGap.y + headGap.height / 2
+        side: menu.side
     }
 
     // Over nav bar: sheet already hidden by then.
@@ -101,6 +164,7 @@ DockedPanel {
     SheetGrip {
         objectName: "menuDragHandle"
         edgeOf: menu
+        upright: menu.side
     }
 
     SheetFlickable {
@@ -109,6 +173,7 @@ DockedPanel {
         objectName: "menuSheet"
         width: parent.width
         height: parent.height
+        across: menu.side
         contentHeight: content.height
         onDragEnded: {
             if (menu.pull > menu.closeDistance) {
@@ -130,6 +195,7 @@ DockedPanel {
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
+                shown: menu.open
                 tlsBroken: menu.tlsBroken
                 onDetailsRequested: menu.openSiteDetails()
                 onCopyRequested: {

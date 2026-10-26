@@ -21,10 +21,11 @@ public:
     {
     }
 
-    // Writer waits for pool before dying, so still alive to signal.
+    // Writer waits for pool before dying, so still alive to signal. JPEG: PNG took 8x as long
+    // to encode, on core Gecko paints with.
     void run() override
     {
-        const bool saved = m_image.save(m_path, "PNG");
+        const bool saved = m_image.save(m_path, "JPEG", 85);
         emit m_writer->written(m_tabId, m_path, saved);
     }
 

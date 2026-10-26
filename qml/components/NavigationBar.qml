@@ -38,6 +38,8 @@ Item {
                                                || (edited && typedText.trim().length > 0))
     // Slim instead of hiding on scroll. Tap restores whole bar; only tap on whole bar edits.
     property bool compact: false
+    // Landscape: every control at slim height, bar stays put.
+    property bool landscape: false
 
     signal accepted(string text, bool inNewTab)
     signal back()
@@ -52,7 +54,7 @@ Item {
     signal dragStarted()
     signal dragMoved(real distance)
     signal dragFinished(real distance)
-    // Reach touch that turned out page's. Window coords.
+    // Reach touch that turned out page's. Page coords.
     signal pageTouchStarted(point position)
     signal pageTouchMoved(point position)
     signal pageTouchEnded(point position)
@@ -66,17 +68,22 @@ Item {
 
     // Edit slab from bar's edge to menu; text inside starts at page margin, under back icon.
     readonly property real fieldLeft: 0
-    readonly property real fieldRight: menuIcon.x - Theme.paddingLarge
+    readonly property real fieldEnd: menuIcon.x - Theme.paddingLarge
+    // Omnibar's landscape go/search pills sit between field and menu.
+    property real pillsWidth: 0
+    readonly property real fieldRight: fieldEnd - (pillsWidth > 0 ? pillsWidth + Theme.paddingMedium
+                                                                  : 0)
 
     // Bar sits in system edge-swipe strip; its height is gesture start area, so slim gives
     // up only a quarter.
     readonly property real slimHeight: Theme.itemSizeSmall
     // 0 slim .. 1 whole. All state differences derive from this so height animation
     // carries everything.
-    readonly property real expansion: (height - slimHeight) / (Theme.itemSizeLarge - slimHeight)
+    readonly property real expansion: landscape ? 1.0 : (height - slimHeight)
+                                                      / (Theme.itemSizeLarge - slimHeight)
     readonly property bool resizing: heightSlide.running
 
-    height: compact ? slimHeight : Theme.itemSizeLarge
+    height: compact || landscape ? slimHeight : Theme.itemSizeLarge
 
     Behavior on height {
         NumberAnimation {
@@ -322,6 +329,7 @@ Item {
                   + (Theme.fontSizeMedium - Theme.fontSizeSmall) * navigationBar.expansion
         iconSize: Theme.iconSizeSmall
                   + (Theme.iconSizeSmallPlus - Theme.iconSizeSmall) * navigationBar.expansion
+        sliding: navigationBar.resizing
     }
 
     AddressField {

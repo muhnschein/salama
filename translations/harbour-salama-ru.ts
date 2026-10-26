@@ -1399,14 +1399,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Не даёт содержимому сайтов заходить под вырез экрана. В режиме «Авто» адаптированные сайты могут использовать область выреза, а содержимое остаётся видимым.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Закреплённая панель инструментов</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Всегда показывать нижнюю панель инструментов</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Включить JavaScript</translation>
     </message>
@@ -1920,10 +1912,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Нет предпросмотра</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Начальная страница</translation>
     </message>
@@ -2070,7 +2058,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Удерживайте вкладку, затем перетащите её на название группы, чтобы переместить туда.</translation>
     </message>
     <message>

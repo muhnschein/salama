@@ -21,12 +21,17 @@ Item {
 
     property bool editing: false
     property string typed
+    // Landscape: every control at slim height, as browsing bar.
+    property bool landscape: false
+    // Omnibar's landscape go/search pills sit between field and menu.
+    property real pillsWidth: 0
+    readonly property real fieldEnd: menuIcon.x - Theme.paddingMedium
     readonly property bool dragging: gestureArea.dragging
     // Hint tap targets, bar coords.
     readonly property point addressCentre: Qt.point(width / 2, height / 2)
     readonly property point menuCentre: Qt.point(menuIcon.x + menuIcon.width / 2, height / 2)
 
-    height: Theme.itemSizeLarge
+    height: landscape ? Theme.itemSizeSmall : Theme.itemSizeLarge
 
     function regionAt(x) {
         if (x >= menuIcon.x) {
@@ -60,6 +65,7 @@ Item {
     Icon {
         id: backIcon
 
+        objectName: "tutorialBackIcon"
         anchors {
             left: parent.left
             leftMargin: Theme.horizontalPageMargin
@@ -72,6 +78,7 @@ Item {
     }
 
     AddressLabel {
+        objectName: "tutorialAddress"
         anchors.centerIn: parent
         visible: !tutorialBar.editing
         url: TabModel.activeUrl
@@ -83,11 +90,15 @@ Item {
     Item {
         objectName: "tutorialField"
         x: Theme.paddingMedium
-        width: menuIcon.x - Theme.paddingMedium - x
+        width: tutorialBar.fieldEnd - (tutorialBar.pillsWidth > 0 ? tutorialBar.pillsWidth
+                                                                    + Theme.paddingMedium : 0) - x
         height: parent.height
         visible: tutorialBar.editing
 
         Label {
+            id: fieldText
+
+            objectName: "tutorialFieldText"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -99,13 +110,14 @@ Item {
             truncationMode: TruncationMode.Fade
         }
 
+        // Landscape, as AddressField: line from text's start, right under it; slim bar
+        // leaves no room below.
         Rectangle {
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                bottomMargin: Theme.paddingLarge
-            }
+            objectName: "tutorialFieldLine"
+            x: tutorialBar.landscape ? fieldText.x : 0
+            y: tutorialBar.landscape ? fieldText.y + fieldText.height
+                                     : parent.height - Theme.paddingLarge - height
+            width: parent.width - x - (tutorialBar.landscape ? Theme.paddingMedium : 0)
             height: Theme._lineWidth
             color: Theme.highlightColor
         }
@@ -114,6 +126,7 @@ Item {
     Icon {
         id: menuIcon
 
+        objectName: "tutorialMenuIcon"
         anchors {
             right: parent.right
             rightMargin: Theme.horizontalPageMargin
@@ -128,6 +141,7 @@ Item {
     Icon {
         id: reloadIcon
 
+        objectName: "tutorialReloadIcon"
         anchors {
             right: menuIcon.left
             rightMargin: Theme.paddingLarge

@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Mantém o conteúdo dos sites longe do recorte da tela. Automático permite que sites adaptados usem a área do recorte sem cobrir o conteúdo.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra de ferramentas fixa</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Sempre mostrar a barra de ferramentas inferior</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Ativar JavaScript</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Sem prévia</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Página inicial</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Mantenha uma aba pressionada e solte-a sobre o nome de um grupo para movê-la para lá.</translation>
     </message>
     <message>

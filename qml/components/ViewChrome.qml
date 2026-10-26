@@ -31,4 +31,18 @@ QtObject {
         value: 0
         when: chrome.cutoutInset > 0
     }
+
+    // Engine's own landscape inset: Silica already keeps landscape page clear of cutout
+    // (AvoidLandscapeCutout), so page padded beside it, and each turn sent engine one more change.
+    property Binding safeAreaLeft: Binding {
+        target: chrome.view
+        property: "safeAreaLeft"
+        value: 0
+    }
+
+    property Binding safeAreaRight: Binding {
+        target: chrome.view
+        property: "safeAreaRight"
+        value: 0
+    }
 }

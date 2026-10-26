@@ -85,6 +85,23 @@ QtObject {
         }
     }
 
+    // Leftovers from unclean exit: their pages are gone. This run's own kept: shown before
+    // sweep.
+    function sweep() {
+        var own = {}
+        for (var key in shown) {
+            own[shown[key].replacesId] = true
+        }
+        var probe = probeComponent.createObject(center)
+        var left = probe.notifications()
+        for (var i = 0; i < left.length; ++i) {
+            if (!own[left[i].replacesId]) {
+                left[i].close()
+            }
+        }
+        probe.destroy()
+    }
+
     function tellEngine(topic, payload) {
         WebEngine.notifyObservers(topic, payload)
     }
@@ -100,6 +117,17 @@ QtObject {
         onCloseRequested: center.close(key)
         onPermissionRequested: center.ask(tabId, host)
         onPermissionWithdrawn: center.withdraw(tabId)
+    }
+
+    property Component probeComponent: Component {
+        Notification {}
+    }
+
+    // Asking server is blocking D-Bus round trip: after launch animation, not in it.
+    property Timer leftovers: Timer {
+        interval: 3000
+        running: true
+        onTriggered: center.sweep()
     }
 
     property Connections engine: Connections {
@@ -122,12 +150,5 @@ QtObject {
         WebEngine.addObserver(NotificationPermissions.topic)
         NotificationPermissions.refresh()
         applyRequests()
-        // Close leftovers from unclean exit: their pages are gone.
-        var probe = notificationComponent.createObject(center)
-        var left = probe.notifications()
-        for (var i = 0; i < left.length; ++i) {
-            left[i].close()
-        }
-        probe.destroy()
     }
 }

@@ -25,6 +25,14 @@ bool run(QSqlQuery &query)
     return true;
 }
 
+// BEGIN, COMMIT: logged as any statement.
+void runStatement(const QSqlDatabase &db, const QString &statement)
+{
+    QSqlQuery query(db);
+    query.prepare(statement);
+    run(query);
+}
+
 int readSetting(const QSqlDatabase &db, const char *name)
 {
     QSqlQuery query(db);
@@ -120,8 +128,12 @@ void TabPersistence::updateTab(const Tab &tab) const
     run(query);
 }
 
+// Grid drag saves on every cell crossed: one commit, and only rows whose place moved, else
+// each tab its own commit and disk syncs (50 tabs froze drag).
 void TabPersistence::saveOrder(const QList<Tab> &tabs) const
 {
+    QSqlDatabase db = m_storage.database();
+    runStatement(db, QStringLiteral("BEGIN"));
     // From 1 so insertTab's MAX(position) + 1 lands last.
     int position = 0;
     for (const Tab &tab : tabs) {
@@ -129,12 +141,15 @@ void TabPersistence::saveOrder(const QList<Tab> &tabs) const
             continue;
         }
         ++position;
-        QSqlQuery query(m_storage.database());
-        query.prepare(QStringLiteral("UPDATE tab SET position = ? WHERE tab_id = ?"));
+        QSqlQuery query(db);
+        query.prepare(
+            QStringLiteral("UPDATE tab SET position = ? WHERE tab_id = ? AND position IS NOT ?"));
         query.addBindValue(position);
         query.addBindValue(tab.id);
+        query.addBindValue(position);
         run(query);
     }
+    runStatement(db, QStringLiteral("COMMIT"));
 }
 
 void TabPersistence::removeTab(int tabId) const
@@ -213,20 +228,26 @@ void TabPersistence::removeGroup(int groupId) const
     run(query);
 }
 
+// As saveOrder: group drag saves per row crossed.
 void TabPersistence::saveGroupOrder(const QList<TabGroup> &groups) const
 {
+    QSqlDatabase db = m_storage.database();
+    runStatement(db, QStringLiteral("BEGIN"));
     int position = 0;
     for (const TabGroup &group : groups) {
         if (!group.isValid()) {
             continue;
         }
         ++position;
-        QSqlQuery query(m_storage.database());
-        query.prepare(QStringLiteral("UPDATE tab_group SET position = ? WHERE group_id = ?"));
+        QSqlQuery query(db);
+        query.prepare(QStringLiteral(
+            "UPDATE tab_group SET position = ? WHERE group_id = ? AND position IS NOT ?"));
         query.addBindValue(position);
         query.addBindValue(group.id);
+        query.addBindValue(position);
         run(query);
     }
+    runStatement(db, QStringLiteral("COMMIT"));
 }
 
 void TabPersistence::setCurrentGroupId(int groupId) const

@@ -11,6 +11,7 @@
 #include <QSqlQuery>
 #include <QVariant>
 #include <QtDebug>
+#include <algorithm>
 
 namespace Salama {
 
@@ -50,8 +51,31 @@ SiteListModel *StartPage::recentPages()
     return &m_recentPages;
 }
 
+void StartPage::watch()
+{
+    ++m_watchers;
+    if (m_stale) {
+        refresh();
+    }
+}
+
+void StartPage::unwatch()
+{
+    m_watchers = std::max(0, m_watchers - 1);
+}
+
+void StartPage::sourceChanged()
+{
+    if (m_watchers > 0) {
+        refresh();
+    } else {
+        m_stale = true;
+    }
+}
+
 void StartPage::refresh()
 {
+    m_stale = false;
     // Ties broken by recency. Tile = site's most-read page.
     m_topSites.setSites(
         readHistory(QStringLiteral("visited_count DESC, date DESC, id DESC"), TopSiteLimit, true));

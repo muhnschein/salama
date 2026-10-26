@@ -1382,14 +1382,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Tiene i contenuti dei siti web lontani dal notch dello schermo. Automatico consente ai siti web adattati di usare l&apos;area del notch mantenendo i contenuti visibili.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra degli strumenti fissa</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Mostra sempre la barra degli strumenti in basso</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Attiva JavaScript</translation>
     </message>
@@ -1899,10 +1891,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Nessuna anteprima</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Pagina iniziale</translation>
     </message>
@@ -2048,7 +2036,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Tieni premuta una scheda, poi rilasciala sul nome di un gruppo per spostarla lì.</translation>
     </message>
     <message>

@@ -4,7 +4,6 @@
 // One MouseArea under contents splits gestures: tap opens; ~1 s hold picks up to reorder
 // or drop on group strip; left drag closes past threshold; vertical drag is grid's.
 import QtQuick 2.6
-import QtGraphicalEffects 1.0
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
 
@@ -34,6 +33,9 @@ Item {
     readonly property real frameGap: Theme.paddingSmall / 2
     // Cell outliving its closed row sees undefined role; bool can't be.
     readonly property bool highlighted: dragArea.pressed || model.activeTab === true
+    // Site's icon and title only for page never pictured: no icon fetch, no address parse for
+    // cells with picture.
+    readonly property bool standsIn: model.thumbnail.length === 0 && model.url.length > 0
     readonly property Item grid: GridView.view
 
     objectName: "tabPreview"
@@ -209,15 +211,27 @@ Item {
             radius: Theme.paddingMedium
             color: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
 
-            // Clipping is rectangular, so corners cut by mask.
+            // Clipping is rectangular, so corners cut in shader: distance to rounded box, no
+            // mask texture per cell.
             layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: Rectangle {
-                    width: shot.width
-                    height: shot.height
-                    radius: shot.radius
-                    visible: false
-                }
+            layer.effect: ShaderEffect {
+                readonly property size size: Qt.size(width, height)
+                readonly property real radius: shot.radius
+
+                objectName: "tabPreviewCorners"
+                fragmentShader: "
+                    varying highp vec2 qt_TexCoord0;
+                    uniform lowp float qt_Opacity;
+                    uniform sampler2D source;
+                    uniform highp vec2 size;
+                    uniform highp float radius;
+                    void main() {
+                        highp vec2 corner = abs(qt_TexCoord0 * size - size * 0.5)
+                                - (size * 0.5 - vec2(radius));
+                        highp float outside = length(max(corner, 0.0)) - radius;
+                        gl_FragColor = texture2D(source, qt_TexCoord0)
+                                * clamp(0.5 - outside, 0.0, 1.0) * qt_Opacity;
+                    }"
             }
 
             Item {
@@ -228,17 +242,14 @@ Item {
                     band: muteAction.height * 2
                 }
 
-                // Top-anchored at own aspect: PreserveAspectCrop would centre on page middle.
+                // Fills cell whatever shape page was taken at (turned since): cut at foot and
+                // right, so page's head and start stay, as Chrome and Firefox cut theirs.
                 Image {
                     objectName: "tabPreviewImage"
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                    }
-                    height: sourceSize.width > 0 ? width * sourceSize.height / sourceSize.width
-                                                 : parent.height
-                    fillMode: Image.PreserveAspectFit
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectCrop
+                    horizontalAlignment: Image.AlignLeft
+                    verticalAlignment: Image.AlignTop
                     asynchronous: true
                     source: model.thumbnail.length > 0 ? "file://" + model.thumbnail : ""
                     visible: status === Image.Ready
@@ -248,10 +259,67 @@ Item {
             Label {
                 objectName: "tabPreviewPlaceholder"
                 anchors.centerIn: parent
-                visible: model.thumbnail.length === 0
-                text: model.url.length === 0 ? qsTr("Start page") : qsTr("No preview")
+                visible: model.thumbnail.length === 0 && model.url.length === 0
+                text: qsTr("Start page")
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
+            }
+
+            // Page never drawn (opened behind, not shown since restart): engine draws only
+            // page in front, so site's icon and title stand in, as in Chrome.
+            Column {
+                objectName: "tabPreviewSite"
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: Theme.paddingMedium
+                }
+                spacing: Theme.paddingSmall
+                visible: preview.standsIn
+
+                Item {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Theme.iconSizeMedium
+                    height: width
+
+                    Image {
+                        id: siteIcon
+
+                        objectName: "tabPreviewIcon"
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        asynchronous: true
+                        source: preview.standsIn && model.favicon ? model.favicon : ""
+                        visible: status === Image.Ready
+                    }
+
+                    Label {
+                        objectName: "tabPreviewLetter"
+                        anchors.centerIn: parent
+                        visible: !siteIcon.visible
+                        text: preview.standsIn
+                              ? SearchSettings.displayAddress(model.url).charAt(0).toUpperCase()
+                              : ""
+                        font.pixelSize: Theme.fontSizeLarge
+                        color: Theme.secondaryColor
+                    }
+                }
+
+                Label {
+                    objectName: "tabPreviewTitle"
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    text: !preview.standsIn ? ""
+                                            : model.title ? model.title
+                                                          : SearchSettings.displayAddress(model.url)
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    truncationMode: TruncationMode.Elide
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryColor
+                }
             }
 
             // Hand-drawn: icon-m-clear has own translucent disc, lost on pages.

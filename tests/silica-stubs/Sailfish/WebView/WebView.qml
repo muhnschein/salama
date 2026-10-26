@@ -24,15 +24,27 @@ Item {
     property real footerMargin: 0
     // QuickMozView chrome gesture: engine drops chrome on scroll down, wants it back on scroll up.
     property bool chrome: true
+    // QuickMozView: page panned or flung; finger on page; two fingers zooming.
+    property bool moving: false
+    property bool dragging: false
+    property bool pinching: false
+    property color backgroundColor: "white"
+    // QuickMozView: engine drew document once (false again from load start); visible part of
+    // page in CSS pixels, its shape view's once engine laid page out at view's size.
+    // Engine's painted is bool; undefined here for tests not about painting.
+    property var painted
+    property rect contentRect
     property bool chromeGestureEnabled: true
     property real chromeGestureThreshold: 0
     // Display cutout inset handed to engine. Binding like platform's: Binding release restores
-    // binding (Qt 5.15: only binding).
+    // binding (Qt 5.15: only binding). Platform's sides follow turn: left in landscape, right in
+    // inverted landscape.
     property real cutoutSafeAreaTop: 90
+    property real cutoutSafeAreaSide: 0
     property real safeAreaTop: cutoutSafeAreaTop
-    property real safeAreaRight: 0
+    property real safeAreaRight: cutoutSafeAreaSide
     property real safeAreaBottom: 0
-    property real safeAreaLeft: 0
+    property real safeAreaLeft: cutoutSafeAreaSide
     property bool hasThemeColor: false
     property color themeColor: "black"
     // QuickMozView QMozSecurity. Assign null = engine build without it.

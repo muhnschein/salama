@@ -1399,14 +1399,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Odsuwa treść stron od wycięcia w ekranie. „Auto” pozwala dostosowanym stronom korzystać z obszaru wycięcia, nie zasłaniając treści.</translation>
     </message>
     <message>
-        <source>Fixed toolbar</source>
-        <translation>Stały pasek narzędzi</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Zawsze pokazuj dolny pasek narzędzi</translation>
-    </message>
-    <message>
         <source>Enable JavaScript</source>
         <translation>Włącz JavaScript</translation>
     </message>
@@ -1920,10 +1912,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
 <context>
     <name>TabPreview</name>
     <message>
-        <source>No preview</source>
-        <translation>Brak podglądu</translation>
-    </message>
-    <message>
         <source>Start page</source>
         <translation>Strona startowa</translation>
     </message>
@@ -2070,7 +2058,7 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     </message>
     <message>
         <source>Hold a tab, then drop it on a group name to move it there.</source>
-        <extracomment>The names of the tab groups are in a row at the foot of the grid</extracomment>
+        <extracomment>The names of the tab groups are in a row at the foot of the grid, or in a column at its left when the phone is turned</extracomment>
         <translation>Przytrzymaj kartę, a następnie upuść ją na nazwie grupy, aby ją tam przenieść.</translation>
     </message>
     <message>

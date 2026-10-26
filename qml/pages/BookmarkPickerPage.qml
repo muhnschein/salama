@@ -13,7 +13,7 @@ Page {
     signal bookmarkPicked(int bookmarkId, string url, string title)
 
     objectName: "bookmarkPickerPage"
-    allowedOrientations: Orientation.Portrait
+    allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
 
     // Field above list, not its header: each keystroke replaces model, list then focuses its
     // new current item (field loses keyboard) and scrolls content under field.

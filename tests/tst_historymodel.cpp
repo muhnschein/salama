@@ -38,6 +38,13 @@ private slots:
     void dateGroups();
     void dateGroupRole();
     void markedRoles();
+    void visitMovesRow();
+    void visitPastDisplayLimit();
+    void visitWhileSearching();
+    void visitBelowFutureRows();
+    void prunesDuringSession();
+    void prunesTiedRows();
+    void tellsEveryWrite();
 };
 
 namespace {
@@ -68,6 +75,50 @@ int rowsInDatabase(const Storage &storage)
     QSqlQuery query(storage.database());
     query.exec(QStringLiteral("SELECT COUNT(*) FROM browser_history"));
     return query.next() ? query.value(0).toInt() : -1;
+}
+
+// Many rows in one transaction: url pageN, visits N % 5 + 1, date base + N, every third icon.
+void addPages(const Storage &storage, int count, qint64 base)
+{
+    QSqlQuery query(storage.database());
+    QVERIFY(query.exec(QStringLiteral("BEGIN")));
+    QSqlQuery insert(storage.database());
+    insert.prepare(QStringLiteral("INSERT INTO browser_history (url, title, visited_count, date, "
+                                  "favicon) VALUES (?, ?, ?, ?, ?)"));
+    for (int i = 0; i < count; ++i) {
+        insert.addBindValue(QStringLiteral("https://page%1.example/").arg(i));
+        insert.addBindValue(QStringLiteral("Page %1").arg(i));
+        insert.addBindValue(i % 5 + 1);
+        insert.addBindValue(base + i);
+        insert.addBindValue(i % 3 == 0 ? QStringLiteral("icon%1.png").arg(i) : QStringLiteral(""));
+        QVERIFY(insert.exec());
+    }
+    QVERIFY(query.exec(QStringLiteral("COMMIT")));
+}
+
+// Every row, every role reload() fills.
+QStringList shown(const HistoryModel &model)
+{
+    QStringList rows;
+    for (int row = 0; row < model.rowCount(); ++row) {
+        rows.append(QStringLiteral("%1|%2|%3|%4|%5")
+                        .arg(role(model, row, roleId(HistoryModel::Role::Url)).toString(),
+                             role(model, row, roleId(HistoryModel::Role::Title)).toString(),
+                             role(model, row, roleId(HistoryModel::Role::VisitCount)).toString(),
+                             QString::number(role(model, row, roleId(HistoryModel::Role::Date))
+                                                 .toDateTime()
+                                                 .toMSecsSinceEpoch()),
+                             role(model, row, roleId(HistoryModel::Role::Favicon)).toString()));
+    }
+    return rows;
+}
+
+// What reload() gives: fresh model over same table.
+QStringList reloaded(const Storage &storage, const QString &term = QString())
+{
+    HistoryModel fresh(storage);
+    fresh.setSearchTerm(term);
+    return shown(fresh);
 }
 
 } // namespace
@@ -540,6 +591,236 @@ void tst_historymodel::markedRoles()
     // Untitled page shows its address as title, marked too.
     model.setSearchTerm(QStringLiteral("untitled"));
     QCOMPARE(role(model, 0, title).toString(), QStringLiteral("https://<b>untitled</b>.example/"));
+}
+
+// Visit moves row to top, no reset: delegates and start page keep state; same rows as reload.
+void tst_historymodel::visitMovesRow()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://a.example/"), QStringLiteral("A"));
+    model.visit(QStringLiteral("https://b.example/"));
+    model.visit(QStringLiteral("https://c.example/"));
+    const qint64 before =
+        role(model, 0, roleId(HistoryModel::Role::Date)).toDateTime().toMSecsSinceEpoch();
+    QSignalSpy resetSpy(&model, &HistoryModel::modelReset);
+    QSignalSpy movedSpy(&model, &HistoryModel::rowsMoved);
+    QSignalSpy insertedSpy(&model, &HistoryModel::rowsInserted);
+    QSignalSpy removedSpy(&model, &HistoryModel::rowsRemoved);
+    QSignalSpy changedSpy(&model, &HistoryModel::dataChanged);
+    QSignalSpy countSpy(&model, &HistoryModel::countChanged);
+    QSignalSpy pagesSpy(&model, &HistoryModel::pageCountChanged);
+
+    model.visit(QStringLiteral("https://a.example/"), QStringLiteral("A again"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(movedSpy.count(), 1);
+    QCOMPARE(movedSpy.at(0).at(1).toInt(), 2);
+    QCOMPARE(movedSpy.at(0).at(4).toInt(), 0);
+    QCOMPARE(insertedSpy.count(), 0);
+    QCOMPARE(removedSpy.count(), 0);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(changedSpy.at(0).at(0).toModelIndex().row(), 0);
+    QCOMPARE(countSpy.count(), 0);
+    QCOMPARE(pagesSpy.count(), 0);
+    QCOMPARE(model.count(), 3);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
+             QStringLiteral("https://a.example/"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("A again"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::VisitCount)).toInt(), 2);
+    QVERIFY(role(model, 0, roleId(HistoryModel::Role::Date)).toDateTime().toMSecsSinceEpoch() >
+            before);
+    QCOMPARE(shown(model), reloaded(storage));
+
+    // Already on top: no move, title kept when none given.
+    model.visit(QStringLiteral("https://a.example/"));
+    QCOMPARE(movedSpy.count(), 1);
+    QCOMPARE(changedSpy.count(), 2);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::VisitCount)).toInt(), 3);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("A again"));
+    QCOMPARE(shown(model), reloaded(storage));
+
+    model.visit(QStringLiteral("https://d.example/"), QStringLiteral("D"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(insertedSpy.at(0).at(1).toInt(), 0);
+    QCOMPARE(countSpy.count(), 1);
+    QCOMPARE(model.count(), 4);
+    QCOMPARE(model.pageCount(), 4);
+    QCOMPARE(pagesSpy.count(), 1);
+    QCOMPARE(shown(model), reloaded(storage));
+
+    // Inserted row holds its table id: remove deletes that page.
+    model.remove(0);
+    QCOMPARE(rowsInDatabase(storage), 3);
+    QCOMPARE(shown(model), reloaded(storage));
+}
+
+// Page older than shown rows comes back on top as written; shown rows stay DisplayLimit.
+void tst_historymodel::visitPastDisplayLimit()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    addPages(storage, HistoryModel::DisplayLimit + 5, 1000);
+    HistoryModel model(storage);
+    QCOMPARE(model.count(), HistoryModel::DisplayLimit);
+    QSignalSpy resetSpy(&model, &HistoryModel::modelReset);
+    QSignalSpy insertedSpy(&model, &HistoryModel::rowsInserted);
+    QSignalSpy removedSpy(&model, &HistoryModel::rowsRemoved);
+    QSignalSpy countSpy(&model, &HistoryModel::countChanged);
+    QSignalSpy pagesSpy(&model, &HistoryModel::pageCountChanged);
+
+    model.visit(QStringLiteral("https://page0.example/"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(removedSpy.count(), 1);
+    QCOMPARE(removedSpy.at(0).at(1).toInt(), HistoryModel::DisplayLimit);
+    QCOMPARE(countSpy.count(), 0);
+    QCOMPARE(pagesSpy.count(), 0);
+    QCOMPARE(model.count(), HistoryModel::DisplayLimit);
+    QCOMPARE(model.pageCount(), HistoryModel::DisplayLimit + 5);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Title)).toString(),
+             QStringLiteral("Page 0"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::VisitCount)).toInt(), 2);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Favicon)).toString(),
+             QStringLiteral("icon0.png"));
+    QCOMPARE(shown(model), reloaded(storage));
+
+    model.visit(QStringLiteral("https://new.example/"));
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(removedSpy.count(), 2);
+    QCOMPARE(model.count(), HistoryModel::DisplayLimit);
+    QCOMPARE(model.pageCount(), HistoryModel::DisplayLimit + 6);
+    QCOMPARE(pagesSpy.count(), 1);
+    QCOMPARE(shown(model), reloaded(storage));
+}
+
+// Search filters rows: visit there gives reload's rows.
+void tst_historymodel::visitWhileSearching()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    addPages(storage, 30, 1000);
+    HistoryModel model(storage);
+    model.setSearchTerm(QStringLiteral("page1"));
+    QSignalSpy pagesSpy(&model, &HistoryModel::pageCountChanged);
+
+    model.visit(QStringLiteral("https://page2.example/"));
+    QCOMPARE(shown(model), reloaded(storage, QStringLiteral("page1")));
+    model.visit(QStringLiteral("https://page12.example/"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
+             QStringLiteral("https://page12.example/"));
+    QCOMPARE(shown(model), reloaded(storage, QStringLiteral("page1")));
+    model.visit(QStringLiteral("https://new.example/page1"));
+    QCOMPARE(shown(model), reloaded(storage, QStringLiteral("page1")));
+    QCOMPARE(model.pageCount(), 31);
+    QCOMPARE(pagesSpy.count(), 1);
+
+    model.setSearchTerm(QString());
+    QCOMPARE(shown(model), reloaded(storage));
+}
+
+// Clock set back: row dated later stays above visit, as reload orders it.
+void tst_historymodel::visitBelowFutureRows()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const qint64 minute = qint64(60) * 1000;
+    addHistory(storage, QStringLiteral("https://future.example/"), now + minute * 60 * 24);
+    addHistory(storage, QStringLiteral("https://past.example/"), now - minute);
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://past.example/"));
+    model.visit(QStringLiteral("https://new.example/"));
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
+             QStringLiteral("https://future.example/"));
+    QCOMPARE(role(model, 1, roleId(HistoryModel::Role::Url)).toString(),
+             QStringLiteral("https://new.example/"));
+    QCOMPARE(shown(model), reloaded(storage));
+}
+
+// Days-long session: new pages past MaxEntries drop oldest, not only at launch.
+void tst_historymodel::prunesDuringSession()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    addPages(storage, HistoryModel::MaxEntries - 3, 1000);
+    HistoryModel model(storage);
+    QSignalSpy resetSpy(&model, &HistoryModel::modelReset);
+    QSignalSpy pagesSpy(&model, &HistoryModel::pageCountChanged);
+    for (int i = 0; i < 10; ++i) {
+        model.visit(QStringLiteral("https://session%1.example/").arg(i));
+        QVERIFY(rowsInDatabase(storage) <= HistoryModel::MaxEntries);
+        QCOMPARE(model.pageCount(), rowsInDatabase(storage));
+    }
+    QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
+    QCOMPARE(pagesSpy.count(), 3);
+    // Pruned rows never shown: no reload.
+    QCOMPARE(resetSpy.count(), 0);
+    QCOMPARE(role(model, 0, roleId(HistoryModel::Role::Url)).toString(),
+             QStringLiteral("https://session9.example/"));
+    QCOMPARE(model.allEntries().last().url, QStringLiteral("https://page7.example/"));
+    QCOMPARE(shown(model), reloaded(storage));
+    model.visit(QStringLiteral("https://page100.example/"));
+    QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
+    QCOMPARE(model.allEntries().last().url, QStringLiteral("https://page7.example/"));
+}
+
+// Imported rows can share one date: prune drops lowest, never one on screen.
+void tst_historymodel::prunesTiedRows()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    {
+        QSqlQuery query(storage.database());
+        QVERIFY(query.exec(QStringLiteral("BEGIN")));
+        for (int i = 0; i < HistoryModel::MaxEntries; ++i) {
+            addHistory(storage, QStringLiteral("https://tied%1.example/").arg(i), 1000);
+        }
+        QVERIFY(query.exec(QStringLiteral("COMMIT")));
+    }
+    HistoryModel model(storage);
+    model.visit(QStringLiteral("https://new.example/"));
+    QCOMPARE(rowsInDatabase(storage), HistoryModel::MaxEntries);
+    QCOMPARE(shown(model), reloaded(storage));
+}
+
+// Omnibar keeps whole table read; any row change, shown or not, says so. No-op writes don't.
+void tst_historymodel::tellsEveryWrite()
+{
+    QTemporaryDir dir;
+    Storage storage(dir.path());
+    addPages(storage, HistoryModel::DisplayLimit + 5, 1000);
+    HistoryModel model(storage);
+    QSignalSpy changedSpy(&model, &HistoryModel::entriesChanged);
+    QSignalSpy rowSpy(&model, &HistoryModel::dataChanged);
+    const QString hidden = QStringLiteral("https://page0.example/");
+
+    model.updateTitle(hidden, QStringLiteral("Renamed"));
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(rowSpy.count(), 0);
+    model.updateTitle(hidden, QStringLiteral("Renamed"));
+    model.updateTitle(QStringLiteral("https://missing.example/"), QStringLiteral("Nope"));
+    QCOMPARE(changedSpy.count(), 1);
+    model.updateFavicon(hidden, QStringLiteral("new.png"));
+    QCOMPARE(changedSpy.count(), 2);
+    model.updateFavicon(hidden, QStringLiteral("new.png"));
+    QCOMPARE(changedSpy.count(), 2);
+    QCOMPARE(model.allEntries().last().title, QStringLiteral("Renamed"));
+    QCOMPARE(model.allEntries().last().favicon, QStringLiteral("new.png"));
+
+    model.visit(QStringLiteral("https://new.example/"));
+    QCOMPARE(changedSpy.count(), 3);
+    model.remove(0);
+    QCOMPARE(changedSpy.count(), 4);
+    model.removeUrl(hidden);
+    QCOMPARE(changedSpy.count(), 5);
+    model.clearSince(0);
+    QCOMPARE(changedSpy.count(), 6);
+    model.setSearchTerm(QStringLiteral("page"));
+    QCOMPARE(changedSpy.count(), 6);
 }
 
 QTEST_GUILESS_MAIN(tst_historymodel)
