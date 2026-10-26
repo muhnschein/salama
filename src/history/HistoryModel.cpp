@@ -31,14 +31,63 @@ bool run(QSqlQuery &query)
     return true;
 }
 
+using Entry = HistoryModel::Entry;
+
+// Query must select id, url, title, date, visited_count, favicon.
+Entry entryAt(const QSqlQuery &query)
+{
+    Entry entry;
+    entry.id = query.value(0).toInt();
+    entry.url = query.value(1).toString();
+    entry.title = query.value(2).toString();
+    entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
+    entry.visitCount = query.value(4).toInt();
+    entry.favicon = query.value(5).toString();
+    return entry;
+}
+
+// Reload's order would put entry at row 0 of shown ones.
+bool belongsOnTop(const QList<Entry> &shown, const Entry &entry)
+{
+    const qint64 date = entry.date.toMSecsSinceEpoch();
+    for (const Entry &other : shown) {
+        if (other.id == entry.id) {
+            continue;
+        }
+        // Reload's order: date DESC, id DESC.
+        const qint64 otherDate = other.date.toMSecsSinceEpoch();
+        return date > otherDate || (date == otherDate && entry.id > other.id);
+    }
+    return true;
+}
+
+// Rows dropped. Ties by id as reload(): dropped rows never shown ones.
+int prunePages(const QSqlDatabase &db)
+{
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("DELETE FROM browser_history WHERE id NOT IN (SELECT id FROM "
+                                 "browser_history ORDER BY date DESC, id DESC LIMIT ?)"));
+    query.addBindValue(HistoryModel::MaxEntries);
+    return run(query) ? std::max(query.numRowsAffected(), 0) : 0;
+}
+
+void pruneInputs(const QSqlDatabase &db)
+{
+    QSqlQuery inputs(db);
+    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE rowid NOT IN "
+                                  "(SELECT rowid FROM input_history ORDER BY used DESC LIMIT ?)"));
+    inputs.addBindValue(HistoryModel::MaxInputs);
+    run(inputs);
+}
+
 } // namespace
 
 HistoryModel::HistoryModel(const Storage &storage, QObject *parent)
     : QAbstractListModel(parent)
     , m_db(storage.database())
 {
-    prunePages();
-    pruneInputs();
+    prunePages(m_db);
+    pruneInputs(m_db);
     reload();
 }
 
@@ -146,18 +195,6 @@ QList<HistoryModel::Entry> HistoryModel::allEntries() const
     return entries;
 }
 
-HistoryModel::Entry HistoryModel::entryAt(const QSqlQuery &query)
-{
-    Entry entry;
-    entry.id = query.value(0).toInt();
-    entry.url = query.value(1).toString();
-    entry.title = query.value(2).toString();
-    entry.date = QDateTime::fromMSecsSinceEpoch(query.value(3).toLongLong());
-    entry.visitCount = query.value(4).toInt();
-    entry.favicon = query.value(5).toString();
-    return entry;
-}
-
 bool HistoryModel::isRecordable(const QString &url)
 {
     return !url.isEmpty() && !url.startsWith(QLatin1String("about:"));
@@ -221,13 +258,13 @@ void HistoryModel::visit(const QString &url, const QString &title)
         entry.visitCount = 1;
         // Long session: launch prune alone lets table grow without bound.
         if (++pages > MaxEntries) {
-            pages -= prunePages();
+            pages -= prunePages(m_db);
         }
     }
     entry.date = QDateTime::fromMSecsSinceEpoch(now);
 
     // Search filters rows; clock set back leaves newer rows above. Both rare: reload.
-    if (!m_searchTerm.isEmpty() || !belongsOnTop(entry)) {
+    if (!m_searchTerm.isEmpty() || !belongsOnTop(m_entries, entry)) {
         reload();
     } else {
         showOnTop(entry);
@@ -237,20 +274,6 @@ void HistoryModel::visit(const QString &url, const QString &title)
         }
     }
     emit entriesChanged();
-}
-
-bool HistoryModel::belongsOnTop(const Entry &entry) const
-{
-    const qint64 date = entry.date.toMSecsSinceEpoch();
-    for (const Entry &other : m_entries) {
-        if (other.id == entry.id) {
-            continue;
-        }
-        // Reload's order: date DESC, id DESC.
-        const qint64 otherDate = other.date.toMSecsSinceEpoch();
-        return date > otherDate || (date == otherDate && entry.id > other.id);
-    }
-    return true;
 }
 
 void HistoryModel::showOnTop(const Entry &entry)
@@ -467,25 +490,6 @@ QHash<QString, double> HistoryModel::inputRanks(const QString &typed, qint64 now
         ranks.insert(url, std::max(rank, ranks.value(url)));
     }
     return ranks;
-}
-
-int HistoryModel::prunePages() const
-{
-    // Ties by id as reload(): dropped rows never shown ones.
-    QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM browser_history WHERE id NOT IN (SELECT id FROM "
-                                 "browser_history ORDER BY date DESC, id DESC LIMIT ?)"));
-    query.addBindValue(MaxEntries);
-    return run(query) ? std::max(query.numRowsAffected(), 0) : 0;
-}
-
-void HistoryModel::pruneInputs() const
-{
-    QSqlQuery inputs(m_db);
-    inputs.prepare(QStringLiteral("DELETE FROM input_history WHERE rowid NOT IN "
-                                  "(SELECT rowid FROM input_history ORDER BY used DESC LIMIT ?)"));
-    inputs.addBindValue(MaxInputs);
-    run(inputs);
 }
 
 void HistoryModel::reload()

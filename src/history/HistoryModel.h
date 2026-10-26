@@ -16,8 +16,6 @@
 #include <QSqlDatabase>
 #include <QString>
 
-class QSqlQuery;
-
 namespace Salama {
 
 class Storage;
@@ -110,16 +108,9 @@ signals:
     void entriesChanged();
 
 private:
-    // Query must select id, url, title, date, visited_count, favicon.
-    static Entry entryAt(const QSqlQuery &query);
     static bool isRecordable(const QString &url);
     static QString inputKey(const QString &input);
-    // Rows dropped.
-    int prunePages() const;
-    void pruneInputs() const;
     void reload();
-    // Reload's order would put entry at row 0.
-    bool belongsOnTop(const Entry &entry) const;
     // Visited entry to row 0: move, or insert dropping last past DisplayLimit.
     void showOnTop(const Entry &entry);
 
