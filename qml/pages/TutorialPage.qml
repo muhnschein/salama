@@ -280,7 +280,7 @@ Page {
     }
 
     // Opposite end from gesture so words don't cover it. Landscape: own line, as platform's wraps,
-    // in a low band; group names at top of rail, so drop step's words at foot.
+    // in low band; group names at top of rail, so drop step's words at foot.
     InteractionHintLabel {
         id: label
 

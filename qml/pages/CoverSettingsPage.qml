@@ -27,7 +27,7 @@ Page {
     // Names picked bookmark even when action isn't bookmark now.
     readonly property bool bookmarkPicked: CoverSettings.quickActionBookmark > 0
                                            || CoverSettings.quickActionBookmarkUrl.length > 0
-    // Landscape: the rows on the left, the cover on the right.
+    // Landscape: rows on left, cover on right.
     readonly property real columnX: isLandscape ? width / 2 : 0
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
@@ -77,7 +77,7 @@ Page {
             }
 
             // Cover first in portrait, rows first in landscape, so both are placed by their
-            // geometry: a Flow lays its children out in order.
+            // geometry: Flow lays children out in order.
             Item {
                 id: body
 

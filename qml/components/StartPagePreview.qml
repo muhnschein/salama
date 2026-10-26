@@ -13,7 +13,7 @@ Item {
     // Settings page size = browsing page size, in either orientation.
     property real screenWidth
     property real screenHeight
-    // Half the screen, or less where it is given less width (a column on landscape), with the
+    // Half screen, or less where it is given less width (column on landscape), with
     // page margin either side.
     readonly property real miniature: Math.min(0.5, (width - 2 * Theme.horizontalPageMargin)
                                                     / screenWidth)
@@ -21,9 +21,9 @@ Item {
     readonly property bool showsTopSites: !blank && StartPageSettings.topSites
     readonly property bool showsBookmarks: !blank && StartPageSettings.bookmarks
     readonly property bool showsRecentPages: !blank && StartPageSettings.recent
-    // Landscape as on the start page: top sites over bookmarks in the left half, recent pages in
-    // the right one, a half with nothing to show leaving the other the whole width; tiles
-    // portrait-sized. Empty sections still drawn here, so only the switches count.
+    // Landscape as on start page: top sites over bookmarks in left half, recent pages in
+    // right one, half with nothing to show leaving other whole width; tiles
+    // portrait-sized. Empty sections still drawn here, so only switches count.
     readonly property bool landscape: screenWidth > screenHeight
     readonly property bool showsTiles: showsTopSites || showsBookmarks
     readonly property bool halves: landscape && showsTiles && showsRecentPages
@@ -264,7 +264,7 @@ Item {
                     objectName: "startPagePreviewBar"
                     anchors.bottom: parent.bottom
                     width: parent.width
-                    // Landscape bar slim, as on the browsing page.
+                    // Landscape bar slim, as on browsing page.
                     height: preview.landscape ? Theme.itemSizeSmall : Theme.itemSizeLarge
                     color: Theme.highlightDimmerColor
 

@@ -9,7 +9,7 @@ import harbour.salama 1.0
 ListItem {
     id: row
 
-    // Landscape cell: smaller title so two lines fit a third of keyboard-shrunk pane.
+    // Landscape cell: smaller title so two lines fit 1/3 of keyboard-shrunk pane.
     property bool compact: false
 
     readonly property bool isFile: model.kind === "download"

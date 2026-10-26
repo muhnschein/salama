@@ -1,7 +1,7 @@
 import QtQuick 2.6
 
 Item {
-    // Sized as Silica sizes it: a Column or Flow places no item with an empty side.
+    // Sized as Silica sizes it: Column or Flow places no item with empty side.
     width: parent ? parent.width : 0
     height: Theme.itemSizeMedium
     property string label

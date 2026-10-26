@@ -169,7 +169,7 @@ Item {
     }
 
     // Column by column from bottom left, as list grows up from field; sideways for more. Rows
-    // stretched to fill height: keyboard leaves just under three item heights.
+    // stretched to fill height: keyboard leaves barely under three item heights.
     SilicaGridView {
         id: columns
 

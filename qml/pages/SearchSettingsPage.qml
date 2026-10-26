@@ -10,7 +10,7 @@ Page {
 
     objectName: "searchSettingsPage"
     allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
-    // Landscape: the engines on the left, the address bar's suggestions on the right.
+    // Landscape: engines on left, address bar's suggestions on right.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     SearchEngineInstaller {

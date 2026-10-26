@@ -18,7 +18,7 @@ SilicaFlickable {
     readonly property bool showsTiles: showsTopSites || showsBookmarks
     // Landscape: top sites over bookmarks in left half, recent pages in right; half with
     // nothing to show leaves other whole width. Tiles portrait-sized (Screen.width is
-    // portrait's), at most StartPage::TopSiteLimit a row.
+    // portrait's), at most StartPage::TopSiteLimit per row.
     readonly property bool halves: landscape && showsTiles && showsRecentPages
     readonly property real columnWidth: halves ? width / 2 : width
     readonly property int fittingTiles: Math.floor(columnWidth / (Screen.width / 4))
@@ -36,7 +36,7 @@ SilicaFlickable {
     Component.onCompleted: StartPage.watch()
     Component.onDestruction: StartPage.unwatch()
 
-    // Grid, not Flow: a fractional column width never wraps. As tall as the taller half.
+    // Grid, not Flow: fractional column width never wraps. As tall as taller half.
     Grid {
         id: column
 

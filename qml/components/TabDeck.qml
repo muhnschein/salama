@@ -22,11 +22,11 @@ Item {
     readonly property bool gridShown: tabsOffset > 0 || primed
 
     // Max height seen in this orientation: resizing engine view mid-animation stretches
-    // content; keyboard covers. Keyboard never makes portrait page wider than tall, so a
-    // flip of that is a rotation.
+    // content; keyboard covers. Keyboard never makes portrait page wider than tall, so
+    // flip of that is rotation.
     property real fullHeight: 0
     // Shape at last flip. Silica turns width before height: square halfway counts as tall,
-    // either way round the max then settles it.
+    // either way round, max then settles it.
     property bool measuredTall: true
 
     readonly property real pullThreshold: Theme.itemSizeLarge

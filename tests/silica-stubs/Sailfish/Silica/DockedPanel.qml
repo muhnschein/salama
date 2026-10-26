@@ -29,7 +29,7 @@ Item {
     }
 
     // Dock.Top = 1, Dock.Bottom = 2, Dock.Right = 8, as stub plugin registers. As Silica: x and
-    // y of the axis not docked along are 0 for it.
+    // y of axis not docked along are 0 for it.
     function place() {
         if (dock === 2 && parent) {
             y = open ? parent.height - height : parent.height
@@ -40,7 +40,7 @@ Item {
         }
     }
 
-    // As Silica: turning to another edge moves both axes at once, so a side panel's y is 0
+    // As Silica: turning to another edge moves both axes at once, so side panel's y is 0
     // until its own handler places it.
     onDockChanged: {
         if (dock === 8) {

@@ -10,7 +10,7 @@ Page {
     id: readerSettingsPage
 
     property SettingNames names: SettingNames {}
-    // Landscape: the choices on the left, the sample article on the right.
+    // Landscape: choices on left, sample article on right.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     objectName: "readerSettingsPage"

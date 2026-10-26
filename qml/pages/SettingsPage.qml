@@ -19,7 +19,7 @@ Page {
                                           BookmarkModel.hasBookmark(CoverSettings.quickActionBookmark)
                                           ? CoverSettings.quickActionBookmark
                                           : BookmarkModel.idForUrl(CoverSettings.quickActionBookmarkUrl))
-    // Entries flow two a row on landscape.
+    // Entries flow two per row on landscape.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     function open(page) {

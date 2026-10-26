@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Silica's ContextMenu, a ComboBox's too, spans its nearest Flickable from that one's left edge:
-// in a column beside another it spread over both and went under the later one (device). This
-// unmoving Flickable is that nearest one, so a menu keeps to its column. Drags still reach the
+// Silica's ContextMenu, ComboBox's too, spans its nearest Flickable from that one's left edge:
+// in column beside another it spread over both and went under later one (device). This
+// unmoving Flickable is that nearest one, so menu keeps to its column. Drags still reach
 // page's own Flickable.
 import QtQuick 2.6
 

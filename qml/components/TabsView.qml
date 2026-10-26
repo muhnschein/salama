@@ -80,7 +80,7 @@ Item {
         footRow.parent = tabGrid
     }
 
-    // Under grid, so a carried cell shows over the group it is dropped on.
+    // Under grid, so carried cell shows over group it is dropped on.
     Rectangle {
         id: rail
 
@@ -293,7 +293,7 @@ Item {
         height: Math.min(parent.height, tabsView.pageHeight) - headRow.height - footRow.height
         visible: tabsView.searching && !tabsView.wide
         clip: true
-        // Only while searching: model resets on every tab change, a hidden list made all its
+        // Only while searching: model resets on every tab change, hidden list made all its
         // rows again each time (several per page load, measured).
         model: tabsView.searching && !tabsView.wide ? TabSearch : null
 

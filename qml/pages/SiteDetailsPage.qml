@@ -14,7 +14,7 @@ Page {
     property string title
     property Item view
     property SitePermissionNames siteNames: SitePermissionNames {}
-    // Landscape: the connection on the left, what the site may do on the right.
+    // Landscape: connection on left, what site may do on right.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     readonly property string origin: SitePermissions.originOf(url)
@@ -135,7 +135,7 @@ Page {
                         text: qsTr("Permissions")
                     }
 
-                    // Two a row on landscape.
+                    // Two per row on landscape.
                     Flow {
                         width: parent.width
 

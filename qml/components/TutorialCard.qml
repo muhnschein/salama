@@ -44,7 +44,7 @@ Rectangle {
 
             objectName: "tutorialCardColumn"
             x: Theme.horizontalPageMargin
-            // Centred, a little high, while it fits.
+            // Centred, slightly high, while it fits.
             y: Math.max(Theme.paddingLarge, (flick.height - height) / 2 - flick.height * 0.04)
             width: flick.width - 2 * Theme.horizontalPageMargin
             columns: card.wide ? 2 : 1

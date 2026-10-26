@@ -48,7 +48,7 @@ Item {
             touchHint.interactionMode = TouchInteraction.Pull
             touchHint.direction = TouchInteraction.Up
             touchHint.startY = height - bar.height - touchHint.height / 2
-            // Landscape: a quarter along, as whole bar drags.
+            // Landscape: quarter along, as whole bar drags.
             touchHint.anchors.horizontalCenterOffset = wide ? -width / 4 : 0
         } else if (step === "closeTab") {
             touchHint.direction = TouchInteraction.Left

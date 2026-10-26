@@ -3,7 +3,7 @@
 //
 // Silica TabBar geometry rebuilt from public API: TabBar is in Sailfish.Silica.private and
 // needs TabView, neither Harbour-allowed. Whole foot is drop zone while carrying, so no
-// trades with cells under it. Vertical (landscape rail): one name a row, + and edit at foot.
+// trades with cells under it. Vertical (landscape rail): one name per row, + and edit at foot.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0

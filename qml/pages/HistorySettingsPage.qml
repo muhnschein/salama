@@ -12,7 +12,7 @@ Page {
 
     objectName: "historySettingsPage"
     allowedOrientations: Orientation.Portrait | Orientation.LandscapeMask
-    // Landscape: the switches on the left, what is kept and the clearing on the right.
+    // Landscape: switches on left, what is kept and clearing on right.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     // Choice passed in: dialog gone before remorse ends. Engine clears all or nothing.

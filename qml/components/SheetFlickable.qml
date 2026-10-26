@@ -4,7 +4,7 @@
 // Fixed-size bottom sheet's content. Pull down only: overscroll drives sheet, y cancels it so
 // content stays under finger. No drag up, fling or quick scroll; Qt 5.6 has no one-sided
 // bounds, so clamp. Not AutoFlick: content fits, and auto with nothing to scroll won't drag.
-// Across: side sheet's, the same pulled right, x cancelling it.
+// Across: side sheet's, same pulled right, x cancelling it.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 

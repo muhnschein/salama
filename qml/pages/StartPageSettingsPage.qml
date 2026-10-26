@@ -10,7 +10,7 @@ Page {
     id: startPageSettings
 
     property SettingNames names: SettingNames {}
-    // Landscape: the choices on the left, the picture on the right.
+    // Landscape: choices on left, picture on right.
     readonly property real columnWidth: isLandscape ? width / 2 : width
 
     objectName: "startPageSettingsPage"

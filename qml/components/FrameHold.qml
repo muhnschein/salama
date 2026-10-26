@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Engine draws its last frame stretched to the view's new size until it draws one at that size:
-// after a turn, for a second or two on heavy pages (device). Turn: page colour over turned view
-// (upright frame in it read as one more movement, device), held until engine reports a visible
-// area of the view's own shape. Engine first lays page out at new size but old rotation (its
-// rotation waits out a filter): that area is the view's shape on its side, still held. Bar
+// Engine draws its last frame stretched to view's new size until it draws one at that size:
+// after turn, for 1-2 s on heavy pages (device). Turn: page colour over turned view
+// (upright frame in it read as one more movement, device), held until engine reports visible
+// area of view's own shape. Engine first lays page out at new size but old rotation (its
+// rotation waits out filter): that area is view's shape on its side, still held. Bar
 // changes no longer resize page.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
@@ -24,7 +24,7 @@ Item {
     // Engine reports it every scroll frame: read only while holding, no JS per frame otherwise.
     readonly property rect area: holding && view && view.contentRect ? view.contentRect
                                                                      : Qt.rect(0, 0, 0, 0)
-    // Finger on page: page must follow it. New document: nothing of the old to cover.
+    // Finger on page: page must follow it. New document: nothing old to cover.
     readonly property bool interrupted: !!view && (view.moving === true || view.dragging === true
                                                    || view.pinching === true
                                                    || view.painted === false)
@@ -113,7 +113,7 @@ Item {
         onHeightChanged: hold.viewResized()
     }
 
-    // Engine draws new size a frame or two after it reports it.
+    // Engine draws new size 1-2 frames after it reports it.
     Timer {
         id: settle
 
@@ -136,7 +136,7 @@ Item {
         onTriggered: hold.armed = false
     }
 
-    // Heavy page goes on redrawing a second or two after (device): slow fade lets it settle.
+    // Heavy page goes on redrawing 1-2 s after (device): slow fade lets it settle.
     NumberAnimation {
         id: fade
 

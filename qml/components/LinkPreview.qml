@@ -4,8 +4,8 @@
 // View from browsing page: only it imports Sailfish.WebView (SCOPE.md §5). Engine renders
 // all views into one picture, so sheet swaps in still of pressed page first.
 //
-// Landscape: sheet has no room for frame, so frame floats centred in room above sheet (where a
-// pressed picture is lifted to), page shaped; toggle row stays in the sheet.
+// Landscape: sheet has no room for frame, so frame floats centred in room above sheet (where
+// pressed picture is lifted to), page shaped; toggle row stays in sheet.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -82,7 +82,7 @@ Column {
         visible: Settings.linkPreview && !preview.floating
     }
 
-    // Lies in its slot in the sheet, or floats in room above it: as large as fits, margins
+    // Lies in its slot in sheet, or floats in room above it: as large as fits, margins
     // round it.
     Rectangle {
         id: frame

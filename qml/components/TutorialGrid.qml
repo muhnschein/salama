@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Real TabPreview cells over sketched ListModel, so gestures match real grid. Landscape, as
-// tab grid: no head or foot row; groups in a rail left of grid.
+// tab grid: no head or foot row; groups in rail left of grid.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -73,7 +73,7 @@ Item {
         id: tabs
     }
 
-    // Under grid, so a carried cell shows over the group it is dropped on.
+    // Under grid, so carried cell shows over group it is dropped on.
     Rectangle {
         objectName: "tutorialRail"
         width: tutorialGrid.railWidth

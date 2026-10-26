@@ -9,7 +9,7 @@ Grid {
     property bool secure: true
     property string verifiedBy
     property string reason
-    // Landscape: the icon beside the words, not above them.
+    // Landscape: icon beside words, not above them.
     property bool compact: false
 
     objectName: "siteSecurityHero"
@@ -22,7 +22,7 @@ Grid {
     Item {
         id: iconSpace
 
-        // Beside the words the icon keeps the page margin, as the rows under it do.
+        // Beside words icon keeps page margin, as rows under it do.
         width: hero.compact ? Theme.horizontalPageMargin + Theme.iconSizeLarge : hero.width
         height: Theme.iconSizeLarge
 

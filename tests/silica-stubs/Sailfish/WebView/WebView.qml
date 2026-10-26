@@ -30,7 +30,7 @@ Item {
     property bool pinching: false
     property color backgroundColor: "white"
     // QuickMozView: engine drew document once (false again from load start); visible part of
-    // page in CSS pixels, its shape the view's once engine laid page out at view's size.
+    // page in CSS pixels, its shape view's once engine laid page out at view's size.
     // Engine's painted is bool; undefined here for tests not about painting.
     property var painted
     property rect contentRect

@@ -2,7 +2,7 @@
 // Copyright (c) 2026 salama contributors
 //
 // Same carryOver()/dropTab()/endCarry() API as TabGroupStrip, for TabPreview. Vertical
-// (landscape rail): one name a row, + and edit at foot.
+// (landscape rail): one name per row, + and edit at foot.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
@@ -160,7 +160,7 @@ Item {
         }
     }
 
-    // Names from top, icons in a row at foot.
+    // Names from top, icons in row at foot.
     states: State {
         when: strip.vertical
 
