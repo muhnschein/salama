@@ -13548,6 +13548,50 @@ void tst_qmlload::pictureWaitsForFirstPaint()
     QCOMPARE(leave(), 1);
     webView->setProperty("loading", false);
     QCOMPARE(leave(), 0);
+
+    // Load ends mid-fling: no readback while page moves; one picture once it rests, again
+    // held off by new move before then.
+    const int resting = grabs();
+    webView->setProperty("moving", true);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), resting);
+    webView->setProperty("moving", false);
+    QCOMPARE(grabs(), resting);
+    webView->setProperty("moving", true);
+    QTest::qWait(300);
+    QCOMPARE(grabs(), resting);
+    webView->setProperty("moving", false);
+    QTRY_COMPARE(grabs(), resting + 1);
+    QTest::qWait(300);
+    QCOMPARE(grabs(), resting + 1);
+    QCOMPARE(leave(), 0);
+    // Painted mid-fling after load end: same wait.
+    webView->setProperty("painted", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    webView->setProperty("moving", true);
+    webView->setProperty("painted", true);
+    QCOMPARE(grabs(), resting + 1);
+    webView->setProperty("moving", false);
+    QTRY_COMPARE(grabs(), resting + 2);
+    // New load before rest: old document's picture dropped.
+    webView->setProperty("moving", true);
+    webView->setProperty("loading", true);
+    webView->setProperty("loading", false);
+    webView->setProperty("loading", true);
+    webView->setProperty("moving", false);
+    QTest::qWait(300);
+    QCOMPARE(grabs(), resting + 2);
+    webView->setProperty("loading", false);
+    QCOMPARE(grabs(), resting + 3);
+
+    // Left mid-fling: taken, but page still going; taken again once it rests.
+    webView->setProperty("moving", true);
+    QCOMPARE(leave(), 1);
+    webView->setProperty("moving", false);
+    QCOMPARE(leave(), 1);
+    QCOMPARE(leave(), 0);
 }
 
 #include "tst_qmlload.moc"

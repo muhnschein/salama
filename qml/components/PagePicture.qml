@@ -17,6 +17,9 @@ QtObject {
     property bool current: false
     property bool held: false
     property bool waiting: false
+    // Load-end picture held off while page moves: readback mid-fling drops frames and pictures
+    // scroll page leaves behind.
+    property bool deferred: false
     // Picture shows page as it is: none since load start, address change in page, scroll, zoom
     // or resize -> false.
     property bool fresh: false
@@ -28,6 +31,7 @@ QtObject {
     readonly property string address: view ? view.url.toString() : ""
 
     function capture() {
+        deferred = false
         if (!view || !current || held) {
             return
         }
@@ -50,9 +54,19 @@ QtObject {
         }
     }
 
-    onMovedChanged: {
+    function take() {
         if (moved) {
-            fresh = false
+            deferred = true
+        } else {
+            capture()
+        }
+    }
+
+    // Either way: picture taken mid-move shows page short of where it rests.
+    onMovedChanged: {
+        fresh = false
+        if (!moved && deferred) {
+            settle.restart()
         }
     }
     onShapeChanged: fresh = false
@@ -62,17 +76,29 @@ QtObject {
         waiting = false
         if (loading) {
             fresh = false
+            deferred = false
+            settle.stop()
         } else if (view.painted === false) {
             waiting = true
         } else {
-            capture()
+            take()
         }
     }
 
     onPaintedChanged: {
         if (painted && waiting) {
             waiting = false
-            capture()
+            take()
+        }
+    }
+
+    // Engine's last frames of fling land after moving ends. Moving again: waits for next rest.
+    property Timer settle: Timer {
+        interval: 200
+        onTriggered: {
+            if (picture.deferred && !picture.moved) {
+                picture.capture()
+            }
         }
     }
 }
