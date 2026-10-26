@@ -24,6 +24,10 @@ SilicaFlickable {
     objectName: "startPage"
     contentHeight: column.height
 
+    // Counted in while shown: history changes re-read only then.
+    Component.onCompleted: StartPage.watch()
+    Component.onDestruction: StartPage.unwatch()
+
     Column {
         id: column
 

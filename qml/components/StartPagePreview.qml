@@ -25,6 +25,10 @@ Item {
     objectName: "startPagePreview"
     height: frame.height
 
+    // As start page: counted in while shown.
+    Component.onCompleted: StartPage.watch()
+    Component.onDestruction: StartPage.unwatch()
+
     Rectangle {
         id: frame
 

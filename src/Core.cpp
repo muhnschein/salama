@@ -39,14 +39,15 @@ Core::Core(const QString &dataDirectory, const QString &configFilePath,
     const std::initializer_list<const QAbstractItemModel *> startPageSources{&m_history,
                                                                              &m_bookmarks};
     for (const QAbstractItemModel *source : startPageSources) {
-        connect(source, &QAbstractItemModel::modelReset, &m_startPage, &StartPage::refresh);
-        connect(source, &QAbstractItemModel::rowsInserted, &m_startPage, &StartPage::refresh);
-        connect(source, &QAbstractItemModel::rowsRemoved, &m_startPage, &StartPage::refresh);
-        connect(source, &QAbstractItemModel::dataChanged, &m_startPage, &StartPage::refresh);
+        connect(source, &QAbstractItemModel::modelReset, &m_startPage, &StartPage::sourceChanged);
+        connect(source, &QAbstractItemModel::rowsInserted, &m_startPage, &StartPage::sourceChanged);
+        connect(source, &QAbstractItemModel::rowsRemoved, &m_startPage, &StartPage::sourceChanged);
+        connect(source, &QAbstractItemModel::rowsMoved, &m_startPage, &StartPage::sourceChanged);
+        connect(source, &QAbstractItemModel::dataChanged, &m_startPage, &StartPage::sourceChanged);
     }
     // Engine added/removed changes which pages count as searches vs sites.
     connect(m_settings.searchEngines(), &SearchEngines::enginesChanged, &m_startPage,
-            &StartPage::refresh);
+            &StartPage::sourceChanged);
     connect(&m_tabs, &TabModel::activeTabDataChanged, &m_bookmarks,
             [this]() { m_bookmarks.setActiveUrl(m_tabs.activeUrl()); });
     m_bookmarks.setActiveUrl(m_tabs.activeUrl());
