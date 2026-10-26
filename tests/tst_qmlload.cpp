@@ -276,6 +276,7 @@ private slots:
     void mediaControls();
     void muteOnTheGrid();
     void webNotifications();
+    void leftoverNotificationsSweptAfterLaunch();
     void notificationPermissions();
     void notificationSettingsPage();
     void sitePermissionsPage();
@@ -10142,6 +10143,38 @@ void tst_qmlload::webNotifications()
     settle();
     QVERIFY(ofTheTab.isNull() || ofTheTab->property("isClosed").toBool());
     QVERIFY(notifications->keys().isEmpty());
+}
+
+// Asking server for last run's leftovers is blocking D-Bus round trip: after launch, not in it.
+// This run's own, shown before then, kept.
+void tst_qmlload::leftoverNotificationsSweptAfterLaunch()
+{
+    QObject *center =
+        find(QStringLiteral("browserPage"))->property("notifications").value<QObject *>();
+    auto *sweep = evaluate(center, QStringLiteral("leftovers")).value<QObject *>();
+    QVERIFY(sweep->property("running").toBool());
+    QVERIFY(sweep->property("interval").toInt() >= 2000);
+    QObject *view = currentWebView();
+    QMetaObject::invokeMethod(view, "viewInitialized");
+    relay(view, message(QStringLiteral("show"), 1, QStringLiteral("Hello")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QObject *own = findAll(QStringLiteral("webNotification")).first();
+    const int ownId = own->property("replacesId").toInt();
+    QVERIFY(ownId != 0);
+    // Timer's file imports Nemo.Notifications; center's outer scope doesn't.
+    evaluate(sweep,
+             QStringLiteral("NotificationServer.left = ["
+                            " center.probeComponent.createObject(center, { replacesId: 41 }),"
+                            " center.probeComponent.createObject(center, { replacesId: %1 })]")
+                 .arg(ownId));
+    const QVariantList left = evaluate(sweep, QStringLiteral("NotificationServer.left")).toList();
+    QCOMPARE(left.count(), 2);
+    QVERIFY(!left.first().value<QObject *>()->property("isClosed").toBool());
+    QMetaObject::invokeMethod(sweep, "triggered");
+    QVERIFY(left.first().value<QObject *>()->property("isClosed").toBool());
+    QVERIFY(!left.last().value<QObject *>()->property("isClosed").toBool());
+    QVERIFY(!own->property("isClosed").toBool());
+    QCOMPARE(findAll(QStringLiteral("webNotification")), QList<QObject *>{own});
 }
 
 // Permission prompt Firefox-style (allow, always block, not now); only for on-screen page;
