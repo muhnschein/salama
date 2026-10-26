@@ -4581,6 +4581,18 @@ void tst_qmlload::menuNamesThePage()
              QStringLiteral("image://theme/qwant-favicon"));
     QTRY_VERIFY(shown("menuPageFavicon"));
     QVERIFY(!shown("menuPageInitial"));
+    // Icon fetched only for open menu (Qt's network stack, past Gecko's cache): kept once
+    // fetched, new page's icon waits for menu.
+    evaluate(menu, QStringLiteral("hide()"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/qwant-favicon"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/icon-m-favicon"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(), QString());
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-favicon"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/qwant-favicon"));
+    QTRY_VERIFY(shown("menuPageFavicon"));
     tabs->updateTitle(front, QString());
     QCOMPARE(text("menuPageTitle"), QStringLiteral("qwant.com"));
     tabs->updateTitle(front, title);

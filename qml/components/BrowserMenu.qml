@@ -195,6 +195,7 @@ DockedPanel {
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
+                shown: menu.open
                 tlsBroken: menu.tlsBroken
                 onDetailsRequested: menu.openSiteDetails()
                 onCopyRequested: {
