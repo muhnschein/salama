@@ -10012,7 +10012,7 @@ void tst_qmlload::webNotifications()
     QCOMPARE(view->property("frameScripts").toStringList().count(notifications->relayScriptUrl()),
              1);
     // Notification shim installed on document arrival and again after load (engine runs no script
-    // before view made).
+    // before view made). In-page address change keeps document: no reinstall.
     const auto installs = [view, notifications]() {
         return view->property("scripts").toStringList().count(notifications->pageScript());
     };
@@ -10026,8 +10026,13 @@ void tst_qmlload::webNotifications()
     view->setProperty("loading", true);
     view->setProperty("loading", false);
     QCOMPARE(installs(), installed + 1);
+    view->setProperty("url", QStringLiteral("https://www.qwant.com/?q=chats"));
+    QCOMPARE(installs(), installed + 1);
+    view->setProperty("loading", true);
     view->setProperty("url", QStringLiteral("https://www.qwant.com/?q=chat"));
     QCOMPARE(installs(), installed + 2);
+    view->setProperty("loading", false);
+    QCOMPARE(installs(), installed + 3);
 
     relay(view, message(QStringLiteral("show"), 1, QStringLiteral("Hello"), QStringLiteral("room")),
           QLatin1String(ChatSite), QStringLiteral("granted"));
