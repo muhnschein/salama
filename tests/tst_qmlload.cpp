@@ -9002,6 +9002,14 @@ void tst_qmlload::cover()
              evaluate(dots, QStringLiteral("Image.PreserveAspectCrop")).toInt());
     QCOMPARE(dots->property("verticalAlignment").toInt(),
              evaluate(dots, QStringLiteral("Image.AlignVCenter")).toInt());
+    // Decoded off UI thread at cover's width, no mipmaps: full art held 8 MB, slowed launch.
+    QVERIFY(dots->property("asynchronous").toBool());
+    QVERIFY(!dots->property("mipmap").toBool());
+    QCOMPARE(dots->property("sourceSize").toSizeF().width(), halftone->width());
+    QTRY_COMPARE(dots->property("status").toInt(),
+                 evaluate(dots, QStringLiteral("Image.Ready")).toInt());
+    QCOMPARE(dots->property("implicitWidth").toReal(), halftone->width());
+    QVERIFY(dots->property("implicitHeight").toReal() > halftone->height());
     const QSize drawn = QImage(source.toLocalFile()).size();
     const qreal coverAspect = evaluate(dots, QStringLiteral("Theme.coverSizeLarge.height"
                                                             " / Theme.coverSizeLarge.width"))

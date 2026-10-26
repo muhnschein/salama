@@ -14,7 +14,9 @@ Item {
 
     objectName: "coverHalftone"
 
-    // Image = shape only; tint below is what shows.
+    // Image = shape only; tint below is what shows. Decoded off UI thread at drawn width (art
+    // taller than any cover, so width decides): full 704x1280 with mipmaps took 20-60 ms of
+    // launch, 8 MB held. Not before laid out, else decoded twice.
     Image {
         id: dots
 
@@ -23,8 +25,9 @@ Item {
         visible: false
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
-        source: Qt.resolvedUrl("../../art/cover/halftone.png")
+        asynchronous: true
+        sourceSize.width: width
+        source: width > 0 ? Qt.resolvedUrl("../../art/cover/halftone.png") : ""
     }
 
     ColorOverlay {
