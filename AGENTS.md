@@ -19,12 +19,23 @@ In this order; later step only once earlier ones hold:
 3. Tests proven to bite: each fails with change reverted or mutated. Report how (e.g. "22/22 mutations caught"); name what headless tests can't prove.
 4. `make check` green locally.
 5. PR CI green (`check` workflow). SonarQube is report, not gate (SCOPE.md §6), but read it: no new issues, new-code coverage held. Say what it flags.
-6. Device RPM: dispatch `.github/workflows/rpm.yml` on PR branch, give user the artifact link.
+6. Device: dispatch `.github/workflows/rpm.yml` on PR branch; run RPM on test phone (see "Device tests"); give user artifact link and evidence.
 7. With RPM: outline briefly what merging this PR risks and how you mitigated it.
 
 Feature reachable from several places (page menu, tab view, long-press sheet, cover, settings, share sheet) → all of them.
 
 User tests RPM on phone; that test judges feel, lag, transitions. Say exactly what to check on device.
+
+## Device tests
+
+- Test phone: OnePlus 6, SFOS 5.1, via `muhnschein-sfos-harness` workflow `do`, shared with other apps' agents. Its AGENTS.md rules every run (lease, tags, baseline, no blind taps, costly ops); helpers: its README, `scripts/lib.sh`; Salama's screens: its `apps/salama.md`. Never run fork or others' PR code there: any job can root phone.
+- Phone runs SFOS 5.1, Salama needs 5.2: harness installs past dependencies (user's go, until phone has 5.2). UI, settings, storage results hold; engine behaviour (loads, rendering, Gecko crashes) may differ on 5.2: report as 5.1 result.
+- Build in: `install_artifact muhnschein/salama RUN_ID harbour-salama` (rpm.yml run on PR branch) or `install_rpm URL SHA256` (release). Same job as `launch`: harness refuses build it didn't install.
+- Every run starts from named state, `state.txt` records it plus RPM: `clean` (`reset`), `fixture:NAME`, `upgrade:FROM` (release FROM plus data, then build over it; required when change touches stored data or settings).
+- Footprint check (`fs_mark`, `footprint harbour-salama`): file written outside known dirs → add to harness `apps/harbour-salama.dirs` or fail run.
+- Before/after: same start state, same steps. Motion or timing change: launch with `FRAMELOG`, report `frames`. Never measure frames while recording.
+- `text` (harness keyboard) closes address field: no page loads via address bar yet (harness `apps/salama.md` "Typing").
+- Evidence: link shots on harness results branch in PR. Harness proves function and frame timing; feel, lag, transitions stay user's call on device.
 
 ## Local checks
 
