@@ -3,6 +3,7 @@
 
 BUILD ?= build
 JOBS ?= $(shell nproc 2>/dev/null || echo 2)
+TEST_JOBS ?= $(JOBS)
 CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Debug -DSALAMA_COVERAGE=ON
 COVERAGE_MIN ?= 80
 
@@ -10,7 +11,7 @@ CXX_SOURCES := $(shell find src tests -name '*.cpp' -o -name '*.h' | sort)
 TS_FILES := $(sort $(wildcard translations/harbour-salama*.ts))
 
 .PHONY: all configure build test coverage fmt fmt-apply tidy qml-lint packaging-lint \
-        harbour-check harbour-selftest sonar-selftest sonar-reports lint check \
+        harbour-check harbour-selftest sonar-selftest ci-selftest sonar-reports lint check \
         translations clean
 
 all: build
@@ -23,9 +24,10 @@ $(BUILD)/CMakeCache.txt: CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt 
 build: configure
 	cmake --build $(BUILD) -j $(JOBS)
 
-# One process per test, serial, no retries (second-attempt pass = defect).
+# One process per test (tst_qmlload: per test function, tests/CMakeLists.txt), TEST_JOBS at
+# once, no retries (second-attempt pass = defect).
 test: build
-	cd $(BUILD) && ctest --output-on-failure -j 1 --timeout 120
+	cd $(BUILD) && ctest --output-on-failure -j $(TEST_JOBS) --timeout 120
 
 # Drop compiler-made exception branches no test can take (632 of 1732; dragged imported
 # Sonar coverage down). Line coverage gate unaffected.
@@ -63,6 +65,12 @@ harbour-selftest:
 sonar-selftest:
 	ci/sonar-report-selftest.sh
 
+# CI helpers' own proof: apt mirror pick and fallback, docs-only skip, crash backtraces.
+ci-selftest:
+	ci/apt-install-selftest.sh
+	ci/changes-selftest.sh
+	ci/core-backtraces-selftest.sh
+
 # Gather what SonarQube imports: coverage report, compile DB. sonar-project.properties names
 # both under build/; other BUILD needs that file changed. Not in `check`: Sonar is report.
 sonar-reports: coverage
@@ -72,7 +80,7 @@ sonar-reports: coverage
 		echo "sonar-reports: BUILD is $(BUILD); sonar-project.properties names build/" >&2
 	@echo "sonar-reports: $(BUILD)/coverage/sonar-coverage.xml and $(BUILD)/compile_commands.json"
 
-lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest
+lint: fmt qml-lint packaging-lint harbour-check harbour-selftest sonar-selftest ci-selftest
 
 check: lint build test coverage tidy
 	@echo "check: all gates green"
