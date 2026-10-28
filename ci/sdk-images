@@ -2,8 +2,14 @@
 # (ci/build-in-container.sh, rpm.yml read this). Digest, not tag: third-party image runs
 # privileged with read-write checkout, tags repointable.
 #
-# New SDK: pull tag once, read `docker inspect --format '{{index .RepoDigests 0}}'`, add
-# line. Never delete one: older releases verify against it (docs/VERIFYING.md).
+# Image: piirit's derived one (github.com/muhnschein/piirit, ci/build-sdk-image.sh,
+# sdk-image.yml): upstream coderus/sailfishos-platform-sdk cut to aarch64, six layers. Pulls
+# ~2.3 GB in ~1.5 min, not 5 GB in 2-6 min. Holds every BuildRequires upstream did;
+# reproducible.yml proves package same byte for byte as built in upstream.
+#
+# New SDK or image: piirit's sdk-image.yml publishes one; paste its pin line here. Old
+# images stay published: older releases verify against image their tag's copy of this
+# file names (docs/VERIFYING.md).
 #
 # <sfos-version> <image@digest>
-5.2.0.15 docker.io/coderus/sailfishos-platform-sdk@sha256:e7c4379393b17ee63d7f7443ce9930c315a61fdb2e732016346ccbe8c934435e
+5.2.0.15 ghcr.io/muhnschein/piirit-sdk@sha256:870013c63021a7549989bec7f15b5d55b43570cb1ce377482578ae5d577243ac

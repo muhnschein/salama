@@ -98,7 +98,8 @@ gate, measures, open issues into job log and step summary. `continue-on-error`: 
 
 Without SDK, Podman or Docker: `ci/build-in-container.sh` (`make clean` first: mb2 builds
 in tree). `.github/workflows/rpm.yml` runs same script unattended (postivene's pattern):
-`coderus/sailfishos-platform-sdk` pinned by digest in `ci/sdk-images` (5.2.0.15), target
+piirit's SDK image pinned by digest in `ci/sdk-images` (5.2.0.15; upstream
+`coderus/sailfishos-platform-sdk` cut to aarch64, six layers: ~1.5 min pull, not 2-6), target
 from image, checkout owned by SDK user and mounted in its home (scratchbox2 rpm maps
 unknown absolute paths into target rootfs), then `mb2 -X build-init`, `build-requires`,
 `build --no-check`. Parallel make. No cache: SDK image restore no faster than pull; build

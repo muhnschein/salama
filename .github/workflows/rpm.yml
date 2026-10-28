@@ -143,18 +143,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Upstream SDK image unpacks to many GB; runner's spare toolchains make room.
+      # SDK image unpacks to ~7 GB; runner's spare toolchains make room. Its build user is
+      # uid 1000: no subordinate id widening (docs/VERIFYING.md).
       - name: Make room
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet \
                       "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}"
-
-      # SDK image's build user is uid 100000: beyond runner's 65536 subordinate ids
-      # (docs/VERIFYING.md).
-      - name: Widen the subordinate id range
-        run: |
-          sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
-          podman system migrate
 
       - name: Rebuild
         env:
