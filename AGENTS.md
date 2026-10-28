@@ -30,6 +30,7 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
 
 - `make check` = CI: clean checkout, no phone, no SDK, no network. Targets and what each catches: BUILDING.md "Lints and gates".
 - Missing optional tool = SKIP locally, FAIL in CI (`PACKAGING_LINT_STRICT=1`). Say which steps skipped.
+- Iterating → run only what change touches: `cd build && ctest -R 'tst_qmlload\.tabs'`. Before every push: full `make check`. CI runs everything (docs-only PR: `packaging-lint` only).
 - Local failure → rerun on untouched `main` before calling it environment.
 - Gates catch device-only breakage (Qt 5.6 QML on Qt 5.15 host, Harbour rules, `Sailfish.WebView` placement, delegate roles); reasons in BUILDING.md, SCOPE.md §6. Gate red → fix code, never loosen gate or add waiver unasked.
 - Tests wait on signals or conditions (`QTRY_*`, `QSignalSpy::wait`), not fixed sleeps or wall-clock asserts (those flake on loaded runners).

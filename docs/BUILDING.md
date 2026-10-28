@@ -22,12 +22,37 @@ and `ci/qml-lint.sh` catch what 5.15 accepts and 5.6 rejects.
 | `harbour-check` | `ci/harbour-check.sh` | unwaived Harbour rule |
 | `harbour-selftest` | `ci/harbour-check-selftest.sh` | checker misses broken rule |
 | `build` | CMake, `-Wall -Wextra -Wpedantic -Werror` | warnings |
-| `test` | ctest, one process per test, serial, no retries | any failure |
+| `test` | ctest, one process per test (`tst_qmlload`: per test function), `TEST_JOBS` (default cores) at once, no retries | any failure |
 | `coverage` | gcovr over `src/` (minus `main.cpp`) | line coverage < 80% |
 | `sonar-selftest` | `ci/sonar-report-selftest.sh` vs stub server | report script drops field |
-| `tidy` | clang-tidy, `.clang-tidy` | any finding |
+| `ci-selftest` | `ci/apt-install-selftest.sh`, `ci/changes-selftest.sh`, `ci/core-backtraces-selftest.sh` | apt keeps wrong list or misses slow mirror; docs-only rule skips code; crash leaves no stack |
+| `tidy` | clang-tidy, `.clang-tidy`, one process per file, `TIDY_JOBS` (default cores) at once | any finding |
 
 Missing tool: SKIP locally, fail in CI (`PACKAGING_LINT_STRICT=1`).
+
+Iterating: run what change touches, e.g. `cd build && ctest -R 'tst_qmlload\.tabs'`,
+`ctest -R tst_historymodel`. Full `make check` before every push.
+
+## CI
+
+- **`make check`** (`ci.yml`), one job, as on laptop. Tests run side by side: most wait on Qt
+  timers, not CPU. `tst_qmlload` split per function after each link
+  (`tests/split-test.cmake`): 108 processes, own temp dir each, ports picked by OS. Serial
+  suite ~2 min on runner, side by side seconds; tidy per file, serial ~7 min.
+- **Docs-only PR skips build, tests, tidy, Sonar**: `changes` job runs `ci/changes.sh` on
+  merge commit's diff vs base. Only `*.md` outside `third_party/` (CMake installs
+  `third_party/readability/LICENSE.md`). `packaging-lint` still runs: reads
+  `docs/CHANGELOG.md`, `docs/HARBOUR.md`, every `docs/*.md` link. Skipped job passes
+  required check. Push to `main`, dispatch: everything.
+- **apt mirror timed per job** (`ci/apt-install.sh`): runner's `azure.archive.ubuntu.com`
+  trickles debs on some runners (seen 26 kB/s, 1 h), indexes fast even then; apt moves on
+  only on error. After index, script reads 2 MiB of biggest deb from each mirror in
+  `/etc/apt/apt-mirrors.txt` plus `mirrors.edge.kernel.org` (≤5 s each), fastest first.
+  Still slow or down: first try capped at 240 s, then next mirror once (`archive.ubuntu.com`).
+- **Test killed by signal leaves its core**: `ci.yml` points `kernel.core_pattern` at
+  `$RUNNER_TEMP/cores`, proves a core lands, on failure `ci/core-backtraces.sh` prints every
+  thread's stack, keeps core, binary, stacks as `test-cores` artifact (7 days). Rare crash on
+  loaded runner, no local repro: next one comes with its stack.
 
 ## Test tiers
 
@@ -80,7 +105,11 @@ unknown absolute paths into target rootfs), then `mb2 -X build-init`, `build-req
 takes seconds.
 
 Reproducible: commit time as `SOURCE_DATE_EPOCH`, fixed host and path; same commit, same
-RPM, byte for byte. Release gated on rebuild matching (`VERIFYING.md`).
+RPM, byte for byte. Release gated on rebuild matching (`VERIFYING.md`). Rebuild runs beside
+release build on second runner (`verify-release.sh --save`), small `compare` job checks both
+(`--rebuilt`): release waits for slower build, not both. Same in `reproducible.yml`.
+Rehearsal: dispatch `rpm.yml` with `rehearse` ticked, any branch: same build, rebuild,
+compare; tags and publishes nothing. Use when release path changed.
 
 Run from Actions tab (`sfos_version` input), cut release with it (`RELEASING.md`), or push
 `build-*` tag to build branch before workflow reaches default branch. Spec holds version and
