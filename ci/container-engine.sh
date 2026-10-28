@@ -58,7 +58,7 @@ ctr_pull() {
     "$engine" image inspect "$ref" >/dev/null 2>&1 && return 0
     "$engine" pull "$ref" && return 0
     if [ "$engine" = podman ] && [ "$rootless" = 1 ]; then
-        echo "$prog: if Podman said 'insufficient UIDs or GIDs': SDK image's build user is" \
+        echo "$prog: if Podman said 'insufficient UIDs or GIDs': upstream SDK image's build user is" \
              "uid 100000, beyond default 65536 subordinate ids (docs/VERIFYING.md):" >&2
         echo "    sudo usermod --add-subuids 100000-599999 --add-subgids 100000-599999 $(id -un)" >&2
         echo "    podman system migrate" >&2

@@ -15,7 +15,7 @@
 #   --rebuilt <file>  don't rebuild: compare against this earlier rebuild
 #   --podman, --docker  engine to use; default: Docker if running, else Podman
 #
-# Needs git, curl, sha256sum, Podman or Docker. First run: ~5 GB pull. Builds in fresh
+# Needs git, curl, sha256sum, Podman or Docker. First run: ~2.3 GB pull. Builds in fresh
 # clone under SALAMA_WORKDIR, never in this tree; checks for 2 GB free there.
 #
 # Exit, worst of copies checked: 0 same file, byte for byte; 1 same files inside,

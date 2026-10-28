@@ -4,7 +4,9 @@
 # packaging: change proves itself before merge.
 #
 # Docker build on one runner, Podman rebuild on another at same time, other time zone and
-# umask; small job compares. Same as release gate.
+# umask; small job compares. Same as release gate. Rebuilt twice: in pinned image
+# (piirit's derived one, ci/sdk-images) and in upstream image it derives from, so
+# pinned image provably changes nothing in package (docs/VERIFYING.md).
 name: reproducible
 
 on:
@@ -56,24 +58,35 @@ jobs:
 
   # Beside `build`, not after: needs its package only to compare (`compare`).
   rebuild:
-    name: Rebuild with Podman
+    name: Rebuild with Podman (${{ matrix.sdk }} SDK)
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sdk: pinned
+            image: ""
+          # piirit's ci/build-sdk-image.sh derives pinned image from this digest.
+          - sdk: upstream
+            image: docker.io/coderus/sailfishos-platform-sdk@sha256:e7c4379393b17ee63d7f7443ce9930c315a61fdb2e732016346ccbe8c934435e
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Make room
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet \
                       "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}"
-      # SDK image's build user is uid 100000: beyond runner's 65536 subordinate ids
-      # (docs/VERIFYING.md).
+      # Upstream image's build user is uid 100000: beyond runner's 65536 subordinate ids
+      # (docs/VERIFYING.md). Pinned one's is 1000.
       - name: Widen the subordinate id range
+        if: matrix.sdk == 'upstream'
         run: |
           sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
           podman system migrate
       - name: Rebuild from a fresh clone
         env:
           SALAMA_ENGINE: podman
+          SALAMA_SDK_IMAGE: ${{ matrix.image }}
           TZ: Pacific/Chatham
         run: |
           umask 0002
@@ -82,16 +95,20 @@ jobs:
             ci/verify-release.sh --no-download --ref "$SHA" --save reproduced/reproduced.rpm
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: reproduced
+          name: reproduced-${{ matrix.sdk }}
           path: reproduced/reproduced.rpm
           if-no-files-found: error
           retention-days: 7
 
   compare:
-    name: Compare byte for byte
+    name: Compare byte for byte (${{ matrix.sdk }} SDK)
     needs: [build, rebuild]
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [pinned, upstream]
     permissions:
       contents: read
       actions: read
@@ -103,9 +120,11 @@ jobs:
         with:
           ref: ${{ env.SHA }}
       - name: Fetch both packages
+        env:
+          SDK: ${{ matrix.sdk }}
         run: |
           gh run download "$GITHUB_RUN_ID" -n repro-build --dir rpms
-          gh run download "$GITHUB_RUN_ID" -n reproduced --dir rpms
+          gh run download "$GITHUB_RUN_ID" -n "reproduced-$SDK" --dir rpms
       # Identical: done in seconds. Different: unpacks both in SDK image to say what differs.
       - name: Compare
         env:
