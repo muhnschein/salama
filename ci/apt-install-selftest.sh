@@ -19,6 +19,8 @@ fi
 status=0
 cases=0
 
+# Fixture URLs https, never fetched; runner's own lists mostly http. Script keys on host,
+# keeps scheme, so either proves same.
 stage() {
     rm -rf "$work/sources"
     mkdir -p "$work/sources"
@@ -34,14 +36,14 @@ EOF
     # matters.
     cat >"$work/sources/ubuntu.sources" <<'EOF'
 Types: deb
-URIs: http://azure.archive.ubuntu.com/ubuntu/
+URIs: https://azure.archive.ubuntu.com/ubuntu/
 Suites: noble noble-updates noble-backports
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 EOF
     # One-line format (older image).
     cat >"$work/sources/archive.list" <<'EOF'
-deb http://archive.ubuntu.com/ubuntu jammy main
+deb https://archive.ubuntu.com/ubuntu jammy main
 EOF
     # Not a source list. apt ignores anything without the two extensions; so
     # must this.
@@ -206,9 +208,9 @@ default_speeds() {
 
 # Image's mirror list (ubuntu.sources names it `mirror+file:`): azure first.
 image_mirrors() {
-    printf '%s\tpriority:%s\n' http://azure.archive.ubuntu.com/ubuntu/ 1 \
+    printf '%s\tpriority:%s\n' https://azure.archive.ubuntu.com/ubuntu/ 1 \
         https://archive.ubuntu.com/ubuntu/ 2 \
-        http://security.ubuntu.com/ubuntu/ 3
+        https://security.ubuntu.com/ubuntu/ 3
     return 0
 }
 
@@ -217,7 +219,7 @@ image_mirrors() {
 run_install() {
     local mode=$1
     stage
-    printf 'deb http://de.archive.ubuntu.com/ubuntu jammy main\n' >"$work/sources.list"
+    printf 'deb https://de.archive.ubuntu.com/ubuntu jammy main\n' >"$work/sources.list"
     image_mirrors >"$work/apt-mirrors.txt"
     rm -f "$work/probes" "$work/down"
     if [[ -n "$mode" ]]; then
@@ -281,26 +283,26 @@ check "every install skips Recommends, the probe's too" \
 check "a working mirror is left as it is" \
     grep -q 'azure.archive.ubuntu.com' "$work/sources/ubuntu.sources"
 check "a working mirror stays first in the image's mirror list" \
-    grep -q '^http://azure.archive.ubuntu.com/' "$work/apt-mirrors.txt"
+    grep -q '^https://azure.archive.ubuntu.com/' "$work/apt-mirrors.txt"
 
 run_install once
 check "a failed mirror is tried once more" test "$(grep -c '' "$work/apt.log")" -eq 3
 check "the retry goes to archive.ubuntu.com (deb822)" \
-    grep -q 'URIs: http://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
+    grep -q 'URIs: https://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
 check "the retry goes to archive.ubuntu.com (sources.list)" \
-    grep -q 'deb http://archive.ubuntu.com/ubuntu jammy' "$work/sources.list"
+    grep -q 'deb https://archive.ubuntu.com/ubuntu jammy' "$work/sources.list"
 check "the retry goes to archive.ubuntu.com (image's mirror list)" \
-    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ http://security.ubuntu.com/ubuntu/ http://azure.archive.ubuntu.com/ubuntu/ "
+    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ https://security.ubuntu.com/ubuntu/ https://azure.archive.ubuntu.com/ubuntu/ "
 check "a failed index is not followed by timing mirrors" test ! -s "$work/probes"
 check "the mirror list keeps security.ubuntu.com" \
-    grep -q '^http://security.ubuntu.com/' "$work/apt-mirrors.txt"
+    grep -q '^https://security.ubuntu.com/' "$work/apt-mirrors.txt"
 check "the log says the mirror was switched" \
     grep -q 'now uses archive.ubuntu.com' "$work/out"
 
 run_install install-once
 check "a failed download is tried once more" test "$(grep -c '' "$work/apt.log")" -eq 5
 check "the download retry goes to archive.ubuntu.com" \
-    grep -q 'URIs: http://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
+    grep -q 'URIs: https://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
 
 # slow <mode> <why>: trickling call cut at cap, rest from archive, well before
 # stand-in's 60 s.
@@ -310,7 +312,7 @@ slow() {
     local rc=$?
     check "$why" test "$rc" -eq 0 -a $((SECONDS - began)) -lt 30
     check "$why, from archive.ubuntu.com" \
-        grep -q 'URIs: http://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
+        grep -q 'URIs: https://archive.ubuntu.com/ubuntu/' "$work/sources/ubuntu.sources"
     return 0
 }
 slow update-slow "a trickling index is cut short and fetched again"
@@ -324,7 +326,7 @@ set_speeds 'azure.archive.ubuntu.com 206 131072 5.0' \
     'security.ubuntu.com 206 2097152 0.1'
 run_install ""
 check "the fastest mirror goes first, security.ubuntu.com stays last" \
-    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ http://azure.archive.ubuntu.com/ubuntu/ http://security.ubuntu.com/ubuntu/ "
+    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ https://azure.archive.ubuntu.com/ubuntu/ https://security.ubuntu.com/ubuntu/ "
 check "the mirror list keeps the image's form" \
     grep -q $'^https://archive.ubuntu.com/ubuntu/\tpriority:1$' "$work/apt-mirrors.txt"
 check "mirrors are timed on the biggest deb the install needs" \
@@ -345,7 +347,7 @@ run_again
 check "a mirror already listed is timed once" \
     test "$(grep -c 'kernel.org' "$work/probes")" -eq 1
 check "a mirror already listed is listed once" \
-    test "$(mirror_order)" = "http://azure.archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ https://archive.ubuntu.com/ubuntu/ http://security.ubuntu.com/ubuntu/ "
+    test "$(mirror_order)" = "https://azure.archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ https://archive.ubuntu.com/ubuntu/ https://security.ubuntu.com/ubuntu/ "
 
 # Error page comes fast: by bytes per second alone, azure would win.
 set_speeds 'azure.archive.ubuntu.com 404 283 0.0001' \
@@ -353,7 +355,7 @@ set_speeds 'azure.archive.ubuntu.com 404 283 0.0001' \
     'mirrors.edge.kernel.org 206 1048576 5.0'
 run_install ""
 check "a mirror answering with an error is never first" \
-    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ http://azure.archive.ubuntu.com/ubuntu/ http://security.ubuntu.com/ubuntu/ "
+    test "$(mirror_order)" = "https://archive.ubuntu.com/ubuntu/ https://mirrors.edge.kernel.org/ubuntu/ https://azure.archive.ubuntu.com/ubuntu/ https://security.ubuntu.com/ubuntu/ "
 
 set_speeds 'nowhere.example 206 1 1'
 run_install ""
@@ -372,7 +374,7 @@ set_speeds 'azure.archive.ubuntu.com 206 131072 5.0' \
     'mirrors.edge.kernel.org 206 2097152 0.8'
 run_install download-slow
 check "a picked mirror that trickles after all hands over to the next fastest" \
-    test "$(mirror_order)" = "https://mirrors.edge.kernel.org/ubuntu/ http://azure.archive.ubuntu.com/ubuntu/ http://security.ubuntu.com/ubuntu/ https://archive.ubuntu.com/ubuntu/ "
+    test "$(mirror_order)" = "https://mirrors.edge.kernel.org/ubuntu/ https://azure.archive.ubuntu.com/ubuntu/ https://security.ubuntu.com/ubuntu/ https://archive.ubuntu.com/ubuntu/ "
 
 # fails <mode> <why>: archive no better, job must fail.
 fails() {
