@@ -53,7 +53,7 @@ local: VERIFIED, same file as the rebuild, byte for byte.
 
 `ci/packaging-lint.sh` (`make check`) fails if spec drops the date and host pins.
 
-Releases pass this check in CI before publishing (`reproduce` in
+Releases pass this check in CI before publishing (`reproduce` and `compare` in
 `.github/workflows/rpm.yml`: fresh clone, Podman, other runner, time zone, umask). `main`
 weekly and PRs touching packaging too (`.github/workflows/reproducible.yml`).
 

@@ -2,7 +2,7 @@
 # Rebuilds a release from its source, checks it against the published RPM.
 #
 #     ci/verify-release.sh [--podman | --docker] [--rpm <file>] [--no-download]
-#                          [--ref <ref>] [<version>]
+#                          [--ref <ref>] [--save <file>] [--rebuilt <file>] [<version>]
 #
 #   <version>       release to check, e.g. 0.9.0; default: latest
 #   --rpm <file>    check this file too (e.g. one copied off a phone); version from its
@@ -10,6 +10,9 @@
 #   --no-download   don't check GitHub's copy; only --rpm's
 #   --ref <ref>     build this tag, branch or commit, not v<version> (rpm.yml checks a
 #                   release before it is tagged)
+#   --save <file>   keep rebuilt RPM there; with --no-download and no --rpm, only
+#                   rebuild (rpm.yml: rebuild beside release build)
+#   --rebuilt <file>  don't rebuild: compare against this earlier rebuild
 #   --podman, --docker  engine to use; default: Docker if running, else Podman
 #
 # Needs git, curl, sha256sum, Podman or Docker. First run: ~5 GB pull. Builds in fresh
@@ -33,7 +36,7 @@ github=muhnschein/salama
 repo=${SALAMA_REPO:-https://github.com/$github.git}
 
 usage() {
-    sed -n '4,13p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '4,16p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 3
 }
 
@@ -41,12 +44,16 @@ rpm=""
 download=1
 ref=""
 version=""
+save=""
+rebuilt=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --podman | --docker) SALAMA_ENGINE=${1#--}; export SALAMA_ENGINE ;;
         --rpm) [ $# -ge 2 ] || usage; rpm=$2; shift ;;
         --no-download) download=0 ;;
         --ref) [ $# -ge 2 ] || usage; ref=$2; shift ;;
+        --save) [ $# -ge 2 ] || usage; save=$2; shift ;;
+        --rebuilt) [ $# -ge 2 ] || usage; rebuilt=$2; shift ;;
         -h | --help) usage ;;
         -*) echo "$prog: unknown option $1" >&2; usage ;;
         *) [ -z "$version" ] || usage; version=$1 ;;
@@ -80,8 +87,11 @@ cleanup() {
 trap cleanup EXIT
 mkdir -p "$work/cmp"
 
-# What to check against: GitHub's copy, --rpm's, or both.
-[ "$download" = 1 ] || [ -n "$rpm" ] || fail "--no-download: nothing to check; give --rpm"
+# What to check against: GitHub's copy, --rpm's, or both; none: rebuild only.
+[ "$download" = 1 ] || [ -n "$rpm" ] || [ -n "$save" ] ||
+    fail "--no-download: nothing to check; give --rpm, or --save to only rebuild"
+[ -z "$rebuilt" ] || [ -f "$rebuilt" ] || fail "no such file: $rebuilt"
+[ -z "$rebuilt" ] || [ -z "$save" ] || fail "--rebuilt reuses a rebuild, --save keeps a new one; pick one"
 if [ -n "$rpm" ]; then
     [ -f "$rpm" ] || fail "no such file: $rpm"
     cp "$rpm" "$work/cmp/local.rpm"
@@ -112,37 +122,47 @@ if [ "$download" = 1 ]; then
 fi
 ref=${ref:-v$version}
 
-# Fresh clone: nothing uncommitted from anywhere gets in.
-echo ">> cloning $ref"
-src="$work/harbour-salama"
-if printf '%s\n' "$ref" | grep -Eq '^[0-9a-f]{7,40}$'; then
-    git clone --quiet "$repo" "$src"
-    git -C "$src" checkout --quiet --detach "$ref"
+if [ -n "$rebuilt" ]; then
+    echo ">> comparing against the rebuild in $rebuilt"
+    cp "$rebuilt" "$work/cmp/rebuilt.rpm"
+    # Image to unpack in: this tree's pin (rpm.yml: same commit).
+    src=$here
 else
-    git clone --quiet --depth 1 --branch "$ref" "$repo" "$src" 2>/dev/null ||
-        git clone --quiet --branch "$ref" "$repo" "$src" ||
-        fail "can't clone $ref from $repo"
+    # Fresh clone: nothing uncommitted from anywhere gets in.
+    echo ">> cloning $ref"
+    src="$work/harbour-salama"
+    if printf '%s\n' "$ref" | grep -Eq '^[0-9a-f]{7,40}$'; then
+        git clone --quiet "$repo" "$src"
+        git -C "$src" checkout --quiet --detach "$ref"
+    else
+        git clone --quiet --depth 1 --branch "$ref" "$repo" "$src" 2>/dev/null ||
+            git clone --quiet --branch "$ref" "$repo" "$src" ||
+            fail "can't clone $ref from $repo"
+    fi
+
+    # Source's own recipe. Releases from before it had one: this tree's, same pinned image
+    # their rpm.yml used.
+    if [ ! -f "$src/ci/build-in-container.sh" ]; then
+        echo ">> $ref predates reproducible releases: expect same files inside," \
+             "different packaging"
+        for f in ci/build-in-container.sh ci/container-engine.sh ci/sdk-images; do
+            cp "$here/$f" "$src/$f"
+            # Build tooling, not packaged: hide from uncommitted-changes warning.
+            echo "/$f" >> "$src/.git/info/exclude"
+        done
+    fi
+
+    # Commit time, from clone: never caller's.
+    unset SOURCE_DATE_EPOCH
+    sh "$src/ci/build-in-container.sh" || fail "the build failed"
+
+    built=$(find "$src/RPMS" -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
+    [ -n "$built" ] || fail "the build made no device RPM"
+    cp "$built" "$work/cmp/rebuilt.rpm"
+    if [ -n "$save" ]; then
+        cp "$built" "$save" || fail "can't save the rebuild to $save"
+    fi
 fi
-
-# Source's own recipe. Releases from before it had one: this tree's, same pinned image
-# their rpm.yml used.
-if [ ! -f "$src/ci/build-in-container.sh" ]; then
-    echo ">> $ref predates reproducible releases: expect same files inside," \
-         "different packaging"
-    for f in ci/build-in-container.sh ci/container-engine.sh ci/sdk-images; do
-        cp "$here/$f" "$src/$f"
-        # Build tooling, not packaged: hide from uncommitted-changes warning.
-        echo "/$f" >> "$src/.git/info/exclude"
-    done
-fi
-
-# Commit time, from clone: never caller's.
-unset SOURCE_DATE_EPOCH
-sh "$src/ci/build-in-container.sh" || fail "the build failed"
-
-built=$(find "$src/RPMS" -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
-[ -n "$built" ] || fail "the build made no device RPM"
-cp "$built" "$work/cmp/rebuilt.rpm"
 
 sum() {
     f=$1
@@ -155,6 +175,10 @@ for c in github local; do
 done
 printf '%-8s %s\n' rebuilt "$ours"
 [ -z "$rpm" ] || echo "local    = $rpm"
+if [ ! -f "$work/cmp/github.rpm" ] && [ ! -f "$work/cmp/local.rpm" ]; then
+    echo "rebuilt  = $save; nothing to check it against here"
+    exit 0
+fi
 
 # Unpacked in SDK image (rpm2cpio, cpio there, maybe not here). As root: rootless, that's
 # us; reads our files whatever image's user.

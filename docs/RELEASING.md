@@ -21,4 +21,8 @@ on `main` (as piirit, vuo).
 5. Submit RPM from release page at https://harbour.jolla.com, changelog section as notes.
 6. After approval, note Harbour release date in changelog.
 
+Release path changed (`rpm.yml`, `ci/verify-release.sh`, spec)? Rehearse first: dispatch
+`rpm` with `rehearse` ticked, any branch. Same build, rebuild, compare; tags and publishes
+nothing.
+
 Never re-tag: rejected submission gets new patch version.

@@ -11,6 +11,8 @@ export NO_PROXY=127.0.0.1,localhost
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 script="$root/ci/sonar-report.sh"
+# Stub answers at once: no 5 s between polls (a failing-task case polls five times).
+export SONAR_POLL_SECONDS=0
 work=$(mktemp -d)
 
 server_pid=""

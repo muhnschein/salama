@@ -34,8 +34,34 @@ function(salama_add_test name)
         SALAMA_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
         SALAMA_STUBS_DIR="${STUBS_DIR}"
     )
-    add_test(NAME ${name} COMMAND ${name})
-    set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    if(name IN_LIST SALAMA_SPLIT_TESTS)
+        salama_split_test(${name})
+    else()
+        add_test(NAME ${name} COMMAND ${name})
+        set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    endif()
+endfunction()
+
+# One ctest test per test function (`<name>.<function>`), own process each: ctest -j runs
+# them side by side. Whole tst_qmlload in one process was ~2 min, most of `make test`.
+# Names come from built binary (-functions) after each link (split-test.cmake); before
+# first build, a placeholder test fails, saying so.
+set(SALAMA_SPLIT_TESTS tst_qmlload)
+function(salama_split_test name)
+    set(list ${CMAKE_CURRENT_BINARY_DIR}/${name}_tests.cmake)
+    set(include ${CMAKE_CURRENT_BINARY_DIR}/${name}_include.cmake)
+    add_custom_command(TARGET ${name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -DTEST_EXE=$<TARGET_FILE:${name}> -DTEST_NAME=${name}
+                -DOUT=${list} -P ${CMAKE_CURRENT_SOURCE_DIR}/split-test.cmake
+        BYPRODUCTS ${list}
+        VERBATIM)
+    file(WRITE ${include}
+        "if(EXISTS [==[${list}]==])\n"
+        "    include([==[${list}]==])\n"
+        "else()\n"
+        "    add_test(${name}_NOT_BUILT ${name}_NOT_BUILT)\n"
+        "endif()\n")
+    set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES ${include})
 endfunction()
 
 foreach(test

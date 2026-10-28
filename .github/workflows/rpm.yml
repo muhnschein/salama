@@ -29,6 +29,12 @@ on:
           build. See docs/RELEASING.md.
         type: string
         default: ""
+      rehearse:
+        description: >
+          Rehearse a release on this branch: build as the release would, rebuild
+          it on a second runner and compare, but tag and publish nothing.
+        type: boolean
+        default: false
   push:
     tags: ["v*", "build-*"]
 
@@ -46,6 +52,7 @@ jobs:
       SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
       # Dispatch free text: via env, never spliced into script; checked vs spec Version first.
       RELEASE: ${{ inputs.release || '' }}
+      REHEARSE: ${{ inputs.rehearse && '1' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -53,7 +60,8 @@ jobs:
       # spec, else package and release page disagree. Dispatch limited to main: release
       # job tags that commit. Runs first so mistake costs seconds, not SDK pull.
       #
-      # Release builds spec as committed (Release: 1, what Harbour gets). Others get
+      # Release and its rehearsal build spec as committed (Release: 1, what Harbour
+      # gets; `reproduce` rebuilds that). Others get
       # 1.<run number> so each upgrades previous (rpm -U, pkcon skip known NEVRA).
       # Digits and periods only (Harbour).
       - name: Stamp the release
@@ -75,6 +83,8 @@ jobs:
             ci/release-notes.sh "$version" >/dev/null || {
               echo "::error::docs/CHANGELOG.md has no '## [$version]' section to release"
               exit 1; }
+            release=1
+          elif [ -n "$REHEARSE" ]; then
             release=1
           else
             release="1.${GITHUB_RUN_NUMBER}"
@@ -120,18 +130,16 @@ jobs:
   # Release gate: fresh clone of same commit, rebuilt the way docs/VERIFYING.md tells users
   # (ci/verify-release.sh), on another runner, with Podman not Docker, another time zone
   # and umask. Not byte-identical: no release. Users' check is then one CI already passed.
+  #
+  # Beside `rpm`, not after: needs that package only to compare (`compare`). Release waits
+  # for slower of two builds, not their sum.
   reproduce:
-    name: Rebuild byte for byte
-    needs: rpm
-    if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
+    name: Rebuild from a fresh clone
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release != '' || inputs.rehearse
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
       contents: read
-      actions: read
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -148,33 +156,69 @@ jobs:
           sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
           podman system migrate
 
-      - name: Fetch the package the build made
-        run: gh run download "$GITHUB_RUN_ID" --dir rpms
-
-      - name: Rebuild and compare
+      - name: Rebuild
         env:
           SALAMA_ENGINE: podman
           SALAMA_SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
           TZ: Pacific/Chatham
         run: |
           umask 0002
+          mkdir -p reproduced
+          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
+            ci/verify-release.sh --no-download --ref "$GITHUB_SHA" \
+              --save reproduced/reproduced.rpm
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reproduced
+          path: reproduced/reproduced.rpm
+          if-no-files-found: error
+          retention-days: 30
+
+  # Release package against rebuild, verify-release.sh's own comparison: byte for byte,
+  # else what differs inside. Own job: holds no write.
+  compare:
+    name: Rebuild byte for byte
+    needs: [rpm, reproduce]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Fetch both packages
+        run: |
+          gh run download "$GITHUB_RUN_ID" --dir rpms --pattern 'harbour-salama-*'
+          gh run download "$GITHUB_RUN_ID" --dir rpms --name reproduced
+
+      # Identical: done in seconds. Different: unpacks both in SDK image to say what differs.
+      - name: Compare
+        env:
+          SALAMA_ENGINE: docker
+          SALAMA_SFOS: ${{ inputs.sfos_version || '5.2.0.15' }}
+        run: |
           rpm=$(find rpms -name 'harbour-salama-*.rpm' ! -name '*debug*' \
                      ! -name '*.src.rpm' | head -1)
           [ -n "$rpm" ] || { echo "::error::no device RPM to check"; exit 1; }
-          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
-            ci/verify-release.sh --no-download --rpm "$rpm" --ref "$GITHUB_SHA"
+          ci/verify-release.sh --no-download --rpm "$rpm" --ref "$GITHUB_SHA" \
+            --rebuilt rpms/reproduced.rpm
 
   # Release: built package on GitHub release v<version>, text = version's
   # docs/CHANGELOG.md section. Own job so `contents: write` never reaches privileged
   # third-party SDK build. Needs build, which ends with validator: rejected package gets
-  # no release; and `reproduce`: package nobody can rebuild gets none either.
+  # no release; and `compare`: package nobody can rebuild gets none either.
   #
   # `v*` tag: tag exists, `--verify-tag` won't invent one. Dispatch: release creates tag
   # on checked-out commit, so tag, release, RPM = one commit. Existing release is added
   # to, so re-run finishes after transient failure. Runner's own `gh`, job token.
   release:
     name: GitHub release
-    needs: [rpm, reproduce]
+    needs: [rpm, compare]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -189,7 +233,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Fetch the package this run built
-        run: gh run download "$GITHUB_RUN_ID" --dir rpms
+        run: gh run download "$GITHUB_RUN_ID" --dir rpms --pattern 'harbour-salama-*'
 
       # Device RPM + checksum only; debug/source RPMs are for developers.
       - name: Gather the assets
