@@ -26,6 +26,12 @@ SUMMARY=$(printenv GITHUB_STEP_SUMMARY || true)
 # Issues to list. 500 = API page max. 100 once truncated 115 issues.
 PAGE=500
 
+# Seconds between task polls; selftest sets 0, its stub answers at once.
+POLL=$(printenv SONAR_POLL_SECONDS || true)
+if [[ -z "$POLL" ]]; then
+    POLL=5
+fi
+
 if [[ ! -f "$TASK_FILE" ]]; then
     echo "no $TASK_FILE -- the scanner did not get as far as uploading" >&2
     exit 1
@@ -116,7 +122,7 @@ for _ in $(seq 60); do
             break
         fi
     fi
-    sleep 5
+    sleep "$POLL"
 done
 
 if [[ "$status" != "SUCCESS" ]]; then
