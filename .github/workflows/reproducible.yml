@@ -3,8 +3,8 @@
 # repos feed BuildRequires each build, can change without commit here. On PRs touching
 # packaging: change proves itself before merge.
 #
-# Docker build on one runner, Podman rebuild on another, other time zone and umask: same
-# as release gate.
+# Docker build on one runner, Podman rebuild on another at same time, other time zone and
+# umask; small job compares. Same as release gate.
 name: reproducible
 
 on:
@@ -54,17 +54,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  check:
-    name: Rebuild with Podman and compare
-    needs: build
+  # Beside `build`, not after: needs its package only to compare (`compare`).
+  rebuild:
+    name: Rebuild with Podman
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    permissions:
-      contents: read
-      actions: read
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Make room
@@ -77,14 +71,46 @@ jobs:
         run: |
           sudo sed -i "s/^$(id -un):.*/$(id -un):165536:1000000/" /etc/subuid /etc/subgid
           podman system migrate
-      - run: gh run download "$GITHUB_RUN_ID" -n repro-build --dir rpms
-      - name: Rebuild and compare
+      - name: Rebuild from a fresh clone
         env:
           SALAMA_ENGINE: podman
           TZ: Pacific/Chatham
         run: |
           umask 0002
+          mkdir -p reproduced
+          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
+            ci/verify-release.sh --no-download --ref "$SHA" --save reproduced/reproduced.rpm
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reproduced
+          path: reproduced/reproduced.rpm
+          if-no-files-found: error
+          retention-days: 7
+
+  compare:
+    name: Compare byte for byte
+    needs: [build, rebuild]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+      - name: Fetch both packages
+        run: |
+          gh run download "$GITHUB_RUN_ID" -n repro-build --dir rpms
+          gh run download "$GITHUB_RUN_ID" -n reproduced --dir rpms
+      # Identical: done in seconds. Different: unpacks both in SDK image to say what differs.
+      - name: Compare
+        env:
+          SALAMA_ENGINE: docker
+        run: |
           rpm=$(find rpms -name 'harbour-salama-*.rpm' ! -name '*debug*' ! -name '*.src.rpm' | head -1)
           [ -n "$rpm" ] || { echo "::error::no device RPM to check"; exit 1; }
-          SALAMA_REPO="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
-            ci/verify-release.sh --no-download --rpm "$rpm" --ref "$SHA"
+          ci/verify-release.sh --no-download --rpm "$rpm" --ref "$SHA" --rebuilt rpms/reproduced.rpm
