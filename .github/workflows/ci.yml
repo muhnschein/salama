@@ -17,13 +17,33 @@ permissions:
   contents: read
 
 jobs:
+  # Docs-only PR (`*.md` outside third_party/): no build, tests, tidy; a job
+  # skipped by `if:` passes as required check. Rules: ci/changes.sh.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Merge commit and its base parent.
+          fetch-depth: 2
+      - id: diff
+        run: ci/changes.sh >>"$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+
   check:
     name: make check
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # gdb: ci/core-backtraces-selftest.sh, crashed tests' stacks.
       - name: Install toolchain
         run: |
           ci/apt-install.sh \
@@ -31,12 +51,24 @@ jobs:
             qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev qtdeclarative5-dev-tools \
             qttools5-dev-tools libqt5sql5-sqlite \
             qml-module-qtquick2 qml-module-qtqml qml-module-qtquick-window2 qml-module-qttest \
-            gcovr shellcheck desktop-file-utils rpm file
+            gcovr shellcheck desktop-file-utils rpm file gdb
+
+      # Test killed by signal leaves core here; read below on failure. Proved each run:
+      # shell that crashes itself must leave one, else step fails.
+      - name: Keep crashed tests' cores
+        run: |
+          mkdir -p "$RUNNER_TEMP/cores"
+          echo "$RUNNER_TEMP/cores/core.%p.%E" | sudo tee /proc/sys/kernel/core_pattern
+          ulimit -c unlimited
+          ! bash -c 'kill -SEGV $$'
+          rm "$RUNNER_TEMP"/cores/core.*bash
 
       - name: make check
         env:
           PACKAGING_LINT_STRICT: "1"
-        run: make check
+        run: |
+          ulimit -c unlimited
+          make check
 
       # SonarQube import; report, not gate.
       - name: Upload coverage reports
@@ -46,6 +78,36 @@ jobs:
           name: coverage
           path: build/coverage/
           if-no-files-found: ignore
+
+      # Crashed test: stacks in log; core, its binary, stacks kept a week.
+      - name: Backtrace crashed tests
+        if: failure()
+        run: ci/core-backtraces.sh "$RUNNER_TEMP/cores"
+      - name: Upload crashed tests' cores
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-cores
+          path: ${{ runner.temp }}/cores
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Docs-only PR: gates that read docs (changelog sections, Sailjail permissions in
+  # docs/HARBOUR.md, every docs/*.md link) still run.
+  docs:
+    name: packaging-lint (docs only)
+    needs: changes
+    if: needs.changes.outputs.code == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install packaging tools
+        run: ci/apt-install.sh qttools5-dev-tools shellcheck desktop-file-utils rpm
+      - name: make packaging-lint
+        env:
+          PACKAGING_LINT_STRICT: "1"
+        run: make packaging-lint
 
   allow-lists:
     name: Harbour allow-lists drift (warning only)

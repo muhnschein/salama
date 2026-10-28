@@ -24,15 +24,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Docs-only PR (`*.md` outside third_party/): no scan, as ci.yml's make check.
+  # Markdown has no rules here but secrets; GitHub's secret scanning reads it
+  # anyway. Rules: ci/changes.sh.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Merge commit and its base parent.
+          fetch-depth: 2
+      - id: diff
+        run: ci/changes.sh >>"$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+
   sonar:
     name: SonarQube Cloud
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Fork PRs get no secrets: empty SONAR_TOKEN -> confusing auth failure. Skip;
     # merge gets analysed on main.
     if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      needs.changes.outputs.code == 'true' && (
+        github.event_name != 'pull_request' ||
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
