@@ -5387,9 +5387,14 @@ void tst_qmlload::linkMenuForPictures()
     auto *pictureCatch = qobject_cast<QQuickItem *>(
         findObjects(find(QStringLiteral("linkMenuDim")), QStringLiteral("sheetShadeTap")).first());
     QCOMPARE(pictureCatch->y(), 0.0);
-    picture->setProperty("visible", true);
+    // Drawn = loaded. Tests have no network: local picture, else forced `visible` raced
+    // network answer and lost under load.
     QObject *overlayItem = find(QStringLiteral("linkMenuOverlay"));
-    QVERIFY(overlayItem->property("pictureShown").toBool());
+    overlayItem->setProperty(
+        "picture",
+        QUrl::fromLocalFile(QStringLiteral(SALAMA_SOURCE_DIR "/icons/86x86/harbour-salama.png"))
+            .toString());
+    QTRY_VERIFY(overlayItem->property("pictureShown").toBool());
     QCOMPARE(pictureCatch->y(),
              overlayItem->property("pictureTop").toReal() - menu->property("y").toReal());
     QVERIFY(pictureCatch->y() < 0);
@@ -8155,6 +8160,7 @@ void tst_qmlload::mediaControls()
     Salama::PageMedia *media = m_core->pageMedia();
     const int first = tabs->activeTabId();
     QObject *behind = currentWebView();
+    QSignalSpy switchAsked(media, &Salama::PageMedia::requested);
     const int second = tabs->newTab(QStringLiteral("https://two.example/"));
     QObject *front = currentWebView();
     QVERIFY(front != behind);
@@ -8163,6 +8169,11 @@ void tst_qmlload::mediaControls()
     FingerWindow fingers(root);
     QQuickWindow &window = *fingers.window();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
+    // Tab switch queries pages queryDelay later. Let it land, else on slow runner it lands
+    // between engine's play and check below; on fast one, counted as play's query.
+    QTRY_VERIFY(!switchAsked.isEmpty());
+    front->setProperty("scripts", QStringList());
+    behind->setProperty("scripts", QStringList());
     auto *bar = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBar")));
     QObject *scope = find(QStringLiteral("viewArea"));
     QObject *mute = find(QStringLiteral("muteButton"));
