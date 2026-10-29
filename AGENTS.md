@@ -22,6 +22,8 @@ In this order; later step only once earlier ones hold:
 6. Device: dispatch `.github/workflows/rpm.yml` on PR branch; run RPM on test phone (see "Device tests"); give user artifact link and evidence.
 7. With RPM: outline briefly what merging this PR risks and how you mitigated it.
 
+PR opens as draft on first push. Mark ready for review only once steps 1–7 hold and their evidence is in PR body.
+
 Feature reachable from several places (page menu, tab view, long-press sheet, cover, settings, share sheet) → all of them.
 
 User tests RPM on phone; that test judges feel, lag, transitions. Say exactly what to check on device.
@@ -35,7 +37,7 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
 - Footprint check (`fs_mark`, `footprint harbour-salama`): file written outside known dirs → add to harness `apps/harbour-salama.dirs` or fail run.
 - Before/after: same start state, same steps. Motion or timing change: launch with `FRAMELOG`, report `frames`. Never measure frames while recording.
 - `text` (harness keyboard) closes address field: no page loads via address bar yet (harness `apps/salama.md` "Typing").
-- Evidence: link shots on harness results branch in PR. Harness proves function and frame timing; feel, lag, transitions stay user's call on device.
+- Evidence: only files from harness results branch, as published (crops, GIFs, charts made from them OK); never type identifiers in. Harness proves function and frame timing; feel, lag, transitions stay user's call on device.
 
 ## Local checks
 
@@ -71,6 +73,12 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
 - Commit and PR titles: Conventional Commits, plain language, ≤ 72 chars, say outcome: `feat(history): group pages by date`. Types `feat` `fix` `perf` `refactor` `test` `docs` `ci` `build` `chore`; scope = app area or subsystem (`tabs`, `history`, `downloads`, `reader`, `settings`, `cover`, `rpm`, …). Issue number in parentheses when there is one. Body says why, plain prose; brief, to the point.
 - PR body: the problem in a sentence or two, then how you fixed it. End with the model and harness that did the work.
 - Final diff: no debug logging, no `TEMPORARY` workflow steps, no leftovers.
+- Evidence shown in PR body, not just described:
+  - UI → before/after device screenshots.
+  - Transitions, motion, feel, lag → before/after GIF (preferred: plays inline; mp4 by URL shows as link only) or mp4. GIF from harness mp4 via `ffmpeg`.
+  - Performance → before/after chart (image), numbers in table beside it. Frame timing from separate `frames` run: recording slows compositor.
+  - Non-visual proof (tests, mutations, logs) → text.
+- Evidence on GitHub, never in tree: harness results branch files embedded by URL; made ones (GIFs, charts) pushed to orphan branch `evidence/pr-N`, deleted after merge.
 - Flaky test → find and fix cause. Never add retries (`make test` runs none by design: pass on second try = defect). Never re-run CI until green and call it done. Never skip test or loosen assert. One re-run OK only for infra failure before any test ran (runner lost, apt mirror timeout); say so.
 - Merge only on user's explicit go. Merge commit, not squash/rebase.
 
