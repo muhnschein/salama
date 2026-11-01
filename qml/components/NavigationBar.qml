@@ -88,18 +88,14 @@ Item {
     }
 
     function beginEditing(newTab) {
-        console.log("PERF edit-begin")
         forNewTab = newTab === true
         openedWith = forNewTab ? "" : navigationBar.url
         urlField.text = openedWith
         editing = true
-        console.log("PERF edit-focus")
         urlField.forceActiveFocus()
-        console.log("PERF edit-focused")
         if (!forNewTab) {
             urlField.selectAll()
         }
-        console.log("PERF edit-end")
     }
 
     function endEditing() {

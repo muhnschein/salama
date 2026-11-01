@@ -52,7 +52,6 @@ MouseArea {
     }
 
     onPressed: {
-        console.log("PERF press")
         pressedY = sceneY(mouse.y)
         pressedAt = scenePoint(mouse)
         lastAt = pressedAt
@@ -104,7 +103,6 @@ MouseArea {
         }
     }
     onReleased: {
-        console.log("PERF release")
         var at = scenePoint(mouse)
         if (forwarding) {
             bar.pageTouchEnded(at)

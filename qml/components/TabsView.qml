@@ -119,11 +119,8 @@ Item {
                 }
             }
             onTapped: {
-                console.log("PERF tab-tap-begin")
                 TabModel.activateTabById(model.tabId)
-                console.log("PERF tab-activated")
                 tabsView.tabActivated()
-                console.log("PERF tab-tap-end")
             }
             onCloseRequested: TabModel.closeTabById(model.tabId)
             onMoveRequested: GroupTabs.moveTab(from, to)
