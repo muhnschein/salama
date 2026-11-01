@@ -687,9 +687,10 @@ bool TabModel::storeThumbnail(int tabId, const QVariant &image)
     return true;
 }
 
-void TabModel::thumbnailWritten(int tabId, const QString &path, bool saved)
+void TabModel::thumbnailWritten(int tabId, const QString &requested, const QString &path,
+                                bool saved)
 {
-    const bool newest = m_pendingThumbnails.value(tabId) == path;
+    const bool newest = m_pendingThumbnails.value(tabId) == requested;
     if (newest) {
         m_pendingThumbnails.remove(tabId);
     }

@@ -40,12 +40,19 @@ public:
     }
 
     // Writer waits for pool before dying, so still alive to signal. JPEG: PNG took 8x as long
-    // to encode, on core Gecko paints with. Reader finds PNG by content despite .jpg name.
+    // to encode, on core Gecko paints with. Suffix follows format: Qt 5.6 Image picks decoder
+    // by suffix, PNG named .jpg never loaded (empty start page tile on device).
     void run() override
     {
-        const bool saved =
-            seeThrough(m_image) ? m_image.save(m_path, "PNG") : m_image.save(m_path, "JPEG", 85);
-        emit m_writer->written(m_tabId, m_path, saved);
+        if (!seeThrough(m_image)) {
+            emit m_writer->written(m_tabId, m_path, m_path, m_image.save(m_path, "JPEG", 85));
+            return;
+        }
+        QString path = m_path;
+        if (path.endsWith(QLatin1String(".jpg"))) {
+            path.replace(path.size() - 3, 3, QStringLiteral("png"));
+        }
+        emit m_writer->written(m_tabId, m_path, path, m_image.save(path, "PNG"));
     }
 
 private:
