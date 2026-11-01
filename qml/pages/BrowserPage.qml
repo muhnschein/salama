@@ -255,7 +255,7 @@ WebViewPage {
 
     Connections {
         target: TabModel
-        onActiveTabChanged: browserPage.updateCurrentView()
+        onActiveTabChanged: { console.log("PERF tabchanged-begin"); browserPage.updateCurrentView(); console.log("PERF tabchanged-end") }
         onCountChanged: browserPage.ensureTab()
     }
 
@@ -326,17 +326,20 @@ WebViewPage {
                        && browserPage.currentView.history.entries.length > 0
             compact: browserPage.barCompact
             onAccepted: browserPage.openChosen(omnibar.enter(text), inNewTab)
-            onBack: browserPage.goBack()
+            onBack: { console.log("PERF back-begin"); browserPage.goBack(); console.log("PERF back-end") }
             onBackPressed: browserPage.askBackHistory()
             onBackHeld: browserPage.showBackHistory()
             onReloadOrStop: browserPage.reloadOrStop()
-            onShowMenu: browserMenu.get().show()
+            onShowMenu: { console.log("PERF menu-show-begin"); browserMenu.get().show(); console.log("PERF menu-show-end") }
             // Capture and prime grid while finger down: both in drag's first frame stuttered.
             onDragArmed: {
+                console.log("PERF armed-begin")
                 browserPage.captureCurrent()
+                console.log("PERF armed-captured")
                 deck.prime()
+                console.log("PERF armed-end")
             }
-            onDragDisarmed: deck.unprime()
+            onDragDisarmed: { console.log("PERF disarm-begin"); deck.unprime(); console.log("PERF disarm-end") }
             onDragStarted: deck.beginDrag()
             onDragMoved: deck.dragTo(distance)
             onDragFinished: deck.settle(distance > deck.pullThreshold)
