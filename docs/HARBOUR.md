@@ -62,6 +62,8 @@ cache, config dirs; nothing else stored elsewhere except downloads. Sharing need
 permission (`Base`). Notifications neither: `Base` includes `Notifications.permission`
 for `org.freedesktop.Notifications`. Shown via `Nemo.Notifications 1.0` (validator QML
 list); package requires `nemo-qml-plugin-notifications-qt5` (validator dependency list).
+Tab pictures written as JPEG (PNG encode 8x slower, on core Gecko paints with): package
+requires `qt5-plugin-imageformat-jpeg` (validator dependency list).
 Upload picker is Sailfish.Pickers' `ContentPickerPage`: each list needs its folder
 permission plus `MediaIndexing`; verified in device smoke test.
 

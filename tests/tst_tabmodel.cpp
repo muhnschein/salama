@@ -704,8 +704,26 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
     QCOMPARE(QFileInfo(path).absolutePath(),
              QDir(dir.path() + QStringLiteral("/previews")).absolutePath());
     QImageReader reader(path);
-    QCOMPARE(reader.format(), QByteArrayLiteral("png"));
+    QCOMPARE(reader.format(), QByteArrayLiteral("jpeg"));
+    QCOMPARE(QFileInfo(path).suffix(), QStringLiteral("jpg"));
     QCOMPARE(reader.size(), picture.size());
+
+    // Start page picture see-through: kept as PNG, alpha intact (JPEG made tiles black and
+    // colours saturated). Named .png: Qt 5.6 Image decodes by suffix, PNG named .jpg showed
+    // empty tile on device.
+    QImage seeThrough(picture.size(), QImage::Format_ARGB32_Premultiplied);
+    seeThrough.fill(Qt::transparent);
+    seeThrough.setPixelColor(10, 10, QColor(0, 139, 139, 128));
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(seeThrough)));
+    QTRY_VERIFY(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString() != path);
+    const QString clear = role(model, 0, roleId(TabModel::Role::Thumbnail)).toString();
+    QCOMPARE(QImageReader(clear).format(), QByteArrayLiteral("png"));
+    QCOMPARE(QFileInfo(clear).suffix(), QStringLiteral("png"));
+    QVERIFY(!QFile::exists(path));
+    const QImage read(clear);
+    QCOMPARE(read.size(), picture.size());
+    QCOMPARE(read.pixelColor(0, 0).alpha(), 0);
+    QCOMPARE(read.pixelColor(10, 10).alpha(), 128);
 
     QVERIFY(!model.storeThumbnail(a, QVariant::fromValue(QImage())));
     QVERIFY(!model.storeThumbnail(a, QVariant()));
@@ -727,8 +745,11 @@ void tst_tabmodel::staleThumbnailWritesAreDiscarded()
     QImage picture(32, 64, QImage::Format_ARGB32_Premultiplied);
     picture.fill(Qt::darkCyan);
     const auto files = [&previews]() { return QDir(previews).entryList(QDir::Files); };
+    // Superseded see-through picture went to .png, not name asked for: that file goes too.
+    QImage clear(picture.size(), QImage::Format_ARGB32_Premultiplied);
+    clear.fill(Qt::transparent);
 
-    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(clear)));
     QVERIFY(model.storeThumbnail(a, QVariant::fromValue(picture)));
     QVERIFY(model.storeThumbnail(b, QVariant::fromValue(picture)));
     model.closeTab(model.indexOf(b));

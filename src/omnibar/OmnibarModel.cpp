@@ -11,9 +11,10 @@
 #include "tabs/TabModel.h"
 
 #include <QHash>
-#include <QSet>
+#include <QVector>
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 
 namespace Salama {
 
@@ -72,8 +73,103 @@ struct Pages
     }
 };
 
+using SiteIcons = QHash<QString, QString>;
+
+// URL parse once per source change, not per keystroke.
+struct Sites
+{
+    bool valid = false;
+    // url -> displayAddress.
+    QHash<QString, QString> hosts;
+    // host -> first favicon in source order.
+    SiteIcons icons;
+
+    void add(const QString &url, const QString &favicon)
+    {
+        auto host = hosts.constFind(url);
+        if (host == hosts.cend()) {
+            host = hosts.insert(url, SearchSettings::displayAddress(url));
+        }
+        if (!favicon.isEmpty() && !icons.contains(host.value())) {
+            icons.insert(host.value(), favicon);
+        }
+    }
+
+    QString hostOf(const QString &url) const
+    {
+        const auto host = hosts.constFind(url);
+        return host != hosts.cend() ? host.value() : SearchSettings::displayAddress(url);
+    }
+};
+
+struct HistoryPage
+{
+    HistoryModel::Entry entry;
+    QString host;
+    qint64 lastUsed = 0;
+};
+
+// Whole table, read once per history change.
+struct HistoryPages
+{
+    bool valid = false;
+    QVector<HistoryPage> pages;
+    SiteIcons icons;
+};
+
+const Sites &tabSites(Sites &sites, const TabModel &model)
+{
+    if (!sites.valid) {
+        for (const Tab &tab : model.tabs()) {
+            sites.add(tab.url, tab.favicon);
+        }
+        sites.valid = true;
+    }
+    return sites;
+}
+
+const Sites &bookmarkSites(Sites &sites, const BookmarkModel &model)
+{
+    if (!sites.valid) {
+        for (const BookmarkModel::Bookmark &bookmark : model.bookmarks()) {
+            sites.add(bookmark.url, bookmark.favicon);
+        }
+        sites.valid = true;
+    }
+    return sites;
+}
+
+const HistoryPages &historyPages(HistoryPages &history, const HistoryModel &model)
+{
+    if (!history.valid) {
+        const QList<HistoryModel::Entry> entries = model.allEntries();
+        history.pages.reserve(entries.count());
+        for (const HistoryModel::Entry &entry : entries) {
+            const HistoryPage page{entry, SearchSettings::displayAddress(entry.url),
+                                   entry.date.toMSecsSinceEpoch()};
+            if (!entry.favicon.isEmpty() && !history.icons.contains(page.host)) {
+                history.icons.insert(page.host, entry.favicon);
+            }
+            history.pages.append(page);
+        }
+        history.valid = true;
+    }
+    return history;
+}
+
+QString siteIcon(const QString &host, std::initializer_list<const SiteIcons *> sources)
+{
+    for (const SiteIcons *icons : sources) {
+        const auto icon = icons->constFind(host);
+        if (icon != icons->cend()) {
+            return icon.value();
+        }
+    }
+    return {};
+}
+
 // Most recent first: of two tabs on one page, nearer wins.
-void addTabs(Pages &pages, const TabModel &model, const Search &search)
+void addTabs(Pages &pages, const TabModel &model, const Search &search, const Sites &sites)
 {
     QList<const Tab *> tabs;
     for (const Tab &tab : model.tabs()) {
@@ -93,6 +189,7 @@ void addTabs(Pages &pages, const TabModel &model, const Search &search)
         page.row.id = tab->id;
         page.row.title = orUrl(tab->title, tab->url);
         page.row.url = tab->url;
+        page.row.host = sites.hostOf(tab->url);
         page.row.favicon = tab->favicon;
         page.row.groupId = tab->groupId;
         const int group = model.groupIndexOf(tab->groupId);
@@ -102,7 +199,8 @@ void addTabs(Pages &pages, const TabModel &model, const Search &search)
     }
 }
 
-void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search)
+void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search,
+                  const Sites &sites)
 {
     for (const BookmarkModel::Bookmark &bookmark : model.bookmarks()) {
         if (pages.byUrl.contains(bookmark.url) || !search.wants(bookmark.title, bookmark.url)) {
@@ -113,35 +211,23 @@ void addBookmarks(Pages &pages, const BookmarkModel &model, const Search &search
         page.row.id = bookmark.id;
         page.row.title = orUrl(bookmark.title, bookmark.url);
         page.row.url = bookmark.url;
+        page.row.host = sites.hostOf(bookmark.url);
         page.row.favicon = bookmark.favicon;
         page.lastUsed = bookmark.created;
         pages.add(page);
     }
 }
 
-using SiteIcons = QHash<QString, QString>;
-
-void addSiteIcon(SiteIcons &icons, const QString &url, const QString &favicon)
+// History icon fills page lacking one.
+void addHistory(Pages &pages, const HistoryPages &history, bool listed, const Search &search)
 {
-    if (!favicon.isEmpty()) {
-        const QString host = SearchSettings::displayAddress(url);
-        if (!icons.contains(host)) {
-            icons.insert(host, favicon);
-        }
-    }
-}
-
-// History icons fill pages and sites lacking one.
-void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Search &search,
-                SiteIcons &icons)
-{
-    for (const HistoryModel::Entry &entry : model.allEntries()) {
-        addSiteIcon(icons, entry.url, entry.favicon);
-        const auto known = pages.byUrl.constFind(entry.url);
-        if (known != pages.byUrl.cend()) {
-            Page &page = pages.list[known.value()];
+    for (const HistoryPage &known : history.pages) {
+        const HistoryModel::Entry &entry = known.entry;
+        const auto shown = pages.byUrl.constFind(entry.url);
+        if (shown != pages.byUrl.cend()) {
+            Page &page = pages.list[shown.value()];
             page.visits = entry.visitCount;
-            page.lastUsed = std::max(page.lastUsed, entry.date.toMSecsSinceEpoch());
+            page.lastUsed = std::max(page.lastUsed, known.lastUsed);
             if (page.row.favicon.isEmpty()) {
                 page.row.favicon = entry.favicon;
             }
@@ -155,23 +241,18 @@ void addHistory(Pages &pages, const HistoryModel &model, bool listed, const Sear
         page.row.id = entry.id;
         page.row.title = orUrl(entry.title, entry.url);
         page.row.url = entry.url;
+        page.row.host = known.host;
         page.row.favicon = entry.favicon;
         page.row.date = entry.date;
         page.visits = entry.visitCount;
-        page.lastUsed = entry.date.toMSecsSinceEpoch();
+        page.lastUsed = known.lastUsed;
         pages.add(page);
     }
 }
 
 // Tab unknown to history counts as visit now.
-void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &icons, qint64 now)
+void score(Page &page, const Search &search, bool bookmarked, qint64 now)
 {
-    page.row.host = SearchSettings::displayAddress(page.row.url);
-    page.row.markedTitle = search.words.marked(page.row.title);
-    page.row.markedHost = search.words.marked(page.row.host);
-    if (page.row.favicon.isEmpty()) {
-        page.row.favicon = icons.value(page.row.host);
-    }
     page.row.bookmarked = bookmarked;
     page.match = matchOf(search.words, page.row);
     page.learnt = search.learnt.value(page.row.url);
@@ -181,26 +262,49 @@ void score(Page &page, const Search &search, bool bookmarked, const SiteIcons &i
     page.frecency = OmnibarModel::frecency(page.visits, bookmarked, page.lastUsed, now);
 }
 
-void rank(QList<Page> &pages)
+// Indices of first `room` pages. Order = stable sort by (learnt, frecency), top MaxLearnt
+// learnt kept, then rest stable-sorted by (match, frecency). Ties fall back to that first
+// order (learnt, then source index), so partial_sort gives same rows, sorting only shown.
+QVector<int> rank(const QList<Page> &pages, int room)
 {
-    std::stable_sort(pages.begin(), pages.end(), [](const Page &one, const Page &other) {
-        if (one.learnt != other.learnt) {
-            return one.learnt > other.learnt;
-        }
-        return one.frecency > other.frecency;
-    });
-    int learntFirst = 0;
-    while (learntFirst < pages.count() && learntFirst < OmnibarModel::MaxLearnt &&
-           pages.at(learntFirst).learnt > 0) {
-        ++learntFirst;
+    QVector<int> learnt;
+    QVector<int> rest;
+    for (int i = 0; i < pages.count(); ++i) {
+        (pages.at(i).learnt > 0 ? learnt : rest).append(i);
     }
-    std::stable_sort(pages.begin() + learntFirst, pages.end(),
-                     [](const Page &one, const Page &other) {
-                         if (one.match != other.match) {
-                             return one.match < other.match;
-                         }
-                         return one.frecency > other.frecency;
-                     });
+    const auto byLearnt = [&pages](int one, int other) {
+        const Page &first = pages.at(one);
+        const Page &second = pages.at(other);
+        if (first.learnt != second.learnt) {
+            return first.learnt > second.learnt;
+        }
+        if (first.frecency != second.frecency) {
+            return first.frecency > second.frecency;
+        }
+        return one < other;
+    };
+    const auto byMatch = [&pages](int one, int other) {
+        const Page &first = pages.at(one);
+        const Page &second = pages.at(other);
+        if (first.match != second.match) {
+            return first.match < second.match;
+        }
+        if (first.frecency != second.frecency) {
+            return first.frecency > second.frecency;
+        }
+        if (first.learnt != second.learnt) {
+            return first.learnt > second.learnt;
+        }
+        return one < other;
+    };
+    const int lead = std::min({int(OmnibarModel::MaxLearnt), learnt.count(), std::max(room, 0)});
+    std::partial_sort(learnt.begin(), learnt.begin() + lead, learnt.end(), byLearnt);
+    for (int i = lead; i < learnt.count(); ++i) {
+        rest.append(learnt.at(i));
+    }
+    const int more = std::min(std::max(room, 0) - lead, rest.count());
+    std::partial_sort(rest.begin(), rest.begin() + more, rest.end(), byMatch);
+    return learnt.mid(0, lead) + rest.mid(0, more);
 }
 
 QString kindName(OmnibarKind kind)
@@ -220,6 +324,13 @@ QString kindName(OmnibarKind kind)
 
 } // namespace
 
+struct OmnibarModel::Cache
+{
+    Sites tabs;
+    Sites bookmarks;
+    HistoryPages history;
+};
+
 OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryModel *history,
                            DownloadModel *downloads, SearchSettings *search,
                            PrivacySettings *privacy, QObject *parent)
@@ -230,29 +341,43 @@ OmnibarModel::OmnibarModel(TabModel *tabs, BookmarkModel *bookmarks, HistoryMode
     , m_downloads(downloads)
     , m_search(search)
     , m_privacy(privacy)
+    , m_cache(std::make_unique<Cache>())
 {
     m_refresh.setSingleShot(true);
     m_refresh.setInterval(0);
     connect(&m_refresh, &QTimer::timeout, this, &OmnibarModel::rebuild);
 
-    connect(m_tabs, &TabModel::countChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_tabs, &TabModel::dataChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_tabs, &TabModel::rowsMoved, this, &OmnibarModel::sourceChanged);
+    // Tab order picks site icon: moves count.
+    const auto tabsChanged = [this]() {
+        m_cache->tabs = Sites();
+        sourceChanged();
+    };
+    connect(m_tabs, &TabModel::countChanged, this, tabsChanged);
+    connect(m_tabs, &TabModel::dataChanged, this, tabsChanged);
+    connect(m_tabs, &TabModel::rowsMoved, this, tabsChanged);
     connect(m_tabs, &TabModel::groupsChanged, this, &OmnibarModel::sourceChanged);
     connect(m_tabs, &TabModel::activeTabChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_bookmarks, &BookmarkModel::revisionChanged, this, &OmnibarModel::sourceChanged);
+    connect(m_bookmarks, &BookmarkModel::revisionChanged, this, [this]() {
+        m_cache->bookmarks = Sites();
+        sourceChanged();
+    });
     // Not count: oldest dropped as new arrives keeps count same.
     connect(m_downloads, &DownloadModel::rowsInserted, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
     connect(m_downloads, &DownloadModel::dataChanged, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::modelReset, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::rowsRemoved, this, &OmnibarModel::sourceChanged);
-    connect(m_history, &HistoryModel::dataChanged, this, &OmnibarModel::sourceChanged);
+    // Not row signals: visit moves or inserts rows; title or icon change past shown rows emits
+    // none.
+    connect(m_history, &HistoryModel::entriesChanged, this, [this]() {
+        m_cache->history = HistoryPages();
+        sourceChanged();
+    });
     connect(m_search, &SearchSettings::omnibarTabsChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarBookmarksChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarHistoryChanged, this, &OmnibarModel::sourceChanged);
     connect(m_search, &SearchSettings::omnibarDownloadsChanged, this, &OmnibarModel::sourceChanged);
 }
+
+OmnibarModel::~OmnibarModel() = default;
 
 int OmnibarModel::rowCount(const QModelIndex &parent) const
 {
@@ -466,32 +591,32 @@ QList<OmnibarRow> OmnibarModel::pageRows(const SearchWords &words, int room) con
 {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     const Search search{words, m_history->inputRanks(m_query, now)};
+    const Sites &tabs = tabSites(m_cache->tabs, *m_tabs);
+    const Sites &bookmarks = bookmarkSites(m_cache->bookmarks, *m_bookmarks);
+    const HistoryPages &history = historyPages(m_cache->history, *m_history);
     Pages pages;
     if (m_search->omnibarTabs()) {
-        addTabs(pages, *m_tabs, search);
+        addTabs(pages, *m_tabs, search, tabs);
     }
     if (m_search->omnibarBookmarks()) {
-        addBookmarks(pages, *m_bookmarks, search);
+        addBookmarks(pages, *m_bookmarks, search, bookmarks);
     }
-    SiteIcons icons;
-    for (const Tab &tab : m_tabs->tabs()) {
-        addSiteIcon(icons, tab.url, tab.favicon);
-    }
-    QSet<QString> bookmarked;
-    for (const BookmarkModel::Bookmark &bookmark : m_bookmarks->bookmarks()) {
-        bookmarked.insert(bookmark.url);
-        addSiteIcon(icons, bookmark.url, bookmark.favicon);
-    }
-    addHistory(pages, *m_history, m_search->omnibarHistory(), search, icons);
+    addHistory(pages, history, m_search->omnibarHistory(), search);
 
     for (Page &page : pages.list) {
-        score(page, search, bookmarked.contains(page.row.url), icons, now);
+        score(page, search, bookmarks.hosts.contains(page.row.url), now);
     }
-    rank(pages.list);
 
+    // Marking costs: shown rows only.
     QList<OmnibarRow> rows;
-    for (int i = 0; i < pages.list.count() && i < room; ++i) {
-        rows.append(pages.list.at(i).row);
+    for (const int i : rank(pages.list, room)) {
+        OmnibarRow row = pages.list.at(i).row;
+        row.markedTitle = words.marked(row.title);
+        row.markedHost = words.marked(row.host);
+        if (row.favicon.isEmpty()) {
+            row.favicon = siteIcon(row.host, {&tabs.icons, &bookmarks.icons, &history.icons});
+        }
+        rows.append(row);
     }
     return rows;
 }

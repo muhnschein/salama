@@ -216,7 +216,7 @@ private:
     void showUrl(int index, const QString &url);
     void persist(const Tab &tab) const;
     void discardThumbnail(const QString &path) const;
-    void thumbnailWritten(int tabId, const QString &path, bool saved);
+    void thumbnailWritten(int tabId, const QString &requested, const QString &path, bool saved);
 
     TabPersistence *m_persistence;
     QString m_thumbnailDirectory;

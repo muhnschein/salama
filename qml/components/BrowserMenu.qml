@@ -51,11 +51,26 @@ DockedPanel {
                        })
     }
 
+    // Readability check only while menu shows its button.
+    function askReader() {
+        if (open && reader !== null) {
+            reader.ask()
+        }
+    }
+
     // Not once closing: DockedPanel moves it then.
     onPullChanged: {
         if (open) {
             y = parent.height - height + pull
         }
+    }
+    onOpenChanged: askReader()
+    onReaderChanged: askReader()
+
+    // Address changed under open menu: new document, ask again.
+    Connections {
+        target: menu.open ? menu.reader : null
+        onAskedChanged: menu.askReader()
     }
 
     Connections {
@@ -130,6 +145,7 @@ DockedPanel {
                 url: TabModel.activeUrl
                 title: TabModel.activeTitle
                 favicon: TabModel.activeFavicon
+                shown: menu.open
                 tlsBroken: menu.tlsBroken
                 onDetailsRequested: menu.openSiteDetails()
                 onCopyRequested: {

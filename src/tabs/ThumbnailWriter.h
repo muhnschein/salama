@@ -25,7 +25,8 @@ public:
     void waitForDone();
 
 signals:
-    void written(int tabId, const QString &path, bool saved);
+    // path = requested one, or same name with .png when picture kept see-through.
+    void written(int tabId, const QString &requested, const QString &path, bool saved);
 
 private:
     QThreadPool m_pool;

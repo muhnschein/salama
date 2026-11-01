@@ -31,8 +31,8 @@ QtObject {
         isClosed = true
     }
 
-    // Platform's shown notifications for app: none on host.
+    // Platform's shown notifications for app: none on host unless test leaves some.
     function notifications() {
-        return []
+        return NotificationServer.left
     }
 }

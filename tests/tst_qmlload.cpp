@@ -26,6 +26,7 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlExpression>
+#include <QQmlIncubationController>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QRegularExpression>
@@ -202,6 +203,7 @@ private slots:
     void barReachUnderAFinger();
     void backHoldShowsTabHistory();
     void barDragStartsWithoutAStutter();
+    void barTapStoresNoPicture();
     void barStaysSlimWhileDragged();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
@@ -260,6 +262,7 @@ private slots:
     void mediaControls();
     void muteOnTheGrid();
     void webNotifications();
+    void leftoverNotificationsSweptAfterLaunch();
     void notificationPermissions();
     void notificationSettingsPage();
     void sitePermissionsPage();
@@ -274,6 +277,7 @@ private slots:
     void tutorial();
     void tutorialGrid();
     void tutorialUnderAFinger();
+    void sheetsMadeAfterLaunch();
 
 private:
     bool loadWindow();
@@ -294,11 +298,14 @@ private:
     void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
+    static QObject *rowMenuItem(QObject *row, const QString &itemName);
 
     QScopedPointer<QTemporaryDir> m_dir;
     QScopedPointer<Core> m_core;
     QScopedPointer<QQmlEngine> m_engine;
     QScopedPointer<QObject> m_window;
+    // Device's view incubates in frames' spare time; none here makes everything at once.
+    QScopedPointer<QQmlIncubationController> m_incubation;
 };
 
 // Software rendering before QtQuick loads: offscreen has no OpenGL, gridGesturesUnderAFinger()
@@ -338,6 +345,7 @@ void tst_qmlload::cleanup()
 {
     m_window.reset();
     m_engine.reset();
+    m_incubation.reset();
     m_core.reset();
     m_dir.reset();
 }
@@ -347,6 +355,9 @@ bool tst_qmlload::loadWindow()
     Salama::registerQmlTypes(m_core.data());
     m_engine.reset(new QQmlEngine);
     m_engine->addImportPath(QStringLiteral(SALAMA_STUBS_DIR));
+    if (m_incubation) {
+        m_engine->setIncubationController(m_incubation.data());
+    }
     QQmlComponent component(m_engine.data(), QUrl::fromLocalFile(QLatin1String(RootQml)));
     if (component.isError()) {
         qWarning() << component.errorString();
@@ -522,6 +533,7 @@ QVariant tst_qmlload::evaluate(QObject *scope, const QString &expression) const
 
 void tst_qmlload::click(QObject *object)
 {
+    QVERIFY2(object != nullptr, "nothing to click");
     QMetaObject::invokeMethod(object, "clicked");
 }
 
@@ -588,6 +600,14 @@ QObject *tst_qmlload::openMenuItem(const QString &itemName)
     }
     click(item);
     return currentPage();
+}
+
+// Long-press menu item of list row, menu opened first: rows build menus only on open.
+QObject *tst_qmlload::rowMenuItem(QObject *row, const QString &itemName)
+{
+    QMetaObject::invokeMethod(row, "openMenu", Q_ARG(QVariant, QVariant()));
+    const QList<QObject *> items = findObjects(row, itemName);
+    return items.isEmpty() ? nullptr : items.first();
 }
 
 void tst_qmlload::rootWindowLoads()
@@ -795,16 +815,18 @@ void tst_qmlload::startPage()
     QCOMPARE(findObjects(marks.first(), QStringLiteral("siteTileName")).first()->property("text"),
              QVariant(QStringLiteral("Sailfish OS")));
 
-    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
-                      QStringLiteral("recentPageNewTabMenu"))
-              .first());
+    // Start page shows on launch and new tab: no menu per row until held.
+    QVERIFY(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
+                        QStringLiteral("recentPageNewTabMenu"))
+                .isEmpty());
+    click(rowMenuItem(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageNewTabMenu")));
     QCOMPARE(tabs->count(), 2);
     QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
     tabs->activateTab(0);
     QVERIFY(layer->property("active").toBool());
-    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
-                      QStringLiteral("recentPageRemoveMenu"))
-              .first());
+    click(rowMenuItem(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageRemoveMenu")));
     QCOMPARE(m_core->history()->count(), 0);
     QVERIFY(!find(QStringLiteral("topSitesSection"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("recentPagesSection"))->property("visible").toBool());
@@ -3179,6 +3201,64 @@ void tst_qmlload::barDragStartsWithoutAStutter()
     QVERIFY(grid->property("visible").toBool());
 }
 
+// Every bar tap (menu, back, address) stored press's page picture: JPEG write, tab save, grid
+// tile reload stalled tap's animation ~60 ms on phone. Picture still grabbed on press, stored
+// only once drag starts; tap and page-bound press drop it.
+void tst_qmlload::barTapStoresNoPicture()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *webView = currentWebView();
+    TabModel *tabs = m_core->tabs();
+    const int tab = tabs->activeTabId();
+    const auto thumbnail = [tabs, tab]() {
+        return tabs->data(tabs->index(tabs->indexOf(tab), 0), roleId(TabModel::Role::Thumbnail))
+            .toString();
+    };
+    const auto settled = [tabs]() {
+        tabs->thumbnailWriter()->waitForDone();
+        QCoreApplication::processEvents();
+    };
+    const auto held = [this, page]() {
+        return evaluate(page, QStringLiteral("pressPicture.image !== null")).toBool();
+    };
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int x = int(gesture->width()) / 2;
+    const int onBar = int(gestureTop.y() + reach + gesture->property("strip").toReal() / 2);
+    const int inReach = int(gestureTop.y() + reach / 2);
+    const qreal threshold = page->property("pullThreshold").toReal();
+    settled();
+    const QString before = thumbnail();
+    int grabs = webView->property("grabCount").toInt();
+
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QVERIFY(held());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    settled();
+    QCOMPARE(thumbnail(), before);
+    QVERIFY(!held());
+
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    settled();
+    QCOMPARE(thumbnail(), before);
+    QVERIFY(!held());
+
+    grabs = webView->property("grabCount").toInt();
+    drag(&window, QPoint(x, onBar), QPoint(x, onBar - 3 * int(threshold)));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QTRY_VERIFY(thumbnail() != before);
+    QVERIFY(QFile::exists(thumbnail()));
+    QVERIFY(!held());
+}
+
 // Issue #27, scrolled page with slim bar: drag made bar whole, bar grew under finger ~200 ms and
 // view resized mid-drag (relayout) and again on spring back. Bar must stay slim.
 void tst_qmlload::barStaysSlimWhileDragged()
@@ -3588,13 +3668,13 @@ void tst_qmlload::browserMenu()
     QVERIFY(!reader->property("iconSource").toString().isEmpty());
     // Via BrowserPage.qml item: its scope names page and menu.
     QObject *pageScope = find(QStringLiteral("viewArea"));
-    evaluate(pageScope, QStringLiteral("browserMenu.view = null"));
+    evaluate(pageScope, QStringLiteral("browserMenu.item.view = null"));
     QVERIFY(!find(QStringLiteral("findMenuButton"))->property("enabled").toBool());
     QVERIFY(!find(QStringLiteral("desktopMenuButton"))->property("enabled").toBool());
     QVERIFY(!reader->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("bookmarkMenuButton"))->property("enabled").toBool());
     QVERIFY(find(QStringLiteral("shareMenuButton"))->property("enabled").toBool());
-    evaluate(pageScope, QStringLiteral("browserMenu.view = Qt.binding(function () {"
+    evaluate(pageScope, QStringLiteral("browserMenu.item.view = Qt.binding(function () {"
                                        " return browserPage.currentView })"));
     QCOMPARE(menu->property("view").value<QObject *>(), currentWebView());
     QVERIFY(find(QStringLiteral("tabsItem")) == nullptr);
@@ -3941,6 +4021,18 @@ void tst_qmlload::menuNamesThePage()
              QStringLiteral("image://theme/qwant-favicon"));
     QTRY_VERIFY(shown("menuPageFavicon"));
     QVERIFY(!shown("menuPageInitial"));
+    // Icon fetched only for open menu (Qt's network stack, past Gecko's cache): kept once
+    // fetched, new page's icon waits for menu.
+    evaluate(menu, QStringLiteral("hide()"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/qwant-favicon"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/icon-m-favicon"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(), QString());
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(item("menuPageFavicon")->property("source").toString(),
+             QStringLiteral("image://theme/icon-m-favicon"));
+    tabs->updateFavicon(front, QStringLiteral("image://theme/qwant-favicon"));
+    QTRY_VERIFY(shown("menuPageFavicon"));
     tabs->updateTitle(front, QString());
     QCOMPARE(text("menuPageTitle"), QStringLiteral("qwant.com"));
     tabs->updateTitle(front, title);
@@ -4346,21 +4438,32 @@ void tst_qmlload::readerView()
     QCOMPARE(runs(engine->readerableScript()), 0);
     QVERIFY(!reader->property("readerable").toBool());
 
+    // Check lays page out on Gecko's main thread: only once menu shows button, once per
+    // document, again at load end once asked.
     answer(QStringLiteral("false"), articleLiteral);
     webView->setProperty("url", QUrl(story));
     load();
-    QVERIFY(runs(engine->readerableScript()) > 0);
+    QCOMPARE(runs(engine->readerableScript()), 0);
+    QVERIFY(!reader->property("readerable").toBool());
+    webView->setProperty("loading", true);
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(runs(engine->readerableScript()), 0);
+    webView->setProperty("loading", false);
+    QCOMPARE(runs(engine->readerableScript()), 1);
     QVERIFY(!reader->property("readerable").toBool());
     QVERIFY(!button->property("enabled").toBool());
+    evaluate(menu, QStringLiteral("hide()"));
+    tapBar(QStringLiteral("menu"));
+    QCOMPARE(runs(engine->readerableScript()), 1);
     answer(QStringLiteral("true"), articleLiteral);
     load();
+    QCOMPARE(runs(engine->readerableScript()), 2);
     QVERIFY(reader->property("readerable").toBool());
     QVERIFY(button->property("enabled").toBool());
     QVERIFY(!button->property("checked").toBool());
     QCOMPARE(tabs->activeUrl(), story);
     const int visits = m_core->history()->count();
 
-    tapBar(QStringLiteral("menu"));
     click(button);
     QVERIFY(!menu->property("open").toBool());
     QCOMPARE(runs(engine->articleScript()), 1);
@@ -4405,7 +4508,16 @@ void tst_qmlload::readerView()
     QVERIFY(bar->property("tlsBroken").toBool());
     evaluate(webView, QStringLiteral("security.allGood = true"));
     QVERIFY(!bar->property("tlsBroken").toBool());
+    QVERIFY(!reader->property("readerable").toBool());
+    tapBar(QStringLiteral("menu"));
     QVERIFY(reader->property("readerable").toBool());
+    // Address change under open menu: new document asked at once.
+    const int asked = runs(engine->readerableScript());
+    webView->setProperty("url", QUrl(QStringLiteral("https://example.com/2026/b-story")));
+    QCOMPARE(runs(engine->readerableScript()), asked + 1);
+    webView->setProperty("url", QUrl(story));
+    QCOMPARE(runs(engine->readerableScript()), asked + 2);
+    evaluate(menu, QStringLiteral("hide()"));
     QCOMPARE(tabs->activeUrl(), story);
     m_core->readerSettings()->setColors(ReaderSettings::Dark);
     QCOMPARE(runs(engine->styleScript(ambience)), 0);
@@ -4422,8 +4534,8 @@ void tst_qmlload::readerView()
 
     answer(QStringLiteral("true"), QStringLiteral("''"));
     load();
-    QVERIFY(button->property("enabled").toBool());
     tapBar(QStringLiteral("menu"));
+    QVERIFY(button->property("enabled").toBool());
     click(button);
     QCOMPARE(calls(QStringLiteral("loadHtml")), 1);
     QVERIFY(!reader->property("readerable").toBool());
@@ -5677,14 +5789,18 @@ void tst_qmlload::historyPage()
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     delegates = findAll(QStringLiteral("historyDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
+    // Menu per row stalled History's first frame on device: none until held.
+    for (QObject *row : delegates) {
+        QVERIFY(findObjects(row, QStringLiteral("openInNewTabMenu")).isEmpty());
+    }
+    click(rowMenuItem(delegates.at(0), QStringLiteral("openInNewTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     const int before = m_core->history()->count();
     delegates = findAll(QStringLiteral("historyDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("removeHistoryMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("removeHistoryMenu")));
     QCOMPARE(m_core->history()->count(), before - 1);
 
     click(find(QStringLiteral("clearHistoryMenu")));
@@ -5808,7 +5924,11 @@ void tst_qmlload::bookmarksPage()
 
     openMenuItem(QStringLiteral("bookmarksMenuButton"));
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(1), QStringLiteral("editBookmarkMenu")).first());
+    // As History: none until held.
+    for (QObject *row : delegates) {
+        QVERIFY(findObjects(row, QStringLiteral("editBookmarkMenu")).isEmpty());
+    }
+    click(rowMenuItem(delegates.at(1), QStringLiteral("editBookmarkMenu")));
     QObject *dialog = currentPage();
     QCOMPARE(dialog->objectName(), QStringLiteral("bookmarkEditDialog"));
     QCOMPARE(dialog->property("bookmarkIndex").toInt(), 1);
@@ -5828,7 +5948,7 @@ void tst_qmlload::bookmarksPage()
     popPage();
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("removeBookmarkMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("removeBookmarkMenu")));
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QCOMPARE(delegates.at(0)->property("remorseCount").toInt(), 1);
 
@@ -5841,7 +5961,7 @@ void tst_qmlload::bookmarksPage()
     }
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("openInNewTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 }
@@ -7414,6 +7534,14 @@ void tst_qmlload::cover()
              evaluate(dots, QStringLiteral("Image.PreserveAspectCrop")).toInt());
     QCOMPARE(dots->property("verticalAlignment").toInt(),
              evaluate(dots, QStringLiteral("Image.AlignVCenter")).toInt());
+    // Decoded off UI thread at cover's width, no mipmaps: full art held 8 MB, slowed launch.
+    QVERIFY(dots->property("asynchronous").toBool());
+    QVERIFY(!dots->property("mipmap").toBool());
+    QCOMPARE(dots->property("sourceSize").toSizeF().width(), halftone->width());
+    QTRY_COMPARE(dots->property("status").toInt(),
+                 evaluate(dots, QStringLiteral("Image.Ready")).toInt());
+    QCOMPARE(dots->property("implicitWidth").toReal(), halftone->width());
+    QVERIFY(dots->property("implicitHeight").toReal() > halftone->height());
     const QSize drawn = QImage(source.toLocalFile()).size();
     const qreal coverAspect = evaluate(dots, QStringLiteral("Theme.coverSizeLarge.height"
                                                             " / Theme.coverSizeLarge.width"))
@@ -8099,9 +8227,17 @@ void tst_qmlload::gridCellsArePicturesAlone()
     QCOMPARE(previews.count(), 2);
     QObject *cell = previews.at(1);
 
-    // Rounded box: clipping always rectangular, so mask cuts corners.
+    // Rounded box: clipping always rectangular, so shader cuts corners at shot's radius, no
+    // mask texture per cell.
     QObject *shot = findObjects(cell, QStringLiteral("tabPreviewShot")).first();
     QVERIFY(shot->property("radius").toReal() > 0);
+    QVERIFY(evaluate(shot, QStringLiteral("layer.enabled")).toBool());
+    const QList<QObject *> corners = findObjects(cell, QStringLiteral("tabPreviewCorners"));
+    QCOMPARE(corners.count(), 1);
+    QVERIFY(corners.first()->inherits("QQuickShaderEffect"));
+    QCOMPARE(corners.first()->property("radius").toReal(), shot->property("radius").toReal());
+    QCOMPARE(corners.first()->property("size").toSizeF(), qobject_cast<QQuickItem *>(shot)->size());
+    QVERIFY(corners.first()->findChildren<QQuickItem *>().isEmpty());
     QVERIFY(findObjects(cell, QStringLiteral("tabPreviewHighlight")).isEmpty());
     auto *frame =
         qobject_cast<QQuickItem *>(findObjects(cell, QStringLiteral("tabPreviewFrame")).first());
@@ -8444,7 +8580,7 @@ void tst_qmlload::webNotifications()
     QCOMPARE(view->property("frameScripts").toStringList().count(notifications->relayScriptUrl()),
              1);
     // Notification shim installed on document arrival and again after load (engine runs no script
-    // before view made).
+    // before view made). In-page address change keeps document: no reinstall.
     const auto installs = [view, notifications]() {
         return view->property("scripts").toStringList().count(notifications->pageScript());
     };
@@ -8458,8 +8594,13 @@ void tst_qmlload::webNotifications()
     view->setProperty("loading", true);
     view->setProperty("loading", false);
     QCOMPARE(installs(), installed + 1);
+    view->setProperty("url", QStringLiteral("https://www.qwant.com/?q=chats"));
+    QCOMPARE(installs(), installed + 1);
+    view->setProperty("loading", true);
     view->setProperty("url", QStringLiteral("https://www.qwant.com/?q=chat"));
     QCOMPARE(installs(), installed + 2);
+    view->setProperty("loading", false);
+    QCOMPARE(installs(), installed + 3);
 
     relay(view, message(QStringLiteral("show"), 1, QStringLiteral("Hello"), QStringLiteral("room")),
           QLatin1String(ChatSite), QStringLiteral("granted"));
@@ -8541,6 +8682,38 @@ void tst_qmlload::webNotifications()
     settle();
     QVERIFY(ofTheTab.isNull() || ofTheTab->property("isClosed").toBool());
     QVERIFY(notifications->keys().isEmpty());
+}
+
+// Asking server for last run's leftovers is blocking D-Bus round trip: after launch, not in it.
+// This run's own, shown before then, kept.
+void tst_qmlload::leftoverNotificationsSweptAfterLaunch()
+{
+    auto *center =
+        find(QStringLiteral("browserPage"))->property("notifications").value<QObject *>();
+    auto *sweep = evaluate(center, QStringLiteral("leftovers")).value<QObject *>();
+    QVERIFY(sweep->property("running").toBool());
+    QVERIFY(sweep->property("interval").toInt() >= 2000);
+    QObject *view = currentWebView();
+    QMetaObject::invokeMethod(view, "viewInitialized");
+    relay(view, message(QStringLiteral("show"), 1, QStringLiteral("Hello")),
+          QLatin1String(ChatSite), QStringLiteral("granted"));
+    QObject *own = findAll(QStringLiteral("webNotification")).first();
+    const int ownId = own->property("replacesId").toInt();
+    QVERIFY(ownId != 0);
+    // Timer's file imports Nemo.Notifications; center's outer scope doesn't.
+    evaluate(sweep,
+             QStringLiteral("NotificationServer.left = ["
+                            " center.probeComponent.createObject(center, { replacesId: 41 }),"
+                            " center.probeComponent.createObject(center, { replacesId: %1 })]")
+                 .arg(ownId));
+    const QVariantList left = evaluate(sweep, QStringLiteral("NotificationServer.left")).toList();
+    QCOMPARE(left.count(), 2);
+    QVERIFY(!left.first().value<QObject *>()->property("isClosed").toBool());
+    QMetaObject::invokeMethod(sweep, "triggered");
+    QVERIFY(left.first().value<QObject *>()->property("isClosed").toBool());
+    QVERIFY(!left.last().value<QObject *>()->property("isClosed").toBool());
+    QVERIFY(!own->property("isClosed").toBool());
+    QCOMPARE(findAll(QStringLiteral("webNotification")), QList<QObject *>{own});
 }
 
 // Permission prompt Firefox-style (allow, always block, not now); only for on-screen page;
@@ -10130,6 +10303,57 @@ void tst_qmlload::tutorialUnderAFinger()
     drag(&window, middle, middle + up);
     QVERIFY(!deck->property("tabsOpen").toBool());
     QCOMPARE(step(), QStringLiteral("done"));
+}
+
+// Menu, tab history and link sheets (about 230 items) made a slice per frame after launch, not
+// for first frame. First use before then makes that one at once.
+void tst_qmlload::sheetsMadeAfterLaunch()
+{
+    cleanup();
+    m_dir.reset(new QTemporaryDir);
+    m_core.reset(new Core(m_dir->path(), m_dir->path() + QStringLiteral("/salama.conf"),
+                          m_dir->path() + QStringLiteral("/Downloads/Salama")));
+    m_core->tabs()->newTab(QLatin1String(FirstPage));
+    m_core->settings()->setTutorialShown(true);
+    // Incubates only when told, as view does between frames.
+    m_incubation.reset(new QQmlIncubationController);
+    QVERIFY(loadWindow());
+    QObject *page = find(QStringLiteral("browserPage"));
+    const char *const sheets[] = {"browserMenu", "tabHistoryPanel", "linkMenu"};
+    for (const char *name : sheets) {
+        QVERIFY2(find(QLatin1String(name)) == nullptr, name);
+    }
+    QVERIFY(m_incubation->incubatingObjectCount() > 0);
+    QVERIFY(currentWebView() != nullptr);
+    QVERIFY(currentWebView()->property("visible").toBool());
+    // Declared sheets sat beside deck; made ones too.
+    QQuickItem *layer = qobject_cast<QQuickItem *>(find(QStringLiteral("tabDeck")))->parentItem();
+
+    tapBar(QStringLiteral("menu"));
+    QObject *menu = find(QStringLiteral("browserMenu"));
+    QVERIFY(menu != nullptr);
+    QVERIFY(menu->property("open").toBool());
+    QCOMPARE(evaluate(page, QStringLiteral("browserMenu.item")).value<QObject *>(), menu);
+    QCOMPARE(menu->property("view").value<QObject *>(), currentWebView());
+    QCOMPARE(qobject_cast<QQuickItem *>(menu)->parentItem(), layer);
+    QVERIFY(find(QStringLiteral("linkMenu")) == nullptr);
+    evaluate(menu, QStringLiteral("hide()"));
+
+    QObject *view = currentWebView();
+    holdOn(view, heldOn(QStringLiteral("https://trails.example/walks/ridge-loop"),
+                        QStringLiteral("The ridge loop")));
+    QObject *link = find(QStringLiteral("linkMenu"));
+    QVERIFY(link != nullptr);
+    QVERIFY(link->property("open").toBool());
+    QCOMPARE(evaluate(page, QStringLiteral("linkMenu.item")).value<QObject *>(), link);
+    evaluate(link, QStringLiteral("hide()"));
+
+    m_incubation->incubateFor(5000);
+    QCOMPARE(m_incubation->incubatingObjectCount(), 0);
+    QObject *history = find(QStringLiteral("tabHistoryPanel"));
+    QVERIFY(history != nullptr);
+    QCOMPARE(evaluate(page, QStringLiteral("tabHistory.item")).value<QObject *>(), history);
+    QCOMPARE(qobject_cast<QQuickItem *>(history)->parentItem(), layer);
 }
 
 #include "tst_qmlload.moc"

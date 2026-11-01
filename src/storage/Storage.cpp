@@ -107,6 +107,7 @@ Storage::Storage(const QString &dataDirectory)
         qWarning() << "Storage: cannot open" << m_databasePath << db.lastError().text();
         return;
     }
+    useWriteAheadLog();
 
     if (!applySchema()) {
         qWarning() << "Storage: schema setup failed for" << m_databasePath;
@@ -175,6 +176,20 @@ QString Storage::defaultConfigFilePath()
 QVariant Storage::text(const QString &value)
 {
     return value.isNull() ? QVariant(QStringLiteral("")) : QVariant(value);
+}
+
+// SQLite default (rollback journal, full sync): every commit waits for 4 disk syncs on GUI
+// thread, page load makes 8-10 commits. WAL + NORMAL: no sync per commit; power cut can lose
+// last commits, never corrupts. Journal mode sticks to file; sync level per connection. WAL
+// refused (file system without shared memory): full sync stays, as NORMAL under rollback
+// journal can corrupt.
+void Storage::useWriteAheadLog() const
+{
+    QSqlQuery query(database());
+    if (query.exec(QStringLiteral("PRAGMA journal_mode=WAL")) && query.next() &&
+        query.value(0).toString() == QLatin1String("wal")) {
+        query.exec(QStringLiteral("PRAGMA synchronous=NORMAL"));
+    }
 }
 
 bool Storage::hasColumn(const QString &table, const QString &column) const
