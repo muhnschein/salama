@@ -2,8 +2,8 @@
 // Copyright (c) 2026 salama contributors
 #include "ThumbnailWriter.h"
 
-#include <QRgb>
 #include <QRunnable>
+#include <algorithm>
 #include <utility>
 
 namespace Salama {
@@ -17,13 +17,11 @@ bool seeThrough(const QImage &image)
     if (!image.hasAlphaChannel()) {
         return false;
     }
-    const QImage argb = image.convertToFormat(QImage::Format_ARGB32);
-    for (int y = 0; y < argb.height(); ++y) {
-        const auto *line = reinterpret_cast<const QRgb *>(argb.constScanLine(y));
-        for (int x = 0; x < argb.width(); ++x) {
-            if (qAlpha(line[x]) < 255) {
-                return true;
-            }
+    const QImage alpha = image.convertToFormat(QImage::Format_Alpha8);
+    for (int y = 0; y < alpha.height(); ++y) {
+        const uchar *line = alpha.constScanLine(y);
+        if (std::any_of(line, line + alpha.width(), [](uchar a) { return a < 255; })) {
+            return true;
         }
     }
     return false;
