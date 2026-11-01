@@ -707,6 +707,20 @@ void tst_tabmodel::thumbnailsAreWrittenOffTheGuiThread()
     QCOMPARE(reader.format(), QByteArrayLiteral("jpeg"));
     QCOMPARE(reader.size(), picture.size());
 
+    // Start page picture see-through: kept as PNG, alpha intact (JPEG made tiles black and
+    // colours saturated). Image reads it by content, .jpg name or not.
+    QImage seeThrough(picture.size(), QImage::Format_ARGB32_Premultiplied);
+    seeThrough.fill(Qt::transparent);
+    seeThrough.setPixelColor(10, 10, QColor(0, 139, 139, 128));
+    QVERIFY(model.storeThumbnail(a, QVariant::fromValue(seeThrough)));
+    QTRY_VERIFY(role(model, 0, roleId(TabModel::Role::Thumbnail)).toString() != path);
+    const QString clear = role(model, 0, roleId(TabModel::Role::Thumbnail)).toString();
+    QCOMPARE(QImageReader(clear).format(), QByteArrayLiteral("png"));
+    const QImage read(clear);
+    QCOMPARE(read.size(), picture.size());
+    QCOMPARE(read.pixelColor(0, 0).alpha(), 0);
+    QCOMPARE(read.pixelColor(10, 10).alpha(), 128);
+
     QVERIFY(!model.storeThumbnail(a, QVariant::fromValue(QImage())));
     QVERIFY(!model.storeThumbnail(a, QVariant()));
     QVERIFY(!model.storeThumbnail(4242, QVariant::fromValue(picture)));
