@@ -203,6 +203,7 @@ private slots:
     void barReachUnderAFinger();
     void backHoldShowsTabHistory();
     void barDragStartsWithoutAStutter();
+    void barTapStoresNoPicture();
     void barStaysSlimWhileDragged();
     void recentlyClosedTabs();
     void pagesBeyondTheLimitUnload();
@@ -3198,6 +3199,64 @@ void tst_qmlload::barDragStartsWithoutAStutter()
     QVERIFY(page->property("tabsOpen").toBool());
     QTRY_COMPARE(offset(), page->property("fullHeight").toReal());
     QVERIFY(grid->property("visible").toBool());
+}
+
+// Every bar tap (menu, back, address) stored press's page picture: JPEG write, tab save, grid
+// tile reload stalled tap's animation ~60 ms on phone. Picture still grabbed on press, stored
+// only once drag starts; tap and page-bound press drop it.
+void tst_qmlload::barTapStoresNoPicture()
+{
+    FingerWindow host(m_window.data());
+    QQuickWindow &window = *host.window();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QObject *page = find(QStringLiteral("browserPage"));
+    QObject *webView = currentWebView();
+    TabModel *tabs = m_core->tabs();
+    const int tab = tabs->activeTabId();
+    const auto thumbnail = [tabs, tab]() {
+        return tabs->data(tabs->index(tabs->indexOf(tab), 0), roleId(TabModel::Role::Thumbnail))
+            .toString();
+    };
+    const auto settled = [tabs]() {
+        tabs->thumbnailWriter()->waitForDone();
+        QCoreApplication::processEvents();
+    };
+    const auto held = [this, page]() {
+        return evaluate(page, QStringLiteral("pressPicture.image !== null")).toBool();
+    };
+    auto *gesture = qobject_cast<QQuickItem *>(find(QStringLiteral("navigationBarGesture")));
+    const qreal reach = gesture->property("reach").toReal();
+    const QPointF gestureTop = gesture->mapToScene(QPointF(0, 0));
+    const int x = int(gesture->width()) / 2;
+    const int onBar = int(gestureTop.y() + reach + gesture->property("strip").toReal() / 2);
+    const int inReach = int(gestureTop.y() + reach / 2);
+    const qreal threshold = page->property("pullThreshold").toReal();
+    settled();
+    const QString before = thumbnail();
+    int grabs = webView->property("grabCount").toInt();
+
+    QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QVERIFY(held());
+    QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, onBar));
+    QVERIFY(find(QStringLiteral("navigationBar"))->property("editing").toBool());
+    evaluate(find(QStringLiteral("navigationBar")), QStringLiteral("endEditing()"));
+    settled();
+    QCOMPARE(thumbnail(), before);
+    QVERIFY(!held());
+
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(x, inReach));
+    settled();
+    QCOMPARE(thumbnail(), before);
+    QVERIFY(!held());
+
+    grabs = webView->property("grabCount").toInt();
+    drag(&window, QPoint(x, onBar), QPoint(x, onBar - 3 * int(threshold)));
+    QVERIFY(page->property("tabsOpen").toBool());
+    QCOMPARE(webView->property("grabCount").toInt(), grabs + 1);
+    QTRY_VERIFY(thumbnail() != before);
+    QVERIFY(QFile::exists(thumbnail()));
+    QVERIFY(!held());
 }
 
 // Issue #27, scrolled page with slim bar: drag made bar whole, bar grew under finger ~200 ms and

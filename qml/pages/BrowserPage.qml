@@ -19,6 +19,7 @@ WebViewPage {
     property SheetMaker browserMenu: SheetMaker { component: browserMenuComponent }
     property SheetMaker tabHistory: SheetMaker { component: tabHistoryComponent }
     property SheetMaker linkMenu: SheetMaker { component: linkMenuComponent }
+    property PressPicture pressPicture: PressPicture {}
     readonly property bool linkPreviewShown: linkMenu.item !== null && linkMenu.item.previewShown
 
     property alias tabsOpen: deck.tabsOpen
@@ -110,11 +111,12 @@ WebViewPage {
         }
     }
 
-    function captureCurrent() {
+    // sink(tabId, image) takes picture instead of storing it.
+    function captureCurrent(sink) {
         if (currentView) {
-            currentView.captureThumbnail()
+            currentView.captureThumbnail(sink)
         } else {
-            startPageLayer.capture()
+            startPageLayer.capture(sink)
         }
     }
 
@@ -333,11 +335,18 @@ WebViewPage {
             onShowMenu: browserMenu.get().show()
             // Capture and prime grid while finger down: both in drag's first frame stuttered.
             onDragArmed: {
-                browserPage.captureCurrent()
+                pressPicture.arm()
+                browserPage.captureCurrent(function (id, image) { pressPicture.take(id, image) })
                 deck.prime()
             }
-            onDragDisarmed: deck.unprime()
-            onDragStarted: deck.beginDrag()
+            onDragDisarmed: {
+                pressPicture.drop()
+                deck.unprime()
+            }
+            onDragStarted: {
+                pressPicture.keep()
+                deck.beginDrag()
+            }
             onDragMoved: deck.dragTo(distance)
             onDragFinished: deck.settle(distance > deck.pullThreshold)
             onPageTouchStarted: browserPage.touchPage(position, "start")
@@ -493,13 +502,18 @@ WebViewPage {
                 }
             }
 
-            function captureThumbnail() {
+            function captureThumbnail(sink) {
                 if (!isCurrent) {
                     return
                 }
+                var id = tabId
                 // Half size: GPU readback at gesture start. Encode/write off GUI thread in model.
                 grabToImage(function (result) {
-                    TabModel.storeThumbnail(tabId, result.image)
+                    if (sink) {
+                        sink(id, result.image)
+                    } else {
+                        TabModel.storeThumbnail(id, result.image)
+                    }
                 }, Qt.size(width / 2, height / 2))
             }
 

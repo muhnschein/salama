@@ -19,13 +19,18 @@ Loader {
         }
     }
 
-    function capture() {
+    // sink(tabId, image) takes picture instead of storing it.
+    function capture(sink) {
         if (!item) {
             return
         }
         var tabId = TabModel.activeTabId
         item.grabToImage(function (result) {
-            TabModel.storeThumbnail(tabId, result.image)
+            if (sink) {
+                sink(tabId, result.image)
+            } else {
+                TabModel.storeThumbnail(tabId, result.image)
+            }
         }, Qt.size(width / 2, height / 2))
     }
 }
