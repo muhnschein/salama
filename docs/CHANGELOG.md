@@ -59,6 +59,8 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Grid: front tab framed by thin rounded outline, not washed; smaller close discs, same tap area; target group name lights in rounded wash; search highlights typed letters; recently closed tabs on menu's sheet.
 - Tab group list: square thumbnail of recent tabs per group, current framed, "N tabs" under name; new-group row has ringed plus; dialog reads New tab group, Create.
 - Tutorial: shorter text, five progress dots, icon first card, check-mark last card.
+- Smoother on phone: menu, back and address taps no longer stall mid-animation; Bookmarks and History open with fewer dropped frames (row menus built on hold); address suggestions sooner; grid slides with fewer dropped frames; menu, link and history sheets made after first frame, not before.
+- Less work in background: saves without disk sync per change (write-ahead log); page pictures stored as JPEG, decoded off UI thread for cover; reader check, page icon fetch, start page refresh only while shown.
 
 ### Fixed
 - Menu sheet: opaque handle sits on top edge as on nav bar. Menu, link and picture sheets no longer scroll or fling. Same handle on link sheet and recently closed list.
