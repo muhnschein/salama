@@ -14,16 +14,19 @@ ListItem {
 
     objectName: "historyDelegate"
     contentHeight: Theme.itemSizeMedium
-    menu: ContextMenu {
-        MenuItem {
-            objectName: "openInNewTabMenu"
-            text: qsTr("Open in new tab")
-            onClicked: delegate.openInNewTabRequested()
-        }
-        MenuItem {
-            objectName: "removeHistoryMenu"
-            text: qsTr("Remove")
-            onClicked: delegate.removeRequested()
+    // Built on hold, not with each row: ContextMenu per row stalled list's first frame.
+    menu: Component {
+        ContextMenu {
+            MenuItem {
+                objectName: "openInNewTabMenu"
+                text: qsTr("Open in new tab")
+                onClicked: delegate.openInNewTabRequested()
+            }
+            MenuItem {
+                objectName: "removeHistoryMenu"
+                text: qsTr("Remove")
+                onClicked: delegate.removeRequested()
+            }
         }
     }
 

@@ -295,6 +295,7 @@ private:
     void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
+    static QObject *rowMenuItem(QObject *row, const QString &itemName);
 
     QScopedPointer<QTemporaryDir> m_dir;
     QScopedPointer<Core> m_core;
@@ -523,6 +524,7 @@ QVariant tst_qmlload::evaluate(QObject *scope, const QString &expression) const
 
 void tst_qmlload::click(QObject *object)
 {
+    QVERIFY2(object != nullptr, "nothing to click");
     QMetaObject::invokeMethod(object, "clicked");
 }
 
@@ -589,6 +591,14 @@ QObject *tst_qmlload::openMenuItem(const QString &itemName)
     }
     click(item);
     return currentPage();
+}
+
+// Long-press menu item of list row, menu opened first: rows build menus only on open.
+QObject *tst_qmlload::rowMenuItem(QObject *row, const QString &itemName)
+{
+    QMetaObject::invokeMethod(row, "openMenu", Q_ARG(QVariant, QVariant()));
+    const QList<QObject *> items = findObjects(row, itemName);
+    return items.isEmpty() ? nullptr : items.first();
 }
 
 void tst_qmlload::rootWindowLoads()
@@ -796,16 +806,18 @@ void tst_qmlload::startPage()
     QCOMPARE(findObjects(marks.first(), QStringLiteral("siteTileName")).first()->property("text"),
              QVariant(QStringLiteral("Sailfish OS")));
 
-    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
-                      QStringLiteral("recentPageNewTabMenu"))
-              .first());
+    // Start page shows on launch and new tab: no menu per row until held.
+    QVERIFY(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
+                        QStringLiteral("recentPageNewTabMenu"))
+                .isEmpty());
+    click(rowMenuItem(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageNewTabMenu")));
     QCOMPARE(tabs->count(), 2);
     QCOMPARE(tabs->activeUrl(), QStringLiteral("https://example.org"));
     tabs->activateTab(0);
     QVERIFY(layer->property("active").toBool());
-    click(findObjects(findAll(QStringLiteral("recentPageRow")).first(),
-                      QStringLiteral("recentPageRemoveMenu"))
-              .first());
+    click(rowMenuItem(findAll(QStringLiteral("recentPageRow")).first(),
+                      QStringLiteral("recentPageRemoveMenu")));
     QCOMPARE(m_core->history()->count(), 0);
     QVERIFY(!find(QStringLiteral("topSitesSection"))->property("visible").toBool());
     QVERIFY(!find(QStringLiteral("recentPagesSection"))->property("visible").toBool());
@@ -5710,14 +5722,18 @@ void tst_qmlload::historyPage()
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     delegates = findAll(QStringLiteral("historyDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
+    // Menu per row stalled History's first frame on device: none until held.
+    for (QObject *row : delegates) {
+        QVERIFY(findObjects(row, QStringLiteral("openInNewTabMenu")).isEmpty());
+    }
+    click(rowMenuItem(delegates.at(0), QStringLiteral("openInNewTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 
     openMenuItem(QStringLiteral("historyMenuButton"));
     const int before = m_core->history()->count();
     delegates = findAll(QStringLiteral("historyDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("removeHistoryMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("removeHistoryMenu")));
     QCOMPARE(m_core->history()->count(), before - 1);
 
     click(find(QStringLiteral("clearHistoryMenu")));
@@ -5841,7 +5857,11 @@ void tst_qmlload::bookmarksPage()
 
     openMenuItem(QStringLiteral("bookmarksMenuButton"));
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(1), QStringLiteral("editBookmarkMenu")).first());
+    // As History: none until held.
+    for (QObject *row : delegates) {
+        QVERIFY(findObjects(row, QStringLiteral("editBookmarkMenu")).isEmpty());
+    }
+    click(rowMenuItem(delegates.at(1), QStringLiteral("editBookmarkMenu")));
     QObject *dialog = currentPage();
     QCOMPARE(dialog->objectName(), QStringLiteral("bookmarkEditDialog"));
     QCOMPARE(dialog->property("bookmarkIndex").toInt(), 1);
@@ -5861,7 +5881,7 @@ void tst_qmlload::bookmarksPage()
     popPage();
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("removeBookmarkMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("removeBookmarkMenu")));
     QCOMPARE(m_core->bookmarks()->count(), 1);
     QCOMPARE(delegates.at(0)->property("remorseCount").toInt(), 1);
 
@@ -5874,7 +5894,7 @@ void tst_qmlload::bookmarksPage()
     }
 
     delegates = findAll(QStringLiteral("bookmarkDelegate"));
-    click(findObjects(delegates.at(0), QStringLiteral("openInNewTabMenu")).first());
+    click(rowMenuItem(delegates.at(0), QStringLiteral("openInNewTabMenu")));
     QCOMPARE(m_core->tabs()->count(), 2);
     QCOMPARE(currentPage()->objectName(), QStringLiteral("browserPage"));
 }

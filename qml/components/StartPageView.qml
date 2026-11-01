@@ -115,17 +115,20 @@ SilicaFlickable {
                     subtitle: model.url
                     icon: model.favicon
                     onClicked: startPage.openRequested(pageUrl)
-                    menu: ContextMenu {
-                        MenuItem {
-                            objectName: "recentPageNewTabMenu"
-                            text: qsTr("Open in new tab")
-                            onClicked: startPage.newTabRequested(recentRow.pageUrl)
-                        }
+                    // Built on hold, not with each row: ContextMenu per row stalled list's first frame.
+                    menu: Component {
+                        ContextMenu {
+                            MenuItem {
+                                objectName: "recentPageNewTabMenu"
+                                text: qsTr("Open in new tab")
+                                onClicked: startPage.newTabRequested(recentRow.pageUrl)
+                            }
 
-                        MenuItem {
-                            objectName: "recentPageRemoveMenu"
-                            text: qsTr("Remove")
-                            onClicked: HistoryModel.removeUrl(recentRow.pageUrl)
+                            MenuItem {
+                                objectName: "recentPageRemoveMenu"
+                                text: qsTr("Remove")
+                                onClicked: HistoryModel.removeUrl(recentRow.pageUrl)
+                            }
                         }
                     }
                 }
