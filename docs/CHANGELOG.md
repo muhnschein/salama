@@ -15,7 +15,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 - Link preview atop that sheet, like Safari: tap opens; Hide preview hides for all links until Show preview.
 - Held picture lifts above sheet, max size, pinch to zoom.
 - Settings > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies when tracking protection off; each with editable exceptions. Salama now requests location, camera, microphone from phone.
-- Site details: tap page name atop menu; connection security, verifier, certificate, cipher; per-site tracking protection off; permissions.
+- Site details: tap page name atop menu; connection security, verifier by name (Let's Encrypt, not R11), certificate, cipher; per-site tracking protection off; permissions.
 - Site-offered search engines collected under Settings > Search > Found while browsing; tap adds and searches. Added engines show source; remove singly or all via pulley (three built-in stay).
 - Salama in share sheet for links: opens in new front tab in "N tabs" group, launching Salama if needed. Plain text not offered.
 - Settings > Appearance > Fixed toolbar: bar stays whole while scrolling.

@@ -88,12 +88,13 @@ Page {
 
             SiteSecurityHero {
                 secure: detailsPage.secure
-                verifiedBy: detailsPage.secure && detailsPage.security
-                            ? detailsPage.security.issuerDisplayName || "" : ""
+                verifiedBy: connection.issuerName
                 reason: detailsPage.reason
             }
 
             SiteConnectionDetails {
+                id: connection
+
                 security: detailsPage.https ? detailsPage.security : null
             }
 

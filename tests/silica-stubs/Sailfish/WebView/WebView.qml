@@ -45,6 +45,8 @@ Item {
         property bool blockedTrackingContent: false
         property string subjectDisplayName: ""
         property string issuerDisplayName: ""
+        // CertificateModel details of server cert; Issuer keyed by long names (organizationName).
+        property var serverCertDetails: ({})
         property var expiryDate: null
         // QMozSecurity::TLS_VERSION: -1 none, 4 TLS 1.3.
         property int protocolVersion: -1

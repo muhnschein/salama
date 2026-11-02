@@ -9472,7 +9472,14 @@ void tst_qmlload::siteDetailsConnection()
     m_core->tabs()->updateTitle(m_core->tabs()->activeTabId(),
                                 QStringLiteral("Qwant, the search engine"));
 
-    security()->setProperty("issuerDisplayName", QStringLiteral("Let's Encrypt (R11)"));
+    // Engine's issuerDisplayName = issuer common name, CA's intermediate code; CA in O (issue 44).
+    const QVariantMap letsEncrypt{
+        {QStringLiteral("Issuer"),
+         QVariantMap{{QStringLiteral("commonName"), QStringLiteral("R11")},
+                     {QStringLiteral("organizationName"), QStringLiteral("Let's Encrypt")},
+                     {QStringLiteral("countryName"), QStringLiteral("US")}}}};
+    security()->setProperty("issuerDisplayName", QStringLiteral("R11"));
+    security()->setProperty("serverCertDetails", letsEncrypt);
     security()->setProperty("subjectDisplayName", QStringLiteral("www.qwant.com"));
     security()->setProperty("expiryDate", QDateTime(QDate(2026, 12, 14), QTime(12, 0)));
     security()->setProperty("protocolVersion", 4);
@@ -9486,7 +9493,7 @@ void tst_qmlload::siteDetailsConnection()
     QCOMPARE(page->property("origin").toString(), QStringLiteral("https://www.qwant.com"));
 
     QCOMPARE(textOf(page, "siteSecurityTitle"), QStringLiteral("Connection is secure"));
-    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("Verified by Let's Encrypt (R11)"));
+    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("Verified by Let's Encrypt"));
     QCOMPARE(icon(page, "source").toString(), QStringLiteral("image://theme/icon-m-device-lock"));
     QVERIFY(!shownIn(page, "siteSecurityWarning"));
     const auto detail = [page](const char *name, const char *property) {
@@ -9504,6 +9511,21 @@ void tst_qmlload::siteDetailsConnection()
     QCOMPARE(detail("siteCipherSuite", "label"), QStringLiteral("Cipher suite"));
     QCOMPARE(detail("siteCipherSuite", "value"), QStringLiteral("TLS_AES_128_GCM_SHA256"));
 
+    // Issuer with common name only, or engine without serverCertDetails: code is all there is.
+    security()->setProperty("serverCertDetails", QVariantMap());
+    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("Verified by R11"));
+    QCOMPARE(detail("siteVerifiedBy", "value"), QStringLiteral("R11"));
+    // Organization only: engine's display name falls back to it, no code to add.
+    security()->setProperty(
+        "serverCertDetails",
+        QVariantMap{{QStringLiteral("Issuer"), QVariantMap{{QStringLiteral("organizationName"),
+                                                            QStringLiteral("DigiCert Inc")}}}});
+    security()->setProperty("issuerDisplayName", QStringLiteral("DigiCert Inc"));
+    QCOMPARE(textOf(page, "siteSecurityDetail"), QStringLiteral("Verified by DigiCert Inc"));
+    QCOMPARE(detail("siteVerifiedBy", "value"), QStringLiteral("DigiCert Inc"));
+    security()->setProperty("issuerDisplayName", QStringLiteral("R11"));
+    security()->setProperty("serverCertDetails", letsEncrypt);
+
     security()->setProperty("cipherName", QString());
     security()->setProperty("protocolVersion", -1);
     QVERIFY(!shownIn(page, "siteCipherSuite"));
@@ -9517,11 +9539,13 @@ void tst_qmlload::siteDetailsConnection()
     security()->setProperty("expiryDate", QVariant());
     security()->setProperty("subjectDisplayName", QString());
     security()->setProperty("issuerDisplayName", QString());
+    security()->setProperty("serverCertDetails", QVariantMap());
     QVERIFY(!shownIn(page, "siteIssuedTo"));
     QVERIFY(!shownIn(page, "siteValidUntil"));
     QVERIFY(!shownIn(page, "siteConnectionDetails"));
     QVERIFY(!shownIn(page, "siteSecurityDetail"));
-    security()->setProperty("issuerDisplayName", QStringLiteral("Let's Encrypt (R11)"));
+    security()->setProperty("issuerDisplayName", QStringLiteral("R11"));
+    security()->setProperty("serverCertDetails", letsEncrypt);
     security()->setProperty("subjectDisplayName", QStringLiteral("www.qwant.com"));
 
     const QColor error = evaluate(page, QStringLiteral("Theme.errorColor")).value<QColor>();
