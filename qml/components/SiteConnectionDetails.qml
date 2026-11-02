@@ -11,7 +11,17 @@ Column {
     property var security
 
     readonly property string issuedTo: plain(security ? security.subjectDisplayName : "")
-    readonly property string issuedBy: plain(security ? security.issuerDisplayName : "")
+    // Issuer common name = CA's intermediate code ("R11"), CA itself in organization:
+    // serverCertDetails.Issuer (CertificateModel, long attribute names). Engines without it -> code.
+    readonly property string issuerOrganization: {
+        var cert = security ? security.serverCertDetails : null
+        return plain(cert && cert.Issuer ? cert.Issuer.organizationName : "")
+    }
+    readonly property string issuerCode: plain(security ? security.issuerDisplayName : "")
+    readonly property string issuerName: issuerOrganization || issuerCode
+    // Code kept beside name for who looks for intermediate.
+    readonly property string issuedBy: issuerOrganization && issuerCode !== issuerOrganization
+                                       ? issuerOrganization + " (" + issuerCode + ")" : issuerName
     readonly property string validUntil: {
         var expiry = security ? security.expiryDate : null
         if (!expiry || isNaN(new Date(expiry).getTime())) {
