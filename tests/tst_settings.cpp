@@ -1098,20 +1098,25 @@ void tst_settings::dohProvider()
     QTemporaryDir dir;
     const QString path = dir.path() + QStringLiteral("/salama.conf");
     const QString nextDns = QStringLiteral("https://firefox.dns.nextdns.io/");
+    const QString cloudflare = QStringLiteral("https://mozilla.cloudflare-dns.com/dns-query");
     const QString own = QStringLiteral("https://dns.example.org/dns-query");
     {
         Sections settings(path);
         const QVariantList providers = settings.doh()->providers();
-        QCOMPARE(providers.count(), 2);
+        QCOMPARE(providers.count(), 3);
         QCOMPARE(providers.at(0).toMap().value(QStringLiteral("name")).toString(),
-                 QStringLiteral("Cloudflare"));
+                 QStringLiteral("Quad9"));
         QCOMPARE(providers.at(0).toMap().value(QStringLiteral("url")).toString(),
-                 QStringLiteral("https://mozilla.cloudflare-dns.com/dns-query"));
+                 QStringLiteral("https://dns.quad9.net/dns-query"));
         QCOMPARE(DohSettings::defaultProvider(),
                  providers.at(0).toMap().value(QStringLiteral("url")).toString());
+        QCOMPARE(settings.doh()->provider(), DohSettings::defaultProvider());
         QCOMPARE(providers.at(1).toMap().value(QStringLiteral("name")).toString(),
+                 QStringLiteral("Cloudflare"));
+        QCOMPARE(providers.at(1).toMap().value(QStringLiteral("url")).toString(), cloudflare);
+        QCOMPARE(providers.at(2).toMap().value(QStringLiteral("name")).toString(),
                  QStringLiteral("NextDNS"));
-        QCOMPARE(providers.at(1).toMap().value(QStringLiteral("url")).toString(), nextDns);
+        QCOMPARE(providers.at(2).toMap().value(QStringLiteral("url")).toString(), nextDns);
         QVERIFY(!settings.doh()->customProvider());
 
         QSignalSpy spy(settings.doh(), &DohSettings::providerChanged);
@@ -1139,6 +1144,11 @@ void tst_settings::dohProvider()
     Sections edited(path);
     QCOMPARE(edited.doh()->provider(), DohSettings::defaultProvider());
     QVERIFY(!edited.doh()->customProvider());
+    // Old default picked by hand stays, as built-in, not custom.
+    edited.doh()->setProvider(cloudflare);
+    Sections chosen(path);
+    QCOMPARE(chosen.doh()->provider(), cloudflare);
+    QVERIFY(!chosen.doh()->customProvider());
 }
 
 void tst_settings::dohProviderProblem_data()

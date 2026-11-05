@@ -8,7 +8,7 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 ### Added
 - Reproducible builds: each release RPM from next one on rebuilds from its tag to same file, byte for byte. `ci/verify-release.sh` checks release for you (docs/VERIFYING.md).
 - Settings > Privacy and security > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
-- Settings > Privacy and security > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
+- Settings > Privacy and security > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Quad9 (default), Cloudflare, NextDNS or own provider; excepted sites.
 - Settings > Privacy and security > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
 - Press and hold link or picture: sheet like menu's, link named with copy button; New tab, Background tab, Share, Save link; app action for email, phone, text message, place; Open image, Save image, Copy image link. Background tab stays put, notes where link went, with Show. Saved files keep names.
 - Press and hold back button: tab history, pages before this one in tab, newest first, like Firefox; tap one to go back to it. Tap still goes back.
