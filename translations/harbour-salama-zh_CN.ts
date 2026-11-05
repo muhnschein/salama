@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>外观</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>首选配色方案</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>在网站支持时使用的样式</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>固定工具栏</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>始终显示底部工具栏</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>屏幕刘海</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>让页面内容避开刘海</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>已复制网址</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>正在清除浏览数据</translation>
     </message>
 </context>
 <context>
@@ -594,10 +633,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>正在清除浏览数据</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>历史记录</translation>
     </message>
@@ -661,22 +696,6 @@
         <translation>
             <numerusform>%1 个，分属 %n 个群组</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-Only 模式</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>自动尝试使用 HTTPS 加密协议连接至网站，增强安全性。</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama 可能仍会为某些连接进行升级</translation>
     </message>
 </context>
 <context>
@@ -905,6 +924,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>隐私与安全</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>跟踪保护</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Sailfish OS 上的网页引擎还无法做到 Firefox 在这方面能做的一切，因此部分跟踪器仍可能漏网。Salama 会开启引擎具备的所有保护。</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>要求网站不共享和不出售我的数据</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>安全连接</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-Only 模式</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>仅 HTTPS。打开没有 HTTPS 的网站前先询问</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>先尝试 HTTPS，网站没有 HTTPS 时使用 HTTP</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>基于 HTTPS 的 DNS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>网站</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>网站权限</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>清除浏览数据</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1066,7 +1144,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>自动</translation>
@@ -1100,11 +1178,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1%</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1201,50 +1274,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>不记录历史</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>关闭时清除</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>记录历史</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>无快捷操作</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>跟随氛围</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>始终</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>关闭</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>没有例外</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>%n 个网站有例外</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1274,18 +1306,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>开启</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>关闭</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1297,6 +1317,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>无</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>始终避开</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>关闭</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1307,10 +1338,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>封面</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>隐私</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1333,76 +1360,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>起始页</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>帮助</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>教程</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>浏览</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>跟踪保护</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>首选配色方案</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>在网站支持时使用的样式</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>避开刘海</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>让网站内容避开屏幕刘海。“自动”允许已适配的网站使用刘海区域，同时保证内容不被遮挡。</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>固定工具栏</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>始终显示底部工具栏</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>启用 JavaScript</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>已允许（推荐）</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>已阻止，部分网站可能无法正常工作</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>网站权限</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-Only 模式</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>基于 HTTPS 的 DNS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>要求网站不共享和不出售我的数据</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>隐私与安全</translation>
     </message>
 </context>
 <context>
@@ -1642,11 +1605,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>网站可以做的事，你为个别网站另作决定的除外。点按一项即可更改或查看例外。</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>跟踪保护关闭时显示 · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>已对部分网站关闭</translation>
     </message>
@@ -1659,6 +1617,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>通过网站详情关闭</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>由跟踪保护决定</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>跟踪保护关闭时在此选择</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>阻止后大多数网站将无法正常工作</translation>
     </message>
 </context>
 <context>
@@ -1912,17 +1889,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>没有匹配的标签页</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>跟踪保护</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS 上的网页引擎还无法做到 Firefox 在这方面能做的一切，因此部分跟踪器仍可能漏网。Salama 会开启引擎具备的所有保护。</translation>
     </message>
 </context>
 <context>

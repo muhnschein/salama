@@ -130,10 +130,10 @@ void tst_qmlstatic::webViewImportOnlyInBrowserPage()
                                      QRegularExpression::MultilineOption);
     const QRegularExpression webEngine(QStringLiteral("^\\s*import\\s+Sailfish\\.WebEngine\\b"),
                                        QRegularExpression::MultilineOption);
-    // Engine users: BrowserPage drives it; history settings clear its data; notifications
-    // (site permissions) and preferences (settings) keep state in it.
+    // Engine users: BrowserPage drives it; clearer (History, Privacy and security) clears its data;
+    // notifications (site permissions) and preferences (settings) keep state in it.
     const QStringList engineAllowed{QStringLiteral("pages/BrowserPage.qml"),
-                                    QStringLiteral("pages/HistorySettingsPage.qml"),
+                                    QStringLiteral("components/BrowsingDataClearer.qml"),
                                     QStringLiteral("components/NotificationCenter.qml"),
                                     QStringLiteral("components/EnginePreferences.qml")};
 

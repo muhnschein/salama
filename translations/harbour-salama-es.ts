@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>Apariencia</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>Esquema de colores preferido</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>El estilo de sitio web que se usará cuando esté disponible</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>Barra de herramientas fija</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>Mostrar siempre la barra de herramientas inferior</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>Muesca de la pantalla</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>Mantiene el contenido de la página fuera de la muesca</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Dirección copiada</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>Limpiando datos de navegación</translation>
     </message>
 </context>
 <context>
@@ -599,10 +638,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>Limpiando datos de navegación</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>Historial</translation>
     </message>
@@ -670,22 +705,6 @@
             <numerusform>%1, en %n grupo</numerusform>
             <numerusform>%1, en %n grupos</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Modo solo HTTPS</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>Intenta conectarse automáticamente a sitios utilizando el protocolo de cifrado HTTPS para mayor seguridad.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama todavía podría actualizar algunas conexiones</translation>
     </message>
 </context>
 <context>
@@ -915,6 +934,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>Privacidad y seguridad</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Protección contra el rastreo</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>El motor web de Sailfish OS aún no puede hacer todo lo que hace Firefox aquí, así que algunos rastreadores pueden colarse. Salama activa todas las protecciones que tiene el motor.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Decir a los sitios web que no vendan ni compartan mis datos</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>Conexiones seguras</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Modo solo HTTPS</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>Solo HTTPS. Pregunta antes de abrir un sitio sin HTTPS</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>Prueba HTTPS primero y usa HTTP si un sitio no tiene HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS sobre HTTPS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>Sitios</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>Permisos del sitio</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Limpiar datos de navegación</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1078,7 +1156,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>Automático</translation>
@@ -1112,11 +1190,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1 %</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1216,51 +1289,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>No se recuerda</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Se limpia al cerrar</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>Se recuerda</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Sin acción rápida</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>Seguir el ambiente</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Siempre</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Nunca</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Sin excepciones</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>%n sitio con excepciones</numerusform>
-            <numerusform>%n sitios con excepciones</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1291,18 +1322,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>Activado</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>Desactivado</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1314,6 +1333,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>Ninguno</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>Evitar siempre</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>Desactivado</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1324,10 +1354,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>Portada</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Privacidad</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1350,76 +1376,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Página de inicio</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>Ayuda</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>Tutorial</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>Navegación</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Protección contra el rastreo</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>Esquema de colores preferido</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>El estilo de sitio web que se usará cuando esté disponible</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>Evitar la muesca</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Mantiene el contenido de los sitios web alejado de la muesca de la pantalla. Automático permite a los sitios web adaptados usar la zona de la muesca sin que el contenido quede tapado.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>Barra de herramientas fija</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Mostrar siempre la barra de herramientas inferior</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>Activar JavaScript</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>Permitido (recomendado)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>Bloqueado, algunos sitios pueden no funcionar correctamente</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>Permisos del sitio</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Modo solo HTTPS</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>DNS sobre HTTPS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>Decir a los sitios web que no vendan ni compartan mis datos</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>Privacidad y seguridad</translation>
     </message>
 </context>
 <context>
@@ -1660,11 +1622,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Lo que pueden hacer los sitios, salvo que hayas decidido otra cosa para alguno. Toca un permiso para cambiarlo o ver las excepciones.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Se muestra mientras la protección contra el rastreo está desactivada · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>Desactivada para algunos sitios</translation>
     </message>
@@ -1678,6 +1635,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>Se desactiva desde los detalles de cada sitio</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Lo decide la protección contra el rastreo</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Elige aquí cuando la protección contra el rastreo está desactivada</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>Si se bloquea, la mayoría de los sitios no funcionan</translation>
     </message>
 </context>
 <context>
@@ -1934,17 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>No hay pestañas que coincidan</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Protección contra el rastreo</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>El motor web de Sailfish OS aún no puede hacer todo lo que hace Firefox aquí, así que algunos rastreadores pueden colarse. Salama activa todas las protecciones que tiene el motor.</translation>
     </message>
 </context>
 <context>

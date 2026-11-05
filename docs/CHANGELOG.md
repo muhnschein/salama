@@ -7,26 +7,26 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 
 ### Added
 - Reproducible builds: each release RPM from next one on rebuilds from its tag to same file, byte for byte. `ci/verify-release.sh` checks release for you (docs/VERIFYING.md).
-- Settings > Privacy > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
-- Settings > Privacy > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
-- Settings > Privacy > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
+- Settings > Privacy and security > HTTPS-Only Mode: all pages over HTTPS; non-HTTPS site asks first. Off (default): HTTPS first, HTTP fallback, like Firefox.
+- Settings > Privacy and security > DNS over HTTPS, like Firefox for Android: Increased Protection, Max Protection or Off (default); Cloudflare, NextDNS or own provider; excepted sites.
+- Settings > Privacy and security > Tell websites not to share & sell data: Firefox's Global Privacy Control, replaces Do not track. On if Do not track was.
 - Press and hold link or picture: sheet like menu's, link named with copy button; New tab, Background tab, Share, Save link; app action for email, phone, text message, place; Open image, Save image, Copy image link. Background tab stays put, notes where link went, with Show. Saved files keep names.
 - Press and hold back button: tab history, pages before this one in tab, newest first, like Firefox; tap one to go back to it. Tap still goes back.
 - Link preview atop that sheet, like Safari: tap opens; Hide preview hides for all links until Show preview.
 - Held picture lifts above sheet, max size, pinch to zoom.
-- Settings > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies when tracking protection off; each with editable exceptions. Salama now requests location, camera, microphone from phone.
+- Settings > Privacy and security > Site permissions, replaces Settings > Notifications: defaults for notifications, pop-ups, location, camera and microphone, cookies (set by tracking protection while on); each with editable exceptions. Salama now requests location, camera, microphone from phone.
 - Site details: tap page name atop menu; connection security, verifier by name (Let's Encrypt, not R11), certificate, cipher; per-site tracking protection off; permissions.
 - Site-offered search engines collected under Settings > Search > Found while browsing; tap adds and searches. Added engines show source; remove singly or all via pulley (three built-in stay).
 - Salama in share sheet for links: opens in new front tab in "N tabs" group, launching Salama if needed. Plain text not offered.
 - Settings > Appearance > Fixed toolbar: bar stays whole while scrolling.
-- Settings > Privacy > Enable JavaScript, notes cost of turning off.
-- Settings > Tracking protection ends with web engine's current limits.
+- Settings > Privacy and security > Site permissions > JavaScript: Allow or Block, notes cost of blocking.
+- Tracking protection ends with web engine's current limits.
 - Downloads said for a moment over bar, Silica Notice: Downloading, Downloaded, Download failed, with file name. Progress in menu's Downloads row and on Downloads page.
 - Downloads pause, resume, retry; pre-restart ones refetchable. Row menu deletes file too; pulley clears finished; Clear list gone.
 - New cover: front tab's site and title over app's bolt in faint dots, ambience colour. Downloading: ring with percentage. Playing: what plays, with art or video picture, playing/paused. No tab: bolt alone. Static; quick action and mute at foot.
-- Settings > Website colours: pages with dark and light schemes follow ambience, or always light, or always dark.
+- Settings > Appearance > Preferred color scheme: pages with dark and light schemes follow ambience, or always light, or always dark.
 - Reader view's Ambience look, now default: article like Sailfish page, ambience colours and typeface, light right-aligned title. Old Ambience now Automatic; its users get new look; Light, Sepia, Dark kept.
-- Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind.
+- Settings > History counts stored history pages, downloads, recently closed tabs, open tabs above Clear browsing data; dialog shows amount per kind. Also under Settings > Privacy and security, where Firefox keeps it.
 - Settings > Start page shows half-size live new-tab preview under switches.
 - Settings > Start page > Frequently visited: Rows, one or two (default) rows of tiles.
 - Menu names page -- icon, title, padlock, host -- with copy-address button; "Start page" on start page, page actions dimmed. Downloads row wears progress ring and percentage.
@@ -41,15 +41,16 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 
 ### Changed
 - Website colours now Preferred color scheme, with sailfish-browser's description; Automatic now Match ambience.
-- Avoid the screen cutout now Notch guard, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Forced keeps all below; Disabled none. Old on becomes Forced, off Disabled.
+- Avoid the screen cutout now Screen notch, sailfish-browser's modes: Automatic (default) lets cutout-aware pages use it; Always keep clear keeps all below; Off none. Old on becomes Always keep clear, off Off.
 - Settings rows: icon or switch, never both; switch lights in icon column.
 - Loading stop button: plain cross, like sailfish-browser.
 - Page loading shown like sailfish-browser: highlight wash fills bar from left, fading downward, fades out when loaded; thin strip along top edge gone.
 - Downloads rows: progress ring at start with pause, play or retry, replacing foot line; kind icon when done. Failed in red; missing file "File not found". Removing in-progress download or clearing list stops it.
-- Settings shows current value under each name (start page, search engine, reader look, cover, tracking protection level, notification sites, history). Headings: Browsing, Appearance, Privacy, Help; Privacy page now Tracking protection.
+- Settings, seven rows, each opens a page: Search, Start page, Appearance, Reader view, Cover, History, Privacy and security. No switches, drop-downs or values there; Tutorial in pull-down menu. Appearance holds colour scheme, fixed toolbar, screen notch. Privacy and security holds tracking protection, GPC, HTTPS-Only Mode (switch; own page gone), DNS over HTTPS, Site permissions, Clear browsing data.
 - Choices inline: start page, search engine, tracking protection level as lists, chosen lit; reader colours five painted squares, typefaces two tiles; cover quick action six rows with glyphs under cover picture.
 - Name-repeating setting descriptions gone; rest add info.
-- Website colours and Avoid the screen cutout get icons: moon and display, from sailfish-browser.
+- Preferred color scheme and Screen notch get icons: moon and display, from sailfish-browser.
+- Site permissions' Cookies row stays put: dimmed while tracking protection sets cookies, says so.
 - Settings > Notifications lists Allowed and Blocked; switch reads Sites can ask; Forget this site removes one.
 - Clear browsing data on history page now button.
 - Menu, Silica way: opaque sheet; page's five actions -- Find in page, Bookmark, Share, Desktop site, Reader view -- plain icons in one row, lit when on; Bookmarks, History, Downloads, Settings below as rows, icon then name. No discs or captions. Bookmark button: star with plus, lit star with check once bookmarked; Bookmarks row: star with list. Star keeps full size; sign cut into its corner with small gap round it, like Material's.

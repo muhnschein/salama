@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>Външен вид</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>Предпочитана цветова схема</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>Стилът на сайтовете, който да се използва, когато е наличен</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>Фиксирана лента с инструменти</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>Постоянно показване на долната лента с инструменти</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>Изрез на екрана</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>Пази съдържанието на страницата далеч от изреза</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Адресът е копиран</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>Данните от разглеждане се изчистват</translation>
     </message>
 </context>
 <context>
@@ -599,10 +638,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>Данните от разглеждане се изчистват</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>История</translation>
     </message>
@@ -670,22 +705,6 @@
             <numerusform>%1, в %n група</numerusform>
             <numerusform>%1, в %n групи</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Режим „само HTTPS“</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>Автоматично се опитва да се свърже със сайтове, използвайки HTTPS протокол за криптиране за повишена сигурност.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Въпреки това е възможно Salama да подобри някои връзки</translation>
     </message>
 </context>
 <context>
@@ -915,6 +934,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>Поверителност и сигурност</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Защита от проследяване</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Уеб двигателят на Sailfish OS все още не може да прави всичко, което Firefox прави тук, затова някои тракери може да се промъкнат. Salama включва всички защити, които двигателят има.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Кажете на уебсайтовете да не споделят и продават данни</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>Сигурни връзки</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Режим „само HTTPS“</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>Само HTTPS. Пита, преди да отвори сайт без HTTPS</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>Първо опитва HTTPS, ползва HTTP, ако сайтът няма HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS през HTTPS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>Сайтове</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>Права на сайтовете</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Изчистване на данни от разглеждане</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1078,7 +1156,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>Авто</translation>
@@ -1112,11 +1190,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1%</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1216,51 +1289,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Не се запомня</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Изчиства се при затваряне</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>Запомня се</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Без бързо действие</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>Според атмосферата</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Принудително</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Изключено</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Няма изключения</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>%n сайт с изключения</numerusform>
-            <numerusform>%n сайта с изключения</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1291,18 +1322,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>Включен</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>Изключен</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1314,6 +1333,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>Няма</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>Винаги отстъп</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>Изключено</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1324,10 +1354,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>Корица</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Поверителност</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1350,76 +1376,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Начална страница</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>Помощ</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>Обучение</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>Разглеждане</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Защита от проследяване</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>Предпочитана цветова схема</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>Стилът на сайтовете, който да се използва, когато е наличен</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>Отстъп от изреза</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Държи съдържанието на сайтовете далеч от изреза на екрана. „Авто“ позволява на пригодените сайтове да използват областта на изреза, като съдържанието остава видимо.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>Фиксирана лента с инструменти</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Постоянно показване на долната лента с инструменти</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>Включване на JavaScript</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>Разрешено (препоръчително)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>Забранено, някои сайтове може да не работят правилно</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>Права на сайтовете</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Режим „само HTTPS“</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>DNS през HTTPS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>Кажете на уебсайтовете да не споделят и продават данни</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>Поверителност и сигурност</translation>
     </message>
 </context>
 <context>
@@ -1660,11 +1622,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Какво могат да правят сайтовете, освен ако не сте решили друго за даден сайт. Докоснете някое право, за да го промените или да видите изключенията.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Показва се, докато защитата от проследяване е изключена · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>Изключена за някои сайтове</translation>
     </message>
@@ -1678,6 +1635,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>Изключва се от подробностите за сайта</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Задава се от защитата от проследяване</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Изберете тук, когато защитата от проследяване е изключена</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>Забраната му спира работата на повечето сайтове</translation>
     </message>
 </context>
 <context>
@@ -1934,17 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>Няма съвпадащи раздели</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Защита от проследяване</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Уеб двигателят на Sailfish OS все още не може да прави всичко, което Firefox прави тук, затова някои тракери може да се промъкнат. Salama включва всички защити, които двигателят има.</translation>
     </message>
 </context>
 <context>

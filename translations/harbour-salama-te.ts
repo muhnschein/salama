@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>రూపం</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>ఇష్టపడే రంగు స్కీము</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>అందుబాటులో ఉన్నప్పుడు వాడాల్సిన వెబ్‌సైటు శైలి</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>స్థిర పనిముట్లపట్టీ</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>కింది పనిముట్లపట్టీని ఎల్లప్పుడూ చూపించు</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>స్క్రీన్ నాచ్</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>పేజీ కంటెంట్‌ను నాచ్‌కు దూరంగా ఉంచుతుంది</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>చిరునామా కాపీ చేయబడింది</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>విహరణ డేటాను తుడిచివేస్తోంది</translation>
     </message>
 </context>
 <context>
@@ -599,10 +638,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>విహరణ డేటాను తుడిచివేస్తోంది</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>చరిత్ర</translation>
     </message>
@@ -670,22 +705,6 @@
             <numerusform>%1, %n సమూహంలో</numerusform>
             <numerusform>%1, %n సమూహాల్లో</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-మాత్రమే రీతి</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>మెరుగైన భద్రత కోసం HTTPS ఎన్‌క్రిప్షన్ ప్రొటోకాల్ ద్వారా సైట్లకు ఆటోమేటిక్‌గా కనెక్ట్ అవ్వడానికి ప్రయత్నిస్తుంది.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama ఇప్పటికీ కొన్ని కనెక్షన్లను అప్‌గ్రేడ్ చేయవచ్చు</translation>
     </message>
 </context>
 <context>
@@ -915,6 +934,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>గోప్యత మరియు భద్రత</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>ట్రాకింగ్ సంరక్షణ</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Sailfish OS లోని వెబ్ ఇంజిన్ ఇక్కడ Firefox చేసే ప్రతిదాన్నీ ఇంకా చేయలేకపోతోంది, కాబట్టి కొన్ని ట్రాకర్లు ఇంకా దాటిపోవచ్చు. ఇంజిన్‌లో ఉన్న ప్రతి సంరక్షణనూ Salama ఆన్ చేస్తుంది.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>డేటాను పంచుకోవద్దని, అమ్మవద్దని వెబ్‌సైట్లకు చెప్పు</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>సురక్షిత కనెక్షన్‌లు</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-మాత్రమే రీతి</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>HTTPS మాత్రమే. HTTPS లేని సైట్‌ను తెరిచే ముందు అడుగుతుంది</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>మొదట HTTPS ప్రయత్నిస్తుంది, సైట్‌కు HTTPS లేకపోతే HTTP వాడుతుంది</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS ద్వారా DNS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>సైట్లు</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>సైటు అనుమతులు</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>విహరణ డేటాను తుడిచివేయి</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1078,7 +1156,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>ఆటోమేటిక్</translation>
@@ -1112,11 +1190,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1%</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1216,51 +1289,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>గుర్తుంచుకోబడదు</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>మూసివేసినప్పుడు తుడిచివేయబడుతుంది</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>గుర్తుంచుకోబడుతుంది</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>త్వరిత చర్య లేదు</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>యాంబియన్స్‌ను అనుసరించు</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>ఎల్లప్పుడూ</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>ఎప్పుడూ కాదు</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>మినహాయింపులు లేవు</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>మినహాయింపులతో %n సైటు</numerusform>
-            <numerusform>మినహాయింపులతో %n సైట్లు</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1291,18 +1322,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>ఆన్</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>ఆఫ్</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1314,6 +1333,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>ఏదీ లేదు</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>ఎల్లప్పుడూ దూరంగా ఉంచు</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>ఆఫ్</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1324,10 +1354,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>కవర్</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>గోప్యత</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1350,76 +1376,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ప్రారంభ పేజీ</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>సహాయం</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>ట్యుటోరియల్</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>విహరణ</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>ట్రాకింగ్ సంరక్షణ</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>ఇష్టపడే రంగు స్కీము</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>అందుబాటులో ఉన్నప్పుడు వాడాల్సిన వెబ్‌సైటు శైలి</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>నాచ్ రక్షణ</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>వెబ్‌సైటు విషయాన్ని స్క్రీన్ నాచ్‌కు దూరంగా ఉంచుతుంది. ఆటోమేటిక్‌లో, దానికి అనుగుణంగా తయారైన వెబ్‌సైట్లు విషయాన్ని కప్పివేయకుండా నాచ్ ప్రాంతాన్ని వాడుకోవచ్చు.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>స్థిర పనిముట్లపట్టీ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>కింది పనిముట్లపట్టీని ఎల్లప్పుడూ చూపించు</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>JavaScript ను ప్రారంభించు</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>అనుమతించబడింది (సిఫార్సు చేయబడింది)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>నిరోధించబడింది, కొన్ని సైట్లు సరిగా పనిచేయకపోవచ్చు</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>సైటు అనుమతులు</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-మాత్రమే రీతి</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>HTTPS ద్వారా DNS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>డేటాను పంచుకోవద్దని, అమ్మవద్దని వెబ్‌సైట్లకు చెప్పు</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>గోప్యత మరియు భద్రత</translation>
     </message>
 </context>
 <context>
@@ -1660,11 +1622,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ఏదైనా సైటు కోసం మీరు వేరేలా నిర్ణయించకపోతే, సైట్లు చేయగలిగేవి ఇవి. దాన్ని మార్చడానికి లేదా మినహాయింపులను చూడటానికి ఒకదాన్ని నొక్కండి.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>ట్రాకింగ్ సంరక్షణ ఆఫ్‌లో ఉన్నప్పుడు చూపబడుతుంది · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>కొన్ని సైట్లకు ఆఫ్ చేయబడింది</translation>
     </message>
@@ -1678,6 +1635,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>సైటు వివరాల నుండి ఆఫ్ చేయబడుతుంది</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>ట్రాకింగ్ సంరక్షణ నిర్ణయిస్తుంది</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>ట్రాకింగ్ సంరక్షణ ఆఫ్‌లో ఉన్నప్పుడు ఇక్కడ ఎంచుకోండి</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>నిరోధిస్తే చాలా సైట్లు పనిచేయవు</translation>
     </message>
 </context>
 <context>
@@ -1934,17 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>సరిపోలే ట్యాబులు లేవు</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>ట్రాకింగ్ సంరక్షణ</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS లోని వెబ్ ఇంజిన్ ఇక్కడ Firefox చేసే ప్రతిదాన్నీ ఇంకా చేయలేకపోతోంది, కాబట్టి కొన్ని ట్రాకర్లు ఇంకా దాటిపోవచ్చు. ఇంజిన్‌లో ఉన్న ప్రతి సంరక్షణనూ Salama ఆన్ చేస్తుంది.</translation>
     </message>
 </context>
 <context>

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
-// Cookies row only while tracking off or cookie exception exists.
+// Cookies row stays put: dimmed, says why, while tracking protection decides cookies.
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 import harbour.salama 1.0
@@ -34,7 +34,10 @@ Page {
         pageStack.push(Qt.resolvedUrl("SiteExceptionsPage.qml"), { "kind": kind })
     }
 
-    Component.onCompleted: SitePermissions.refresh()
+    Component.onCompleted: {
+        NotificationPermissions.refresh()
+        SitePermissions.refresh()
+    }
 
     SilicaFlickable {
         anchors.fill: parent
@@ -87,25 +90,30 @@ Page {
                 onOpened: sitePermissionsPage.showExceptions(SitePermissions.Popups)
             }
 
-            // Tracking on -> its level decides cookies, choice here moot.
+            // Tracking on -> its level decides cookies, choice here moot; exceptions still
+            // reachable.
             SitePermissionRow {
                 objectName: "cookiesPermissionRow"
-                visible: sitePermissionsPage.trackingOff || sitePermissionsPage.cookieExceptions > 0
+                enabled: sitePermissionsPage.trackingOff || sitePermissionsPage.cookieExceptions > 0
+                opacity: enabled ? 1.0 : Theme.opacityLow
                 iconSource: sitePermissionsPage.siteNames.kindIcon(SitePermissions.Cookies)
                 text: sitePermissionsPage.siteNames.kindName(SitePermissions.Cookies)
-                value: sitePermissionsPage.siteNames.defaultName(SitePermissions.Cookies)
-                description: {
-                    var count = sitePermissionsPage.siteNames.exceptionCount(
-                                sitePermissionsPage.cookieExceptions)
-                    return sitePermissionsPage.trackingOff
-                            //: Under the cookies row of Site permissions, which is there only while
-                            //: tracking protection is off; %1 is how many exceptions there are
-                            ? qsTr("Shown while tracking protection is off · %1").arg(count)
-                            : count
-                }
-                choices: [sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesAllowAll),
-                          sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesBlockCrossSite),
-                          sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesBlockAll)]
+                value: sitePermissionsPage.trackingOff
+                       ? sitePermissionsPage.siteNames.defaultName(SitePermissions.Cookies)
+                       //: Cookies row of Site permissions while tracking protection is on
+                       : qsTr("Set by tracking protection")
+                description: sitePermissionsPage.trackingOff
+                             || sitePermissionsPage.cookieExceptions > 0
+                             ? sitePermissionsPage.siteNames.exceptionCount(
+                                   sitePermissionsPage.cookieExceptions)
+                             //: Under the cookies row of Site permissions while tracking
+                             //: protection is on
+                             : qsTr("Choose here when tracking protection is off")
+                choices: sitePermissionsPage.trackingOff
+                         ? [sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesAllowAll),
+                            sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesBlockCrossSite),
+                            sitePermissionsPage.siteNames.cookies(SitePermissionSettings.CookiesBlockAll)]
+                         : []
                 onChosen: SitePermissionSettings.cookies = index
                 onOpened: sitePermissionsPage.showExceptions(SitePermissions.Cookies)
             }
@@ -144,6 +152,20 @@ Page {
                 choices: [sitePermissionsPage.siteNames.ask(), sitePermissionsPage.siteNames.block()]
                 onChosen: SitePermissionSettings.microphoneBlocked = index === 1
                 onOpened: sitePermissionsPage.showExceptions(SitePermissions.Microphone)
+            }
+
+            // Engine has one switch for every site: no exceptions to show.
+            SitePermissionRow {
+                objectName: "javascriptPermissionRow"
+                iconSource: "image://theme/icon-m-browser-javascript"
+                text: qsTr("JavaScript")
+                value: PrivacySettings.javascript ? sitePermissionsPage.siteNames.allow()
+                                                  : sitePermissionsPage.siteNames.block()
+                //: Under JavaScript in Site permissions
+                description: qsTr("Blocking it stops most sites working")
+                choices: [sitePermissionsPage.siteNames.allow(), sitePermissionsPage.siteNames.block()]
+                showsExceptions: false
+                onChosen: PrivacySettings.javascript = index === 0
             }
 
             // Only sites turned off via site details.

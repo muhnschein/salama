@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 salama contributors
 //
-// Choice names shared by choice pages and main-page value lines. Lists ordered by stored value.
+// Choice names shared by settings pages. Lists ordered by stored value.
 import QtQuick 2.6
 import harbour.salama 1.0
 
@@ -23,12 +23,12 @@ QtObject {
     // Settings.NotchGuard order.
     function notchGuard(guard) {
         return [
-            //: Notch guard mode that lets adapted websites use the notch area
+            //: Screen notch choice that lets adapted websites use the notch area
             qsTr("Automatic"),
-            //: Notch guard mode that always keeps website content away from the notch
-            qsTr("Forced"),
-            //: Notch guard mode that lets every website use the notch area
-            qsTr("Disabled")
+            //: Screen notch choice that always keeps page content away from the notch
+            qsTr("Always keep clear"),
+            //: Screen notch choice that lets every page use the notch area
+            qsTr("Off", "screen notch")
         ][guard] || ""
     }
 
@@ -52,12 +52,6 @@ QtObject {
         //: A text size, as a share of the default: "100 %"
         return qsTr("%1 %").arg(Math.round(100 * Reader.fontSizeFor(step)
                                            / Reader.fontSizeFor(ReaderSettings.TextSizeDefault)))
-    }
-
-    function reader(colors, typefaceChosen, step) {
-        //: The reader view's colours, typeface and text size: "Ambience · Sans serif · 100 %"
-        return qsTr("%1 · %2 · %3").arg(readerColors(colors)).arg(typeface(typefaceChosen))
-                                   .arg(textSize(step))
     }
 
     function quickAction(action) {
@@ -84,13 +78,6 @@ QtObject {
         }
         //: The cover's quick action opens a bookmark that has since been deleted
         return bookmarkId > 0 ? bookmarkTitle : qsTr("Deleted bookmark")
-    }
-
-    function cover(action, bookmarkId, bookmarkTitle) {
-        return action === CoverSettings.QuickActionNone
-                //: The cover's line in Settings when it offers no quick action
-                ? qsTr("No quick action")
-                : quickActionValue(action, bookmarkId, bookmarkTitle)
     }
 
     function trackingProtection(level) {
@@ -128,29 +115,6 @@ QtObject {
         }
         //: "2 sites allowed · 1 blocked"
         return qsTr("%1 · %2").arg(allowedText).arg(blockedText)
-    }
-
-    function sitePermissions(sites) {
-        //: Settings' line under Site permissions when no site has a decision of its own
-        return sites === 0 ? qsTr("No exceptions")
-                             //: How many sites have a permission decided for them
-                           : qsTr("%n site(s) with exceptions", "", sites)
-    }
-
-    function history(remember, clearOnClose) {
-        if (!remember) {
-            //: The pages visited are not kept in the history
-            return qsTr("Not remembered")
-        }
-        //: The pages visited are kept until the browser closes, or kept for good
-        return clearOnClose ? qsTr("Cleared when closed") : qsTr("Remembered")
-    }
-
-    function httpsOnly(on) {
-        //: HTTPS-Only Mode is on
-        return on ? qsTr("On", "HTTPS-Only Mode")
-                    //: HTTPS-Only Mode is off
-                  : qsTr("Off", "HTTPS-Only Mode")
     }
 
     function doh(level) {
