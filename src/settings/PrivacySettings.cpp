@@ -80,14 +80,15 @@ void PrivacySettings::setBlockNotificationRequests(bool on)
     }
 }
 
+// GPC and HTTPS-Only on by default: user's pick, stricter than Firefox (off there).
 bool PrivacySettings::globalPrivacyControl() const
 {
-    return flag(GlobalPrivacyControlKey, false);
+    return flag(GlobalPrivacyControlKey, true);
 }
 
 void PrivacySettings::setGlobalPrivacyControl(bool on)
 {
-    if (setFlag(GlobalPrivacyControlKey, on, false)) {
+    if (setFlag(GlobalPrivacyControlKey, on, true)) {
         emit globalPrivacyControlChanged();
     }
 }
@@ -106,12 +107,12 @@ void PrivacySettings::setJavascript(bool on)
 
 bool PrivacySettings::httpsOnly() const
 {
-    return flag(HttpsOnlyKey, false);
+    return flag(HttpsOnlyKey, true);
 }
 
 void PrivacySettings::setHttpsOnly(bool on)
 {
-    if (setFlag(HttpsOnlyKey, on, false)) {
+    if (setFlag(HttpsOnlyKey, on, true)) {
         emit httpsOnlyChanged();
     }
 }

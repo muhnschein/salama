@@ -90,10 +90,11 @@ void tst_settings::defaults()
     QVERIFY(settings.general()->cutoutGuard());
     QVERIFY(!settings.general()->fixedToolbar());
     QVERIFY(settings.general()->linkPreview());
-    QVERIFY(!settings.privacy()->globalPrivacyControl());
+    // GPC, HTTPS-Only, DoH Increased on by default: user's pick, beyond Firefox's defaults.
+    QVERIFY(settings.privacy()->globalPrivacyControl());
     QVERIFY(settings.privacy()->javascript());
-    QVERIFY(!settings.privacy()->httpsOnly());
-    QCOMPARE(settings.doh()->protection(), int(DohSettings::ProtectionOff));
+    QVERIFY(settings.privacy()->httpsOnly());
+    QCOMPARE(settings.doh()->protection(), int(DohSettings::ProtectionIncreased));
     QCOMPARE(settings.doh()->provider(), DohSettings::defaultProvider());
     QVERIFY(settings.doh()->exceptions().isEmpty());
     QCOMPARE(settings.searchEngines()->engineNames().count(),
@@ -996,25 +997,26 @@ void tst_settings::contentSwitches()
         Sections settings(path);
         QSignalSpy gpcSpy(settings.privacy(), &PrivacySettings::globalPrivacyControlChanged);
         QSignalSpy scriptSpy(settings.privacy(), &PrivacySettings::javascriptChanged);
-        settings.privacy()->setGlobalPrivacyControl(true);
-        settings.privacy()->setGlobalPrivacyControl(true);
+        settings.privacy()->setGlobalPrivacyControl(false);
+        settings.privacy()->setGlobalPrivacyControl(false);
         settings.privacy()->setJavascript(false);
         settings.privacy()->setJavascript(false);
         QCOMPARE(gpcSpy.count(), 1);
         QCOMPARE(scriptSpy.count(), 1);
     }
     Sections reloaded(path);
-    QVERIFY(reloaded.privacy()->globalPrivacyControl());
+    QVERIFY(!reloaded.privacy()->globalPrivacyControl());
     QVERIFY(!reloaded.privacy()->javascript());
 }
 
-// Old Do Not Track file: GPC starts as DNT was, old key removed; existing GPC kept.
+// Old Do Not Track file: GPC starts as DNT was, old key removed; existing GPC kept. Neither:
+// default, on.
 void tst_settings::globalPrivacyControlTakesDoNotTracksPlace_data()
 {
     QTest::addColumn<QVariant>("doNotTrack");
     QTest::addColumn<QVariant>("globalPrivacyControl");
     QTest::addColumn<bool>("expected");
-    QTest::newRow("neither") << QVariant() << QVariant() << false;
+    QTest::newRow("neither") << QVariant() << QVariant() << true;
     QTest::newRow("do not track on") << QVariant(true) << QVariant() << true;
     QTest::newRow("do not track off") << QVariant(false) << QVariant() << false;
     QTest::newRow("both, gpc wins") << QVariant(true) << QVariant(false) << false;
@@ -1054,12 +1056,12 @@ void tst_settings::httpsOnly()
     {
         Sections settings(path);
         QSignalSpy spy(settings.privacy(), &PrivacySettings::httpsOnlyChanged);
-        settings.privacy()->setHttpsOnly(true);
-        settings.privacy()->setHttpsOnly(true);
+        settings.privacy()->setHttpsOnly(false);
+        settings.privacy()->setHttpsOnly(false);
         QCOMPARE(spy.count(), 1);
     }
     Sections reloaded(path);
-    QVERIFY(reloaded.privacy()->httpsOnly());
+    QVERIFY(!reloaded.privacy()->httpsOnly());
 }
 
 void tst_settings::dohProtection()
@@ -1079,18 +1081,29 @@ void tst_settings::dohProtection()
     {
         Sections reloaded(path);
         QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionMax));
-        reloaded.doh()->setProtection(DohSettings::ProtectionIncreased);
+        reloaded.doh()->setProtection(DohSettings::ProtectionOff);
     }
     {
         Sections reloaded(path);
-        QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionIncreased));
+        QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionOff));
     }
     {
         QSettings file(path, QSettings::IniFormat);
         file.setValue(QStringLiteral("dohProtection"), 7);
     }
     Sections edited(path);
-    QCOMPARE(edited.doh()->protection(), int(DohSettings::ProtectionOff));
+    QCOMPARE(edited.doh()->protection(), int(DohSettings::ProtectionIncreased));
+
+    // Fresh file: turning off from default sticks.
+    const QString fresh = dir.path() + QStringLiteral("/fresh.conf");
+    {
+        Sections settings(fresh);
+        QSignalSpy spy(settings.doh(), &DohSettings::protectionChanged);
+        settings.doh()->setProtection(DohSettings::ProtectionOff);
+        QCOMPARE(spy.count(), 1);
+    }
+    Sections reloaded(fresh);
+    QCOMPARE(reloaded.doh()->protection(), int(DohSettings::ProtectionOff));
 }
 
 void tst_settings::dohProvider()

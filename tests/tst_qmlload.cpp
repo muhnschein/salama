@@ -665,13 +665,13 @@ void tst_qmlload::rootWindowLoads()
         takeGiven(EngineMessages::websiteColorPreferences(Settings::WebsiteColorsAutomatic, true)
                       .first()
                       .toMap()));
-    for (const QVariant &content : EngineMessages::contentPreferences(false, true)) {
+    for (const QVariant &content : EngineMessages::contentPreferences(true, true)) {
         QVERIFY(takeGiven(content.toMap()));
     }
-    for (const QVariant &https : EngineMessages::httpsOnlyPreferences(false)) {
+    for (const QVariant &https : EngineMessages::httpsOnlyPreferences(true)) {
         QVERIFY(takeGiven(https.toMap()));
     }
-    for (const QVariant &doh : EngineMessages::dohPreferences(DohSettings::ProtectionOff,
+    for (const QVariant &doh : EngineMessages::dohPreferences(DohSettings::ProtectionIncreased,
                                                               DohSettings::defaultProvider(), {})) {
         QVERIFY(takeGiven(doh.toMap()));
     }
@@ -6721,7 +6721,7 @@ QVariant lastPreferenceGiven(const QVariantList &given, const QString &name)
     return {};
 }
 
-// HTTPS-Only on Privacy and security: Firefox Android name, off default; engine told at once,
+// HTTPS-Only on Privacy and security: Firefox Android name, on default; engine told at once,
 // HTTPS-First on either way. Line under it says what Salama does for state shown.
 void tst_qmlload::httpsOnlyMode()
 {
@@ -6733,29 +6733,29 @@ void tst_qmlload::httpsOnlyMode()
             evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList(),
             QLatin1String(name));
     };
-    QCOMPARE(last("dom.security.https_only_mode"), QVariant(false));
+    QCOMPARE(last("dom.security.https_only_mode"), QVariant(true));
     QCOMPARE(last("dom.security.https_first"), QVariant(true));
 
     QObject *toggle = find(QStringLiteral("httpsOnlySwitch"));
     QCOMPARE(toggle->property("text").toString(), QStringLiteral("HTTPS-Only Mode"));
-    QVERIFY(!toggle->property("checked").toBool());
-    QCOMPARE(toggle->property("description").toString(),
-             QStringLiteral("Tries HTTPS first, uses HTTP if a site has no HTTPS"));
-
-    toggle->setProperty("checked", true);
-    QVERIFY(m_core->privacySettings()->httpsOnly());
-    QCOMPARE(last("dom.security.https_only_mode"), QVariant(true));
-    QCOMPARE(last("dom.security.https_first"), QVariant(true));
+    QVERIFY(toggle->property("checked").toBool());
     QCOMPARE(toggle->property("description").toString(),
              QStringLiteral("HTTPS only. Asks before opening a site without HTTPS"));
-    m_core->privacySettings()->setHttpsOnly(false);
-    QVERIFY(!toggle->property("checked").toBool());
+
+    toggle->setProperty("checked", false);
+    QVERIFY(!m_core->privacySettings()->httpsOnly());
     QCOMPARE(last("dom.security.https_only_mode"), QVariant(false));
+    QCOMPARE(last("dom.security.https_first"), QVariant(true));
     QCOMPARE(toggle->property("description").toString(),
              QStringLiteral("Tries HTTPS first, uses HTTP if a site has no HTTPS"));
+    m_core->privacySettings()->setHttpsOnly(true);
+    QVERIFY(toggle->property("checked").toBool());
+    QCOMPARE(last("dom.security.https_only_mode"), QVariant(true));
+    QCOMPARE(toggle->property("description").toString(),
+             QStringLiteral("HTTPS only. Asks before opening a site without HTTPS"));
 }
 
-// DoH: Firefox Android levels minus Default, Off default, wording, set one lit; level sent at
+// DoH: Firefox Android levels minus Default, Increased default, wording, set one lit; level sent at
 // once as GeckoView resolver mode after provider and exceptions. Provider choosable only when
 // used.
 void tst_qmlload::dohSettingsPage()
@@ -6771,7 +6771,7 @@ void tst_qmlload::dohSettingsPage()
     const auto last = [&](const char *name) {
         return lastPreferenceGiven(given(), QLatin1String(name));
     };
-    QCOMPARE(last("network.trr.mode"), QVariant(5));
+    QCOMPARE(last("network.trr.mode"), QVariant(2));
     QCOMPARE(last("network.trr.uri"), QVariant(DohSettings::defaultProvider()));
     QCOMPARE(last("network.trr.excluded-domains"), QVariant(QString()));
     QVERIFY(textOf(page, "dohSummary").startsWith(QStringLiteral("Domain Name System (DNS)")));
@@ -6787,20 +6787,20 @@ void tst_qmlload::dohSettingsPage()
         QCOMPARE(levels.at(i)->property("text").toString(), names.at(i));
         QVERIFY(!levels.at(i)->property("automaticCheck").toBool());
         QCOMPARE(levels.at(i)->property("checked").toBool(),
-                 stored.at(i) == DohSettings::ProtectionOff);
+                 stored.at(i) == DohSettings::ProtectionIncreased);
         const QString description = levels.at(i)->property("description").toString();
         QVERIFY2(!description.isEmpty(), qPrintable(names.at(i)));
         QVERIFY(!descriptions.contains(description));
         descriptions.append(description);
     }
     QCOMPARE(descriptions.last(), QStringLiteral("Use your default DNS resolver"));
-    QVERIFY(!shownIn(page, "dohProviderCombo"));
+    QVERIFY(shownIn(page, "dohProviderCombo"));
 
     const int before = given().count();
     click(levels.at(1));
     QCOMPARE(m_core->dohSettings()->protection(), int(DohSettings::ProtectionMax));
     QVERIFY(levels.at(1)->property("checked").toBool());
-    QVERIFY(!levels.at(2)->property("checked").toBool());
+    QVERIFY(!levels.at(0)->property("checked").toBool());
     const QVariantList after = given();
     QCOMPARE(after.count(), before + 3);
     QCOMPARE(after.at(before).toMap().value(QStringLiteral("key")).toString(),
@@ -7058,7 +7058,7 @@ void tst_qmlload::privacySettingsPage()
                  .toInt(),
              int(Qt::AlignHCenter));
     QCOMPARE(lastPreference("privacy.donottrackheader.enabled"), QVariant(false));
-    QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(false));
+    QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(true));
     QCOMPARE(lastPreference("privacy.globalprivacycontrol.functionality.enabled"), QVariant(true));
     QObject *gpc = find(QStringLiteral("globalPrivacyControlSwitch"));
     QVERIFY(gpc->property("automaticCheck").toBool());
@@ -7066,7 +7066,10 @@ void tst_qmlload::privacySettingsPage()
              QStringLiteral("Tell websites not to share & sell data"));
     QCOMPARE(gpc->property("description").toString(),
              QStringLiteral("Global Privacy Control (GPC)"));
-    QVERIFY(!gpc->property("checked").toBool());
+    QVERIFY(gpc->property("checked").toBool());
+    gpc->setProperty("checked", false);
+    QVERIFY(!m_core->privacySettings()->globalPrivacyControl());
+    QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(false));
     gpc->setProperty("checked", true);
     QVERIFY(m_core->privacySettings()->globalPrivacyControl());
     QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(true));
