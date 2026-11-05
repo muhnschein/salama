@@ -15,7 +15,9 @@ const char *const ExceptionsKey = "dohExceptions";
 
 const char *const HttpsPrefix = "https://";
 
-// Firefox Android providers: Gecko default (network.trr.default_provider_uri) + NextDNS.
+// Quad9 first, Salama's default (user's pick: non-profit, no logging of addresses); then
+// Firefox Android's two: Gecko default (network.trr.default_provider_uri) + NextDNS.
+const char *const Quad9Url = "https://dns.quad9.net/dns-query";
 const char *const CloudflareUrl = "https://mozilla.cloudflare-dns.com/dns-query";
 const char *const NextDnsUrl = "https://firefox.dns.nextdns.io/";
 
@@ -40,7 +42,7 @@ void DohSettings::setProtection(int level)
 
 QString DohSettings::defaultProvider()
 {
-    return QLatin1String(CloudflareUrl);
+    return QLatin1String(Quad9Url);
 }
 
 QString DohSettings::provider() const
@@ -62,12 +64,15 @@ void DohSettings::setProvider(const QString &url)
 bool DohSettings::customProvider() const
 {
     const QString current = provider();
-    return current != QLatin1String(CloudflareUrl) && current != QLatin1String(NextDnsUrl);
+    return current != QLatin1String(Quad9Url) && current != QLatin1String(CloudflareUrl) &&
+           current != QLatin1String(NextDnsUrl);
 }
 
 QVariantList DohSettings::providers() const
 {
     return {
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("Quad9")},
+                    {QStringLiteral("url"), QLatin1String(Quad9Url)}},
         QVariantMap{{QStringLiteral("name"), QStringLiteral("Cloudflare")},
                     {QStringLiteral("url"), QLatin1String(CloudflareUrl)}},
         QVariantMap{{QStringLiteral("name"), QStringLiteral("NextDNS")},

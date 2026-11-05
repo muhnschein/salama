@@ -6817,16 +6817,23 @@ void tst_qmlload::dohSettingsPage()
     QCOMPARE(provider->property("currentIndex").toInt(), 0);
     QCOMPARE(provider->property("description").toString(), QString());
     const QList<QObject *> choices = findAll(QStringLiteral("dohProviderChoice"));
-    QCOMPARE(choices.count(), 3);
-    QCOMPARE(choices.at(0)->property("text").toString(), QStringLiteral("Cloudflare (default)"));
-    QCOMPARE(choices.at(1)->property("text").toString(), QStringLiteral("NextDNS"));
-    QCOMPARE(choices.at(2)->property("text").toString(), QStringLiteral("Custom"));
+    QCOMPARE(choices.count(), 4);
+    QCOMPARE(choices.at(0)->property("text").toString(), QStringLiteral("Quad9 (default)"));
+    QCOMPARE(choices.at(1)->property("text").toString(), QStringLiteral("Cloudflare"));
+    QCOMPARE(choices.at(2)->property("text").toString(), QStringLiteral("NextDNS"));
+    QCOMPARE(choices.at(3)->property("text").toString(), QStringLiteral("Custom"));
+    QCOMPARE(last("network.trr.uri"), QVariant(QStringLiteral("https://dns.quad9.net/dns-query")));
     click(choices.at(1));
-    QCOMPARE(m_core->dohSettings()->provider(), QStringLiteral("https://firefox.dns.nextdns.io/"));
+    QCOMPARE(m_core->dohSettings()->provider(),
+             QStringLiteral("https://mozilla.cloudflare-dns.com/dns-query"));
     QCOMPARE(provider->property("currentIndex").toInt(), 1);
+    click(choices.at(2));
+    QCOMPARE(m_core->dohSettings()->provider(), QStringLiteral("https://firefox.dns.nextdns.io/"));
+    QCOMPARE(provider->property("currentIndex").toInt(), 2);
     QCOMPARE(last("network.trr.uri"), QVariant(QStringLiteral("https://firefox.dns.nextdns.io/")));
     click(choices.at(0));
     QCOMPARE(m_core->dohSettings()->provider(), DohSettings::defaultProvider());
+    QCOMPARE(provider->property("currentIndex").toInt(), 0);
 
     click(levels.at(2));
     QCOMPARE(last("network.trr.mode"), QVariant(5));
@@ -6864,8 +6871,8 @@ void tst_qmlload::dohProviderDialog()
     const QList<QObject *> choices = findAll(QStringLiteral("dohProviderChoice"));
 
     // Silica combo takes tapped item as choice before dialog opens.
-    provider->setProperty("currentIndex", 2);
-    click(choices.at(2));
+    provider->setProperty("currentIndex", 3);
+    click(choices.at(3));
     QObject *dialog = currentPage();
     QCOMPARE(dialog->objectName(), QStringLiteral("dohProviderDialog"));
     QObject *address = find(QStringLiteral("dohProviderAddress"));
@@ -6887,8 +6894,8 @@ void tst_qmlload::dohProviderDialog()
     QCOMPARE(m_core->dohSettings()->provider(), DohSettings::defaultProvider());
     QCOMPARE(provider->property("currentIndex").toInt(), 0);
 
-    provider->setProperty("currentIndex", 2);
-    click(choices.at(2));
+    provider->setProperty("currentIndex", 3);
+    click(choices.at(3));
     dialog = currentPage();
     address = find(QStringLiteral("dohProviderAddress"));
     address->setProperty("text", QStringLiteral("https://dns.example.org/dns-query"));
@@ -6899,7 +6906,7 @@ void tst_qmlload::dohProviderDialog()
     QCOMPARE(m_core->dohSettings()->provider(),
              QStringLiteral("https://dns.example.org/dns-query"));
     QVERIFY(m_core->dohSettings()->customProvider());
-    QCOMPARE(provider->property("currentIndex").toInt(), 2);
+    QCOMPARE(provider->property("currentIndex").toInt(), 3);
     QCOMPARE(provider->property("description").toString(),
              QStringLiteral("https://dns.example.org/dns-query"));
     QCOMPARE(lastPreferenceGiven(evaluate(find(QStringLiteral("viewArea")),
@@ -6907,7 +6914,7 @@ void tst_qmlload::dohProviderDialog()
                                      .toList(),
                                  QStringLiteral("network.trr.uri")),
              QVariant(QStringLiteral("https://dns.example.org/dns-query")));
-    click(choices.at(2));
+    click(choices.at(3));
     QCOMPARE(find(QStringLiteral("dohProviderAddress"))->property("text").toString(),
              QStringLiteral("https://dns.example.org/dns-query"));
     QMetaObject::invokeMethod(currentPage(), "reject");

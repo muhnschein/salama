@@ -11,10 +11,15 @@ Page {
 
     property SettingNames names: SettingNames {}
     // Combo index: built-in's own, or last (Custom).
-    readonly property int providerIndex: DohSettings.customProvider
-                                         ? 2
-                                         : (DohSettings.provider === DohSettings.providers[0].url
-                                            ? 0 : 1)
+    readonly property int providerIndex: {
+        var all = DohSettings.providers
+        for (var i = 0; i < all.length; ++i) {
+            if (all[i].url === DohSettings.provider) {
+                return i
+            }
+        }
+        return all.length
+    }
 
     function restoreProvider() {
         provider.currentIndex = Qt.binding(function () { return dohPage.providerIndex })
@@ -92,6 +97,12 @@ Page {
                         objectName: "dohProviderChoice"
                         text: DohSettings.providers[1].name
                         onClicked: DohSettings.provider = DohSettings.providers[1].url
+                    }
+
+                    MenuItem {
+                        objectName: "dohProviderChoice"
+                        text: DohSettings.providers[2].name
+                        onClicked: DohSettings.provider = DohSettings.providers[2].url
                     }
 
                     MenuItem {
