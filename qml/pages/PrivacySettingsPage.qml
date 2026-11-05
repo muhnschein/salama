@@ -108,7 +108,8 @@ Page {
 
             SettingsEntry {
                 objectName: "dohSettingsEntry"
-                iconSource: "image://theme/icon-m-browser"
+                // icon-m-browser absent on device theme (SFOS 5.1): row showed blank.
+                iconSource: "image://theme/icon-m-remote-security"
                 text: qsTr("DNS over HTTPS")
                 onClicked: pageStack.push(Qt.resolvedUrl("DohSettingsPage.qml"))
             }

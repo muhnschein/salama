@@ -7075,7 +7075,7 @@ void tst_qmlload::privacySettingsPage()
         QString page;
     };
     const QList<Entry> entries{
-        {QStringLiteral("dohSettingsEntry"), QStringLiteral("icon-m-browser"),
+        {QStringLiteral("dohSettingsEntry"), QStringLiteral("icon-m-remote-security"),
          QStringLiteral("DNS over HTTPS"), QStringLiteral("dohSettingsPage")},
         {QStringLiteral("sitePermissionsSettingsEntry"),
          QStringLiteral("icon-m-browser-permissions"), QStringLiteral("Site permissions"),
