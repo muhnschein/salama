@@ -28,14 +28,15 @@ DohSettings::DohSettings(QSettings &file, QObject *parent)
 {
 }
 
+// Increased by default: user's pick; Firefox ships Off/Default here.
 int DohSettings::protection() const
 {
-    return choice(ProtectionKey, ProtectionOff, ProtectionOff, ProtectionMax);
+    return choice(ProtectionKey, ProtectionIncreased, ProtectionOff, ProtectionMax);
 }
 
 void DohSettings::setProtection(int level)
 {
-    if (setChoice(ProtectionKey, level, ProtectionOff, ProtectionOff, ProtectionMax)) {
+    if (setChoice(ProtectionKey, level, ProtectionIncreased, ProtectionOff, ProtectionMax)) {
         emit protectionChanged();
     }
 }
