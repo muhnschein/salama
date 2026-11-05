@@ -19,7 +19,8 @@ class DohSettings : public SettingsSection
     Q_PROPERTY(QStringList exceptions READ exceptions NOTIFY exceptionsChanged)
 
 public:
-    // No Default: needs Mozilla rollout heuristics engine lacks. Stored: file format.
+    // No Default: needs Mozilla rollout heuristics engine lacks; Increased is default instead.
+    // Stored: file format.
     enum Protection // NOSONAR(cpp:S3642) QML on Qt 5.6 reads no scoped enum
     {
         ProtectionOff = 0,
