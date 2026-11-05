@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>Giao diện</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>Chế độ màu ưu tiên</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>Kiểu trang web được dùng khi trang có hỗ trợ</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>Thanh công cụ cố định</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>Luôn hiện thanh công cụ ở dưới cùng</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>Tai thỏ màn hình</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>Giữ nội dung trang tránh xa tai thỏ</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Đã sao chép địa chỉ</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>Đang xóa dữ liệu duyệt web</translation>
     </message>
 </context>
 <context>
@@ -594,10 +633,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>Đang xóa dữ liệu duyệt web</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>Lịch sử</translation>
     </message>
@@ -661,22 +696,6 @@
         <translation>
             <numerusform>%1, trong %n nhóm</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Chế độ chỉ HTTPS</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>Tự động cố gắng kết nối với các trang web bằng giao thức mã hóa HTTPS để tăng cường bảo mật.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama vẫn có thể nâng cấp một số kết nối</translation>
     </message>
 </context>
 <context>
@@ -905,6 +924,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>Quyền riêng tư và bảo mật</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Trình chống theo dõi</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Nhân web của Sailfish OS chưa thể làm mọi điều Firefox làm ở đây, nên một số trình theo dõi vẫn có thể lọt qua. Salama bật mọi biện pháp bảo vệ mà nhân web này có.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Yêu cầu trang web không bán hay chia sẻ dữ liệu cá nhân của tôi</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>Kết nối an toàn</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Chế độ chỉ HTTPS</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>Chỉ HTTPS. Hỏi trước khi mở trang web không có HTTPS</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>Thử HTTPS trước, dùng HTTP nếu trang web không có HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS qua HTTPS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>Trang web</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>Quyền hạn trang web</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Xóa dữ liệu duyệt web</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1066,7 +1144,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>Tự động</translation>
@@ -1100,11 +1178,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1%</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1201,50 +1274,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Không ghi nhớ</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Xóa khi đóng</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>Ghi nhớ</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Không có thao tác nhanh</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>Theo chủ đề hệ thống</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Luôn bật</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Đã tắt</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Không có ngoại lệ</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>%n trang web có ngoại lệ</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1274,18 +1306,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>Bật</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>Tắt</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1297,6 +1317,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>Không có</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>Luôn tránh</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>Tắt</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1307,10 +1338,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>Bìa</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Quyền riêng tư</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1333,76 +1360,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Trang chủ</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>Trợ giúp</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>Hướng dẫn</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>Duyệt web</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Trình chống theo dõi</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>Chế độ màu ưu tiên</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>Kiểu trang web được dùng khi trang có hỗ trợ</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>Tránh tai thỏ</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Giữ nội dung trang web tránh xa phần tai thỏ của màn hình. Chế độ Tự động cho phép các trang web đã được điều chỉnh dùng vùng tai thỏ mà nội dung vẫn không bị che.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>Thanh công cụ cố định</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Luôn hiện thanh công cụ ở dưới cùng</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>Bật JavaScript</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>Đã cho phép (khuyến nghị)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>Đã chặn, một số trang web có thể không hoạt động đúng</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>Quyền hạn trang web</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Chế độ chỉ HTTPS</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>DNS qua HTTPS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>Yêu cầu trang web không bán hay chia sẻ dữ liệu cá nhân của tôi</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>Quyền riêng tư và bảo mật</translation>
     </message>
 </context>
 <context>
@@ -1642,11 +1605,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Những gì các trang web được phép làm, trừ khi bạn đã quyết định khác cho một trang web. Chạm vào một quyền để thay đổi hoặc xem các ngoại lệ.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Hiện khi trình chống theo dõi đang tắt · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>Đã tắt cho một số trang web</translation>
     </message>
@@ -1659,6 +1617,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>Được tắt từ thông tin chi tiết của trang web</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Do trình chống theo dõi quyết định</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Chọn ở đây khi trình chống theo dõi đang tắt</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>Chặn nó khiến hầu hết trang web không hoạt động</translation>
     </message>
 </context>
 <context>
@@ -1912,17 +1889,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>Không có thẻ nào khớp</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Trình chống theo dõi</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Nhân web của Sailfish OS chưa thể làm mọi điều Firefox làm ở đây, nên một số trình theo dõi vẫn có thể lọt qua. Salama bật mọi biện pháp bảo vệ mà nhân web này có.</translation>
     </message>
 </context>
 <context>

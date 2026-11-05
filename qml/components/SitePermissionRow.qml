@@ -13,6 +13,8 @@ ListItem {
     property string value
     property string description
     property var choices: []
+    // False: one setting for every site, menu offers no exceptions.
+    property bool showsExceptions: true
 
     signal chosen(int index)
     signal opened()
@@ -31,6 +33,7 @@ ListItem {
 
         MenuItem {
             objectName: "sitePermissionShowExceptions"
+            visible: row.showsExceptions
             text: qsTr("Show exceptions")
             onClicked: row.opened()
         }

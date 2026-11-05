@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>Izskats</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>Vēlamā krāsu shēma</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>Vietnes stils, ko izmantot, ja tas ir pieejams</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>Fiksēta rīkjosla</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>Vienmēr rādīt apakšējo rīkjoslu</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>Ekrāna izgriezums</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>Tur lapas saturu prom no izgriezuma</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>Adrese nokopēta</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>Notīra pārlūkošanas datus</translation>
     </message>
 </context>
 <context>
@@ -604,10 +643,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>Notīra pārlūkošanas datus</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>Vēsture</translation>
     </message>
@@ -679,22 +714,6 @@
             <numerusform>%1, %n grupās</numerusform>
             <numerusform>%1, %n grupās</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Tikai HTTPS režīms</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>Automātiski mēģina savienoties ar vietnēm, izmantojot HTTPS šifrēšanas protokolu, lai uzlabotu drošību.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama joprojām var uzlabot dažus savienojumus</translation>
     </message>
 </context>
 <context>
@@ -925,6 +944,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>Privātums un drošība</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>Aizsardzība pret izsekošanu</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Sailfish OS tīmekļa dzinējs vēl nespēj darīt visu, ko šeit dara Firefox, tāpēc daži izsekotāji joprojām var izsprukt cauri. Salama ieslēdz visu aizsardzību, kas dzinējam ir.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>Teikt vietnēm, lai tās nepārdod un nedalās ar maniem datiem</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Globālā privātuma kontrole (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>Drošie savienojumi</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>Tikai HTTPS režīms</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>Tikai HTTPS. Jautā pirms vietnes bez HTTPS atvēršanas</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>Vispirms mēģina HTTPS, izmanto HTTP, ja vietnei nav HTTPS</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>DNS caur HTTPS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>Vietnes</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>Vietņu atļaujas</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>Notīrīt pārlūkošanas datus</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1090,7 +1168,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>Automātiski</translation>
@@ -1124,11 +1202,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1 %</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1231,52 +1304,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>Netiek atcerēta</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>Tiek notīrīta, aizverot pārlūku</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>Tiek atcerēta</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>Nav ātrās darbības</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>Atbilstoši motīvam</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>Piespiedu</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>Izslēgts</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>Nav izņēmumu</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>%n vietne ar izņēmumiem</numerusform>
-            <numerusform>%n vietnes ar izņēmumiem</numerusform>
-            <numerusform>%n vietņu ar izņēmumiem</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1308,18 +1338,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>Ieslēgts</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>Izslēgts</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1331,6 +1349,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>Nav</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>Vienmēr prom</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>Izslēgts</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1341,10 +1370,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>Vāks</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>Privātums</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1367,76 +1392,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Sākumlapa</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>Palīdzība</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>Apmācība</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>Pārlūkošana</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Aizsardzība pret izsekošanu</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>Vēlamā krāsu shēma</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>Vietnes stils, ko izmantot, ja tas ir pieejams</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>Izgriezuma aizsardzība</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>Tur vietnes saturu atstatus no ekrāna izgriezuma. Automātiskais režīms ļauj pielāgotām vietnēm izmantot izgriezuma laukumu, saglabājot saturu redzamu.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>Fiksēta rīkjosla</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>Vienmēr rādīt apakšējo rīkjoslu</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>Iespējot JavaScript</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>Atļauts (ieteicams)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>Liegts, dažas vietnes var nedarboties pareizi</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>Vietņu atļaujas</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>Tikai HTTPS režīms</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>DNS caur HTTPS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>Teikt vietnēm, lai tās nepārdod un nedalās ar maniem datiem</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Globālā privātuma kontrole (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>Privātums un drošība</translation>
     </message>
 </context>
 <context>
@@ -1678,11 +1639,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Ko vietnes drīkst darīt, ja kādai vietnei nav izlemts citādi. Pieskaries kādai, lai to mainītu vai skatītu izņēmumus.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>Redzams, kamēr aizsardzība pret izsekošanu ir izslēgta · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>Izslēgta dažām vietnēm</translation>
     </message>
@@ -1697,6 +1653,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>Izslēgta vietnes informācijā</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Nosaka aizsardzība pret izsekošanu</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>Izvēlieties šeit, kad aizsardzība pret izsekošanu ir izslēgta</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>Ja to liedz, lielākā daļa vietņu nedarbojas</translation>
     </message>
 </context>
 <context>
@@ -1956,17 +1931,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>Nav atbilstošu ciļņu</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>Aizsardzība pret izsekošanu</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS tīmekļa dzinējs vēl nespēj darīt visu, ko šeit dara Firefox, tāpēc daži izsekotāji joprojām var izsprukt cauri. Salama ieslēdz visu aizsardzību, kas dzinējam ir.</translation>
     </message>
 </context>
 <context>

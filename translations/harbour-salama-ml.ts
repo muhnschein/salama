@@ -16,6 +16,38 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPage</name>
+    <message>
+        <source>Appearance</source>
+        <translation>ദൃശ്യരൂപം</translation>
+    </message>
+    <message>
+        <source>Preferred color scheme</source>
+        <translation>മുൻഗണനയുള്ള നിറ അലങ്കാരം</translation>
+    </message>
+    <message>
+        <source>The website style to use when available</source>
+        <translation>ലഭ്യമാകുമ്പോൾ ഉപയോഗിക്കേണ്ട വെബ്‌സൈറ്റ് ശൈലി</translation>
+    </message>
+    <message>
+        <source>Fixed toolbar</source>
+        <translation>സ്ഥിരമായ ടൂൾബാർ</translation>
+    </message>
+    <message>
+        <source>Always show the bottom toolbar</source>
+        <translation>താഴെയുള്ള ടൂൾബാർ എപ്പോഴും കാണിക്കുക</translation>
+    </message>
+    <message>
+        <source>Screen notch</source>
+        <extracomment>Setting for the notch at the top of the screen, where the camera sits</extracomment>
+        <translation>സ്ക്രീൻ നോച്ച്</translation>
+    </message>
+    <message>
+        <source>Keeps page content clear of the notch</source>
+        <translation>പേജിലെ ഉള്ളടക്കം നോച്ചിൽ നിന്ന് അകറ്റി നിർത്തുന്നു</translation>
+    </message>
+</context>
+<context>
     <name>BarBanner</name>
     <message>
         <source>Show</source>
@@ -118,6 +150,13 @@
         <source>Address copied</source>
         <extracomment>Shown for a moment once the menu&apos;s copy button has put the page&apos;s address on the clipboard</extracomment>
         <translation>വിലാസം പകർത്തി</translation>
+    </message>
+</context>
+<context>
+    <name>BrowsingDataClearer</name>
+    <message>
+        <source>Clearing browsing data</source>
+        <translation>ബ്രൗസിംഗ് ഡാറ്റ മായ്ക്കുന്നു</translation>
     </message>
 </context>
 <context>
@@ -599,10 +638,6 @@
 <context>
     <name>HistorySettingsPage</name>
     <message>
-        <source>Clearing browsing data</source>
-        <translation>ബ്രൗസിംഗ് ഡാറ്റ മായ്ക്കുന്നു</translation>
-    </message>
-    <message>
         <source>History</source>
         <translation>നാൾവഴി</translation>
     </message>
@@ -670,22 +705,6 @@
             <numerusform>%1, %n കൂട്ടത്തിൽ</numerusform>
             <numerusform>%1, %n കൂട്ടങ്ങളിൽ</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>HttpsOnlySettingsPage</name>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-മാത്രം രീതി</translation>
-    </message>
-    <message>
-        <source>Automatically attempts to connect to sites using HTTPS encryption protocol for increased security.</source>
-        <translation>കൂടുതൽ സുരക്ഷയ്ക്കായി HTTPS എൻക്രിപ്ഷൻ പ്രോട്ടോക്കോൾ ഉപയോഗിച്ച് സൈറ്റുകളിലേക്ക് സ്വയമേവ കണക്റ്റ് ചെയ്യാൻ ശ്രമിക്കുന്നു.</translation>
-    </message>
-    <message>
-        <source>Salama may still upgrade some connections</source>
-        <extracomment>Under the HTTPS-Only Mode switch while it is off: the engine still tries HTTPS before HTTP. Salama is the browser&apos;s name.</extracomment>
-        <translation>Salama ഇപ്പോഴും ചില കണക്ഷനുകൾ അപ്ഗ്രേഡ് ചെയ്തേക്കാം</translation>
     </message>
 </context>
 <context>
@@ -915,6 +934,65 @@
     </message>
 </context>
 <context>
+    <name>PrivacySettingsPage</name>
+    <message>
+        <source>Privacy and security</source>
+        <translation>സ്വകാര്യതയും സുരക്ഷയും</translation>
+    </message>
+    <message>
+        <source>Tracking protection</source>
+        <translation>പിന്തുടർച്ച പരിരക്ഷണം</translation>
+    </message>
+    <message>
+        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
+        <translation>Sailfish OS-ലെ വെബ് എഞ്ചിന് Firefox ഇവിടെ ചെയ്യുന്നതെല്ലാം ഇതുവരെ ചെയ്യാനാവില്ല, അതിനാൽ ചില പിന്തുടർച്ചായന്ത്രങ്ങൾ ഇപ്പോഴും കടന്നുവന്നേക്കാം. എഞ്ചിനിലുള്ള എല്ലാ പരിരക്ഷണങ്ങളും Salama ഓണാക്കുന്നു.</translation>
+    </message>
+    <message>
+        <source>Tell websites not to share &amp; sell data</source>
+        <translation>ദത്ത പങ്കിടുകയോ വിൽക്കുകയോ ചെയ്യരുതെന്ന് വെബ്‌സൈറ്റുകളോട് പറയുക</translation>
+    </message>
+    <message>
+        <source>Global Privacy Control (GPC)</source>
+        <translation>Global Privacy Control (GPC)</translation>
+    </message>
+    <message>
+        <source>Secure connections</source>
+        <extracomment>HTTPS-Only Mode and DNS over HTTPS: how the browser connects to sites</extracomment>
+        <translation>സുരക്ഷിത കണക്ഷനുകൾ</translation>
+    </message>
+    <message>
+        <source>HTTPS-Only Mode</source>
+        <translation>HTTPS-മാത്രം രീതി</translation>
+    </message>
+    <message>
+        <source>HTTPS only. Asks before opening a site without HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while on</extracomment>
+        <translation>HTTPS മാത്രം. HTTPS ഇല്ലാത്ത സൈറ്റ് തുറക്കും മുമ്പ് ചോദിക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>Tries HTTPS first, uses HTTP if a site has no HTTPS</source>
+        <extracomment>Under HTTPS-Only Mode while off</extracomment>
+        <translation>ആദ്യം HTTPS ശ്രമിക്കുന്നു, സൈറ്റിൽ HTTPS ഇല്ലെങ്കിൽ HTTP ഉപയോഗിക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>DNS over HTTPS</source>
+        <translation>HTTPS മീതെ DNS</translation>
+    </message>
+    <message>
+        <source>Sites</source>
+        <extracomment>What sites may do, and what they have left on the phone</extracomment>
+        <translation>സൈറ്റുകൾ</translation>
+    </message>
+    <message>
+        <source>Site permissions</source>
+        <translation>സൈറ്റ് അനുമതികൾ</translation>
+    </message>
+    <message>
+        <source>Clear browsing data</source>
+        <translation>ബ്രൗസിംഗ് ഡാറ്റ മായ്ക്കുക</translation>
+    </message>
+</context>
+<context>
     <name>ReaderPreview</name>
     <message>
         <source>example.com</source>
@@ -1078,7 +1156,7 @@
     </message>
     <message>
         <source>Automatic</source>
-        <extracomment>Notch guard mode that lets adapted websites use the notch area
+        <extracomment>Screen notch choice that lets adapted websites use the notch area
 ----------
 The reader view in Firefox&apos;s light or dark colours as the ambience is</extracomment>
         <translation>സ്വയമേവ</translation>
@@ -1112,11 +1190,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <source>%1 %</source>
         <extracomment>A text size, as a share of the default: &quot;100 %&quot;</extracomment>
         <translation>%1%</translation>
-    </message>
-    <message>
-        <source>%1 · %2 · %3</source>
-        <extracomment>The reader view&apos;s colours, typeface and text size: &quot;Ambience · Sans serif · 100 %&quot;</extracomment>
-        <translation>%1 · %2 · %3</translation>
     </message>
     <message>
         <source>None</source>
@@ -1216,51 +1289,9 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>Not remembered</source>
-        <extracomment>The pages visited are not kept in the history</extracomment>
-        <translation>ഓർമ്മിക്കുന്നില്ല</translation>
-    </message>
-    <message>
-        <source>Cleared when closed</source>
-        <extracomment>The pages visited are kept until the browser closes, or kept for good</extracomment>
-        <translation>അടയ്ക്കുമ്പോൾ മായ്ക്കും</translation>
-    </message>
-    <message>
-        <source>Remembered</source>
-        <translation>ഓർമ്മിക്കുന്നു</translation>
-    </message>
-    <message>
-        <source>No quick action</source>
-        <extracomment>The cover&apos;s line in Settings when it offers no quick action</extracomment>
-        <translation>ദ്രുത പ്രവർത്തനമില്ല</translation>
-    </message>
-    <message>
         <source>Match ambience</source>
         <extracomment>Pages are drawn light or dark as the ambience is: sailfish-browser&apos;s words</extracomment>
         <translation>ആംബിയൻസ് പിന്തുടരുക</translation>
-    </message>
-    <message>
-        <source>Forced</source>
-        <extracomment>Notch guard mode that always keeps website content away from the notch</extracomment>
-        <translation>നിർബന്ധിതം</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <extracomment>Notch guard mode that lets every website use the notch area</extracomment>
-        <translation>പ്രവർത്തനരഹിതം</translation>
-    </message>
-    <message>
-        <source>No exceptions</source>
-        <extracomment>Settings&apos; line under Site permissions when no site has a decision of its own</extracomment>
-        <translation>ഒഴിവാക്കലുകളില്ല</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n site(s) with exceptions</source>
-        <extracomment>How many sites have a permission decided for them</extracomment>
-        <translation>
-            <numerusform>ഒഴിവാക്കലുള്ള %n സൈറ്റ്</numerusform>
-            <numerusform>ഒഴിവാക്കലുകളുള്ള %n സൈറ്റുകൾ</numerusform>
-        </translation>
     </message>
     <message>
         <source>Increased Protection</source>
@@ -1291,18 +1322,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         </translation>
     </message>
     <message>
-        <source>On</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is on</extracomment>
-        <translation>ഓൺ</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <comment>HTTPS-Only Mode</comment>
-        <extracomment>HTTPS-Only Mode is off</extracomment>
-        <translation>ഓഫ്</translation>
-    </message>
-    <message>
         <source>Off</source>
         <comment>DNS over HTTPS</comment>
         <extracomment>DNS over HTTPS is off</extracomment>
@@ -1314,6 +1333,17 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <extracomment>No site is an exception to DNS over HTTPS</extracomment>
         <translation>ഒന്നുമില്ല</translation>
     </message>
+    <message>
+        <source>Always keep clear</source>
+        <extracomment>Screen notch choice that always keeps page content away from the notch</extracomment>
+        <translation>എപ്പോഴും അകറ്റി നിർത്തുക</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <comment>screen notch</comment>
+        <extracomment>Screen notch choice that lets every page use the notch area</extracomment>
+        <translation>ഓഫ്</translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -1324,10 +1354,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Cover</source>
         <translation>കവർ</translation>
-    </message>
-    <message>
-        <source>Privacy</source>
-        <translation>സ്വകാര്യത</translation>
     </message>
     <message>
         <source>Reader view</source>
@@ -1350,76 +1376,12 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ആരംഭ താൾ</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>പിന്തുണ</translation>
-    </message>
-    <message>
         <source>Tutorial</source>
         <translation>ട്യൂട്ടോറിയൽ</translation>
     </message>
     <message>
-        <source>Browsing</source>
-        <translation>ബ്രൗസിംഗ്</translation>
-    </message>
-    <message>
-        <source>Tracking protection</source>
-        <translation>പിന്തുടർച്ച പരിരക്ഷണം</translation>
-    </message>
-    <message>
-        <source>Preferred color scheme</source>
-        <translation>മുൻഗണനയുള്ള നിറ അലങ്കാരം</translation>
-    </message>
-    <message>
-        <source>The website style to use when available</source>
-        <translation>ലഭ്യമാകുമ്പോൾ ഉപയോഗിക്കേണ്ട വെബ്‌സൈറ്റ് ശൈലി</translation>
-    </message>
-    <message>
-        <source>Notch guard</source>
-        <translation>നോച്ച് സംരക്ഷണം</translation>
-    </message>
-    <message>
-        <source>Keeps website content away from the screen notch. Automatic lets adapted websites use the notch area while keeping content clear.</source>
-        <translation>വെബ്‌സൈറ്റ് ഉള്ളടക്കം സ്ക്രീനിലെ നോച്ചിൽ നിന്ന് അകറ്റി നിർത്തുന്നു. സ്വയമേവ എന്ന ക്രമീകരണം, അനുയോജ്യമാക്കിയ വെബ്‌സൈറ്റുകളെ ഉള്ളടക്കം മറയാതെ നിലനിർത്തിക്കൊണ്ട് നോച്ച് ഭാഗം ഉപയോഗിക്കാൻ അനുവദിക്കുന്നു.</translation>
-    </message>
-    <message>
-        <source>Fixed toolbar</source>
-        <translation>സ്ഥിരമായ ടൂൾബാർ</translation>
-    </message>
-    <message>
-        <source>Always show the bottom toolbar</source>
-        <translation>താഴെയുള്ള ടൂൾബാർ എപ്പോഴും കാണിക്കുക</translation>
-    </message>
-    <message>
-        <source>Enable JavaScript</source>
-        <translation>JavaScript പ്രവർത്തനക്ഷമമാക്കുക</translation>
-    </message>
-    <message>
-        <source>Allowed (recommended)</source>
-        <translation>അനുവദിച്ചു (ശുപാർശ ചെയ്യുന്നു)</translation>
-    </message>
-    <message>
-        <source>Blocked, some sites may not work correctly</source>
-        <translation>തടഞ്ഞു, ചില സൈറ്റുകൾ ശരിയായി പ്രവർത്തിച്ചേക്കില്ല</translation>
-    </message>
-    <message>
-        <source>Site permissions</source>
-        <translation>സൈറ്റ് അനുമതികൾ</translation>
-    </message>
-    <message>
-        <source>HTTPS-Only Mode</source>
-        <translation>HTTPS-മാത്രം രീതി</translation>
-    </message>
-    <message>
-        <source>DNS over HTTPS</source>
-        <translation>HTTPS മീതെ DNS</translation>
-    </message>
-    <message>
-        <source>Tell websites not to share &amp; sell data</source>
-        <translation>ദത്ത പങ്കിടുകയോ വിൽക്കുകയോ ചെയ്യരുതെന്ന് വെബ്‌സൈറ്റുകളോട് പറയുക</translation>
-    </message>
-    <message>
-        <source>Global Privacy Control (GPC)</source>
-        <translation>Global Privacy Control (GPC)</translation>
+        <source>Privacy and security</source>
+        <translation>സ്വകാര്യതയും സുരക്ഷയും</translation>
     </message>
 </context>
 <context>
@@ -1660,11 +1622,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>ഒരു സൈറ്റിനായി നിങ്ങൾ മറ്റൊന്ന് തീരുമാനിച്ചിട്ടില്ലെങ്കിൽ സൈറ്റുകൾക്ക് ചെയ്യാവുന്നത്. മാറ്റാനോ ഒഴിവാക്കലുകൾ കാണാനോ ഒന്നിൽ ടാപ്പ് ചെയ്യുക.</translation>
     </message>
     <message>
-        <source>Shown while tracking protection is off · %1</source>
-        <extracomment>Under the cookies row of Site permissions, which is there only while tracking protection is off; %1 is how many exceptions there are</extracomment>
-        <translation>പിന്തുടർച്ച പരിരക്ഷണം ഓഫായിരിക്കുമ്പോൾ കാണിക്കുന്നു · %1</translation>
-    </message>
-    <message>
         <source>Turned off for some sites</source>
         <translation>ചില സൈറ്റുകൾക്ക് ഓഫാക്കി</translation>
     </message>
@@ -1678,6 +1635,25 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>Turned off from a site’s details</source>
         <translation>സൈറ്റിന്റെ വിശദാംശങ്ങളിൽ നിന്ന് ഓഫാക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>Set by tracking protection</source>
+        <extracomment>Cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>പിന്തുടർച്ച പരിരക്ഷണം നിശ്ചയിക്കുന്നു</translation>
+    </message>
+    <message>
+        <source>Choose here when tracking protection is off</source>
+        <extracomment>Under the cookies row of Site permissions while tracking protection is on</extracomment>
+        <translation>പിന്തുടർച്ച പരിരക്ഷണം ഓഫായിരിക്കുമ്പോൾ ഇവിടെ തിരഞ്ഞെടുക്കുക</translation>
+    </message>
+    <message>
+        <source>JavaScript</source>
+        <translation>JavaScript</translation>
+    </message>
+    <message>
+        <source>Blocking it stops most sites working</source>
+        <extracomment>Under JavaScript in Site permissions</extracomment>
+        <translation>തടഞ്ഞാൽ മിക്ക സൈറ്റുകളും പ്രവർത്തിക്കില്ല</translation>
     </message>
 </context>
 <context>
@@ -1934,17 +1910,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>No matching tabs</source>
         <translation>പൊരുത്തപ്പെടുന്ന ടാബുകളില്ല</translation>
-    </message>
-</context>
-<context>
-    <name>TrackingSettingsPage</name>
-    <message>
-        <source>Tracking protection</source>
-        <translation>പിന്തുടർച്ച പരിരക്ഷണം</translation>
-    </message>
-    <message>
-        <source>The web engine on Sailfish OS can’t yet do everything Firefox does here, so some trackers may still get through. Salama turns on every protection the engine has.</source>
-        <translation>Sailfish OS-ലെ വെബ് എഞ്ചിന് Firefox ഇവിടെ ചെയ്യുന്നതെല്ലാം ഇതുവരെ ചെയ്യാനാവില്ല, അതിനാൽ ചില പിന്തുടർച്ചായന്ത്രങ്ങൾ ഇപ്പോഴും കടന്നുവന്നേക്കാം. എഞ്ചിനിലുള്ള എല്ലാ പരിരക്ഷണങ്ങളും Salama ഓണാക്കുന്നു.</translation>
     </message>
 </context>
 <context>

@@ -234,15 +234,15 @@ private slots:
     void searchFieldsKeepTheKeyboard();
     void bookmarksPage();
     void settingsPage();
-    void sailfishBrowserSettings();
+    void appearanceSettingsPage();
     void startPageSettingsPage();
     void searchSettingsPage();
     void searchEnginesFound();
     void searchEnginesAdd();
     void searchEnginesRemove();
     void readerSettingsPage();
-    void trackingSettingsPage();
-    void httpsOnlySettingsPage();
+    void privacySettingsPage();
+    void httpsOnlyMode();
     void dohSettingsPage();
     void dohProviderDialog();
     void dohExceptionsPage();
@@ -298,6 +298,7 @@ private:
     void pullDownToBrowser();
     void popPage() const;
     QObject *openMenuItem(const QString &itemName);
+    QObject *openPrivacyPage();
     static QObject *rowMenuItem(QObject *row, const QString &itemName);
 
     QScopedPointer<QTemporaryDir> m_dir;
@@ -599,6 +600,16 @@ QObject *tst_qmlload::openMenuItem(const QString &itemName)
         return nullptr;
     }
     click(item);
+    return currentPage();
+}
+
+// Settings > Privacy and security, two pages up from browser.
+QObject *tst_qmlload::openPrivacyPage()
+{
+    if (openMenuItem(QStringLiteral("settingsMenuButton")) == nullptr) {
+        return nullptr;
+    }
+    click(find(QStringLiteral("privacySettingsEntry")));
     return currentPage();
 }
 
@@ -5986,72 +5997,43 @@ QStringList columnOf(QObject *item)
 
 } // namespace
 
-// Settings main page: entries to own pages (start page, search, reader, cover, tracking,
-// notifications, history) under Browsing/Appearance/Privacy/Help; website colours and cutout
-// inline last under Appearance. Entry = theme icon, name, current value; pushes its page.
+// Settings main page: seven rows, no headings, each pushing its own page; Firefox's order
+// (search first), History beside browsing rows, protection behind one row. No value under any
+// name, no switch or combo: tap changes nothing here. Tutorial in pulley.
 void tst_qmlload::settingsPage()
 {
     QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
     QCOMPARE(page->objectName(), QStringLiteral("settingsPage"));
-    QCOMPARE(evaluate(find(QStringLiteral("viewArea")),
-                      QStringLiteral("WebEngine.notifications[WebEngine.notifications.length - 1]"
-                                     ".value.msg"))
-                 .toString(),
-             QStringLiteral("get-all"));
-
-    const QStringList expected{
-        QStringLiteral("#Browsing"),
-        QStringLiteral("startPageSettingsEntry"),
-        QStringLiteral("searchSettingsEntry"),
-        QStringLiteral("#Appearance"),
-        QStringLiteral("readerSettingsEntry"),
-        QStringLiteral("coverSettingsEntry"),
-        QStringLiteral("websiteColorsCombo"),
-        QStringLiteral("notchGuardCombo"),
-        QStringLiteral("fixedToolbarSwitch"),
-        QStringLiteral("#Privacy"),
-        QStringLiteral("httpsOnlySettingsEntry"),
-        QStringLiteral("dohSettingsEntry"),
-        QStringLiteral("trackingSettingsEntry"),
-        QStringLiteral("globalPrivacyControlSwitch"),
-        QStringLiteral("javascriptSwitch"),
-        QStringLiteral("sitePermissionsSettingsEntry"),
-        QStringLiteral("historySettingsEntry"),
-        QStringLiteral("#Help"),
-        QStringLiteral("tutorialSettingsEntry"),
-    };
-    QCOMPARE(columnOf(find(QStringLiteral("searchSettingsEntry"))), expected);
 
     struct Entry
     {
         QString name;
         QString icon;
+        QString text;
         QString page;
-        QString value;
     };
     const QList<Entry> entries{
-        {QStringLiteral("startPageSettingsEntry"), QStringLiteral("icon-m-home"),
-         QStringLiteral("startPageSettingsPage"), QStringLiteral("Your sites")},
         {QStringLiteral("searchSettingsEntry"), QStringLiteral("icon-m-search"),
-         QStringLiteral("searchSettingsPage"), QStringLiteral("Qwant")},
+         QStringLiteral("Search"), QStringLiteral("searchSettingsPage")},
+        {QStringLiteral("startPageSettingsEntry"), QStringLiteral("icon-m-home"),
+         QStringLiteral("Start page"), QStringLiteral("startPageSettingsPage")},
+        {QStringLiteral("appearanceSettingsEntry"), QStringLiteral("icon-m-ambience"),
+         QStringLiteral("Appearance"), QStringLiteral("appearanceSettingsPage")},
         {QStringLiteral("readerSettingsEntry"), QStringLiteral("icon-m-file-formatted"),
-         QStringLiteral("readerSettingsPage"), QStringLiteral("Ambience · Sans serif · 100 %")},
+         QStringLiteral("Reader view"), QStringLiteral("readerSettingsPage")},
         {QStringLiteral("coverSettingsEntry"), QStringLiteral("icon-m-tabs"),
-         QStringLiteral("coverSettingsPage"), QStringLiteral("Search")},
-        {QStringLiteral("httpsOnlySettingsEntry"), QStringLiteral("icon-m-keys"),
-         QStringLiteral("httpsOnlySettingsPage"), QStringLiteral("Off")},
-        {QStringLiteral("dohSettingsEntry"), QStringLiteral("icon-m-browser"),
-         QStringLiteral("dohSettingsPage"), QStringLiteral("Off")},
-        {QStringLiteral("trackingSettingsEntry"), QStringLiteral("icon-m-device-lock"),
-         QStringLiteral("trackingSettingsPage"), QStringLiteral("Standard")},
-        {QStringLiteral("sitePermissionsSettingsEntry"),
-         QStringLiteral("icon-m-browser-permissions"), QStringLiteral("sitePermissionsPage"),
-         QStringLiteral("No exceptions")},
+         QStringLiteral("Cover"), QStringLiteral("coverSettingsPage")},
         {QStringLiteral("historySettingsEntry"), QStringLiteral("icon-m-history"),
-         QStringLiteral("historySettingsPage"), QStringLiteral("Remembered")},
-        {QStringLiteral("tutorialSettingsEntry"), QStringLiteral("icon-m-gesture"),
-         QStringLiteral("tutorialPage"), QString()},
+         QStringLiteral("History"), QStringLiteral("historySettingsPage")},
+        {QStringLiteral("privacySettingsEntry"), QStringLiteral("icon-m-device-lock"),
+         QStringLiteral("Privacy and security"), QStringLiteral("privacySettingsPage")},
     };
+    QStringList expected;
+    for (const Entry &entry : entries) {
+        expected.append(entry.name);
+    }
+    QCOMPARE(columnOf(find(QStringLiteral("searchSettingsEntry"))), expected);
+
     const qreal itemSize = evaluate(page, QStringLiteral("Theme.itemSizeMedium")).toReal();
     const qreal iconSize = evaluate(page, QStringLiteral("Theme.iconSizeMedium")).toReal();
     for (const Entry &entry : entries) {
@@ -6059,11 +6041,9 @@ void tst_qmlload::settingsPage()
         QVERIFY2(item != nullptr, qPrintable(entry.name));
         QCOMPARE(item->property("iconSource").toString(),
                  QStringLiteral("image://theme/") + entry.icon);
-        QVERIFY2(!item->property("text").toString().isEmpty(), qPrintable(entry.name));
-        QCOMPARE(item->property("value").toString(), entry.value);
-        QObject *value = findObjects(item, QStringLiteral("settingsEntryValue")).first();
-        QCOMPARE(value->property("text").toString(), entry.value);
-        QCOMPARE(value->property("visible").toBool(), !entry.value.isEmpty());
+        QCOMPARE(item->property("text").toString(), entry.text);
+        QVERIFY2(item->property("value").toString().isEmpty(), qPrintable(entry.name));
+        QVERIFY2(!shownIn(item, QStringLiteral("settingsEntryValue")), qPrintable(entry.name));
         QCOMPARE(item->property("height").toReal(), itemSize);
         QObject *icon = findObjects(item, QStringLiteral("settingsEntryIcon")).first();
         QCOMPARE(icon->property("width").toReal(), iconSize);
@@ -6075,43 +6055,24 @@ void tst_qmlload::settingsPage()
         popPage();
         QCOMPARE(currentPage(), page);
     }
+    for (const char *gone :
+         {"websiteColorsCombo", "notchGuardCombo", "fixedToolbarSwitch",
+          "globalPrivacyControlSwitch", "javascriptSwitch", "tutorialSettingsEntry"}) {
+        QVERIFY2(findObjects(page, QLatin1String(gone)).isEmpty(), gone);
+    }
 
-    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
-    const qreal gap = evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal();
-    struct InPlace
-    {
-        QString name;
-        QString iconItem;
-        QString icon;
-    };
-    const QList<InPlace> inPlace{
-        {QStringLiteral("websiteColorsCombo"), QStringLiteral("settingsComboBoxIcon"),
-         QStringLiteral("icon-m-night")},
-        {QStringLiteral("notchGuardCombo"), QStringLiteral("settingsComboBoxIcon"),
-         QStringLiteral("icon-m-display")},
-    };
-    for (const InPlace &setting : inPlace) {
-        QObject *control = find(setting.name);
-        QObject *icon = findObjects(control, setting.iconItem).first();
-        QCOMPARE(icon->property("source").toUrl(),
-                 QUrl(QStringLiteral("image://theme/") + setting.icon));
-        QCOMPARE(icon->property("x").toReal(), margin);
-        QCOMPARE(control->property("leftMargin").toReal(),
-                 margin + icon->property("width").toReal() + gap);
-        QVERIFY(!icon->property("highlighted").toBool());
-        control->setProperty("highlighted", true);
-        QVERIFY(icon->property("highlighted").toBool());
-        control->setProperty("highlighted", false);
+    // Values change underneath; row still names nothing.
+    m_core->privacySettings()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
+    m_core->privacySettings()->setRememberHistory(false);
+    m_core->startPageSettings()->setBlank(true);
+    for (const Entry &entry : entries) {
+        QVERIFY2(!shownIn(find(entry.name), QStringLiteral("settingsEntryValue")),
+                 qPrintable(entry.name));
     }
 
     QObject *search = find(QStringLiteral("searchSettingsEntry"));
     QObject *searchName = findObjects(search, QStringLiteral("settingsEntryName")).first();
-    QObject *searchValue = findObjects(search, QStringLiteral("settingsEntryValue")).first();
     QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.primaryColor")));
-    QCOMPARE(searchValue->property("color"),
-             evaluate(page, QStringLiteral("Theme.secondaryHighlightColor")));
-    QCOMPARE(searchValue->property("font").value<QFont>().pixelSize(),
-             evaluate(page, QStringLiteral("Theme.fontSizeExtraSmall")).toInt());
     search->setProperty("down", true);
     QVERIFY(findObjects(search, QStringLiteral("settingsEntryIcon"))
                 .first()
@@ -6120,102 +6081,94 @@ void tst_qmlload::settingsPage()
     QCOMPARE(searchName->property("color"), evaluate(page, QStringLiteral("Theme.highlightColor")));
     search->setProperty("down", false);
 
-    auto valueOf = [this](const QString &entry) {
-        return find(entry)->property("value").toString();
-    };
-    m_core->startPageSettings()->setBlank(true);
-    QCOMPARE(valueOf(QStringLiteral("startPageSettingsEntry")), QStringLiteral("Blank page"));
-    m_core->searchSettings()->setEngineIndex(1);
-    QCOMPARE(valueOf(QStringLiteral("searchSettingsEntry")),
-             m_core->searchEngines()->engineNames().at(1));
-    m_core->readerSettings()->setColors(ReaderSettings::Sepia);
-    m_core->readerSettings()->setTypeface(ReaderSettings::Serif);
-    m_core->readerSettings()->setTextSize(ReaderSettings::TextSizeMax);
-    QCOMPARE(valueOf(QStringLiteral("readerSettingsEntry")),
-             QStringLiteral("Sepia · Serif · 140 %"));
-    m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionNone);
-    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("No quick action"));
-    const int bookmark = m_core->bookmarks()->add(QStringLiteral("https://yle.fi/uutiset"),
-                                                  QStringLiteral("Yle Uutiset"));
-    m_core->coverSettings()->setQuickActionBookmark(
-        bookmark, QStringLiteral("https://yle.fi/uutiset"), QStringLiteral("Yle Uutiset"));
-    m_core->coverSettings()->setQuickAction(CoverSettings::QuickActionBookmark);
-    QCOMPARE(valueOf(QStringLiteral("coverSettingsEntry")), QStringLiteral("Yle Uutiset"));
-    m_core->privacySettings()->setTrackingProtection(PrivacySettings::TrackingProtectionStrict);
-    QCOMPARE(valueOf(QStringLiteral("trackingSettingsEntry")), QStringLiteral("Strict"));
-    NotificationPermissions *sites = m_core->notificationPermissions();
-    sites->setAllowed(QStringLiteral("https://mastodon.social"), true);
-    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
-             QStringLiteral("1 site(s) with exceptions"));
-    sites->setAllowed(QStringLiteral("https://app.element.io"), true);
-    sites->setAllowed(QStringLiteral("https://www.iltalehti.fi"), false);
-    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
-             QStringLiteral("3 site(s) with exceptions"));
-    sites->setAllowed(QStringLiteral("https://mastodon.social"), false);
-    QCOMPARE(valueOf(QStringLiteral("sitePermissionsSettingsEntry")),
-             QStringLiteral("3 site(s) with exceptions"));
-    m_core->privacySettings()->setClearHistoryOnClose(true);
-    QCOMPARE(valueOf(QStringLiteral("historySettingsEntry")),
-             QStringLiteral("Cleared when closed"));
-    m_core->privacySettings()->setRememberHistory(false);
-    QCOMPARE(valueOf(QStringLiteral("historySettingsEntry")), QStringLiteral("Not remembered"));
-
-    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
-    QCOMPARE(colors->property("currentIndex").toInt(), int(Settings::WebsiteColorsAutomatic));
-    QObject *pageScope = find(QStringLiteral("viewArea"));
-    const auto lastDark = [this, pageScope]() {
-        const QVariantList given =
-            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
-        for (int i = given.count() - 1; i >= 0; --i) {
-            if (given.at(i).toMap().value(QStringLiteral("key")) ==
-                QStringLiteral("ui.systemUsesDarkTheme")) {
-                return given.at(i).toMap().value(QStringLiteral("value")).toInt();
-            }
-        }
-        return -1;
-    };
-    QCOMPARE(lastDark(), 1);
-    colors->setProperty("currentIndex", int(Settings::WebsiteColorsLight));
-    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsLight));
-    QCOMPARE(lastDark(), 0);
-    colors->setProperty("currentIndex", int(Settings::WebsiteColorsDark));
-    QCOMPARE(lastDark(), 1);
-    colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
-    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
+    QObject *tutorial = find(QStringLiteral("tutorialMenuItem"));
+    QCOMPARE(tutorial->property("text").toString(), QStringLiteral("Tutorial"));
+    QCOMPARE(findObjects(page, QStringLiteral("settingsPulley")).count(), 1);
+    click(tutorial);
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("tutorialPage"));
 }
 
-// sailfish-browser's Appearance/Privacy rows, its wording, and effect on page and engine.
-void tst_qmlload::sailfishBrowserSettings()
+// Appearance: sailfish-browser's Preferred color scheme, fixed toolbar, screen notch; each
+// writes live and acts on page and engine.
+void tst_qmlload::appearanceSettingsPage()
 {
-    QObject *page = openMenuItem(QStringLiteral("settingsMenuButton"));
-    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
-    const qreal switchMargin =
-        evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
-                                      " + Math.round((Theme.iconSizeMedium"
-                                      " - Theme.itemSizeExtraSmall) / 2)"))
-            .toReal();
-    for (const QString &name :
-         {QStringLiteral("fixedToolbarSwitch"), QStringLiteral("globalPrivacyControlSwitch"),
-          QStringLiteral("javascriptSwitch")}) {
-        QObject *control = find(name);
-        QVERIFY2(findObjects(control, QStringLiteral("settingsSwitchIcon")).isEmpty(),
-                 qPrintable(name));
-        QCOMPARE(control->property("leftMargin").toReal(), switchMargin);
-        QVERIFY2(!control->property("description").toString().isEmpty(), qPrintable(name));
-    }
+    openMenuItem(QStringLiteral("settingsMenuButton"));
+    click(find(QStringLiteral("appearanceSettingsEntry")));
+    QObject *page = currentPage();
+    QCOMPARE(page->objectName(), QStringLiteral("appearanceSettingsPage"));
+    QCOMPARE(
+        columnOf(find(QStringLiteral("websiteColorsCombo"))),
+        (QStringList{QStringLiteral("websiteColorsCombo"), QStringLiteral("fixedToolbarSwitch"),
+                     QStringLiteral("notchGuardCombo")}));
 
+    const qreal margin = evaluate(page, QStringLiteral("Theme.horizontalPageMargin")).toReal();
+    const qreal gap = evaluate(page, QStringLiteral("Theme.paddingMedium")).toReal();
+    const QList<QPair<QString, QString>> combos{
+        {QStringLiteral("websiteColorsCombo"), QStringLiteral("icon-m-night")},
+        {QStringLiteral("notchGuardCombo"), QStringLiteral("icon-m-display")},
+    };
+    for (const auto &combo : combos) {
+        QObject *control = find(combo.first);
+        QObject *icon = findObjects(control, QStringLiteral("settingsComboBoxIcon")).first();
+        QCOMPARE(icon->property("source").toUrl(),
+                 QUrl(QStringLiteral("image://theme/") + combo.second));
+        QCOMPARE(icon->property("x").toReal(), margin);
+        QCOMPARE(control->property("leftMargin").toReal(),
+                 margin + icon->property("width").toReal() + gap);
+        QVERIFY(!icon->property("highlighted").toBool());
+        control->setProperty("highlighted", true);
+        QVERIFY(icon->property("highlighted").toBool());
+        control->setProperty("highlighted", false);
+    }
+    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
+    QVERIFY(findObjects(toolbar, QStringLiteral("settingsSwitchIcon")).isEmpty());
+    QCOMPARE(toolbar->property("leftMargin").toReal(),
+             evaluate(page, QStringLiteral("Theme.horizontalPageMargin + Theme.paddingLarge"
+                                           " + Math.round((Theme.iconSizeMedium"
+                                           " - Theme.itemSizeExtraSmall) / 2)"))
+                 .toReal());
+    QCOMPARE(toolbar->property("description").toString(),
+             QStringLiteral("Always show the bottom toolbar"));
+
+    QObject *colors = find(QStringLiteral("websiteColorsCombo"));
     QCOMPARE(colors->property("label").toString(), QStringLiteral("Preferred color scheme"));
     QCOMPARE(colors->property("description").toString(),
              QStringLiteral("The website style to use when available"));
     QCOMPARE(evaluate(page, QStringLiteral("names.websiteColors(Settings.WebsiteColorsAutomatic)"))
                  .toString(),
              QStringLiteral("Match ambience"));
+    QCOMPARE(colors->property("currentIndex").toInt(), int(Settings::WebsiteColorsAutomatic));
+    QObject *pageScope = find(QStringLiteral("viewArea"));
+    auto lastPreference = [&](const QString &name) {
+        const QVariantList given =
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
+        for (int i = given.count() - 1; i >= 0; --i) {
+            if (given.at(i).toMap().value(QStringLiteral("key")).toString() == name) {
+                return given.at(i).toMap().value(QStringLiteral("value"));
+            }
+        }
+        return QVariant();
+    };
+    const QString dark = QStringLiteral("ui.systemUsesDarkTheme");
+    QCOMPARE(lastPreference(dark), QVariant(1));
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsLight));
+    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsLight));
+    QCOMPARE(lastPreference(dark), QVariant(0));
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsDark));
+    QCOMPARE(lastPreference(dark), QVariant(1));
+    colors->setProperty("currentIndex", int(Settings::WebsiteColorsAutomatic));
+    QCOMPARE(m_core->settings()->websiteColors(), int(Settings::WebsiteColorsAutomatic));
 
     QObject *guard = find(QStringLiteral("notchGuardCombo"));
-    QCOMPARE(guard->property("label").toString(), QStringLiteral("Notch guard"));
-    QVERIFY(guard->property("description")
-                .toString()
-                .startsWith(QStringLiteral("Keeps website content away from the screen notch.")));
+    QCOMPARE(guard->property("label").toString(), QStringLiteral("Screen notch"));
+    QCOMPARE(guard->property("description").toString(),
+             QStringLiteral("Keeps page content clear of the notch"));
+    const QStringList notchChoices{QStringLiteral("Automatic"), QStringLiteral("Always keep clear"),
+                                   QStringLiteral("Off")};
+    for (int choice = 0; choice < notchChoices.count(); ++choice) {
+        QCOMPARE(evaluate(page, QStringLiteral("names.notchGuard(%1)").arg(choice)).toString(),
+                 notchChoices.at(choice));
+    }
     QCOMPARE(guard->property("currentIndex").toInt(), int(Settings::NotchGuardAutomatic));
     QObject *browser = find(QStringLiteral("browserPage"));
     QObject *webView = currentWebView();
@@ -6240,7 +6193,6 @@ void tst_qmlload::sailfishBrowserSettings()
     guard->setProperty("currentIndex", int(Settings::NotchGuardAutomatic));
     QCOMPARE(browser->property("pageCutoutInset").toReal(), cutout);
 
-    QObject *toolbar = find(QStringLiteral("fixedToolbarSwitch"));
     QVERIFY(!toolbar->property("checked").toBool());
     toolbar->setProperty("checked", true);
     QVERIFY(m_core->settings()->fixedToolbar());
@@ -6249,43 +6201,6 @@ void tst_qmlload::sailfishBrowserSettings()
     toolbar->setProperty("checked", false);
     QVERIFY(browser->property("barCompact").toBool());
     webView->setProperty("chrome", true);
-
-    QObject *pageScope = find(QStringLiteral("viewArea"));
-    auto lastPreference = [&](const QString &name) {
-        const QVariantList given =
-            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList();
-        for (int i = given.count() - 1; i >= 0; --i) {
-            if (given.at(i).toMap().value(QStringLiteral("key")).toString() == name) {
-                return given.at(i).toMap().value(QStringLiteral("value"));
-            }
-        }
-        return QVariant();
-    };
-    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
-    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.enabled")),
-             QVariant(false));
-    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.functionality.enabled")),
-             QVariant(true));
-    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(true));
-    QObject *gpc = find(QStringLiteral("globalPrivacyControlSwitch"));
-    QCOMPARE(gpc->property("text").toString(),
-             QStringLiteral("Tell websites not to share & sell data"));
-    QCOMPARE(gpc->property("description").toString(),
-             QStringLiteral("Global Privacy Control (GPC)"));
-    QVERIFY(!gpc->property("checked").toBool());
-    gpc->setProperty("checked", true);
-    QVERIFY(m_core->privacySettings()->globalPrivacyControl());
-    QCOMPARE(lastPreference(QStringLiteral("privacy.globalprivacycontrol.enabled")),
-             QVariant(true));
-    QCOMPARE(lastPreference(QStringLiteral("privacy.donottrackheader.enabled")), QVariant(false));
-    QObject *javascript = find(QStringLiteral("javascriptSwitch"));
-    QCOMPARE(javascript->property("description").toString(),
-             QStringLiteral("Allowed (recommended)"));
-    javascript->setProperty("checked", false);
-    QVERIFY(!m_core->privacySettings()->javascript());
-    QCOMPARE(lastPreference(QStringLiteral("javascript.enabled")), QVariant(false));
-    QCOMPARE(javascript->property("description").toString(),
-             QStringLiteral("Blocked, some sites may not work correctly"));
 }
 
 // Start page: sections vs blank as one choice, chosen lit; section switches on by default,
@@ -6682,9 +6597,7 @@ void tst_qmlload::searchEnginesRemove()
     click(findAll(QStringLiteral("foundSearchEngine")).first());
     QTRY_COMPARE(list->engineNames().last(), QStringLiteral("Third"));
     popPage();
-    QCOMPARE(
-        textIn(find(QStringLiteral("searchSettingsEntry")), QStringLiteral("settingsEntryValue")),
-        QStringLiteral("Third"));
+    QCOMPARE(list->engineNames().at(search->engineIndex()), QStringLiteral("Third"));
 }
 
 // Reader look: colour swatches painted as reader, typeface tiles in own face, set one lit;
@@ -6808,16 +6721,12 @@ QVariant lastPreferenceGiven(const QVariantList &given, const QString &name)
     return {};
 }
 
-// HTTPS-Only: Firefox Android switch wording, off default; engine told at once, HTTPS-First on
-// either way; while off, line says connections may still upgrade.
-void tst_qmlload::httpsOnlySettingsPage()
+// HTTPS-Only on Privacy and security: Firefox Android name, off default; engine told at once,
+// HTTPS-First on either way. Line under it says what Salama does for state shown.
+void tst_qmlload::httpsOnlyMode()
 {
-    openMenuItem(QStringLiteral("settingsMenuButton"));
-    QObject *entry = find(QStringLiteral("httpsOnlySettingsEntry"));
-    QCOMPARE(entry->property("text").toString(), QStringLiteral("HTTPS-Only Mode"));
-    click(entry);
-    QObject *page = currentPage();
-    QCOMPARE(page->objectName(), QStringLiteral("httpsOnlySettingsPage"));
+    QObject *page = openPrivacyPage();
+    QCOMPARE(page->objectName(), QStringLiteral("privacySettingsPage"));
     QObject *pageScope = find(QStringLiteral("viewArea"));
     const auto last = [&](const char *name) {
         return lastPreferenceGiven(
@@ -6829,35 +6738,29 @@ void tst_qmlload::httpsOnlySettingsPage()
 
     QObject *toggle = find(QStringLiteral("httpsOnlySwitch"));
     QCOMPARE(toggle->property("text").toString(), QStringLiteral("HTTPS-Only Mode"));
-    QVERIFY(toggle->property("description")
-                .toString()
-                .startsWith(QStringLiteral("Automatically attempts to connect to sites using "
-                                           "HTTPS")));
     QVERIFY(!toggle->property("checked").toBool());
-    QVERIFY(shownIn(page, "httpsFirstNote"));
-    QCOMPARE(textOf(page, "httpsFirstNote"),
-             QStringLiteral("Salama may still upgrade some connections"));
+    QCOMPARE(toggle->property("description").toString(),
+             QStringLiteral("Tries HTTPS first, uses HTTP if a site has no HTTPS"));
 
     toggle->setProperty("checked", true);
     QVERIFY(m_core->privacySettings()->httpsOnly());
     QCOMPARE(last("dom.security.https_only_mode"), QVariant(true));
     QCOMPARE(last("dom.security.https_first"), QVariant(true));
-    QVERIFY(!shownIn(page, "httpsFirstNote"));
-    popPage();
-    QCOMPARE(find(QStringLiteral("httpsOnlySettingsEntry"))->property("value").toString(),
-             QStringLiteral("On"));
+    QCOMPARE(toggle->property("description").toString(),
+             QStringLiteral("HTTPS only. Asks before opening a site without HTTPS"));
     m_core->privacySettings()->setHttpsOnly(false);
+    QVERIFY(!toggle->property("checked").toBool());
     QCOMPARE(last("dom.security.https_only_mode"), QVariant(false));
-    QCOMPARE(find(QStringLiteral("httpsOnlySettingsEntry"))->property("value").toString(),
-             QStringLiteral("Off"));
+    QCOMPARE(toggle->property("description").toString(),
+             QStringLiteral("Tries HTTPS first, uses HTTP if a site has no HTTPS"));
 }
 
 // DoH: Firefox Android levels minus Default, Off default, wording, set one lit; level sent at
 // once as GeckoView resolver mode after provider and exceptions. Provider choosable only when
-// used; entry names level.
+// used.
 void tst_qmlload::dohSettingsPage()
 {
-    openMenuItem(QStringLiteral("settingsMenuButton"));
+    openPrivacyPage();
     click(find(QStringLiteral("dohSettingsEntry")));
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("dohSettingsPage"));
@@ -6946,8 +6849,7 @@ void tst_qmlload::dohSettingsPage()
 
     m_core->dohSettings()->setProtection(DohSettings::ProtectionIncreased);
     popPage();
-    QCOMPARE(find(QStringLiteral("dohSettingsEntry"))->property("value").toString(),
-             QStringLiteral("Increased Protection"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("privacySettingsPage"));
 }
 
 // Custom provider: Firefox Android dialog + its two errors; invalid can't be added; choice
@@ -6955,7 +6857,7 @@ void tst_qmlload::dohSettingsPage()
 void tst_qmlload::dohProviderDialog()
 {
     m_core->dohSettings()->setProtection(DohSettings::ProtectionIncreased);
-    openMenuItem(QStringLiteral("settingsMenuButton"));
+    openPrivacyPage();
     click(find(QStringLiteral("dohSettingsEntry")));
     QObject *page = currentPage();
     QObject *provider = find(QStringLiteral("dohProviderCombo"));
@@ -7020,7 +6922,7 @@ void tst_qmlload::dohProviderDialog()
 void tst_qmlload::dohExceptionsPage()
 {
     DohSettings *doh = m_core->dohSettings();
-    openMenuItem(QStringLiteral("settingsMenuButton"));
+    openPrivacyPage();
     click(find(QStringLiteral("dohSettingsEntry")));
     click(find(QStringLiteral("dohExceptionsEntry")));
     QObject *page = currentPage();
@@ -7070,30 +6972,39 @@ void tst_qmlload::dohExceptionsPage()
     QVERIFY(findAll(QStringLiteral("dohException")).isEmpty());
 }
 
-// Tracking protection: three levels shown together, each described, set one lit; change reaches
-// engine at once. Entry names level.
-void tst_qmlload::trackingSettingsPage()
+// Privacy and security: Firefox's three tracking levels shown together, each described, set one
+// lit, change reaching engine at once; engine's limits under them; line, then GPC as own switch;
+// HTTPS-Only and DoH under Secure connections; site permissions and Clear browsing data under
+// Sites. Clear asks first, clears under remorse on this page.
+void tst_qmlload::privacySettingsPage()
 {
-    openMenuItem(QStringLiteral("settingsMenuButton"));
-    QObject *entry = find(QStringLiteral("trackingSettingsEntry"));
-    click(entry);
-    QObject *page = currentPage();
-    QCOMPARE(page->objectName(), QStringLiteral("trackingSettingsPage"));
+    QObject *page = openPrivacyPage();
+    QCOMPARE(page->objectName(), QStringLiteral("privacySettingsPage"));
+    const QString choice = QStringLiteral("trackingProtectionChoice");
+    QCOMPARE(columnOf(find(QStringLiteral("httpsOnlySwitch"))),
+             (QStringList{QStringLiteral("#Tracking protection"), choice, choice, choice,
+                          QStringLiteral("trackingProtectionLimits"),
+                          QStringLiteral("globalPrivacyControlSeparator"),
+                          QStringLiteral("globalPrivacyControlSwitch"),
+                          QStringLiteral("#Secure connections"), QStringLiteral("httpsOnlySwitch"),
+                          QStringLiteral("dohSettingsEntry"), QStringLiteral("#Sites"),
+                          QStringLiteral("sitePermissionsSettingsEntry"),
+                          QStringLiteral("clearDataSettingsEntry")}));
 
     // Browsing page writes prefs, so read via BrowserPage.qml item.
     QObject *pageScope = find(QStringLiteral("viewArea"));
-    const QList<QObject *> levels = findAll(QStringLiteral("trackingProtectionChoice"));
+    const QList<QObject *> levels = findAll(choice);
     QCOMPARE(levels.count(), 3);
     const QStringList names{QStringLiteral("Off"), QStringLiteral("Standard"),
                             QStringLiteral("Strict")};
     QStringList descriptions;
     for (int level = 0; level < levels.count(); ++level) {
-        QObject *choice = levels.at(level);
-        QCOMPARE(choice->property("text").toString(), names.at(level));
-        QVERIFY(!choice->property("automaticCheck").toBool());
-        QCOMPARE(choice->property("checked").toBool(),
+        QObject *option = levels.at(level);
+        QCOMPARE(option->property("text").toString(), names.at(level));
+        QVERIFY(!option->property("automaticCheck").toBool());
+        QCOMPARE(option->property("checked").toBool(),
                  level == int(PrivacySettings::TrackingProtectionStandard));
-        const QString description = choice->property("description").toString();
+        const QString description = option->property("description").toString();
         QVERIFY2(!description.isEmpty(), qPrintable(names.at(level)));
         QVERIFY(!descriptions.contains(description));
         descriptions.append(description);
@@ -7124,14 +7035,86 @@ void tst_qmlload::trackingSettingsPage()
     click(levels.at(PrivacySettings::TrackingProtectionOff));
     QCOMPARE(evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences.length")).toInt(),
              given + 2 * strict.count());
-
-    const QString choice = QStringLiteral("trackingProtectionChoice");
-    QCOMPARE(columnOf(levels.first()),
-             (QStringList{choice, choice, choice, QStringLiteral("trackingProtectionLimits")}));
     QVERIFY(find(QStringLiteral("trackingProtectionLimits"))
                 ->property("text")
                 .toString()
                 .contains(QStringLiteral("some trackers may still get through")));
+
+    // GPC: switch, not fourth level; line keeps it apart.
+    const auto lastPreference = [&](const char *name) {
+        return lastPreferenceGiven(
+            evaluate(pageScope, QStringLiteral("WebEngineSettings.preferences")).toList(),
+            QLatin1String(name));
+    };
+    QCOMPARE(find(QStringLiteral("globalPrivacyControlSeparator"))
+                 ->property("horizontalAlignment")
+                 .toInt(),
+             int(Qt::AlignHCenter));
+    QCOMPARE(lastPreference("privacy.donottrackheader.enabled"), QVariant(false));
+    QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(false));
+    QCOMPARE(lastPreference("privacy.globalprivacycontrol.functionality.enabled"), QVariant(true));
+    QObject *gpc = find(QStringLiteral("globalPrivacyControlSwitch"));
+    QVERIFY(gpc->property("automaticCheck").toBool());
+    QCOMPARE(gpc->property("text").toString(),
+             QStringLiteral("Tell websites not to share & sell data"));
+    QCOMPARE(gpc->property("description").toString(),
+             QStringLiteral("Global Privacy Control (GPC)"));
+    QVERIFY(!gpc->property("checked").toBool());
+    gpc->setProperty("checked", true);
+    QVERIFY(m_core->privacySettings()->globalPrivacyControl());
+    QCOMPARE(lastPreference("privacy.globalprivacycontrol.enabled"), QVariant(true));
+    QCOMPARE(lastPreference("privacy.donottrackheader.enabled"), QVariant(false));
+    QCOMPARE(m_core->privacySettings()->trackingProtection(),
+             int(PrivacySettings::TrackingProtectionOff));
+
+    struct Entry
+    {
+        QString name;
+        QString icon;
+        QString text;
+        QString page;
+    };
+    const QList<Entry> entries{
+        {QStringLiteral("dohSettingsEntry"), QStringLiteral("icon-m-browser"),
+         QStringLiteral("DNS over HTTPS"), QStringLiteral("dohSettingsPage")},
+        {QStringLiteral("sitePermissionsSettingsEntry"),
+         QStringLiteral("icon-m-browser-permissions"), QStringLiteral("Site permissions"),
+         QStringLiteral("sitePermissionsPage")},
+        {QStringLiteral("clearDataSettingsEntry"), QStringLiteral("icon-m-delete"),
+         QStringLiteral("Clear browsing data"), QStringLiteral("clearDataDialog")},
+    };
+    for (const Entry &entry : entries) {
+        QObject *item = find(entry.name);
+        QCOMPARE(item->property("iconSource").toString(),
+                 QStringLiteral("image://theme/") + entry.icon);
+        QCOMPARE(item->property("text").toString(), entry.text);
+        QVERIFY2(!shownIn(item, QStringLiteral("settingsEntryValue")), qPrintable(entry.name));
+        click(item);
+        QCOMPARE(currentPage()->objectName(), entry.page);
+        QCOMPARE(pageStack()->property("depth").toInt(), 4);
+        popPage();
+        QCOMPARE(currentPage(), page);
+    }
+
+    // Clear from here: same dialog as History's, remorse on this page.
+    m_core->tabs()->newTab(QStringLiteral("https://kept.example/"));
+    QTRY_VERIFY(m_core->history()->count() > 0);
+    const int remorses = evaluate(page, QStringLiteral("Remorse.popupCount")).toInt();
+    click(find(QStringLiteral("clearDataSettingsEntry")));
+    QObject *dialog = currentPage();
+    QCOMPARE(dialog->objectName(), QStringLiteral("clearDataDialog"));
+    for (const char *kind : {"clearTabsSwitch", "clearSiteDataSwitch", "clearCacheSwitch"}) {
+        find(QLatin1String(kind))->setProperty("checked", false);
+    }
+    find(QStringLiteral("clearHistorySwitch"))->setProperty("checked", true);
+    QMetaObject::invokeMethod(dialog, "accept");
+    popPage();
+    QCOMPARE(currentPage(), page);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupCount")).toInt(), remorses + 1);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupItem")).value<QObject *>(), page);
+    QCOMPARE(evaluate(page, QStringLiteral("Remorse.popupText")).toString(),
+             QStringLiteral("Clearing browsing data"));
+    QCOMPARE(m_core->history()->count(), 0);
 }
 
 // History: keep-pages and clear-on-close switches; kept data counted; clear-data button asks
@@ -7227,11 +7210,13 @@ void tst_qmlload::clearDataDialog()
     const auto remorses = [this, privacy]() {
         return evaluate(privacy, QStringLiteral("Remorse.popupCount")).toInt();
     };
-    const auto sent = [this, privacy]() {
-        return evaluate(privacy, QStringLiteral("WebEngine.notifications.length")).toInt();
+    // Page no longer imports WebEngine (BrowsingDataClearer does): ask from view's scope.
+    QObject *engineScope = find(QStringLiteral("viewArea"));
+    const auto sent = [this, engineScope]() {
+        return evaluate(engineScope, QStringLiteral("WebEngine.notifications.length")).toInt();
     };
-    const auto notification = [this, privacy](int index, const QString &field) {
-        return evaluate(privacy,
+    const auto notification = [this, engineScope](int index, const QString &field) {
+        return evaluate(engineScope,
                         QStringLiteral("WebEngine.notifications[%1].%2").arg(index).arg(field))
             .toString();
     };
@@ -8849,7 +8834,7 @@ void tst_qmlload::notificationSettingsPage()
                               : sent.last().toMap().value(QStringLiteral("value")).toMap();
     };
 
-    openMenuItem(QStringLiteral("settingsMenuButton"));
+    openPrivacyPage();
     click(find(QStringLiteral("sitePermissionsSettingsEntry")));
     QCOMPARE(currentPage()->objectName(), QStringLiteral("sitePermissionsPage"));
     click(find(QStringLiteral("notificationsPermissionRow")));
@@ -8960,6 +8945,9 @@ void tst_qmlload::sitePermissionsPage()
         }
         return QVariant();
     };
+    // Notifications row counts its sites: page asks for them (Settings no longer does).
+    QSignalSpy notificationsAsked(m_core->notificationPermissions(),
+                                  &NotificationPermissions::engineRequest);
     evaluate(scope,
              QStringLiteral("pageStack.push('%1')")
                  .arg(QUrl::fromLocalFile(QLatin1String(SALAMA_SOURCE_DIR) +
@@ -8968,6 +8956,7 @@ void tst_qmlload::sitePermissionsPage()
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("sitePermissionsPage"));
     QCOMPARE(lastToEngine().value(QStringLiteral("msg")).toString(), QStringLiteral("get-all"));
+    QCOMPARE(notificationsAsked.count(), 1);
 
     QCOMPARE(find(QStringLiteral("sitePermissionsHint"))->property("text").toString(),
              QStringLiteral("What sites may do unless you decided otherwise for a site. Tap one "
@@ -9013,7 +9002,12 @@ void tst_qmlload::sitePermissionsPage()
           "cameraPermissionRow", "microphonePermissionRow"}) {
         QCOMPARE(description(name), QStringLiteral("No exceptions"));
     }
-    QVERIFY(!shownIn(page, "cookiesPermissionRow"));
+    // Tracking on: cookies row stays, dimmed, says who decides.
+    QVERIFY(shownIn(page, "cookiesPermissionRow"));
+    QVERIFY(!row("cookiesPermissionRow")->property("enabled").toBool());
+    QCOMPARE(value("cookiesPermissionRow"), QStringLiteral("Set by tracking protection"));
+    QCOMPARE(description("cookiesPermissionRow"),
+             QStringLiteral("Choose here when tracking protection is off"));
     QVERIFY(!shownIn(page, "trackingExceptionsSection"));
     QVERIFY(!shownIn(page, "trackingPermissionRow"));
 
@@ -9088,10 +9082,43 @@ void tst_qmlload::sitePermissionsPage()
     click(cameraChoices.at(0));
     QVERIFY(!defaults->cameraBlocked());
     QCOMPARE(given("permissions.default.camera"), QVariant(0));
+
+    // JavaScript: one engine switch for all sites, so no exceptions entry.
+    PrivacySettings *privacy = m_core->privacySettings();
+    QObject *javascript = row("javascriptPermissionRow");
+    QCOMPARE(textOf(javascript, "sitePermissionName"), QStringLiteral("JavaScript"));
+    QCOMPARE(findObjects(javascript, QStringLiteral("sitePermissionIcon"))
+                 .first()
+                 ->property("source")
+                 .toString(),
+             QStringLiteral("image://theme/icon-m-browser-javascript"));
+    QCOMPARE(value("javascriptPermissionRow"), QStringLiteral("Allow"));
+    QCOMPARE(description("javascriptPermissionRow"),
+             QStringLiteral("Blocking it stops most sites working"));
+    QVERIFY(!findObjects(javascript, QStringLiteral("sitePermissionShowExceptions"))
+                 .first()
+                 ->property("visible")
+                 .toBool());
+    QVERIFY(findObjects(popups, QStringLiteral("sitePermissionShowExceptions"))
+                .first()
+                ->property("visible")
+                .toBool());
+    const QList<QObject *> javascriptChoices =
+        findObjects(javascript, QStringLiteral("sitePermissionChoice"));
+    QCOMPARE(javascriptChoices.count(), 2);
+    QCOMPARE(javascriptChoices.at(0)->property("text").toString(), QStringLiteral("Allow"));
+    QCOMPARE(javascriptChoices.at(1)->property("text").toString(), QStringLiteral("Block"));
+    click(javascriptChoices.at(1));
+    QVERIFY(!privacy->javascript());
+    QCOMPARE(value("javascriptPermissionRow"), QStringLiteral("Block"));
+    QCOMPARE(given("javascript.enabled"), QVariant(false));
+    click(javascriptChoices.at(0));
+    QVERIFY(privacy->javascript());
+    QCOMPARE(given("javascript.enabled"), QVariant(true));
 }
 
-// Cookies on Site permissions belong to TP while on: row appears when TP off or site has
-// cookie exception; choice = engine cookie behaviour while TP off. Choice-less rows navigate.
+// Cookies on Site permissions belong to TP while on: row always shown, live when TP off or site
+// has cookie exception; choice = engine cookie behaviour while TP off. Choice-less rows navigate.
 void tst_qmlload::sitePermissionsCookiesAndWaysOn()
 {
     SitePermissionSettings *defaults = m_core->sitePermissionSettings();
@@ -9116,8 +9143,8 @@ void tst_qmlload::sitePermissionsCookiesAndWaysOn()
     QVERIFY(shownIn(page, "cookiesPermissionRow"));
     QCOMPARE(textOf(row("cookiesPermissionRow"), "sitePermissionName"), QStringLiteral("Cookies"));
     QCOMPARE(value("cookiesPermissionRow"), QStringLiteral("Block cross-site"));
-    QCOMPARE(description("cookiesPermissionRow"),
-             QStringLiteral("Shown while tracking protection is off · No exceptions"));
+    QVERIFY(row("cookiesPermissionRow")->property("enabled").toBool());
+    QCOMPARE(description("cookiesPermissionRow"), QStringLiteral("No exceptions"));
     QCOMPARE(findObjects(row("cookiesPermissionRow"), QStringLiteral("sitePermissionIcon"))
                  .first()
                  ->property("source")
@@ -9149,11 +9176,22 @@ void tst_qmlload::sitePermissionsCookiesAndWaysOn()
     QCOMPARE(cookieBehavior(), 0);
     privacy->setTrackingProtection(PrivacySettings::TrackingProtectionStandard);
     QCOMPARE(cookieBehavior(), 5);
-    QVERIFY(!shownIn(page, "cookiesPermissionRow"));
+    QVERIFY(shownIn(page, "cookiesPermissionRow"));
+    QVERIFY(!row("cookiesPermissionRow")->property("enabled").toBool());
+    QCOMPARE(value("cookiesPermissionRow"), QStringLiteral("Set by tracking protection"));
+    QCOMPARE(description("cookiesPermissionRow"),
+             QStringLiteral("Choose here when tracking protection is off"));
+    QVERIFY(
+        findObjects(row("cookiesPermissionRow"), QStringLiteral("sitePermissionChoice")).isEmpty());
     evaluate(scope, permissionList({{QStringLiteral("cookie"), QStringLiteral("https://c.example"),
                                      QStringLiteral("1")}}));
-    QVERIFY(shownIn(page, "cookiesPermissionRow"));
+    // Exception exists: row live again so its exceptions stay reachable.
+    QVERIFY(row("cookiesPermissionRow")->property("enabled").toBool());
     QCOMPARE(description("cookiesPermissionRow"), QStringLiteral("1 exception(s)"));
+    click(row("cookiesPermissionRow"));
+    QCOMPARE(currentPage()->objectName(), QStringLiteral("siteExceptionsPage"));
+    QCOMPARE(currentPage()->property("kind").toInt(), int(SitePermissions::Cookies));
+    popPage();
 
     evaluate(scope, permissionList({{QStringLiteral("trackingprotection"),
                                      QStringLiteral("https://tp.example"), QStringLiteral("1")},
@@ -9950,7 +9988,7 @@ void tst_qmlload::tutorialOnFirstStart()
 void tst_qmlload::tutorial()
 {
     openMenuItem(QStringLiteral("settingsMenuButton"));
-    click(find(QStringLiteral("tutorialSettingsEntry")));
+    click(find(QStringLiteral("tutorialMenuItem")));
     QObject *page = currentPage();
     QCOMPARE(page->objectName(), QStringLiteral("tutorialPage"));
     QCOMPARE(pageStack()->property("depth").toInt(), 3);
@@ -10083,7 +10121,7 @@ void tst_qmlload::tutorial()
 void tst_qmlload::tutorialGrid()
 {
     QObject *settings = openMenuItem(QStringLiteral("settingsMenuButton"));
-    click(find(QStringLiteral("tutorialSettingsEntry")));
+    click(find(QStringLiteral("tutorialMenuItem")));
     QObject *page = currentPage();
     evaluate(page, QStringLiteral("step = 'open'"));
     const int tabCount = m_core->tabs()->count();
