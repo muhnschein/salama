@@ -16,7 +16,7 @@
 # CI stamps 1.<run number> on non-release builds.
 Name:       harbour-salama
 Summary:    Web browser
-Version:    0.8.0
+Version:    0.9.0
 Release:    1
 License:    MPL-2.0
 URL:        https://github.com/muhnschein/salama
