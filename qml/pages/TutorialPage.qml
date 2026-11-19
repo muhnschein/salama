@@ -305,7 +305,7 @@ Page {
         // Not translated.
         heading: "Salama"
         //: Under the application's name on the tutorial's first card
-        subheading: qsTr("Web browser for Sailfish OS")
+        subheading: qsTr("A better web browser for Sailfish OS")
         topics: [
             //: What the tutorial covers: the address bar
             { "icon": "image://theme/icon-m-search", "text": qsTr("Address bar") },

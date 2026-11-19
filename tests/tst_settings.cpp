@@ -12,6 +12,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
+#include <QPolygonF>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -55,6 +58,7 @@ private slots:
     void coverIconPath();
     void coverIconPathNamesTheSpeakers();
     void coverIconPathNamesEveryGlyph();
+    void artworkShowsLauncherBolt();
     void startPage();
     void retiresTheHomePage();
     void tutorialShown();
@@ -730,6 +734,69 @@ void tst_settings::coverIconPathNamesEveryGlyph()
             QVERIFY2(whiteFile != blackFile, qPrintable(black));
         }
     }
+}
+
+// Launcher icon (every Harbour size), tutorial logo, cover halftone all show bolt of
+// icons/harbour-salama.svg. All are committed renders (icons/render.sh): stale one, or
+// halftone drawn from other outline, fails here. Colours, exact look: device, by eye.
+void tst_settings::artworkShowsLauncherBolt()
+{
+    const QDir source(QStringLiteral(SALAMA_SOURCE_DIR));
+    QFile svg(source.absoluteFilePath(QStringLiteral("icons/harbour-salama.svg")));
+    QVERIFY(svg.open(QIODevice::ReadOnly));
+    const QRegularExpressionMatch match =
+        QRegularExpression(QStringLiteral("id=\"bolt\" points=\"([^\"]+)\""))
+            .match(QString::fromUtf8(svg.readAll()));
+    QVERIFY(match.hasMatch());
+    const QStringList numbers = match.captured(1).split(QLatin1Char(' '));
+    QPolygonF bolt;
+    for (int i = 0; i + 1 < numbers.count(); i += 2) {
+        bolt << QPointF(numbers.at(i).toDouble(), numbers.at(i + 1).toDouble());
+    }
+    QCOMPARE(bolt.count(), 6);
+    const QRectF box = bolt.boundingRect();
+    QVERIFY(bolt.containsPoint(box.center(), Qt::OddEvenFill));
+
+    // Icon is 86 units wide. Bolt yellow, ground indigo, outside drop clear; drop's one
+    // square corner (top right) filled.
+    const QStringList icons{QStringLiteral("icons/86x86/harbour-salama.png"),
+                            QStringLiteral("icons/108x108/harbour-salama.png"),
+                            QStringLiteral("icons/128x128/harbour-salama.png"),
+                            QStringLiteral("icons/172x172/harbour-salama.png"),
+                            QStringLiteral("art/logo.png")};
+    for (const QString &path : icons) {
+        const QImage image(source.absoluteFilePath(path));
+        QVERIFY2(!image.isNull() && image.width() == image.height(), qPrintable(path));
+        const qreal scale = image.width() / 86.0;
+        const auto at = [&image, scale](qreal x, qreal y) {
+            return image.pixelColor(qRound(x * scale), qRound(y * scale));
+        };
+        const QColor spark = at(box.center().x(), box.center().y());
+        QVERIFY2(spark.red() > 230 && spark.green() > 150 && spark.blue() < 120, qPrintable(path));
+        const QColor ground = at(12, 43);
+        QVERIFY2(ground.alpha() == 255 && ground.blue() > 150 && ground.red() < 110,
+                 qPrintable(path));
+        QVERIFY2(at(3, 3).alpha() == 0, qPrintable(path));
+        QVERIFY2(at(83, 3).alpha() == 255, qPrintable(path));
+    }
+
+    // Halftone: dot every 32 px, bolt centred at 12.8 px per icon unit. Dot is solid
+    // exactly where its centre lies in bolt; halo and field dots stay fainter.
+    const QImage halftone(source.absoluteFilePath(QStringLiteral("art/cover/halftone.png")));
+    QCOMPARE(halftone.size(), QSize(704, 1280));
+    const qreal perUnit = 12.8;
+    const QPointF shift = QRectF(halftone.rect()).center() - box.center() * perUnit;
+    int solid = 0;
+    for (int y = 16; y < halftone.height(); y += 32) {
+        for (int x = 16; x < halftone.width(); x += 32) {
+            const bool inside =
+                bolt.containsPoint((QPointF(x, y) - shift) / perUnit, Qt::OddEvenFill);
+            const bool drawnSolid = halftone.pixelColor(x, y).alpha() > 245;
+            QVERIFY2(inside == drawnSolid, qPrintable(QStringLiteral("%1,%2").arg(x).arg(y)));
+            solid += drawnSolid ? 1 : 0;
+        }
+    }
+    QVERIFY(solid > 40);
 }
 
 void tst_settings::startPage()

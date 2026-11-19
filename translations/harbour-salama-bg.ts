@@ -1962,11 +1962,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Продължаване</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Уеб браузър за Sailfish OS</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>Започване на обучението</translation>
@@ -2034,6 +2029,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>Можете да го отворите отново от Настройки.</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>По-добър уеб браузър за Sailfish OS</translation>
     </message>
 </context>
 <context>
