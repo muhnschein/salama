@@ -1941,11 +1941,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Дәвам итәргә</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Sailfish OS өчен веб-браузер</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>Өйрәтүне башларга</translation>
@@ -2013,6 +2008,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>Аны Көйләүләрдән яңадан ача аласыз.</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>Sailfish OS өчен яхшырак веб-браузер</translation>
     </message>
 </context>
 <context>

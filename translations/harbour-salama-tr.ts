@@ -1941,11 +1941,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Devam et</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Sailfish OS için web tarayıcısı</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>Öğreticiyi başlat</translation>
@@ -2013,6 +2008,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>Ayarlar&apos;dan yeniden açabilirsin.</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>Sailfish OS için daha iyi bir web tarayıcısı</translation>
     </message>
 </context>
 <context>

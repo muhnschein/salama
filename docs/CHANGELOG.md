@@ -5,6 +5,9 @@ Each version's section is its GitHub release text, cut by `ci/release-notes.sh` 
 
 ## [Unreleased]
 
+### Changed
+- New app icon: yellow bolt on an indigo drop, flat. The cover's dotted bolt and the tutorial's first card follow it. New tagline: "A better web browser for Sailfish OS"
+
 ## [0.9.0] - 2026-11-05
 
 ### Features

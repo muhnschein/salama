@@ -1962,11 +1962,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>सुरू ठेवा</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Sailfish OS साठी वेब ब्राउझर</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>मार्गदर्शन सुरू करा</translation>
@@ -2034,6 +2029,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>तुम्ही हे सेटिंग्जमधून पुन्हा उघडू शकता.</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>Sailfish OS साठी अधिक चांगला वेब ब्राउझर</translation>
     </message>
 </context>
 <context>

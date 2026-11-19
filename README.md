@@ -1,6 +1,6 @@
 # Salama
 
-![Salama - An experimental native web browser](art/store/cover.png)
+![Salama - A better web browser for Sailfish OS](art/store/cover.png)
 
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=coverage)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=muhnschein_salama&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=muhnschein_salama)
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-Salama is an experimental native web browser for Sailfish OS.
+Salama is a better web browser for Sailfish OS.
 
 It is a Silica/QML interface over the platform Gecko engine exposed through 
 `Sailfish.WebView`. Salama does not touch the browser engine in any way — it

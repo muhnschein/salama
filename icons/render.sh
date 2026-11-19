@@ -30,11 +30,13 @@ for source in cover/*.svg; do
 done
 
 # Cover halftone (qml/components/CoverHalftone.qml): launcher bolt as dot field, white
-# (cover tints with highlight colour). Bolt = harbour-salama.svg outline polygon, 6.4
-# picture units per icon unit, centred. Dots largest inside bolt, thinning to foot; halo
-# just outside; faint field elsewhere. Taller than any cover, cropped evenly so bolt stays
-# centred. Drawn 2x, cover only scales down.
-awk -v pitch=16 -v width=352 -v height=640 '
+# (cover tints with highlight colour). Bolt = harbour-salama.svg `bolt` polygon, read from
+# there so cover follows launcher icon; 6.4 picture units per icon unit, centred. Dots
+# largest inside bolt, thinning to foot; halo just outside; faint field elsewhere. Taller
+# than any cover, cropped evenly so bolt stays centred. Drawn 2x, cover only scales down.
+bolt=$(sed -n 's/.*id="bolt" points="\([^"]*\)".*/\1/p' harbour-salama.svg)
+[ -n "$bolt" ] || { echo "no bolt polygon in harbour-salama.svg" >&2; exit 1; }
+awk -v pitch=16 -v width=352 -v height=640 -v bolt="$bolt" '
 function inside(x, y,    i, j, hit) {
     hit = 0
     for (i = 0; i < corners; i++) {
@@ -64,9 +66,7 @@ function distance(x, y,    i, j, dx, dy, t, ex, ey, d, best) {
     return best
 }
 BEGIN {
-    n = split("56.24 14.05 44.6 26.56 34.37 39.1 30.33 44.51 31.28 45.87 41.72 45.09 " \
-              "42.01 45.54 32.97 68.93 57.35 40.05 59.49 37.2 59.08 35.84 48.27 36.62 " \
-              "48.11 35.55", q, " ")
+    n = split(bolt, q, " ")
     corners = n / 2
     for (i = 0; i < corners; i++) {
         px[i] = q[2 * i + 1] * 6.4

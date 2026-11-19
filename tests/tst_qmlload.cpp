@@ -9952,11 +9952,8 @@ void tst_qmlload::tutorialOnFirstStart()
     QVERIFY(QFile::exists(QLatin1String(SALAMA_SOURCE_DIR "/art/logo.png")));
     QCOMPARE(findObjects(card, QStringLiteral("tutorialCardHeading")).first()->property("text"),
              QVariant(QStringLiteral("Salama")));
-    QVERIFY(!findObjects(card, QStringLiteral("tutorialCardSubheading"))
-                 .first()
-                 ->property("text")
-                 .toString()
-                 .isEmpty());
+    QCOMPARE(findObjects(card, QStringLiteral("tutorialCardSubheading")).first()->property("text"),
+             QVariant(QStringLiteral("A better web browser for Sailfish OS")));
     QVERIFY(!findObjects(card, QStringLiteral("tutorialCardText"))
                  .first()
                  ->property("visible")

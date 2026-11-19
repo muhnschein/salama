@@ -1941,11 +1941,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>繼續</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>適用於 Sailfish OS 的網頁瀏覽器</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>開始使用教學</translation>
@@ -2013,6 +2008,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>你可以在「設定」中再次開啟它。</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>適用於 Sailfish OS 的更佳網頁瀏覽器</translation>
     </message>
 </context>
 <context>

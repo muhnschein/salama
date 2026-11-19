@@ -1941,11 +1941,6 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
         <translation>Tiếp tục</translation>
     </message>
     <message>
-        <source>Web browser for Sailfish OS</source>
-        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
-        <translation>Trình duyệt web cho Sailfish OS</translation>
-    </message>
-    <message>
         <source>Start tutorial</source>
         <extracomment>Starts the tutorial from its first card</extracomment>
         <translation>Bắt đầu hướng dẫn</translation>
@@ -2013,6 +2008,11 @@ The reader view in Firefox&apos;s light or dark colours as the ambience is</extr
     <message>
         <source>You can open it again from Settings.</source>
         <translation>Bạn có thể mở lại hướng dẫn từ Cài đặt.</translation>
+    </message>
+    <message>
+        <source>A better web browser for Sailfish OS</source>
+        <extracomment>Under the application&apos;s name on the tutorial&apos;s first card</extracomment>
+        <translation>Trình duyệt web tốt hơn cho Sailfish OS</translation>
     </message>
 </context>
 <context>
