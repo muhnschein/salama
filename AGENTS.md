@@ -30,14 +30,14 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
 
 ## Device tests
 
-- Test phone: OnePlus 6, SFOS 5.1, via `muhnschein-sfos-harness` workflow `do`, shared with other apps' agents. Its AGENTS.md rules every run (lease, tags, baseline, no blind taps, costly ops); helpers: its README, `scripts/lib.sh`; Salama's screens: its `apps/salama.md`. Never run fork or others' PR code there: any job can root phone.
+- Test phone: on the local SFOS test host via the harness's `local/run.sh` (`muhnschein-sfos-harness`, see its `local/README.md`), shared with other apps' agents. Its AGENTS.md rules every run (phone lock, baseline, no blind taps, costly ops); helpers: its README, `scripts/lib.sh`; Salama's screens: its `apps/salama.md`. Never run fork or others' PR code there: any run can root phone.
 - Phone runs SFOS 5.1, Salama needs 5.2: harness installs past dependencies (user's go, until phone has 5.2). UI, settings, storage results hold; engine behaviour (loads, rendering, Gecko crashes) may differ on 5.2: report as 5.1 result.
-- Build in: `install_artifact muhnschein/salama RUN_ID harbour-salama` (rpm.yml run on PR branch) or `install_rpm URL SHA256` (release). Same job as `launch`: harness refuses build it didn't install.
+- Build in: `install_artifact muhnschein/salama RUN_ID harbour-salama` (rpm.yml run on PR branch) or `install_rpm URL SHA256` (release). Same run as `launch`: harness refuses build it didn't install.
 - Every run starts from named state, `state.txt` records it plus RPM: `clean` (`reset`), `fixture:NAME`, `upgrade:FROM` (release FROM plus data, then build over it; required when change touches stored data or settings).
 - Footprint check (`fs_mark`, `footprint harbour-salama`): file written outside known dirs → add to harness `apps/harbour-salama.dirs` or fail run.
 - Before/after: same start state, same steps. Motion or timing change: launch with `FRAMELOG`, report `frames`. Never measure frames while recording.
 - `text` (harness keyboard) closes address field: no page loads via address bar yet (harness `apps/salama.md` "Typing").
-- Evidence: only files from harness results branch, as published (crops, GIFs, charts made from them OK); never type identifiers in. Harness proves function and frame timing; feel, lag, transitions stay user's call on device.
+- Evidence: only files from the harness's `local/publish.sh` output, as written (crops, GIFs, charts made from them OK); never type identifiers in. Harness proves function and frame timing; feel, lag, transitions stay user's call on device.
 
 ## Local checks
 
@@ -78,7 +78,7 @@ User tests RPM on phone; that test judges feel, lag, transitions. Say exactly wh
   - Transitions, motion, feel, lag → before/after GIF (preferred: plays inline; mp4 by URL shows as link only) or mp4. GIF from harness mp4 via `ffmpeg`.
   - Performance → before/after chart (image), numbers in table beside it. Frame timing from separate `frames` run: recording slows compositor.
   - Non-visual proof (tests, mutations, logs) → text.
-- Evidence on GitHub, never in tree: harness results branch files embedded by URL; made ones (GIFs, charts) pushed to orphan branch `evidence/pr-N`, deleted after merge.
+- Evidence on GitHub, never in tree: published harness files and ones made from them (GIFs, charts) pushed to orphan branch `evidence/pr-N`, embedded by URL, deleted after merge.
 - Flaky test → find and fix cause. Never add retries (`make test` runs none by design: pass on second try = defect). Never re-run CI until green and call it done. Never skip test or loosen assert. One re-run OK only for infra failure before any test ran (runner lost, apt mirror timeout); say so.
 - Merge only on user's explicit go. Merge commit, not squash/rebase.
 
